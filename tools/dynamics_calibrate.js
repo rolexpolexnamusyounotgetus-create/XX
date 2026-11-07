@@ -50,6 +50,8 @@ const extra = JSON.parse(opt("--params", "{}"));
 const DR = require(path.join(ROOT, "tools/durrec.js"))(E, ROOT);
 // v5 merge step 3: walk-forward SOS pairs (tools/sosrec.js; leave-one-year-out coefficients before 2024) when components.styles_sos sos is on
 const SR = require(path.join(ROOT, "tools/sosrec.js"))(E, ROOT);
+// v5 merge step 4: embedding etas, oppadj factors and pre-UFC records (tools/mlpathrec.js) when components.embed / .oppadj / .preufc are on
+const XR = require(path.join(ROOT, "tools/mlpathrec.js"))(E, ROOT);
 
 const allTrain = bt.fights.filter((f) => f.date >= FROM && f.date <= TO && oof.fights[f.id]);
 const fights = bt.fights.filter((f, i) => f.date >= FROM && f.date <= TO && i % STRIDE === 0 && oof.fights[f.id]);
@@ -93,8 +95,9 @@ function run(params) {
       const o = optsFor(f, swap, params);
       DR.apply(o, f.id, swap);   // v5: durability walk-forward record + train NORM when the component is on (tools/durrec.js)
       if (SR.on(params)) SR.apply(o, f, swap);   // v5: walk-forward SOS pair (tools/sosrec.js)
+      XR.apply(o, f, swap, params);   // v5 merge step 4 inputs (tools/mlpathrec.js)
       const m = swap ? E.matchup(PB, PA, o) : E.matchup(PA, PB, o);
-      DR.assertApplied(m, f.id, params); SR.assertApplied(m, f.id, params);
+      DR.assertApplied(m, f.id, params); SR.assertApplied(m, f.id, params); XR.assertApplied(m, f.id, params);
       const rng = E.makeRng(seedOf(f.id, swap ? 2 : 1));
       for (let s = 0; s < SIMS; s++) {
         const fight = E.simulate(m, rng, true), nr = fight.rounds.length;

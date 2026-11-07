@@ -1767,6 +1767,114 @@ def stage_valid(args):
                                                           for k in ("bin7", "method_given_winner", "round_given_fin")}))
 
 
+# ====================================================================== capture: forward prop snapshots (upcoming cards)
+def _bfo_home_events(html, today):
+    """Event links on BFO's home page (UFC cards only), with the header date (no year: rolled forward)."""
+    import html as H
+    out = []
+    for m in re.finditer(r'<div class="table-header"><a href="(/events/([a-z0-9-]+)-(\d+))"><h1>([^<]*)</h1></a>'
+                         r'(?:<span class="table-header-date">([^<]*)</span>)?', html):
+        url, slug, eid, title, dtext = m.groups()
+        if not re.match(r"(noche-)?ufc", slug) or slug.startswith("ufc-bjj"):
+            continue
+        d = None
+        mm = re.search(r"([A-Za-z]{3})[a-z]*\s+(\d{1,2})", dtext or "")
+        if mm:
+            mon = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"].index(
+                mm.group(1).lower()) + 1
+            d = dt.date(today.year, mon, int(mm.group(2)))
+            if (d - today).days < -60:
+                d = dt.date(today.year + 1, mon, int(mm.group(2)))
+        out.append({"url": BFO + url, "slug": slug + "-" + eid, "title": H.unescape(title),
+                    "date": d.isoformat() if d else None})
+    return out
+
+
+@stage("capture")
+def stage_capture(args):
+    """Forward capture for upcoming cards: BFO event pages fetched now (FightLabSim/1.0, robots.txt checked, >= 2 s
+    apart), every book's prop prices, the de-vigged families per book and the consensus, oriented to the bout's
+    a/b order in data/predictions/cards_upcoming.json when the bout is listed there (else page order). Writes a NEW
+    data/predictions/props_snapshot_<YYYYMMDD-HHMM>.json (UTC stamp; never overwrites) with the fetch time of every
+    page. --replay STAMP rebuilds a snapshot from its cached raw pages (data/raw/props_cache/capture/STAMP/)."""
+    import market as MK
+    now = dt.datetime.now(dt.timezone.utc)
+    stamp = args.replay or now.strftime("%Y%m%d-%H%M")
+    out_path = os.path.join(PRED_DIR, "props_snapshot_%s.json" % stamp)
+    if os.path.exists(out_path) and not args.replay:
+        raise SystemExit("%s exists; snapshots are never overwritten" % out_path)
+    F = Fetcher(os.path.join(RAWC, "capture"), delay=args.delay)
+    today = now.date()
+    until = dt.date.fromisoformat(args.until) if args.until else today + dt.timedelta(days=14)
+    home, ts_home = F.get(BFO + "/", stamp)
+    if not home:
+        raise SystemExit("BFO home page unavailable")
+    evs = [e for e in _bfo_home_events(home, today) if e["date"] and today - dt.timedelta(days=1)
+           <= dt.date.fromisoformat(e["date"]) <= until]
+    cards = {}
+    cpath = os.path.join(PRED_DIR, "cards_upcoming.json")
+    if os.path.exists(cpath):
+        for ev in json.load(open(cpath)).get("events", []):
+            for b in ev.get("bouts", []):
+                cards.setdefault(ev["date"], []).append(dict(b, event=ev["name"]))
+    snap = {"meta": {"snapshot_utc": now.strftime("%Y-%m-%dT%H:%M:%SZ") if not args.replay else None, "stamp": stamp,
+                     "tool": "tools/props.py capture", "source": "bestfightodds.com event pages (closing-style "
+                     "current prices per book; exchanges dropped)", "user_agent": UA, "home_fetched_utc": ts_home,
+                     "window": [today.isoformat(), until.isoformat()], "devig": "power per family per book, "
+                     "arithmetic mean over books, 0.15 outlier rule (tools/props.py book_families / consensus; "
+                     "src/ml/propspool.js mirrors it)", "events": []}, "bouts": []}
+    for e in evs:
+        html, ts = F.get(e["url"], stamp)
+        if not html:
+            continue
+        snap["meta"]["events"].append({"slug": e["slug"], "title": e["title"], "date": e["date"], "fetched_utc": ts})
+        mus, props = MK.parse_event_props_full(html)
+        for mu, m in mus.items():
+            books = {}
+            for (mu2, bk), d in props.items():
+                if mu2 != mu or bk in EXCHANGES:
+                    continue
+                row = {k: (v[0] if v[0] is not None else "") for k, v in d.items()}
+                for k in TWO_WAY:
+                    if k in d:
+                        row[k + "_no"] = d[k][1] if d[k][1] is not None else ""
+                ml = m["lines"].get(bk) or [None, None]
+                row["ml1"], row["ml2"] = (ml[0] if ml[0] is not None else ""), (ml[1] if ml[1] is not None else "")
+                books[bk] = row
+            t1, t2 = m.get("t1_name", ""), m.get("t2_name", "")
+            # orient to the card's a/b when the bout is listed
+            match, sw = None, False
+            d0 = dt.date.fromisoformat(e["date"])
+            for dd in (0, 1, -1):
+                for b in cards.get((d0 + dt.timedelta(days=dd)).isoformat(), []):
+                    sk = min(MK.name_sim(b["a"]["name"], t1), MK.name_sim(b["b"]["name"], t2))
+                    ss = min(MK.name_sim(b["a"]["name"], t2), MK.name_sim(b["b"]["name"], t1))
+                    if max(sk, ss) >= 0.8 and (match is None or max(sk, ss) > match[0]):
+                        match, sw = (max(sk, ss), b, (d0 + dt.timedelta(days=dd)).isoformat()), ss > sk
+                if match:
+                    break
+            K5 = any(r.get(k) not in (None, "") for r in books.values() for k in ("er4", "wr41", "wr42", "kor41"))
+            K = int(match[1].get("rounds") or (5 if K5 else 3)) if match else (5 if K5 else 3)
+            fams = {bk: book_families(r, K, sw) for bk, r in books.items()}
+            cons = consensus(fams, K) if books else {}
+            rec = {"event_slug": e["slug"], "mu": mu, "page_t1": t1, "page_t2": t2, "fetched_utc": ts, "rounds": K,
+                   "swap": sw, "books": books, "consensus": cons,
+                   "families_present": sorted(k for k in ("m6", "gd", "er", "wr", "mr", "itd", "ou") if k in cons)}
+            if match:
+                b = match[1]
+                rec.update({"bout_id": "%s:%s__%s" % (match[2], b["a"].get("slug") or b["a"]["name"].lower().replace(" ", "-"),
+                                                    b["b"].get("slug") or b["b"]["name"].lower().replace(" ", "-")),
+                            "a": b["a"]["name"], "b": b["b"]["name"], "segment": b.get("segment"),
+                            "order": b.get("order"), "event": b.get("event")})
+            else:
+                rec.update({"a": t1, "b": t2, "bout_id": None, "segment": None})
+            snap["bouts"].append(rec)
+    json.dump(snap, open(out_path, "w"), indent=1, default=float)
+    n_m6 = sum(1 for b in snap["bouts"] if "m6" in b["consensus"])
+    log("capture: %d bouts on %d events (%d with method props, %d matched to cards_upcoming) -> %s"
+        % (len(snap["bouts"]), len(snap["meta"]["events"]), n_m6, sum(1 for b in snap["bouts"] if b["bout_id"]), out_path))
+
+
 # ====================================================================== export
 def _r(x, k=4):
     import numpy as np

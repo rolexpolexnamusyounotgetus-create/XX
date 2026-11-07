@@ -303,7 +303,7 @@ class Pool {
       hookPath: spec.hook ? absPath(spec.hook) : null,
       inject: spec.inject, priors: PA,
       // the worker may run from a session snapshot in os.tmpdir() (snapshotEngine), so it gets the repo's durrec.js and root here
-      durrecPath: path.join(__dirname, "durrec.js"), sosrecPath: path.join(__dirname, "sosrec.js"), root: ROOT };
+      durrecPath: path.join(__dirname, "durrec.js"), sosrecPath: path.join(__dirname, "sosrec.js"), mlpathrecPath: path.join(__dirname, "mlpathrec.js"), root: ROOT };
     this.workers = this.groups.map((g) => new Worker(spec.workerFile || __filename, { workerData: Object.assign({
       tasks: g.map((i) => { const t = tasks[i], f = fights[t.fi]; return { swap: t.swap, seed: t.seed, f: { id: f.id, date: f.date, year: f.year,
         division: f.division, rounds: f.rounds, title: f.title, A: f.A, B: f.B } }; }) }, common) }));
@@ -335,6 +335,8 @@ function workerMain() {
   const DR = require(workerData.durrecPath || path.join(__dirname, "durrec.js"))(E, workerData.root || path.resolve(__dirname, ".."));
   // v5 merge step 3: walk-forward SOS pairs (tools/sosrec.js; leave-one-year-out coefficients before 2024) when components.styles_sos sos is on
   const SR = require(workerData.sosrecPath || path.join(__dirname, "sosrec.js"))(E, workerData.root || path.resolve(__dirname, ".."));
+  // v5 merge step 4: embedding etas, oppadj factors and pre-UFC records (tools/mlpathrec.js) when components.embed / .oppadj / .preufc are on
+  const XR = require(workerData.mlpathrecPath || path.join(__dirname, "mlpathrec.js"))(E, workerData.root || path.resolve(__dirname, ".."));
   const hook = hookPath ? require(hookPath) : null;
   let cacheKey = null, cache = null;
   function build(t, tree, hp) {
@@ -345,8 +347,9 @@ function workerMain() {
     DR.apply(opts, f.id, t.swap);   // v5: durability walk-forward record + train NORM when the component is on (tools/durrec.js)
     const P0 = opts.params;
     if (SR.on(P0)) SR.apply(opts, f, t.swap);   // v5: walk-forward SOS pair (tools/sosrec.js)
+    XR.apply(opts, f, t.swap, P0);   // v5 merge step 4 inputs (tools/mlpathrec.js)
     const m = E.matchup(A, B, opts);
-    DR.assertApplied(m, f.id, opts.params); SR.assertApplied(m, f.id, P0);
+    DR.assertApplied(m, f.id, opts.params); SR.assertApplied(m, f.id, P0); XR.assertApplied(m, f.id, P0);
     return m;
   }
   parentPort.on("message", (msg) => {

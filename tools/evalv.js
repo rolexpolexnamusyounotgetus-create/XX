@@ -21,6 +21,12 @@
    - Strength of schedule (engine v5, components.styles_sos sos "wf"): sos_wf.json walk-forward pairs per fight, A/B swapped
      with the corners; leave-one-year-out coefficients on train, the 2019-2023 fit on 2024-2025 (sosOpts below). The frozen
      copy must include styles_sos.js next to engine3.js.
+   - Step-4 inputs (engine v5 merge step 4: components.embed, .oppadj, .preufc; each a no-op without its input): tools/mlpathrec.js
+     (or the frozen copy's own mlpathrec.js + ml/embed.js when versions/<v>/ holds them): embedding task predictors from
+     embed.json walk-forward snapshots with leave-one-year-out blend coefficients on train (data/derived/embed_blend_loyo.json) and
+     the exported 2019-2023 recipe on 2024-2025; oppadj.json walk-forward factors; preufc.json pre-bout records for sides with
+     0-3 UFC fights. A/B swapped with the corners; 2026 refused; a matchup whose component is on but did not get its input fails.
+     Engines without these components (v3, v4) are untouched.
    Metrics (per split, 95% event-cluster bootstrap CIs, 2,000 resamples of events):
      winner log loss, Brier, accuracy, ECE (10 bins, mirrored), calibration slope (mirrored, no intercept), 7-bin log
      loss, method (KO / SUB / DEC) log loss, who x how x when log loss and the rest of tools/methodround.py's metrics
@@ -117,6 +123,9 @@ if (!isMainThread) {
     p.stylesSOS = Object.assign({}, p.stylesSOS || {}, { sosCoef: coef });
     return { sos: o === 0 ? { A: s.A, B: s.B } : { A: s.B, B: s.A }, params: p };
   }
+  // engine v5 merge step 4 (components.embed / .oppadj / .preufc): leak-free per-fight inputs from tools/mlpathrec.js, or the
+  // frozen copy's own mlpathrec.js when the version directory holds one; for engines without these components it is a no-op
+  const XR = require(W.mlpathrec)(E, ROOT);
   const names = OOF ? OOF.meta.targets : null;
   const rates = (arr) => { const o = {}; names.forEach((n, i) => { o[n] = arr[i]; }); return o; };
   parentPort.on("message", (msg) => {
@@ -139,7 +148,9 @@ if (!isMainThread) {
           } else if (typeof E.loadMLRates === "function") opts.ml = false;
           if (useDur) { opts.dur = durOpts(f.id, o); opts.params = durNorm; }
           if (useSOS) { const so = sosOpts(f, o, opts.params); opts.sos = so.sos; opts.params = so.params; }
+          XR.apply(opts, f, o === 1, opts.params);   // step 4: opts.embed / opts.oppadj / opts.preufc for each component that is on
           const m = E.matchup(A, B, opts);
+          XR.assertApplied(m, f.id, opts.params);
           if (useDur && !(m.dur && m.dur.baseFromRecord)) throw new Error("durability: walk-forward record not applied for " + f.id);
           if (useSOS && !(m.stylesSOS && m.stylesSOS.sos && m.stylesSOS.sos.have && m.stylesSOS.sos.have[0] && m.stylesSOS.sos.have[1])) {
             throw new Error("styles_sos: walk-forward pair not applied for " + f.id);
@@ -212,6 +223,9 @@ if (!DEV && path.relative(path.join(ROOT, "versions"), ENGINE_DIR).startsWith(".
 const engineSha = sha256(path.join(ENGINE_DIR, "engine3.js")), paramsSha = sha256(path.join(ENGINE_DIR, "params3.js"));
 const mlFile = path.join(ENGINE_DIR, "ml", "mlrates.js");
 const mlSha = fs.existsSync(mlFile) ? sha256(mlFile) : null;
+// step-4 inputs helper: the frozen copy's own mlpathrec.js when present, else tools/mlpathrec.js (its hash goes into the output)
+const MLP_FILE = fs.existsSync(path.join(ENGINE_DIR, "mlpathrec.js")) ? path.join(ENGINE_DIR, "mlpathrec.js") : path.join(ROOT, "tools/mlpathrec.js");
+const mlpSha = sha256(MLP_FILE);
 
 function loadHistory() { return fs.existsSync(HIST) ? JSON.parse(fs.readFileSync(HIST, "utf8")) : { meta: {}, versions: [] }; }
 function historyEntry(H) { return H.versions.find((v) => v.version === VERSION && !v.superseded) || null; }
@@ -255,7 +269,7 @@ function runAll() {
       w.postMessage({ cmd: "run", ids: chunks[next++] });
     }
     for (let k = 0; k < Math.min(WORKERS, chunks.length); k++) {
-      const w = new Worker(__filename, { workerData: { engineDir: ENGINE_DIR, sims: SIMS, seed: SEED, useML } });
+      const w = new Worker(__filename, { workerData: { engineDir: ENGINE_DIR, sims: SIMS, seed: SEED, useML, mlpathrec: MLP_FILE } });
       live++;
       w.on("message", (m) => {
         if (m.cmd === "done") {
@@ -529,6 +543,11 @@ function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && ty
       ml_applied_share: mlShare, sims_per_order: SIMS, seed: SEED, bootstrap: B, n_fights: pfs.length, n_decisive: nWin, n_outcome: nOut, failed: errs.length,
       wall_s: (Date.now() - t0) / 1000, main_cpu_s: (cpu.user + cpu.system) / 1e6,
       priors: "data/derived/mlcal_priors_asof.json (walk-forward 5-year windows)",
+      step4: (function () {
+        const c = (P0 && P0.components) || {};
+        return { embed: !!c.embed, oppadj: !!c.oppadj, preufc: !!c.preufc, mlpathrec: path.relative(ROOT, MLP_FILE), mlpathrec_sha256: mlpSha,
+          inputs: "embed.json snapshots + embed_blend_loyo.json coef_loyo (train) / embed_model.json recipe (2024-25); oppadj.json snapshots; preufc.json snapshots" };
+      })(),
       sos: P0.components && P0.components.styles_sos && (P0.components.styles_sos === true || P0.components.styles_sos.sos !== false) &&
         ((P0.stylesSOS && P0.stylesSOS.sosSource) || "wf") === "wf"
         ? "styles_sos sos 'wf': data/derived/sos_wf.json pairs (corners swapped with the order); coefficients meta.coef_loyo[year] on train, meta.coef (fit 2019-2023) on 2024-2025"

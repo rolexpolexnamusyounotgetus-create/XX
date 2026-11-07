@@ -73,6 +73,8 @@ const keys = bt.meta.keys;
 const DR = require(path.join(ROOT, "tools/durrec.js"))(E, ROOT);
 // v5 merge step 3: walk-forward SOS pairs (tools/sosrec.js; leave-one-year-out coefficients before 2024) when components.styles_sos sos is on
 const SR = require(path.join(ROOT, "tools/sosrec.js"))(E, ROOT);
+// v5 merge step 4: embedding etas, oppadj factors and pre-UFC records (tools/mlpathrec.js) when components.embed / .oppadj / .preufc are on
+const XR = require(path.join(ROOT, "tools/mlpathrec.js"))(E, ROOT);
 
 const cfgArgs = optAll("--cfg");
 const CFGS = [];
@@ -135,8 +137,9 @@ for (const f of fights) {
         o.params = cparams;
         DR.apply(o, f.id, swap);
         if (SR.on(cparams)) SR.apply(o, f, swap);
+        XR.apply(o, f, swap, cparams);   // v5 merge step 4 inputs (tools/mlpathrec.js)
         m = swap ? E.matchup(PB, PA, o) : E.matchup(PA, PB, o);
-        DR.assertApplied(m, f.id, cparams); SR.assertApplied(m, f.id, cparams);
+        DR.assertApplied(m, f.id, cparams); SR.assertApplied(m, f.id, cparams); XR.assertApplied(m, f.id, cparams);
       } catch (e) { ok = false; nErr++; if (nErr < 4) console.error(String(e && e.stack || e)); break; }
       const rng = E.makeRng(seedOf(f.id, swap ? 2 : 1));
       for (let s = 0; s < SIMS; s++) {

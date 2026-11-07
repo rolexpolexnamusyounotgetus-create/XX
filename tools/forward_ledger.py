@@ -1202,11 +1202,11 @@ def score_statlines(rows, B):
                 continue
             dm = [pois_dev(r["y"], r["mean"]) for r in rs]
             db = [pois_dev(r["y"], r["blend_mean"]) for r in rs]
-            n = len(rs)
-            mv[st] = {"n": n, "n_bouts": len({r["bout_id"] for r in rs}), "deviance_mean": sum(dm) / n,
+            n, nb = len(rs), len({r["bout_id"] for r in rs})
+            mv[st] = {"n": n, "n_bouts": nb, "deviance_mean": sum(dm) / n,
                       "deviance_blend_mean": sum(db) / n,
                       "deviance_minus_blend": boot_ci([x - y for x, y in zip(dm, db)], [r["date"] for r in rs], B,
-                                                      units=[r["bout_id"] for r in rs]) if n >= 2 else None,
+                                                      units=[r["bout_id"] for r in rs]) if nb >= 2 else None,
                       "coverage_p10_p90": sum(1 for r in rs if r["p10"] <= r["y"] <= r["p90"]) / n,
                       "above_p90": sum(1 for r in rs if r["y"] > r["p90"]) / n,
                       "below_p10": sum(1 for r in rs if r["y"] < r["p10"]) / n,

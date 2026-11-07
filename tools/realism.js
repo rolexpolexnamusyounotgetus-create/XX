@@ -152,6 +152,7 @@ function workerMain() {
   // back to the live fit (2008..2026-10) and SOS runs neutral. Both are no-ops for engines without those components.
   const DR = require(path.join(__dirname, "durrec.js"))(E, path.join(__dirname, ".."));
   const SR = require(path.join(__dirname, "sosrec.js"))(E, path.join(__dirname, ".."));
+  const XR = require(path.join(__dirname, "mlpathrec.js"))(E, path.join(__dirname, ".."));   // v5 merge step 4: embed / oppadj / preufc inputs
   const caches = new Map();
   const isDec = (f) => f.method === "UD" || f.method === "SD" || f.method === "MD" || f.method === "DRAW";
   function build(f, swap, tree, useMl) {
@@ -162,8 +163,9 @@ function workerMain() {
     else if (useMl === false) o.ml = false;
     if (DR.on(o.params)) DR.apply(o, f.id, !!swap);
     if (SR.on(o.params)) SR.apply(o, f, !!swap);
+    XR.apply(o, f, !!swap, o.params);
     const m = E.matchup(A, B, o);
-    DR.assertApplied(m, f.id, tree); SR.assertApplied(m, f.id, tree);
+    DR.assertApplied(m, f.id, tree); SR.assertApplied(m, f.id, tree); XR.assertApplied(m, f.id, tree);
     return m;
   }
   parentPort.on("message", (msg) => {

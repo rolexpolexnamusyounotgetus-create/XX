@@ -16,6 +16,7 @@ const ROOT = path.join(__dirname, "..");
 const E = require(path.join(ROOT, "src/engine3.js"));
 const DR = require(path.join(ROOT, "tools/durrec.js"))(E, ROOT);   // v5 durability inputs (walk-forward records)
 const SR = require(path.join(ROOT, "tools/sosrec.js"))(E, ROOT);   // v5 merge step 3: walk-forward SOS pairs (styles_sos sos on)
+const XR = require(path.join(ROOT, "tools/mlpathrec.js"))(E, ROOT);   // v5 merge step 4: embed / oppadj / preufc inputs
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
 const SIMS = +opt("--sims", 100), PART = +opt("--part", 0), PARTS = +opt("--parts", 1);
@@ -57,8 +58,11 @@ for (const f of fights) {
     // v5: durability walk-forward record (corner order of each call) + train NORM when the component is on (tools/durrec.js)
     const o1 = DR.apply(Object.assign({}, o), f.id, false), o2 = DR.apply(Object.assign({}, o), f.id, true);
     if (SR.on(o.params)) { SR.apply(o1, f, false); SR.apply(o2, f, true); }   // v5: walk-forward SOS pairs, corners swapped (tools/sosrec.js)
-    s1 = E.summarize(E.matchup(A, B, o1), SIMS, seedOf(f.id, 1));
-    s2 = E.summarize(E.matchup(B, A, o2), SIMS, seedOf(f.id, 2));
+    XR.apply(o1, f, false, o.params); XR.apply(o2, f, true, o.params);   // v5 merge step 4 inputs, corners swapped (tools/mlpathrec.js)
+    const m1 = E.matchup(A, B, o1), m2 = E.matchup(B, A, o2);
+    XR.assertApplied(m1, f.id, o.params); XR.assertApplied(m2, f.id, o.params);
+    s1 = E.summarize(m1, SIMS, seedOf(f.id, 1));
+    s2 = E.summarize(m2, SIMS, seedOf(f.id, 2));
   } catch (err) {
     res[f.id] = { err: String(err.message || err) };
     continue;

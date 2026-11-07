@@ -1332,6 +1332,361 @@ def _full(base, G, v):
 STAGES["nested"] = stage_nested
 
 
+# ====================================================================== stage: gate (stack gate, forward-chained 2021-2023)
+def blend_cells(Ja, Jb, beta):
+    return beta * Ja + (1 - beta) * Jb
+
+
+def fit_beta(base, Pa, Ha, Pb, Hb, rows, metric="bin7"):
+    """Weight of model a in a linear pool of the joint cells with model b (grid 0..1 by 0.05), min mean loss."""
+    Ja, Jb = joint(base, Pa, Ha, rows), joint(base, Pb, Hb, rows)
+    best = None
+    for b in np.round(np.arange(0, 1.0001, 0.05), 2):
+        L = losses(base, blend_cells(Ja, Jb, b), rows)
+        s = float(np.nanmean(L[metric]))
+        if best is None or s < best[0]:
+            best = (s, float(b))
+    return best[1]
+
+
+def gate_run(base, P6f, Hf, years=GATE_YEARS, hist_from=2017):
+    """Forward-chained stack gate: for gate year Y, beta fit on OOF rows [hist_from, Y); the pooled gate-year cells."""
+    yr = base["T"]["year"].to_numpy()
+    n = len(yr)
+    J = np.full((n, NC_), np.nan)
+    betas = {}
+    for Y in years:
+        hist = rows_of(base, range(hist_from, Y))
+        b = fit_beta(base, P6f, Hf, base["P6_S2w"], base["H"], hist)
+        betas[str(Y)] = b
+        m = rows_of(base, [Y])
+        J[m] = blend_cells(joint(base, P6f, Hf, m), joint(base, base["P6_S2w"], base["H"], m), b)
+    return J, betas
+
+
+def stage_gate(args):
+    """The stack gate (tools/ml2.py rule): the finishing model enters the method / round stack only if the forward-
+    chained 2021-2023 blend with S2+ml2win beats S2+ml2win by more than 0.0005 in 7-bin log loss (primary). Primary
+    input: the nested procedure's out-of-fold predictions. Also reported (not decisive): the minimal-change candidate
+    (EB block inside S2's six-class model at S2's own penalty, nothing tuned) and the method-only nested predictions."""
+    base = load("base.pkl")
+    G = load("grid.pkl")
+    nz = load("nested_oof.pkl")
+    rows = rows_of(base, GATE_YEARS)
+    inputs = {"nested procedure (primary)": (nz["P6"], nz["H"]),
+              "nested method, S2 round shapes": (nz["P6"], base["H"]),
+              "six_eb at S2's penalty C 0.002 (minimal change, reported)": (G["P6"]["six_eb|st2012|hl8|C0.002"].astype(float),
+                                                                             base["H"])}
+    out = {"years": list(GATE_YEARS), "n": int(rows.sum()), "rule": "enter if pooled 2021-2023 7-bin of the blend < "
+           "S2+ml2win - 0.0005 (beta per year fit on OOF rows 2017..Y-1, grid 0..1 by 0.05)", "results": {}}
+    T = base["T"]
+    Linc = losses(base, joint(base, base["P6_S2w"], base["H"], rows), rows)
+    for k, (P6f, Hf) in inputs.items():
+        J, betas = gate_run(base, P6f, Hf)
+        L = losses(base, J[rows], rows)
+        Lraw = losses(base, joint(base, P6f, Hf, rows), rows)
+        bt, st = MR.cluster_bootstrap({"blend": L, "raw": Lraw, "inc": Linc}, T["event"].to_numpy()[rows], B=2000)
+        d = MR.paired_diff(L, Linc, st, METRICS)
+        draw = MR.paired_diff(Lraw, Linc, st, METRICS)
+        passed = d["bin7"]["diff"] < -SEL_MIN
+        out["results"][k] = {"betas": betas, "blend_minus_S2+ml2win": d, "raw_minus_S2+ml2win": draw,
+                             "blend": {m: bt["blend"][m] for m in ("bin7", "joint", "method_given_winner",
+                                                                   "round_given_fin")},
+                             "passes": bool(passed)}
+        log("gate: %-58s betas %s blend-inc bin7 %+.5f %s joint %+.5f rgf %+.5f -> %s" % (
+            k, betas, d["bin7"]["diff"], d["bin7"]["ci95"], d["joint"]["diff"], d["round_given_fin"]["diff"],
+            "PASS" if passed else "fail"))
+    out["decision"] = "enter" if out["results"]["nested procedure (primary)"]["passes"] else "not adopted"
+    # production weight (deployment, if it enters): beta fit on every OOF row 2017-2023
+    hist = rows_of(base, range(2017, 2024))
+    out["production_beta"] = fit_beta(base, nz["P6"], nz["H"], base["P6_S2w"], base["H"], hist)
+    json.dump(out, open(cpath("gate.json"), "w"), indent=1, default=float)
+    log("gate: decision %s; production beta (2017-2023) %.2f" % (out["decision"], out["production_beta"]))
+
+
+STAGES["gate"] = stage_gate
+
+
+# ====================================================================== stage: stage2 (2019+ verified layers)
+SL_STATS = ["kd", "sub_att", "td_lnd", "ctrl", "sig_lnd", "h_lnd"]
+BY_DIMS_W = ["pw", "su", "so", "to", "co", "ca"]
+BY_DIMS_L = ["ch", "sdf", "sd", "tdd", "ca"]
+
+
+def layer_block(base):
+    """Per row side, pre-fight values of the verified 2019+ layers (nan where absent; rows dated < 2026 only):
+    statlines unconditional expected stat lines (statlines_oof.json, never the actual-length fields), durability's
+    walk-forward chin / power random effects (durability.json backtest), bayes walk-forward skill means (bayes.json)."""
+    T = base["T"]
+    ids = list(T["id"])
+    n = len(ids)
+    sl = jload("statlines_oof.json")["fights"]
+    du = jload("durability.json")["backtest"]
+    by = jload("bayes.json")
+    dims = by["meta"]["dims"]
+    byf = by["fights"]
+    out = {"sl": np.full((n, 2, len(SL_STATS)), np.nan), "du": np.full((n, 2, 2), np.nan),
+           "by": np.full((n, 2, len(dims)), np.nan)}
+    for i, f in enumerate(ids):
+        r = sl.get(f)
+        if r and r.get("date", "") < VAULT_S and "A" in r and r.get("set") != "raw2019":
+            for s, t in enumerate(("A", "B")):
+                for j, k in enumerate(SL_STATS):
+                    v = r[t][k][-1]
+                    out["sl"][i, s, j] = math.log1p(v / 60.0 if k == "ctrl" else v)
+        r = du.get(f)
+        if r and str(T["date"].iat[i]) < VAULT_S:
+            for s, t in enumerate(("A", "B")):
+                out["du"][i, s] = [math.log(max(r[t]["chin_re"], 1e-3)), math.log(max(r[t]["pow_re"], 1e-3))]
+        r = byf.get(f)
+        if r and r.get("date", "") < VAULT_S and r.get("skill_A"):
+            out["by"][i, 0] = r["skill_A"]
+            out["by"][i, 1] = r["skill_B"]
+    out["by_dims"] = dims
+    return out
+
+
+def layer_design(LB, o, blocks):
+    w, l = o, 1 - o
+    cols, X = [], []
+    if "statlines" in blocks:
+        for j, k in enumerate(SL_STATS):
+            X += [LB["sl"][:, w, j], LB["sl"][:, l, j]]
+            cols += ["sl_w_" + k, "sl_l_" + k]
+    if "durability" in blocks:
+        X += [LB["du"][:, w, 1], LB["du"][:, l, 0], LB["du"][:, w, 0], LB["du"][:, l, 1]]
+        cols += ["du_w_pow", "du_l_chin", "du_w_chin", "du_l_pow"]
+    if "bayes" in blocks:
+        di = {d: j for j, d in enumerate(LB["by_dims"])}
+        for d in BY_DIMS_W:
+            X.append(LB["by"][:, w, di[d]])
+            cols.append("by_w_" + d)
+        for d in BY_DIMS_L:
+            X.append(LB["by"][:, l, di[d]])
+            cols.append("by_l_" + d)
+    return np.stack(X, 1), cols
+
+
+def offset_mnl_fit(O, X, y, lam):
+    """Multinomial logit with a fixed offset O (log base shares, coefficient 1), class intercepts and an L2 penalty
+    lam on the standardized slopes (mean-NLL scale)."""
+    n, d = X.shape
+    k = 3
+    Y = np.eye(k)[y]
+
+    def f(th):
+        W = th[:d * k].reshape(d, k)
+        b = th[d * k:]
+        Z = O + X @ W + b
+        Z = Z - Z.max(1, keepdims=True)
+        E = np.exp(Z)
+        s = E.sum(1)
+        P = E / s[:, None]
+        nll = (np.log(s) - (Z * Y).sum(1)).mean()
+        R = (P - Y) / n
+        return nll + 0.5 * lam * (W ** 2).sum(), np.concatenate([(X.T @ R + lam * W).ravel(), R.sum(0)])
+    r = minimize(f, np.zeros(d * k + k), jac=True, method="L-BFGS-B", options={"maxiter": 3000})
+    return r.x[:d * k].reshape(d, k), r.x[d * k:]
+
+
+def offset_mnl_predict(O, X, W, b):
+    Z = O + X @ W + b
+    E = np.exp(Z - Z.max(1, keepdims=True))
+    return E / E.sum(1, keepdims=True)
+
+
+def stage2_run(base, LB, blocks, lam, years=GATE_YEARS, first=2019):
+    """Residual on S2+ml2win's method-given-winner shares, forward-chained: year Y fit on decisive rows in
+    [first, Y) where the layers exist; rows without the layers keep the incumbent's shares."""
+    T = base["T"]
+    yr = T["year"].to_numpy()
+    ws, mc = method_labels(base)
+    sA, sB = s2_cond(base)
+    OA, OB = np.log(np.clip(sA, 1e-9, 1)), np.log(np.clip(sB, 1e-9, 1))
+    XA, cols = layer_design(LB, 0, blocks)
+    XB, _ = layer_design(LB, 1, blocks)
+    have = ~np.isnan(XA).any(1) & ~np.isnan(XB).any(1)
+    P6 = np.array(base["P6_S2w"], copy=True)
+    info = {}
+    for Y in years:
+        tr = (yr < Y) & (yr >= first) & (ws >= 0) & have
+        va = ((yr == Y) if Y < 2024 else (yr >= 2024)) & have
+        if tr.sum() < 200:
+            info[str(Y)] = {"n_train": int(tr.sum()), "skipped": True}
+            continue
+        Xtr = np.where((ws[tr] == 0)[:, None], XA[tr], XB[tr])
+        Otr = np.where((ws[tr] == 0)[:, None], OA[tr], OB[tr])
+        mu, sd = Xtr.mean(0), Xtr.std(0) + 1e-9
+        W, b = offset_mnl_fit(Otr, (Xtr - mu) / sd, mc[tr], lam)
+        qA = offset_mnl_predict(OA[va], (XA[va] - mu) / sd, W, b)
+        qB = offset_mnl_predict(OB[va], (XB[va] - mu) / sd, W, b)
+        P6[va] = p6_from_cond(qA, qB, base["pwin"][va])
+        info[str(Y)] = {"n_train": int(tr.sum()), "n_pred": int(va.sum())}
+    return P6, info, cols
+
+
+def stage_stage2(args):
+    """The 2019+ verified layers as a residual on S2+ml2win's method shares (the finishing model itself did not pass
+    its gate, so the incumbent is the base). Gate: pooled 2021-2023 7-bin better than S2+ml2win by > 0.0005. The
+    penalty is pre-set (lam 1.0); lam 0.3 and 3.0 are reported as sensitivity, never chosen from."""
+    base = load("base.pkl")
+    LB = layer_block(base)
+    yr = base["T"]["year"].to_numpy()
+    cov = {k: {str(y): int((~np.isnan(LB[k][:, 0, 0]) & (yr == y)).sum()) for y in range(2019, 2026)}
+           for k in ("sl", "du", "by")}
+    rows = rows_of(base, GATE_YEARS)
+    T = base["T"]
+    Linc = losses(base, joint(base, base["P6_S2w"], base["H"], rows), rows)
+    out = {"coverage_rows_by_year": cov, "rule": "enter if pooled 2021-2023 7-bin < S2+ml2win - 0.0005 at lam 1.0",
+           "results": {}}
+    for blocks in (("statlines",), ("durability",), ("bayes",), ("statlines", "durability", "bayes")):
+        for lam in (1.0, 0.3, 3.0):
+            first = 2020 if "statlines" in blocks else 2019
+            P6, info, cols = stage2_run(base, LB, blocks, lam, first=first)
+            L = losses(base, joint(base, P6, base["H"], rows), rows)
+            bt, st = MR.cluster_bootstrap({"s2": L, "inc": Linc}, T["event"].to_numpy()[rows], B=2000)
+            d = MR.paired_diff(L, Linc, st, ["bin7", "method_given_winner", "method3", "joint"])
+            key = "+".join(blocks) + " lam %g" % lam
+            out["results"][key] = {"folds": info, "minus_S2+ml2win": d,
+                                   "passes": bool(lam == 1.0 and d["bin7"]["diff"] < -SEL_MIN)}
+            log("stage2: %-40s bin7 %+.5f %s mgw %+.5f%s" % (key, d["bin7"]["diff"], d["bin7"]["ci95"],
+                                                             d["method_given_winner"]["diff"],
+                                                             "  PASS" if out["results"][key]["passes"] else ""))
+    out["decision"] = [k for k, v in out["results"].items() if v["passes"]] or "none passes"
+    json.dump(out, open(cpath("stage2.json"), "w"), indent=1, default=float)
+    log("stage2: decision %s" % (out["decision"],))
+
+
+STAGES["stage2"] = stage_stage2
+
+
+# ====================================================================== production configuration
+def production_cfgs():
+    """The configuration the protocol would deploy: the nested stage's pick over all folds 2016-2023 (method and
+    round), the pre-UFC switch of that pick, and the gate's production blend weight."""
+    nz = json.load(open(cpath("nested.json")))
+    gt = json.load(open(cpath("gate.json")))
+    tn = json.load(open(cpath("tune.json")))
+    mk, rk = nz["production"]["method"], nz["production"]["round"]
+    mcfg, pre = method_grid()[mk]
+    rcfg = round_grid()[rk]
+    return {"method_key": mk, "method": mcfg, "use_pre": pre, "round_key": rk, "round": rcfg,
+            "beta": gt["production_beta"], "filter": tn["chosen"]["filter"], "gate_decision": gt["decision"]}
+
+
+# ====================================================================== stage: swap (corner-swap test of the pipeline)
+def swap_rows(base, feats, filt, card, flip):
+    """Copies of base / feats / filter / cardio with A and B exchanged on the rows in flip."""
+    b = dict(base)
+    T = base["T"].copy()
+    for c in ("slug", "name", "age", "n"):
+        a_, b_ = T["A_" + c].copy(), T["B_" + c].copy()
+        T.loc[flip, "A_" + c], T.loc[flip, "B_" + c] = b_[flip], a_[flip]
+    T.loc[flip, "winner"] = T.loc[flip, "winner"].map({"A": "B", "B": "A"}).fillna(T.loc[flip, "winner"])
+    b["T"] = T
+    FX2, FY2 = base["FX2"].copy(), base["FY2"].copy()
+    FX2.loc[flip], FY2.loc[flip] = base["FY2"].loc[flip].to_numpy(), base["FX2"].loc[flip].to_numpy()
+    b["FX2"], b["FY2"] = FX2, FY2
+    y = base["y"].copy()
+    y[flip] = MR.mirror_index(base["y"][flip])
+    b["y"] = y
+    b["pwin"] = np.where(flip, 1 - base["pwin"], base["pwin"])
+    for k in ("P6_S2", "P6_S2w"):
+        b[k] = np.where(flip[:, None], base[k][:, ::-1], base[k])
+    b["H"] = np.where(flip[:, None], MR.mirror_cells(base["H"]), base["H"])
+    f = dict(feats)
+    f["PA"] = np.where(flip[:, None], feats["PB"], feats["PA"])
+    f["PB"] = np.where(flip[:, None], feats["PA"], feats["PB"])
+    f["pre"] = np.where(flip[:, None, None], feats["pre"][:, ::-1], feats["pre"])
+    return b, f, np.where(flip[:, None, None], filt[:, ::-1], filt), np.where(flip[:, None, None], card[:, ::-1], card)
+
+
+def stage_swap(args):
+    """Swap A and B on a random half of all rows (labels, designs, pointers, pre-UFC counts, filter state, ML v2
+    winner, S2 inputs), refit the production configuration on fold 2023 (a CV fold, not the 2024-2025 window) and
+    check that every prediction mirrors: P6 and the joint cells of flipped rows equal the mirror of the originals."""
+    base, feats = load("base.pkl"), load("feats.pkl")
+    pc = production_cfgs()
+    rng = np.random.default_rng(20261107)
+    flip = rng.random(len(base["T"])) < 0.5
+    filt, _ = run_filter(feats, base, pc["filter"]["sigma0"], pc["filter"]["tau"])
+    card = cardio_block(feats, base)
+    bs, fs, filts, cards = swap_rows(base, feats, filt, card, flip)
+    v = 2023
+    res = {}
+    for nm, (bb, ff, fl, cd) in (("orig", (base, feats, filt, card)), ("swap", (bs, fs, filts, cards))):
+        fd = FoldData(bb, ff, v, fl, cd, use_pre=pc["use_pre"])
+        P6 = oof_method(bb, {v: fd}, [v], pc["method"])
+        H = oof_round(bb, {v: fd}, [v], pc["round"])
+        six = oof_method(bb, {v: fd}, [v], {"six": ("eb",), "C": 0.002, "start": 2012, "hl": 8.0})
+        rows = rows_of(bb, [v])
+        res[nm] = (P6, H, six, joint(bb, P6, H, rows), rows)
+    P6o, Ho, sixo, Jo, rows = res["orig"]
+    P6s, Hs, sixs, Js, _ = res["swap"]
+    fr = flip[rows]
+    Jm = np.where(fr[:, None], MR.mirror_cells(Js), Js)
+    d_p6 = float(np.nanmax(np.abs(np.where(flip[:, None], P6s[:, ::-1], P6s) - P6o)[rows]))
+    d_six = float(np.nanmax(np.abs(np.where(flip[:, None], sixs[:, ::-1], sixs) - sixo)[rows]))
+    d_j = float(np.nanmax(np.abs(Jm - Jo)))
+    out = {"fold": v, "n_rows": int(rows.sum()), "n_flipped": int(fr.sum()), "max_abs_diff_P6": d_p6,
+           "max_abs_diff_joint": d_j, "max_abs_diff_six_eb_P6": d_six, "method": pc["method_key"],
+           "round": pc["round_key"]}
+    json.dump(out, open(cpath("swap.json"), "w"), indent=1)
+    log("swap: %s" % out)
+    assert d_p6 < 1e-6 and d_j < 1e-6 and d_six < 1e-6, "corner-swap test failed"
+
+
+STAGES["swap"] = stage_swap
+
+
+# ====================================================================== stage: holdout (2024-2025, scored once)
+def stage_holdout(args):
+    """The single 2024-01-01..2025-12-31 look. Scored objects (fixed in code before the look): the production finishing
+    model (nested pick: method + round), its method with S2's round shapes, the gate's production blend with
+    S2+ml2win (beta from 2017-2023 OOF rows), and the minimal-change six-class S2 + EB block at S2's own penalty;
+    every one paired with S2+ml2win. Everything is fit on fights before 2024-01-01. A marker refuses a second run."""
+    mark = cpath("holdout.done")
+    if os.path.exists(mark):
+        raise SystemExit("holdout already scored (%s); the 2024-2025 window is scored once" % open(mark).read().strip())
+    base, feats = load("base.pkl"), load("feats.pkl")
+    pc = production_cfgs()
+    FD = get_folds(base, feats, pc["filter"], pc["use_pre"], years=FOLDS)
+    P6 = oof_method(base, FD, [2024], pc["method"])
+    H = oof_round(base, FD, [2024], pc["round"])
+    FDp = get_folds(base, feats, pc["filter"], True, years=FOLDS)
+    six = oof_method(base, FDp, [2024], {"six": ("eb",), "C": 0.002, "start": 2012, "hl": 8.0})
+    rows = rows_of(base, [2024])
+    assert base["T"]["date"][rows].min() >= TEST_FROM and base["T"]["date"][rows].max() < VAULT
+    Jf = joint(base, P6, H, rows)
+    Ji = joint(base, base["P6_S2w"], base["H"], rows)
+    Jfull = np.full((len(rows), NC_), np.nan)
+    Jfull[rows] = blend_cells(Jf, Ji, pc["beta"])
+    T = base["T"]
+    L = {"S2+ml2win": losses(base, Ji, rows), "finishing": losses(base, Jf, rows),
+         "finishing method, S2 round shapes": losses(base, joint(base, P6, base["H"], rows), rows),
+         "blend (beta %.2f)" % pc["beta"]: losses(base, Jfull[rows], rows),
+         "six-class S2 + EB block (C 0.002)": losses(base, joint(base, six, base["H"], rows), rows)}
+    bt, st = MR.cluster_bootstrap(L, T["event"].to_numpy()[rows], B=2000, seed=11)
+    pdif = {k + " - S2+ml2win": MR.paired_diff(L[k], L["S2+ml2win"], st, METRICS) for k in L if k != "S2+ml2win"}
+    out = {"window": "2024-01-01..2025-12-31", "n": int(rows.sum()), "n_cards": int(T["event"][rows].nunique()),
+           "production": {k: v for k, v in pc.items() if k not in ("method", "round")}, "means": bt, "paired": pdif,
+           "scored_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+    yr = T["year"].to_numpy()
+    out["by_year"] = {str(y): {k: round(float(np.nanmean(np.where((yr[rows] == y), L[k]["bin7"], np.nan))), 5)
+                               for k in L} for y in (2024, 2025)}
+    for k, v in pdif.items():
+        log("holdout: %s: %s" % (k, {m: (v[m]["diff"], v[m]["ci95"]) for m in ("bin7", "joint", "method_given_winner",
+                                                                                 "round_given_fin", "method3")}))
+    save({"P6": P6, "H": H, "six": six, "rows": rows}, "holdout_pred.pkl")
+    json.dump(out, open(cpath("holdout.json"), "w"), indent=1, default=float)
+    with open(mark, "w") as fh:
+        fh.write("scored %s UTC, n=%d\n" % (out["scored_utc"], out["n"]))
+    log("holdout: done (n=%d)" % out["n"])
+
+
+STAGES["holdout"] = stage_holdout
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])
