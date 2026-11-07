@@ -173,7 +173,10 @@ check("identity covers >= 300 random matchups incl. traced fights", total >= 300
     }
   } finally { E.loadMLRates(null); }
   const fl = E.v401Flags(E.params());
-  check("default params: all five v401 sub-flags on (until the Calibrate stage decides)", SUBS.every((s) => fl[s]), JSON.stringify(fl));
+  // v5 Calibrate A (research/v5_train_ablation.md, train leave-one-out): (c) mlLevels off, the other four on (emJudge as a protocol
+  // exception: its off state is the all-cards EM fit through 2026-10)
+  check("default params: the Calibrate A sub-flags (emJudge, deductions, tdCap, koTargets on; mlLevels off)",
+    fl.emJudge && fl.deductions && !fl.mlLevels && fl.tdCap && fl.koTargets, JSON.stringify(fl));
   const p = E.resolveParams(comp(false)), P4 = require(path.join(ROOT, "versions/v4/params3.js"));
   const keys = ["kdScale", "kdInstant", "kdRefStop", "stko", "gnpTko", "subConvScale", "kdPos"], jk = ["head", "body", "leg", "kd", "td", "ctrlMin", "sub", "sharedSd", "sharedFight", "indSd", "t108", "t108kd", "hurt", "power", "tasteSd"];
   check("v401 off resolves to v4.0.0's parameter values (judge, KO block, levels)", keys.every((k) => JSON.stringify(p[k]) === JSON.stringify(P4[k])) &&

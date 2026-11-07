@@ -851,17 +851,20 @@ def info_at(W, Z, yv, a):
     return (yv - p) * dp / (p * (1 - p)), dp * dp / (p * (1 - p))
 
 
-def track_split(day, vint, event, W, Z, yv, obs, cfg, scope=None, brk=()):
+def track_split(day, vint, event, W, Z, yv, obs, cfg, scope=None, brk=(), query=None):
     """Walk-forward offsets for one split. Returns, for every row, the offset used to predict it (from rows on
     strictly earlier days whose split outcome is observed). cfg: {"fam": "ew", "h", "n0", "rho"} or
     {"fam": "kal", "q", "se", "rho", "vb"} or {"fam": "none"}. Vintage: rows predicted by an older model vintage than
     the row being predicted get weight rho^(age) (EW); the Kalman state is multiplied by rho at each refit.
     scope: optional integer group per row (format or division); its offset = league offset + a deviation shrunk to 0
-    with precision cfg["n0s"] * 0.2 (EW family only)."""
+    with precision cfg["n0s"] * 0.2 (EW family only). query: rows that only read the state (snapshots); a day with
+    query rows only changes nothing."""
     n = len(day)
     off = np.zeros(n)
     if cfg["fam"] == "none":
         return off
+    if query is None:
+        query = np.zeros(n, bool)
     u = np.unique(day)
     fam = cfg["fam"]
     rho = cfg.get("rho", 1.0)
@@ -874,6 +877,7 @@ def track_split(day, vint, event, W, Z, yv, obs, cfg, scope=None, brk=()):
         for d in u:
             rows = np.where(day == d)[0]
             hi = np.where(hist)[0]
+            realr = rows[~query[rows]]
             if len(hi):
                 wt = np.exp(-lam * (d - day[hi]))
                 vnow = vint[rows].max()
@@ -882,15 +886,18 @@ def track_split(day, vint, event, W, Z, yv, obs, cfg, scope=None, brk=()):
                 keep = wt > 1e-4
                 hi, wt = hi[keep], wt[keep]
                 a = solve_offset(W[hi], Z[hi], yv[hi], wt, prec, 0.0, a_prev)
-                a_prev = a
+                if len(realr):
+                    a_prev = a
                 off[rows] = a
                 if scope is not None:
                     prec_s = cfg["n0s"] * 0.2
+                    rg = set(int(x) for x in scope[realr])
                     for g in np.unique(scope[rows]):
                         m = scope[hi] == g
                         key = int(g)
                         a_s = solve_offset(W[hi][m], Z[hi][m], yv[hi][m], wt[m], prec_s, a, prev_a_s.get(key, a))
-                        prev_a_s[key] = a_s
+                        if key in rg:
+                            prev_a_s[key] = a_s
                         off[rows[scope[rows] == g]] = a_s
             hist[rows[obs[rows]]] = True
         return off
@@ -904,6 +911,10 @@ def track_split(day, vint, event, W, Z, yv, obs, cfg, scope=None, brk=()):
         bi = 0
         for d in u:
             rows = np.where(day == d)[0]
+            if query[rows].all():
+                vq = vint[rows].max()
+                off[rows] = rho * a if (v_cur is not None and vq > v_cur) else a
+                continue
             if last is not None:
                 P += q * (d - last) / YEAR_D
             while bi < len(bdays) and bdays[bi] <= d:
@@ -1319,8 +1330,10 @@ def st_track(S, st, cfg, real=None):
                     wt = wt * np.power(rho, np.maximum(vnow - vint[hi], 0))
                 keep = wt > 1e-4
                 hi, wt = hi[keep], wt[keep]
-                a_prev = st_solve(kind, y[hi], par[hi], t[hi], wt, prec, a_prev) if len(hi) else 0.0
-                off[rows] = a_prev
+                a_new = st_solve(kind, y[hi], par[hi], t[hi], wt, prec, a_prev) if len(hi) else 0.0
+                if real[rows].any():
+                    a_prev = a_new
+                off[rows] = a_new
         return off
     if cfg["fam"] == "kal":
         q, se = cfg["q"], cfg["se"]
@@ -1329,6 +1342,10 @@ def st_track(S, st, cfg, real=None):
         last, v_cur = None, None
         for d in u:
             rows = np.where(day == d)[0]
+            if not real[rows].any():
+                vq = vint[rows].max()
+                off[rows] = rho * a if (v_cur is not None and vq > v_cur) else a
+                continue
             if last is not None:
                 P += q * (d - last) / YEAR_D
             vnow = vint[rows].max()
@@ -1695,6 +1712,385 @@ def stage_periods(args):
 
 
 STAGES["periods"] = stage_periods
+
+
+# ====================================================================== stage: export
+def month_starts(y0, y1):
+    return [dt.date(y, m, 1) for y in range(y0, y1 + 1) for m in range(1, 13) if dt.date(y, m, 1) <= dt.date(y1, 1, 1)]
+
+
+def sig5(x):
+    if x is None or not math.isfinite(x):
+        return None
+    return float("%.5g" % x)
+
+
+def with_queries(d, qdays):
+    """Append snapshot query rows (E = 0, y = 0) for every (query day, division) to a target_data dict."""
+    nq = len(qdays) * (DIV_ALL + 1)
+    qd = np.repeat(np.array([q.toordinal() for q in qdays]), DIV_ALL + 1)
+    qv = np.tile(np.arange(DIV_ALL + 1), len(qdays))
+    e = {"day": np.concatenate([d["day"], qd]),
+         "year": np.concatenate([d["year"], np.array([dt.date.fromordinal(int(x)).year for x in qd])]),
+         "y": np.concatenate([d["y"], np.zeros(nq)]), "E": np.concatenate([d["E"], np.zeros(nq)]),
+         "div": np.concatenate([d["div"], qv]),
+         "event": np.concatenate([d["event"], np.array(["__q%d" % x for x in qd], dtype=object)]),
+         "kind": d["kind"]}
+    o = np.argsort(e["day"], kind="stable")
+    real = np.concatenate([np.ones(len(d["y"]), bool), np.zeros(nq, bool)])
+    for k in ("day", "year", "y", "E", "div", "event"):
+        e[k] = e[k][o]
+    return e, real[o], qd, qv, o
+
+
+def adjust_bins7(b7, a_fin, a_ko):
+    """7-bin [A KO, A SUB, A DEC, draw, B DEC, B SUB, B KO] version of adjust_joint (the draw keeps its share of the
+    decision mass; P(A wins) in the six-class sense is unchanged). Mirrors src/ml/eradrift.js adjustBins7."""
+    b7 = np.atleast_2d(np.asarray(b7, float))
+    AKO, ASUB, ADEC, DR, BDEC, BSUB, BKO = b7.T
+    ds = ADEC + BDEC
+    dc = np.where(ds + DR > 0, DR / np.maximum(ds + DR, 1e-300), 0.0)
+    shA = np.where(ds > 0, ADEC / np.maximum(ds, 1e-300), 0.5)
+    P6 = np.stack([AKO, ASUB, ADEC + DR * shA, BDEC + DR * (1 - shA), BSUB, BKO], 1)
+    out = np.zeros_like(b7)
+    a_fin = np.broadcast_to(np.asarray(a_fin, float), (len(b7),))
+    a_ko = np.broadcast_to(np.asarray(a_ko, float), (len(b7),))
+    for j, (ko, sb, de) in enumerate(((0, 1, 2), (5, 4, 3))):
+        pw = P6[:, ko] + P6[:, sb] + P6[:, de]
+        tot = np.maximum(pw, 1e-12)
+        f = np.clip((P6[:, ko] + P6[:, sb]) / tot, 1e-6, 1 - 1e-6)
+        k = np.clip(P6[:, ko] / np.maximum(P6[:, ko] + P6[:, sb], 1e-12), 1e-6, 1 - 1e-6)
+        f2, k2 = sig(logit(f) + a_fin), sig(logit(k) + a_ko)
+        pko, psb, pde = pw * f2 * k2, pw * f2 * (1 - k2), pw * (1 - f2)
+        if j == 0:
+            out[:, 0], out[:, 1], out[:, 2] = pko, psb, pde * (1 - dc)
+        else:
+            out[:, 6], out[:, 5], out[:, 4] = pko, psb, pde * (1 - dc)
+        out[:, 3] += pde * dc
+    return out
+
+
+def bins7_of(J):
+    return np.stack([J[:, I_XKO:I_XKO + R5].sum(1), J[:, I_XSUB:I_XSUB + R5].sum(1), J[:, I_XDEC], J[:, I_DRAW],
+                     J[:, I_YDEC], J[:, I_YSUB:I_YSUB + R5].sum(1), J[:, I_YKO:I_YKO + R5].sum(1)], 1)
+
+
+def method_snapshots(S, spec, qdays):
+    """Walk-forward candidate offsets at query days (dev vintage: fold year before 2024, 2024 after) plus the
+    deployment value at 2026-01-01 for a model refit through 2025 (vintage 2026). Returns per split:
+    {"groups": {...}: [values by query day], "prod_2026": {...}} and the per-row offsets (for the identity check)."""
+    out, rows_off = {}, {}
+    for split in ("fin", "ko", "r1"):
+        sp, cfg, scope = parse_mcfg(spec[split])
+        rows_off[split] = run_split(S, sp, cfg, scope)
+        if cfg["fam"] == "none":
+            continue
+        W, Z = S["split_in"][split]
+        obs, yv = S["split_y"][split]
+        if split == "r1":
+            gkind, gvals, gsel = "format", (0, 1), S["r5"]
+        elif scope == "division":
+            gkind, gvals, gsel = "division", tuple(range(DIV_ALL + 1)), S["div"]
+        elif scope == "format":
+            gkind, gvals, gsel = "format", (0, 1), S["r5"]
+        else:
+            gkind, gvals, gsel = "league", (0,), np.zeros(len(yv), int)
+        qd_all = list(qdays) + [dt.date(2026, 1, 1)]
+        nq = len(qd_all) * len(gvals)
+        qday = np.repeat([q.toordinal() for q in qd_all], len(gvals))
+        qg = np.tile(gvals, len(qd_all))
+        qvint = np.array([min(dt.date.fromordinal(int(x)).year, 2024) for x in qday])
+        qvint[-len(gvals):] = 2026
+        day = np.concatenate([S["day"], qday])
+        vint = np.concatenate([S["vint"], qvint])
+        ev = np.concatenate([S["event"], np.array(["__q"] * nq, dtype=object)])
+        Wq = np.concatenate([W, np.full((nq, W.shape[1]), 1.0 / W.shape[1])])
+        Zq = np.concatenate([Z, np.zeros((nq, Z.shape[1]))])
+        yq = np.concatenate([yv, np.zeros(nq)])
+        oq = np.concatenate([obs, np.zeros(nq, bool)])
+        isq = np.concatenate([np.zeros(len(obs), bool), np.ones(nq, bool)])
+        gq = np.concatenate([gsel, qg])
+        o = np.argsort(day, kind="stable")
+        inv = np.empty_like(o)
+        inv[o] = np.arange(len(o))
+        brk = ()
+        if cfg.get("vb"):
+            tk = SPLIT_BREAK_TARGET[split]
+            brk = [BREAK_DAYS[b["key"]] for b in BREAKS if tk in b["targets"] or (split == "r1" and "r1_fin5" in b["targets"])]
+        if split == "r1":
+            off = np.zeros(len(day))
+            for f in (0, 1):
+                m = gq[o] == f
+                oo = o[m]
+                off[oo] = track_split(day[oo], vint[oo], ev[oo], Wq[oo], Zq[oo], yq[oo], oq[oo], cfg, brk=brk,
+                                      query=isq[oo])
+        else:
+            off = np.zeros(len(day))
+            off[o] = track_split(day[o], vint[o], ev[o], Wq[o], Zq[o], yq[o], oq[o], cfg,
+                                 scope=None if gkind == "league" else gq[o], brk=brk, query=isq[o])
+        n = len(S["day"])
+        chk = float(np.abs(off[:n] - rows_off[split]).max())
+        assert chk < 1e-9, ("snapshot run differs from the scored run", split, chk)
+        qo = off[n:].reshape(len(qd_all), len(gvals))
+        names = {"format": ["3", "5"], "division": DIVS + ["ALL"], "league": ["ALL"]}[gkind]
+        out[split] = {"config": spec[split], "group": gkind,
+                      "values": {names[i]: [sig5(v) for v in qo[:-1, i]] for i in range(len(gvals))},
+                      "prod_2026": {names[i]: sig5(qo[-1, i]) for i in range(len(gvals))}}
+    return out, rows_off
+
+
+def stat_snapshots(St, st, cfg_name_, qdays):
+    cfg = {"fam": "none"} if cfg_name_ == "none" else parse_mcfg("x:" + cfg_name_)[1]
+    n = len(St["day"])
+    qd_all = list(qdays) + [dt.date(2026, 1, 1)]
+    nq = len(qd_all)
+    qday = np.array([q.toordinal() for q in qd_all])
+    qvint = np.array([min(q.year, 2024) for q in qd_all])
+    qvint[-1] = 2026
+    S2 = {"day": np.concatenate([St["day"], qday]), "vint": np.concatenate([St["vint"], qvint]),
+          "year": np.concatenate([St["year"], np.array([q.year for q in qd_all])]),
+          "t": np.concatenate([St["t"], np.ones(nq)])}
+    D = St[st]
+    S2[st] = {"kind": D["kind"], "y": np.concatenate([D["y"], np.zeros(nq)]),
+              "par": np.concatenate([D["par"], np.tile(D["par"][:1], (nq, 1))])}
+    real = np.concatenate([np.ones(n, bool), np.zeros(nq, bool)])
+    o = np.argsort(S2["day"], kind="stable")
+    S3 = {k: (v[o] if isinstance(v, np.ndarray) else v) for k, v in S2.items() if k != st}
+    S3[st] = {"kind": D["kind"], "y": S2[st]["y"][o], "par": S2[st]["par"][o]}
+    off = np.zeros(len(o))
+    off[o] = st_track(S3, st, cfg, real=real[o])
+    ref = st_track(St, st, cfg)
+    chk = float(np.abs(off[:n] - ref).max())
+    assert chk < 1e-9, ("stat snapshot run differs", st, chk)
+    return [sig5(v) for v in off[n:-1]], sig5(off[-1])
+
+
+def stage_export(args):
+    if not os.path.exists(cpath(LOCK)):
+        raise SystemExit("run holdout first (export carries the single-look results)")
+    pre = jload_c(PREREG)
+    tr = jload_c("trackers.json")
+    me = jload_c("method.json")
+    stt = jload_c("stat.json")
+    ho = jload_c("holdout.json")
+    per = jload_c("periods.json") if os.path.exists(cpath("periods.json")) else None
+    L = load("league.pkl")
+    T = target_frames(L)
+    cached = load("tracker_preds.pkl")
+    months = month_starts(2012, 2026)
+    levels = {}
+    for key, spec in pre["league"].items():
+        tt = tr["targets"][key]
+        verdict = ho["league"][key]["verdict"]
+        nm = spec["chosen"] if verdict != "contradicted" else spec["ref_win5"]
+        entry = tt["res"][nm]
+        d = target_data(L, T, key)
+        e, real, qd, qv, o = with_queries(d, months)
+        fam = entry["fam"]
+        dcfg = tuple(entry["dcfg"]) if entry.get("dcfg") else None
+        v = entry.get("brk")
+        brk_all = [BREAK_DAYS[b["key"]] for b in BREAKS if key in b["targets"]] if v is not None else ()
+        p = run_tracker(fam, entry["cfg"], e, e["kind"], tt["prior"], tt["k_nb"], dcfg, brk=brk_all,
+                        vb=(v or 0.0) if fam == "kal" else 0.0, phi=(v or 0.0) if fam == "ew" else 0.0)
+        p_real = p[real]
+        assert np.abs(p_real - cached[key]["best"]).max() < 1e-9 or nm != tt["best"], key
+        pq = p[~real].reshape(len(months), DIV_ALL + 1)      # rows sorted by day; within a day queries keep order
+        u = tt["unit"] if tt["kind"] == "cnt" else 1.0
+        levels[key] = {"label": tt["label"], "kind": tt["kind"], "unit": u, "config": nm, "holdout_verdict": verdict,
+                       "league": [sig5(x * u) for x in pq[:, DIV_ALL]],
+                       "div": {DIVS[j]: [sig5(x * u) for x in pq[:, j]] for j in range(DIV_ALL)},
+                       "current": {"ALL": sig5(pq[-1, DIV_ALL] * u),
+                                   **{DIVS[j]: sig5(pq[-1, j] * u) for j in range(DIV_ALL)}}}
+        log("export: levels %-9s %-38s current %s" % (key, nm, levels[key]["current"]["ALL"]))
+    # method candidates
+    S = method_setup()
+    zero = np.zeros(len(S["year"]))
+    _, J0 = losses_for(S, {"fin": zero, "ko": zero, "r1": zero})
+    mcand = {}
+    fights = {}
+    b0 = bins7_of(J0)
+    m19 = S["year"] >= 2019
+    for cand, spec in pre["method"]["descriptive"].items():
+        snaps, roff = method_snapshots(S, spec, months)
+        _, Jc = losses_for(S, roff)
+        bc = bins7_of(Jc)
+        # the 7-bin adjuster equals the joint adjuster on the 7 bins
+        chk = adjust_bins7(b0, roff["fin"], roff["ko"])
+        assert np.abs(chk - bc).max() < 1e-9, "adjust_bins7 != adjust_joint"
+        mcand[cand] = {"desc": M_DESC[cand], "splits": snaps,
+                       "holdout": {k: ho["method"][cand]["paired"][k] for k in ("bin7", "method3", "finish", "joint",
+                                                                                "round_given_fin")}}
+        if cand != "M2_fast_dec":            # M1 changes rounds only and M3's 7 bins equal M2's: not stored
+            continue
+        for i in np.where(m19)[0]:
+            fid = S["T"]["id"].iloc[i]
+            r = fights.setdefault(fid, {"date": S["T"]["date"].iloc[i].isoformat(),
+                                        "set": "holdout" if S["year"][i] >= 2024 else "cv",
+                                        "p_a": r5(float(S["P6w"][i, :3].sum())), "rounds": int(S["r5"][i] * 2 + 3),
+                                        "division": S["T"]["division"].iloc[i],
+                                        "static_bins7": [r5(x, 5) for x in b0[i]]})
+            r[cand + "_bins7"] = [r5(x, 5) for x in bc[i]]
+    # statlines offsets
+    St = stat_setup()
+    smonths = month_starts(2020, 2026)
+    sts = {}
+    for st, r in ho["stat"].items():
+        nm = stt["stats"][st]["best"]
+        adopted = st in pre["stat"]["adopted"]
+        verdict = r.get("verdict")
+        if not adopted and nm == "none":
+            continue
+        vals, prod = stat_snapshots(St, st, nm, smonths)
+        on = bool(adopted and verdict == "confirmed")
+        sts[st] = {"config": nm, "kind": stt["stats"][st]["kind"], "adopted_cv": adopted, "holdout_verdict": verdict,
+                   "enabled": on, "values": vals, "prod_2026": prod, "cv_gain": stt["stats"][st]["gain"],
+                   "cv_ci": stt["stats"][st]["ci"], "holdout_nll": r["nll_diff"]}
+    doc = {"meta": {"tool": "eradrift 1.0 (2026-11-07)", "built": dt.datetime.utcnow().isoformat() + "Z",
+                    "protocol": "fights >= 2026-01-01 dropped at parse; choices by rolling-origin / forward-chained CV "
+                                "<= 2023; 2024-25 scored once after the pre-registration (commit 53ca073, "
+                                "data/derived/eradrift_prereg.json)",
+                    "months": [m.isoformat() for m in months], "stat_months": [m.isoformat() for m in smonths],
+                    "levels_semantics": "value at month start m = the tracker's prediction for a fight on day m, "
+                                        "from fights strictly before m (shares as probabilities; rates in 'unit' x "
+                                        "per-exposure: kd100 per 100 head strikes landed, slpm / sapm per fighter-"
+                                        "minute, tdpm / subpm per 15 fighter-minutes, ctrlpm seconds per fighter-"
+                                        "minute, r108 per 100 judged rounds)",
+                    "offset_semantics": "method: logit offsets on P(finish | winner) (fin), P(KO | finish, winner) "
+                                        "(ko), P(round 1 | finish, winner) (r1, by format); values = walk-forward "
+                                        "offsets for the dev-vintage S2+ml2win (fold year before 2024, fit < 2024 "
+                                        "after); prod_2026 = the offset a model refit through 2025 starts 2026 with. "
+                                        "stat: log offsets on the statlines NB mean (dev tables), same vintage rule",
+                    "divisions": DIVS, "breaks": BREAKS,
+                    "production": {"method": "unchanged (gate failed): EraDrift.adjustCells is the identity unless a "
+                                             "candidate is named", "stat": [k for k, v in sts.items() if v["enabled"]]}},
+           "levels": levels, "method": {"candidates": mcand, "gate": me["gate"]["paired"], "cv_final": me["final"],
+                                        "dec_cal_cv": me["dec_cal"], "dec_cal_holdout": ho["method"]["dec_cal"],
+                                        "static_cv": me["static_cv"], "static_holdout": ho["method"]["static_loss"]},
+           "stat": sts, "periods": per,
+           "cv": {k: {"best": v["best"], "refs": v["refs"], "cv_best": v["res"][v["best"]]["cv"],
+                      "cv_win5": v["res"][v["refs"]["win5"]]["cv"], "cv_static": v["res"][v["refs"]["static"]]["cv"],
+                      "nested": v["nested_loss"], "nested_win5": v["nested_win5"], "ci": v["ci"], "n": v["n_cv"],
+                      "fam_best": {f: [k2, v["res"][k2]["cv"]] for f, k2 in v["fam_best"].items()}}
+                  for k, v in tr["targets"].items()},
+           "stat_cv": {k: {kk: v[kk] for kk in ("best", "gain", "wins", "adopt", "ci", "ci_dev", "nested", "nested_ci",
+                                                "level_ratio", "dev_static")} for k, v in stt["stats"].items()},
+           "holdout": {"league": ho["league"], "stat": ho["stat"], "prereg_sha256": ho["prereg_sha256"]},
+           "fights": fights}
+    # JS test vectors
+    rng = np.random.default_rng(7)
+    vec = {"levels": [], "bins7": [], "joint": [], "stat": []}
+    keys = list(levels)
+    for _ in range(60):
+        k = keys[rng.integers(len(keys))]
+        dd = dt.date(2012, 1, 1) + dt.timedelta(days=int(rng.integers(0, 5200)))
+        dv = (DIVS + ["Catch Weight"])[rng.integers(len(DIVS) + 1)]
+        vec["levels"].append({"target": k, "date": dd.isoformat(), "division": dv,
+                              "expect": level_lookup(doc, k, dd, dv)})
+    fids = list(fights)
+    for _ in range(40):
+        fid = fids[rng.integers(len(fids))]
+        r = fights[fid]
+        cand = ["M2_fast_dec", "M3_both", None][rng.integers(3)]
+        dd = dt.date.fromisoformat(r["date"])
+        a_fin, a_ko = cand_offsets(doc, cand, dd, r["division"], r["rounds"])[:2]
+        vec["bins7"].append({"bins7": r["static_bins7"], "date": r["date"], "division": r["division"],
+                             "rounds": r["rounds"], "candidate": cand,
+                             "expect": [r5(x, 9) for x in adjust_bins7(np.array(r["static_bins7"]), a_fin, a_ko)[0]]})
+    for _ in range(20):
+        i = int(rng.integers(len(S["year"])))
+        if S["year"][i] < 2016:
+            continue
+        cand = ["M1_cv_final", "M3_both"][rng.integers(2)]
+        dd = S["T"]["date"].iloc[i]
+        rounds = int(S["r5"][i] * 2 + 3)
+        a = cand_offsets(doc, cand, dd, S["T"]["division"].iloc[i], rounds)
+        Jin = J0[i:i + 1]
+        Jout = adjust_from_joint(Jin, *a)
+        vec["joint"].append({"joint": [r5(x, 9) for x in Jin[0]], "date": dd.isoformat(),
+                             "division": S["T"]["division"].iloc[i], "rounds": rounds, "candidate": cand,
+                             "expect": [r5(x, 9) for x in Jout[0]]})
+    for _ in range(20):
+        dd = dt.date(2020, 1, 1) + dt.timedelta(days=int(rng.integers(0, 2600)))
+        means = {st: float(rng.uniform(0.5, 60)) for st in ("sig_lnd", "l_att", "l_lnd", "c_att", "kd")}
+        vec["stat"].append({"date": dd.isoformat(), "means": means, "all": bool(rng.integers(2)),
+                            "expect": stat_adjust(doc, means, dd, use_all=None)})
+    doc["test_vectors"] = vec
+    with open(OUT_JSON, "w") as fh:
+        json.dump(doc, fh, separators=(",", ":"), default=_jdef)
+    log("export: %s (%.0f KB; %d fights with candidate bins)" % (OUT_JSON, os.path.getsize(OUT_JSON) / 1024,
+                                                                  len(fights)))
+
+
+def month_index(doc, date, key="months"):
+    ms = doc["meta"][key]
+    s_ = date.isoformat()
+    i = -1
+    for j, m in enumerate(ms):
+        if m <= s_:
+            i = j
+        else:
+            break
+    return i
+
+
+def level_lookup(doc, target, date, division):
+    L = doc["levels"][target]
+    i = month_index(doc, date)
+    if i < 0:
+        return None
+    if division in L["div"]:
+        return L["div"][division][i]
+    return L["league"][i]
+
+
+def cand_offsets(doc, cand, date, division, rounds):
+    """(a_fin, a_ko, a_r1) of a method candidate at a date (month-start snapshot; from 2026-01-01 on, the prod value)."""
+    if cand is None:
+        return 0.0, 0.0, 0.0
+    C = doc["method"]["candidates"][cand]["splits"]
+    i = month_index(doc, date)
+    prod = date >= dt.date(2026, 1, 1)
+    out = []
+    for split in ("fin", "ko", "r1"):
+        if split not in C or i < 0:
+            out.append(0.0)
+            continue
+        c = C[split]
+        if c["group"] == "format":
+            g = "5" if rounds == 5 else "3"
+        elif c["group"] == "division":
+            g = division if division in c["values"] else "ALL"
+        else:
+            g = "ALL"
+        v = c["prod_2026"][g] if prod else c["values"][g][i]
+        out.append(float(v or 0.0))
+    return tuple(out)
+
+
+def adjust_from_joint(J, a_fin, a_ko, a_r1):
+    """adjust_joint on a 23-cell joint (shapes and the draw share read from the joint itself)."""
+    import methodround as MR
+    P6 = MR.joint_to_c6(J)
+    dsum = J[:, I_XDEC] + J[:, I_YDEC] + J[:, I_DRAW]
+    dc = float(J[0, I_DRAW] / dsum[0]) if dsum[0] > 0 else 0.0
+    return adjust_joint(P6, J, dc, a_fin, a_ko, a_r1)
+
+
+def stat_adjust(doc, means, date, use_all=None):
+    i = month_index(doc, date, "stat_months")
+    prod = date >= dt.date(2026, 1, 1)
+    out = {}
+    for st, mu in means.items():
+        S = doc["stat"].get(st)
+        if not S or not S["enabled"] or S["kind"] != "nb" or i < 0:
+            out[st] = r5(mu, 9)
+            continue
+        a = S["prod_2026"] if prod else S["values"][i]
+        out[st] = r5(mu * math.exp(a or 0.0), 9)
+    return out
+
+
+STAGES["export"] = stage_export
 
 
 # ====================================================================== main
