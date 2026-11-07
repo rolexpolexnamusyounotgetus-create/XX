@@ -176,8 +176,12 @@ def load(path, years=None):
     return H, fights
 
 
-def table(H, fights):
-    base = outcome_base(fights)
+def table(H, fights, base_fights=None):
+    # the smoothing prior must come from TRAIN fights (outcome_base docstring). A validation run passes its train fights as
+    # base_fights; without it the scored fights' own outcomes set the prior (v10 review: tools/v10_gate.py look did that, weight 1/601)
+    if base_fights is None:
+        assert all(f["date"] < "2024-01-01" for f in fights), "table(): pass base_fights (train) when scoring fights dated 2024 or later"
+    base = outcome_base(base_fights if base_fights is not None else fights)
     arms = H["meta"]["arms"]
     Ls = {arm: [losses(f, f["arms"][arm], base) for f in fights] for arm in arms}
     groups = [f["event"] + "|" + f["date"] for f in fights]

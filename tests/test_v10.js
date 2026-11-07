@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* test_v10.js: engine v10 (the consolidated bundle: the v4 simulator + v8's stat-line bundle as v8 shipped it + v7's prediction
    package + cycle 5's newcomer path and explainer coherence; docs/V6_V10_PLAN.md, data/derived/v10/gate_protocol.json).
-   Checks on V10_DIR (default src/; the gate runs them on versions/v10):
+   Checks on V10_DIR (default src/ while src holds 10.0.0, else versions/v10-rejected; the gate ran them on versions/v10):
      1. simulator identity: every v8 flag off = versions/v4 (engine 4.0.0) bit for bit (summarize and a traced fight, both corner
         orders, the v10 per-call inputs given) on train fights;
      2. the stat-line bundle as v8 shipped it: v10's matchup tables and fights with the default flags = versions/v8-gate-failed's
@@ -27,7 +27,8 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 const ROOT = path.join(__dirname, "..");
-const V10 = path.resolve(ROOT, process.env.V10_DIR || "src");
+// v10 was not kept (docs/CHANGELOG.md "v10 finish"): src/ is v4 again, so the default is the frozen rejected copy unless src holds 10.0.0
+const V10 = path.resolve(ROOT, process.env.V10_DIR || (require(path.join(ROOT, "src/engine3.js")).VERSION === "10.0.0" ? "src" : "versions/v10-rejected"));
 const E = require(path.join(V10, "engine3.js"));
 const FB = require(path.join(V10, "ml", "blend.js"));
 const E4 = require(path.join(ROOT, "versions/v4/engine3.js"));

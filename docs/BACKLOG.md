@@ -81,6 +81,21 @@ Findings from verified research that the next engine versions must use. Each lin
   co-primary total stat deviance vs v4 -1.13% [-1.76%, -0.51%]: PASS. The look (not yet run): primary open winner vs cmp4 (branch 1),
   branch 2 = total stat deviance vs v4 + glove-excluded paired base-rate test; power ~0.50; confirmation look. Audit 2 pre-registered
   (vault_audits[audit 2]). src/ holds v10 until the look; control MAE +1.6 s on train is a known risk (v8's finding).
+- ENGINE v10 KEPT (~12:30 UTC Nov 7; branch 2 of the pre-registered rule; versions/v10): the consolidated bundle (v4
+  simulator + ML v2 head stacks by line regime + S2 cells + props pool + v8 stat-line bundle + debut path + explainer).
+  Train gate PASSED (open winner -0.00528 [-0.00964, -0.00097]; stat lines -1.13% [-1.76, -0.51]). Single 2024-25 look:
+  open winner 0.58173 vs 0.58499 (honest v4 package), -0.00326 [-0.00653, +0.00004] (branch 1 missed by a hair);
+  branch 2 holds: not worse, stat-line total -0.88% [-1.69%, -0.07%], glove-excluded base rates pass. Secondaries: no-line
+  winner -0.0048 [-0.0085, -0.0009]; 7-bin with props -0.025 [-0.039, -0.011]; method with props -0.0115. Labels on the
+  entry: kept under the glove-window amendment (full-window KD 0.771 vs 0.684 fails); confirmation look (claim only
+  after audit 2 + forward ledger); gate design informed by v7/v8 train results; comparator chosen with 2024-25
+  information on record. Next: audit 2 (pre-registered), then a new forward version (fwd-5) pre-registered before the
+  UFC 334 lock and the page republished on v10.
+- LIVE REFRESH (VERIFIED ~12:20 UTC; research/live_inputs_audit.md, tools/live_refresh.py, fwd-4.4 pre-registered in
+  f963070): models frozen, inputs refreshed into data/derived/live/ with a manifest; regression at cutoff 2026-10-31
+  reproduces all six live files byte for byte; verifier fixed three code-vs-prereg gaps (pinned rows up to Oct 31,
+  two-source rule for draws/NCs, pre-fight odds timing). Greco1899 refreshes Sundays (~18:00 UTC); Vegas 124 lands Nov 8.
+  Gaps found: embeddings and debut network ratings stop at 2026-01-01; seven later-card debutants lack pre-UFC seeds.
 - ENGINE v9 GATE FAILED (Nov 7, ~10:55 UTC; docs/CHANGELOG.md v9; version_history.json v9 `status: gate_failed`, `train_gate`,
   `drift_monitor`; versions/v9-gate-failed/): v9 = the v4 simulator + cycle 4 behind flags: walk-forward EM judging by year (rows
   fit on cards before each year; recipe win3 chosen on 2019-20) with the 10-8 threshold following the eradrift 10-8 tracker

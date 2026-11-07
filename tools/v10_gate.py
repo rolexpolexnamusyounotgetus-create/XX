@@ -385,7 +385,10 @@ def cmd_look(a):
     Hs = json.load(open(a.stat))
     Fs = [f for f in Hs["fights"] if not f.get("err")]
     assert all("2024-01-01" <= f["date"] < "2026-01-01" for f in Fs)
-    arms, Ls, groups = G8.table(Hs, Fs)
+    # smoothing prior for the engine-level 7-bin / method from the TRAIN fights of the gate's stat harness (v10 review fix; the v10
+    # look itself ran before this fix with the scored fights' own outcome shares, weight 1/601, secondaries only)
+    _, Fbase = G8.load(os.path.join(ROOT, a.base_stat or G["meta"]["stat_harness"]), YEARS)
+    arms, Ls, groups = G8.table(Hs, Fs, base_fights=Fbase)
     norm = {s_: float(np.nanmean(G8.col(Ls["cmp4"], "dev_" + s_))) for s_ in G8.STATS}
     P2 = G8.paired(groups, Ls["all"], Ls["cmp4"], ["total", "total_raw", "winLL", "bin7", "method"] + ["dev_" + s_ for s_ in G8.STATS], norm)
     sb = PS.check_upper(P2["total"], 0.0, True)
@@ -439,6 +442,7 @@ def main():
     lk.add_argument("--gate", required=True)
     lk.add_argument("--out", required=True)
     lk.add_argument("--v501", help="data/derived/v6/look_val.json (descriptive v5.0.1-package contrast, v6 continuity)")
+    lk.add_argument("--base-stat", help="train stat harness for the smoothing prior (default: the gate score's meta.stat_harness)")
     w = sp.add_parser("power")
     w.add_argument("path")
     w.add_argument("--n-look", type=int, required=True)
