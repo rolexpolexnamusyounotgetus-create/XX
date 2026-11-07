@@ -429,6 +429,7 @@
       var e = own(experts), d = featShift ? featShift(i) : 0;
       if (isNum(e.feat_lr) && d) e.feat_lr = sigm(logit(e.feat_lr) + d);
       if (isNum(e.ml) && d) e.ml = sigm(logit(e.ml) + d);
+      if (isNum(e.ml2) && d) e.ml2 = sigm(logit(e.ml2) + d);   // ML v2's page logistic: a feature LR on the same stats
       if (isNum(e.elo) && (b.eloRdScale > 0)) {
         var rd = Math.sqrt(Math.pow(ctx.rdA || b.eloRd || 0, 2) + Math.pow(ctx.rdB || b.eloRd || 0, 2)) * b.eloRdScale;
         if (rd > 0) e.elo = sigm(logit(e.elo) + sg * Math.LN10 / 400 * rd * rng.normal());
@@ -493,20 +494,150 @@
     return s > 0 ? e / s : 5 * R;
   }
 
+  // ------------------------------------------------------------------ the winner blend (v5 merge step 5: the ML v2 package)
+  var LBS = { "Flyweight": 125, "Bantamweight": 135, "Featherweight": 145, "Lightweight": 155, "Welterweight": 170,
+    "Middleweight": 185, "Light Heavyweight": 205, "Heavyweight": 265, "Women's Strawweight": 115, "Women's Flyweight": 125,
+    "Women's Bantamweight": 135, "Women's Featherweight": 145 };
+  var STACK_BLOCK = { close: "model", open: "model_open", none: "model" };
+  var FIT_KEY = { close: "moe_close", open: "moe_open", none: "moe_noline" };   // blindtest_stack.json meta.fit_info keys
+  var BACKTEST_STACK_MAX = "2023-12-31";   // hidden-data protocol: a backtest stacker is fit on 2023 or earlier
+  var VAULT_FROM = "2026-01-01";
+  /** Last training date per block of a stacker document: blindtest_stack.json meta.fit_info (tools/blindtest.py export),
+      else an explicit doc.fit_through (set by the caller, e.g. { model: moe.json model_validated, fit_through:
+      "2023-12-31" }). Nothing is inferred from other metadata (moe.json's meta.train describes model_validated, not
+      model). */
+  function stackFitThrough(doc) {
+    var m = (doc && doc.meta) || {}, out = {}, k, n = 0;
+    if (m.fit_info) for (k in m.fit_info) if (m.fit_info[k] && m.fit_info[k].fit_through) { out[k] = m.fit_info[k].fit_through; n++; }
+    if (doc && doc.fit_through) { out.all = doc.fit_through; n++; }
+    return n ? out : null;
+  }
+  function fitThroughFor(ft, kind) {
+    if (!ft) return null;
+    if (ft[FIT_KEY[kind]]) return ft[FIT_KEY[kind]];
+    if (ft.all) return ft.all;
+    var mx = null; for (var k in ft) if (!mx || ft[k] > mx) mx = ft[k];
+    return mx;
+  }
+  /** A stack handle from a stacker document in src/ml/moe.js's format: data/derived/blindtest_stack.json (close-trained
+      `model` + open-trained `model_open`, the same no-line block in both), a moe.json / moe_page.json-style document
+      (`model` only: no open-trained block, so lineKind 'open' is refused), a bare model block, a MoE.load() handle or a
+      handle made here. */
+  function stackOf(x, M) {
+    if (!x) return null;
+    if (x.isStack) return x;
+    if (typeof x === "string") x = JSON.parse(x);
+    if (x.predict && x.model) x = x.doc && x.doc.model ? x.doc : { model: x.model };   // a MoE.load() handle
+    var doc = x.model ? x : { model: x };
+    return { isStack: true, doc: doc, close: M.load(doc), open: doc.model_open ? M.load(doc, "model_open") : null,
+      fitThrough: stackFitThrough(doc), built: doc.meta && doc.meta.built || null };
+  }
+  function featOf(x) { if (!x) return null; if (typeof x === "string") x = JSON.parse(x); return x.feat || (x.names && x.coef ? x : null); }
+  function ml2Of(x) {
+    if (!x) return null;
+    if (x.predictSides && x.doc) return x;                         // an ML2.load() handle
+    var L = ml2Lib(); if (!L) return null;
+    return L.load(x);                                              // ml2.json or its page_model
+  }
+  function mlPageOf(x) {
+    if (!x) return null;
+    if (x.predict && x.has) return x;                              // an MLPage.load() handle
+    var L = mlPageLib(); if (!L) return null;
+    var d = typeof x === "string" ? JSON.parse(x) : x;
+    if (d.page_model && d.roster) d = { snapshot: d.page_model.snapshot, winner: d.page_model.winner, stack: d.page_model.stack, roster: d.roster };
+    return L.load(d);
+  }
+  function ratingsOf(x) {
+    if (!x) return null;
+    var d = typeof x === "string" ? JSON.parse(x) : x, R = d.ratings || d, out = {};
+    for (var k in R) if (Array.isArray(R[k]) && R[k].length >= 2 && isNum(R[k][0]) && isNum(R[k][1])) out[k] = [R[k][0], R[k][1]];
+    return out;
+  }
+  /** The market line and its kind. A line (opts.line American odds, opts.pMarket or opts.experts.market) needs an
+      explicit opts.lineKind; 'close' de-vigs odds by the power method (the close-trained stack's construction), 'open'
+      proportionally (the open-trained stack's: market.json p_novig_open); 'none' drops any line. */
+  function lineOf(opts, ex, M) {
+    var q = null, src = null, kind = opts.lineKind;
+    if (isNum(ex.market)) { q = ex.market; src = "experts.market"; }
+    else if (isNum(opts.pMarket)) { q = opts.pMarket; src = "pMarket"; }
+    else if (opts.line && isNum(+opts.line.oddsA) && isNum(+opts.line.oddsB)) src = "line";
+    if (kind == null) {
+      if (src) throw new Error("FightBlend.predict: a market line needs an explicit opts.lineKind: 'close' (a fight-day line near the " +
+        "close: the close-trained stack `model`, power de-vig), 'open' (an opener or any earlier line: the open-trained `model_open`, " +
+        "proportional de-vig) or 'none' (ignore the line)");
+      kind = "none";
+    }
+    if (kind !== "close" && kind !== "open" && kind !== "none") throw new Error("FightBlend.predict: opts.lineKind must be 'close', 'open' or 'none', got " + kind);
+    if (kind === "none") return { kind: "none", p: null, src: null, devig: null };
+    if (!src) throw new Error("FightBlend.predict: opts.lineKind '" + kind + "' needs a line (opts.line { oddsA, oddsB }, opts.pMarket or opts.experts.market)");
+    var dv = src === "line" ? (kind === "open" ? "proportional" : "power") : "as given";
+    if (src === "line") q = M.devig(opts.line.oddsA, opts.line.oddsB, kind === "open" ? "mult" : undefined);
+    return { kind: kind, p: q, src: src, devig: dv };
+  }
+  // ML v2 page stack (src/ml/ml2.js stackP): logit p = sum_i w_i logit(clip(input_i, pclip)); no intercept, so exactly
+  // corner-symmetric
+  function ml2StackP(st, inp) {
+    if (!st || !st.inputs) return null;
+    var z = 0, pc = st.pclip || 0.01;
+    for (var i = 0; i < st.inputs.length; i++) {
+      var q = inp[st.inputs[i]];
+      if (!isNum(q)) { if (st.inputs[i] === "market" || st.inputs[i] === "open") return null; continue; }
+      z += st.weights[i] * logit(clip(q, pc, 1 - pc));
+    }
+    return sigm(z);
+  }
+  var ML2_STACK = { none: "noline", close: "line", open: "open" };
+  /** ML v2 next to the stack: { pA (ML v2 logistic), pMR (its market rating), stacks: { noline, line, open } (page
+      stacks), p (the lineKind-matched page stack), stack (its name), weights (which stack weights) }. src: an ML2 handle
+      (both fighters in its roster) or a precomputed { pA, pMR } (backtests: ml2.json rows), with stack weights from
+      src.stack, opts.ml2Stack (e.g. forward_models.json ml2_static, fit 2019-2023) or the handle's page_model.stack. */
+  function ml2Package(src, stackW, pa, pb, m, date, line) {
+    if (!src) return null;
+    var pA = null, pMR = null, W = stackW || null, h = src.predictSides ? src : null, note = null;
+    if (h) {
+      if (!pa.slug || !pb.slug || !h.has(pa.slug) || !h.has(pb.slug)) return { pA: null, note: "a fighter is not in the ML v2 roster" };
+      var r = h.predict(pa.slug, pb.slug, { date: date, lbs: LBS[m.division] || 155, five: m.rounds === 5 ? 1 : 0 });
+      if (!r) return { pA: null, note: "ML v2 returned no prediction" };
+      pA = r.pA; pMR = r.pMR; W = W || h.doc.stack || null;
+    } else {
+      pA = isNum(src.pA) ? src.pA : null; pMR = isNum(src.pMR) ? src.pMR : null; W = W || src.stack || null;
+      if (pA == null) return { pA: null, note: "no ML v2 probability given" };
+    }
+    if (!W) note = "no ML v2 stack weights";
+    var inp = { ml2lr: pA, mkt_rating: pMR, market: line.kind === "close" ? line.p : null, open: line.kind === "open" ? line.p : null };
+    var st = W ? { noline: ml2StackP(W.noline, inp), line: ml2StackP(W.line, inp), open: ml2StackP(W.open, inp) } : null;
+    return { pA: pA, pMR: pMR, stacks: st, stack: ML2_STACK[line.kind], p: st ? st[ML2_STACK[line.kind]] : null, W: W, inp: inp, note: note };
+  }
+
   // ------------------------------------------------------------------ data loading
-  /** Load the blend's data once: { moe: moe_page.json (or moe.json), methodRound: methodround.json (or its js_model),
-      data: blend_anchor.json }. Any part may be omitted. */
+  /** Load the blend's data once. Every part may be omitted; production page / ledger files:
+        stack:       data/derived/blindtest_stack.json (the ML v2 package's exported stack; `model` + `model_open`)
+                     (`moe` is an alias: a moe_page.json-style document loads as a stack without an open-trained block)
+        feat:        data/derived/moe_page.json (its `feat` block: the feature LR expert feat_lr)
+        mlPage:      data/derived/ml.json (page_model + roster: the `ml` and `elo_sig` experts)
+        market:      data/derived/market.json (ratings: the `mkt_rating` expert)
+        ml2:         data/derived/ml2.json (page_model: ML v2's page logistic and page stacks, src/ml/ml2.js)
+        methodRound: data/derived/methodround.json (or its js_model: the S / SM method x round model)
+        data:        data/derived/blend_anchor.json
+      The production files are fit through 2025 (stack, ML v2) or 2026-10 (S, rosters): never for backtests. */
   function load(o) {
     o = o || {};
     var M = moeLib();
-    if (o.moe !== undefined) STATE.moe = o.moe && M ? (o.moe.predict ? o.moe : M.load(o.moe)) : null;
+    if (o.stack !== undefined) STATE.stack = o.stack && M ? stackOf(o.stack, M) : null;
+    else if (o.moe !== undefined) STATE.stack = o.moe && M ? stackOf(o.moe, M) : null;
+    if (o.feat !== undefined) STATE.feat = featOf(o.feat);
+    else if (o.moe !== undefined && o.stack === undefined) STATE.feat = featOf(o.moe && (o.moe.doc || o.moe));
+    if (o.mlPage !== undefined) STATE.mlPage = mlPageOf(o.mlPage);
+    if (o.market !== undefined) STATE.mktRatings = ratingsOf(o.market);
+    if (o.ml2 !== undefined) STATE.ml2 = ml2Of(o.ml2);
     if (o.methodRound !== undefined) {
       var MR = mrLib(), jm = o.methodRound && (o.methodRound.js_model || o.methodRound);
       STATE.mrModel = jm || null;
       STATE.mr = jm && MR ? (jm.predict ? jm : MR.create(jm)) : null;
     }
     if (o.data !== undefined) STATE.data = o.data;
-    return { moe: !!STATE.moe, methodRound: !!STATE.mr, data: !!STATE.data };
+    return { stack: !!STATE.stack, stackOpen: !!(STATE.stack && STATE.stack.open), feat: !!STATE.feat, mlPage: !!STATE.mlPage,
+      market: !!STATE.mktRatings, ml2: !!STATE.ml2, methodRound: !!STATE.mr, data: !!STATE.data };
   }
 
   // ------------------------------------------------------------------ the package
@@ -514,44 +645,101 @@
     if (typeof x === "string") { var p = FE.profile(x); if (!p) throw new Error("FightBlend: unknown fighter " + x); return p; }
     return x;
   }
+  /** Backtest guard (opts.backtest): refuse production defaults and anything from the vault. */
+  function backtestCheck(opts, date, stk, kind) {
+    if (!date) throw new Error("FightBlend.predict (backtest): the fight date is required (opts.date)");
+    if (date >= VAULT_FROM) throw new Error("FightBlend.predict (backtest): fights dated " + VAULT_FROM + " or later are sealed (vault), got " + date);
+    if (!(opts.stack || opts.moe)) throw new Error("FightBlend.predict (backtest): pass a stacker fit on 2023 or earlier in opts.stack " +
+      "(e.g. data/derived/blindtest_stack_pre2024.json); the loaded production stack is fit through 2025");
+    if (!stk) throw new Error("FightBlend.predict (backtest): the stacker in opts.stack could not be loaded");
+    var ft = fitThroughFor(stk.fitThrough, kind);
+    if (!ft) throw new Error("FightBlend.predict (backtest): the stacker carries no fit_through (meta.fit_info or doc.fit_through)");
+    if (ft > BACKTEST_STACK_MAX || ft >= date) throw new Error("FightBlend.predict (backtest): the stacker is fit through " + ft +
+      "; a backtest stacker must be fit on 2023 or earlier and before the fight (" + date + ")");
+    if (opts.mrCells === undefined) throw new Error("FightBlend.predict (backtest): pass walk-forward method/round cells in opts.mrCells " +
+      "(methodround.json fights[id].S, fit through the previous year; or false for simulator cells only); the loaded S model is fit through 2026-10");
+    if (opts.mrCells && opts.mrFitThrough && opts.mrFitThrough >= date) throw new Error("FightBlend.predict (backtest): method/round cells fit through " +
+      opts.mrFitThrough + " are not walk-forward for a fight on " + date);
+    return ft;
+  }
   /** FightEngine.predict with the component on. opts: the matchup options (division, rounds, title, date, priors, adjA,
-      adjB, ml ...) plus sims, seed / seeds, experts { engine, feat_lr, elo, ml, elo_sig, mkt_rating, market }, line
-      { oddsA, oddsB } (American) or pMarket, moe (a MoE handle / json), methodRound (handle / js_model), mrCells
-      (precomputed S/SM cells, A-B orientation), anchor (true or config), interval (false to skip), blend (config
-      overrides), recalT. ctx (from the engine): { meta (fighters.json meta for the feature LR), params (merged with opts.params) }. */
+      adjB, ml, dur, sos, embed, oppadj, preufc ...) plus sims, seed / seeds, lineKind ('close' | 'open' | 'none'), line
+      { oddsA, oddsB } (American) or pMarket, experts { engine, feat_lr, elo, ml, elo_sig, mkt_rating, market }, stack
+      (alias moe: a stacker document or handle), feat (+ featCoef), ml2 (handle, ml2.json, or { pA, pMR } precomputed) +
+      ml2Stack, winner ('stack' default | 'ml2'), methodRound (handle / js_model), mrCells (precomputed S/SM cells, A-B
+      orientation; false = simulator cells only) + mrFitThrough, anchor (true or config), interval (false to skip), blend
+      (config overrides), recalT, backtest (true: refuse production defaults). ctx (from the engine): { meta (fighters.json
+      meta for the feature LR), params (merged with opts.params) }. */
   function predict(FE, profA, profB, opts, ctx) {
     opts = opts || {}; ctx = ctx || {};
     var params = ctx.params || (FE.params ? FE.params() : null), cfg = cfgOf(params, opts), M = moeLib();
-    var pa = resolveProf(FE, profA), pb = resolveProf(FE, profB);
+    var pa = resolveProf(FE, profA), pb = resolveProf(FE, profB), BT = !!opts.backtest;
     var N = opts.sims || cfg.sims, seeds = seedsOf(opts, pa, pb), sym = cfg.symmetric !== false;
     var meta = ctx.meta || {};
+    // 0. the line and the stack it selects (explicit lineKind), and the backtest guard (before any simulation)
+    var ex = own(opts.experts), line = lineOf(opts, ex, M);
+    if (line.kind === "none") delete ex.market; else ex.market = line.p;
+    var stk = (opts.stack || opts.moe) ? (M ? stackOf(opts.stack || opts.moe, M) : null) : (BT ? null : STATE.stack);
+    var date0 = opts.date || null, stackFT = BT ? backtestCheck(opts, date0, stk, line.kind) : (stk ? fitThroughFor(stk.fitThrough, line.kind) : null);
+    var moe = null, block = null;
+    if (stk) {
+      block = STACK_BLOCK[line.kind];
+      moe = line.kind === "open" ? stk.open : stk.close;
+      if (!moe) throw new Error("FightBlend.predict: lineKind 'open' needs an open-trained stack block (`model_open`, data/derived/blindtest_stack.json); " +
+        "this stacker has only close-trained line weights");
+    }
     // 1. the simulator (plain)
     var sim = symSim(FE, pa, pb, opts, N, seeds, 0, cfg.anchor, sym), R = sim.R, m = sim.m;
     // 2. experts and the blend
-    var ex = own(opts.experts);
     if (!isNum(ex.engine)) ex.engine = sim.p;
     var date = opts.date || m.date || meta.snapshot || null, division = m.division, rounds = m.rounds;
-    var moe = opts.moe ? (opts.moe.predict ? opts.moe : (M ? M.load(opts.moe) : null)) : STATE.moe;
+    var feat = opts.feat ? featOf(opts.feat) : (BT ? null : STATE.feat), featCoef = opts.featCoef || (BT ? "coef_valid" : "coef");
     var sides = null;
-    if (M && moe && moe.doc && moe.doc.feat && Array.isArray(pa.S) && Array.isArray(pb.S)) {
+    if (M && Array.isArray(pa.S) && Array.isArray(pb.S)) {
       var so = { keys: pa.keys || meta.keys || FE.KEYS, snapshot: meta.snapshot || null, halfLife: meta.half_life_days || 730 };
       sides = [M.sideFromProfile(pa, date, so), M.sideFromProfile(pb, date, so)];
       sides.opts = so;
-      if (!isNum(ex.feat_lr)) ex.feat_lr = M.featLR(moe.doc.feat, sides[0], sides[1], { division: division, homeA: sides[0].home, homeB: sides[1].home });
+      if (feat && !isNum(ex.feat_lr)) ex.feat_lr = M.featLR(feat, sides[0], sides[1], { division: division, homeA: sides[0].home, homeB: sides[1].home, coef: featCoef });
     }
     if (!isNum(ex.elo) && M && isNum(pa.elo) && isNum(pb.elo)) ex.elo = M.eloProb(pa.elo, pb.elo);
-    if (!isNum(ex.market) && M && opts.line && isNum(+opts.line.oddsA) && isNum(+opts.line.oddsB)) ex.market = M.devig(opts.line.oddsA, opts.line.oddsB);
-    if (!isNum(ex.market) && isNum(opts.pMarket)) ex.market = opts.pMarket;
+    if (!BT) {
+      // live rosters (production / page / ledger only): the same experts tools/forward_ledger.js computes
+      var mlp = STATE.mlPage;
+      if (mlp && !isNum(ex.ml) && pa.slug && pb.slug && mlp.has(pa.slug) && mlp.has(pb.slug)) {
+        var mr0 = mlp.predict(pa.slug, pb.slug, { date: date, lbs: LBS[division] || 155, five: rounds === 5 ? 1 : 0, title: m.title ? 1 : 0,
+          women: /^Women/.test(division || "") ? 1 : 0, "catch": LBS[division] ? 0 : 1 });
+        if (mr0 && isNum(mr0.pLR) && isNum(mr0.pEloSig)) { ex.ml = mr0.pLR; ex.elo_sig = mr0.pEloSig; }
+      }
+      var RT = STATE.mktRatings;
+      if (RT && !isNum(ex.mkt_rating) && pa.slug && pb.slug && RT[pa.slug] && RT[pb.slug]) ex.mkt_rating = M.ratingProb(RT[pa.slug][0], RT[pa.slug][1], RT[pb.slug][0], RT[pb.slug][1]);
+    }
+    if (!(isNum(ex.ml) && isNum(ex.elo_sig))) { delete ex.ml; delete ex.elo_sig; }   // the MoE optional group: both or none
+    var ml2live = !!(opts.ml2 && (opts.ml2.predictSides || opts.ml2.page_model || opts.ml2.terms));
+    if (BT && ml2live) throw new Error("FightBlend.predict (backtest): opts.ml2 must be a precomputed walk-forward { pA, pMR } (ml2.json fights: " +
+      "OOF 2019-2023, static fit < 2024 for 2024-2025), not the page model, whose roster and coefficients are fit through 2025");
+    var ml2src = opts.ml2 ? (ml2live ? ml2Of(opts.ml2) : opts.ml2) : (BT ? null : STATE.ml2);
+    var ml2 = ml2Package(ml2src, opts.ml2Stack || null, pa, pb, m, date, line);
+    if (ml2 && isNum(ml2.pA)) ex.ml2 = ml2.pA;   // reported (and shifted in the interval); not an expert of the exported stack
     var gate = M && sides ? M.gateFromSides(sides[0], sides[1], { division: division, rounds: rounds, preufcA: opts.preufcA, preufcB: opts.preufcB }) :
       { rounds: rounds, division: division };
     var T = isNum(opts.recalT) ? opts.recalT : cfg.recalT;
-    // MoE throws when no trained pattern fits the available experts (every stored pattern carries feat_lr, so a manual
-    // profile without decayed sums S has none): fall back to the simulator alone and say why (verifier fix)
+    var winner = opts.winner || "stack";
+    if (winner !== "stack" && winner !== "ml2") throw new Error("FightBlend.predict: opts.winner must be 'stack' or 'ml2', got " + winner);
+    // The stack throws when no trained pattern fits the available experts (every stored pattern carries feat_lr, so a
+    // manual profile without decayed sums S has none): fall back to the simulator alone and say why (verifier fix)
     var r = null, pRaw = ex.engine, source = "engine", blendError = null;
     if (moe) {
-      try { r = moe.predict({ experts: ex, gate: gate }); pRaw = r.p; source = "moe"; } catch (err) { r = null; blendError = String((err && err.message) || err); }
+      try { r = moe.predict({ experts: ex, gate: gate }); pRaw = r.p; source = "stack"; } catch (err) { r = null; blendError = String((err && err.message) || err); }
+    } else blendError = "no stacker loaded (FightEngine.loadBlend({ stack: blindtest_stack.json }) or opts.stack)";
+    if (winner === "ml2") {
+      if (ml2 && isNum(ml2.p)) { pRaw = ml2.p; source = "ml2"; }
+      else blendError = (blendError ? blendError + "; " : "") + "winner 'ml2': " + ((ml2 && ml2.note) || "ML v2 not available") + ", kept " + source;
     }
     function blendP(e) {
+      if (source === "ml2") {
+        var inp = own(ml2.inp); inp.ml2lr = e.ml2;
+        return sigm(T * logit(ml2StackP(ml2.W[ml2.stack], inp)));
+      }
       if (!r) return sigm(T * logit(e.engine));
       return sigm(T * logit(moe.predict({ experts: e, gate: gate }).p));
     }
@@ -566,14 +754,15 @@
       anc = anchor(FE, pa, pb, opts, p, cfgA, base);
       cellSim = anc.sim.cells; cellMin = anc.sim.cellMin; rates = anc.sim.rates;
     }
-    // 4. method x round
-    var mrCells = opts.mrCells || null, mrVariant = null;
-    if (!mrCells) {
+    // 4. method x round (S without a line; SM only with a closing line: SM was fit with the closing line as a feature, so
+    // an opener goes to S, the same close-vs-open rule as the winner stack). Backtests pass walk-forward cells (opts.mrCells).
+    var mrCells = opts.mrCells || null, mrVariant = opts.mrCells ? (opts.mrVariant || "passed") : null;
+    if (!mrCells && opts.mrCells !== false && !BT) {
       var MR = opts.methodRound ? (opts.methodRound.predict ? opts.methodRound : (mrLib() ? mrLib().create(opts.methodRound.js_model || opts.methodRound) : null)) : STATE.mr;
       if (MR && Array.isArray(pa.C) && Array.isArray(pb.C)) {
         try {
           var mo = MR.predict(pa, pb, { slugA: pa.slug, slugB: pb.slug, division: division, rounds: rounds, title: m.title, date: date,
-            pMarketA: isNum(ex.market) ? ex.market : undefined });
+            pMarketA: line.kind === "close" ? line.p : undefined });
           mrVariant = mo.variant;
           mrCells = [].concat(mo.cells.A.ko, mo.cells.A.sub, mo.cells.B.ko, mo.cells.B.sub, [mo.cells.A.dec, mo.cells.B.dec, mo.cells.draw]);
         } catch (e) { mrCells = null; }
@@ -602,15 +791,15 @@
       // (the one seedsOf uses) and the rating / Monte Carlo noise is mirrored, so predict(B, A) draws the same noise for
       // the same fighter and its interval is the mirror image of predict(A, B)'s
       var flip = canonFlip(pa, pb);
-      if (M && moe && r && sides && moe.doc.feat) {
-        var keys = sides.opts.keys, f0 = logit(M.featLR(moe.doc.feat, sides[0], sides[1], { division: division, homeA: sides[0].home, homeB: sides[1].home }));
+      if (M && feat && (r || source === "ml2") && sides) {
+        var keys = sides.opts.keys, f0 = logit(M.featLR(feat, sides[0], sides[1], { division: division, homeA: sides[0].home, homeB: sides[1].home, coef: featCoef }));
         var shifts = [];
         for (var bI = 0; bI < cfg.boot.B; bI++) {
           var qa = own(pa), qb = own(pb);
           if (flip) { qb.S = perturbS(pb.S, keys, rng, cfg.boot); qa.S = perturbS(pa.S, keys, rng, cfg.boot); }
           else { qa.S = perturbS(pa.S, keys, rng, cfg.boot); qb.S = perturbS(pb.S, keys, rng, cfg.boot); }
           var sa = M.sideFromProfile(qa, date, sides.opts), sb = M.sideFromProfile(qb, date, sides.opts);
-          shifts.push(logit(M.featLR(moe.doc.feat, sa, sb, { division: division, homeA: sa.home, homeB: sb.home })) - f0);
+          shifts.push(logit(M.featLR(feat, sa, sb, { division: division, homeA: sa.home, homeB: sb.home, coef: featCoef })) - f0);
         }
         featShift = function (i) { return shifts[i]; };
       }
@@ -620,6 +809,12 @@
       component: "blend_anchor", version: VERSION, on: true, source: source, blendError: blendError,
       p: p, pRaw: pRaw, recalT: T, pA: mg.pA, pB: mg.pB, pD: mg.pD,
       experts: ex, blend: r ? { weights: r.weights, contrib: r.contrib, used: r.used, regime: r.regime || null, scale: r.scale, ignored: r.ignored } : null,
+      // v5 merge step 5: which line, which stack block, which headline, and ML v2 next to it
+      lineKind: line.kind, line: line.kind === "none" ? null : { kind: line.kind, p: line.p, src: line.src, devig: line.devig },
+      winner: source === "ml2" ? "ml2" : "stack",
+      stack: stk ? { block: block, regime: r ? r.regime || null : null, fitThrough: stackFT, built: stk.built, from: (opts.stack || opts.moe) ? "opts" : "loaded" } : null,
+      ml2: ml2 ? { pA: ml2.pA, pMR: ml2.pMR, stacks: ml2.stacks || null, stack: ml2.stack || null, p: isNum(ml2.p) ? ml2.p : null, note: ml2.note || null } : null,
+      backtest: BT ? { date: date, stackFitThrough: stackFT, mrCells: opts.mrCells ? "passed" : "none", mrFitThrough: opts.mrFitThrough || null } : null,
       cells: cells, R: R, marginals: mg, bins7: mg.bins7,
       methodRound: { weight: w, pool: cfg.mrPool || "linear", variant: mrVariant, simRescaled: simR, mrRescaled: mrR },
       sim: { p: sim.p, pA: sim.pA, pB: sim.pB, pD: sim.pD, cells: sim.cells, n: N, runs: sim.runs, avgMin: sim.avgMin, rates: sim.rates },

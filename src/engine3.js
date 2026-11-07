@@ -2193,7 +2193,8 @@
   api.matchup = matchupStylesSOS;
   // [styles_sos] end
   /* blend_anchor:begin -- engine component "blend_anchor" (roadmap v9): FightEngine.predict, the final prediction package.
-     params.components.blend_anchor true: src/ml/blend.js (FightBlend) blends P(win) (src/ml/moe.js), rescales and pools the
+     params.components.blend_anchor true: src/ml/blend.js (FightBlend) blends P(win) (src/ml/moe.js over the ML v2 package's
+     exported stack, data/derived/blindtest_stack.json, block chosen by opts.lineKind; ML v2 via src/ml/ml2.js), rescales and pools the
      method x round cells with tools/methodround_model.js, optionally anchors the simulator to the blend, adds ML stat lines
      and a profile-noise interval. false (or FightBlend missing): the plain engine package, whose numbers are exactly
      summarize(matchup(profA, profB, opts), sims, seed). Nothing outside this block changes matchup / simulate / summarize. */
@@ -2214,7 +2215,10 @@
     return { component: "blend_anchor", on: false, source: "engine", p: dec > 0 ? s.pA / dec : 0.5, pA: s.pA, pB: s.pB, pD: s.pD,
       bins7: s.bins, sim: s, reason: on ? "src/ml/blend.js not loaded" : "params.components.blend_anchor is false" };
   };
-  /** Data for the blend: { moe (moe_page.json), methodRound (methodround.json or its js_model), data (blend_anchor.json) }. */
+  /** Data for the blend (v5 merge step 5: the ML v2 package): { stack (data/derived/blindtest_stack.json; `moe` is an alias),
+      feat (moe_page.json: the feature LR), mlPage (ml.json), market (market.json ratings), ml2 (ml2.json), methodRound
+      (methodround.json or its js_model), data (blend_anchor.json) }. predict picks the stack block by opts.lineKind
+      ('close' | 'open' | 'none'); backtests pass opts.backtest with a stacker fit on 2023 or earlier (src/ml/blend.js). */
   api.loadBlend = function (o) { var FB = getBlend(); if (!FB) throw new Error("FightEngine.loadBlend: src/ml/blend.js (FightBlend) is not loaded"); return FB.load(o); };
   /* blend_anchor:end */
   return api;

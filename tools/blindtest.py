@@ -1731,6 +1731,83 @@ def export_stack(args):
         models[EXPORT["present"]].weights(), models[EXPORT["absent"]].weights()))
 
 
+STACK_PRE_JSON = os.path.join(DERIVED, "blindtest_stack_pre2024.json")
+
+
+def export_stack_pre(args):
+    """v5 merge step 5 (FightEngine.predict backtests): the SAME production stackers as export_stack (moe_close,
+    moe_noline, moe_open with moe.json's configurations and the same expert map), fit ONLY on dev fights from
+    2019-01-01 through --fit-through (at most 2023-12-31), each row an expert's out-of-sample prediction. Nothing from
+    the validation window is read: no replay rows, no blind scores; the test vectors are the last 60 fit-window fights
+    per regime. Output (src/ml/moe.js format, `model` + `model_open`, meta.fit_info[key].fit_through) goes to
+    data/derived/blindtest_stack_pre2024.json (or --stack-out); FightBlend.predict's backtest guard reads fit_through.
+    The engine expert is whatever export uses (_ENGK: the newest validated, non-rejected engine; BLINDTEST_MOE_ENGINE
+    pins one): re-export after a new engine version's train run so the stack's engine weight belongs to it."""
+    ft = args.fit_through
+    if not (len(ft) == 10 and ft[4] == "-" and ft[7] == "-") or ft > "2023-12-31":
+        raise SystemExit("--fit-through must be an ISO date on or before 2023-12-31 (hidden-data protocol), got %s" % ft)
+    cutoff = (dt.date.fromisoformat(ft) + dt.timedelta(days=1)).isoformat()
+    ctx = Ctx(args)
+    keys = topo(list(EXPORT.values()) + [EXPORT_OPEN])
+    models = {k: REGISTRY[k]["factory"](ctx) for k in keys}
+    P = {k: {f: v for f, v in models[k].history().items() if f in ctx.fights and HIST_FROM <= ctx.date[f] < cutoff}
+         for k in keys}
+    mo = ctx.json("moe.json")
+    full = list(mo["model"]["experts"])
+    out = {"method": "switch", "on": "market", "experts": full, "pclip": PCLIP,
+           "optional_groups": mo["model"].get("optional_groups")}
+    out_open, vectors, fit_info, fit_ids = dict(out), [], {}, [i for i in ctx.hist_ids if ctx.date[i] < cutoff]
+
+    def block(key):
+        m = models[key]
+        if m.method != "linear":
+            raise SystemExit("export supports the linear method only (%s is %s)" % (key, m.method))
+        info = m.fit(cutoff, P)
+        if info["fit_through"] > ft:
+            raise SystemExit("%s fit through %s, after --fit-through %s" % (key, info["fit_through"], ft))
+        fit_info[key] = info
+        lin = {}
+        for pat, (idx, ls) in m.st.lin.items():
+            names = [m.names[j] for j in idx]
+            lin["+".join(e for e in full if e in names)] = {m.names[j]: float(w) for j, w in zip(idx, ls.w)}
+        return {"method": "linear", "experts": full, "pclip": PCLIP, "hp": m.hp,
+                "gate": {"names": list(m.MO.GATE_NAMES), "mu": [float(x) for x in m.mu], "sd": [float(x) for x in m.sd]},
+                "calibration": m.cal.export() if hasattr(m.cal, "export") else {"type": "none"}, "linear": lin}
+
+    def add_vectors(key, regime, model_key):
+        m = models[key]
+        ids = [i for i in fit_ids if i in m.Gall and all(i in P[m.map[e]] for e in m.names if e == "market")][-60:]
+        pr = m.predict(ids, P)
+        for i in ids:
+            if i in pr:
+                ex = {e: P[m.map[e]][i] for e in m.names if i in P[m.map[e]]}
+                vectors.append({"model": model_key, "regime": regime, "id": i, "experts": ex, "p": pr[i]})
+
+    for regime, key in EXPORT.items():
+        out[regime] = block(key)
+        add_vectors(key, regime, "model")
+    out_open["present"] = block(EXPORT_OPEN)
+    out_open["absent"] = out["absent"]
+    add_vectors(EXPORT_OPEN, "present", "model_open")
+    res = {"meta": {"tool": "tools/blindtest.py export --fit-through %s" % ft,
+                    "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                    "fit": "decisive dev fights %s..%s only (each expert's out-of-sample predictions); nothing from the "
+                           "2024-2025 validation window or 2026 is read" % (HIST_FROM, ft),
+                    "purpose": "backtest / validation stacker for FightEngine.predict (opts.backtest): the production "
+                               "blindtest_stack.json is fit through 2025",
+                    "experts_map": {r: models[k].map for r, k in EXPORT.items()},
+                    "experts_map_open": {"present": models[EXPORT_OPEN].map, "absent": models[EXPORT["absent"]].map},
+                    "versions": {k: models[k].version for k in keys}, "fit_info": fit_info,
+                    "usage": "MoE.load(doc) / MoE.load(doc, 'model_open'), or FightEngine.predict(a, b, { backtest: true, "
+                             "stack: doc, lineKind, mrCells, experts }); 'engine' expert = %s" % _ENGK},
+           "model": out, "model_open": out_open, "test_vectors": vectors}
+    dest = args.stack_out or STACK_PRE_JSON
+    wjson(dest, res)
+    log("wrote %s: fit through %s; present %d patterns, absent %d, %d test vectors; weights present %s, absent %s, open %s" % (
+        dest, ft, len(out["present"]["linear"]), len(out["absent"]["linear"]), len(vectors),
+        models[EXPORT["present"]].weights(), models[EXPORT["absent"]].weights(), models[EXPORT_OPEN].weights()))
+
+
 SELFTEST_MODELS = ["ml_lr", "feat_lr", "ml_lgb", "ml_xgb", "ml_blend", "stack_elo_ml_mr", "moe_noline", "moe_close"]
 
 
@@ -1805,6 +1882,9 @@ def main():
                                                          "unless --out is given")
     ap.add_argument("--out", default=None)
     ap.add_argument("--cards", type=int, default=None, help="replay only the first N cards")
+    ap.add_argument("--fit-through", default=None, help="export only: fit the stackers on 2019-01-01..this date (<= "
+                                                        "2023-12-31) -> blindtest_stack_pre2024.json (FightEngine.predict backtests)")
+    ap.add_argument("--stack-out", default=None, help="export --fit-through: output path")
     args = ap.parse_args()
     plugins = load_plugins()
     if args.cmd == "list":
@@ -1817,7 +1897,10 @@ def main():
         return
     if args.cmd == "export":
         args.perturb_from = None
-        export_stack(args)
+        if args.fit_through:
+            export_stack_pre(args)
+        else:
+            export_stack(args)
         return
     out = args.out or (None if args.quick or args.cards else OUT_JSON)
     if args.quick:
