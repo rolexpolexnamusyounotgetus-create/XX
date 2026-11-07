@@ -5,6 +5,57 @@ Each engine version records its held-out numbers here (docs/ROADMAP.md). From v4
 2026-01-01 is in the sealed vault (docs/BACKLOG.md "Hidden-data protocol"). Older entries that say "test" meant 2024-01-01 to the
 snapshot; that window is retired.
 
+## v7 (2026-11-07): built and frozen; binding train gate FAILED on one marginal check; no pre-registration, no look; v4 (4.0.0) stays
+
+**Outcome.** v7 = the v4 simulator (unchanged, bit for bit) + FightEngine.predict carrying cycle 1 of docs/V6_V10_PLAN.md
+(ML v2 head stacks by explicit line regime, S2 cells pooled with the simulator's cells) and cycle 2 (market props for method
+given the winner, the verified props pool of research/model_props.md). Finishing tendencies (research/model_finishing.md)
+were not adopted by their verifier and are not in v7. The binding train gate ran once under a protocol committed beforehand
+(data/derived/v7/gate_protocol.json, commit 78b01cf) and **failed one of 33 checks**: cycle 1's close-regime winner "not
+worse" bound. Status `gate_failed` in version_history.json; no pre-registration was written and no 2024-25 number was
+computed (tools/evalv.js now refuses a look for a gate-failed or unregistered v7+ entry). src/ is unchanged (v4); the frozen
+candidate is versions/v7-gate-failed/ (versions/v7 is a compatibility symlink). Nothing read 2026.
+
+**Why cycle 1 had to pass here.** The v6 review relabelled v6's gate "failed as first run" (7.1 item 10 a), so cycle 1's parts
+could return only through v7's own gate, against an honest comparator committed first. The latest kept version, v4, has no
+predict(); the comparator is the honest v4 package (`cmp4`): the same engine file with the v5-style package (MoE expert stack
+by line regime with this simulator as the engine expert, methodround S / SM cells), per-year stackers refit on 2019..Y-1 with
+this simulator's fold-honest evalv rows (data/derived/v7/cmp_stack_v4pkg_fit2020-2023.json, tools/blindtest.py
+BLINDTEST_MOE_ENGINE_TRAIN), its pool weight refit forward-chained like v7's. One simulator for both (common random numbers).
+
+**The gate** (tools/v7_gate.py; 1,999 train fights; 20,000 event-cluster resamples, seed 7; marginal bounds decided by the
+clustered normal bound). C1 = cycle 1's test, v7 with props off minus cmp4, scored 2021-2023 (1,222 decisive, 128 cards):
+
+| regime | winner log loss | 7-bin | method | check |
+|---|---|---|---|---|
+| open | -0.0053 [-0.0096, -0.0010] | -0.0181 [-0.0264, -0.0097] | -0.0081 [-0.0138, -0.0023] | pass |
+| no line | -0.0065 [-0.0118, -0.0011] | -0.0193 [-0.0278, -0.0106] | -0.0077 [-0.0134, -0.0021] | pass |
+| close | -0.0024 [-0.0054, +0.00054] | -0.0125 [-0.0205, -0.0042] | -0.0061 [-0.0122, +0.0002] | **winner FAIL** (needs upper <= +0.0005; bootstrap +0.00054 is within 2 MC SE of 0.000029, the normal bound +0.00060 decides) |
+
+C2 = cycle 2's test, v7 minus v7 with props off on close+props rows, forward folds fit 2021 -> 2022 and 2021-22 -> 2023 (797
+fights, 85 cards): 7-bin -0.0149 [-0.0273, -0.0028], method -0.0122 [-0.0222, -0.0024], round given a finish +0.0005
+[-0.0002, +0.0013] (limit +0.002), P(decision) 47.5% vs 48.1% observed, winner bit-identical (and equal to the v6 package's
+p on 5,997 shared rows); all pass. Forward-chained weights: simulator pool w 0.20 / 0.20 / 0.20 (cmp4 0.30 / 0.25 / 0.30),
+props pool 0.48 (fit 2021) / 0.44 (fit 2021-22) on the cells. Test checks all pass (simulator identity with v4, flag-off
+identities incl. blend.js 1.3.0 with props off = 1.2.1, corner swap < 1e-12, S2 JS = Python, props JS = Python 1.7e-16,
+predict refuses without FightBlend, manualProfile keeps n_fights 0). Reported, never decisive: the would-be primary contrast
+(v7 minus cmp4, 7-bin close+props) -0.0301 [-0.0444, -0.0159]; props in the open / no-line regimes -0.0154 / -0.0157 7-bin;
+LOYO 2021-2023 -0.0140 [-0.0235, -0.0044]; a forward-chained decision tilt would have been +0.11 / +0.01 (knob stays 0).
+
+**What it means.** The failure is marginal and in the regime the plan already called out of reach (close-regime winner gains
+of ~0.002 have ~40% power); point estimates favour the cycle-1 package in every regime. But the gate is binding and was run
+once, so cycle 1 stays out, and cycle 2 as planned (pooled with S2 cells under cycle 1's winner) cannot enter alone. The
+props pool's own evidence on train is clear (C2). Any next attempt needs a new design and a new protocol committed before
+its gate, without reusing this run to choose the comparator or the tolerance.
+
+**Built and kept as capability (off by default, no scored number changes):** src/ml/blend.js 1.3.0 (`params.blend.props`,
+`opts.props` consensus or raw per-book prices through src/ml/propspool.js, the one power de-vig of training and capture;
+`applyProps`, `mirrorProps`); tools/predict_harness.js modes `v7` / `cmp4`, `--cmp-stacks`, `--ml2-rolling`, protocol keys
+years / sims / kinds / cmp_stacks; tools/predictrec.js `v7` (props from props.json) and `ml2Rolling`; tools/v7_gate.py;
+tests/test_v7.js; tests/test_engine3.js `ENGINE_DIR` / `EXPECT_VERSION`; tests/test_blend121.js accepts blend.js >= 1.2.1.
+Records: version_history.json v7 (`status`, `train_gate`, `decision`), data/derived/v7/ (protocol, binding harness and score,
+dev fits run, stackers, tests, informational power).
+
 ## v6 review (2026-11-07): review issues reproduced and fixed; no new version, v6 stays rejected, v4 (4.0.0) stays
 
 **Outcome.** I reproduced every issue in the v6 review and fixed each one that was real. None of the fixes changes a scored

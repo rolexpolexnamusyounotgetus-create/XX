@@ -620,9 +620,9 @@
      "logloss_with": 0.5788248485320001,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -8.727629959482959e-7,
-      "lo": -0.0000015272600814283089,
-      "hi": -2.5655151717160004e-7,
+      "est": -8.727629959482959e-07,
+      "lo": -1.5272600814283089e-06,
+      "hi": -2.5655151717160004e-07,
       "p_gt0": 0.002
      },
      "n": 845
@@ -632,9 +632,9 @@
      "logloss_with": 0.5930335681784208,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -1.0099141584613298e-7,
-      "lo": -1.8138076015023744e-7,
-      "hi": -1.882505288986469e-8,
+      "est": -1.0099141584613298e-07,
+      "lo": -1.8138076015023744e-07,
+      "hi": -1.882505288986469e-08,
       "p_gt0": 0.0105
      },
      "n": 845
@@ -1454,9 +1454,9 @@
      "logloss_with": 0.5930319721344538,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -0.0000016970353827425062,
-      "lo": -0.000002435549185916011,
-      "hi": -9.44685467941618e-7,
+      "est": -1.6970353827425062e-06,
+      "lo": -2.435549185916011e-06,
+      "hi": -9.44685467941618e-07,
       "p_gt0": 0
      },
      "n": 845
@@ -2295,9 +2295,9 @@
      "logloss_with": 0.5788099923758476,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -0.0000157289191484635,
-      "lo": -0.00003115957049440681,
-      "hi": -2.182334234371639e-7,
+      "est": -1.57289191484635e-05,
+      "lo": -3.115957049440681e-05,
+      "hi": -2.182334234371639e-07,
       "p_gt0": 0.0235
      },
      "n": 845
@@ -2312,9 +2312,9 @@
       "hi": 0,
       "p_gt0": null,
       "raw": {
-       "est": -2.947697791072808e-7,
-       "lo": -4.819442412118878e-7,
-       "hi": -1.0681580458083556e-7,
+       "est": -2.947697791072808e-07,
+       "lo": -4.819442412118878e-07,
+       "hi": -1.0681580458083556e-07,
        "p_gt0": 0.002
       },
       "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
@@ -5284,7 +5284,7 @@
      "v4": 0.9399330733473251,
      "v5.0.1": 0.9399711317868685,
      "S": 0.9359561823360422,
-     "diff": 0.00004,
+     "diff": 4e-05,
      "ci95": [
       -0.00963,
       0.00979
@@ -6615,7 +6615,7 @@
           "diff": -0.00095,
           "ci": [
            -0.00192,
-           0.00008
+           8e-05
           ]
          },
          "acc": {
@@ -7162,7 +7162,7 @@
         "diff": -0.00331,
         "ci95": [
          -0.00651,
-         -0.00004
+         -4e-05
         ]
        },
        "bin7": {
@@ -7190,7 +7190,7 @@
         "diff": -0.0014,
         "ci95": [
          -0.0028,
-         0.00008
+         8e-05
         ]
        }
       }
@@ -7564,7 +7564,7 @@
          "diff": -0.00492,
          "ci95": [
           -0.00993,
-          -0.00008
+          -8e-05
          ]
         }
        }
@@ -8298,7 +8298,1300 @@
    },
    "validation": null,
    "blend": null,
-   "notes": []
+   "notes": [
+    "2026-11-07T08:38:05+00:00 v7 built (v4 simulator + predict: cycle 1 re-bundled + cycle 2 props pool), frozen, protocol committed (78b01cf), binding train gate run once (08:34-08:36 UTC) and scored: FAIL on one check (C1 close winner, marginal, decided by the normal bound). Status gate_failed; no pre-registration; validation null."
+   ],
+   "status": "gate_failed",
+   "train_gate": {
+    "rule": "V6_V10_PLAN section 3: cycle 1 'Train-only acceptance test' (C1: the v7 package with props off vs the honest v4 package, forward-chained 2021-2023, all three line regimes) + cycle 2 'Train-only acceptance test' (C2: v7 vs v7 with props off, forward folds fit 2021 -> score 2022 and fit 2021-22 -> score 2023, close+props rows) + test-derived checks (T); 7.1 item 10: comparator and rules committed first, binding run once, 20,000 event-cluster resamples (seed 7), Monte Carlo SE, marginal bounds decided by the clustered normal bound",
+    "protocol": {
+     "file": "data/derived/v7/gate_protocol.json",
+     "sha256": "99e5a760c5f9400ffbea96cb448daef500a044be2a20d100891fc694dd119c15",
+     "commit": "78b01cf (2026-11-07 08:33:36 UTC)"
+    },
+    "binding_run": {
+     "harness": "data/derived/v7/gate_train.json",
+     "harness_sha256": "cf785f08dc9ceb1ab9f6e81589d32ff4ed11502795443bcf345dd1fc5a1063ef",
+     "score": "data/derived/v7/gate_train_score.json",
+     "score_sha256": "c45efb2ffdbb9fa71de210a727c71ab80a716b79b5b7eeaad71d2115af20b666",
+     "git_head_at_run": "78b01cfb44860491d2cead771f3b2cebcf0d349e",
+     "n_fights": 1999,
+     "failed_fights": 0,
+     "wall_s": 124
+    },
+    "result": "FAIL",
+    "failed_checks": [
+     "C1 close winner: CI upper <= +0.0005"
+    ],
+    "failed_detail": {
+     "C1 close winner: CI upper <= +0.0005": {
+      "pass": false,
+      "boot_upper": 0.00054,
+      "mcse_upper": 2.9e-05,
+      "normal_upper": 0.0006,
+      "threshold": 0.0005,
+      "marginal": true,
+      "decided_by": "normal"
+     }
+    },
+    "checks": {
+     "C1 open winner: CI upper < 0 and point <= -0.001": true,
+     "C1 no-line winner: CI upper < 0 and point <= -0.001": true,
+     "C1 close winner: CI upper <= +0.0005": false,
+     "C1 7-bin (open): CI upper < 0": true,
+     "C1 method (open): CI upper <= +0.002": true,
+     "C1 7-bin (none): CI upper < 0": true,
+     "C1 method (none): CI upper <= +0.002": true,
+     "C1 7-bin (close): CI upper < 0": true,
+     "C1 method (close): CI upper <= +0.002": true,
+     "C2 7-bin (close+props): CI upper < 0": true,
+     "C2 method (close+props): CI upper <= +0.003": true,
+     "C2 round given a finish (close+props): CI upper <= +0.002": true,
+     "C2 P(decision) within 2 points of observed (pooled)": true,
+     "C2 winner bit-identical (composition, 1e-12)": true,
+     "C2 winner identical to the v6 package (ml2stack rows)": true,
+     "T props composition: Python = shipped JS <= 1e-9": true,
+     "T simulator_identity_v4": true,
+     "T flag_off_summarize": true,
+     "T flag_off_props_121": true,
+     "T flag_off_props_param": true,
+     "T props_applied": true,
+     "T props_winner_identity": true,
+     "T props_jlin": true,
+     "T props_round_shapes": true,
+     "T props_draw": true,
+     "T corner_swap": true,
+     "T routing": true,
+     "T s2_parity": true,
+     "T refuse_without_blend": true,
+     "T manual_profile_n0": true,
+     "T live_props": true,
+     "T debut_keeps_debut_model": true,
+     "harness: no failed fights": true
+    },
+    "fits_forward_chained": {
+     "w": {
+      "v7": {
+       "2021": {
+        "w": 0.2,
+        "joint": 2.05914,
+        "n": 737,
+        "years": [
+         2019,
+         2020
+        ]
+       },
+       "2022": {
+        "w": 0.2,
+        "joint": 2.08072,
+        "n": 1156,
+        "years": [
+         2019,
+         2020,
+         2021
+        ]
+       },
+       "2023": {
+        "w": 0.2,
+        "joint": 2.10558,
+        "n": 1577,
+        "years": [
+         2019,
+         2020,
+         2021,
+         2022
+        ]
+       },
+       "fit_2019_2023": {
+        "w": 0.15,
+        "joint": 2.11714,
+        "n": 1972,
+        "years": [
+         2019,
+         2020,
+         2021,
+         2022,
+         2023
+        ]
+       }
+      },
+      "cmp4": {
+       "2021": {
+        "w": 0.3,
+        "joint": 2.08211,
+        "n": 737,
+        "years": [
+         2019,
+         2020
+        ]
+       },
+       "2022": {
+        "w": 0.25,
+        "joint": 2.09999,
+        "n": 1156,
+        "years": [
+         2019,
+         2020,
+         2021
+        ]
+       },
+       "2023": {
+        "w": 0.3,
+        "joint": 2.12726,
+        "n": 1577,
+        "years": [
+         2019,
+         2020,
+         2021,
+         2022
+        ]
+       },
+       "fit_2019_2023": {
+        "w": 0.2,
+        "joint": 2.13779,
+        "n": 1972,
+        "years": [
+         2019,
+         2020,
+         2021,
+         2022,
+         2023
+        ]
+       }
+      }
+     },
+     "pi": {
+      "2022": {
+       "pi": 0.48,
+       "mgw": 0.90857,
+       "n": 413,
+       "years": [
+        2021
+       ],
+       "w_cells_pool": 0.2
+      },
+      "2023": {
+       "pi": 0.44,
+       "mgw": 0.91891,
+       "n": 824,
+       "years": [
+        2021,
+        2022
+       ],
+       "w_cells_pool": 0.2
+      },
+      "fit_2021_2023": {
+       "pi": 0.47,
+       "mgw": 0.9259,
+       "n": 1203,
+       "years": [
+        2021,
+        2022,
+        2023
+       ],
+       "w_cells_pool": 0.15
+      }
+     }
+    },
+    "C1": {
+     "open": {
+      "n_outcome": 1235,
+      "n_decisive": 1222,
+      "n_cards": 128,
+      "levels": {
+       "v7np": {
+        "winLL": 0.62133,
+        "brier": 0.21618,
+        "acc": 0.6653,
+        "ece": 0.0174,
+        "slope": 1.049,
+        "bin7": 1.607,
+        "method": 0.96416,
+        "joint": 2.14535,
+        "rgf": 1.06047,
+        "mgw": 0.9421,
+        "pdec": 0.504,
+        "ydec": 0.4923
+       },
+       "cmp4": {
+        "winLL": 0.62662,
+        "brier": 0.21844,
+        "acc": 0.6604,
+        "ece": 0.0207,
+        "slope": 1.019,
+        "bin7": 1.62509,
+        "method": 0.97222,
+        "joint": 2.16414,
+        "rgf": 1.06174,
+        "mgw": 0.954,
+        "pdec": 0.5033,
+        "ydec": 0.4923
+       }
+      },
+      "paired_v7np_minus_cmp4": {
+       "winLL": {
+        "diff": -0.00528,
+        "ci95": [
+         -0.00964,
+         -0.00097
+        ],
+        "ci_mcse": [
+         4.9e-05,
+         4e-05
+        ],
+        "normal_ci95": [
+         -0.00967,
+         -0.0009
+        ]
+       },
+       "bin7": {
+        "diff": -0.0181,
+        "ci95": [
+         -0.02639,
+         -0.00967
+        ],
+        "ci_mcse": [
+         5.7e-05,
+         5.5e-05
+        ],
+        "normal_ci95": [
+         -0.02656,
+         -0.00963
+        ]
+       },
+       "method": {
+        "diff": -0.00806,
+        "ci95": [
+         -0.01378,
+         -0.00228
+        ],
+        "ci_mcse": [
+         6.6e-05,
+         4.6e-05
+        ],
+        "normal_ci95": [
+         -0.01381,
+         -0.00231
+        ]
+       },
+       "joint": {
+        "diff": -0.01878,
+        "ci95": [
+         -0.02715,
+         -0.01017
+        ],
+        "ci_mcse": [
+         5.6e-05,
+         5.7e-05
+        ],
+        "normal_ci95": [
+         -0.02734,
+         -0.01022
+        ]
+       },
+       "brier": {
+        "diff": -0.00226,
+        "ci95": [
+         -0.00419,
+         -0.00034
+        ],
+        "ci_mcse": [
+         2.4e-05,
+         1.8e-05
+        ],
+        "normal_ci95": [
+         -0.00421,
+         -0.0003
+        ]
+       },
+       "mgw": {
+        "diff": -0.01191,
+        "ci95": [
+         -0.01986,
+         -0.00382
+        ],
+        "ci_mcse": [
+         7.1e-05,
+         5.6e-05
+        ],
+        "normal_ci95": [
+         -0.01992,
+         -0.00389
+        ]
+       },
+       "rgf": {
+        "diff": -0.00127,
+        "ci95": [
+         -0.00249,
+         -5e-05
+        ],
+        "ci_mcse": [
+         1.7e-05,
+         1.2e-05
+        ],
+        "normal_ci95": [
+         -0.00248,
+         -5e-05
+        ]
+       }
+      }
+     },
+     "none": {
+      "n_outcome": 1235,
+      "n_decisive": 1222,
+      "n_cards": 128,
+      "levels": {
+       "v7np": {
+        "winLL": 0.62791,
+        "brier": 0.21919,
+        "acc": 0.6498,
+        "ece": 0.0112,
+        "slope": 1.068,
+        "bin7": 1.61351,
+        "method": 0.96498,
+        "joint": 2.15186,
+        "rgf": 1.06046,
+        "mgw": 0.9421,
+        "pdec": 0.5043,
+        "ydec": 0.4923
+       },
+       "cmp4": {
+        "winLL": 0.63438,
+        "brier": 0.22218,
+        "acc": 0.6367,
+        "ece": 0.0112,
+        "slope": 1.086,
+        "bin7": 1.63278,
+        "method": 0.97271,
+        "joint": 2.17182,
+        "rgf": 1.06183,
+        "mgw": 0.954,
+        "pdec": 0.5038,
+        "ydec": 0.4923
+       }
+      },
+      "paired_v7np_minus_cmp4": {
+       "winLL": {
+        "diff": -0.00647,
+        "ci95": [
+         -0.01184,
+         -0.00111
+        ],
+        "ci_mcse": [
+         4e-05,
+         5e-05
+        ],
+        "normal_ci95": [
+         -0.01185,
+         -0.00109
+        ]
+       },
+       "bin7": {
+        "diff": -0.01927,
+        "ci95": [
+         -0.02777,
+         -0.01056
+        ],
+        "ci_mcse": [
+         6.8e-05,
+         5.2e-05
+        ],
+        "normal_ci95": [
+         -0.02787,
+         -0.01067
+        ]
+       },
+       "method": {
+        "diff": -0.00773,
+        "ci95": [
+         -0.01337,
+         -0.00206
+        ],
+        "ci_mcse": [
+         5.5e-05,
+         5.2e-05
+        ],
+        "normal_ci95": [
+         -0.01338,
+         -0.00209
+        ]
+       },
+       "joint": {
+        "diff": -0.01996,
+        "ci95": [
+         -0.02853,
+         -0.01116
+        ],
+        "ci_mcse": [
+         7e-05,
+         4.7e-05
+        ],
+        "normal_ci95": [
+         -0.02868,
+         -0.01123
+        ]
+       },
+       "brier": {
+        "diff": -0.00299,
+        "ci95": [
+         -0.00545,
+         -0.00056
+        ],
+        "ci_mcse": [
+         2.4e-05,
+         3e-05
+        ],
+        "normal_ci95": [
+         -0.00544,
+         -0.00054
+        ]
+       },
+       "mgw": {
+        "diff": -0.01191,
+        "ci95": [
+         -0.01986,
+         -0.00382
+        ],
+        "ci_mcse": [
+         7.1e-05,
+         5.6e-05
+        ],
+        "normal_ci95": [
+         -0.01992,
+         -0.00389
+        ]
+       },
+       "rgf": {
+        "diff": -0.00137,
+        "ci95": [
+         -0.00261,
+         -0.00011
+        ],
+        "ci_mcse": [
+         2e-05,
+         1.7e-05
+        ],
+        "normal_ci95": [
+         -0.00261,
+         -0.00012
+        ]
+       }
+      }
+     },
+     "close": {
+      "n_outcome": 1235,
+      "n_decisive": 1222,
+      "n_cards": 128,
+      "levels": {
+       "v7np": {
+        "winLL": 0.61502,
+        "brier": 0.21343,
+        "acc": 0.6694,
+        "ece": 0.0139,
+        "slope": 1.056,
+        "bin7": 1.60075,
+        "method": 0.96512,
+        "joint": 2.13911,
+        "rgf": 1.06059,
+        "mgw": 0.9421,
+        "pdec": 0.5035,
+        "ydec": 0.4923,
+        "softCE_vs_close": 0.62759
+       },
+       "cmp4": {
+        "winLL": 0.61742,
+        "brier": 0.21446,
+        "acc": 0.6628,
+        "ece": 0.0086,
+        "slope": 1.04,
+        "bin7": 1.61326,
+        "method": 0.9712,
+        "joint": 2.15232,
+        "rgf": 1.06203,
+        "mgw": 0.95131,
+        "pdec": 0.5054,
+        "ydec": 0.4923,
+        "softCE_vs_close": 0.62615
+       }
+      },
+      "paired_v7np_minus_cmp4": {
+       "winLL": {
+        "diff": -0.0024,
+        "ci95": [
+         -0.0054,
+         0.00054
+        ],
+        "ci_mcse": [
+         3.9e-05,
+         2.9e-05
+        ],
+        "normal_ci95": [
+         -0.00541,
+         0.0006
+        ]
+       },
+       "bin7": {
+        "diff": -0.01252,
+        "ci95": [
+         -0.02053,
+         -0.00422
+        ],
+        "ci_mcse": [
+         6.7e-05,
+         7e-05
+        ],
+        "normal_ci95": [
+         -0.02071,
+         -0.00432
+        ]
+       },
+       "method": {
+        "diff": -0.00608,
+        "ci95": [
+         -0.01219,
+         0.00015
+        ],
+        "ci_mcse": [
+         5.5e-05,
+         5.9e-05
+        ],
+        "normal_ci95": [
+         -0.01224,
+         9e-05
+        ]
+       },
+       "joint": {
+        "diff": -0.01321,
+        "ci95": [
+         -0.02127,
+         -0.00485
+        ],
+        "ci_mcse": [
+         6e-05,
+         7.6e-05
+        ],
+        "normal_ci95": [
+         -0.02147,
+         -0.00495
+        ]
+       },
+       "brier": {
+        "diff": -0.00102,
+        "ci95": [
+         -0.00238,
+         0.0003
+        ],
+        "ci_mcse": [
+         1.8e-05,
+         1.1e-05
+        ],
+        "normal_ci95": [
+         -0.00238,
+         0.00034
+        ]
+       },
+       "mgw": {
+        "diff": -0.00921,
+        "ci95": [
+         -0.01768,
+         -0.0005
+        ],
+        "ci_mcse": [
+         7.1e-05,
+         8.9e-05
+        ],
+        "normal_ci95": [
+         -0.01773,
+         -0.00069
+        ]
+       },
+       "rgf": {
+        "diff": -0.00144,
+        "ci95": [
+         -0.00278,
+         -0.00011
+        ],
+        "ci_mcse": [
+         1.8e-05,
+         1.3e-05
+        ],
+        "normal_ci95": [
+         -0.00278,
+         -0.0001
+        ]
+       }
+      }
+     }
+    },
+    "C2": {
+     "n_outcome": 797,
+     "n_decisive": 790,
+     "n_finish": 414,
+     "n_cards": 85,
+     "levels": {
+      "v7": {
+       "winLL": 0.60658,
+       "brier": 0.20988,
+       "acc": 0.6886,
+       "ece": 0.0471,
+       "slope": 1.087,
+       "bin7": 1.57967,
+       "method": 0.95814,
+       "joint": 2.1241,
+       "rgf": 1.04764,
+       "mgw": 0.93514,
+       "pdec": 0.4753,
+       "ydec": 0.4806,
+       "softCE_vs_close": 0.62175
+      },
+      "v7np": {
+       "winLL": 0.60658,
+       "brier": 0.20988,
+       "acc": 0.6886,
+       "ece": 0.0471,
+       "slope": 1.087,
+       "bin7": 1.5946,
+       "method": 0.97035,
+       "joint": 2.13904,
+       "rgf": 1.04714,
+       "mgw": 0.95034,
+       "pdec": 0.5031,
+       "ydec": 0.4806,
+       "softCE_vs_close": 0.62175
+      }
+     },
+     "paired_v7_minus_v7np": {
+      "winLL": {
+       "diff": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "ci_mcse": [
+        0.0,
+        0.0
+       ],
+       "normal_ci95": [
+        0.0,
+        0.0
+       ]
+      },
+      "bin7": {
+       "diff": -0.01494,
+       "ci95": [
+        -0.02728,
+        -0.00283
+       ],
+       "ci_mcse": [
+        0.000147,
+        0.00013
+       ],
+       "normal_ci95": [
+        -0.0272,
+        -0.00268
+       ]
+      },
+      "method": {
+       "diff": -0.01221,
+       "ci95": [
+        -0.02216,
+        -0.00235
+       ],
+       "ci_mcse": [
+        0.000116,
+        6.9e-05
+       ],
+       "normal_ci95": [
+        -0.02209,
+        -0.00233
+       ]
+      },
+      "joint": {
+       "diff": -0.01494,
+       "ci95": [
+        -0.02728,
+        -0.00283
+       ],
+       "ci_mcse": [
+        0.000147,
+        0.00013
+       ],
+       "normal_ci95": [
+        -0.0272,
+        -0.00268
+       ]
+      },
+      "brier": {
+       "diff": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "ci_mcse": [
+        0.0,
+        0.0
+       ],
+       "normal_ci95": [
+        0.0,
+        0.0
+       ]
+      },
+      "mgw": {
+       "diff": -0.01521,
+       "ci95": [
+        -0.02761,
+        -0.0031
+       ],
+       "ci_mcse": [
+        0.000143,
+        0.000136
+       ],
+       "normal_ci95": [
+        -0.02751,
+        -0.0029
+       ]
+      },
+      "rgf": {
+       "diff": 0.0005,
+       "ci95": [
+        -0.00024,
+        0.00125
+       ],
+       "ci_mcse": [
+        5e-06,
+        8e-06
+       ],
+       "normal_ci95": [
+        -0.00025,
+        0.00124
+       ]
+      }
+     },
+     "winner_identity_max_abs": 1.6653345369377348e-16,
+     "v6_identity": {
+      "rows": 5997,
+      "identical": 5997,
+      "examples_differing": [],
+      "pass": true
+     },
+     "js_parity": {
+      "n": 797,
+      "max_abs_diff": 1.6653345369377348e-16
+     }
+    },
+    "reported": {
+     "primary_contrast_v7_minus_cmp4_close_props_2022_2023": {
+      "n_outcome": 797,
+      "paired": {
+       "winLL": {
+        "diff": -0.00227,
+        "ci95": [
+         -0.00558,
+         0.00109
+        ],
+        "ci_mcse": [
+         4.7e-05,
+         3.5e-05
+        ],
+        "normal_ci95": [
+         -0.00564,
+         0.0011
+        ]
+       },
+       "bin7": {
+        "diff": -0.03012,
+        "ci95": [
+         -0.04438,
+         -0.01586
+        ],
+        "ci_mcse": [
+         0.000187,
+         0.000135
+        ],
+        "normal_ci95": [
+         -0.04457,
+         -0.01566
+        ]
+       },
+       "method": {
+        "diff": -0.02015,
+        "ci95": [
+         -0.03196,
+         -0.00837
+        ],
+        "ci_mcse": [
+         0.000145,
+         9.5e-05
+        ],
+        "normal_ci95": [
+         -0.03193,
+         -0.00838
+        ]
+       },
+       "joint": {
+        "diff": -0.03094,
+        "ci95": [
+         -0.04533,
+         -0.01655
+        ],
+        "ci_mcse": [
+         0.000172,
+         9.7e-05
+        ],
+        "normal_ci95": [
+         -0.04551,
+         -0.01636
+        ]
+       },
+       "brier": {
+        "diff": -0.00088,
+        "ci95": [
+         -0.00234,
+         0.00061
+        ],
+        "ci_mcse": [
+         2e-05,
+         1.7e-05
+        ],
+        "normal_ci95": [
+         -0.00237,
+         0.0006
+        ]
+       },
+       "mgw": {
+        "diff": -0.02743,
+        "ci95": [
+         -0.04204,
+         -0.01297
+        ],
+        "ci_mcse": [
+         0.000181,
+         0.00011
+        ],
+        "normal_ci95": [
+         -0.04215,
+         -0.01272
+        ]
+       },
+       "rgf": {
+        "diff": -0.00066,
+        "ci95": [
+         -0.00223,
+         0.00089
+        ],
+        "ci_mcse": [
+         2.3e-05,
+         1.4e-05
+        ],
+        "normal_ci95": [
+         -0.00223,
+         0.00091
+        ]
+       }
+      }
+     },
+     "props_open_v7_minus_v7np": {
+      "winLL": {
+       "diff": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "ci_mcse": [
+        0.0,
+        0.0
+       ],
+       "normal_ci95": [
+        0.0,
+        0.0
+       ]
+      },
+      "bin7": {
+       "diff": -0.01541,
+       "ci95": [
+        -0.02799,
+        -0.00312
+       ],
+       "ci_mcse": [
+        0.000136,
+        0.00014
+       ],
+       "normal_ci95": [
+        -0.02787,
+        -0.00295
+       ]
+      },
+      "method": {
+       "diff": -0.01167,
+       "ci95": [
+        -0.0215,
+        -0.00199
+       ],
+       "ci_mcse": [
+        0.000101,
+        7.8e-05
+       ],
+       "normal_ci95": [
+        -0.02138,
+        -0.00197
+       ]
+      },
+      "joint": {
+       "diff": -0.01541,
+       "ci95": [
+        -0.02799,
+        -0.00312
+       ],
+       "ci_mcse": [
+        0.000136,
+        0.00014
+       ],
+       "normal_ci95": [
+        -0.02787,
+        -0.00295
+       ]
+      },
+      "brier": {
+       "diff": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "ci_mcse": [
+        0.0,
+        0.0
+       ],
+       "normal_ci95": [
+        0.0,
+        0.0
+       ]
+      },
+      "mgw": {
+       "diff": -0.01565,
+       "ci95": [
+        -0.02826,
+        -0.00335
+       ],
+       "ci_mcse": [
+        0.000143,
+        0.000143
+       ],
+       "normal_ci95": [
+        -0.02814,
+        -0.00315
+       ]
+      },
+      "rgf": {
+       "diff": 0.00045,
+       "ci95": [
+        -0.00027,
+        0.00119
+       ],
+       "ci_mcse": [
+        5e-06,
+        8e-06
+       ],
+       "normal_ci95": [
+        -0.00028,
+        0.00118
+       ]
+      }
+     },
+     "props_none_v7_minus_v7np": {
+      "winLL": {
+       "diff": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "ci_mcse": [
+        0.0,
+        0.0
+       ],
+       "normal_ci95": [
+        0.0,
+        0.0
+       ]
+      },
+      "bin7": {
+       "diff": -0.01571,
+       "ci95": [
+        -0.02849,
+        -0.00315
+       ],
+       "ci_mcse": [
+        0.000153,
+        0.000155
+       ],
+       "normal_ci95": [
+        -0.02836,
+        -0.00307
+       ]
+      },
+      "method": {
+       "diff": -0.01118,
+       "ci95": [
+        -0.02083,
+        -0.00166
+       ],
+       "ci_mcse": [
+        0.000113,
+        5.1e-05
+       ],
+       "normal_ci95": [
+        -0.02073,
+        -0.00163
+       ]
+      },
+      "joint": {
+       "diff": -0.01571,
+       "ci95": [
+        -0.02849,
+        -0.00315
+       ],
+       "ci_mcse": [
+        0.000153,
+        0.000155
+       ],
+       "normal_ci95": [
+        -0.02836,
+        -0.00307
+       ]
+      },
+      "brier": {
+       "diff": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "ci_mcse": [
+        0.0,
+        0.0
+       ],
+       "normal_ci95": [
+        0.0,
+        0.0
+       ]
+      },
+      "mgw": {
+       "diff": -0.01595,
+       "ci95": [
+        -0.02877,
+        -0.00339
+       ],
+       "ci_mcse": [
+        0.000167,
+        0.000159
+       ],
+       "normal_ci95": [
+        -0.02863,
+        -0.00326
+       ]
+      },
+      "rgf": {
+       "diff": 0.00041,
+       "ci95": [
+        -0.00032,
+        0.00116
+       ],
+       "ci_mcse": [
+        5e-06,
+        8e-06
+       ],
+       "normal_ci95": [
+        -0.00032,
+        0.00115
+       ]
+      }
+     },
+     "loyo_2021_2023": {
+      "pi": {
+       "2021": 0.47,
+       "2022": 0.51,
+       "2023": 0.44
+      },
+      "paired": {
+       "winLL": {
+        "diff": 0.0,
+        "ci95": [
+         0.0,
+         0.0
+        ],
+        "ci_mcse": [
+         0.0,
+         0.0
+        ],
+        "normal_ci95": [
+         0.0,
+         0.0
+        ]
+       },
+       "bin7": {
+        "diff": -0.01395,
+        "ci95": [
+         -0.02345,
+         -0.00444
+        ],
+        "ci_mcse": [
+         0.000121,
+         5.7e-05
+        ],
+        "normal_ci95": [
+         -0.02348,
+         -0.00443
+        ]
+       },
+       "method": {
+        "diff": -0.0106,
+        "ci95": [
+         -0.01811,
+         -0.00329
+        ],
+        "ci_mcse": [
+         8.7e-05,
+         6.7e-05
+        ],
+        "normal_ci95": [
+         -0.01807,
+         -0.00313
+        ]
+       },
+       "joint": {
+        "diff": -0.01395,
+        "ci95": [
+         -0.02345,
+         -0.00444
+        ],
+        "ci_mcse": [
+         0.000121,
+         5.7e-05
+        ],
+        "normal_ci95": [
+         -0.02348,
+         -0.00443
+        ]
+       },
+       "brier": {
+        "diff": 0.0,
+        "ci95": [
+         0.0,
+         0.0
+        ],
+        "ci_mcse": [
+         0.0,
+         0.0
+        ],
+        "normal_ci95": [
+         0.0,
+         0.0
+        ]
+       },
+       "mgw": {
+        "diff": -0.01405,
+        "ci95": [
+         -0.02361,
+         -0.00444
+        ],
+        "ci_mcse": [
+         0.00014,
+         6.2e-05
+        ],
+        "normal_ci95": [
+         -0.02365,
+         -0.00445
+        ]
+       },
+       "rgf": {
+        "diff": 0.00071,
+        "ci95": [
+         0.0001,
+         0.00135
+        ],
+        "ci_mcse": [
+         5e-06,
+         6e-06
+        ],
+        "normal_ci95": [
+         8e-05,
+         0.00135
+        ]
+       }
+      }
+     },
+     "decShift_forward_chained": {
+      "2022": {
+       "decShift": 0.11,
+       "mgw": 0.9071,
+       "n": 413,
+       "years": [
+        2021
+       ]
+      },
+      "2023": {
+       "decShift": 0.01,
+       "mgw": 0.9189,
+       "n": 824,
+       "years": [
+        2021,
+        2022
+       ]
+      }
+     },
+     "power_info_if_a_look_were_run": {
+      "primary_7bin_v7_minus_cmp4": {
+       "gate_score": "data/derived/v7/gate_train_score.json",
+       "contrast": "primary",
+       "metric": "bin7",
+       "n_gate": 797,
+       "n_look": 830,
+       "se_gate_normal": 0.007375,
+       "se_look": 0.007227,
+       "mde_80": 0.02024,
+       "effect": -0.03012,
+       "effect_source": "gate point estimate",
+       "power": 0.986,
+       "underpowered": false
+      },
+      "props_7bin_v7_minus_v7np": {
+       "gate_score": "data/derived/v7/gate_train_score.json",
+       "contrast": "props",
+       "metric": "bin7",
+       "n_gate": 797,
+       "n_look": 830,
+       "se_gate_normal": 0.006256,
+       "se_look": 0.00613,
+       "mde_80": 0.01717,
+       "effect": -0.01494,
+       "effect_source": "gate point estimate",
+       "power": 0.683,
+       "underpowered": false
+      }
+     },
+     "note": "reported rows, never decisive; no look follows from them"
+    },
+    "tests": {
+     "file": "data/derived/v7/tests/test_v7.json",
+     "passes": 18,
+     "fails": 0,
+     "suite": "data/derived/v7/tests/_status.txt: 37 of 37 logs rc=0 (tolerated failing tests: none)"
+    },
+    "reading": "One check fails, and only marginally: C1's close-regime winner 'not worse' bound (cycle 1's ML v2 close stack vs the honest v4 package's close-trained MoE stack): -0.0024, bootstrap 95% CI [-0.0054, +0.00054] with a Monte Carlo SE of 0.000029 on the upper bound, within 2 MC SE of +0.0005, so the clustered normal bound decides: +0.00060 > +0.0005 -> FAIL. Every other check passes: open and no-line winner, 7-bin and method in all three regimes (C1), and all of cycle 2 (7-bin -0.0149 [-0.0273, -0.0028], method -0.0122, round given a finish +0.0005 [-0.0002, +0.0013], P(decision) 47.5% vs 48.1% observed, winner bit-identical and equal to the v6 package's on 5,997 rows, JS = Python 1.7e-16)."
+   },
+   "prereg": null,
+   "prereg_note": "not written: the binding train gate failed (task rule and V6_V10_PLAN 6.2 item 4: the train gate must already have passed). No validation look is pre-registered or run; validation stays null.",
+   "decision": {
+    "kept": false,
+    "rule": "train gate (binding, run once under the protocol committed in 78b01cf) failed; no 2024-25 look",
+    "against": "the honest v4 package (cmp4) for C1; v7 with props off for C2",
+    "basis": "One check fails, and only marginally: C1's close-regime winner 'not worse' bound (cycle 1's ML v2 close stack vs the honest v4 package's close-trained MoE stack): -0.0024, bootstrap 95% CI [-0.0054, +0.00054] with a Monte Carlo SE of 0.000029 on the upper bound, within 2 MC SE of +0.0005, so the clustered normal bound decides: +0.00060 > +0.0005 -> FAIL. Every other check passes: open and no-line winner, 7-bin and method in all three regimes (C1), and all of cycle 2 (7-bin -0.0149 [-0.0273, -0.0028], method -0.0122, round given a finish +0.0005 [-0.0002, +0.0013], P(decision) 47.5% vs 48.1% observed, winner bit-identical and equal to the v6 package's on 5,997 rows, JS = Python 1.7e-16).",
+    "action": "src/ is unchanged (v4 = 4.0.0, the latest kept version); the frozen candidate versions/v7 is renamed versions/v7-gate-failed (versions/v7 is a compatibility symlink so the protocol's paths resolve); src/ml/blend.js stays 1.3.0 (the props path is off unless params.blend.props is on; 1.2.1 behaviour bit for bit otherwise, tests/test_blend121.js and test_v7.js); no fwd version is pre-registered",
+    "context": "V6_V10_PLAN 7.1 item 10 (a): cycle 1's parts could return only through v7's own gate; they did not pass it (by a marginal close-regime bound), so they stay out. Cycle 2's own checks passed, but cycle 2 as planned sits on cycle 1's winner and S2 cells, so it cannot enter alone without a new design and a new protocol. Nothing here was computed on 2024-25 or 2026.",
+    "decided_at": "2026-11-07T08:38:05+00:00"
+   },
+   "known_exposures": [
+    "the v4 simulator's EM judging weights were fit on judges' rounds through 2026-10 (incl. 2024-25 and the vault); v7 and cmp4 share them (one simulator); irrelevant to the train-only gate in kind",
+    "the props pool, S2 cells and ML v2 stacks were all scored on 2024-25 in earlier research (a v7 look would have been a confirmation look)"
+   ]
   }
  ],
  "vault_audits": [

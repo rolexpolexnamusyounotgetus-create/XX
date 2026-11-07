@@ -254,6 +254,16 @@ if (SPLIT === "val" && !DEV) {
     console.error(`evalv: versions/${VERSION} no longer matches the history entry's hashes; freeze a new version instead.`);
     process.exit(3);
   }
+  // v7 on (V6_V10_PLAN 6.2 item 4): no look without a passed train gate and a pre-registration written into the entry first
+  if (e && (e.status === "gate_failed" || (e.train_gate && e.train_gate.result === "FAIL"))) {
+    console.error(`evalv: ${VERSION} failed its binding train gate (version_history.json status ${e.status}); a validation look is not allowed.`);
+    process.exit(3);
+  }
+  const maj = +String(VERSION).replace(/^v/, "").split(".")[0];
+  if (maj >= 7 && !(e && e.prereg)) {
+    console.error(`evalv: ${VERSION} has no pre-registration in data/derived/version_history.json; write it (after a passed train gate) before the look.`);
+    process.exit(3);
+  }
 }
 
 const E0 = require(path.join(ENGINE_DIR, "engine3.js"));

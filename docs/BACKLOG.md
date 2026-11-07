@@ -64,6 +64,17 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- ENGINE v7 GATE FAILED (Nov 7, ~08:36 UTC; docs/CHANGELOG.md v7; version_history.json v7 `status: gate_failed`, `train_gate`;
+  versions/v7-gate-failed/): v7 = the v4 simulator + predict() with cycle 1 (ML v2 head stacks, S2 pool) re-bundled and cycle 2
+  (the verified props pool; finishing not adopted by its verifier, not in v7). Binding gate run once under data/derived/v7/
+  gate_protocol.json (committed 78b01cf first) against the honest v4 package (cmp4: MoE expert stack with this simulator's
+  fold-honest rows, per-year stackers, S / SM cells): 32 of 33 checks pass; FAIL on cycle 1's close-regime winner "not worse"
+  bound (-0.0024 [-0.0054, +0.00054]; marginal, normal bound +0.00060 > +0.0005). Cycle 2's own checks all pass (7-bin -0.0149
+  [-0.0273, -0.0028], method -0.0122, round given a finish +0.0005, P(decision) 47.5% vs 48.1%). No pre-registration, no look,
+  no 2024-25 number; src/ stays v4; tools/evalv.js refuses a look for a gate-failed or unregistered v7+ entry. Cycle 1's parts
+  stay out (they did not pass v7's gate); cycle 2 as planned sits on cycle 1's winner and S2 cells. A next attempt needs a new
+  design and a new protocol committed before its gate; this run must not be used to pick the comparator or the tolerance.
+  Capability kept (off by default): src/ml/blend.js 1.3.0 props path (`params.blend.props`, raw-price de-vig via propspool.js).
 - v6 REVIEW DONE (Nov 7, ~08:00 UTC; docs/CHANGELOG.md "v6 review"; version_history.json v6 `review`): every issue reproduced,
   the real ones fixed, no new version (no scored backtest number of the v6 package changes; re-deciding v6 on 2024-25 would be
   selection). The v6 TRAIN GATE IS RELABELLED "failed as first run; passes only under a comparator chosen after the failure"
