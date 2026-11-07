@@ -921,6 +921,7 @@
       if (side[tn] == null) continue;
       var r = recipe[tn], x = +side[tn], z, q, ti = tix[r.task];
       if (ti == null || eta[ti] == null) throw new Error("FightEngine embed: no task predictor for " + r.task);
+      if (!finNum(eta[ti]) || !finNum(x)) continue;   // v5.0.1: a non-finite predictor (or target) is missing: the target stays unblended
       if (tn === "ctrl") z = Math.log(Math.max(x / 60, 1e-6));
       else if (tn === "kd_h") z = Math.log(Math.min(Math.max(x, 1e-6), 1 - 1e-6));
       else if (r.link === "logit") { q = Math.min(Math.max(x, 1e-6), 1 - 1e-6); z = Math.log(q / (1 - q)); }
@@ -1056,25 +1057,34 @@
   function durSide(m, prof, i, opts, dp, lvlDiv) {
     var rost = DURROSTER && prof.slug && DURROSTER[prof.slug] && (!DURASOF || !m.date || String(m.date) >= DURASOF) ? DURROSTER[prof.slug] : null;
     var od = opts.dur || null, rec = (od && od[SIDE[i]]) || prof.dur || rost || null;
-    var age = m.ages ? m.ages[i] : ageAt(prof, m.date), cov = null, src = rec ? "record" : "computed";
-    var chinCov = rec && rec.chin_cov != null ? +rec.chin_cov : null, powCov = rec && rec.pow_cov != null ? +rec.pow_cov : null;
+    var age = m.ages ? m.ages[i] : ageAt(prof, m.date), cov = null;
+    // v5.0.1: a record field counts only when it is a finite positive number (a string 'x', NaN, 0 or a negative value is
+    // missing: it made the knockdown hazard NaN and hung simulate). src is "record" only when all four fields came from the
+    // record, "partial" when some did, "computed" when none did; backtest harnesses refuse anything but "record".
+    var nRec = 0;
+    function rf(k) { if (rec && posNum(rec[k])) { nRec++; return +rec[k]; } return null; }
+    var chinCov = rf("chin_cov"), powCov = rf("pow_cov");
     if (chinCov == null || powCov == null) {
       cov = durCovariates(dp, prof, age, m.date);
       if (chinCov == null) chinCov = cov.chin;
       if (powCov == null) powCov = cov.pow;
     }
-    var chinRe = rec && rec.chin_re != null ? +rec.chin_re : null, powRe = rec && rec.pow_re != null ? +rec.pow_re : null;
+    var chinRe = rf("chin_re"), powRe = rf("pow_re"), comp = { chin: false, pow: false };
     if ((chinRe == null || powRe == null) && dp.fallbackEB) {
       // walk-forward empirical Bayes from career sums (C, else the decayed S): opponent effects taken as 1 and 90% of
-      // head strikes standing (research/model_durability.md section 1)
+      // head strikes standing (research/model_durability.md section 1). v5.0.1: re-levelled by normComputedChin / Pow (the
+      // record path's mean over the computed path's, fit on 2019-2023 backtest sides, tools/durlevel_fit.js): the raw
+      // formula ran about 18% below the record path the knockdown levels were matched on (v5 review).
       var C = prof.C ? (Array.isArray(prof.C) ? (function () { var o = {}, ks = prof.keys || (DB && DB.meta && DB.meta.keys) || KEYS; for (var q = 0; q < ks.length; q++) o[ks[q]] = +prof.C[q] || 0; return o; })() : prof.C) : sums(prof);
       var sh = dp.standShare != null ? dp.standShare : 0.9;
-      if (chinRe == null) chinRe = ((dp.alphaChin || 3) + (+C.okd || 0)) / ((dp.alphaChin || 3) + lvlDiv * chinCov * sh * (+C.oh_lnd || 0));
-      if (powRe == null) powRe = ((dp.alphaPow || 2.5) + (+C.kd || 0)) / ((dp.alphaPow || 2.5) + lvlDiv * powCov * sh * (+C.h_lnd || 0));
+      var ncC = posNum(dp.normComputedChin) ? +dp.normComputedChin : 1, ncP = posNum(dp.normComputedPow) ? +dp.normComputedPow : 1;
+      if (chinRe == null) { chinRe = ncC * ((dp.alphaChin || 3) + (+C.okd || 0)) / ((dp.alphaChin || 3) + lvlDiv * chinCov * sh * (+C.oh_lnd || 0)); comp.chin = true; }
+      if (powRe == null) { powRe = ncP * ((dp.alphaPow || 2.5) + (+C.kd || 0)) / ((dp.alphaPow || 2.5) + lvlDiv * powCov * sh * (+C.h_lnd || 0)); comp.pow = true; }
     }
-    if (chinRe == null) chinRe = 1;
-    if (powRe == null) powRe = 1;
-    return { src: src, age: age, chin_re: chinRe, pow_re: powRe, chin_cov: chinCov, pow_cov: powCov, cov: cov };
+    if (!posNum(chinRe)) chinRe = 1;
+    if (!posNum(powRe)) powRe = 1;
+    var src = nRec === 4 ? "record" : (nRec > 0 ? "partial" : "computed");
+    return { src: src, nRec: nRec, age: age, chin_re: chinRe, pow_re: powRe, chin_cov: chinCov, pow_cov: powCov, cov: cov, computed: comp };
   }
   function applyDurability(m, pa, pb, opts) {
     var p = m.p, dp = p.durability || {}, i, j, k;
@@ -1138,6 +1148,35 @@
     var m = matchupML(profA, profB, opts);
     if (m.p.components && m.p.components.durability) applyDurability(m, resolve(profA), resolve(profB), opts);
     if (compOn(m.p, "preufc")) applyPreUFC(m, resolve(profA), resolve(profB), opts);   // v5 merge step 4
+    checkTables(m);                                                                      // v5.0.1
+    return m;
+  }
+  // v5.0.1 (v5 review): every rate table simulate() reads must be finite and >= 0. A NaN rate made the event clock NaN, so the
+  // round never ended (or every finish was switched off and the fight ended at t = NaN); a bad knob, record or embedding
+  // input now fails here with the field named. Called at the end of matchup() and again after the styles_sos hook.
+  var RATE_FIELDS = ["dRate", "cRate", "gRate", "gBot", "tdD", "tdCC", "tdCU", "tdO", "tdOC", "upPos", "swPos", "gPos", "subTPos",
+    "subBPos", "subOPos", "subO", "gillo", "kd", "dw", "gnp", "stko", "drain", "accO", "mixC", "finR", "kdPace", "clE", "clBreak",
+    "clSwap", "instO", "refO", "pCtl", "subBotO", "subStandO"];
+  var DYN_FIELDS = ["formPace", "formOut", "formAcc", "vol", "roundPace", "arPhi", "arSd", "arInn", "accArPhi", "accArSd", "accArInn",
+    "accLevel", "kdP", "conv", "stkoR", "gnpR", "pace", "tdR", "tdLevel"];
+  function badNum(v) { return typeof v !== "number" || !(v >= 0) || v === Infinity; }
+  function checkField(name, v) {
+    if (v == null) return;
+    if (typeof v === "number") { if (badNum(v)) throw new Error("FightEngine: matchup table " + name + " = " + v + " (must be a finite number >= 0)"); return; }
+    if (ArrayBuffer.isView(v) || Array.isArray(v)) {
+      for (var q = 0; q < v.length; q++) {
+        var x = v[q];
+        if (Array.isArray(x) || ArrayBuffer.isView(x)) checkField(name + "[" + q + "]", x);
+        else if (badNum(x)) throw new Error("FightEngine: matchup table " + name + "[" + q + "] = " + x + " (must be a finite number >= 0)");
+      }
+    }
+  }
+  function checkTables(m) {
+    var q;
+    for (q = 0; q < RATE_FIELDS.length; q++) checkField(RATE_FIELDS[q], m[RATE_FIELDS[q]]);
+    checkField("pace", m.pace);
+    if (m.dyn) for (q = 0; q < DYN_FIELDS.length; q++) checkField("dyn." + DYN_FIELDS[q], m.dyn[DYN_FIELDS[q]]);
+    if (!finNum(m.judgePower)) throw new Error("FightEngine: judgePower " + m.judgePower + " is not a finite number");
     return m;
   }
 
@@ -1176,11 +1215,17 @@
     if (!rec) return null;
     var nU = rec.n_ufc != null ? +rec.n_ufc : (prof && prof.n != null ? +prof.n : null);
     if (nU == null || !isFinite(nU) || nU > (q.maxUfc != null ? +q.maxUfc : 3)) return null;
+    // v5.0.1: a record with a count that is not a finite number >= 0 is treated as missing (a negative KO count made the
+    // smoothed rate negative and the knockdown hazard NaN)
+    function cnt(v) { return v == null || v === "" ? 0 : (finNum(v) && +v >= 0 ? +v : NaN); }
+    if (!(nU >= 0) || !isFinite(cnt(rec.n)) || !isFinite(cnt(rec.ko_w)) || !isFinite(cnt(rec.sub_w)) || !isFinite(cnt(rec.ko_l))) return null;
     var sm = q.smooth || {}, rf = q.ref || {}, ex = q.exp || {}, n = Math.max(0, +rec.n || 0);
     var f = Math.exp(-nU / (q.tau || 8));
     var ko = ((+rec.ko_w || 0) + sm.ko) / (n + 2), su = ((+rec.sub_w || 0) + sm.sub) / (n + 2), kl = ((+rec.ko_l || 0) + sm.kol) / (n + 2);
-    return { pow: Math.pow(ko / rf.ko, ex.pow * f), sub: Math.pow(su / rf.sub, ex.sub * f), chin: Math.pow(kl / rf.kol, ex.chin * f),
+    var out = { pow: Math.pow(ko / rf.ko, ex.pow * f), sub: Math.pow(su / rf.sub, ex.sub * f), chin: Math.pow(kl / rf.kol, ex.chin * f),
       n_ufc: nU, fade: f, rates: { ko: ko, sub: su, kol: kl } };
+    if (!posNum(out.pow) || !posNum(out.sub) || !posNum(out.chin)) return null;   // v5.0.1: rates must be > 0
+    return out;
   }
   function applyPreUFC(m, pa, pb, opts) {
     var p = m.p, q = p.preufc || {}, sc = q.scale || {}, ss = p.components.styles_sos, i, j, k;
@@ -1288,6 +1333,8 @@
     var shared = (sF || 0) + J.sharedSd * Math.sqrt(1 - rho) * rng.normal(), n108 = 0, kc = J.t108kd || 0;
     for (var j = 0; j < 3; j++) {
       var z = dStr * tS[j] + dGr * tG[j] + dDm * tP[j] + shared + J.indSd * rng.normal();
+      // v5.0.1 (v5 review): a NaN score went to corner B (z > 0 is false); refuse to score the round instead
+      if (!isFinite(z)) throw new Error("FightEngine.judgeRound: judge score " + z + " is not finite (check the judge power and the round's damage inputs)");
       var aw = z > 0, mg = aw ? z : -z, kdE = aw ? dKd : -dKd;
       var big = mg > J.t108 - kc * (kdE <= 0 ? 0 : (kdE >= 2 ? 2 : kdE));
       var scA = aw ? 10 : (big ? 8 : 9), scB = aw ? (big ? 8 : 9) : 10;
@@ -1359,7 +1406,8 @@
     if (!set || !set.tables) return null;
     var ys = Object.keys(set.tables).map(Number).filter(isFinite).sort(function (a, b) { return a - b; });
     if (!ys.length) return null;
-    var y = date ? +String(date).slice(0, 4) : ys[ys.length - 1], pick = null;
+    var dn = date ? normDate(date) : null;   // v5.0.1: a Date object gave NaN here (no table)
+    var y = dn ? +dn.slice(0, 4) : ys[ys.length - 1], pick = null;
     for (var i = 0; i < ys.length; i++) if (ys[i] <= y) pick = ys[i];
     return pick == null ? null : set.tables[String(pick)];
   }
@@ -1482,6 +1530,7 @@
     for (var j = 0; j < 3; j++) {
       var e = logisticOf(rng.normal()), ef = OF.sel[j];
       var eta = Math.exp(ef[0]) * (Math.exp(ef[1]) * V + Math.exp(ef[2]) * Kx + Math.exp(ef[3]) * G + u) + e;
+      if (!isFinite(eta)) throw new Error("FightEngine.officialsRound: judge score " + eta + " is not finite");   // v5.0.1: NaN went to corner B
       var scA, scB;
       if (r2.u() < off.p1010) { scA = 10; scB = 10; }
       else {
@@ -1497,6 +1546,7 @@
   }
 
   // ------------------------------------------------------------------ simulate one fight
+  var MAX_EVENTS_ROUND = 200000;   // v5.0.1: backstop event cap per round (a real round has a few hundred events)
   function simulate(m, rng, trace) {
     var p = m.p, K = m.k, F = p.form, J = p.judge, nR = m.rounds, i, j, k;
     var dRate = m.dRate, cRate = m.cRate, tdD = m.tdD, tdCC = m.tdCC, tdCU = m.tdCU, gPos = m.gPos, gBot = m.gBot, gEdge = m.gEdge;
@@ -1553,7 +1603,7 @@
 
     for (var r = 0; r < nR; r++) {
       for (k = 0; k < 2 * NS; k++) st[k] = 0;
-      var t = 0, state = 0, ctl = -1, pos = 0, downed = -1, kdLoc = 0;
+      var t = 0, state = 0, ctl = -1, pos = 0, downed = -1, kdLoc = 0, nEv = 0;
       var ev = trace ? [] : null;
       var rp = sharedPace * lnorm(rng, DY ? DY.roundPace : F.roundPace);
       if (DY) {
@@ -1621,6 +1671,10 @@
           }
         }
         var Rs = 0; for (k = 0; k < n; k++) Rs += evR[k];
+        // v5.0.1 (v5 review): a NaN or infinite total rate made t NaN, so the horizon test never fired and the round never
+        // ended; matchup() validates the tables, this is the backstop for anything computed in the loop, with an event cap
+        if (!(Rs >= 0 && Rs < Infinity)) throw new Error("FightEngine.simulate: total event rate " + Rs + " in round " + (r + 1) + " (state " + state + ")");
+        if (++nEv > MAX_EVENTS_ROUND) throw new Error("FightEngine.simulate: more than " + MAX_EVENTS_ROUND + " events in round " + (r + 1));
         var dt = rng.expo() / Rs;
         var horizon = 300;
         if (hurtEnd[0] > t && hurtEnd[0] < horizon) horizon = hurtEnd[0];
@@ -2252,7 +2306,7 @@
   function matchupStylesSOS(profA, profB, opts) {
     var m = matchup(profA, profB, opts);
     var c = m.p && m.p.components, on = !!(c && c.styles_sos), SS = on ? getSS() : null;
-    if (SS) SS.apply(m, resolve(profA), resolve(profB), opts || {}, KEYS);
+    if (SS) { SS.apply(m, resolve(profA), resolve(profB), m.opts || opts || {}, KEYS); checkTables(m); }   // v5.0.1: m.opts carries the canonical date
     else if (on) m.stylesSOS = { missing: true };   // flag on but src/styles_sos.js not loaded: tables unchanged, flagged
     return m;
   }
