@@ -48,6 +48,17 @@ def logit(p, eps=1e-6):
     return np.log(p / (1 - p))
 
 
+def pd_isnan(v):
+    try:
+        return v is None or (isinstance(v, float) and math.isnan(v)) or bool(np.isnan(v))
+    except TypeError:
+        return False
+
+
+def none_nan(v):
+    return None if pd_isnan(v) else float(v)
+
+
 def lgb_export(m):
     """LightGBM model -> list of trees: {f: [...], t: [...], l: [...], r: [...], dl: [...], mt: [...], v: [...]} where
     internal node i splits on feature f[i] at threshold t[i] (x <= t -> left), children >= 0 are internal nodes and
@@ -217,6 +228,70 @@ def main():
                     "n_train": int(tr.sum())},
            "columns": names, "blend_w": {"lr": w[0], "lgb": w[1], "xgb": w[2]},
            "lgb": exp["lgb"], "xgb": exp["xgb"], "xgb_base_score": [float(b) for b in xbs], "vectors": vec}
+    # ---- live design-row builder spec (src/ml/ml2trees.js designRow / designFromRoster) and its checks
+    import ml as M
+    import build_db as BDB
+    pk = M2.jload("ml2.json")["page_model"]
+    page_terms = {t["name"]: t for t in pk["terms"]}
+    dcols = [c[2:] for c in names if c.startswith("d_")]
+    extra_terms = [dict(t) for t in M2.BASE_SPECS if t["name"] in dcols and t["name"] not in page_terms]
+    MK = ["slpm", "sapm", "head_pm", "ohead_pm", "power", "chin", "td15", "otd15", "ctrl", "octrl", "sub15", "osub15",
+          "ground_pm", "oground_pm", "acc", "def", "td_acc", "td_def"]
+    need = sorted(set(M.GBM_SIDE) | set(MK) | {t.get(k) for t in extra_terms for k in ("key", "u", "v") if t.get(k)} |
+                  {"southpaw", "orthodox", "switch"})
+    mlr = M2.jload("ml.json")["roster"]
+    extra_keys = [k for k in need if k not in pk["keys"]]
+    roster_extra = {slug: [fx.get(k) for k in extra_keys] for slug, fx in mlr.items() if slug in pk["roster"]}
+    # live priors for the matchup terms: league rates of the 5 years before the last dev fight (2026 dropped at parse)
+    fights, people, _ = M.load_all()
+    snap = max(f.date for f in fights)
+    assert snap < dt.date(2026, 1, 1)
+    pri = BDB.build_priors(fights, dt.date(snap.year - 5, snap.month, min(snap.day, 28)), None)
+    KI = M.KI
+
+    def pconst(P):
+        pv = M.prior_vector(P)
+        h_mu = max(pv[KI["h_lnd"]], 1e-9)
+        return {"sig_mu": max(float(pv[M.SIG_L].sum()), 1e-9), "h_mu": float(h_mu), "td_mu": max(15 * float(pv[KI["td_lnd"]]), 1e-9),
+                "ctrl_mu": max(float(pv[KI["ctrl"]]) / 60.0, 1e-9), "sub_mu": max(15 * float(pv[KI["sub_att"]]), 1e-9),
+                "g_mu": max(float(pv[KI["g_lnd"]]), 1e-9), "kdph": float(pv[KI["kd"]] / h_mu)}
+    priors_live = {d: pconst(P) for d, P in pri.items()}
+    # check A: matchup terms, JS formula vs ml.py matchup_features (40 cases from table sides, live priors)
+    mcases = []
+    rows2 = rng.choice(np.flatnonzero(te), 40, replace=False)
+    divs = sorted(priors_live)
+    for j, i in enumerate(rows2):
+        fa = {k: float(T["A_" + k].iloc[i]) for k in MK}
+        fb = {k: float(T["B_" + k].iloc[i]) for k in MK}
+        d = divs[j % len(divs)]
+        out = M.matchup_features(fa, fb, M.prior_pack(pri, d))
+        mcases.append({"fa": fa, "fb": fb, "division": d, "m": {k: float(v) for k, v in out.items()}})
+    # check B: full design rows from their parts (table sides, the logistic design values, matchup values, context)
+    bcases = []
+    for i in rows[:40]:
+        r = T.iloc[i]
+        sa = {k: (None if pd_isnan(r["A_" + k]) else float(r["A_" + k])) for k in M.GBM_SIDE}
+        sb = {k: (None if pd_isnan(r["B_" + k]) else float(r["B_" + k])) for k in M.GBM_SIDE}
+        dv = {c: float(X[c].iloc[i]) for c in dcols}
+        mv = {c: float(r["M_" + c]) for c in M.M_ANTI + M.M_SYM}
+        ctx = {c: float(r[c]) for c in M.CTX}
+        ex = {"nA": float(r["nA"]), "nB": float(r["nB"]), "A_mr_var": none_nan(r["A_mr_var"]), "B_mr_var": none_nan(r["B_mr_var"]),
+              "A_rsd_whr_rounds": none_nan(r["A_rsd_whr_rounds"]), "B_rsd_whr_rounds": none_nan(r["B_rsd_whr_rounds"]),
+              "A_pre_ok": float(r["A_pre_ok"]), "B_pre_ok": float(r["B_pre_ok"]), "mr_ok": float(r["mr_ok"])}
+        bcases.append({"id": str(r["fid"]), "sideA": sa, "sideB": sb, "d": dv, "m": mv, "ctx": ctx, "ex": ex,
+                       "g0": [None if math.isnan(v) else float(v) for v in A0[i]], "g1": [None if math.isnan(v) else float(v) for v in A1[i]]})
+    builder = {"side_keys": list(M.GBM_SIDE), "d_cols": dcols, "extra_terms": extra_terms, "m_anti": list(M.M_ANTI),
+               "m_sym": list(M.M_SYM), "ctx": list(M.CTX), "matchup_keys": MK, "extra_keys": extra_keys,
+               "roster_extra": roster_extra, "priors": priors_live, "priors_window": [str(dt.date(snap.year - 5, snap.month, min(snap.day, 28))), str(snap)],
+               "mr_params": pk["mr_params"], "check_matchup": mcases, "check_design": bcases,
+               "note": "a_/b_ side levels (age: a missing DOB takes the opponent's age, else 30); d_ = the logistic design "
+                       "values (A minus B; ml2.js termValues) plus the ml.py base terms the logistic dropped (extra_terms, "
+                       "from ml.json's roster: roster_extra); m_ = ml.py matchup_features with the live division priors "
+                       "(antisymmetric terms flip sign with the corners, symmetric ones do not); context lbs / women / title "
+                       "/ five / catch; extras nprior, market-rating variance at the fight (min(sd^2 + tau^2 years since "
+                       "the last rated fight, 2 v0)), round-WHR sd, pre-UFC presence, min prior fights, both rated"}
+    doc["builder"] = builder
+
     def _d(o):
         if isinstance(o, (np.floating,)):
             return float(o)
