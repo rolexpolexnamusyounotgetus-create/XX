@@ -12,7 +12,13 @@
      - profiles: backtest_dev's frozen pre-fight snapshots;
      - priors: data/derived/mlcal_priors_asof.json[year] (division rates from the 5 years before Jan 1 of the fight's year);
      - learned rates: data/derived/mlrates_oof.json (each year predicted by a model trained on earlier years), passed as
-       opts.ml = { A, B } so no live model is consulted.
+       opts.ml = { A, B } so no live model is consulted;
+     - v5 merge step 5: the v5 components' walk-forward inputs for whichever components are on (durability records + train
+       NORM, tools/durrec.js; SOS pairs, tools/sosrec.js; embed / oppadj / preufc, tools/mlpathrec.js), given in the A-B
+       order (FightBlend.swapOpts swaps them for the B-A run) and asserted applied on both runs. Without them the engine
+       would fall back to live fits that include 2024-26. REBUILD (Calibrate stage): rerun plain -> eval targets -> pilot
+       -> anchor -> eval report only after the final component flags are fixed (the cells, mrWeight and slope0 belong to
+       one engine).
    The anchor stage solves the per-fight skill offset (src/ml/blend.js anchor) so the simulator's own P(A) matches the
    out-of-fold blend target from tools/blend_anchor_eval.js (targets.json), starting from the plain run at s = 0.
    Output: out/blend_anchor/<stage>_part<i>of<n>.json, merged to out/blend_anchor/<stage>.json (gitignored).
@@ -24,6 +30,9 @@ const crypto = require("crypto");
 const ROOT = path.join(__dirname, "..");
 const E = require(path.join(ROOT, "src/engine3.js"));
 const FB = require(path.join(ROOT, "src/ml/blend.js"));
+const DR = require(path.join(ROOT, "tools/durrec.js"))(E, ROOT);      // v5 durability walk-forward records
+const SR = require(path.join(ROOT, "tools/sosrec.js"))(E, ROOT);      // v5 walk-forward SOS pairs
+const XR = require(path.join(ROOT, "tools/mlpathrec.js"))(E, ROOT);   // v5 embed / oppadj / preufc inputs
 
 const args = process.argv.slice(2), mode = args[0];
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
@@ -61,7 +70,14 @@ function setup(f) {
     seeds: [seedOf(f.id, 1), seedOf(f.id, 2)] };
   const r = OOF.fights[f.id];
   o.ml = r ? { A: obj(r.A), B: obj(r.B) } : false;
+  // v5 inputs in the A-B order (symSim's B-A run swaps them with FightBlend.swapOpts)
+  if (DR.on(o.params)) DR.apply(o, f.id, false);
+  if (SR.on(o.params)) SR.apply(o, f, false);
+  XR.apply(o, f, false, o.params);
   return { A, B, o, ml: !!r };
+}
+function assertV5(r, f, o) {   // both corner orders got their walk-forward inputs
+  for (const m of [r.m, r.m2]) { if (!m) continue; DR.assertApplied(m, f.id, o.params); SR.assertApplied(m, f.id, o.params); XR.assertApplied(m, f.id, o.params); }
 }
 function pack(r) {
   return { p: r5(r.p), pA: r5(r.pA), pB: r5(r.pB), pD: r5(r.pD), cells: r.cells.map(r5), cellMin: r.cellMin.map((x) => x == null ? null : Math.round(x * 1e3) / 1e3),
@@ -80,7 +96,11 @@ if (mode === "pilot") {
   const t0 = Date.now();
   for (const f of pick) {
     const s = setup(f), z = [];
-    for (const off of [offs[0], 0, offs[1]]) z.push(FB.logit(Math.min(0.995, Math.max(0.005, FB.symSim(E, s.A, s.B, s.o, SIMS, s.o.seeds, off, CFG.anchor, true).p))));
+    for (const off of [offs[0], 0, offs[1]]) {
+      const rr = FB.symSim(E, s.A, s.B, s.o, SIMS, s.o.seeds, off, CFG.anchor, true);
+      assertV5(rr, f, s.o);
+      z.push(FB.logit(Math.min(0.995, Math.max(0.005, rr.p))));
+    }
     rows.push(z);
   }
   const sl = rows.map((z) => (z[2] - z[0]) / (offs[1] - offs[0]));
@@ -105,6 +125,7 @@ for (const f of fights) {
   try {
     if (STAGE === "plain") {
       const r = FB.symSim(E, s.A, s.B, s.o, SIMS, s.o.seeds, 0, CFG.anchor, true);
+      assertV5(r, f, s.o);
       res[f.id] = pack(r);
       res[f.id].ml = s.ml;
     } else {
@@ -115,6 +136,7 @@ for (const f of fights) {
       base.rates = null;
       s.o.anchorSims = SIMS;
       const a = FB.anchor(E, s.A, s.B, s.o, tg, CFG, base);
+      assertV5(a.sim, f, s.o);
       res[f.id] = pack(a.sim);
       res[f.id].s = Math.round(a.s * 1e4) / 1e4; res[f.id].target = r5(tg); res[f.id].iters = a.iters; res[f.id].slope = r5(a.slope);
       res[f.id].hist = a.history.map((h) => [Math.round(h.s * 1e4) / 1e4, r5(h.p)]);
