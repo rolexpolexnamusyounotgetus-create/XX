@@ -116,7 +116,7 @@ const V6S = readJSON("data/derived/v6_stacks.json");
     catch (e) { if (/explicit opts.lineKind/.test(String(e.message))) refused++; }
   }
   check("routing: open -> open-trained, close -> close-trained, none -> no-line ML v2 stack; forward-chained fit of the fight's year", route === routeN, route + "/" + routeN);
-  check("JS stacks = manual stack = tools/v6_prep.py per-fight values", par < 1e-9, "max |diff| " + par.toExponential(2));
+  check("JS stacks = manual stack = tools/v6_prep.py per-fight values (stored to 8 decimals)", par < 1e-8, "max |diff| " + par.toExponential(2));
   check("corner swap: max |p(A,B) + p(B,A) - 1| < 1e-12 and mirrored cells", sym < 1e-12 && symC < 1e-12, nS + " fight-regimes, p " + sym.toExponential(2) + ", cells " + symC.toExponential(2));
   check("a line without an explicit lineKind is refused", refused === pick.length, refused + "/" + pick.length);
   // routing guard at the block level: an 'open' request never returns close-trained weights

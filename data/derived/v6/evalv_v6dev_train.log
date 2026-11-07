@@ -1,0 +1,24 @@
+evalv v6dev (engine 6.0.0, params 6.0.0-selfcal-pre2024) on train: 1999 fights x 2 orders x 300 sims, 3 workers, ML on (out-of-fold), DEV run (no history)
+  400/1999 fights, 6 s
+  800/1999 fights, 10 s
+  1200/1999 fights, 14 s
+  1600/1999 fights, 18 s
+  engine / params (all workers): 6.0.0 | 6.0.0-selfcal-pre2024
+
+v6dev train: 1999 fights (1952 decisive, 1972 with an outcome), ML applied 100.0% of matchups
+  winLL        0.6544 [0.6446, 0.6649]
+  brier        0.2314 [0.2267, 0.2364]
+  acc          0.6048 [0.5822, 0.6260]
+  ece          0.0058 [0.0051, 0.0321]
+  calSlope     1.1336 [0.9568, 1.3446]
+  bin7         1.6358 [1.6029, 1.6692]
+  method       0.9582 [0.9339, 0.9840]
+  dev_sig_lnd  23.484 [22.334, 24.632]
+  dev_sig_att  48.813 [46.492, 51.136]
+  dev_td_lnd   1.715 [1.639, 1.793]
+  dev_ctrl     153.181 [146.485, 159.506]
+  dev_kd       0.699 [0.668, 0.733]
+  base rates (sim vs actual): finish 48.4 vs 49.2, KO 31.8 vs 31.7, SUB 16.6 vs 17.5, KD/100 head 0.773 vs 0.782, UD 77.9 vs 78.6, SD 20.9 vs 19.4, 10-8 4.62 vs 5.29
+  finish by round 3-rd sim 25.1/13.3/8.7 vs 24.4/16.7/7.5; 5-rd sim 19.7/15.6/9.3/7.9/4.7 vs 17.3/16.5/9.5/5.3/4.9
+  methodround: joint 2.1722 (S 2.1523, d +0.0199 [0.0027, 0.0379]); method3 0.9582 (S 0.9569, d +0.0013 [-0.0087, 0.0112]); finish 0.6622 (S 0.6607, d +0.0015 [-0.0044, 0.0072]); bin7 1.6358 (S 1.6281, d +0.0077 [-0.0075, 0.0229]); method_round 1.4923 (S 1.4811, d +0.0112 [-0.0004, 0.0235]); round_given_fin 1.0817 (S 1.0620, d +0.0197 [0.0086, 0.0309]); ko_vs_sub 0.6010 (S 0.6016, d -0.0005 [-0.0160, 0.0152]); method_given_winner 0.9372 (S 0.9342, d +0.0029 [-0.0109, 0.0169]); winner 0.6544 (S 0.6518, d +0.0026 [-0.0038, 0.0092]); winner_brier 0.2314 (S 0.2301, d +0.0013 [-0.0018, 0.0044]); winner_acc 0.6045 (S 0.6204, d -0.0159 [-0.0353, 0.0036]); method3_brier 0.5747 (S 0.5751, d -0.0004 [-0.0062, 0.0054])
+wrote data/derived/evalv/v6dev_dev_train.json (28 s wall)

@@ -76,7 +76,7 @@ if (!isMainThread) {
   const XR = require(path.join(ROOT, "tools/mlpathrec.js"))(E, ROOT);
   const fights = trainFights(), byId = new Map(fights.map((f) => [f.id, f]));
   const priors = readJSON("data/derived/mlcal_priors_asof.json");
-  const OOF = readJSON("data/derived/mlrates_oof.json"), TN = OOF.meta.targets;
+  const OOF = readJSON(+String(E.VERSION).split(".")[0] >= 6 ? "data/derived/mlrates_oof_fh.json" : "data/derived/mlrates_oof.json"), TN = OOF.meta.targets;   // v6: fold-honest rates
   const rates = (arr) => { const o = {}; TN.forEach((n, i) => { o[n] = arr[i]; }); return o; };
   const ids = workerData.ids;
   parentPort.on("message", (msg) => {

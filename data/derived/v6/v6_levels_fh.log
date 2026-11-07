@@ -1,0 +1,5 @@
+v5_calB_levels fit: 1999 train fights x 2 orders, engine 6.0.0, params 6.0.0-selfcal-pre2024, 3 workers
+iter 0: KD/15 3rd 0.6080 (0.6111) 5rd 0.5175 (0.4999) | KD/100h 0.7713 (0.7816) | conv 0.5120 (0.5121) | KO 31.82 (31.74) SUB 16.61 (17.49) DEC 51.57 | 10-8 4.57 (4.71; all 5.29) MD 1.16 (2.04) draw 0.72 (1.01)
+   levels {"kdLevel3":0.675,"kdLevel5":0.5651,"convLevel":1.1068,"stkoScale":0.665,"gnpScale":0.4363,"t108":7.7255} (10 s)
+iter 1: KD/15 3rd 0.6119 (0.6111) 5rd 0.5153 (0.4999) | KD/100h 0.7750 (0.7816) | conv 0.5117 (0.5121) | KO 31.87 (31.74) SUB 16.61 (17.49) DEC 51.53 | 10-8 4.64 (4.71; all 5.29) MD 1.17 (2.04) draw 0.73 (1.01)
+   levels {"kdLevel3":0.6803,"kdLevel5":0.5627,"convLevel":1.1074,"stkoScale":0.6611,"gnpScale":0.4338,"t108":7.6888} (18 s)
