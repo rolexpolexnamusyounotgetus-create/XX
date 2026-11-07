@@ -681,6 +681,72 @@ def year_level_error(d, P, names, prior):
     return out
 
 
+# ====================================================================== stage: base (the production method model, annual folds)
+BASE_FOLDS = tuple(range(2014, 2025))        # 2014-2015 warm the residual trackers; 2016-2023 CV; 2024 = 2024-25 static
+M_CV = tuple(range(2016, 2024))
+M_TUNE = (2016, 2017, 2018, 2019, 2020)
+GATE_YEARS = (2021, 2022, 2023)
+
+
+def fold_masks(T, v):
+    yr = T["year"].to_numpy()
+    return yr < v, ((yr == v) if v < 2024 else (yr >= 2024))
+
+
+def stage_base(args):
+    """methodround's walk-forward table (2026 dropped at parse) + ML v2's S2 columns; per annual fold the competing-risks
+    hazard (round shapes), the S2 six-class logit (C = method.json chosen_C6_S2, recency half-life 8 y, trained 2012+)
+    and S2 + ML v2 winner, exactly as tools/ml2.py's method stage and tools/finishing.py base build them, with the folds
+    extended back to 2014. Reproduction check: CV 2020-2023 joint equals ml2's method.json to 2e-4."""
+    import methodround as MR
+    t0 = time.time()
+    D = MR.prepare(False)
+    T, FX, FY, y = D["T"], D["FX"], D["FY"], D["y"]
+    assert T["date"].max() < VAULT, "vault row in the methodround table"
+    S = M2.load_table()
+    T2 = S["df"]
+    assert T2["date"].max() < VAULT
+    F = pickle.load(open(os.path.join(M2.CACHE, "fit.pkl"), "rb"))
+    C = json.load(open(os.path.join(M2.CACHE, "cv.json")))
+    chosen = json.load(open(os.path.join(DERIVED, "methodround.json")))["meta"]["chosen"]
+    m2 = json.load(open(os.path.join(M2.CACHE, "method.json")))
+    nX, nY, pwin, okz = M2.method_new_cols(T, T2, F, C["lr"]["tau"], C["pre_means"])
+    FX2 = pd.concat([FX, nX], axis=1)
+    FY2 = pd.concat([FY, nY], axis=1)
+    cols_s2 = D["stat_cols"] + list(nX.columns)
+    C6 = m2["chosen_C6_S2"]
+    H = np.full((len(T), MR.NC_), np.nan)
+    P6 = np.full((len(T), 6), np.nan)
+    vint = np.full(len(T), -1)
+    for v in BASE_FOLDS:
+        tr, va = fold_masks(T, v)
+        hm = tr & (T["year"] >= MR.HAZ_START).to_numpy()
+        hz = MR.HazardModel(MR.HAZ_COLS, C=chosen["C_haz"], C_dec=MR.C_DEC).fit(T[hm], FX[hm], FY[hm], y[hm])
+        H[va] = hz.predict(T[va], FX[va], FY[va])
+        m6 = tr & (T["year"] >= 2012).to_numpy()
+        m = MR.C6Logit(cols_s2, C=C6, hl_years=MR.HL_YEARS).fit(T[m6], FX2[m6], FY2[m6], y[m6])
+        P6[va] = m.predict6(T[va], FX2[va], FY2[va])
+        vint[va] = v
+        log("base: fold %d (%d six-class train rows, %d predicted)" % (v, m6.sum(), va.sum()))
+    P6w = MR.reweight_winner(np.nan_to_num(P6, nan=1 / 6), pwin)
+    keep = ["id", "date", "year", "event", "division", "prior_div", "rounds", "title", "winner", "method", "cls", "rnd",
+            "A_slug", "B_slug"]
+    base = {"T": T[keep].copy(), "y": y, "H": H, "P6_S2": P6, "P6w": P6w, "pwin": pwin, "okz": okz, "vint": vint,
+            "draw_c": chosen["draw_c"]}
+    vm = T["year"].isin([2020, 2021, 2022, 2023]).to_numpy()
+    J = MR.joint_from_c6(P6w[vm], H[vm], chosen["draw_c"])
+    s = MR.summarize_losses(MR.per_fight_losses(J, y[vm], T[vm]))
+    ref = m2["cv"]["S2+ml2win"]
+    log("base: S2+ml2win CV 2020-23 joint %.5f (ml2 %.5f) bin7 %.5f (ml2 %.5f)" % (s["joint"], ref["joint"], s["bin7"],
+                                                                                 ref["bin7"]))
+    assert abs(s["joint"] - ref["joint"]) < 2e-4, "S2 reproduction failed"
+    save(base, "base.pkl")
+    log("base: %d rows %s..%s in %.0f s" % (len(T), T["date"].min(), T["date"].max(), time.time() - t0))
+
+
+STAGES["base"] = stage_base
+
+
 # ====================================================================== main
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
