@@ -3,7 +3,7 @@
    re-level the engine's computed chin / power fallback (engine3.js durSide, params.durability.fallbackEB) to the record path the
    knockdown levels were matched on.
 
-     node tools/durlevel_fit.js [--write]      (prints the constants; --write stores data/derived/durlevel_fit.json)
+     node tools/durlevel_fit.js [--engine-dir versions/v5.0.1] [--write]      (prints the constants; --write stores data/derived/durlevel_fit.json)
 
    The fallback is chin_re = (alphaChin + KD absorbed) / (alphaChin + lvlDiv x chin_cov x 0.9 x head absorbed) and the same for
    power, with opponent effects taken as 1. Its bias depends on which sums the profile carries:
@@ -62,7 +62,9 @@ function fit(E) {
 }
 module.exports = { fit };
 if (require.main === module) {
-  const E = require(path.join(ROOT, "src/engine3.js"));
+  // the engine must carry the durability component (5.0.1+): --engine-dir versions/v5.0.1 while src/ holds v4
+  const ai = process.argv.indexOf("--engine-dir"), ED = ai > 0 ? path.resolve(ROOT, process.argv[ai + 1]) : path.join(ROOT, "src");
+  const E = require(path.join(ED, "engine3.js"));
   const out = fit(E);
   out.meta = { tool: "tools/durlevel_fit.js", built: new Date().toISOString(), engine: E.VERSION, params: E.params().version,
     note: "S path fit on 2019-2023 backtest sides (train only); C path on the live roster (production constant, never used in backtests)" };

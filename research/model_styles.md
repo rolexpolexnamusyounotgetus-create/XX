@@ -1,26 +1,26 @@
 # Styles and matchups: style vectors, archetypes and interaction tests (engine v7 component)
 
-Built 2026-11-06 from the ufcstats snapshot through 2026-10-31 by `tools/styles.py`; machine-readable output in `data/derived/styles.json`. Walk-forward throughout: every feature of a backtest fight comes from the two sides' frozen pre-fight sums and the priors of fights before Jan 1 of the fight year; standardisation, clusters, prior strengths, penalties and coefficients are fit on 2019-2023 only; 2024-01-01 onward (1223 decisive fights) is reported, never tuned on.
+Built 2026-11-07 from the ufcstats snapshot through 2026-10-31 by `tools/styles.py`; machine-readable output in `data/derived/styles.json`. Walk-forward throughout: every feature of a backtest fight comes from the two sides' frozen pre-fight sums and the priors of fights before Jan 1 of the fight year; standardisation, clusters, prior strengths, penalties and coefficients are fit on 2019-2023 only; 2024-01-01 onward (854 decisive fights) is reported, never tuned on.
 
 ## Summary
 
-- **Style interactions do not move the winner prediction by a detectable amount.** On top of an engine-free skill model (Elo, age, reach and 29 shrunk skill and style main effects; 2024+ log loss 0.6272, accuracy 0.659, vs Elo alone 0.6805), none of 33 pre-registered matchup terms survives held-out validation (0 survive; 1 consistent in sign but not significant: leg kicker vs opponent who gets leg-kicked). The 8x8 archetype interaction matrix makes held-out log loss worse (+0.0029). Adding every term that looked good in 2019-2023 at once raises 2024+ log loss from 0.6272 to 0.6307.
+- **Style interactions do not move the winner prediction by a detectable amount.** On top of an engine-free skill model (Elo, age, reach and 29 shrunk skill and style main effects; 2024+ log loss 0.6193, accuracy 0.670, vs Elo alone 0.6783), none of 33 pre-registered matchup terms survives held-out validation (0 survive; 1 consistent in sign but not significant: leg kicker vs opponent who gets leg-kicked). The 8x8 archetype interaction matrix makes held-out log loss worse (+0.0040). Adding every term that looked good in 2019-2023 at once raises 2024+ log loss from 0.6193 to 0.6234.
 - **Inside the fight, some matchups are real and measurable.** At the rate level (one row per fighter per fight, X attacking Y, exposure-correct baselines that already contain the engine's log-linear / log5 main effects), terms and blocks are selected and switched on with 2019-2023 data only (fight-clustered z screen, leave-one-year-out CV deviance with a fight bootstrap) and then scored once on 2024+. On by default:
-  - `dist_att` (distance significant attempts per standing minute): length_d +0.039/sd, open -0.033/sd, zy_kd_pow -0.024/sd; 2019-2023 CV deviance change -972 (95% CI [-1401, -520]); 2024+ deviance -1.95% (95% CI of the change [-758, -73]).
-  - `td_att` (takedown attempts per standing minute): zy_td_int -0.076/sd, length_d -0.081/sd, zy_vol +0.077/sd, zy_td_def -0.093/sd; 2019-2023 CV deviance change -256 (95% CI [-400, -104]); 2024+ deviance -0.93% (95% CI of the change [-195, 33]).
-  - `ctrl` (control seconds per minute (quasi-Poisson)): kick_y +0.062/sd, zx_ctrl*zy_octrl -0.069/sd, zy_td_int -0.049/sd; 2019-2023 CV deviance change -3670 (95% CI [-7005, -61]); 2024+ deviance -1.68% (95% CI of the change [-7865, -2035]); a composition check, not applied in the engine (section 9).
-  - `ctrl_per_td` (control seconds per takedown landed (duration; quasi-Poisson)): zy_td_def -0.069/sd, zy_sub_int +0.026/sd; 2019-2023 CV deviance change -2564 (95% CI [-4894, -269]); 2024+ deviance -0.81% (95% CI of the change [-3446, -108]).
-  - `gnp_att` (ground significant attempts per own control minute): zy_sub_int +0.104/sd, zy_kd_pow +0.086/sd; 2019-2023 CV deviance change -395 (95% CI [-718, -93]); 2024+ deviance -0.77% (95% CI of the change [-493, 81]).
-  Selected but off by default (the 2019-2023 CV interval crosses zero): `leg_share` (length_d, zy_press, zy_td_int; 2024+ -1.10%, CI [-247, -20]); `body_share` (open; 2024+ -0.05%, CI [-72, 66]); `kd` (zy_vol; 2024+ -0.20%, CI [-16, 7]); `sub_att` (zy_octrl; 2024+ -0.20%, CI [-19, 11]).
+  - `dist_att` (distance significant attempts per standing minute): length_d +0.039/sd, open -0.033/sd, zy_kd_pow -0.024/sd; 2019-2023 CV deviance change -972 (95% CI [-1412, -523]); 2024+ deviance -1.43% (95% CI of the change [-494, 68]).
+  - `td_att` (takedown attempts per standing minute): zy_td_int -0.076/sd, length_d -0.081/sd, zy_vol +0.077/sd, zy_td_def -0.093/sd; 2019-2023 CV deviance change -256 (95% CI [-406, -114]); 2024+ deviance -0.01% (95% CI of the change [-100, 97]).
+  - `ctrl` (control seconds per minute (quasi-Poisson)): kick_y +0.062/sd, zx_ctrl*zy_octrl -0.069/sd, zy_td_int -0.049/sd; 2019-2023 CV deviance change -3670 (95% CI [-7178, -290]); 2024+ deviance -1.43% (95% CI of the change [-5236, -699]); a composition check, not applied in the engine (section 9).
+  - `ctrl_per_td` (control seconds per takedown landed (duration; quasi-Poisson)): zy_td_def -0.069/sd, zy_sub_int +0.026/sd; 2019-2023 CV deviance change -2564 (95% CI [-4868, -352]); 2024+ deviance -1.03% (95% CI of the change [-2992, -252]).
+  - `gnp_att` (ground significant attempts per own control minute): zy_sub_int +0.104/sd, zy_kd_pow +0.086/sd; 2019-2023 CV deviance change -395 (95% CI [-690, -90]); 2024+ deviance -1.40% (95% CI of the change [-498, -20]).
+  Selected but off by default (the 2019-2023 CV interval crosses zero): `leg_share` (length_d, zy_press, zy_td_int; 2024+ -0.99%, CI [-179, 16]); `body_share` (open; 2024+ -0.03%, CI [-61, 60]); `kd` (zy_vol; 2024+ -0.07%, CI [-10, 8]); `sub_att` (zy_octrl; 2024+ -0.77%, CI [-26, -0]).
   In words: distance attempts per standing minute x1.04 per +1 sd of length advantage, x0.93 in open-stance fights, x0.98 per +1 sd of defender's knockdown power; takedown attempts per standing minute x0.93 per +1 sd of defender's takedown intent, x0.92 per +1 sd of length advantage, x1.08 per +1 sd of defender's volume, x0.91 per +1 sd of defender's takedown defense; control time per takedown x0.93 per +1 sd of defender's takedown defense, x1.03 per +1 sd of defender's submission intent; ground strikes per top-control minute x1.11 per +1 sd of defender's submission intent, x1.09 per +1 sd of defender's knockdown power.
-- **Applied mechanistically, they move win probabilities only slightly.** Feeding the default-on modifiers through an expected-scorecard stand-in for the engine (predicted rates -> expected judging impact) changes win probabilities by a median 1.5 points (max 7.8) and moves 2024+ log loss of the Elo + scorecard model by -0.0015 (CI [-0.0040, 0.0011]); every tune-screened matchup term at once moves it by -0.0007 (CI [-0.0032, 0.0019]). Neither is significant: the gain is in realistic fight statistics, not in a measurable edge on who wins.
+- **Applied mechanistically, they move win probabilities only slightly.** Feeding the default-on modifiers through an expected-scorecard stand-in for the engine (predicted rates -> expected judging impact) changes win probabilities by a median 1.4 points (max 7.8) and moves 2024+ log loss of the Elo + scorecard model by -0.0023 (CI [-0.0052, 0.0006]); every tune-screened matchup term at once moves it by -0.0010 (CI [-0.0039, 0.0021]). Neither is significant: the gain is in realistic fight statistics, not in a measurable edge on who wins.
 - **Recommendation:** apply styles as rate modifiers inside the engine (section 9, exact equations and values); do not add archetype or interaction tweaks to the final win probability; use the archetypes for labels, the director and the page.
 - **Archetypes are a continuum.** Silhouette is about 0.09 for every k from 4 to 12, so there are no natural clusters. k = 8 is the most stable of the interpretable solutions (bootstrap adjusted Rand 0.53) and its clusters match expert scouting on the grappling and kicking axes (tag AUCs: top-control 0.98, leg-kicks 0.94, takedown-defense 0.94, volume 0.92), but the attempts-ratio pressure proxy does not match the scouts' 'pressure' or 'counter' tags (AUC 0.47 and 0.51): ufcstats has no cage position.
-- **By-product for v9:** the engine-free skill logistic (2024+ log loss 0.6272) is a far stronger benchmark than Elo (0.6805) and a natural stacking input; its coefficients are in `styles.json` (`winner_level.skill_baseline`).
+- **By-product for v9:** the engine-free skill logistic (2024+ log loss 0.6193) is a far stronger benchmark than Elo (0.6783) and a natural stacking input; its coefficients are in `styles.json` (`winner_level.skill_baseline`).
 
 ## 1. Data and design
 
-- Fights: 3237 walk-forward backtest entries 2019-01-01 to 2026-10-31 (both men with a prior UFC fight), 3178 decisive; tune 2019-2023, test 2024+ (1223 decisive). Per-fight actual stats by position and target come from `data/raw/ufc_fight_stats.csv` through `tools/build_db.py` (round rows summed per fighter).
+- Fights: 2864 walk-forward backtest entries 2019-01-01 to 2026-10-31 (both men with a prior UFC fight), 2809 decisive; tune 2019-2023, test 2024+ (854 decisive). Per-fight actual stats by position and target come from `data/raw/ufc_fight_stats.csv` through `tools/build_db.py` (round rows summed per fighter).
 - Symmetry: winner models are antisymmetric (every feature is A minus B, no intercept), so the first-named corner, which wins 56% of the time, cannot leak; rate models have one row per side.
 - Uncertainty: held-out changes carry 95% intervals from a paired bootstrap over test fights (2000 replicates; both sides of a fight resampled together in the rate models). In the rate models 'z (tune)' is the Wald z on 2019-2023 with a fight-clustered sandwich covariance (the two sides of a fight share pace, duration and the finishing sequence); in the winner models it uses the inverse penalised Hessian. 'z (test only)' refits on 2024+ as a diagnostic and is never used for selection.
 - Selection rule, all on 2019-2023: a winner-level term is *screened in* if |z (tune)| >= 2 (likelihood-ratio p < 0.05 for blocks) and leave-one-year-out CV log loss improves. A rate-level term is *screened* if |z (tune)| >= 3 and leave-one-year-out (LOYO) CV deviance improves (the stricter bar allows for about 140 rate tests), and **CV-confirmed** if the LOYO out-of-fold deviance change also has a fight-bootstrap 95% CI below zero. Rate terms are assembled per model by forward addition on LOYO CV, and a block is **on by default** when its joint LOYO CV change has a CI below zero. 2024+ is then scored once and labelled descriptively (**holds**: CI below zero; **same sign**: negative change and the test-only refit agrees; **fails**). Winner-level terms carry the same descriptive 2024+ labels (survives / supported / fails held-out); none is recommended. (The first version of this analysis used the 2024+ intervals to give verdicts, pick terms and switch blocks on; see the verification log.)
@@ -92,62 +92,62 @@ Baseline: L2 logistic on A-minus-B differences of Elo, age, reach and the shrunk
 
 | Model | 2019-2023 CV log loss | 2024+ log loss | Brier | Accuracy |
 |---|---|---|---|---|
-| Elo only |  | 0.6805 | 0.2438 | 0.547 |
-| Skill baseline | 0.6542 | 0.6272 | 0.2182 | 0.659 |
-| Skill baseline + all tune-screened terms |  | 0.6307 | 0.2199 | 0.652 |
+| Elo only |  | 0.6783 | 0.2427 | 0.548 |
+| Skill baseline | 0.6542 | 0.6193 | 0.2145 | 0.670 |
+| Skill baseline + all tune-screened terms |  | 0.6234 | 0.2166 | 0.666 |
 
 Each term added alone to the skill baseline (log-loss changes x 1000; negative = better):
 
 | Term | cols | z (tune) | CV change | 2024+ change | 95% CI | z (test only) | Verdict |
 |---|---|---|---|---|---|---|---|
-| wrestling vs low takedown defense | 1 | 0.10 | +1.07 | +0.05 | [-0.06, +0.17] | -0.65 | not screened in |
-| takedown accuracy vs low takedown defense | 1 | 0.30 | +0.30 | +0.27 | [-0.08, +0.63] | -1.13 | not screened in |
-| control vs stuck-on-bottom | 1 | -0.57 | +0.34 | +0.98 | [+0.31, +1.63] | 2.46 | not screened in |
-| control vs time on bottom | 1 | -1.95 | -0.32 | +1.35 | [-1.28, +4.05] | 0.31 | not screened in |
-| submission threat vs time on bottom | 1 | -1.04 | +0.31 | +0.84 | [-0.60, +2.18] | 0.87 | not screened in |
-| submission threat vs submission exposure | 1 | 3.08 | -2.30 | +2.45 | [-1.44, +6.35] | 0.14 | fails held-out |
-| kicker vs wrestler | 1 | 0.31 | +0.92 | +0.30 | [-0.12, +0.71] | -1.29 | not screened in |
-| pressure vs striking defense | 1 | 0.07 | +0.29 | -0.06 | [-0.14, +0.03] | 1.19 | not screened in |
-| pressure vs counter accuracy | 1 | 0.62 | +2.31 | +0.03 | [-0.77, +0.81] | 0.33 | not screened in |
-| pressure vs volume | 1 | 1.48 | -0.32 | +1.19 | [-0.58, +2.93] | -0.74 | not screened in |
-| volume vs power | 1 | -0.12 | +0.03 | -0.04 | [-0.19, +0.10] | -0.74 | not screened in |
-| power vs chin | 1 | 0.62 | +0.22 | -0.74 | [-1.46, +0.00] | 2.00 | not screened in |
-| clinch fighter vs distance fighter | 1 | 2.27 | -1.08 | +2.23 | [-1.41, +5.62] | -0.32 | fails held-out |
-| ground-and-pound vs time on bottom | 1 | 1.40 | +0.61 | +1.32 | [-0.52, +3.17] | -0.95 | not screened in |
-| leg kicker vs opponent who gets leg-kicked | 1 | 2.45 | -1.23 | -0.96 | [-4.06, +2.14] | 1.87 | supported |
-| volume vs poor cardio | 1 | 0.52 | +0.37 | -0.02 | [-0.72, +0.65] | 0.48 | not screened in |
-| striking edge x distance context | 1 | -0.81 | +0.29 | +0.48 | [-0.45, +1.42] | 0.42 | not screened in |
-| striking edge x low-wrestling context | 1 | -0.63 | +0.11 | +0.28 | [-0.56, +1.09] | 0.23 | not screened in |
-| grappling edge x wrestling context | 1 | 0.63 | +0.22 | -0.23 | [-1.07, +0.62] | 0.88 | not screened in |
-| reach edge x distance context | 1 | -0.89 | -0.18 | +0.73 | [-0.43, +1.93] | 0.13 | not screened in |
-| reach x own distance share | 1 | 0.92 | +0.98 | -1.30 | [-2.62, -0.04] | 2.29 | not screened in |
-| age gap x five rounds | 1 | -0.02 | +0.86 | +0.00 | [-0.02, +0.03] | 0.15 | not screened in |
-| cardio edge x five rounds | 1 | -0.09 | +0.88 | -0.02 | [-0.12, +0.08] | -0.08 | not screened in |
-| stance main effects (southpaw, switch) | 2 | LR 2.2 | +0.72 | -0.19 | [-2.29, +1.83] |  | not screened in |
-| southpaw vs orthodox (open-stance edge) | 1 | 0.34 | +0.25 | -0.32 | [-0.75, +0.08] | 1.51 | not screened in |
-| kicker x open stance | 1 | 0.18 | +1.36 | -0.22 | [-0.46, +0.00] | 1.61 | not screened in |
-| wrestler type vs weak takedown defense | 1 | -0.51 | +0.65 | +0.39 | [-0.24, +1.01] | 0.80 | not screened in |
-| kicker type vs wrestler type | 1 | -0.16 | +1.20 | -0.02 | [-0.21, +0.18] | -0.08 | not screened in |
-| pressure type vs counter type | 1 | -0.80 | +0.14 | +0.40 | [-0.53, +1.29] | 0.61 | not screened in |
-| power type vs volume type | 1 | 1.05 | +0.28 | -0.94 | [-2.09, +0.20] | 2.07 | not screened in |
-| submission type vs wrestler type | 1 | 1.38 | -0.29 | -0.48 | [-2.20, +1.21] | 1.22 | not screened in |
-| archetype main effects | 7 | LR 5.1 | +0.26 | +1.10 | [-0.58, +2.82] |  | not screened in |
-| archetype x archetype matrix | 28 | LR 20.6 | -0.26 | +2.90 | [-0.52, +6.25] |  | not screened in |
+| wrestling vs low takedown defense | 1 | 0.10 | +1.07 | +0.06 | [-0.08, +0.20] | -0.76 | not screened in |
+| takedown accuracy vs low takedown defense | 1 | 0.30 | +0.30 | +0.44 | [+0.02, +0.85] | -1.64 | not screened in |
+| control vs stuck-on-bottom | 1 | -0.57 | +0.34 | +1.07 | [+0.33, +1.83] | 2.13 | not screened in |
+| control vs time on bottom | 1 | -1.95 | -0.32 | +0.57 | [-2.34, +3.57] | -0.38 | not screened in |
+| submission threat vs time on bottom | 1 | -1.04 | +0.31 | +0.20 | [-1.46, +2.04] | -0.11 | not screened in |
+| submission threat vs submission exposure | 1 | 3.08 | -2.30 | +2.51 | [-2.36, +7.00] | 0.19 | fails held-out |
+| kicker vs wrestler | 1 | 0.31 | +0.92 | +0.21 | [-0.23, +0.70] | -0.64 | not screened in |
+| pressure vs striking defense | 1 | 0.07 | +0.29 | -0.04 | [-0.14, +0.06] | 0.47 | not screened in |
+| pressure vs counter accuracy | 1 | 0.62 | +2.31 | -0.58 | [-1.56, +0.41] | 1.27 | not screened in |
+| pressure vs volume | 1 | 1.48 | -0.32 | +1.08 | [-0.98, +3.16] | -0.39 | not screened in |
+| volume vs power | 1 | -0.12 | +0.03 | -0.05 | [-0.21, +0.12] | -0.58 | not screened in |
+| power vs chin | 1 | 0.62 | +0.22 | -0.48 | [-1.36, +0.39] | 1.18 | not screened in |
+| clinch fighter vs distance fighter | 1 | 2.27 | -1.08 | +2.93 | [-1.07, +6.84] | -0.66 | fails held-out |
+| ground-and-pound vs time on bottom | 1 | 1.40 | +0.61 | +2.41 | [+0.28, +4.35] | -1.69 | not screened in |
+| leg kicker vs opponent who gets leg-kicked | 1 | 2.45 | -1.23 | -1.15 | [-4.98, +2.48] | 1.58 | supported |
+| volume vs poor cardio | 1 | 0.52 | +0.37 | -0.26 | [-1.05, +0.50] | 1.11 | not screened in |
+| striking edge x distance context | 1 | -0.81 | +0.29 | +0.77 | [-0.26, +1.85] | 1.24 | not screened in |
+| striking edge x low-wrestling context | 1 | -0.63 | +0.11 | +0.33 | [-0.60, +1.27] | 0.29 | not screened in |
+| grappling edge x wrestling context | 1 | 0.63 | +0.22 | -0.34 | [-1.35, +0.63] | 0.83 | not screened in |
+| reach edge x distance context | 1 | -0.89 | -0.18 | +0.26 | [-1.09, +1.59] | -0.48 | not screened in |
+| reach x own distance share | 1 | 0.92 | +0.98 | -0.52 | [-2.00, +0.91] | 0.77 | not screened in |
+| age gap x five rounds | 1 | -0.02 | +0.86 | +0.01 | [-0.02, +0.05] | 0.59 | not screened in |
+| cardio edge x five rounds | 1 | -0.09 | +0.88 | +0.00 | [-0.13, +0.13] | 0.28 | not screened in |
+| stance main effects (southpaw, switch) | 2 | LR 2.2 | +0.72 | -0.74 | [-3.15, +1.62] |  | not screened in |
+| southpaw vs orthodox (open-stance edge) | 1 | 0.34 | +0.25 | -0.35 | [-0.86, +0.17] | 1.57 | not screened in |
+| kicker x open stance | 1 | 0.18 | +1.36 | -0.25 | [-0.53, +0.03] | 1.74 | not screened in |
+| wrestler type vs weak takedown defense | 1 | -0.51 | +0.65 | +0.67 | [-0.07, +1.38] | 1.26 | not screened in |
+| kicker type vs wrestler type | 1 | -0.16 | +1.20 | -0.01 | [-0.24, +0.23] | 0.10 | not screened in |
+| pressure type vs counter type | 1 | -0.80 | +0.14 | +0.82 | [-0.24, +1.91] | 1.31 | not screened in |
+| power type vs volume type | 1 | 1.05 | +0.28 | -1.54 | [-2.96, -0.23] | 2.54 | not screened in |
+| submission type vs wrestler type | 1 | 1.38 | -0.29 | -0.65 | [-2.77, +1.48] | 1.04 | not screened in |
+| archetype main effects | 7 | LR 5.1 | +0.26 | +1.28 | [-0.74, +3.41] |  | not screened in |
+| archetype x archetype matrix | 28 | LR 20.6 | -0.26 | +4.01 | [+0.15, +7.98] |  | not screened in |
 
-On top of Elo alone (no skill controls), the terms that pass the screen are: control vs time on bottom (2024+ +1.27, CI [-1.51, +4.10], fails held-out); submission threat vs submission exposure (2024+ +2.41, CI [-0.69, +5.62], fails held-out); clinch fighter vs distance fighter (2024+ +3.14, CI [-0.75, +6.71], fails held-out); leg kicker vs opponent who gets leg-kicked (2024+ -0.66, CI [-3.74, +2.57], supported); age gap x five rounds (2024+ -3.16, CI [-6.62, +0.37], supported); archetype main effects (2024+ -3.78, CI [-7.42, -0.06], survives). Archetype main effects and the age-by-rounds context help Elo because they carry main effects Elo lacks (style and age); once the skill controls are in, they add nothing.
+On top of Elo alone (no skill controls), the terms that pass the screen are: control vs time on bottom (2024+ +0.33, CI [-2.79, +3.51], fails held-out); submission threat vs submission exposure (2024+ +2.52, CI [-1.44, +6.03], fails held-out); clinch fighter vs distance fighter (2024+ +3.85, CI [-0.76, +8.14], fails held-out); leg kicker vs opponent who gets leg-kicked (2024+ -1.29, CI [-5.25, +2.48], supported); age gap x five rounds (2024+ -2.49, CI [-6.57, +1.61], supported); archetype main effects (2024+ -5.92, CI [-10.13, -1.59], survives). Archetype main effects and the age-by-rounds context help Elo because they carry main effects Elo lacks (style and age); once the skill controls are in, they add nothing.
 
-**Style-mismatch fights** (the v7 check in docs/ROADMAP.md). A fight is a mismatch when the weighted style distance between the two men exceeds the 2019-2023 two-thirds quantile (3.27); 432 of 1223 test fights qualify. Separately, 878 test fights pair two different archetypes with both memberships above 0.5.
+**Style-mismatch fights** (the v7 check in docs/ROADMAP.md). A fight is a mismatch when the weighted style distance between the two men exceeds the 2019-2023 two-thirds quantile (3.27); 300 of 854 test fights qualify. Separately, 625 test fights pair two different archetypes with both memberships above 0.5.
 
 | Model (2024+ log loss) | Mismatch fights | Other fights | Different confident archetypes |
 |---|---|---|---|
-| elo | 0.6783 | 0.6817 | 0.6757 |
-| skill_baseline | 0.6224 | 0.6298 | 0.6209 |
-| skill_baseline+screened_interactions | 0.6266 | 0.6329 | 0.6246 |
-| elo+scorecard(none) | 0.6581 | 0.6615 | 0.6544 |
-| elo+scorecard(tune_screened) | 0.6566 | 0.6612 | 0.6549 |
-| elo+scorecard(tier1) | 0.6554 | 0.6605 | 0.6547 |
-| elo+scorecard(default_on) | 0.6566 | 0.6600 | 0.6540 |
-| elo+scorecard(all_recommended) | 0.6567 | 0.6612 | 0.6548 |
+| elo | 0.6756 | 0.6797 | 0.6756 |
+| skill_baseline | 0.6017 | 0.6289 | 0.6082 |
+| skill_baseline+screened_interactions | 0.6073 | 0.6321 | 0.6145 |
+| elo+scorecard(none) | 0.6479 | 0.6635 | 0.6528 |
+| elo+scorecard(tune_screened) | 0.6451 | 0.6635 | 0.6524 |
+| elo+scorecard(tier1) | 0.6443 | 0.6626 | 0.6524 |
+| elo+scorecard(default_on) | 0.6440 | 0.6621 | 0.6509 |
+| elo+scorecard(all_recommended) | 0.6451 | 0.6635 | 0.6524 |
 
 Mismatch fights are not harder to call, and no interaction model does better on them than the skill baseline. The scorecard models with rate modifiers are slightly better on mismatch fights than without (section 7), within noise.
 
@@ -159,47 +159,47 @@ Base fits (coefficient per sd of the feature; 2024+ deviance explained relative 
 
 | Model | Outcome | Main effects (per sd) | Dispersion | 2024+ deviance explained |
 |---|---|---|---|---|
-| dist_att | distance significant attempts per standing minute | zx_d_rate 0.135, zy_od_rate 0.103 | 10.3 | 28.4% |
-| dist_acc | distance accuracy (landed of attempted), log5 baseline | zx_acc 0.135, neg_zy_dfn 0.088 | 3.2 | 21.2% |
-| leg_share | leg share of significant attempts | zx_sh_l 0.421, zy_osh_l 0.194 | 6.1 | 25.5% |
-| body_share | body share of significant attempts | zx_sh_b 0.276 | 4.0 | 20.2% |
-| td_att | takedown attempts per standing minute | zx_td_rate 0.662, zy_otd_rate 0.197 | 5.3 | 30.3% |
-| td_acc | takedown success (landed of attempted), log5 baseline | zx_td_acc 0.108, neg_zy_td_def 0.239 | 1.4 | 3.6% |
-| ctrl | control seconds per minute (quasi-Poisson) | zx_ctrl 0.441, zy_octrl 0.308 | 130.0 | 24.8% |
-| ctrl_per_td | control seconds per takedown landed (duration; quasi-Poisson) | zx_ctrl_td 0.092, zy_octrl_td 0.133 | 123.4 | 4.6% |
-| kd | knockdowns per landed head strike | zx_kd_pow 0.334, zy_chin 0.182 | 2.1 | 5.2% |
-| sub_att | submission attempts per minute | zx_sub_int 0.559, zy_osub_int 0.337 | 2.3 | 10.2% |
-| clinch_att | clinch significant attempts per minute | zx_c_rate 0.338, zy_oc_rate 0.218 | 8.9 | 13.4% |
-| gnp_att | ground significant attempts per own control minute | zx_g_rate 0.230 | 14.9 | 3.4% |
+| dist_att | distance significant attempts per standing minute | zx_d_rate 0.135, zy_od_rate 0.103 | 10.3 | 27.3% |
+| dist_acc | distance accuracy (landed of attempted), log5 baseline | zx_acc 0.135, neg_zy_dfn 0.088 | 3.2 | 21.4% |
+| leg_share | leg share of significant attempts | zx_sh_l 0.421, zy_osh_l 0.194 | 6.1 | 24.4% |
+| body_share | body share of significant attempts | zx_sh_b 0.276 | 4.0 | 18.8% |
+| td_att | takedown attempts per standing minute | zx_td_rate 0.662, zy_otd_rate 0.197 | 5.3 | 28.7% |
+| td_acc | takedown success (landed of attempted), log5 baseline | zx_td_acc 0.108, neg_zy_td_def 0.239 | 1.4 | 3.4% |
+| ctrl | control seconds per minute (quasi-Poisson) | zx_ctrl 0.441, zy_octrl 0.308 | 130.0 | 25.4% |
+| ctrl_per_td | control seconds per takedown landed (duration; quasi-Poisson) | zx_ctrl_td 0.092, zy_octrl_td 0.133 | 123.4 | 3.5% |
+| kd | knockdowns per landed head strike | zx_kd_pow 0.334, zy_chin 0.182 | 2.1 | 4.7% |
+| sub_att | submission attempts per minute | zx_sub_int 0.559, zy_osub_int 0.337 | 2.3 | 11.9% |
+| clinch_att | clinch significant attempts per minute | zx_c_rate 0.338, zy_oc_rate 0.218 | 8.9 | 13.2% |
+| gnp_att | ground significant attempts per own control minute | zx_g_rate 0.230 | 14.9 | 3.3% |
 
 Screened and other notable candidates (coefficient per sd of the term; deviance changes summed over fight sides, negative = better; the verdict uses 2019-2023 only, the 2024+ columns are reported after the fact):
 
 | Model | Term | Coef/sd | z (tune, clustered) | LOYO CV change [95% CI] | Verdict (2019-2023) | 2024+ change | 2024+ 95% CI | z (test only) | 2024+ result |
 |---|---|---|---|---|---|---|---|---|---|
-| dist_att | `zy_kd_pow` | -0.0256 | -3.61 | -198.1 [-440, +40] | screened | -220.6 (-1.02%) | [-376.3, -74.0] | -4.42 | holds |
-| dist_att | `open` | -0.0328 | -4.34 | -292.5 [-609, +36] | screened | -66.9 (-0.31%) | [-312.5, +185.4] | -2.26 | same sign |
-| dist_att | `x_sp_vs_orth` | -0.0227 | -3.66 | -115.2 [-283, +54] | screened | +35.9 (+0.17%) | [-98.1, +183.8] | -0.87 | fails |
-| dist_att | `length_d` | +0.0395 | 9.28 | -512.5 [-737, -290] | cv-confirmed | -157.2 (-0.73%) | [-334.8, +13.0] | 5.21 | same sign |
-| dist_acc | `kick_x` | +0.0268 | 3.66 | -35.8 [-100, +29] | screened (own-style, not a matchup) | -45.6 (-0.62%) | [-93.7, +4.0] | 3.25 | same sign |
-| leg_share | `zy_td_int` | -0.0507 | -3.19 | -53.0 [-164, +56] | screened | -106.6 (-0.89%) | [-181.2, -37.0] | -4.22 | holds |
-| leg_share | `zy_press` | +0.0513 | 3.27 | -51.6 [-162, +55] | screened | -3.5 (-0.03%) | [-74.0, +66.8] | 1.46 | same sign |
-| leg_share | `length_d` | -0.0581 | -3.92 | -97.2 [-205, +10] | screened | -54.1 (-0.45%) | [-115.8, +15.4] | -3.44 | same sign |
-| body_share | `open` | +0.0466 | 4.04 | -96.2 [-191, -6] | cv-confirmed | -5.1 (-0.05%) | [-72.7, +66.1] | 1.70 | same sign |
-| td_att | `zy_td_def` | -0.0673 | -3.12 | -48.5 [-119, +20] | screened | -11.9 (-0.13%) | [-59.8, +34.6] | -1.61 | same sign |
-| td_att | `kick_y` | +0.0522 | 2.64 | -24.3 [-69, +22] | not screened in | -63.5 (-0.71%) | [-103.3, -24.7] | 4.37 | holds |
-| td_att | `zy_td_int` | -0.0992 | -4.78 | -99.3 [-186, -9] | cv-confirmed | -79.7 (-0.89%) | [-148.7, -9.7] | -4.02 | holds |
-| td_att | `zy_vol` | +0.0853 | 3.90 | -51.1 [-121, +18] | screened | +6.3 (+0.07%) | [-55.3, +66.4] | 1.77 | fails |
-| td_att | `length_d` | -0.0901 | -4.53 | -74.2 [-147, +3] | screened | -30.2 (-0.34%) | [-94.2, +31.6] | -2.61 | same sign |
-| ctrl | `zx_ctrl*zy_octrl` | -0.0654 | -3.19 | -1072.0 [-3227, +1202] | screened | -1902.0 (-0.66%) | [-3640.0, -174.2] | -3.49 | holds |
-| ctrl | `zy_td_int` | -0.0536 | -3.02 | -1016.0 [-2851, +852] | screened | -1426.0 (-0.49%) | [-2789.0, -20.3] | -3.17 | holds |
-| ctrl | `zy_ctrl` | -0.0385 | -2.05 | -562.8 [-1922, +769] | not screened in | -1231.0 (-0.43%) | [-2264.0, -205.2] | -3.28 | holds |
-| ctrl | `kick_y` | +0.0660 | 3.75 | -1792.0 [-3903, +391] | screened | -1695.0 (-0.59%) | [-3382.0, -87.2] | 3.58 | holds |
-| ctrl_per_td | `zy_sub_int` | +0.0457 | 3.10 | -928.6 [-2165, +323] | screened | -429.9 (-0.19%) | [-1437.0, +626.0] | 2.11 | same sign |
-| ctrl_per_td | `zy_td_def` | -0.0767 | -4.67 | -2263.0 [-4351, -24] | cv-confirmed | -1735.0 (-0.78%) | [-3273.0, -132.0] | -4.09 | holds |
-| kd | `zy_vol` | -0.1185 | -3.17 | -10.6 [-25, +4] | screened | -3.9 (-0.20%) | [-15.6, +7.5] | -1.77 | same sign |
-| sub_att | `zy_octrl` | +0.1324 | 3.16 | -15.0 [-37, +6] | screened | -4.7 (-0.20%) | [-20.4, +9.5] | 1.86 | same sign |
-| gnp_att | `zy_sub_int` | +0.1024 | 4.20 | -242.1 [-474, -6] | cv-confirmed | -145.6 (-0.58%) | [-367.3, +75.3] | 2.56 | same sign |
-| gnp_att | `zy_kd_pow` | +0.0841 | 3.53 | -142.5 [-358, +71] | screened | -45.4 (-0.18%) | [-209.7, +117.7] | 1.69 | same sign |
+| dist_att | `zy_kd_pow` | -0.0256 | -3.61 | -198.1 [-429, +42] | screened | -141.3 (-0.94%) | [-268.4, -18.4] | -3.42 | holds |
+| dist_att | `open` | -0.0328 | -4.34 | -292.5 [-610, +16] | screened | -39.3 (-0.26%) | [-258.2, +187.5] | -1.92 | same sign |
+| dist_att | `x_sp_vs_orth` | -0.0227 | -3.66 | -115.2 [-286, +49] | screened | +12.7 (+0.08%) | [-110.9, +143.3] | -1.05 | fails |
+| dist_att | `length_d` | +0.0395 | 9.28 | -512.5 [-738, -290] | cv-confirmed | -47.4 (-0.31%) | [-171.3, +69.6] | 4.03 | same sign |
+| dist_acc | `kick_x` | +0.0268 | 3.66 | -35.8 [-100, +31] | screened (own-style, not a matchup) | -23.0 (-0.46%) | [-60.5, +15.3] | 2.49 | same sign |
+| leg_share | `zy_td_int` | -0.0507 | -3.19 | -53.0 [-162, +57] | screened | -58.8 (-0.70%) | [-119.3, +2.3] | -3.04 | same sign |
+| leg_share | `zy_press` | +0.0513 | 3.27 | -51.6 [-160, +66] | screened | +1.6 (+0.02%) | [-63.4, +63.5] | 1.08 | fails |
+| leg_share | `length_d` | -0.0581 | -3.92 | -97.2 [-205, +8] | screened | -45.5 (-0.54%) | [-104.0, +8.5] | -3.21 | same sign |
+| body_share | `open` | +0.0466 | 4.04 | -96.2 [-192, -3] | cv-confirmed | -1.9 (-0.03%) | [-62.6, +64.0] | 1.37 | same sign |
+| td_att | `zy_td_def` | -0.0673 | -3.12 | -48.5 [-119, +19] | screened | -10.1 (-0.16%) | [-49.8, +29.3] | -1.36 | same sign |
+| td_att | `kick_y` | +0.0522 | 2.64 | -24.3 [-69, +24] | not screened in | -36.0 (-0.56%) | [-67.4, -3.9] | 2.94 | holds |
+| td_att | `zy_td_int` | -0.0992 | -4.78 | -99.3 [-190, -11] | cv-confirmed | -19.7 (-0.31%) | [-73.6, +32.2] | -2.42 | same sign |
+| td_att | `zy_vol` | +0.0853 | 3.90 | -51.1 [-124, +21] | screened | +15.7 (+0.24%) | [-34.1, +67.5] | 1.04 | fails |
+| td_att | `length_d` | -0.0901 | -4.53 | -74.2 [-144, +0] | screened | +6.6 (+0.10%) | [-44.1, +60.6] | -1.11 | fails |
+| ctrl | `zx_ctrl*zy_octrl` | -0.0654 | -3.19 | -1072.0 [-3294, +1158] | screened | -1200.0 (-0.58%) | [-2831.0, +235.3] | -2.74 | same sign |
+| ctrl | `zy_td_int` | -0.0536 | -3.02 | -1016.0 [-2870, +828] | screened | -421.6 (-0.20%) | [-1434.0, +543.5] | -1.86 | same sign |
+| ctrl | `zy_ctrl` | -0.0385 | -2.05 | -562.8 [-1845, +818] | not screened in | -697.8 (-0.34%) | [-1505.0, -13.3] | -2.48 | holds |
+| ctrl | `kick_y` | +0.0660 | 3.75 | -1792.0 [-3892, +468] | screened | -1460.0 (-0.70%) | [-2809.0, -147.3] | 3.35 | holds |
+| ctrl_per_td | `zy_sub_int` | +0.0457 | 3.10 | -928.6 [-2239, +294] | screened | -490.3 (-0.32%) | [-1377.0, +383.0] | 2.27 | same sign |
+| ctrl_per_td | `zy_td_def` | -0.0767 | -4.67 | -2263.0 [-4412, -34] | cv-confirmed | -1443.0 (-0.94%) | [-2754.0, -204.2] | -4.03 | holds |
+| kd | `zy_vol` | -0.1185 | -3.17 | -10.6 [-24, +3] | screened | -0.9 (-0.07%) | [-9.7, +7.9] | -1.32 | same sign |
+| sub_att | `zy_octrl` | +0.1324 | 3.16 | -15.0 [-36, +5] | screened | -12.6 (-0.77%) | [-25.4, -0.1] | 2.96 | holds |
+| gnp_att | `zy_sub_int` | +0.1024 | 4.20 | -242.1 [-465, -13] | cv-confirmed | -196.4 (-1.12%) | [-375.4, -5.9] | 3.17 | holds |
+| gnp_att | `zy_kd_pow` | +0.0841 | 3.53 | -142.5 [-352, +68] | screened | -43.4 (-0.25%) | [-188.0, +100.7] | 1.47 | same sign |
 
 Everything else (115 candidates, listed in `styles.json`) failed the screen. Null results worth stating: no block for distance accuracy, leg-kick share, body share, takedown success, knockdowns per head strike, submission attempts per minute, clinch strikes per minute passes the 2019-2023 CV (a few single terms clear the z screen there, such as the defender's volume on knockdowns per head strike or the defender's time on bottom on submission attempts, but their CV gain is not distinguishable from zero); the log5 / log-linear combination itself shows no interaction (`zx_acc*zy_dfn`, `zx_td_acc*zy_td_def`, `zx_kd_pow*zy_chin`, `zx_d_rate*zy_od_rate` all near zero), so the engine's multiplicative form is adequate (its exponents are another matter, section 6). Southpaw vs orthodox does not change accuracy or knockdowns.
 
@@ -216,22 +216,22 @@ The coefficients are conditional on the main-effect strengths they were fit with
 | dist_att | `length_d` | length advantage: ((reach_X - reach_Y)/sd_reach + (height_X - height_Y)/sd_height) / 2 | 1 | +0.0385 | +0.0639 | 8.92 | 1.039 | +0.0524 | 7.27 |
 | dist_att | `open` | 1 if one is southpaw and the other orthodox | 2 | -0.0326 | -0.0731 | -4.33 | 0.968 | -0.0676 | -3.88 |
 | dist_att | `zy_kd_pow` | defender's knockdown power (z) | 2 | -0.0238 | -0.0238 | -3.39 | 0.976 | -0.0100 | -1.39 |
-| dist_att | *block* | 2019-2023 CV -972, CI [-1401, -520]; 2024+ deviance -1.95%, CI [-758, -73] |  |  |  |  |  |  |  |
+| dist_att | *block* | 2019-2023 CV -972, CI [-1412, -523]; 2024+ deviance -1.43%, CI [-494, 68] |  |  |  |  |  |  |  |
 | td_att | `zy_td_int` | defender's takedown intent (z) | 1 | -0.0763 | -0.0763 | -3.29 | 0.927 | +0.0007 | 0.03 |
 | td_att | `length_d` | length advantage: ((reach_X - reach_Y)/sd_reach + (height_X - height_Y)/sd_height) / 2 | 2 | -0.0808 | -0.1340 | -4.02 | 0.922 | -0.0966 | -2.86 |
 | td_att | `zy_vol` | defender's volume (z) | 2 | +0.0767 | +0.0767 | 3.15 | 1.080 | +0.1679 | 6.91 |
 | td_att | `zy_td_def` | defender's takedown defense (z) | 2 | -0.0933 | -0.0933 | -4.24 | 0.911 | -0.0741 | -3.33 |
-| td_att | *block* | 2019-2023 CV -256, CI [-400, -104]; 2024+ deviance -0.93%, CI [-195, 33] |  |  |  |  |  |  |  |
+| td_att | *block* | 2019-2023 CV -256, CI [-406, -114]; 2024+ deviance -0.01%, CI [-100, 97] |  |  |  |  |  |  |  |
 | ctrl | `kick_y` | defender's kick share (z_sh_l + z_sh_b)/sqrt(2) | 2 | +0.0624 | +0.0569 | 3.55 | 1.064 | +0.0432 | 2.59 |
 | ctrl | `zx_ctrl*zy_octrl` | attacker's control propensity x defender's time-controlled propensity (z x z) | 2 | -0.0686 | -0.0683 | -3.37 | 0.934 | -0.1708 | -9.25 |
 | ctrl | `zy_td_int` | defender's takedown intent (z) | 2 | -0.0490 | -0.0490 | -2.77 | 0.952 | -0.0298 | -1.66 |
-| ctrl | *block* | 2019-2023 CV -3670, CI [-7005, -61]; 2024+ deviance -1.68%, CI [-7865, -2035] |  |  |  |  |  |  |  |
+| ctrl | *block* | 2019-2023 CV -3670, CI [-7178, -290]; 2024+ deviance -1.43%, CI [-5236, -699] |  |  |  |  |  |  |  |
 | ctrl_per_td | `zy_td_def` | defender's takedown defense (z) | 1 | -0.0690 | -0.0690 | -3.94 | 0.933 | -0.1069 | -6.01 |
 | ctrl_per_td | `zy_sub_int` | defender's submission intent (z) | 2 | +0.0264 | +0.0264 | 1.67 | 1.027 | +0.0017 | 0.10 |
-| ctrl_per_td | *block* | 2019-2023 CV -2564, CI [-4894, -269]; 2024+ deviance -0.81%, CI [-3446, -108] |  |  |  |  |  |  |  |
+| ctrl_per_td | *block* | 2019-2023 CV -2564, CI [-4868, -352]; 2024+ deviance -1.03%, CI [-2992, -252] |  |  |  |  |  |  |  |
 | gnp_att | `zy_sub_int` | defender's submission intent (z) | 1 | +0.1041 | +0.1041 | 4.28 | 1.110 | +0.1038 | 4.18 |
 | gnp_att | `zy_kd_pow` | defender's knockdown power (z) | 2 | +0.0859 | +0.0859 | 3.57 | 1.090 | +0.0744 | 3.08 |
-| gnp_att | *block* | 2019-2023 CV -395, CI [-718, -93]; 2024+ deviance -0.77%, CI [-493, 81] |  |  |  |  |  |  |  |
+| gnp_att | *block* | 2019-2023 CV -395, CI [-690, -90]; 2024+ deviance -1.40%, CI [-498, -20] |  |  |  |  |  |  |  |
 
 **Optional (knob, default off)**
 
@@ -240,13 +240,13 @@ The coefficients are conditional on the main-effect strengths they were fit with
 | leg_share | `length_d` | length advantage: ((reach_X - reach_Y)/sd_reach + (height_X - height_Y)/sd_height) / 2 | 2 | -0.0490 | -0.0813 | -3.28 | 0.952 | -0.0483 | -1.88 |
 | leg_share | `zy_press` | defender's pressure proxy (z) | 2 | +0.0402 | +0.0402 | 2.53 | 1.041 | +0.0228 | 1.36 |
 | leg_share | `zy_td_int` | defender's takedown intent (z) | 2 | -0.0417 | -0.0417 | -2.61 | 0.959 | -0.0206 | -1.22 |
-| leg_share | *block* | 2019-2023 CV -151, CI [-318, 25]; 2024+ deviance -1.10%, CI [-247, -20] |  |  |  |  |  |  |  |
+| leg_share | *block* | 2019-2023 CV -151, CI [-322, 24]; 2024+ deviance -0.99%, CI [-179, 16] |  |  |  |  |  |  |  |
 | body_share | `open` | 1 if one is southpaw and the other orthodox | 1 | +0.0466 | +0.1045 | 4.04 | 1.048 | +0.1040 | 4.01 |
-| body_share | *block* | 2019-2023 CV -96, CI [-191, 1]; 2024+ deviance -0.05%, CI [-72, 66] |  |  |  |  |  |  |  |
+| body_share | *block* | 2019-2023 CV -96, CI [-192, 2]; 2024+ deviance -0.03%, CI [-61, 60] |  |  |  |  |  |  |  |
 | kd | `zy_vol` | defender's volume (z) | 2 | -0.1186 | -0.1186 | -3.17 | 0.888 | -0.0781 | -1.89 |
-| kd | *block* | 2019-2023 CV -11, CI [-25, 4]; 2024+ deviance -0.20%, CI [-16, 7] |  |  |  |  |  |  |  |
+| kd | *block* | 2019-2023 CV -11, CI [-26, 4]; 2024+ deviance -0.07%, CI [-10, 8] |  |  |  |  |  |  |  |
 | sub_att | `zy_octrl` | defender's time-controlled propensity (z) | 2 | +0.1323 | +0.1323 | 3.16 | 1.141 | -0.0923 | -2.09 |
-| sub_att | *block* | 2019-2023 CV -15, CI [-35, 6]; 2024+ deviance -0.20%, CI [-19, 11] |  |  |  |  |  |  |  |
+| sub_att | *block* | 2019-2023 CV -15, CI [-36, 8]; 2024+ deviance -0.77%, CI [-26, -0] |  |  |  |  |  |  |  |
 
 Implied main-effect exponents of the free fits (coefficient on the raw log-ratio or log-odds feature; the engine default is 1 for both):
 
@@ -266,17 +266,17 @@ Tier 1 = CV-confirmed alone; tier 2 = screened alone and kept by the forward CV 
 
 | Rate | p5 | p25 | median | p75 | p95 | median |shift| |
 |---|---|---|---|---|---|---|
-| dist_att | -0.117 | -0.057 | -0.015 | 0.020 | 0.066 | 0.037 |
-| td_att | -0.296 | -0.136 | -0.020 | 0.098 | 0.257 | 0.119 |
-| ctrl | -0.177 | -0.069 | -0.005 | 0.060 | 0.160 | 0.065 |
-| ctrl_per_td | -0.129 | -0.054 | -0.003 | 0.052 | 0.120 | 0.053 |
-| gnp_att | -0.209 | -0.092 | 0.004 | 0.106 | 0.219 | 0.099 |
-| leg_share | -0.142 | -0.064 | -0.008 | 0.054 | 0.142 | 0.060 |
+| dist_att | -0.117 | -0.057 | -0.014 | 0.020 | 0.066 | 0.036 |
+| td_att | -0.287 | -0.132 | -0.021 | 0.097 | 0.257 | 0.118 |
+| ctrl | -0.174 | -0.067 | -0.004 | 0.061 | 0.165 | 0.064 |
+| ctrl_per_td | -0.128 | -0.053 | -0.001 | 0.051 | 0.120 | 0.053 |
+| gnp_att | -0.212 | -0.093 | 0.005 | 0.106 | 0.223 | 0.100 |
+| leg_share | -0.139 | -0.064 | -0.009 | 0.053 | 0.139 | 0.059 |
 | body_share | 0.000 | 0.000 | 0.000 | 0.105 | 0.105 | 0.000 |
-| kd | -0.175 | -0.065 | 0.009 | 0.089 | 0.215 | 0.076 |
-| sub_att | -0.236 | -0.094 | 0.004 | 0.091 | 0.192 | 0.092 |
+| kd | -0.174 | -0.065 | 0.008 | 0.088 | 0.210 | 0.077 |
+| sub_att | -0.235 | -0.088 | 0.004 | 0.093 | 0.193 | 0.092 |
 
-So for the default-on blocks a typical matchup moves a rate by 4-13% and the 5% most extreme by up to 35%. Examples (multipliers for Poisson rates, log-odds shifts for shares, all selected blocks including optional ones):
+So for the default-on blocks a typical matchup moves a rate by 4-12% and the 5% most extreme by up to 33%. Examples (multipliers for Poisson rates, log-odds shifts for shares, all selected blocks including optional ones):
 
 | Attacker vs defender | Attacker archetype (live) | Modifiers |
 |---|---|---|
@@ -299,20 +299,20 @@ A stand-in for the engine: fit every rate model on 2019-2023, predict each side'
 
 | Modifiers | Model | 2024+ log loss | Accuracy | z of impact term | Change vs none [95% CI] | Median / max |dp| (points) |
 |---|---|---|---|---|---|---|
-| none | elo plus impact | 0.6603 | 0.624 | 6.61 |  |  |
-| none | baseline plus impact | 0.6267 | 0.661 | 0.93 |  |  |
-| tune_screened | elo plus impact | 0.6596 | 0.621 | 7.04 | -0.0007 [-0.0032, +0.0019] | 1.4 / 8.7 |
-| tune_screened | baseline plus impact | 0.6267 | 0.665 | 1.32 | +0.0000 [-0.0007, +0.0007] | 0.3 / 2.2 |
-| tier1 | elo plus impact | 0.6587 | 0.619 | 7.00 | -0.0016 [-0.0038, +0.0009] | 1.2 / 8.0 |
-| tier1 | baseline plus impact | 0.6266 | 0.662 | 1.00 | -0.0002 [-0.0005, +0.0002] | 0.2 / 1.3 |
-| default_on | elo plus impact | 0.6588 | 0.619 | 7.20 | -0.0015 [-0.0040, +0.0011] | 1.5 / 7.8 |
-| default_on | baseline plus impact | 0.6267 | 0.666 | 1.35 | +0.0000 [-0.0007, +0.0007] | 0.3 / 2.4 |
-| all_recommended | elo plus impact | 0.6596 | 0.620 | 7.04 | -0.0007 [-0.0032, +0.0019] | 1.4 / 8.7 |
-| all_recommended | baseline plus impact | 0.6267 | 0.665 | 1.33 | -0.0000 [-0.0007, +0.0007] | 0.3 / 2.2 |
+| none | elo plus impact | 0.6580 | 0.619 | 6.61 |  |  |
+| none | baseline plus impact | 0.6190 | 0.671 | 0.93 |  |  |
+| tune_screened | elo plus impact | 0.6570 | 0.622 | 7.04 | -0.0010 [-0.0039, +0.0021] | 1.4 / 7.8 |
+| tune_screened | baseline plus impact | 0.6190 | 0.673 | 1.32 | +0.0000 [-0.0007, +0.0007] | 0.3 / 1.8 |
+| tier1 | elo plus impact | 0.6562 | 0.619 | 7.00 | -0.0019 [-0.0047, +0.0010] | 1.2 / 7.4 |
+| tier1 | baseline plus impact | 0.6188 | 0.671 | 1.00 | -0.0002 [-0.0006, +0.0002] | 0.2 / 1.3 |
+| default_on | elo plus impact | 0.6558 | 0.622 | 7.20 | -0.0023 [-0.0052, +0.0006] | 1.4 / 7.8 |
+| default_on | baseline plus impact | 0.6191 | 0.673 | 1.35 | +0.0000 [-0.0008, +0.0007] | 0.3 / 1.9 |
+| all_recommended | elo plus impact | 0.6570 | 0.621 | 7.04 | -0.0010 [-0.0040, +0.0021] | 1.4 / 7.8 |
+| all_recommended | baseline plus impact | 0.6190 | 0.673 | 1.33 | -0.0000 [-0.0008, +0.0007] | 0.3 / 1.8 |
 
-Read: the scorecard alone lifts Elo from 0.6805 to 0.6603 (it is a real, if crude, mechanistic predictor). Modifiers change the scorecard model's 2024+ log loss by at most about 0.002, with intervals that include zero. Every variant's terms were chosen on 2019-2023 only ('tier1' = CV-confirmed terms of the selected blocks, 'default_on' = the on-by-default blocks, 'all_recommended' = every selected block, 'tune_screened' = every screened matchup term without the forward step), so each row is a clean held-out test. On top of the full skill baseline the scorecard adds nothing, as expected: the baseline already holds the same main effects.
+Read: the scorecard alone lifts Elo from 0.6783 to 0.6580 (it is a real, if crude, mechanistic predictor). Modifiers change the scorecard model's 2024+ log loss by at most about 0.002, with intervals that include zero. Every variant's terms were chosen on 2019-2023 only ('tier1' = CV-confirmed terms of the selected blocks, 'default_on' = the on-by-default blocks, 'all_recommended' = every selected block, 'tune_screened' = every screened matchup term without the forward step), so each row is a clean held-out test. On top of the full skill baseline the scorecard adds nothing, as expected: the baseline already holds the same main effects.
 
-Median relative change in the expected per-minute stats from the modifiers (2019-2026 sides): tune_screened: h 4.7%, b 3.4%, l 4.4%, kd 9.8%, td 11.5%, ctrl 6.5%; tier1: h 2.3%, b 3.4%, l 2.2%, kd 2.3%, td 7.0%, ctrl 0.0%; default_on: h 3.6%, b 3.6%, l 3.6%, kd 3.6%, td 11.5%, ctrl 6.5%; all_recommended: h 4.7%, b 3.4%, l 4.4%, kd 9.8%, td 11.5%, ctrl 6.5%.
+Median relative change in the expected per-minute stats from the modifiers (2019-2026 sides): tune_screened: h 4.7%, b 3.4%, l 4.4%, kd 9.7%, td 11.4%, ctrl 6.5%; tier1: h 2.3%, b 3.4%, l 2.2%, kd 2.3%, td 7.0%, ctrl 0.0%; default_on: h 3.6%, b 3.6%, l 3.6%, kd 3.6%, td 11.4%, ctrl 6.5%; all_recommended: h 4.7%, b 3.4%, l 4.4%, kd 9.8%, td 11.4%, ctrl 6.5%.
 
 ## 8. Scouting files versus the data
 
@@ -328,7 +328,7 @@ Median relative change in the expected per-minute stats from the modifiers (2019
 | body-work | `sh_b` | + | 34 | 0.89 |
 | submissions | `sub_int` | + | 34 | 0.88 |
 | chin-concern | `chin` | + | 19 | 0.88 |
-| back-takes | `sub_int` | + | 22 | 0.85 |
+| back-takes | `sub_int` | + | 23 | 0.84 |
 | cage-wrestling | `td_int` | + | 8 | 0.83 |
 | power | `kd_pow` | + | 37 | 0.81 |
 | clinch | `sh_c` | + | 21 | 0.79 |
@@ -341,12 +341,12 @@ Median relative change in the expected per-minute stats from the modifiers (2019
 | knees | `sh_c` | + | 8 | 0.62 |
 | elbows | `sh_c` | + | 16 | 0.58 |
 | head-movement | `dfn` | + | 3 | 0.53 |
-| ground-and-pound | `g_rate` | + | 32 | 0.52 |
 | counter | `press` | - | 19 | 0.51 |
+| ground-and-pound | `g_rate` | + | 33 | 0.50 |
 | jab | `sh_h` | + | 16 | 0.48 |
 | pressure | `press` | + | 26 | 0.47 |
 
-What the weakly matched tags line up with instead (best three features by |AUC - 0.5|): **pressure**: sh_l 0.25, otd_int 0.29, otd_rate 0.30; **counter**: ctrl 0.27, kd_pow 0.71, osh_l 0.69; **durable**: ko_l 0.16, chin 0.23, late 0.72; **cardio**: kd_pow 0.23, fin_w 0.27, lexp 0.72; **ground-and-pound**: sh_g 0.85, sh_d 0.18, ctrl 0.77; **power**: kd_pow 0.81, g_rate 0.78, fin_w 0.78.
+What the weakly matched tags line up with instead (best three features by |AUC - 0.5|): **pressure**: sh_l 0.25, otd_int 0.29, otd_rate 0.30; **counter**: ctrl 0.27, kd_pow 0.71, osh_l 0.69; **durable**: ko_l 0.16, chin 0.23, late 0.72; **cardio**: kd_pow 0.23, fin_w 0.27, lexp 0.72; **ground-and-pound**: sh_g 0.85, sh_d 0.20, ctrl 0.78; **power**: kd_pow 0.81, g_rate 0.78, fin_w 0.78.
 
 Scouts' 'pressure' fighters kick the legs less and get fewer takedown attempts against them; nothing in the attempt counts measures walking a man down. Treat `press` as an output-share feature, not as pressure in the coaching sense, and keep the scouting tag for the director. Stance agrees with the tale of the tape for every scouted fighter (orthodox|orthodox 51, southpaw|southpaw 20, switch|switch 14).
 
@@ -382,11 +382,11 @@ Scouting archetype family (rows) against the data archetype (largest live member
 5. **Labels.** Show the scouting archetype where a scouting file exists and the data archetype otherwise (with its membership); the data names describe centroids, and the attempts-ratio 'pressure' axis can label a forward-moving fighter who gets out-thrown (Gaethje) as a counter striker.
 6. **Do not** add archetype-pair or interaction terms to the final win probability; none survived held-out validation and the combined set made 2024+ log loss worse. Do not use the scouting tags as numeric inputs in backtests (hindsight); use them for the director's technique choices and the page.
 7. **Calibration order.** The modifiers are not orthogonal to the engine's exponents: with the main effects fixed at a = b = 1, the defender's-wrestling term on takedown attempts vanishes and the control ceiling term more than doubles (section 6). Ship them together with the exponents they were fit with (v4 should start its exponent search from the implied values above), or use the a = b = 1 column while the engine keeps a = b = 1; refit the modifiers by rerunning this tool whenever v4 changes the exponents or the prior strengths.
-8. **Validation target for v7.** With the modifiers on, the engine's simulated per-fight stats should reproduce the 2024+ rate-level gains above (distance attempts per standing minute, takedown attempts per standing minute, control time per takedown, ground strikes per top-control minute), and its 2024+ winner log loss should be no worse than without them; that is the ship criterion, given that the winner-level effect is below what 1223 fights can detect.
+8. **Validation target for v7.** With the modifiers on, the engine's simulated per-fight stats should reproduce the 2024+ rate-level gains above (distance attempts per standing minute, takedown attempts per standing minute, control time per takedown, ground strikes per top-control minute), and its 2024+ winner log loss should be no worse than without them; that is the ship criterion, given that the winner-level effect is below what 854 fights can detect.
 
 ## 10. Caveats
 
-- Power: with 1223 held-out fights the paired bootstrap SE of a log-loss change is about 0.001-0.002, so winner-level matchup effects smaller than about 0.003 are invisible. The rate-level tests have far more information per fight, which is why they detect effects the winner tests cannot.
+- Power: with 854 held-out fights the paired bootstrap SE of a log-loss change is about 0.001-0.002, so winner-level matchup effects smaller than about 0.003 are invisible. The rate-level tests have far more information per fight, which is why they detect effects the winner tests cannot.
 - ufcstats lacks cage position, feints, stance switches within fights, technique labels and per-target attempts by position; pressure, counter-punching and kick types can only be proxied.
 - Control time includes clinch control; standing minutes are approximate (min minus both men's control).
 - Stance, reach and height are the current tale of the tape, applied to past fights.

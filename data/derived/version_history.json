@@ -620,9 +620,9 @@
      "logloss_with": 0.5788248485320001,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -8.727629959482959e-7,
-      "lo": -0.0000015272600814283089,
-      "hi": -2.5655151717160004e-7,
+      "est": -8.727629959482959e-07,
+      "lo": -1.5272600814283089e-06,
+      "hi": -2.5655151717160004e-07,
       "p_gt0": 0.002
      },
      "n": 845
@@ -632,9 +632,9 @@
      "logloss_with": 0.5930335681784208,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -1.0099141584613298e-7,
-      "lo": -1.8138076015023744e-7,
-      "hi": -1.882505288986469e-8,
+      "est": -1.0099141584613298e-07,
+      "lo": -1.8138076015023744e-07,
+      "hi": -1.882505288986469e-08,
       "p_gt0": 0.0105
      },
      "n": 845
@@ -1208,10 +1208,10 @@
      },
      "r108": {
       "sim": 0.0338,
-      "actual": 0.0628,
-      "diff": -0.029,
-      "actual_fixed": 0.0246,
-      "diff_fixed": 0.0092
+      "actual": 0.0246,
+      "diff": 0.0092,
+      "actual_before_fix": 0.0628,
+      "note": "v5.0.1: corrected actual (judged rounds from the card totals), as in data/derived/evalv/v4_val.json meta.erratum; no metric or decision input changes"
      },
      "sigLndPer15": {
       "sim": 63.3076,
@@ -1454,9 +1454,9 @@
      "logloss_with": 0.5930319721344538,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -0.0000016970353827425062,
-      "lo": -0.000002435549185916011,
-      "hi": -9.44685467941618e-7,
+      "est": -1.6970353827425062e-06,
+      "lo": -2.435549185916011e-06,
+      "hi": -9.44685467941618e-07,
       "p_gt0": 0
      },
      "n": 845
@@ -2295,9 +2295,9 @@
      "logloss_with": 0.5788099923758476,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -0.0000157289191484635,
-      "lo": -0.00003115957049440681,
-      "hi": -2.182334234371639e-7,
+      "est": -1.57289191484635e-05,
+      "lo": -3.115957049440681e-05,
+      "hi": -2.182334234371639e-07,
       "p_gt0": 0.0235
      },
      "n": 845
@@ -2312,9 +2312,9 @@
       "hi": 0,
       "p_gt0": null,
       "raw": {
-       "est": -2.947697791072808e-7,
-       "lo": -4.819442412118878e-7,
-       "hi": -1.0681580458083556e-7,
+       "est": -2.947697791072808e-07,
+       "lo": -4.819442412118878e-07,
+       "hi": -1.0681580458083556e-07,
        "p_gt0": 0.002
       },
       "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
@@ -5265,9 +5265,213 @@
    "notes": [
     "2026-11-07T04:32 train: train: engine 5.0.1 frozen in versions/v5.0.1 (the v5 review's fixes: input guards, components.v501 durFallback / dynNoise / levels; kdBase kept L730 by the pre-registered forward-chained 2019-2023 check); train only, validation is the single look",
     "2026-11-07T04:33 prereg (written before the validation run): v5.0.1's single validation look is the SECOND look at 2024-2025 for the v5 lineage. The KD level and dynamics issues were diagnosed from v5's look and its review, so every 5.0.1-vs-v4 and 5.0.1-vs-5.0.0 validation delta is an upper bound and 2024-25 is not a clean test for this version; the forward ledger and (with its KD/KO exposure noted) the vault are the clean arbiters. Command: node tools/evalv.js --version v5.0.1 --split val --sims 300 --workers 3 --compare v4. DECISION (tools/evalv_decide.js, new = v5.0.1_val.json, old = the deterministic --dev reproduction of v4's look data/derived/evalv/v4_repro_dev_val.json, whose per-fight pA equal the stored look on all 865 fights): keep v5.0.1 if (1) validation winner log loss paired 95% CI vs v4 excludes 0 on the good side; or (2) the winner CI includes 0 AND at least one of the registered secondary family {7-bin, method, stat-line deviance of sig landed, sig attempts, TD landed, control, KD} is better after a Holm adjustment at family-wise 0.05 AND no gated base rate (KO share, SUB share, R1 / R3 share of 3-round finishes, SD+MD share of decisions, KD per 100 head, sig landed / TD / control per 15) drifts out of tolerance by the paired test: D_b = |new - actual| - |old - actual| with an event-cluster CI above 0 AND |new - actual| > max(mlcal tolerance, 1.96 x the event-cluster SE of the actual). This replaces v5's point-tolerance gate and unadjusted secondaries, as the v5 review asked; v5's registered rule is computed and reported next to it, and a disagreement is reported, not used. The same paired test without the dated 2024 glove-trial window is information only. Also reported (not rule inputs): per-minute deviances, the base-rate table by window, the blend test, methodround paired vs v4 and descriptive 5.0.1 vs 5.0.0 (v5's look reproduced deterministically). The prediction package (FightEngine.predict) is not re-scored on validation.",
-    "2026-11-07T04:33 val: val: v5.0.1's single validation look (pre-registered in the previous note), paired vs v4"
+    "2026-11-07T04:33 val: val: v5.0.1's single validation look (pre-registered in the previous note), paired vs v4",
+    "2026-11-07T04:35Z decision: REJECTED by the pre-registered rule (winner n.s.; four stat-line deviances better after Holm, but KD per 100 head out of tolerance by the paired test). v4 restored in src/; v5.0.1 kept in versions/v5.0.1-rejected/."
    ],
-   "validated_at": "2026-11-07T04:33:41.338Z"
+   "validated_at": "2026-11-07T04:33:41.338Z",
+   "methodround_paired_vs_v4": {
+    "joint": {
+     "v4": 2.070684806832696,
+     "v5.0.1": 2.0589573492883644,
+     "S": 2.0417760105410894,
+     "diff": -0.01173,
+     "ci95": [
+      -0.04015,
+      0.01617
+     ]
+    },
+    "method3": {
+     "v4": 0.9399330733473251,
+     "v5.0.1": 0.9399711317868685,
+     "S": 0.9359561823360422,
+     "diff": 4e-05,
+     "ci95": [
+      -0.00963,
+      0.00979
+     ]
+    },
+    "finish": {
+     "v4": 0.6617194102538732,
+     "v5.0.1": 0.6606830773961049,
+     "S": 0.6593383146271491,
+     "diff": -0.00104,
+     "ci95": [
+      -0.00796,
+      0.00633
+     ]
+    },
+    "bin7": {
+     "v4": 1.571227877823871,
+     "v5.0.1": 1.5652767386765372,
+     "S": 1.553812418306754,
+     "diff": -0.00595,
+     "ci95": [
+      -0.02938,
+      0.01858
+     ]
+    },
+    "method_round": {
+     "v4": 1.4326948030758586,
+     "v5.0.1": 1.437248462732199,
+     "S": 1.4239756889184736,
+     "diff": 0.00455,
+     "ci95": [
+      -0.00905,
+      0.01887
+     ]
+    },
+    "round_given_fin": {
+     "v4": 1.0624727036225536,
+     "v5.0.1": 1.063692730694831,
+     "S": 1.0601277423205628,
+     "diff": 0.00122,
+     "ci95": [
+      -0.01402,
+      0.01696
+     ]
+    },
+    "ko_vs_sub": {
+     "v4": 0.6051500235306811,
+     "v5.0.1": 0.6074869609464073,
+     "S": 0.6016789660571612,
+     "diff": 0.00234,
+     "ci95": [
+      -0.01307,
+      0.01803
+     ]
+    },
+    "method_given_winner": {
+     "v4": 0.9107052225583608,
+     "v5.0.1": 0.9089647160580842,
+     "S": 0.9072786667286212,
+     "diff": -0.00174,
+     "ci95": [
+      -0.01459,
+      0.01209
+     ]
+    },
+    "winner": {
+     "v4": 0.6323601982649442,
+     "v5.0.1": 0.6266908351242426,
+     "S": 0.6212640384394861,
+     "diff": -0.00567,
+     "ci95": [
+      -0.01355,
+      0.00175
+     ]
+    },
+    "winner_brier": {
+     "v4": 0.22060707907891874,
+     "v5.0.1": 0.21796760028573967,
+     "S": 0.2154475858825891,
+     "diff": -0.00264,
+     "ci95": [
+      -0.00644,
+      0.00099
+     ]
+    },
+    "winner_acc": {
+     "v4": 0.6559202813599062,
+     "v5.0.1": 0.6658851113716295,
+     "S": 0.675263774912075,
+     "diff": 0.00996,
+     "ci95": [
+      -0.01075,
+      0.03228
+     ]
+    },
+    "method3_brier": {
+     "v4": 0.5636905918429223,
+     "v5.0.1": 0.5619962615900707,
+     "S": 0.5610006523666659,
+     "diff": -0.00169,
+     "ci95": [
+      -0.00792,
+      0.00463
+     ]
+    }
+   },
+   "decide_vs_v4": {
+    "file": "data/derived/evalv/v5.0.1_vs_v4_val_decide.json",
+    "old_reference": "data/derived/evalv/v4_repro_dev_val.json (deterministic --dev reproduction of v4's look: per-fight pA equal on all 865 fights)",
+    "branch1": {
+     "winLL": {
+      "diff": -0.005670339976553336,
+      "ci": [
+       -0.014104046242774572,
+       0.002251890034364265
+      ],
+      "p_two_sided": 0.17,
+      "n": 853
+     },
+     "pass": false
+    },
+    "clearly_better_holm": [
+     "dev_sig_lnd",
+     "dev_sig_att",
+     "dev_td_lnd",
+     "dev_ctrl"
+    ],
+    "clearly_worse_holm": [],
+    "base_rate_paired_fail": [
+     "kd100"
+    ],
+    "base_rate_registered_fail": [
+     "KO",
+     "kd100"
+    ],
+    "kd100": {
+     "actual": 0.6843857892908946,
+     "new": 0.8271617190804268,
+     "old": 0.7459398002072043,
+     "err_new": 0.14277592978953224,
+     "err_old": 0.06155401091630974,
+     "D_abs_err": 0.0812219188732225,
+     "D_ci": [
+      0.05888204216864423,
+      0.09470948589089478
+     ],
+     "se_actual": 0.03908937680132254,
+     "tol_registered": 0.08212629471490734,
+     "tol_paired": 0.08212629471490734,
+     "paired_fail": true,
+     "registered_fail": true
+    },
+    "KO": {
+     "actual": 0.29054842473745623,
+     "new": 0.31710423687281225,
+     "old": 0.30576819369895,
+     "err_new": 0.026555812135356016,
+     "err_old": 0.01521976896149374,
+     "D_abs_err": 0.011336043173862276,
+     "D_ci": [
+      -0.009990166273585288,
+      0.015036373563218075
+     ],
+     "se_actual": 0.015079871975635019,
+     "tol_registered": 0.02,
+     "tol_paired": 0.029556549072244635,
+     "paired_fail": false,
+     "registered_fail": true
+    },
+    "sensitivity_no_glove_trial_paired_fail": [
+     "SDMD"
+    ]
+   },
+   "descriptive": {
+    "vs_v5_5.0.0": "data/derived/evalv/v5.0.1_vs_v5_val_descriptive.json (winner -0.0035 [-0.0072, +0.0003]; nothing else significant; upper bound: not a clean look)",
+    "v5_vs_v4_under_the_5.0.1_rule": "data/derived/evalv/v5_vs_v4_val_decide_reanalysis.json (v5 still rejected: KD per 100 head fails the paired test; KO passes it)"
+   },
+   "decision": {
+    "against": "v4",
+    "kept": false,
+    "rule": "keep if validation winner log loss beats the previous version with a paired 95% CI excluding 0, or is not worse and clearly better on 7-bin / method / stat-line deviance (Holm-adjusted over the registered family of seven at FWER 0.05) without base rates drifting out of tolerance (paired event-cluster test |new-actual|-|old-actual| with CI above 0 and |new-actual| above max(mlcal tolerance, 1.96 SE of the actual)); pre-registered in the notes before the run",
+    "basis": "branch 1 fails: winner log loss 0.6267 vs v4 0.6324, paired -0.0057 [-0.0141, +0.0023] (CI includes 0). Branch 2: winner not worse; four stat-line deviances clearly better after Holm (sig landed -0.80 [-1.22, -0.39], attempts -1.40 [-2.26, -0.56], TD -0.043 [-0.066, -0.020], control -4.34 s [-7.23, -1.49]; 7-bin -0.0059 and method +0.0000 n.s.), BUT KD per 100 head landed drifts out of tolerance by the paired test: 0.827 vs actual 0.684 (+20.9%), v4 0.746; D = +0.081 [+0.059, +0.095] above 0 and |error| 0.143 above the tolerance 0.082 (12% of the actual; 1.96 SE = 0.077). Every other gated base rate passes the paired test (KO share 31.7% vs 29.1%, D +0.011 [-0.010, +0.015]). Branch 2 fails on its base-rate condition. v5's registered rule fails too (KO and KD).",
+    "also": "Brier -0.0026 [-0.0065, +0.0012]; accuracy +0.9 pts n.s.; calibration slope 1.72 (v5 1.81, v4 1.72); ECE 0.065; who x how x when vs v4 -0.0117 [-0.0402, +0.0162], vs S +0.0172 [-0.0097, +0.0444] (v5 +0.0380, v4 +0.0289, both CIs excluding 0); per-minute deviances (conditioned on real fight length) better for sig landed, attempts, TD, control. Blend test: engine weight 0.105 with the close (blend -0.0002 [-0.0011, +0.0008]) and 0.182 without a line (-0.0015 [-0.0031, +0.0003]); both n.s., and the weights are learned on in-sample train rows (biased upward; not evidence of value).",
+    "context": "information only, never a rule input: by window, KD per 100 head sim / actual = 0.86 / 0.61 (2024-01..05), 0.84 / 0.54 (glove trial Jun 1 - Nov 15, 2024), 0.80 / 0.63 (Nov 16, 2024 - Feb 14, 2025), 0.81 / 0.83 (Feb 15 - Dec 31, 2025); by year 0.85 / 0.57 (2024) and 0.81 / 0.81 (2025); KO share 32.4% / 27.3% (2024) and 31.0% / 30.8% (2025). The paired test without the glove window passes KD and fails SD+MD share. The rule covers the whole window as registered.",
+    "action": "src/ restored to v4 (4.0.0); versions/v5.0.1 renamed versions/v5.0.1-rejected (symlink kept), see docs/CHANGELOG.md v5.0.1",
+    "decided_at": "2026-11-07T04:35Z"
+   }
   }
  ]
 }

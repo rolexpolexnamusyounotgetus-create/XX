@@ -38,6 +38,12 @@
    The blend test (validation runs only): the MoE stacker (tools/moe.py's Stacker, chosen linear family) refit with
      this version's engine probabilities, via tools/evalv_blend.py: validated engine weight and the blend's validation
      log loss with vs without the engine.
+   v5.0.1 additions (v5 review): per-minute stat-line deviance conditioned on the real fight length (devpm_*; the unconditional
+     dev_* mixes finish-rate and duration errors with rate accuracy); base rates by calendar year (the Calibrate gate's per-year
+     KD / KO checks) and, on validation, by the dated glove-trial windows (information only); per-fight outputs at 6 decimals with
+     the simulated stats, shares and minutes (b7 / cells, pKO / pSUB / pDEC, st, mins, dec), which tools/evalv_decide.js needs
+     for the paired base-rate tests and the Holm-adjusted decision; every worker must report this version's engine and params
+     (and the history entry's params version), and a durability record must be complete and fully applied (src "record").
    Outputs: data/derived/evalv/<version>_<split>.json (metrics + per-fight predictions), and the version's entry in
    data/derived/version_history.json {version, date, engine_sha256, params_sha256, train, validation, blend, notes}.
    A train run creates or updates the entry's train block (and leaves validation null). A validation run fills

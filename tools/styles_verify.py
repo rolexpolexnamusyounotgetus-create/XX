@@ -36,7 +36,7 @@ import build_db as B      # noqa: E402
 import styles as S        # noqa: E402
 
 NB = 1000
-TUNE, TEST = [2019, 2020, 2021, 2022, 2023], [2024, 2025, 2026]
+TUNE, TEST = [2019, 2020, 2021, 2022, 2023], [2024, 2025]   # v5.0.1 vault cleanup: 2026 is the sealed vault (it was in TEST)
 # The first version's on-by-default blocks (selected with 2024+ intervals) and the 2024+ numbers it reported.
 ORIGINAL_DEFAULT_ON = {
     "dist_att": (["zy_kd_pow", "length_d", "open"], -1.95, [-758, -73]),

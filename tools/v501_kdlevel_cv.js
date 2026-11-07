@@ -19,7 +19,8 @@
    Rule: the lowest primary RMSE wins, but the incumbent A is replaced only if the winner's RMSE is at most 0.9 x A's AND its
    secondary deviance is not worse than A's; otherwise A stays.
 
-     nice -n 5 node tools/v501_kdlevel_cv.js [--sims 100] [--workers 3] [--out data/derived/v501_kdlevel_cv.json] */
+     nice -n 5 node tools/v501_kdlevel_cv.js [--sims 100] [--workers 3] [--engine-dir versions/v5.0.1] [--out data/derived/v501_kdlevel_cv.json]
+   (ran on the 5.0.1 working copy in src/ before the levels set was added; the check is level-invariant: each fold re-matches the scale) */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -32,7 +33,7 @@ const CANDS = ["A_L730", "B_relative", "C_L1460", "D_L1825", "E_shrunk"];
 
 if (!isMainThread) {
   const W = workerData;
-  const E = require(path.join(ROOT, "src/engine3.js"));
+  const E = require(path.join(W.engineDir, "engine3.js"));
   const bt = J("data/derived/backtest_dev.json"), keys = bt.meta.keys;
   const PA = J("data/derived/mlcal_priors_asof.json"), OOF = J("data/derived/mlrates_oof.json"), T = OOF.meta.targets;
   const toObj = (a) => { const r = {}; T.forEach((k, i) => { r[k] = a[i]; }); return r; };
@@ -85,7 +86,7 @@ const ids = train.map((f) => f.id), chunks = []; for (let i = 0; i < ids.length;
 const res = []; let next = 0, live = 0; const t0 = Date.now();
 new Promise((resolve) => {
   for (let k = 0; k < WORKERS; k++) {
-    const w = new Worker(__filename, { workerData: { sims: SIMS } }); live++;
+    const w = new Worker(__filename, { workerData: { sims: SIMS, engineDir: path.resolve(ROOT, args["engine-dir"] || "src") } }); live++;
     const feed = () => { if (next >= chunks.length) { w.terminate(); if (--live === 0) resolve(); return; } w.postMessage({ ids: chunks[next++] }); };
     w.on("message", (o) => { res.push(...o); feed(); }); w.on("error", (e) => { console.error(e); process.exit(1); });
     feed();
