@@ -155,6 +155,14 @@ Findings from verified research that the next engine versions must use. Each lin
   pseudo-holdout; (3) select components by train-only forward-chained CV, treat 2024-25 as information; (4) a page that runs v5+
   components must pass tests/test_page_parity.js (bundle embed.js / blend.js, ship compact durability / pre-UFC / embed rosters);
   (5) state the in-sample bias next to any stacker engine weight; (6) never read the moved vault-period durability / styles numbers.
+- ENGINE v5.0.1 MEASURED AND REJECTED (02:10-04:35 UTC Nov 7; the v5 review's train-only fixes + vault-contamination
+  cleanup in durability/styles inputs): winner 0.6267 vs v4 0.6324, paired -0.0057 [-0.0141, +0.0023] (n.s.); four
+  stat lines clearly better after Holm; FAILS on KD per 100 head 0.827 vs actual 0.684 (paired test). By window:
+  2024 KD sim/actual 0.85/0.57 (glove trial), 2025 0.81/0.81. src stays v4 (4.0.0); versions/v5.0.1-rejected/.
+  Page-parity test (tests/test_page_parity.js) added: any v5.x page must bundle embed/blend modules and rosters.
+- DECISION-RULE AMENDMENT for v6-v10 (V6_V10_PLAN 7.1 item 9, written before the v6 look, validation-informed):
+  the base-rate condition excludes the announced glove-trial window (Jun 1 - Nov 15, 2024); loss metrics keep the
+  full window; never applied back to v5/v5.0.1; any version kept because of it is flagged.
 - ENGINE v5 MEASURED AND REJECTED (single validation look, decided 02:10 UTC Nov 7; data/derived/version_history.json):
   winner log loss 0.6301 vs v4 0.6324, paired -0.0022 [-0.0099, +0.0053] (branch 1 fails). Branch 2: stat lines
   clearly better (sig landed -0.71, attempts -1.23, TD -0.048, control -4.1 s, CIs exclude 0) BUT two base rates

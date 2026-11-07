@@ -834,6 +834,18 @@ before the look it governs (an override after a look is read counts as selection
 8. **Rules 6.5.1 (production drift rule) and 6.5.2 (contamination rule) are hereby pre-registered** exactly as
    written in 6.5, together with the audit-1 scope in 6.5.3 plus item 5 above.
 
+9. **Amendment (Nov 7, ~05:00 UTC, before the v6 look; VALIDATION-INFORMED, recorded as such).** v5 and v5.0.1 both
+   failed the decision rule only on the base-rate condition, through knockdown/KO levels inside the documented 2024
+   glove trial (new gloves Jun 1 - Nov 15, 2024; research/model_eradrift.md). v5.0.1's KD per 100 head was 0.85 vs
+   0.57 actual in 2024 but 0.81 vs 0.81 in 2025. An engine calibrated to standard gloves cannot pass a full-window
+   KD/KO tolerance without being tuned to the trial, which the protocol forbids. So, for v6-v10 only (never applied
+   back to v5 / v5.0.1): the base-rate condition of the decision rule is evaluated on the 2024-25 window EXCLUDING
+   Jun 1 - Nov 15, 2024 (the announced trial dates), and the full-window base-rate table is still reported next to
+   it. Every primary and secondary loss metric (winner, 7-bin, method, stat lines) keeps the full window. Rationale:
+   an announced, temporary equipment change is exogenous to every model fit before 2024; v9's era work treats it as
+   a logged variance bump, not a level. This amendment was written after two looks showed the problem, so any
+   version kept because of it is flagged "kept under the glove-window amendment" in its entry and in audit 2.
+
 ---
 
 ## 8. Considered, not in the five
