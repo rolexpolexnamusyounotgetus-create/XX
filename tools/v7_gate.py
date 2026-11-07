@@ -513,7 +513,7 @@ def gate(path, out=None, tests=None):
     mr = {}
     for nm, rws in (("C2_close_props", rows2), ("primary_close_props", rows3)):
         for pk in ("v7", "v7np", "cmp4"):
-            if pk in rws[0][2] if rws else False:
+            if rws and pk in rws[0][2]:
                 try:
                     mr["%s|%s" % (nm, pk)] = methodround_cells(rws, pk, "2022-01-01", "2024-01-01")
                 except Exception as e:  # noqa: BLE001
