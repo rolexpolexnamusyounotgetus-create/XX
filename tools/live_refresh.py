@@ -1000,7 +1000,8 @@ def cmd_build(args):
     manifest = {
         "tool": TOOL, "readme_section": "data/predictions/README.md 'Forward model v4.4 (Nov 7, 2026)'",
         "as_of": info["as_of"], "until": until, "built_utc": iso(now_utc()), "code_commit": git("rev-parse", "HEAD"),
-        "uncommitted_code": bool(git("status", "--porcelain", "--", "tools")),
+        "uncommitted_code": bool(git("status", "--porcelain", "--", "tools/live_refresh.py",
+                                     *["tools/" + m for m in BUILDER_MODULES])),
         "code_sha256": dict({"tools/live_refresh.py": sha256_file(os.path.abspath(__file__))}, **info["builder_code_sha256"]),
         "pinned_snapshot": PIN_SNAPSHOT, "sources": sources, "files": files,
         "not_live": {k: {"file": v, "sha256_16": FWD43_PINNED[v], "why": "pre-registered live, but tools/live_refresh.py "

@@ -840,6 +840,74 @@ fallback inputs themselves fail fwd-4.3's pinned-hash check.
   the current tools before the edit).
 - **The page is out of scope.** This section changes nothing on the page, in build.py or in src/app.js.
 
+### Addendum: fwd-4.4 implementation (Nov 7, 2026, about 12:00 pm UTC; before any fwd-4.4 file)
+
+The code was written after the README-only pre-registration commit (f963070, 11:30:24 am UTC). It follows the rules
+above without changing them. The repository's autosave commits picked up in-flight edits between the two commits; none
+of them is a ledger file, and none touched a data/derived input, a backtest or evaluation file, or the vault.
+
+- **Tool code hashes** (sha256, first 16 hex), recorded in every fwd-4.4 file as `model.code_sha256_16`:
+  - `tools/forward_ledger.py` (1.4): f8aec0838cc8d8df
+  - `tools/forward_ledger.js`: 39e0ae0596d54455
+  - `tools/forward_statlines.js`: a8ae3e47c01e87e6
+  - `tools/live_refresh.py` (1.0): 53f6bfd3777960ac
+- **Zero-diff rule** (`python3 tools/live_refresh.py regress`, cutoff 2026-10-31 on the pinned Oct 31 CSVs, Greco1899
+  3d4886d). Every live file reproduces its fwd-4.3 pinned file **byte for byte**: fighters `df4d868a2195fb4a`, market
+  `8edb0a6cc9c3ca4f`, ratings `5fc4f8a3be14051f`, ml `444b7b1e62086cc1`, ml2 `0837826dbc05cd1f`, methodround
+  `b26b7e373367f346`. The builders take 25 s. Two details make the bytes match:
+  - ratings.json stores elo_ref's K rounded to 6 decimals (0.253284). elo_ref is untuned (tools/ratings.py specs:
+    K = 44 x ln 10 / 400, the pipeline's Elo K 44 in logit units), so the builder runs that exact value; with the rounded
+    value, 4 of the 1,229 elo_ref means flip in the 4th decimal.
+  - The ml2 `r` block uses tools/ratings.py with `OPPUFC_CLEAN = False`, as section 1 says (0 of 1,229 rows differ).
+- **oppadj.json stays at its fwd-4.3 pin.** tools/live_refresh.py 1.0 has no oppadj roster builder (oppadj.py's roster
+  factors need its full walk data object, its stored `chosen` configs and the engine k values), so under the zero-diff
+  rule fwd-4.4 reads oppadj.json at `c27c8c6de3733c59`, and the manifest says so (`not_live`). oppadj feeds only the
+  stat-line block, not any winner probability. Adding it later is a new version.
+- **Details the rules leave open, settled here.**
+  - Market stream membership after Oct 31 follows tools/market.py for fights after nlbair's window: backtest-type
+    bouts only (both men with a prior UFC fight, no ambiguous name). A debut bout is listed in the manifest
+    (`not_in_stream`) and is not a market update, as it would not be in a market.py rebuild either.
+  - `as_of` is the date of the newest event that passed the two-source check. An event ESPN does not list (or where no
+    bout passes) stops the cutoff before it; later events wait for the next refresh.
+  - The Greco1899 CSVs carry trailing spaces in some EVENT fields; events and bouts are matched on stripped text.
+  - A debutant who fights after the snapshot enters the live roster under his ufcstats slug. The card snapshot
+    (cards_upcoming.json) must then carry that slug for him to be treated as a veteran on a later card; with a `null`
+    slug he stays a debutant, as in fwd-4.3.
+- **First build** (`python3 tools/live_refresh.py build`, Nov 7, 11:47 am UTC): Greco1899 HEAD 3d4886d ("2026-11-01 data
+  refresh") has no event after Oct 31, so `as_of` = 2026-10-31, no bout was added or held out, and every live file equals
+  its pin. The live set is rebuilt and committed after this addendum (its manifest records the implementation commit).
+- **UFC 334 dry run** (`predict --event 2026-11-14 --fwd 4.4 --dry-run`, 2,000 sims per corner order). It reads the live
+  set (`live_inputs.used` true) and writes nothing under data/predictions. Every bout field equals the fwd-4.3 dry run
+  on the same day; only the model block differs (version, tool, fwd, live_inputs, preregistration, inputs, code hashes).
+  So no UFC 334 fighter's input changed yet, and the largest p_a change is 0. Vegas 124 (tonight) reaches the Greco1899
+  CSVs with the Sunday refresh, about 6:00 pm UTC Nov 8.
+- **Sensitivity check** (diagnostic only, not an input; scratch build in out/live_refresh/sens_oct25). The same builders
+  run on the Oct 25 upstream refresh (5d6622f, events through Oct 24) and compared with the Oct 31 inputs on the UFC 334
+  card measure what one card of results (Oct 31, 13 bouts) does to UFC 334, whose fighters did not fight that week. Largest
+  changes: ml2_stack_open (primary) 0.0006, ml2_stack_noline 0.0009, ml2_lr 0.0011, whr_rounds 0.0044, ratings_stack
+  0.0027, Elo 0. The market file was held at its Oct 31 state in both runs.
+- **Tests.**
+  - `python3 tests/test_live_refresh.py` (60 checks, about 65 s): the market continuation against tools/market.py
+    `run_rating` on a synthetic stream (to the stored 4-decimal rounding; exact up to rounding ties from an unrounded state);
+    the two-source rule on the Dec 13, 2025 card (12 of 12 pass; a changed winner, round or finish class, a missing stats
+    round, a bout missing on ESPN and an unavailable scoreboard are held out or stop the cutoff); filtered CSV copies;
+    `check_live` on the live folder and 8 tampered variants; the pins; the zero-diff rule; and an integration build on a
+    synthetic post-snapshot card in a temporary folder (as_of moves, participants change, non-participants keep their Elo
+    and career sums, every guard holds).
+  - `node tests/test_forward_v44.js`: fwd-4.3, fwd-4.2 and fwd-4.1 ledger documents and the fwd-4.3 JS output
+    byte-identical to tests/fixtures/forward_v43_golden.json (captured at 11:34 am UTC from the tools before the edit, code
+    hashes at capture = the fwd-4.3 addendum's); fwd-4.4 = fwd-4.3 on equal inputs; the fallback (missing folder, changed
+    frozen key) gives fwd-4.3's numbers flagged `live_inputs_fallback`; a changed live market rating moves only its bout;
+    corner symmetry; the version guards; this hash list.
+  - tests/test_forward_v43.js and tests/test_forward_v42.js now expect fwd-4.4 where `--fwd auto` and the refusal
+    messages name the version for events from 2026-11-14.
+  - tools/drift_monitor.py: a fwd-4.4 file is read like a fwd-4.3 file (its `p_a_noline` is the ML v2 stack, never the
+    MoE series). No number changes; no fwd-4.4 file exists.
+- **Runbook per card.** After the Greco1899 Sunday refresh: `python3 tools/live_refresh.py build`, check the manifest
+  (`python3 tools/live_refresh.py show`: as_of, bouts added and held out), commit data/derived/live/, then
+  `predict --event <date>` (fwd-4.4 by default) before the lock. If the build fails or is not run, the prediction file
+  falls back to fwd-4.3's pinned inputs and says so.
+
 ## Drift monitor (Nov 7, 2026; engine cycle 4 tooling, no model change)
 
 `python3 tools/drift_monitor.py ledger` regenerates `drift_monitor.json` from the scored files (the same file selection as
