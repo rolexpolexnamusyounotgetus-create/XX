@@ -1,0 +1,5 @@
+1. identity: JS --fwd 4.3 (2 headlines) and 4 ledger documents (fwd-4.3 x2, fwd-4.2, fwd-4.1) byte-identical to the pre-fwd-4.4 tools
+2. fwd-4.4 = fwd-4.3 on equal inputs (JS, stat lines, ledger: 7 bouts identical; live as_of 2026-10-31)
+3. fallback: missing folder and tampered frozen key both fall back to fwd-4.3's numbers, flagged
+4. live inputs are read: drew-dober's market rating moves only his bout (p_a_noline 0.4207 -> 0.5720)
+42 checks, 0 failures

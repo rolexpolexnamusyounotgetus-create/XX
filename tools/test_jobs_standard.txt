@@ -39,3 +39,4 @@ test_bayes python3 tests/test_bayes.py
 test_crowd python3 tests/test_crowd.py
 test_linemove python3 tests/test_linemove.py
 test_seqnet python3 tests/test_seqnet.py
+live_components_src node tools/live_component_check.js --json $D/live_components_src.json
