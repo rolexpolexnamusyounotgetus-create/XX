@@ -1124,10 +1124,12 @@ def _metrics(v):
             "accuracy": sum(0.5 if abs(p - 0.5) < 1e-12 else float((p > 0.5) == (y > 0.5)) for p, y in v) / len(v)}
 
 
-def boot_ci(vals, clusters, B=2000, seed=11):
+def boot_ci(vals, clusters, B=2000, seed=11, units=None):
     """95% interval of a mean paired difference: the event-cluster bootstrap, widened to the bout-level bootstrap
     wherever that is wider. With one event the cluster bootstrap collapses to a point ([x, x] would 'exclude zero'),
-    and with a handful of events it is far too narrow; the envelope is never narrower than either."""
+    and with a handful of events it is far too narrow; the envelope is never narrower than either. units: the
+    resampling unit of the bout-level bootstrap per value (default: each value is its own bout); the fwd-4.2 stat
+    lines pass the bout id, so a bout's two fight-sides are resampled together (README "Forward model v4.2")."""
     import random
 
     def pct(cl, sd):
@@ -1146,7 +1148,7 @@ def boot_ci(vals, clusters, B=2000, seed=11):
         est.sort()
         return (est[int(0.025 * len(est))], est[int(0.975 * len(est)) - 1]) if est else None
 
-    ev, bt = pct(clusters, seed), pct(list(range(len(vals))), seed + 1)
+    ev, bt = pct(clusters, seed), pct(list(range(len(vals))) if units is None else list(units), seed + 1)
     if not ev or not bt:
         return None
     return {"est": sum(vals) / len(vals), "lo": min(ev[0], bt[0]), "hi": max(ev[1], bt[1]),
@@ -1203,8 +1205,8 @@ def score_statlines(rows, B):
             n = len(rs)
             mv[st] = {"n": n, "n_bouts": len({r["bout_id"] for r in rs}), "deviance_mean": sum(dm) / n,
                       "deviance_blend_mean": sum(db) / n,
-                      "deviance_minus_blend": boot_ci([x - y for x, y in zip(dm, db)], [r["date"] for r in rs], B)
-                      if n >= 2 else None,
+                      "deviance_minus_blend": boot_ci([x - y for x, y in zip(dm, db)], [r["date"] for r in rs], B,
+                                                      units=[r["bout_id"] for r in rs]) if n >= 2 else None,
                       "coverage_p10_p90": sum(1 for r in rs if r["p10"] <= r["y"] <= r["p90"]) / n,
                       "above_p90": sum(1 for r in rs if r["y"] > r["p90"]) / n,
                       "below_p10": sum(1 for r in rs if r["y"] < r["p10"]) / n,

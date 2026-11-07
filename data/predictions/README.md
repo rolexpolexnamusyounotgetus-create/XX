@@ -471,6 +471,11 @@ rules above. No fwd-4.2 ledger file exists; the UFC 334 dry run (`predict --even
 - Tests: `node tests/test_forward_v42.js` (fwd-4.1 identity, additions only, corner symmetry of every new field, method
   cells sum to 1 and agree with p_a, debut bouts with and without a line, guards, this hash table) and
   `python3 tests/test_forward_score42.py` (stat parse, match rules, scoring arithmetic).
+- Verifier fix (Nov 6, 2026, about 11:59 pm UTC; before any fwd-4.2 file; no prediction output changes). The stat-line
+  deviance difference resampled fight-sides in its bout-level bootstrap, not bouts as "Scoring (fwd-4.2 files)" says.
+  `boot_ci` now resamples the bout id there, so a bout's two sides move together. Every other interval, fwd-4.1's
+  included, is unchanged. tests/test_forward_score42.py part 5 checks it. New hash:
+  `tools/forward_ledger.py` (1.2, verifier fix): b7c3d1c3ca6355f1
 
 ## Card snapshot notes (`cards_upcoming.json`)
 

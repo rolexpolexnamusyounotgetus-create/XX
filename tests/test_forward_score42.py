@@ -212,5 +212,21 @@ with tempfile.TemporaryDirectory() as tdir:
     ok(json.load(open(os.path.join(tdir, "statlines_results.json")))["results"] == stats[:2], "4. statlines_results.json untouched without a fetch")
 print("4. score --no-fetch: scores.json / scores.md carry the fwd-4.2 sections")
 
+# ---------------------------------------------------------------- 5. stat-line CI: the bout-level bootstrap resamples bouts
+# README "Forward model v4.2": the stat-line deviance difference uses the event-cluster bootstrap widened to the bout-level
+# one. Rows are fight-sides, so a bout's two sides must move together: with one bout on one card both levels collapse to
+# the estimate (resampling fight-sides instead would give a non-degenerate interval).
+row = lambda side, y, mu: {"version": "fwd-4.2: t", "date": "2026-11-14", "bout_id": "2026-11-14:x__y", "side": side,
+                           "stat": "sig_lnd", "y": y, "mean": mu, "blend_mean": 30.0, "p10": 0, "p50": 30, "p90": 80}
+c1 = FL.score_statlines([row("a", 10.0, 20.0), row("b", 60.0, 40.0)], 400)["fwd-4.2: t"]["sig_lnd"]["deviance_minus_blend"]
+ok(c1["lo_bout"] == c1["hi_bout"] == c1["est"] and c1["lo"] == c1["hi"] == c1["est"],
+   "5. one bout: the bout-level stat-line interval collapses to the estimate (%r)" % c1)
+two = [row("a", 10.0, 20.0), row("b", 60.0, 40.0)] + [dict(r, bout_id="2026-11-14:u__v") for r in (row("a", 5.0, 25.0), row("b", 70.0, 35.0))]
+c2 = FL.score_statlines(two, 400)["fwd-4.2: t"]["sig_lnd"]["deviance_minus_blend"]
+ok(c2["lo_bout"] < c2["hi_bout"], "5. two bouts: the bout-level interval is non-degenerate (%r)" % c2)
+ok(FL.boot_ci([1.0, -2.0, 0.5], ["e1", "e1", "e2"], 300) == FL.boot_ci([1.0, -2.0, 0.5], ["e1", "e1", "e2"], 300, units=None),
+   "5. boot_ci default (one value per bout) is unchanged for every other caller")
+print("5. stat-line CI: the bout-level bootstrap resamples bouts, not fight-sides")
+
 print(("FAILED %d of %d checks" % (len(FAILS), CHECKS[0])) if FAILS else ("ok %d/%d checks" % (CHECKS[0], CHECKS[0])))
 sys.exit(1 if FAILS else 0)

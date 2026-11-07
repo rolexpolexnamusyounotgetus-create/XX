@@ -207,6 +207,14 @@ const onDisk = Object.entries(rows).filter(([f, h]) => sha16(f) !== h).map(([f])
 ok(Object.keys(rows).length === 25, "4. README pins 25 files");
 if (onDisk.length) console.log("NOTE: pinned files changed on disk (a fwd-4.2 write would be refused): " + onDisk.join(", "));
 ok(P.model.preregistration.pinned_inputs_ok === (onDisk.length === 0), "4. pinned_inputs_ok reflects the files on disk");
+// the README addendum names the three tool-code hashes every fwd-4.2 file records; an edit to the code needs a dated
+// addendum line first (README "Addendum: implementation"), so the latest hash listed for each file must be the one on disk
+const add = readme.slice(readme.indexOf("### Addendum: implementation"), readme.indexOf("## Card snapshot notes"));
+for (const f of ["tools/forward_ledger.py", "tools/forward_ledger.js", "tools/forward_statlines.js"]) {
+  const hs = [...add.matchAll(new RegExp("`" + f.replace(/[.]/g, "\\.") + "`[^:\\n]*: ([0-9a-f]{16})", "g"))].map((m) => m[1]);
+  ok(hs.length > 0 && hs[hs.length - 1] === sha16(f), "4. README addendum code hash of " + f + " (" + hs[hs.length - 1] + ") = the file on disk (" + sha16(f) + ")");
+  ok(P.model.code_sha256_16[f] === sha16(f), "4. the fwd-4.2 file records the code hash of " + f);
+}
 
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log((fails ? "FAILED " : "ok ") + (checks - fails) + "/" + checks + " checks");

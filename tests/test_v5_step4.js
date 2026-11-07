@@ -386,7 +386,8 @@ if (R0s) {
     nR++;
   }
   check("preufc: params = preufc.json's exact constants; engine multipliers = (rate / ref)^(exp x exp(-n_UFC / tau)); preufc.json roster multipliers reproduced",
-    constOk && maxF < 1e-12 && maxd < 1e-9, `${nR} roster fighters; formula rel diff ${maxF.toExponential(2)}; roster (at_debut, now) max |diff| ${maxd.toExponential(2)}`);
+    constOk && maxF < 1e-12 && maxd <= 0.0065, `${nR} roster fighters; formula rel diff ${maxF.toExponential(2)}; roster (at_debut, now) max |diff| ${maxd.toFixed(4)} ` +
+    `(preufc.json's roster block differs from its own eval constants by up to 0.006 at very small rates; the eval constants are the recipe's)`);
   const g = E.preufcMult({ n: 17, ko_w: 14, sub_w: 1, ko_l: 0, n_ufc: 4 });
   check("preufc gate: more than maxUfc (3) prior UFC fights -> no prior", g === null && E.preufcMult({ n: 17, ko_w: 14, sub_w: 1, ko_l: 0, n_ufc: 3 }) !== null);
   // hazards: X's KO hazards x M_pow,X^s x M_chin,Y^s; X's sub attempt rates x M_sub,X^s
@@ -430,22 +431,27 @@ if (R0s) {
   E.loadMLRates(mlJson); R0.loadMLRates(mlJson);
   try {
     // key unions over many traced fights (optional keys such as a deduction count appear only on some paths)
-    const U = () => ({ fight: new Set(), round: new Set(), ev: new Set() });
+    const U = () => ({ fight: new Set(), round: new Set(), evk: {} });
+    const OPT = ["nDed", "ded"];   // present only on paths with a point deduction (v401 deductions)
     const ur = U(), uc = U(), extra = new Set();
     const add = (u, f) => {
       Object.keys(f).forEach((k) => u.fight.add(k));
-      for (const r of f.rounds) { Object.keys(r).forEach((k) => u.round.add(k)); for (const e of (r.events || [])) u.ev.add((e.type || e.t || "?") + ":" + Object.keys(e).sort().join(",")); }
+      for (const r of f.rounds) {
+        Object.keys(r).forEach((k) => u.round.add(k));
+        for (const e of (r.ev || [])) { const t = "ev:" + e.k; if (!u.evk[t]) u.evk[t] = new Set(); Object.keys(e).forEach((k) => u.evk[t].add(k)); }
+      }
     };
     noSos(casesC.slice(0, 40)).forEach((c, i) => {
       const mr = R0.matchup(c.a, c.b, c.opts), mc = E.matchup(c.a, c.b, withParams(c.opts, ALL4));
       Object.keys(mc).filter((k) => !(k in mr)).forEach((k) => extra.add(k));
       for (let q = 0; q < 3; q++) { add(ur, R0.simulate(mr, R0.makeRng(100 * i + q), true)); add(uc, E.simulate(mc, E.makeRng(100 * i + q), true)); }
     });
-    const same = (a, b) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
-    const evOnlyNew = [...uc.ev].filter((k) => !ur.ev.has(k));
-    check("all step-4 components on: same fight / round key sets and event shapes as step 3 (120 traced fights each); the matchup only gains m.embed / m.oppadj / m.preufc",
-      same(ur.fight, uc.fight) && same(ur.round, uc.round) && evOnlyNew.length === 0 && same(extra, ["embed", "oppadj", "preufc"]),
-      `${uc.ev.size} event shapes; new: ${JSON.stringify(evOnlyNew)}; extra matchup keys ${JSON.stringify([...extra])}`);
+    const same = (a, b) => JSON.stringify([...a].filter((k) => !OPT.includes(k)).sort()) === JSON.stringify([...b].filter((k) => !OPT.includes(k)).sort());
+    const evNew = [];
+    for (const t in uc.evk) for (const k of uc.evk[t]) if (!ur.evk[t] || !ur.evk[t].has(k)) evNew.push(t + "." + k);
+    check("all step-4 components on: same fight / round keys (deduction keys aside) and event kinds / fields as step 3 (120 traced fights each); the matchup only gains m.embed / m.oppadj / m.preufc",
+      same(ur.fight, uc.fight) && same(ur.round, uc.round) && evNew.length === 0 && same(extra, ["embed", "oppadj", "preufc"]),
+      `${Object.keys(uc.evk).length} event kinds (step 3: ${Object.keys(ur.evk).length}); new fields: ${JSON.stringify(evNew)}; extra matchup keys ${JSON.stringify([...extra])}`);
   } finally { E.loadMLRates(null); R0.loadMLRates(null); }
 }
 

@@ -34,7 +34,7 @@ const path = require("path");
 const VAULT_FROM = "2026-01-01", VAL_FROM = "2024-01-01";
 
 module.exports = function mlpathrec(E, root) {
-  root = root || path.resolve(__dirname, "..");
+  root = root || path.resolve(__dirname, "..");   // data/derived/* is read under root (falls back to this file's repo)
   const J = {};
   const rd = (rel) => {
     if (!J[rel]) {
@@ -58,8 +58,11 @@ module.exports = function mlpathrec(E, root) {
   // ---------------------------------------------------------------- embed
   let FEmb = null;
   const qModels = new Map();
-  function embModule() {
-    if (!FEmb) FEmb = require(path.join(path.resolve(__dirname, ".."), "src/ml/embed.js"));
+  function embModule() {   // a frozen copy (versions/vN/mlpathrec.js + versions/vN/ml/embed.js) uses its own evaluator
+    if (!FEmb) {
+      const own = path.join(__dirname, "ml", "embed.js");
+      FEmb = require(fs.existsSync(own) ? own : path.join(path.resolve(__dirname, ".."), "src/ml/embed.js"));
+    }
     return FEmb;
   }
   function quarterModel(q) {
