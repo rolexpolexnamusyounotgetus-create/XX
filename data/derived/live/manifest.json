@@ -3,11 +3,11 @@
  "readme_section": "data/predictions/README.md 'Forward model v4.4 (Nov 7, 2026)'",
  "as_of": "2026-10-31",
  "until": "2026-11-07",
- "built_utc": "2026-11-07T11:59:40Z",
- "code_commit": "e436595346fcd226935f8024d9c8ecb1943399e0",
+ "built_utc": "2026-11-07T12:19:34Z",
+ "code_commit": "b2cbe034318fd9685898d37c3dc073c142a1cab6",
  "uncommitted_code": false,
  "code_sha256": {
-  "tools/live_refresh.py": "53f6bfd3777960ac2b42e728b240fd5d49272c8960502e60f66d3f144c4a9456",
+  "tools/live_refresh.py": "3f5c10f95e00f7d04de38a59bdc8b29e4d4dfc1840471883783183c3ba4665dc",
   "tools/build_db.py": "6ca8d038b3d59d349b9cdc6606ffdc9ef218b88ed418e7e911988751cb80638b",
   "tools/ml.py": "5a68db870dd8b5f474b9c402f61e6dbc578fd7030c9cd4d6b9af5ae9e45517f0",
   "tools/ratings.py": "7d4b24e5747303fb3f435f3452410fb269d9cd69db4c44639d343b748e44dea1",
@@ -246,6 +246,31 @@
    "ufc_fight_details.csv": 0,
    "ufc_fight_results.csv": 0,
    "ufc_fight_stats.csv": 0
+  },
+  "pinned_period": {
+   "pinned_csvs": "data/raw (sha256 = the pinned Oct 31 CSVs)",
+   "merge": {
+    "ufc_event_details.csv": {
+     "later_event_rows": 0,
+     "pinned_period_rows_only_upstream": 0,
+     "pinned_period_rows_only_pinned": 0
+    },
+    "ufc_fight_details.csv": {
+     "later_event_rows": 0,
+     "pinned_period_rows_only_upstream": 0,
+     "pinned_period_rows_only_pinned": 0
+    },
+    "ufc_fight_results.csv": {
+     "later_event_rows": 0,
+     "pinned_period_rows_only_upstream": 0,
+     "pinned_period_rows_only_pinned": 0
+    },
+    "ufc_fight_stats.csv": {
+     "later_event_rows": 0,
+     "pinned_period_rows_only_upstream": 0,
+     "pinned_period_rows_only_pinned": 0
+    }
+   }
   }
  },
  "market_update": {
@@ -543,6 +568,6 @@
   }
  },
  "seconds": 52.0,
- "work_dir": "out/live_refresh/build_20261107-115848",
+ "work_dir": "out/live_refresh/build_20261107-121842",
  "ok": true
 }
