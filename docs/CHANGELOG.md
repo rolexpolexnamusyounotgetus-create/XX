@@ -3,6 +3,210 @@
 Each engine version records its held-out numbers here (docs/ROADMAP.md). "Test" means UFC fights from
 2024-01-01 to 2026-10-31 whose profiles were frozen before the fight and which no tuning step ever saw.
 
+## v5 (2026-11-07): the merged roadmap engine, validated once and REJECTED; v4 (4.0.0) restored
+
+**Status: rejected by the decision rule.**
+- Timeline (ET; UTC is 5 hours ahead): the validation look ran once at 8:51 pm on Nov 6, paired against v4. The package scoring
+  followed at 8:54 pm, and the decision was made at 9:10 pm.
+- src/engine3.js, src/params3.js and src/ml/mlrates.js are back to versions/v4/; the hashes match the v4 entry (6c661f68...,
+  e16a6481..., b563032d...).
+- tests/test_engine3.js and data/derived/v4_levels.json are back to the v4 final commit 122c31a.
+- The work is kept in versions/v5-rejected/:
+  - the frozen files, unchanged;
+  - the thirteen tests that need the v5 engine in src/;
+  - the v5-era v4_levels.json;
+  - logs.
+- `versions/v5` is a symlink to it, so the first vault audit (pre-registered scope: v5 vs v4 paired) and the tools keep working.
+- **The current engine is v4.** Results are in data/derived/version_history.json (entry v5: `validation`, `validation.package`,
+  `blend`, `methodround_paired_vs_v4`, `decision`) and data/derived/evalv/v5_*.
+
+Setup: `nice -n 5 node tools/evalv.js --version v5 --split val --sims 300 --workers 3 --compare v4`.
+- Before the run, a pre-flight check built every one of the 865 validation fights' inputs on versions/v5 with no simulation and
+  no outcome read. That covers the OOF learned rates (all from the dev model), durability records, SOS pairs and step-4 inputs.
+- The decision rule and the base-rate tolerances were written into the history note before the run.
+- The run covered 865 fights: 853 decisive, 857 with an outcome. It was symmetric, with common random numbers, 300 sims per
+  order, ML applied to 100% of matchups, 0 failures, and 2,000 event-cluster resamples.
+
+### Validation 2024-2025 (one look), paired against v4
+
+| validation 2024-2025 | v4 | v5 | v5 - v4, paired [95% CI] |
+|---|---|---|---|
+| **Winner log loss** | 0.6324 [0.6165, 0.6474] | 0.6301 [0.6155, 0.6435] | **-0.0022 [-0.0099, +0.0053]** |
+| Brier | 0.2206 | 0.2195 [0.2126, 0.2260] | -0.0011 [-0.0046, +0.0024] |
+| Accuracy | 65.7% | 65.3% [62.0, 68.6] | -0.4 pts [-2.8, +2.1] |
+| ECE (resampling spread) / calibration slope | 0.063 / 1.72 | 0.059 [0.039, 0.095] / 1.81 [1.52, 2.18] | |
+| 7-bin log loss | 1.5712 | 1.5741 [1.5283, 1.6238] | +0.0029 [-0.0224, +0.0287] |
+| Method log loss | 0.9399 | 0.9394 [0.9106, 0.9696] | -0.0005 [-0.0107, +0.0100] |
+| who x how x when (methodround) | 2.0707 | 2.0798 | +0.0091 [-0.0188, +0.0396] |
+| Stat-line deviance: sig landed / attempts | 21.866 / 43.422 | 21.158 / 42.196 | **-0.708 [-1.131, -0.293] / -1.225 [-2.100, -0.376]** |
+| Stat-line deviance: TD / control s / KD | 1.806 / 154.12 / 0.652 | 1.758 / 150.00 / 0.651 | **-0.048 [-0.072, -0.025] / -4.12 [-7.22, -1.43]** / -0.001 [-0.015, +0.014] |
+| MAE per fighter: sig landed / TD / KD | 25.01 / 1.057 / 0.3206 | 24.43 / 1.049 / 0.3242 | -0.58 [-0.89, -0.25] / -0.008 [-0.016, -0.000] / +0.004 [+0.000, +0.007] |
+
+The methodround metrics come from `methodround.py --score` on 857 fights. The v5 - v4 column is
+data/derived/evalv/v5_vs_v4_val_methodround_paired.json.
+
+| validation 2024-2025 | model S | v4 (vs S) | v5 (vs S) | v5 - v4 |
+|---|---|---|---|---|
+| who x how x when | 2.0418 | 2.0707 (+0.0289 [+0.0015, +0.0575]) | 2.0798 (+0.0380 [+0.0068, +0.0742]) | +0.0091 [-0.0188, +0.0396] |
+| method x round | 1.4240 | 1.4327 (+0.0087) | 1.4368 (+0.0128 [-0.0051, +0.0293]) | +0.0041 [-0.0097, +0.0193] |
+| method given winner | 0.9073 | 0.9107 (+0.0034) | 0.9063 (-0.0009 [-0.0195, +0.0189]) | -0.0044 [-0.0164, +0.0088] |
+| finish vs decision | 0.6593 | 0.6617 | 0.6593 (0.0000) | -0.0024 [-0.0096, +0.0053] |
+| winner | 0.6213 | 0.6324 (+0.0111 [+0.0024, +0.0198]) | 0.6301 (+0.0089 [+0.0004, +0.0168]) | -0.0022 [-0.0098, +0.0049] |
+
+| base rate, validation (mlcal tolerance) | actual | v4 | v5 | v5 status |
+|---|---|---|---|---|
+| KO/TKO share (2 pts) | 29.1% | 30.6% (+1.5) | 31.8% (+2.7) | **newly out** |
+| SUB share (1.5 pts) | 16.9% | 17.9% (+1.0) | 18.1% (+1.2) | in |
+| R1 / R3 share of 3-round finishes (3 pts) | 52.3 / 17.4% | 51.4 / 18.7% | 54.5 / 17.5% | in |
+| SD + MD share of decisions (4 pts) | 18.5% | 20.6% | 20.8% | in |
+| KD per 100 head landed (12%) | 0.684 | 0.746 (+9.0%) | 0.830 (+21.3%) | **newly out** |
+| sig landed per 15 (6%) | 58.1 | 63.3 (+9.0%) | 61.7 (+6.2%) | out (as v4), closer |
+| TD per 15 (10%) / control s per 15 (10%) | 1.41 / 168 | 1.31 (-7.1%) / 163 (-2.9%) | 1.39 (-1.5%) / 174 (+3.5%) | in, closer |
+| finish rate / 10-8 share of decision judge-rounds (no tolerance set) | 46.0% / 2.46% | 48.5% / 3.38% | 49.9% / 4.53% | further off |
+| finish by round, 3-round / 5-round | 23.7/13.7/7.8; 15.2/16.2/9.5/7.6/2.9 | 24.6/14.4/9.0; 14.5/12.4/10.1/9.2/5.4 | 26.7/13.7/8.6; 19.3/15.6/9.3/7.8/4.5 | |
+| decisions UD / SD / MD (n = 459) | 81.5 / 18.1 / 0.4 | 79.4 / 20.1 / 0.5 | 79.2 / 20.0 / 0.9 | |
+
+**Blend test** (tools/evalv_blend.py: MoE linear stacker refit on 2019-2023 with v5's engine rows, scored on 845 fights of
+2024-25):
+
+| blend pattern | v4 engine weight | v5 engine weight | v5: with engine | without | with - without [95% CI] |
+|---|---|---|---|---|---|
+| with the closing line | 0.037 | 0.070 | 0.5787 | 0.5788 | -0.0001 [-0.0007, +0.0005] |
+| without a line | 0.000 | 0.088 | 0.5924 | 0.5930 | -0.0006 [-0.0013, +0.0002] |
+
+v5 is the first engine with a non-zero validated weight without a line. Neither blend moves measurably.
+
+### The prediction package (FightEngine.predict), scored once on validation
+
+How it was scored:
+- The stacker was refit first: `BLINDTEST_MOE_ENGINE=engine_v5 python3 tools/blindtest.py export --fit-through 2023-12-31
+  --stack-out data/derived/blindtest_stack_pre2024_v5.json`.
+  - It uses the production stackers' configuration, fit on 2019-2023 out-of-sample rows only.
+  - Its engine weight is 0.070 with the close, 0.175 with the opener and 0.088 without a line (the engine_v4 pre-2024 stacker:
+    0.04 / 0.09 / 0).
+  - The default data/derived/blindtest_stack_pre2024.json is unchanged.
+- New tools/predict_eval.js ran `node tools/predict_eval.js --version v5 --split val --stack
+  data/derived/blindtest_stack_pre2024_v5.json --kinds close,open,none --anchor --sims 1000`, which took 393 s.
+  - It used predict's defaults: 1,000 sims per order, mrWeight 0.30, a linear pool, recalT 1 and the calibrated interval with
+    kappa 2.15.
+  - Inputs: evalv's matchup inputs plus tools/predictrec.js (walk-forward experts from the blind replay, S / SM cells fit through
+    2023, ML v2 rows).
+  - 865 fights, 0 failed. lineKind close / open falls back to 'none' on the 9 / 11 fights without that line.
+  - The table's paired differences are on the 844 decisive fights that have every benchmark.
+  - The plumbing was checked first on 40 and then 20 train fights only (in-sample).
+
+| validation 2024-25 | winner log loss (853 decisive) | Brier | ECE / slope | 7-bin | method | who x how x when (vs S) |
+|---|---|---|---|---|---|---|
+| **package, closing line** | **0.5810** | 0.1986 | 0.043 / 1.12 | 1.5062 | 0.9271 | 1.9943 (-0.0475 [-0.0675, -0.0279]) |
+| **package, opening line** | **0.5868** | 0.2010 | 0.024 / 1.26 | 1.5118 | 0.9286 | 1.9999 (-0.0419 [-0.0582, -0.0264]) |
+| **package, no line** | **0.5930** | 0.2039 | 0.037 / 1.29 | 1.5180 | 0.9276 | 2.0060 (-0.0358 [-0.0495, -0.0206]) |
+| market close (n=844) | 0.5847 | 0.2002 | 0.025 / 1.11 | | | |
+| market open (n=842) | 0.6092 | 0.2107 | 0.029 / 1.31 | | | |
+| ML logistic (walk-forward, the stack's `ml`) | 0.6053 | 0.2085 | 0.050 / 1.49 | | | |
+| ML v2 logistic (static fit < 2024) | 0.5881 | 0.2011 | 0.047 / 1.46 | | | |
+| Elo (walk-forward) | 0.6768 | 0.2421 | 0.021 / 1.14 | | | |
+| model S (no line) | 0.6193 | 0.2146 | 0.060 / 1.61 | 1.5504 | 0.9339 | 2.0418 |
+| model SM (with the close) | 0.5808 | 0.1983 | 0.018 / 1.15 | 1.5123 | 0.9301 | |
+| simulator inside predict (1,000 sims per order) | 0.6278 | 0.2184 | 0.061 / 1.86 | 1.5568 | 0.9368 | 2.0506 (+0.0088 n.s.) |
+
+Paired winner log loss, package minus benchmark:
+
+| package | vs close | vs open | vs ML logistic | vs ML v2 | vs Elo | vs S | vs SM | vs simulator |
+|---|---|---|---|---|---|---|---|---|
+| closing line | **-0.0067 [-0.0096, -0.0036]** | -0.0311 | -0.0243 [-0.0420, -0.0066] | -0.0071 [-0.0220, +0.0081] | -0.0958 | -0.0384 | +0.0002 [-0.0074, +0.0075] | -0.0469 |
+| opening line | -0.0008 [-0.0124, +0.0102] | **-0.0252 [-0.0325, -0.0178]** | -0.0185 [-0.0313, -0.0056] | -0.0013 [-0.0111, +0.0092] | -0.0900 | -0.0326 | +0.0060 [-0.0044, +0.0173] | -0.0410 |
+| no line | +0.0054 [-0.0111, +0.0220] | -0.0190 [-0.0341, -0.0044] | -0.0123 [-0.0222, -0.0015] | +0.0049 [-0.0019, +0.0122] | -0.0838 | -0.0264 | +0.0122 [-0.0017, +0.0272] | -0.0349 |
+
+Further results:
+- Method and round, against S (paired): 7-bin -0.044 / -0.039 / -0.032 and method -0.007 / -0.005 / -0.006, for close / open /
+  none. All 7-bin CIs exclude 0, and the no-line method CI excludes 0.
+  - Against SM, the close package is level: 7-bin -0.006 [-0.017, +0.003].
+  - Against the simulator alone, the package is better everywhere: 7-bin -0.04 to -0.05, joint -0.04 to -0.06.
+- Anchor mode (opts.anchor): same winner. Its cells are level or slightly worse than the plain package's (7-bin 1.5073 / 1.5150
+  / 1.5196 vs 1.5062 / 1.5118 / 1.5180). That fits its role, which is fights shown on the page, not scoring.
+- Interval coverage of the closing line (calibrated):
+  - no line: 77.1% at 80%, 92.9% at 95%; open line: 75.2% / 91.2%. Train out-of-fold was 79.6% / 94.2%, so it is a little narrow
+    on 2024-25.
+  - With the close as an input, coverage is 92% / 99% (trivially wide).
+  - The interval uses moe_page.json's feature LR (coef_valid, fit 2010-2023) for profile noise. Its shrinkage priors are division
+    rates 2021-2025; that is a disclosed blemish on the interval width only. Every point estimate used the blind replay's
+    walk-forward feat_lr.
+- Package KO share 32.6-32.9% vs 29.1% actual. The pool carries the simulator's and S's KO excess.
+
+### Decision: v5 is rejected (v4 restored)
+
+- Branch 1 fails: winner log loss -0.0022 [-0.0099, +0.0053], and the CI includes 0.
+- Branch 2 fails on its base-rate condition.
+  - v5 is not worse on the winner, and it is clearly better on four stat-line deviances (sig landed, attempts, TD, control; CIs
+    exclude 0).
+  - But two base rates that v4 kept inside the mlcal tolerances drift out of them:
+    - KD per 100 head landed: +21.3% vs 12%.
+    - KO/TKO share: +2.7 pts vs 2.
+  - 7-bin, method and who x how x when are n.s. either way.
+
+### Read this honestly
+
+1. **Most of the KO miss is the 2024 glove trial, but the rule was applied as written.** This comes from the stored cells of this
+   look, with no new simulation; the dates are in research/model_eradrift.md.
+
+   | window | KO share actual | v4 | v5 |
+   |---|---|---|---|
+   | 2024-01-01..05-31 (n=168) | 30.4% | 31.3% | 33.4% |
+   | glove trial 2024-06-01..11-15 (n=217) | 22.1% | 30.7% | 31.9% |
+   | 2024-11-16..2025-02-14 (n=80) | 35.0% | 31.3% | 31.1% |
+   | 2025-02-15..12-31 (n=392) | 31.1% | 30.1% | 31.1% |
+
+   - Outside the trial, v5's KO share is level with actual (31.7% vs 31.4%).
+   - KD per 100 head cannot be split by period without re-simulating, because evalv stores no per-fight KD. eradrift reports an
+     actual 0.54 in the trial, 0.68 before it and 0.87 from Feb 15, 2025.
+   - Reading the tolerance only outside the trial would be a choice made after seeing the numbers. The registered rule covers the
+     whole window, so the verdict stands.
+2. **v5's knockdown level moves the wrong way out of sample.**
+   - On train, Calibrate B matched KD per 100 head at 0.780 (actual 0.782). On 2024-25, v5 simulates 0.830 while v4 dropped to
+     0.746.
+   - Hypothesis, not tested: durability's absolute tracked league level (trailing 730 days) carries the high 2022-23 level into
+     2024-25, while v4's walk-forward 5-year priors follow the era down.
+   - Any fix must be chosen on train or forward-chained CV. 2024-25 has now been seen, and the vault audit is the clean test.
+3. **The stat-line gains are real and the winner gain is not.**
+   - Four of five deviances improve with CIs excluding 0 (control -4.1 s, sig landed -0.71), and TD and control levels move inside
+     tolerance.
+   - The winner leans better (-0.0022) but is n.s.
+   - v5 is more underconfident than v4 (slope 1.81 vs 1.72) and still trails model S on who x how x when (+0.038, the CI excludes
+     0).
+4. **The engine is still close to irrelevant for the winner; the package is not.**
+   - The blend test gives v5 small weights (0.070 / 0.088), and the blend moves by -0.0001 / -0.0006 (n.s.).
+   - The predict package with a closing line beats the close (-0.0067 [-0.0096, -0.0036]). With an opener it ties the close, and
+     without a line it is level with the close and with ML v2's logistic.
+   - On method x round it beats S on every line kind, but it does not beat SM when the close is available.
+   - Those gains come mostly from the stack (market, ML) and S/SM. How much the v5 cells add on 2024-25 was not measured, to avoid
+     an extra look at a sub-choice. On train they added -0.005 joint (research/v5_calB.md).
+   - The package needs blend_anchor, a v5 component, so the restored v4 has no FightEngine.predict. The page and the forward ledger
+     (fwd-4.2 pins versions/v4) are unaffected.
+5. **The look was not perfectly clean.** Several v5 ingredients had been scored on 2024-25 before it: embed (-1.67% stat-line
+   deviance), preufc (newcomer bouts), and officials, which is off. Every v5 parameter was fit on 2019-2023. The contamination
+   would flatter v5, so it does not soften the rejection.
+6. **For v6:**
+   - Rebuild from versions/v5-rejected/. The components are flag-isolated, and the tests restore with the engine.
+   - The knockdown level should track the era on a walk-forward basis (or run durability in relative mode), chosen on train or
+     CV only.
+   - v6 then makes its own single look. The first vault audit keeps its pre-registered v5 vs v4 paired line.
+
+### Restore and tests (on the restored src/)
+
+- `node tests/test_engine3.js 8000`: 69 passed, 0 failed.
+- `node tests/test_director3.js 300`: OK, engine 4.0.0, 300 of 300 matchups with learned rates. `NO_ML=1 ... 100`: OK.
+- Still passing: test_mlrates 47 OK, test_mlcal 33, test_v5_calA 14 (frozen fixtures), test_embed OK, test_moe 21, test_mlpage 5,
+  test_blindtest_stack PASS, test_ml2 365, test_statdist 3,059, test_calib 14, test_forward_models PASS, test_forward_v42 457,
+  test_debut 23, test_finishing 371, test_propspool 732, test_eradrift 2,283.
+- Moved to versions/v5-rejected/tests/, because they need the v5 engine in src/ and failed only for that reason: test_v401,
+  test_v5_step2..5, test_v5_calB, test_durability, test_dynamics, test_styles_sos, test_officials, test_realism_sens,
+  test_blend_anchor, and v5's test_engine3.js.
+- `python3 build.py <tmp>` builds (10.3 MB). A sandbox load of the page's engine script (params, mlrates, styles_sos.js, then the
+  v4 engine) simulates Volkanovski vs Gaethje at 69.0% Volk with learned rates. The published page was not rebuilt.
+- tools/blindtest.py now lists engine_v5 as REJECTED, so default exports keep engine_v4. src/styles_sos.js, src/ml/embed.js and
+  src/ml/blend.js stay in src/, unused by v4.
+- Nothing from 2026 was read. The one new fit (the engine_v5 pre-2024 stacker) used 2019-2023 rows only.
+
 ## v5 merge log
 
 Sequential, tested merge of the v5 components onto engine v4.0.0. Every component sits behind its own

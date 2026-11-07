@@ -165,7 +165,15 @@ Findings from verified research that the next engine versions must use. Each lin
 
 ## Prediction status after the ML-core round (verified, Nov 6 ~11:00 UTC)
 
-**Current (Nov 6, 2:20 pm ET):**
+**Current (Nov 6, 9:10 pm ET; v5 measured):**
+- **The current engine is still v4 (4.0.0)** in src/ and versions/v4/. v5 (5.0.0, the merged roadmap) was validated once and
+  rejected by the decision rule; see docs/CHANGELOG.md v5 and versions/v5-rejected/.
+- Validation 2024-25 winner log loss: v5 0.6301 vs v4 0.6324, -0.0022 [-0.0099, +0.0053]. The stat lines are better (4 of 5 CIs
+  exclude 0), but KD per 100 head (+21%) and KO share (+2.7 pts) are out of tolerance.
+- Best validated prediction package, v5's FightEngine.predict, recorded for v6: with the close 0.5810 (beats the close by -0.0067
+  [-0.0096, -0.0036]); no line 0.5930 (level with the close and ML v2).
+
+**Earlier (Nov 6, 2:20 pm ET):**
 - **The current engine is v4 (4.0.0), in src/ and versions/v4/.** v4.0.1 (the v4 review's fixes) was validated
   once and rejected by the decision rule. Its work is in versions/v4.0.1-rejected/; see docs/CHANGELOG.md v4.0.1.
 - Validation 2024-2025 winner log loss (853 decisive fights, symmetric, 300 sims per order):
@@ -419,6 +427,28 @@ Findings from verified research that the next engine versions must use. Each lin
     (4) Engine 5.0.0 frozen in versions/v5/. Train evalv vs v4: winner -0.0070 [-0.0119, -0.0020], 7-bin -0.0365, method -0.0093, who x
     how x when -0.0272 [-0.0488, -0.0064]; still behind model S on train (who x how x when +0.0236). Next: the Measure stage's single
     2024-25 look (re-export the pre-2024 stacker with v5 train rows first).
+  - Measure done (8:51-9:10 pm ET Nov 6; docs/CHANGELOG.md "v5 (2026-11-07)"; version_history.json v5 `decision`): ONE validation
+    look, paired vs v4. **v5 REJECTED; v4 restored in src/.** The work is in versions/v5-rejected/ (`versions/v5` is a symlink), with
+    the twelve v5-engine tests and v5's test_engine3.js.
+    - Winner log loss 0.6301 vs 0.6324: -0.0022 [-0.0099, +0.0053], n.s. 7-bin, method and who x how x when are n.s.
+    - Stat-line deviance is better on 4 of 5 stats (sig landed -0.71, attempts -1.23, TD -0.048, control -4.1 s; CIs exclude 0).
+    - Two base rates are newly out of tolerance: KD per 100 head 0.830 vs 0.684 (+21%; tolerance 12%; v4 +9%) and KO share 31.8%
+      vs 29.1% (+2.7 pts; tolerance 2; v4 +1.5). That fails branch 2.
+    - Descriptive: the KO excess sits in the 2024 glove trial (actual 22.1% vs v5 31.9%); outside it v5 is level. The rule was
+      applied to the whole window as registered.
+    - Open question for v6: v5's KD per 100 head rises out of sample (train 0.780 matched; 2024-25 0.830) while v4's fell (0.746).
+      Hypothesis: durability's absolute trailing-730-day league level. Choose any fix on train or CV only: 2024-25 is now seen.
+    - Blend test: engine weight 0.070 with the close and 0.088 without a line (first non-zero without a line). The blend moves
+      -0.0001 / -0.0006, n.s.
+    - Package (FightEngine.predict, tools/predict_eval.js, scored once; stacker data/derived/blindtest_stack_pre2024_v5.json):
+      - Winner log loss on 853 decisive fights: close 0.5810, open 0.5868, none 0.5930.
+      - vs the market close (844 fights): -0.0067 [-0.0096, -0.0036] / -0.0008 n.s. / +0.0054 n.s.
+      - vs ML v2 logistic 0.5881: -0.0071 / -0.0013 / +0.0049, all n.s.
+      - Beats the walk-forward ML logistic (0.6053), Elo (0.6768) and S (0.6193).
+      - who x how x when vs S: -0.0475 / -0.0419 / -0.0358, all CIs exclude 0. Level with SM when the close is in.
+      - Calibration slope 1.12 / 1.26 / 1.29 (simulator 1.86).
+      - Interval coverage of the close 77% / 93% (no line) at 80 / 95%.
+      - The restored v4 has no predict (blend_anchor is a v5 component).
 - blindtest harness (VERIFIED ~21:10 UTC, research/model_blindtest.md "Verification log"): independent no-cache
   replay, own scorer and own stacker reproduce every headline. MoE stack + close 0.5774 vs close 0.5854
   (-0.0081 [-0.0125, -0.0036], ahead on 56 of 84 cards); no-line stack ties the close (+0.0001); removing the
