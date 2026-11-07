@@ -117,6 +117,11 @@ Findings from verified research that the next engine versions must use. Each lin
   penalty searches for method models.
 - LAB 4 SCORECARD: props adopted as hygiene (tie vs incumbent), finishing not adopted. Method/round is close to the
   market's information too; production stays S2 + ML v2 winner + props pool, debut method model for debut bouts.
+- PAGE REPUBLISHED (Version 2, ~08:15 UTC Nov 7, https://claude.ai/artifact/PP5QsWNDwPiqP6m7V3C4JC): winner from the ML v2
+  stacks (no line / open / close by an explicit closing-line box; src/ml/pagepredict.js, JS = Python to 1e-16), S2
+  method cells (debut method model for debutants), stat-line P10/P50/P90 bands, honest scorecard (2024-25 and the 2026
+  vault: "level with the market"), engine versions table, and the locked Vegas 124 forward picks read from the
+  committed file. Volkanovski vs Gaethje: 71.3% no line; 54.0% with the prefilled opener (+160/-180). page_check 44/44.
 - FORWARD v4.3 (VERIFIED ~08:00 UTC Nov 7; README "Forward model v4.3", pre-registered in 386b99c before any code):
   events >= 2026-11-14. p_a_noline = models.ml2_stack_noline (forward_models.json ml2_static.noline, weights 0.7049
   ML v2 logistic + 0.5526 market rating, fit 2019-2023, h 1.5); MoE no-line kept as models.moe_noline (secondary,
