@@ -99,6 +99,10 @@ if (!isMainThread) {
     const d = DURJ && DURJ.backtest[id];
     if (!d) throw new Error("durability: no walk-forward record for fight " + id + " (refusing the live-fit fallback)");
     const side = (x) => ({ chin_re: x.chin_re, chin_cov: x.chin_cov, pow_re: x.pow_re, pow_cov: x.pow_cov });
+    // v5.0.1 (v5 review): refuse a record with a missing or invalid field (the engine would fill it from the live fit)
+    const ok = (v) => typeof v === "number" && isFinite(v) && v > 0;
+    for (const s of ["A", "B"]) for (const k of ["chin_re", "chin_cov", "pow_re", "pow_cov"]) if (!d[s] || !ok(d[s][k])) throw new Error("durability: record " + id + " " + s + "." + k + " is not a finite positive number");
+    if (!d.p || !ok(d.p.A) || !ok(d.p.B)) throw new Error("durability: record " + id + " has no valid p.A / p.B");
     const bA = d.p.A / (d.B.chin_re * d.B.chin_cov * d.A.pow_re * d.A.pow_cov), bB = d.p.B / (d.A.chin_re * d.A.chin_cov * d.B.pow_re * d.B.pow_cov);
     const base = Math.sqrt(bA * bB);
     return o === 0 ? { A: side(d.A), B: side(d.B), base } : { A: side(d.B), B: side(d.A), base };
@@ -152,6 +156,7 @@ if (!isMainThread) {
           const m = E.matchup(A, B, opts);
           XR.assertApplied(m, f.id, opts.params);
           if (useDur && !(m.dur && m.dur.baseFromRecord)) throw new Error("durability: walk-forward record not applied for " + f.id);
+          if (useDur && (m.dur.A.src !== "record" || m.dur.B.src !== "record")) throw new Error("durability: computed chin / power fields used for " + f.id + " (" + m.dur.A.src + " / " + m.dur.B.src + ")");
           if (useSOS && !(m.stylesSOS && m.stylesSOS.sos && m.stylesSOS.sos.have && m.stylesSOS.sos.have[0] && m.stylesSOS.sos.have[1])) {
             throw new Error("styles_sos: walk-forward pair not applied for " + f.id);
           }

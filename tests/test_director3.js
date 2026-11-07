@@ -10,6 +10,12 @@
    is loaded first, as the page does, so every matchup goes through the learned-rate path (v4.0.1 review: the test used
    to run the base tables only). Decisions also check that the per-round judges' scores add up to the fight's cards
    (point deductions included, engine v4.0.1).
+     FUZZ=1 node tests/test_director3.js 600   # v5.0.1 (v5 review): every v5 path the stock run never reaches. Loads the
+       durability, pre-UFC, embedding and officials rosters and builds each matchup from a random component configuration
+       (every components flag and v401 sub-flag, styles_sos sos with walk-forward SOS pairs, officials on with named or unknown
+       judges and referees, 2019 / 2026 dates, learned rates off now and then), so a component that changes the trace
+       (officials' 10-10 rounds, deductions, dynamics momentum) is checked against the show's beat contract too. Engines
+       without these loaders (v3, v4) run the stock matchups.
 */
 "use strict";
 var fs = require("fs"), path = require("path");
@@ -24,6 +30,39 @@ var ML_FILE = path.join(ROOT, "data/derived/mlrates.json");
 var USE_ML = !process.env.NO_ML && typeof E.loadMLRates === "function" && fs.existsSync(ML_FILE);
 if (USE_ML) E.loadMLRates(JSON.parse(fs.readFileSync(ML_FILE, "utf8")));
 var db = E.loadDB(JSON.parse(fs.readFileSync(path.join(ROOT, "data/derived/fighters.json"), "utf8")));
+// FUZZ=1 (v5.0.1): rosters plus a random component configuration per matchup (the reviewer's fuzzpre.js preload, folded in)
+var FUZZ = process.env.FUZZ === "1" && typeof E.loadDurability === "function" && typeof E.loadOfficials === "function";
+var FUZZ_STATS = { n: 0, officials: 0, durability: 0, embed: 0, preufc: 0, sos: 0, dated2019: 0, noMl: 0, errors: 0 };
+var fuzzMatchup = null;
+if (FUZZ) (function () {
+  var J = function (f) { return JSON.parse(fs.readFileSync(path.join(ROOT, f), "utf8")); };
+  E.loadDurability(J("data/derived/durability.json"));
+  if (E.loadPreUFC) E.loadPreUFC(J("data/derived/preufc.json"));
+  if (E.loadEmbed) E.loadEmbed(J("data/derived/embed_model.json"));
+  var OFFJ = J("data/derived/officials_engine.json"); E.loadOfficials(OFFJ);
+  var tab = E.officialsTableFor(OFFJ, null), jn = Object.keys(tab.judges).map(function (k) { return tab.judges[k][0]; }), rn = Object.keys(tab.referees);
+  var SOSJ = J("data/derived/sos_wf.json"), sosIds = Object.keys(SOSJ.fights);
+  fuzzMatchup = function (a, b, div, rounds, n) {
+    var R0 = rng(0xABCDEF ^ Math.imul(n + 1, 2654435761)), B = function (q) { return R0() < q; };
+    var comp = { v401: B(0.3) ? false : { emJudge: B(0.7), deductions: B(0.8), mlLevels: B(0.5), tdCap: B(0.7), koTargets: B(0.7) },
+      durability: B(0.7), dynamics: B(0.7), embed: B(0.7), preufc: B(0.7), calB: B(0.7), realism_sens: B(0.4), officials: B(0.6),
+      styles_sos: B(0.2) ? false : { styles: B(0.3), sos: B(0.8) }, oppadj: false };
+    var o = { division: div, rounds: rounds, title: rounds === 5, params: { components: comp } };
+    if (B(0.3)) { o.date = B(0.5) ? "2019-06-15" : "2026-11-14"; if (o.date < "2020") FUZZ_STATS.dated2019++; }
+    if (B(0.1)) { o.ml = false; FUZZ_STATS.noMl++; }
+    if (comp.styles_sos && comp.styles_sos.sos && B(0.6)) { var f = SOSJ.fights[sosIds[Math.floor(R0() * sosIds.length)]]; o.sos = { A: f.A, B: f.B }; FUZZ_STATS.sos++; }
+    if (comp.officials) {
+      if (B(0.5)) o.judges = [jn[Math.floor(R0() * jn.length)], "Unknown Judge", ""];
+      if (B(0.5)) o.referee = B(0.5) ? rn[Math.floor(R0() * rn.length)] : "Unknown Ref";
+      FUZZ_STATS.officials++;
+    }
+    if (comp.durability) FUZZ_STATS.durability++;
+    if (comp.embed) FUZZ_STATS.embed++;
+    if (comp.preufc) FUZZ_STATS.preufc++;
+    FUZZ_STATS.n++;
+    return E.matchup(a, b, o);
+  };
+})();
 var overrides = {};
 try { overrides = JSON.parse(fs.readFileSync(path.join(ROOT, "data/overrides.json"), "utf8")).fighters || {}; } catch (e) { overrides = {}; }
 var scouting = {};
@@ -96,7 +135,7 @@ for (var n = 0; n < N; n++) {
   var div = divs[di], L = byDiv[div];
   var a = L[Math.floor(R() * L.length)], b = a; while (b === a) b = L[Math.floor(R() * L.length)];
   var rounds = n % 2 === 0 ? 3 : 5, seed = (SEED * 100003 + n * 7 + 1) >>> 0;
-  var m = E.matchup(a, b, { division: div, rounds: rounds, title: rounds === 5 });
+  var m = fuzzMatchup ? fuzzMatchup(a, b, div, rounds, n) : E.matchup(a, b, { division: div, rounds: rounds, title: rounds === 5 });
   var fight = E.simulate(m, E.makeRng(seed), true);
   if (m.mlApplied) agg.mlApplied++;
   if (fight.nDed) agg.deducted++;
@@ -278,7 +317,11 @@ function printFight(s, title) {
 
 console.log("director v3: " + agg.fights + " fights, " + agg.rounds + " rounds (" + agg.scoutFights + " with a scouting file); engine " + E.VERSION +
   ", learned stat-line rates " + (USE_ML ? "on (" + agg.mlApplied + " of " + agg.fights + " matchups applied)" : "off") + ", fights with a point deduction " + agg.deducted);
-if (USE_ML && agg.mlApplied < agg.fights) fail("learned rates", "model loaded but only " + agg.mlApplied + " of " + agg.fights + " matchups used it");
+if (USE_ML && !FUZZ && agg.mlApplied < agg.fights) fail("learned rates", "model loaded but only " + agg.mlApplied + " of " + agg.fights + " matchups used it");
+if (FUZZ) {
+  console.log("  FUZZ: " + JSON.stringify(FUZZ_STATS));
+  if (FUZZ_STATS.officials === 0 || FUZZ_STATS.sos === 0 || FUZZ_STATS.durability === 0) fail("fuzz", "a component path was never exercised: " + JSON.stringify(FUZZ_STATS));
+}
 console.log("  methods " + JSON.stringify(agg.methods));
 console.log("  beats/round " + (agg.beats / agg.rounds).toFixed(1) + ", strikes/round " + (agg.strikes / agg.rounds).toFixed(1) +
   ", misses shown " + agg.missShown + " of " + agg.missEngine + " (" + (100 * agg.missShown / Math.max(1, agg.missEngine)).toFixed(0) + "%), landed " + agg.landed +

@@ -47,7 +47,7 @@
   else root.FightBlend = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (root) {
   "use strict";
-  var VERSION = "1.1.0";   // 1.1.0 (v5 merge step 5): ML v2 package winner blend, opts.lineKind, backtest guard, v5 corner swaps
+  var VERSION = "1.1.1";   // 1.1.1 (v5.0.1): invalid market lines are refused, never treated as no line; 1.1.0 (v5 merge step 5): ML v2 package winner blend, opts.lineKind, backtest guard, v5 corner swaps
   var STATE = { stack: null, feat: null, ml2: null, mlPage: null, mktRatings: null, mr: null, mrModel: null, data: null };
 
   function clip(x, lo, hi) { return x < lo ? lo : (x > hi ? hi : x); }
@@ -558,9 +558,14 @@
       proportionally (the open-trained stack's: market.json p_novig_open); 'none' drops any line. */
   function lineOf(opts, ex, M) {
     var q = null, src = null, kind = opts.lineKind;
-    if (isNum(ex.market)) { q = ex.market; src = "experts.market"; }
-    else if (isNum(opts.pMarket)) { q = opts.pMarket; src = "pMarket"; }
-    else if (opts.line && isNum(+opts.line.oddsA) && isNum(+opts.line.oddsB)) src = "line";
+    // v5.0.1 (v5 review): a line counts only when it is valid: a probability strictly inside (0, 1), or American odds that are
+    // finite with |odds| >= 100 and de-vig to a probability inside (0, 1). Invalid odds (0, NaN, 'abc') used to give a NaN
+    // market expert, so a 'close' forecast silently became the no-line one while still reporting lineKind 'close'.
+    function isP(x) { return isNum(x) && x > 0 && x < 1; }
+    function isOdds(o) { o = +o; return isNum(o) && Math.abs(o) >= 100; }
+    if (isP(ex.market)) { q = ex.market; src = "experts.market"; }
+    else if (isP(opts.pMarket)) { q = opts.pMarket; src = "pMarket"; }
+    else if (opts.line && isOdds(opts.line.oddsA) && isOdds(opts.line.oddsB)) src = "line";
     if (kind == null) {
       if (src) throw new Error("FightBlend.predict: a market line needs an explicit opts.lineKind: 'close' (a fight-day line near the " +
         "close: the close-trained stack `model`, power de-vig), 'open' (an opener or any earlier line: the open-trained `model_open`, " +
@@ -571,7 +576,8 @@
     if (kind === "none") return { kind: "none", p: null, src: null, devig: null };
     if (!src) throw new Error("FightBlend.predict: opts.lineKind '" + kind + "' needs a line (opts.line { oddsA, oddsB }, opts.pMarket or opts.experts.market)");
     var dv = src === "line" ? (kind === "open" ? "proportional" : "power") : "as given";
-    if (src === "line") q = M.devig(opts.line.oddsA, opts.line.oddsB, kind === "open" ? "mult" : undefined);
+    if (src === "line") q = M.devig(+opts.line.oddsA, +opts.line.oddsB, kind === "open" ? "mult" : undefined);
+    if (!isP(q)) throw new Error("FightBlend.predict: opts.lineKind '" + kind + "' needs a line, and the one given does not de-vig to a probability in (0, 1)");
     return { kind: kind, p: q, src: src, devig: dv };
   }
   // ML v2 page stack (src/ml/ml2.js stackP): logit p = sum_i w_i logit(clip(input_i, pclip)); no intercept, so exactly

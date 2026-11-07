@@ -37,6 +37,11 @@ module.exports = function durrec(E, root) {
     const d = load().backtest[id];
     if (!d) throw new Error("durability: no walk-forward record for fight " + id + " (refusing the live-fit fallback)");
     const side = (x) => ({ chin_re: x.chin_re, chin_cov: x.chin_cov, pow_re: x.pow_re, pow_cov: x.pow_cov });
+    // v5.0.1 (v5 review): every field must be a finite positive number; a missing one would make the engine fill it from the
+    // live fit (terms 2008..2026-10, level at Oct 2026), which covers the validation years and the vault
+    const ok = (v) => typeof v === "number" && isFinite(v) && v > 0;
+    for (const s of ["A", "B"]) for (const k of ["chin_re", "chin_cov", "pow_re", "pow_cov"]) if (!d[s] || !ok(d[s][k])) throw new Error("durability: record " + id + " " + s + "." + k + " is not a finite positive number (refusing the live-fit fallback)");
+    if (!d.p || !ok(d.p.A) || !ok(d.p.B)) throw new Error("durability: record " + id + " has no valid p.A / p.B");
     const bA = d.p.A / (d.B.chin_re * d.B.chin_cov * d.A.pow_re * d.A.pow_cov), bB = d.p.B / (d.A.chin_re * d.A.chin_cov * d.B.pow_re * d.B.pow_cov);
     const base = Math.sqrt(bA * bB);
     return swap ? { A: side(d.B), B: side(d.A), base } : { A: side(d.A), B: side(d.B), base };
@@ -54,6 +59,10 @@ module.exports = function durrec(E, root) {
   }
   function assertApplied(m, id, params) {
     if (on(params) && !(m.dur && m.dur.baseFromRecord)) throw new Error("durability: walk-forward record not applied for " + id);
+    // v5.0.1: and every chin / power field of both sides came from the record (engines 5.0.1+ label partial records)
+    if (on(params) && m.dur && ((m.dur.A && m.dur.A.src !== "record") || (m.dur.B && m.dur.B.src !== "record"))) {
+      throw new Error("durability: fight " + id + " used computed chin / power fields (src " + m.dur.A.src + " / " + m.dur.B.src + ")");
+    }
   }
   // convenience: set opts.dur / opts.params for a backtest fight in place; returns opts
   function apply(opts, id, swap) {
