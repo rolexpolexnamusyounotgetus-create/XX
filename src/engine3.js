@@ -1051,6 +1051,17 @@
     var tS = [1, 1, 1], tG = [1, 1, 1], tP = [1, 1, 1];
     for (j = 0; j < 3; j++) { tS[j] = lnorm(rng, J.tasteSd); tG[j] = lnorm(rng, J.tasteSd); tP[j] = lnorm(rng, J.tasteSd); }
     var jF = J.sharedSd * Math.sqrt(J.sharedFight || 0) * rng.normal();   // judges' fight-level shared view (always drawn: fixed draw order)
+    var spD = null;
+    if (m.spread) {
+      // v8 components.tdIntent / ctrlSpread: per fighter, mean-1 lognormal takedown intent and top-stint length, from an auxiliary
+      // generator seeded by this fight's own form draws (the main stream is untouched; off: none of this runs)
+      var spr = m.spread, ar = makeRng(auxSeed(sharedPace, vol, fOut[0], fOut[1], fAcc[0]));
+      var tdM = [lnorm(ar, spr.td), lnorm(ar, spr.td)], ctM = [lnorm(ar, spr.ctrl), lnorm(ar, spr.ctrl)];
+      tdD = [m.tdD[0] * tdM[0], m.tdD[1] * tdM[1]]; tdCC = [m.tdCC[0] * tdM[0], m.tdCC[1] * tdM[1]]; tdCU = [m.tdCU[0] * tdM[0], m.tdCU[1] * tdM[1]];
+      upPos = new Float64Array(m.upPos); swPos = new Float64Array(m.swPos);
+      for (k = 0; k < 5; k++) { upPos[k] /= ctM[0]; swPos[k] /= ctM[0]; upPos[5 + k] /= ctM[1]; swPos[5 + k] /= ctM[1]; }   // index top * 5 + pos
+      spD = { tdA: tdM[0], tdB: tdM[1], ctrlA: ctM[0], ctrlB: ctM[1] };
+    }
     var kdB = [m.kd[0] * fPow[0] * fChin[1] * vol, m.kd[1] * fPow[1] * fChin[0] * vol];
     var dw = [m.dw[0] * Math.pow(fPow[0], K.powDmgExp), m.dw[1] * Math.pow(fPow[1], K.powDmgExp)];
     var pcF = [Math.sqrt(fPow[0] * fChin[1] * vol), Math.sqrt(fPow[1] * fChin[0] * vol)];
@@ -1074,6 +1085,7 @@
       form: { A: { out: fOut[0], acc: fAcc[0], pow: fPow[0], chin: 1 / fChin[0], cardio: 1 / fCard[0], grap: fGrap[0], subOff: fSubO[0], subDef: 1 / fSubD[0] },
               B: { out: fOut[1], acc: fAcc[1], pow: fPow[1], chin: 1 / fChin[1], cardio: 1 / fCard[1], grap: fGrap[1], subOff: fSubO[1], subDef: 1 / fSubD[1] } },
       rounds: rounds, fin: null, n108: 0, kdr: 0, kdrf: 0, pace: sharedPace, vol: vol };
+    if (spD) fight.spread = spD;
     var po = [0, 0], fin = null;
 
     for (var r = 0; r < nR; r++) {
@@ -1570,6 +1582,10 @@
     VERSION: VERSION, KEYS: KEYS, STATS: STK,
     loadDB: loadDB, profile: profile, matchup: matchup, matchupBase: matchupBase, simulate: simulate, bucket: bucket, makeRng: makeRng,
     loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound,
+    // v8: components embed / retarget / tdIntent / ctrlSpread
+    loadEmbed: loadEmbed, embedBlend: embedBlendSide, compOn: compOn,
+    resolveParams: function (over, base) { return mergeParams(base || getParams(), over || {}); },
+    retargetCacheClear: retargetCacheClear, _rt: { step: rtStep, apply: rtApply, ipf: rtIpf, pilot: rtPilot, swapOpts: swapOpts, auxSeed: auxSeed, spreadOf: spreadOf },
     summarize: summarize, explain: explain, manualProfile: manualProfile,
     // helpers exposed for tests, calibration and the page
     priorFor: priorFor, league: league, fighterRates: fighterRates, occupancy: occupancy, isDecision: isDecision,
