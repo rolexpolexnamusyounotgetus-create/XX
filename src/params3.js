@@ -124,7 +124,12 @@
       // model_blend_anchor.md, verified). ON: blend P(win) (the ML v2 package: data/derived/blindtest_stack.json `model` /
       // `model_open` by opts.lineKind, + src/ml/ml2.js) + rescaled / pooled method x round + anchor mode + interval (kappa 1.65).
       // It never touches matchup / simulate / summarize / explain; off, predict returns summarize's own numbers.
-      blend_anchor: true
+      blend_anchor: true,
+      // v5 Calibrate B (tools/v5_calB_levels.js; data/derived/v5_calB_levels.json; train 2019-2023 only): the ONE joint level pass
+      // of the knockdown / finish / stoppage / judging levels with the Calibrate A flags (block `calB` below; engine3.js
+      // resolveParams). ON: the levels match the 2019-2023 actuals; off reproduces the Calibrate A engine bit for bit
+      // (tests/test_v5_calB.js).
+      calB: true
     },
 
     // ---------------- styles_sos knobs (component "styles_sos"; src/styles_sos.js, docs/ENGINE_V3_SPEC.md) ----------------
@@ -614,6 +619,29 @@
       },
       koTargets: { ground: 0.2859, clinch: 0.0711, standNoKd: 0.0725 },   // (e) the self-calibration's composition targets (tests/test_engine3.js --fit uses them while the sub-flag is on; v4: 0.28 / 0.125 / 0.07)
       koComp: { kdScale: 1.11, kdClinch: 0.4999, gnpTko: 1.023, stko: 1.051, kdInstant: 0.9877, kdRefStop: 0.9877 }   // (e) tools/v401_kocomp.js --n 30000 --iters 12 (data/derived/v401_kocomp.json): clinch share 12.7% -> 6.9% on league-average LW pairs, KD per head strike held, KO share +0.4 pt
+    },
+
+    // ---------------- v5 Calibrate B: the joint level pass (components.calB; src/engine3.js resolveParams) ----------------
+    // tools/v5_calB_levels.js fit (data/derived/v5_calB_levels.json): all 1,999 2019-2023 backtest_dev fights, both corner orders,
+    // a seed per simulated fight, evalv's leak-free inputs (as-of priors, out-of-fold learned rates, durability records + train NORM,
+    // SOS pairs, embed / preufc snapshots), the Calibrate A flags; 6 damped fixed-point iterations at 60 sims per order, final check
+    // at 200 (20 traced). One lever per target; durability.kdCal is held (1.1639618), so knockdowns have one free scale per format:
+    //   dyn.kdLevel3 / kdLevel5: geometric mean of the factors matching KD per 15 minutes and KD per 100 head landed of the format
+    //     (3 rounds 0.611 / 0.814 actual; 5 rounds 0.500 / 0.641); before 0.595 / 0.791 and 0.504 / 0.621, after 0.613 / 0.815 and
+    //     0.509 / 0.627; KD per 100 head landed overall 0.759 -> 0.780 (actual 0.782 [0.721, 0.843]);
+    //   dyn.convLevel: same-round strike finish per knockdown 0.505 -> 0.511 (dynamics.json kd_conversion rate_train 0.512);
+    //   dyn.stkoScale / gnpScale: one joint factor (their ratio kept) holding the KO/TKO share at the actual 31.7% (after 31.8%);
+    //   judge.t108: card-implied 10-8 share of decision judge-rounds (judges' 10-8s + 3 x deduction points) 4.47% -> 4.75%, aimed at
+    //     the 2021-2023 decisions' 4.71% (v4's judging-regime choice; 2019-2023 5.29%, 2019-2020 6.2%). Majority decisions (0.96% vs
+    //     2.04%) and draws (0.62% vs 1.01%) stay low: in the 2019-2023 cards MDs do not track 10-8s (2022: 4.0% 10-8, 3.6% MD;
+    //     2020: 5.8%, 0.0%), and a threshold that gives 6.6% 10-8s still leaves 1.3% MD / 0.8% draws. Structural, not a level.
+    // Not fixed by levels (round shape; for v6): 3-round finish by round 24.4 / 16.7 / 7.5% actual vs 25.9 / 13.5 / 8.8% (round 2
+    // below the actuals' interval [15.0, 18.4] for KO and SUB alike); 5-round R4 8.0% vs 5.3%.
+    calB: {
+      set: {
+        dyn: { kdLevel3: 0.6772, kdLevel5: 0.5656, convLevel: 1.0966, stkoScale: 0.6587, gnpScale: 0.4322 },   // before: 0.655 / 0.559 / 1.045 / 0.733 / 0.481
+        judge: { t108: 8.176 }                                                                                 // before: 8.31
+      }
     },
 
     // ---------------- division self-calibration factors ([selfcal v4]: train-only priors_dev.json; neutral = 1) ----------------

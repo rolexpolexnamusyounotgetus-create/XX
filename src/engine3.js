@@ -141,8 +141,15 @@
     return o;
   }
   // base params (FightParams) + per-call overrides -> the parameter set a matchup runs on
+  // components.calB (v5 Calibrate B, tools/v5_calB_levels.js; train 2019-2023 only): the joint level pass of the knockdown /
+  // finish / stoppage / judging levels. params.calB.set holds the new values (dyn.kdLevel3 / kdLevel5 / convLevel / stkoScale /
+  // gnpScale, judge.t108); the usual fields keep the values before the pass, so calB off reproduces the engine before
+  // Calibrate B exactly. The set goes in BEFORE the v401 put-backs and the opts.params overrides: a v401 sub-flag that is off
+  // still restores v4.0.0's value of any field it owns (judge.t108 under emJudge), and an explicit override always wins.
   function resolveParams(base, over) {
     var p = mergeParams(base, over), fl = v401Flags(p), OFF = base.v401 && base.v401.off, i;
+    var CBS = compOn(p, "calB") && base.calB && base.calB.set ? base.calB.set : null, b0 = base;   // [calB]
+    if (CBS) { b0 = mergeParams(base, CBS); p = mergeParams(b0, over); }                              // [calB]
     if (OFF) {
       var back = null;
       for (i = 0; i < V401_SUB.length; i++) {
@@ -150,7 +157,7 @@
         if (fl[s] || !OFF[s]) continue;
         back = back ? mergeParams(back, OFF[s]) : mergeParams({}, OFF[s]);
       }
-      if (back) p = mergeParams(mergeParams(base, back), over);
+      if (back) p = mergeParams(mergeParams(b0, back), over);
     }
     var KC = fl.koTargets && base.v401 && base.v401.koComp;
     if (KC) {
