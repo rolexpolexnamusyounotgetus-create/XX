@@ -1,0 +1,7 @@
+v10_stat_gate: 865 val fights x 2 orders x 300 sims, arms cmp4, all, 3 workers, seed 10, BINDING
+  200/865 fights, 10 s
+  400/865 fights, 16 s
+  600/865 fights, 23 s
+  800/865 fights, 30 s
+wrote data/derived/v10/look_stat_val.json (865 fights, 0 failed, 32 s); engine/params 10.0.0 | 10.0.0-selfcal-pre2024
+rc=0
