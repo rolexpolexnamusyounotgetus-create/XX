@@ -35,7 +35,16 @@
                                'S' (methodround S, SM with a closing line), debut / statDist / props off }; per-year stackers
                                --cmp-stacks <prefix> (<prefix>2020.json ... <prefix>2023.json: fit on 2019..Y-1 with this engine's
                                evalv rows); 2019-2020 rows use the fit through 2020 (flagged inSample; only used to fit pool weights)
-   Packages on the same engine file must produce identical simulator cells (common random numbers; asserted). */
+   Packages on the same engine file must produce identical simulator cells (common random numbers; asserted).
+
+   v10 (the consolidated bundle; data/derived/v10/gate_protocol.json):
+   --pkg name=engineDir:v10    the v10 package: mode v7's records (winner 'ml2stack', S2 cells, props OFF in the record, the props
+                               consensus recorded once per fight) on the v10 engine, whose simulator carries v8's stat-line bundle:
+                               each fight also gets opts.statTargets from data/derived/v8/statlines_targets.json (leak-free forward-
+                               chained statlines fold tables; none for 2019, so the retarget is off there, as in v8's gate) and the
+                               fold-honest embedding inputs (the package's mlpathrec.js); the harness asserts both were applied
+                               (FightEngine.matchup once per fight; predict's own matchups replay the retarget cache). FightBlend
+                               1.4.0 swaps statTargets with the corners in predict's B-A run. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -102,7 +111,21 @@ if (!isMainThread) {
   }
   const XRS = PK.map((p, k) => (W.shared && k > 0) ? null : require(fs.existsSync(path.join(p.dir, "mlpathrec.js")) ? path.join(p.dir, "mlpathrec.js") : path.join(ROOT, "tools/mlpathrec.js"))(p.E, ROOT));
   const PRs = PK.map((p) => require(path.join(ROOT, "tools/predictrec.js"))(p.E, ROOT, { stacks: CMP_STACKS(W.stackDir, W.cmpStacks), inSample: true,
-    v6: p.mode === "v6", v7: p.mode === "v7", blendPath: path.relative(ROOT, path.join(p.dir, "ml", "blend.js")), ml2Rolling: !!W.ml2Rolling }));
+    v6: p.mode === "v6", v7: p.mode === "v7" || p.mode === "v10", blendPath: path.relative(ROOT, path.join(p.dir, "ml", "blend.js")), ml2Rolling: !!W.ml2Rolling }));
+  // v10: leak-free statlines targets for the retarget (data/derived/v8/statlines_targets.json; tools/v8_targets.js)
+  const TGV10 = PK.some((p) => p.mode === "v10") ? readJSON("data/derived/v8/statlines_targets.json").fights : null;
+  function v10Inputs(f, o, P, k) {
+    const t = TGV10[f.id];
+    if (!t) throw new Error("v10: no statlines targets entry for " + f.id);
+    if (t.fold) o.statTargets = { A: t.A, B: t.B, fin: t.fin };
+    const prm = P.E.resolveParams(o.params || {}), c = prm.components || {};
+    const m = P.E.matchup(f.A, f.B, o);
+    if (!m.mlApplied) throw new Error("v10: learned rates not applied for " + f.id);
+    if (c.embed && !(m.embed && m.embed.src === "opts")) throw new Error("v10: embedding inputs not applied for " + f.id);
+    if (c.retarget && t.fold && !(m.retarget && m.retarget.applied)) throw new Error("v10: retarget not applied for " + f.id);
+    if (c.retarget && !t.fold && m.retarget && m.retarget.applied) throw new Error("v10: retarget applied without a leak-free table for " + f.id);
+    return { retarget: !!(m.retarget && m.retarget.applied), embed: !!(m.embed && m.embed.src === "opts"), fold: t.fold || null };
+  }
   function baseOpts(f, k) {
     const OOF = OOFS[k], XR = XRS[k];
     const opts = { division: f.prior_division || f.division, rounds: f.rounds, title: f.title, date: f.date, priors: priors[f.date.slice(0, 4)] };
@@ -138,10 +161,14 @@ if (!isMainThread) {
           for (const kind of W.kinds) {
             const o = Object.assign({}, b, PRs[k].opts(f, false, { lineKind: kind }), { seed: hash32(f.id), sims: W.sims, interval: false });
             if (P.mode === "v5") { delete o.winnerStacks; delete o.winnerFit; }
-            if (P.mode === "v7") {
-              // cycle-1 cells (props off); the consensus is recorded once per fight for tools/v7_gate.py
+            if (P.mode === "v7" || P.mode === "v10") {
+              // cycle-1 cells (props off); the consensus is recorded once per fight for tools/v7_gate.py / tools/v10_gate.py
               if (o.props && !rec.props) rec.props = { m6: o.props.m6 || null, n_books: o.props.n_books || null, gd: o.props.gd == null ? null : o.props.gd };
               o.propsOn = false;
+            }
+            if (P.mode === "v10") {
+              const vi = v10Inputs(f, o, P, k);
+              if (!rec.v10) rec.v10 = vi;
             }
             if (P.mode === "cmp4") {
               o.params = Object.assign({}, o.params || {}, { blend: Object.assign({}, ((o.params || {}).blend) || {}, CMP4_BLEND) });
@@ -194,7 +221,7 @@ const SPLIT = String(args.split || "train");
 if (!SPLITS[SPLIT]) { console.error("predict_harness: --split train | val"); process.exit(2); }
 if (!args.pkg.length) { console.error("predict_harness: --pkg name=engineDir:mode (v6 | v5) at least once"); process.exit(2); }
 const PKGS = args.pkg.map((s) => { const [name, rest] = s.split("="), i = rest.lastIndexOf(":"); return { name, dir: path.resolve(ROOT, rest.slice(0, i)), mode: rest.slice(i + 1) }; });
-for (const p of PKGS) if (["v6", "v5", "v7", "cmp4"].indexOf(p.mode) < 0) { console.error("predict_harness: mode must be v6, v5, v7 or cmp4"); process.exit(2); }
+for (const p of PKGS) if (["v6", "v5", "v7", "cmp4", "v10"].indexOf(p.mode) < 0) { console.error("predict_harness: mode must be v6, v5, v7, cmp4 or v10"); process.exit(2); }
 if (PKGS.some((p) => p.mode === "cmp4") && !args["cmp-stacks"]) { console.error("predict_harness: mode cmp4 needs --cmp-stacks <prefix> (per-year stackers <prefix>2020.json ...)"); process.exit(2); }
 const KINDS = String(args.kinds || "close,open,none").split(",");
 const SIMS = +(args.sims || 300);
@@ -301,6 +328,7 @@ function runAll() {
       cmp_stacks: CMP_STACKS("data/derived/v6", args["cmp-stacks"] || null),
       cmp_stacks_sha256: (() => { const o = {}; for (const [y, f] of Object.entries(CMP_STACKS("data/derived/v6", args["cmp-stacks"] || null))) { const fp = path.join(ROOT, f); if (fs.existsSync(fp)) o[y] = sha(fp); } return o; })(),
       props_sha256: fs.existsSync(path.join(ROOT, "data/derived/props.json")) ? sha(path.join(ROOT, "data/derived/props.json")) : null,
+      statlines_targets_sha256: PKGS.some((p) => p.mode === "v10") ? sha(path.join(ROOT, "data/derived/v8/statlines_targets.json")) : null,
       market_sha256: sha(path.join(ROOT, "data/derived/market.json")), methodround_sha256: sha(path.join(ROOT, "data/derived/methodround.json")) },
     n_fights: recs.length, failed: recs.filter((r) => r.err).length, wall_s: Math.round((Date.now() - t0) / 1000) };
   fs.writeFileSync(path.isAbsolute(OUT) ? OUT : path.join(ROOT, OUT), JSON.stringify({ meta, fights: recs }));

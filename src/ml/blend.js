@@ -64,7 +64,7 @@
   else root.FightBlend = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (root) {
   "use strict";
-  var VERSION = "1.3.0";   // 1.3.0 (engine v7, cycle 2): market props for method given the winner (params.blend.props, opts.props; item 7 above); with props off or absent every output equals 1.2.1. 1.2.1 (v6 review; not part of any kept version): line fallback for debut / manual bouts (source 'line'), isDebutant honours record.ufc, the ml2stack interval perturbs the head without the MoE handle and has its own kappa; backtest-universe outputs are unchanged (every backtest row is ml2stack or stack). 1.2.0 (engine v6): ML v2 winner heads by line regime (winner 'ml2stack', data/derived/v6_stacks.json), S2 method/round cells (tools/methodround_model.js createS2), debut method path, distributional stat lines; every v6 path is off unless params.blend switches it on, so 1.1.1 behaviour is unchanged for v5 params
+  var VERSION = "1.4.0";   // 1.4.0 (engine v10, cycle 5 + the v8 bundle): swapOpts also swaps the v8 engine's per-call inputs (opts.statTargets with its finished-fight grid, opts.statdist) for the B-A order; the newcomer path (params.blend.debutWinner: a bout with a UFC debutant takes its winner from the line where there is one, else opts.seededElo; the debut winner model reported as a monitored candidate). With debutWinner off and no statTargets / statdist, every output equals 1.3.0 (tests/test_v10.js). 1.3.0 (engine v7, cycle 2): market props for method given the winner (params.blend.props, opts.props; item 7 above); with props off or absent every output equals 1.2.1. 1.2.1 (v6 review; not part of any kept version): line fallback for debut / manual bouts (source 'line'), isDebutant honours record.ufc, the ml2stack interval perturbs the head without the MoE handle and has its own kappa; backtest-universe outputs are unchanged (every backtest row is ml2stack or stack). 1.2.0 (engine v6): ML v2 winner heads by line regime (winner 'ml2stack', data/derived/v6_stacks.json), S2 method/round cells (tools/methodround_model.js createS2), debut method path, distributional stat lines; every v6 path is off unless params.blend switches it on, so 1.1.1 behaviour is unchanged for v5 params
   var VERSION_PREV = "1.1.1";   // 1.1.1 (v5.0.1): invalid market lines are refused, never treated as no line; 1.1.0 (v5 merge step 5): ML v2 package winner blend, opts.lineKind, backtest guard, v5 corner swaps
   var STATE = { stack: null, feat: null, ml2: null, mlPage: null, mktRatings: null, mr: null, mrModel: null, data: null,
     winnerStacks: null, mrS2: null, debut: null, statDist: null, ml2Trees: null, preufc: null, lineStack: null, props: null };
@@ -139,7 +139,10 @@
     statDist: false,       // v6: distributional stat lines (src/ml/statdist.js, P10 / P50 / P90) next to the means
     lineFallback: null,    // 1.2.1: true / false; null = on for winner 'ml2stack' only (a line is never dropped), off otherwise (1.1.1 behaviour, flagged)
     // 1.3.0 (engine v7): market props for method given the winner; off by default, so 1.2.1 behaviour is unchanged for v5 / v6 params
-    props: { on: false, mode: "jlin", w: null, decShift: 0, drawC: 0.01457, overMax: null, outlierMaxDev: 0.15, debutPool: false }
+    props: { on: false, mode: "jlin", w: null, decShift: 0, drawC: 0.01457, overMax: null, outlierMaxDev: 0.15, debutPool: false },
+    // 1.4.0 (engine v10, cycle 5): newcomer path for the winner of a bout with a UFC debutant (line-only stack, else seeded Elo); off by
+    // default, so 1.3.0 behaviour is unchanged for v5-v7 params
+    debutWinner: false
   };
   function cfgOf(p, opts) {
     var b = (p && p.blend) || {}, o = (opts && opts.blend) || {}, out = {}, k;
@@ -264,7 +267,34 @@
     if (o.ml && typeof o.ml === "object") s.ml = swapML(o.ml);
     if (o.preufcA != null || o.preufcB != null) { s.preufcA = o.preufcB; s.preufcB = o.preufcA; }
     ["dur", "sos", "embed", "oppadj", "preufc"].forEach(function (k) { if (o[k] && typeof o[k] === "object") s[k] = swapAB(o[k]); });
+    // 1.4.0 (engine v10 = v8's retarget): statlines targets { A, B, fin: { t, A, B } } and live statdist inputs swap with the corners,
+    // exactly as the engine's own pilot does (engine3.js swapOpts)
+    if (o.statTargets && typeof o.statTargets === "object") {
+      var st = { A: o.statTargets.B, B: o.statTargets.A };
+      if (o.statTargets.fin) st.fin = { t: o.statTargets.fin.t, A: o.statTargets.fin.B, B: o.statTargets.fin.A };
+      s.statTargets = st;
+    }
+    if (o.statdist && o.statdist.input) {
+      var I = o.statdist.input, J2 = {}, kk;
+      for (kk in I) J2[kk] = I[kk];
+      J2.mlA = I.mlB; J2.mlB = I.mlA; J2.etaA = I.etaB; J2.etaB = I.etaA; J2.oppA = I.oppB; J2.oppB = I.oppA; J2.winLogit = -(+I.winLogit || 0);
+      s.statdist = { SD: o.statdist.SD, input: J2 };
+    }
+    if (o.seededElo != null) s.seededElo = swapSeeded(o.seededElo);
     return s;
+  }
+  /** 1.4.0: the seeded-Elo input of the newcomer path: a number P(A wins), { p }, or ratings { A, B } (Elo points). */
+  function seededP(x) {
+    if (isNum(x)) return clip(+x, 1e-4, 1 - 1e-4);
+    if (x && isNum(x.p)) return clip(+x.p, 1e-4, 1 - 1e-4);
+    if (x && isNum(x.A) && isNum(x.B)) return clip(1 / (1 + Math.pow(10, (x.B - x.A) / 400)), 1e-4, 1 - 1e-4);
+    return null;
+  }
+  function swapSeeded(x) {
+    if (isNum(x)) return 1 - x;
+    if (x && isNum(x.p)) { var y = own(x); y.p = 1 - x.p; return y; }
+    if (x && isNum(x.A) && isNum(x.B)) { var z = own(x); z.A = x.B; z.B = x.A; return z; }
+    return x;
   }
   /** Anchor offset s (log-odds) applied through the matchup knobs: A's striking accuracy odds x e^(cAcc s/2), B's
       x e^(-cAcc s/2); A's takedown success odds x e^(cTd s/2) (B's tdDef), B's x e^(-cTd s/2) (A's tdDef); optional
@@ -1011,7 +1041,34 @@
         blendError = (blendError ? blendError + "; " : "") + "LINE DROPPED: a " + line.kind + " line was given but the headline is the simulator alone (params.blend.lineFallback off)";
       }
     }
+    // 1.4.0 (engine v10, cycle 5 newcomer path; data/derived/debut.json model.adoption, verified): a bout with a UFC debutant takes its
+    // winner from the line where there is one (the line-only stack of that kind), else from the seeded Elo (opts.seededElo); the ML v2
+    // head, the expert stack and the simulator never decide a debut bout's winner. Without a line and without a seeded Elo the
+    // headline keeps its source and the record says so. The debut winner model is reported as a monitored candidate (never applied).
+    var dwRec = null, dwOn = (opts.debutWinner !== undefined ? !!opts.debutWinner : !!cfg.debutWinner) && !BT;
+    if (dwOn && (isDebutant(pa, opts.debutA) || isDebutant(pb, opts.debutB))) {
+      dwRec = { debutant: { A: isDebutant(pa, opts.debutA), B: isDebutant(pb, opts.debutB) }, kept: source, applied: false };
+      if (line.kind !== "none" && isNum(line.p)) {
+        var lsb2 = lineStackBlock(opts.lineStack || STATE.lineStack, line.kind, null);
+        pRaw = lsb2 ? sigm(lsb2.slope * logit(clip(line.p, lsb2.pclip, 1 - lsb2.pclip))) : line.p;
+        source = "line"; dwRec.applied = true; dwRec.source = "line";
+        dwRec.note = lsb2 ? "line-only stack " + lsb2.key + " (data/derived/line_stack.json)" : "de-vigged line itself (no line stack loaded)";
+        lineFb = lineFb || { kind: line.kind, stack: lsb2 ? lsb2.key : null, slope: lsb2 ? lsb2.slope : 1, fitThrough: lsb2 ? lsb2.fitThrough : null, note: dwRec.note };
+      } else {
+        var pse = seededP(opts.seededElo);
+        if (isNum(pse)) { pRaw = pse; source = "seeded_elo"; dwRec.applied = true; dwRec.source = "seeded_elo"; dwRec.note = "seeded Elo (opts.seededElo; the ledger's models.elo for a debut bout)"; }
+        else dwRec.note = "no line and no opts.seededElo: the headline keeps source " + source;
+      }
+      var DMw = opts.debutModel || STATE.debut;
+      if (DMw) {
+        try {
+          var sdw = opts.debutSides || { A: DMw.lib.sideFromProfile(pa, date, division, DMw.model || {}, null), B: DMw.lib.sideFromProfile(pb, date, division, DMw.model || {}, null) };
+          dwRec.candidate = { p: DMw.M.winner(sdw.A, sdw.B), note: "debut winner model: monitored candidate (research/model_debut.md), never applied" };
+        } catch (e) { dwRec.candidate = { error: String((e && e.message) || e) }; }
+      }
+    }
     function blendP(e) {
+      if (source === "seeded_elo") return sigm(T * logit(pRaw));   // 1.4.0: no profile noise on the seeded Elo
       if (source === "ml2stack") {
         // the profile-noise shift of ML v2's logistic (interval: e.ml2) moves the head by the same logit amount
         var d6 = (isNum(e.ml2) && isNum(ex.ml2)) ? logit(e.ml2) - logit(ex.ml2) : 0, q6 = own(v6.inp);
@@ -1159,14 +1216,14 @@
       }
       // the v5 kappa (boot.inflate) was fit on the v5 expert-stack construction; the head stack has its own (boot.inflateMl2stack)
       var bootI = cfg.boot;
-      if (source === "ml2stack" || source === "line") {
+      if (source === "ml2stack" || source === "line" || source === "seeded_elo") {
         var km = cfg.boot.inflateMl2stack, kv = isNum(km) ? km : (km && isNum(km[line.kind]) ? km[line.kind] : null);   // a number or { none, open, close }
         bootI = own(cfg.boot); bootI.inflate = (source === "ml2stack" && isNum(kv)) ? kv : 0;
       }
       iv = interval(blendP, ex, featShift, { rng: rng, rdA: opts.rdA, rdB: opts.rdB, mrSd: opts.mrSd, engineN: N * sim.runs, sign: flip ? -1 : 1 }, bootI);
-      if (iv && (source === "ml2stack" || source === "line")) {
+      if (iv && (source === "ml2stack" || source === "line" || source === "seeded_elo")) {
         iv.construction = source;
-        if (!(bootI.inflate > 0)) iv.calibratedNote = source === "line" ? "line headline: no profile noise, no calibrated interval" :
+        if (!(bootI.inflate > 0)) iv.calibratedNote = source === "line" ? "line headline: no profile noise, no calibrated interval" : source === "seeded_elo" ? "seeded-Elo headline (debut bout): no profile noise, no calibrated interval" :
           "no kappa fit for the ml2stack construction (params.blend.boot.inflateMl2stack): raw bootstrap only";
         if (source === "ml2stack" && !featShift) iv.degenerate = "no profile-noise shift (feature LR or decayed sums missing): sd 0";
       }
@@ -1177,10 +1234,10 @@
       experts: ex, blend: r ? { weights: r.weights, contrib: r.contrib, used: r.used, regime: r.regime || null, scale: r.scale, ignored: r.ignored } : null,
       // v5 merge step 5: which line, which stack block, which headline, and ML v2 next to it
       lineKind: line.kind, line: line.kind === "none" ? null : { kind: line.kind, p: line.p, src: line.src, devig: line.devig },
-      winner: source === "ml2" ? "ml2" : (source === "ml2stack" ? "ml2stack" : (source === "line" ? "line" : "stack")),
+      winner: source === "ml2" ? "ml2" : (source === "ml2stack" ? "ml2stack" : (source === "line" ? "line" : (source === "seeded_elo" ? "seeded_elo" : "stack"))),
       // engine v6: the routing record (which line type, which trained weights) and the ML v2 head
       lineType: line.kind, routing: { lineType: line.kind, winner: source, weights: source === "ml2stack" ? (v6 && v6.stack) : (stk ? (line.kind === "open" ? "model_open" : "model") + ":" + (line.kind === "none" ? "absent" : "present") : null) },
-      v6: v6, debut: deb, props: prRec, lineFallback: lineFb, lineDropped: lineDropped || undefined,
+      v6: v6, debut: deb, debutWinner: dwRec || undefined, props: prRec, lineFallback: lineFb, lineDropped: lineDropped || undefined,
       stack: stk ? { block: block, regime: r ? r.regime || null : null, fitThrough: stackFT, built: stk.built, from: (opts.stack || opts.moe) ? "opts" : "loaded" } : null,
       ml2: ml2 ? { pA: ml2.pA, pMR: ml2.pMR, stacks: ml2.stacks || null, stack: ml2.stack || null, p: isNum(ml2.p) ? ml2.p : null, note: ml2.note || null } : null,
       backtest: BT ? { date: date, stackFitThrough: stackFT, inSample: !!(stackFT && date && stackFT >= date), mrCells: opts.mrCells ? "passed" : "none",
@@ -1202,7 +1259,7 @@
     cfgOf: cfgOf, cellOf: cellOf, nCells: nCells, mirrorCells: mirrorCells, sideSums: sideSums, rescale: rescale, poolCells: poolCells, smoothCells: smoothCells,
     marginals: marginals, simCells: simCells, symSim: symSim, swapOpts: swapOpts, anchorOpts: anchorOpts, anchor: anchor,
     nnLogit: nnLogit, fitTemp: fitTemp, perturbS: perturbS, interval: interval, mlStatRates: mlStatRates,
-    v6Stack: v6Stack, v6StackP: v6StackP, debutCells: debutCells, isDebutant: isDebutant, lineStackBlock: lineStackBlock,
+    v6Stack: v6Stack, v6StackP: v6StackP, debutCells: debutCells, isDebutant: isDebutant, lineStackBlock: lineStackBlock, seededP: seededP,
     expectedMinutes: expectedMinutes, logit: logit, sigm: sigm,
     // 1.3.0 (engine v7)
     applyProps: applyProps, mirrorProps: mirrorProps, propsConsensus: function (input, K, pc) { var PP = propsLib(); return PP ? propsConsensus(PP, input, K, pc || {}) : null; },
