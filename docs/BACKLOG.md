@@ -189,6 +189,14 @@ Findings from verified research that the next engine versions must use. Each lin
   no-line +0.0013 n.s. Descriptive only: a per-card trailing temperature would have helped no-line -0.0047 on
   2024-25 (already-seen window: judge it only on the forward ledger / audit 2). Proposed v9 refinements to the
   pre-registered drift rule (one-sided test, longer ledger window, named column) AFTER audit 1 only.
+- ENGINE v7 GATE FAILED (~09:15 UTC Nov 7; no pre-registration, no 2024-25 look; versions/v7-gate-failed/): v4
+  simulator + predict() with ML v2 head stacks + S2 cells (cycle 1 re-bundled) + the verified props pool (cycle 2).
+  Binding train gate (protocol committed 78b01cf before any metric; 2021-23, 1,222 fights; comparator = the honest
+  v4 package) passed 32 of 33 checks: open winner -0.0053 [-0.0096, -0.0010], no-line -0.0065 [-0.0118, -0.0011],
+  7-bin -0.018/-0.019, method -0.008, props block 7-bin -0.0149 [-0.0273, -0.0028]; FAILED the close-regime winner
+  "not worse" check: -0.0024 [-0.0054, +0.00054] vs the pre-committed limit CI upper <= +0.0005 (tie-break by the
+  clustered normal bound, +0.00060). Rule followed as written; cycle 2 depends on cycle 1, so neither enters. Any
+  later protocol must not use this run to choose its comparator or tolerance.
 - ENGINE v6 MEASURED AND REJECTED (~07:15 UTC Nov 7; pre-registered primary = open-regime winner log loss of the
   predict() package vs the v5.0.1 package, because v4 has no predict()): 0.58193 vs 0.58438 on 842 fights, paired
   -0.00245 [-0.00588, +0.00099] (CI includes 0). Every point estimate in all three regimes favours v6 (no line

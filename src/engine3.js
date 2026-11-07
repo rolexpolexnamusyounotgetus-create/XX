@@ -822,6 +822,33 @@
     var a = [m.dRate[i] * occ[0], m.cRate[i] * (occ[1 + i] * cs + occ[2 - i] * (2 - cs)), m.gRate[i] * occ[3 + i], m.gBot[i] * occ[4 - i]];
     return { pos: [a[0], a[1], a[2] + a[3]], cell: a, j: j };
   }
+  // the occupancy CTMC of matchup() integrated with substeps when a hazard is large (retargeted takedown rates per distance-second
+  // can exceed 0.5 / s in matchups with very little distance time, where the one-second Euler step of occupancy() diverges);
+  // with every hazard below 0.25 / s it is occupancy() exactly
+  function rtOccupancy(q, T) {
+    var mx = q.e + q.x + 2 * q.swap + Math.max(q.up[0], q.up[1]) + Math.max(q.rev[0], q.rev[1]), i;
+    for (i = 0; i < 2; i++) mx = Math.max(mx, q.e + q.tdD[0] + q.tdD[1], q.x + 2 * q.swap + q.tdCC[i] + q.tdCU[1 - i]);
+    var sub = mx > 0.25 ? Math.ceil(mx / 0.25) : 1;
+    if (sub === 1) return occupancy(q, T);
+    var D = 1, CA = 0, CB = 0, TA = 0, TB = 0, o0 = 0, o1 = 0, o2 = 0, o3 = 0, o4 = 0, dt = 1 / sub, n = Math.round(T) * sub;
+    var e = q.e, pA = q.pA, x = q.x, sw = q.swap, fc = q.fc;
+    for (var s = 0; s < n; s++) {
+      o0 += D; o1 += CA; o2 += CB; o3 += TA; o4 += TB;
+      var fDCA = e * pA * D + q.tdD[0] * (1 - q.pD[0]) * q.ftc * D, fDCB = e * (1 - pA) * D + q.tdD[1] * (1 - q.pD[1]) * q.ftc * D;
+      var fDTA = q.tdD[0] * q.pD[0] * D, fDTB = q.tdD[1] * q.pD[1] * D;
+      var fCAD = x * CA, fCBD = x * CB, fCACB = sw * 2 * (1 - pA) * CA, fCBCA = sw * 2 * pA * CB;
+      var fCATA = q.tdCC[0] * q.pC[0] * CA, fCATB = q.tdCU[1] * q.pC[1] * CA;
+      var fCBTB = q.tdCC[1] * q.pC[1] * CB, fCBTA = q.tdCU[0] * q.pC[0] * CB;
+      var fTAD = q.up[1] * (1 - fc) * TA, fTACA = q.up[1] * fc * TA, fTATB = q.rev[1] * TA;
+      var fTBD = q.up[0] * (1 - fc) * TB, fTBCB = q.up[0] * fc * TB, fTBTA = q.rev[0] * TB;
+      D += dt * (fCAD + fCBD + fTAD + fTBD - fDCA - fDCB - fDTA - fDTB);
+      CA += dt * (fDCA + fCBCA + fTACA - fCAD - fCACB - fCATA - fCATB);
+      CB += dt * (fDCB + fCACB + fTBCB - fCBD - fCBCA - fCBTB - fCBTA);
+      TA += dt * (fDTA + fCATA + fCBTA + fTBTA - fTAD - fTACA - fTATB);
+      TB += dt * (fDTB + fCBTB + fCATB + fTATB - fTBD - fTBCB - fTBTA);
+    }
+    return [o0 / n, o1 / n, o2 / n, o3 / n, o4 / n];
+  }
   function rtRefitOcc(m) {
     var p = m.p, i, k;
     var avgSweep = [wavg(m.occS[0], p.sweepPos), wavg(m.occS[1], p.sweepPos)];
@@ -831,7 +858,7 @@
       up: m.up.slice(), rev: [m.sw[0] * avgSweep[1], m.sw[1] * avgSweep[0]] };
     var occ = null, gT = [0, 0];
     for (var it = 0; it < 60; it++) {
-      occ = occupancy(q, 300);
+      occ = rtOccupancy(q, 300);
       var cl = occ[1] + occ[2];
       q.e = clip(q.e * Math.pow(m.clT / Math.max(1e-6, cl), 0.8), 1e-5, 0.08);
       gT[0] = Math.max(0.002, m.ctrlT[0] / 60 - occ[1]);
@@ -839,7 +866,7 @@
       q.up[1] = clip(q.up[1] * Math.pow(occ[3] / gT[0], 0.8), 1 / 3000, 1 / 6);
       q.up[0] = clip(q.up[0] * Math.pow(occ[4] / gT[1], 0.8), 1 / 3000, 1 / 6);
     }
-    m.occ = occupancy(q, 300); m.clE = q.e; m.up = q.up.slice(); m.gTarget = gT;
+    m.occ = rtOccupancy(q, 300); m.clE = q.e; m.up = q.up.slice(); m.gTarget = gT;
     for (i = 0; i < 2; i++) for (k = 0; k < 5; k++) m.upPos[i * 5 + k] = m.up[1 - i] * p.standPos[k] / avgStand[i];
   }
   // two-margin logit fit: shifts alpha (by target) and beta (by position) so the weighted cell accuracies match wantT / wantQ
