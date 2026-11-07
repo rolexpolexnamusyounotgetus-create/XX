@@ -1524,8 +1524,12 @@ STAGES["prereg"] = stage_prereg
 
 def stage_holdout(args):
     """2024-01-01..2025-12-31 scored ONCE with the frozen choices of prereg.json."""
-    if os.path.exists(cpath(LOCK)) and not args.force:
+    dry = bool(getattr(args, "dry", False))
+    if os.path.exists(cpath(LOCK)) and not args.force and not dry:
         raise SystemExit("holdout already run (%s); refusing a second look" % cpath(LOCK))
+    # --dry: the same code on the last CV year (2023) as the window, no lock (a code check that reads no 2024+ row)
+    Y0, Y1 = (2023, 2023) if dry else (2024, 2025)
+    YRS = (2023,) if dry else (2024, 2025)
     pre = jload_c(PREREG)
     tr = jload_c("trackers.json")
     out = {"prereg_sha256": hashlib.sha256(open(cpath(PREREG), "rb").read()).hexdigest(), "league": {}, "method": {},
@@ -1542,7 +1546,7 @@ def stage_holdout(args):
             if nm is None:
                 continue
             d, P[role] = tracker_pred(L, T, key, tt["res"][nm], prior, k_nb)
-        ho = d["year"] >= 2024
+        ho = (d["year"] >= Y0) & (d["year"] <= Y1)
         nl = {r: score_obs(d["kind"], d["y"], d["E"], p, k_nb)[0] for r, p in P.items()}
         row = {"n": int(ho.sum()), "loss": {r: float(v[ho].mean()) for r, v in nl.items()},
                "vs_win5": boot_diff((nl["chosen"] - nl["ref_win5"])[ho], d["event"][ho]),
@@ -1550,7 +1554,7 @@ def stage_holdout(args):
         if "brk_variant" in nl and spec["brk_variant"] != spec["chosen"]:
             row["brk_vs_chosen"] = boot_diff((nl["brk_variant"] - nl["chosen"])[ho], d["event"][ho])
         lv = {}
-        for Y in (2024, 2025):
+        for Y in YRS:
             m = d["year"] == Y
             act = d["y"][m].sum() / d["E"][m].sum()
             lv[Y] = {"actual": float(act)}
@@ -1560,14 +1564,14 @@ def stage_holdout(args):
         row["verdict"] = ("contradicted" if row["vs_win5"][1] > 0 else
                           ("confirmed" if row["vs_win5"][2] < 0 else "n.s."))
         out["league"][key] = row
-        log("holdout league %-9s chosen - win5 %+.5f [%+.5f, %+.5f] (%s) | 2024 act %.4f pred %.4f win5 %.4f | 2025 act %.4f pred %.4f win5 %.4f" % (
+        log("holdout league %-9s chosen - win5 %+.5f [%+.5f, %+.5f] (%s) | %s" % (
             key, row["vs_win5"][0], row["vs_win5"][1], row["vs_win5"][2], row["verdict"],
-            lv[2024]["actual"], lv[2024]["chosen"], lv[2024]["ref_win5"], lv[2025]["actual"], lv[2025]["chosen"],
-            lv[2025]["ref_win5"]))
+            " | ".join("%d act %.4f pred %.4f win5 %.4f" % (Y, lv[Y]["actual"], lv[Y]["chosen"], lv[Y]["ref_win5"])
+                       for Y in YRS)))
     # ---- method candidates (descriptive; production unchanged)
     S = method_setup()
     yr = S["year"]
-    ho = yr >= 2024
+    ho = (yr >= Y0) & (yr <= Y1)
     zero = np.zeros(len(yr))
     L0, J0 = losses_for(S, {"fin": zero, "ko": zero, "r1": zero})
     Js = {"static": J0}
@@ -1586,8 +1590,8 @@ def stage_holdout(args):
             cand, pp["bin7"]["diff"], pp["bin7"]["ci95"], pp["joint"]["diff"], pp["joint"]["ci95"],
             pp["finish"]["diff"], pp["finish"]["ci95"]))
     out["method"]["static_loss"] = {k: float(np.nanmean(L0[k][ho])) for k in M_METRICS}
-    dc = dec_calibration(S, Js, years=(2024,))
-    for Y in (2024, 2025):
+    dc = {}
+    for Y in YRS:
         m = (S["y"] >= 0) & (yr == Y)
         y = S["y"]
         isdec = ((y == I_XDEC) | (y == I_YDEC) | (y == I_DRAW)).astype(float)
@@ -1596,11 +1600,11 @@ def stage_holdout(args):
             row["pred_dec_" + k] = float((J[m, I_XDEC] + J[m, I_YDEC] + J[m, I_DRAW]).mean())
         dc[Y] = row
     out["method"]["dec_cal"] = dc
-    log("holdout method decision share: %s" % {Y: {k: round(v, 4) for k, v in r.items() if k != "n"} for Y, r in dc.items() if Y in (2024, 2025)})
+    log("holdout method decision share: %s" % {Y: {k: round(v, 4) for k, v in r.items() if k != "n"} for Y, r in dc.items()})
     # ---- statlines
     St = stat_setup()
     syr = St["year"]
-    sho = syr >= 2024
+    sho = (syr >= Y0) & (syr <= Y1)
     stt = jload_c("stat.json")
     for st in ST_STATS:
         D = St[st]
@@ -1612,7 +1616,7 @@ def stage_holdout(args):
         dv0 = st_dev(D["kind"], D["y"], D["par"], St["t"], 0.0)
         dv1 = st_dev(D["kind"], D["y"], D["par"], St["t"], o)
         lv = {}
-        for Y in (2024, 2025):
+        for Y in YRS:
             m = syr == Y
             lv[Y] = [float(D["y"][m].sum() / st_mean(D["kind"], D["par"][m], St["t"][m], 0.0).sum()),
                      float(D["y"][m].sum() / st_mean(D["kind"], D["par"][m], St["t"][m], o[m]).sum())]
@@ -1624,9 +1628,13 @@ def stage_holdout(args):
             r["verdict"] = ("contradicted" if r["nll_diff"][1] > 0 else ("confirmed" if r["nll_diff"][0] < 0 else
                                                                             "not confirmed"))
         out["stat"][st] = r
-        log("holdout stat %-7s %s %-30s nll %+.5f [%+.5f, %+.5f] dev %+.4f | act/pred 2024 %.3f 2025 %.3f %s" % (
+        log("holdout stat %-7s %s %-30s nll %+.5f [%+.5f, %+.5f] dev %+.4f | act/pred %s %s" % (
             st, "ADOPT" if r["adopted"] else "     ", nm, r["nll_diff"][0], r["nll_diff"][1], r["nll_diff"][2],
-            r["dev_diff"][0], lv[2024][0], lv[2025][0], r.get("verdict", "")))
+            r["dev_diff"][0], " ".join("%d %.3f" % (Y, lv[Y][0]) for Y in YRS), r.get("verdict", "")))
+    if dry:
+        jdump(out, "holdout_dry.json")
+        log("holdout --dry: code check on 2023 written to %s (no lock)" % cpath("holdout_dry.json"))
+        return
     jdump(out, "holdout.json")
     with open(cpath(LOCK), "w") as fh:
         fh.write(dt.datetime.utcnow().isoformat() + "Z\n")
@@ -1641,6 +1649,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES))
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--dry", action="store_true", help="holdout: run the code on 2023 (CV year) without the lock")
     args = ap.parse_args()
     t0 = time.time()
     STAGES[args.stage](args)

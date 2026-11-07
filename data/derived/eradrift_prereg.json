@@ -1,0 +1,184 @@
+{
+ "written": "2026-11-07T00:52:29.688547Z",
+ "window": [
+  "2024-01-01",
+  "2025-12-31"
+ ],
+ "league": {
+  "dec": {
+   "chosen": "win5+div(3,30)",
+   "ref_win5": "win5+div(3,30)",
+   "ref_static": "static+div(10,30)",
+   "brk_variant": "ew(h=2)+div(3,30)+brk(phi=0.5)"
+  },
+  "ko": {
+   "chosen": "ew(h=5)+div(3,30)",
+   "ref_win5": "win5+div(3,30)",
+   "ref_static": "static+div(3,30)",
+   "brk_variant": "ew(h=5)+div(3,30)+brk(phi=0.5)"
+  },
+  "sub": {
+   "chosen": "win5+div(3,150)",
+   "ref_win5": "win5+div(3,150)",
+   "ref_static": "static+div(3,150)",
+   "brk_variant": "ew(h=1)+div(3,150)+brk(phi=0.5)"
+  },
+  "dec3": {
+   "chosen": "win5+div(3,30)",
+   "ref_win5": "win5+div(3,30)",
+   "ref_static": "static+div(10,30)",
+   "brk_variant": "ew(h=1)+div(3,30)+brk(phi=0.5)"
+  },
+  "dec5": {
+   "chosen": "ew(h=1)+div(3,30)+brk(phi=0.5)",
+   "ref_win5": "win5+div(3,30)",
+   "ref_static": "static+div(3,30)",
+   "brk_variant": "ew(h=1)+div(3,30)+brk(phi=0.5)"
+  },
+  "sd_dec": {
+   "chosen": "win5+div(3,150)",
+   "ref_win5": "win5+div(3,150)",
+   "ref_static": "static+div(3,150)",
+   "brk_variant": "ew(h=2)+div(3,150)+brk(phi=0.5)"
+  },
+  "md_dec": {
+   "chosen": "ew(h=5)+div(3,150)+brk(phi=0.5)",
+   "ref_win5": "win5",
+   "ref_static": "static+div(3,150)",
+   "brk_variant": "ew(h=5)+div(3,150)+brk(phi=0.5)"
+  },
+  "r1_fin3": {
+   "chosen": "ew(h=2)+div(10,150)+brk(phi=0.8)",
+   "ref_win5": "win5+div(3,150)",
+   "ref_static": "static+div(10,150)",
+   "brk_variant": "ew(h=2)+div(10,150)+brk(phi=0.8)"
+  },
+  "r1_fin5": {
+   "chosen": "ew(h=0.25)+div(3,30)+brk(phi=0.8)",
+   "ref_win5": "win5",
+   "ref_static": "static+div(3,30)",
+   "brk_variant": "ew(h=0.25)+div(3,30)+brk(phi=0.8)"
+  },
+  "late_fin3": {
+   "chosen": "ew(h=2)+div(10,150)",
+   "ref_win5": "win5",
+   "ref_static": "static+div(10,150)",
+   "brk_variant": "ew(h=2)+div(10,150)+brk(phi=0.5)"
+  },
+  "kd100": {
+   "chosen": "ew(h=5)+div(10,30)",
+   "ref_win5": "win5+div(3,30)",
+   "ref_static": "static+div(10,30)",
+   "brk_variant": "ew(h=5)+div(10,30)+brk(phi=0.5)"
+  },
+  "slpm": {
+   "chosen": "kal(q=0.002,se=0)+brk(vb=0.05)",
+   "ref_win5": "win5+div(3,30)",
+   "ref_static": "static+div(10,30)",
+   "brk_variant": "kal(q=0.002,se=0)+brk(vb=0.05)"
+  },
+  "sapm": {
+   "chosen": "kal(q=0.002,se=0.1)+div(0.15,0)",
+   "ref_win5": "win5+div(3,150)",
+   "ref_static": "static+div(10,30)",
+   "brk_variant": "kal(q=0.002,se=0.1)+div(0.15,0)+brk(vb=0.05)"
+  },
+  "tdpm": {
+   "chosen": "ew(h=0.5)+div(3,30)+brk(phi=0.8)",
+   "ref_win5": "win5+div(3,30)",
+   "ref_static": "static+div(3,30)",
+   "brk_variant": "ew(h=0.5)+div(3,30)+brk(phi=0.8)"
+  },
+  "ctrlpm": {
+   "chosen": "kal(q=0.002,se=0.1)+div(0.15,0)",
+   "ref_win5": "win5+div(3,150)",
+   "ref_static": "static+div(3,30)",
+   "brk_variant": "kal(q=0.002,se=0.1)+div(0.15,0)+brk(vb=0.05)"
+  },
+  "subpm": {
+   "chosen": "kal(q=0.03,se=0.1)+div(0.3,0.002)",
+   "ref_win5": "win5+div(3,150)",
+   "ref_static": "static+div(3,30)",
+   "brk_variant": "kal(q=0.03,se=0.1)+div(0.3,0.002)+brk(vb=0.05)"
+  },
+  "r108": {
+   "chosen": "kal(q=0.03,se=0)",
+   "ref_win5": "win5",
+   "ref_static": "static",
+   "brk_variant": "kal(q=0.03,se=0)+brk(vb=0.05)"
+  }
+ },
+ "league_primary": "per target: mean per-observation loss (Bernoulli NLL for shares, NB NLL for rates) of the chosen tracker minus the win5+div reference on 2024-25, card-cluster bootstrap CI; expected: stat-level targets (slpm, sapm, tdpm, ctrlpm, subpm, kd100, r108) < 0, outcome-mix targets ~0. A target whose CI excludes 0 on the wrong side is 'contradicted' and its deployment falls back to the win5+div reference.",
+ "league_secondary": "base-rate table for 2024 and 2025 (mean one-step-ahead prediction vs realised); the +brk variants (glove / ABC 2024-25 breaks as variance interventions) vs the chosen config, descriptive only",
+ "method": {
+  "gate": {
+   "bin7": {
+    "diff": -7e-05,
+    "ci95": [
+     -0.00167,
+     0.00144
+    ],
+    "p_worse_or_equal": 0.4645,
+    "n": 1235
+   },
+   "joint": {
+    "diff": 0.0005,
+    "ci95": [
+     -0.00151,
+     0.00246
+    ],
+    "p_worse_or_equal": 0.68,
+    "n": 1235
+   },
+   "pass_bin7": false,
+   "pass_joint": false
+  },
+  "production": "unchanged (static S2 + ML v2 winner): the nested forward-chained gate 2021-2023 failed on both 7-bin and joint",
+  "final": {
+   "fin": "fin:none",
+   "ko": "ko:none",
+   "r1": "r1:kal(q=0.005,se=0.1,rho=0.5,vb=0.1)"
+  },
+  "descriptive": {
+   "M1_cv_final": {
+    "fin": "fin:none",
+    "ko": "ko:none",
+    "r1": "r1:kal(q=0.005,se=0.1,rho=0.5,vb=0.1)"
+   },
+   "M2_fast_dec": {
+    "fin": "fin:ew(h=0.25,n0=200.0,rho=0.0,n0s=200.0)+division",
+    "ko": "ko:none",
+    "r1": "r1:none"
+   },
+   "M3_both": {
+    "fin": "fin:ew(h=0.25,n0=200.0,rho=0.0,n0s=200.0)+division",
+    "ko": "ko:none",
+    "r1": "r1:kal(q=0.005,se=0.1,rho=0.5,vb=0.1)"
+   }
+  },
+  "desc_text": {
+   "M1_cv_final": "the CV-final configuration (chosen on 2016-2023; fin / ko 'none' by the 0.0005 rule, r1 Kalman)",
+   "M2_fast_dec": "decision-vs-finish EW tracker that the nested gate picked in 2022 and 2023 (fin: ew h=0.25 y, n0=200, rho=0, + division n0s=200), alone",
+   "M3_both": "M1 + M2"
+  },
+  "metrics": "7-bin, method3, finish (decision vs finish), joint, round given finish; decision-share calibration-in-the-large for 2024 and 2025 (mean predicted vs realised)",
+  "expectation": "M1 joint within +-0.002 (CV -0.0008, gate years +0.0005); M2 finish loss lower only if the 2024-25 decision drift persists within the window (the tracker lags by ~3 months); none of them changes production"
+ },
+ "stat": {
+  "adopted": {
+   "l_att": "ew(h=2.0,n0=200,rho=0.0)",
+   "l_lnd": "ew(h=2.0,n0=200,rho=0.0)",
+   "c_att": "ew(h=0.5,n0=50,rho=0.5)",
+   "c_lnd": "ew(h=1.0,n0=50,rho=0.5)",
+   "g_lnd": "ew(h=0.5,n0=50,rho=1.0)",
+   "td_att": "kal(q=0.002,se=0.05,rho=0.5)"
+  },
+  "rule": "statlines' rule on CV 2021-2023: pooled gain > 0.001 nats per fight-side and better in >= 2 of 3 years",
+  "fragile": [
+   "c_lnd",
+   "td_att"
+  ],
+  "primary": "per adopted stat: NLL per fight-side (adjusted - static) on the 2024-25 'valid' rows, date-cluster bootstrap CI. Confirmed if the point is < 0; contradicted (adjustment withdrawn) if the CI lies entirely above 0",
+  "secondary": "sig-landed deviance (unchanged by construction: sig_lnd is not adjusted), the non-adopted stats' best trackers (descriptive), level ratios realised / predicted by year"
+ }
+}
