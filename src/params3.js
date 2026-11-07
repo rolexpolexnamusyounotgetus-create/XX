@@ -1,4 +1,8 @@
-/* Fight engine global parameters (engine v4; the file name stays params3.js for every version).
+/* Fight engine global parameters (engine v10 = the v4 simulator's parameters unchanged + v8's stat-line blocks (components
+   embed / retarget / tdIntent / ctrlSpread, embed, retarget, spread) exactly as v8 shipped them + v7's prediction package
+   (components.blend_anchor, blend) + cycle 5 (blend.debutWinner, components.explainer, explainer); the file name stays
+   params3.js for every version).
+   Fight engine global parameters (engine v4; the file name stays params3.js for every version).
    UMD: module.exports in Node, self.FightParams / window.FightParams in the browser.
    One plain object. Every entry carries a comment with its meaning and its source or default.
    Sources: data/derived/combine_fit.json (shrinkage, combination), data/derived/baserates.json and
@@ -22,7 +26,121 @@
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "4.0.0-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01)
+    version: "10.0.0-selfcal-pre2024",   // v10 (docs/V6_V10_PLAN.md cycles 1-3 + 5 consolidated): v4's simulator values unchanged ([selfcal] fit to train-only priors, data/derived/priors_dev.json, fights before 2024-01-01) + v8's blocks (components, embed, retarget, spread) + v7's blend block + cycle 5 (blend.debutWinner, explainer). Labels before: 8.0.0 / 7.0.0 / 4.0.0-selfcal-pre2024
+
+    // ---------------- v8 components (stat-line fidelity; docs/V6_V10_PLAN.md cycle 3; engine3.js header) ----------------
+    // Each sub-part acts only when its flag is true; all false = engine 4.0.0 bit for bit (tests/test_v8.js). Defaults = the
+    // sub-parts kept by the binding train gate (data/derived/v8/gate_protocol.json, tools/v8_gate.py RULES).
+    components: {
+      // v10: v7's prediction package (FightEngine.predict = the blend block below; false: the plain engine package, summarize).
+      // On without FightBlend: predict throws (V6_V10_PLAN 7.1 item 10 h)
+      blend_anchor: true,
+      // v10 cycle 5: FightEngine.showFight draws the shown fight's winner x method x round from predict()'s cells (block explainer)
+      explainer: true,
+      embed: true,       // embedding blend of the learned stat-line targets (block embed; needs opts.embed or a loaded roster)
+      retarget: true,    // realised-rate retarget toward the statlines layer (block retarget; needs opts.statTargets or opts.statdist)
+      tdIntent: true,    // fight-level mean-1 lognormal takedown intent per fighter (spread.td); acts only on a retargeted matchup
+      ctrlSpread: true   // fight-level mean-1 lognormal top-stint length per fighter (spread.ctrl); acts only on a retargeted matchup
+    },
+    // embedding blend recipe (= data/derived/embed_model.json mlrates_blend.targets, fit on mlrates' 2019-2023 out-of-fold rows;
+    // the v6 engine's block): link(rate) = b[0] + b[1] link(mlrates rate) + b[2] eta[task]. Backtests pass fold-honest
+    // coefficients per call (data/derived/embed_blend_fh.json coef_fh[year], fit on 2019..year-1; tools/mlpathrec.js).
+    embed: {
+      tasks: ["d_att", "c_att", "g_att", "h_att", "b_att", "l_att", "ns_att", "d_acc", "c_acc", "g_acc", "h_acc", "b_acc", "l_acc", "kd", "td_att", "td_acc", "ctrl", "sub_att", "rev", "ko_fin", "sub_fin"],
+      recipe: {
+        d_att: { task: "d_att", link: "log", b: [-0.069982, 0.711099, 0.322209] },
+        c_att: { task: "c_att", link: "log", b: [-0.003585, 0.581088, 0.406225] },
+        g_att: { task: "g_att", link: "log", b: [-0.038304, 0.657976, 0.37345] },
+        h_att: { task: "h_att", link: "log", b: [-0.177151, 0.725199, 0.360312] },
+        b_att: { task: "b_att", link: "log", b: [-0.000881, 0.686235, 0.32603] },
+        l_att: { task: "l_att", link: "log", b: [0.01211, 0.796754, 0.202168] },
+        td_att: { task: "td_att", link: "log", b: [0.043751, 0.573656, 0.425045] },
+        sub_att: { task: "sub_att", link: "log", b: [0.352258, 0.851244, 0.229988] },
+        rev: { task: "rev", link: "log", b: [-0.490037, 0.88882, 0.0] },
+        ctrl: { task: "ctrl", link: "log", b: [0.064459, 0.557073, 0.455859] },
+        acc_h: { task: "h_acc", link: "logit", b: [0.011774, 0.521711, 0.515074] },
+        acc_b: { task: "b_acc", link: "logit", b: [0.07556, 0.554021, 0.388165] },
+        acc_l: { task: "l_acc", link: "logit", b: [-0.011057, 0.481682, 0.51298] },
+        acc_d: { task: "d_acc", link: "logit", b: [-0.011446, 0.434249, 0.503721] },
+        acc_c: { task: "c_acc", link: "logit", b: [0.19873, 0.255241, 0.563796] },
+        acc_g: { task: "g_acc", link: "logit", b: [0.014659, 0.946195, 0.0] },
+        td_acc: { task: "td_acc", link: "logit", b: [-0.056387, 0.889465, 0.0] },
+        kd_h: { task: "kd", link: "log", b: [-0.703483, 0.849507, 0.0] }
+      }
+    },
+    // realised-rate retarget (engine3.js retarget): design constants set before any gate number (not tuned): pilot simulations
+    // per corner order and iteration, iterations, damping and the shrink of the step toward 1 with few decision simulations
+    // (s = damp x n / (n + kDec)), smoothing of the realised rates toward the target (kMin minutes, kAcc attempts), pilot seed
+    retarget: { pilot: 200, iters: 2, damp: 0.9, kDec: 20, kMin: 5, kAcc: 5, seed: 20261107 },
+    // fight-level spread draws: lognormal sds (mean 1), fit to the 2019-2023 PIT coverage (non-binding development runs before the
+    // gate protocol, embed + retarget on, 150 sims per order, seed 1; data/derived/v8/dev/spread_fit_td*.json, spread_fit_ctrl*.json):
+    // td = the smallest grid value whose train takedown-attempt PIT meets the plan's band (inside the 80% band >= 0.78, above P90
+    // <= 0.12): 1.1 (0.781 / 0.117; v4 0.68 / 0.16; the PIT-uniformity minimum is 1.25-1.3, whose extra spread costs Monte Carlo
+    // noise in the per-fight means); ctrl = the minimiser of the control PIT calibration error given td 1.1: 0 (the takedown-intent
+    // draw alone brings control to 0.799 / 0.101 / 0.100), so components.ctrlSpread is a no-op at this value
+    spread: { td: 1.1, ctrl: 0 },
+
+    // ---------------- engine v7 / v10: the prediction package (FightEngine.predict; src/ml/blend.js 1.4.0) ----------------
+    // mrWeight and props.w below: written before the v10 gate protocol from a NON-BINDING fits-only run of the v10 package
+    // (data/derived/v10/dev_fits.json; no metric, no comparator); the binding gate refits every weight forward-chained.
+    blend: {
+      sims: 1000,          // simulations per corner order in predict() (both orders run and averaged; exact corner symmetry)
+      symmetric: true,     // run A-B and B-A (common random numbers)
+      smooth: 0.5,         // Jeffreys pseudo-count per method x round cell on the simulated counts
+      // cycle 1 (V6_V10_PLAN section 3), re-bundled onto the v4 simulator through v7's own gate (7.1 item 10): the winner is the ML v2
+      // head stack of the EXPLICIT line regime (no line = ML v2 + market rating, h 1.5; open = opener + ML v2; close = closing line +
+      // ML v2; data/derived/v6_stacks.json, production fit 2019-2025, backtests the forward-chained fits); an opener never reaches
+      // close-trained weights; method x round = mrWeight x rescaled simulator cells + (1 - mrWeight) x rescaled S2 cells
+      winner: "ml2stack",
+      ml2Head: "blend",    // ML v2 LR + LightGBM + XGBoost (the CV choice; JS tree evaluator src/ml/ml2trees.js on the page / ledger)
+      mrModel: "S2",
+      mrPool: "linear",
+      mrWeight: 0.15,   // weight of the rescaled v4-simulator cells in the S2 pool: the w in 0..1 step 0.05 minimising the no-line package's joint
+                           // method x round log loss on 2019-2023 (tools/v7_gate.py fits, the rule of tools/predict_score.py; the train gate uses the
+                           // forward-chained fits for 2021 / 2022 / 2023 instead: 0.20 / 0.20 / 0.20; data/derived/v7/dev_fits.json, a non-binding
+                           // fits-only run of the v7 package, reproduced by the binding gate). v6 (v5.0.1 simulator): 0.35; v4-engine cells with S: 0.15
+      debut: true,         // bouts with a UFC debutant: method given the winner from the debut method model (lab 3, research/model_debut.md)
+      // v10 cycle 5 (newcomer path; src/ml/blend.js 1.4.0): a bout with a UFC debutant takes its WINNER from the line where there is
+      // one (the line-only stack of that line kind, data/derived/line_stack.json), else the seeded Elo (opts.seededElo), never from the
+      // ML v2 head / MoE stack / simulator; the debut winner model is reported as a monitored candidate only. This is the verified
+      // adoption block of data/derived/debut.json (model.adoption: winner_noline fallback_seeded_elo, open / close line, method debut),
+      // the routing fwd-4.2 already uses in the forward ledger. The backtest universe has no debut bouts, so no scored number moves.
+      debutWinner: true,
+      statDist: true,      // P10 / P50 / P90 stat lines (lab 3, research/model_statlines.md); page / ledger only, never a backtest score
+      recalT: 1,           // no temperature on top of the stacks (the no-line stack carries its recency weighting)
+      lineFallback: null,  // 1.2.1: with 'ml2stack' a line is never dropped (line-only stack, data/derived/line_stack.json)
+      // anchor mode (opts.anchor; explainer only): slope0 0.86 is the v4-engine pilot (120 fights x 3 offsets x 400 sims, se 0.014)
+      anchor: { cAcc: 0.5, cTd: 1, cPow: 1, powNorm: true, slope0: 0.86, priorWeight: 2, iters: 4, step: 0.05, tol: 0.01, sims: 300, maxAbs: 4 },
+      // interval (live only; backtests score none): profile-noise bootstrap; kappa 1.65 for the expert-stack construction on the v4
+      // engine; the head stack has its own kappa (tools/v6_kappa.js, data/derived/v6/review/kappa_ml2stack.json)
+      boot: { B: 200, seed: 7, level: [0.8, 0.95], cvOut: 0.45, cvGrap: 1.0, cvSub: 1.5, cvKd: 1.0, cvAcc: 0.25, count: true,
+        eloRd: 0, eloRdScale: 0, mrSd: 0, engineMC: true, inflate: 1.65, inflateMl2stack: { none: 1.2569, open: 1.3691, close: 1.3691 } },
+      // cycle 2 (V6_V10_PLAN section 3; research/model_props.md, verified, adopted as hygiene): with method props (opts.props), method
+      // given the winner = the joint-linear pool [w_cells, w_props] of the package cells' and the props' mixes, each weighted by its
+      // own P(side wins); round shapes stay the cells' (round props failed the CV gate); draw = drawC x P(decision); winner untouched.
+      props: {
+        on: true,
+        mode: "jlin",        // the CV-chosen form (log-linear 0.0017 worse in forward-chained CV 2022-23)
+        w: [0.47, 0.53],   // fit on 2021-2023 close-regime fights with method props: the w_cells in 0..1 step 0.01 minimising method
+                             // given the winner log loss of the pooled cells (tools/v7_gate.py fits, cells with the 2019-2023 mrWeight); the
+                             // train gate uses the forward-chained fits (2021 -> 2022: 0.48; 2021-22 -> 2023: 0.44; data/derived/v7/dev_fits.json).
+                             // research/model_props.md (S2 cells as the model expert): 0.46 / 0.54
+        fitThrough: "2023-12-31",   // the weights' last training date (the backtest guard refuses them for fights on or before it)
+        decShift: 0,         // labeled knob: logit shift on DEC within method given the winner. 0: the forward-chained CV rejected a decision
+                             // tilt (+0.0018, research/model_props.md table 4); the market over-prices finishes, calibrate to outcomes only
+        drawC: 0.01457,      // P(draw) = drawC x P(decision) (data/derived/props.json model.draw_c, fit 2021-2023)
+        outlierMaxDev: 0.15, // de-vig: with >= 3 books, drop a book whose key scalar is > 0.15 from the median (outcome-blind; props.json)
+        overMax: { m6: 1.6, gd: 1.25, er: 1.8, wr: 2.2, mr: 2.6, itd: 1.25, ou: 1.25 },   // implausible-overround caps per family (props.json)
+        debutPool: false     // debut bouts keep the debut method model; true only reports the debut-bout props pool (monitored, never applied)
+      }
+    },
+
+    // ---------------- engine v10 cycle 5: explainer coherence (FightEngine.showFight; engine3.js explainer block) ----------------
+    explainer: {
+      on: true,          // with components.explainer: the shown fight's cell is a draw from predict()'s cells
+      maxTries: 400,     // seeds searched for a fight landing in the drawn cell (untraced), then the hit is replayed traced
+      seed: 1            // default show seed (opts.showSeed overrides; the page passes a fresh seed per "new fight")
+    },
 
     // ---------------- learned stat-line rates (engine v4) ----------------
     mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base
