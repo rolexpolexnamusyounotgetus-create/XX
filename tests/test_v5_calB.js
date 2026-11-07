@@ -4,7 +4,7 @@
    1. Fixtures: tests/fixtures/engine3_pre_calB.js / params3_pre_calB.js are the Calibrate A commit's (2e24835) src files (skipped
       without git). src/engine3.js = that engine + the [calB]-tagged lines (and the VERSION label).
    2. src/params3.js differs from the Calibrate A params only in the version label, components.calB, the calB block and the
-      blend_anchor rebuild's blend.mrWeight / blend.anchor.slope0 (predict only).
+      blend_anchor rebuild's blend.mrWeight / blend.anchor.slope0 / blend.boot.inflate (predict only).
    3. calB OFF: the current engine and params with opts.params.components.calB = false reproduce the Calibrate A engine on its own
       params bit for bit: whole fight objects (JSON incl. the per-round trace) for fixed seeds, traced and untraced, a shared rng
       stream across fights, summarize() and explain(), over
@@ -70,10 +70,10 @@ const R0 = loadEngine(preEngSrc, { "params3.js": P0 });
   const strip = (p) => {
     const o = JSON.parse(JSON.stringify(p));
     delete o.version; delete o.calB; if (o.components) delete o.components.calB;
-    if (o.blend) { delete o.blend.mrWeight; if (o.blend.anchor) delete o.blend.anchor.slope0; }
+    if (o.blend) { delete o.blend.mrWeight; if (o.blend.anchor) delete o.blend.anchor.slope0; if (o.blend.boot) delete o.blend.boot.inflate; }
     return JSON.stringify(o);
   };
-  check("params: only the label, components.calB, the calB block and blend.mrWeight / anchor.slope0 changed", strip(P0) === strip(FP),
+  check("params: only the label, components.calB, the calB block and blend.mrWeight / anchor.slope0 / boot.inflate changed", strip(P0) === strip(FP),
     `${P0.version} -> ${FP.version}`);
   check("defaults: components.calB on, the set holds the fitted levels", FP.components.calB === true && FP.calB && FP.calB.set &&
     FP.calB.set.dyn && FP.calB.set.judge && Object.keys(FP.calB.set).sort().join(",") === "dyn,judge", JSON.stringify(FP.calB.set));

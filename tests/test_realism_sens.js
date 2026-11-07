@@ -91,7 +91,8 @@ const wild = { components: { realism_sens: false }, realism: { div: { "Lightweig
 const dOff = digest(E, { params: wild }, NF);
 // the reference engine / stored digest predate v5 Calibrate A, which turned components.v401.mlLevels off by default
 // (research/v5_train_ablation.md): compare them with the flag pinned to their state (on)
-const wildPinned = Object.assign({}, wild, { components: Object.assign({}, wild.components, { v401: { mlLevels: true } }) });
+// v5 Calibrate B (components.calB, the joint level pass) postdates them too: off
+const wildPinned = Object.assign({}, wild, { components: Object.assign({}, wild.components, { v401: { mlLevels: true }, calB: false }) });
 const dOffRef = digest(E, { params: wildPinned }, NF);
 if (refE) {
   const dRef = digest(refE, null, NF);
@@ -165,7 +166,10 @@ console.log("\n=== realism factors ===");
   const ko = (s) => s.bins[0] + s.bins[6], sub = (s) => s.bins[1] + s.bins[5];
   check("ko factor up -> more KO/TKO", ko(sK) > ko(s0) + 0.02, `${(100 * ko(s0)).toFixed(1)} -> ${(100 * ko(sK)).toFixed(1)}%`);
   check("sub factor up -> more submissions", sub(sS) > sub(s0) + 0.015, `${(100 * sub(s0)).toFixed(1)} -> ${(100 * sub(sS)).toFixed(1)}%`);
-  check("att factor up -> more strike attempts", sA.avg.A.sig_att > s0.avg.A.sig_att * 1.1, `${s0.avg.A.sig_att.toFixed(1)} -> ${sA.avg.A.sig_att.toFixed(1)}`);
+  // per fight-minute (v5 Calibrate B): per-fight totals mix in fight length, and with the re-levelled knockdown / conversion levels the
+  // att 1.2 fights end sooner (per fight x1.09, per minute x1.16; before Calibrate B x1.14 / x1.19)
+  const apm = (s) => s.avg.A.sig_att / s.avgMin;
+  check("att factor up -> more strike attempts (per fight-minute)", apm(sA) > apm(s0) * 1.1, `${apm(s0).toFixed(2)} -> ${apm(sA).toFixed(2)} per minute`);
   check("kd factor up -> more knockdowns per landed head strike", sD.avg.A.kdPer100Head > s0.avg.A.kdPer100Head * 1.2, `${s0.avg.A.kdPer100Head.toFixed(2)} -> ${sD.avg.A.kdPer100Head.toFixed(2)}`);
 }
 {

@@ -35,7 +35,8 @@ function check(name, ok, info) {
   if (ok) passes++; else fails++;
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${info ? "  (" + info + ")" : ""}`);
 }
-const OFF = { components: { dynamics: false } };
+// v5 Calibrate B: components.calB (a later step; its judge.t108 acts with dynamics off too) is off in the flag-off identity checks
+const OFF = { components: { dynamics: false, calB: false } };
 const ON = { components: { dynamics: true } };
 function strip(f) { return JSON.stringify(f); }
 function mean(a) { return a.reduce((x, y) => x + y, 0) / Math.max(1, a.length); }
@@ -251,7 +252,7 @@ function roundStats(m, n, seed) {
   const pg = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, VG5, { params: { components: { dynamics: true }, dyn: { stkoHurtGate: true } } }));
   const gate = (m, r) => m.dyn.stkoR[r] * m.dyn.kdP[r] / m.dyn.kdP[0] / m.dyn.stkoR[0];
   check("stkoHurtGate: off by default; on, the standing table x hurt gate decays as exp(noKdRound r)", P.dyn.stkoHurtGate === false &&
-    p45.dyn.stkoR.every((x, r) => x === P.dyn.stkoScale * Math.exp(P.dyn.noKdRound * r)) && Math.abs(gate(pg, 2) - Math.exp(2 * P.dyn.noKdRound)) < 1e-12 &&
+    p45.dyn.stkoR.every((x, r) => x === E.resolveParams({}).dyn.stkoScale * Math.exp(P.dyn.noKdRound * r)) &&   // resolved: Calibrate B's set when calB is on Math.abs(gate(pg, 2) - Math.exp(2 * P.dyn.noKdRound)) < 1e-12 &&
     Math.abs(gate(pg, 4) - Math.exp(4 * P.dyn.noKdRound)) < 1e-12, `gate on: R3/R1 ${gate(pg, 2).toFixed(3)} vs exp(2 noKdRound) ${Math.exp(2 * P.dyn.noKdRound).toFixed(3)}`);
   check("knockdown conversion odds decay by round", p45.dyn.conv[4] < p45.dyn.conv[0]);
 }

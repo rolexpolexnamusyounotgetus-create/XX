@@ -140,9 +140,10 @@ function withParams(opts, params) {
   for (const k in params) p[k] = (p[k] && typeof p[k] === "object" && !Array.isArray(p[k])) ? Object.assign({}, p[k], params[k]) : params[k];
   o.params = p; return o;
 }
-const OFF0 = { components: { styles_sos: false, officials: false, realism_sens: false } };
-const OFF1 = { components: { officials: false, realism_sens: false } };
-const OFF2 = { components: { realism_sens: false } };
+// v5 Calibrate B: components.calB (a later step: the joint level pass) is off in every comparison with an engine that predates it
+const OFF0 = { components: { styles_sos: false, officials: false, realism_sens: false, calB: false } };
+const OFF1 = { components: { officials: false, realism_sens: false, calB: false } };
+const OFF2 = { components: { realism_sens: false, calB: false } };
 function runGroup(label, REF, refName, OFF, cases, ctx) {
   let nM = 0, nF = 0, bad = 0, badSum = 0, nSum = 0, firstBad = null, applied = 0, recs = 0, sosOn = 0, named = 0;
   const go = () => {
@@ -204,9 +205,9 @@ if (R0s) {
   E.loadMLRates(mlJson); R0.loadMLRates(mlJson); R1.loadMLRates(mlJson); R2.loadMLRates(mlJson);
   try {
     const ON = [
-      [R0, "styles_sos (SOS, with inputs) on vs step 2", { components: { officials: false, realism_sens: false } }, 0.3],
-      [R1, "officials on vs step 2 + styles_sos", { components: { officials: true, realism_sens: false } }, 0.05],
-      [R2, "realism_sens on (shipped v4.0.1 factors) vs step 2 + styles_sos + officials", { components: { realism_sens: true } }, 0.3]
+      [R0, "styles_sos (SOS, with inputs) on vs step 2", { components: { officials: false, realism_sens: false, calB: false } }, 0.3],
+      [R1, "officials on vs step 2 + styles_sos", { components: { officials: true, realism_sens: false, calB: false } }, 0.05],
+      [R2, "realism_sens on (shipped v4.0.1 factors) vs step 2 + styles_sos + officials", { components: { realism_sens: true, calB: false } }, 0.3]
     ];
     // fight.officials (the names) is dropped before comparing, so the officials check counts changed scoring, not the new field
     const noOff = (j) => { const o = JSON.parse(j); delete o.officials; return JSON.stringify(o); };

@@ -156,10 +156,11 @@ function withParams(opts, params) {
   for (const k in params) p[k] = (p[k] && typeof p[k] === "object" && !Array.isArray(p[k])) ? Object.assign({}, p[k], params[k]) : params[k];
   o.params = p; return o;
 }
-const OFF0 = { components: { embed: false, oppadj: false, preufc: false } };
-const OFF1 = { components: { embed: true, oppadj: false, preufc: false } };
-const OFF2 = { components: { embed: true, oppadj: false, preufc: false } };
-const OFF2b = { components: { embed: true, oppadj: true, preufc: false, styles_sos: { styles: false, sos: false, newcomer: false } } };
+// v5 Calibrate B: components.calB (a later step: the joint level pass) is off in every comparison with an engine that predates it
+const OFF0 = { components: { embed: false, oppadj: false, preufc: false, calB: false } };
+const OFF1 = { components: { embed: true, oppadj: false, preufc: false, calB: false } };
+const OFF2 = { components: { embed: true, oppadj: false, preufc: false, calB: false } };
+const OFF2b = { components: { embed: true, oppadj: true, preufc: false, styles_sos: { styles: false, sos: false, newcomer: false }, calB: false } };
 function runGroup(label, REF, refName, OFF, cases, ctx, refParams) {
   let nM = 0, nF = 0, bad = 0, badSum = 0, nSum = 0, firstBad = null, applied = 0, recs = 0, emb = 0, oa = 0;
   const go = () => {
@@ -229,9 +230,9 @@ if (R0s) {
   try {
     const nc = casesC.filter((c) => c.opts.preufc && (c.opts.preufc.A || c.opts.preufc.B));
     const ON = [
-      [R0, "embed (with inputs) on vs step 3", { components: { embed: true, oppadj: false, preufc: false } }, casesA.slice(0, 30).concat(casesC.slice(0, 30)), 0.3],
+      [R0, "embed (with inputs) on vs step 3", { components: { embed: true, oppadj: false, preufc: false, calB: false } }, casesA.slice(0, 30).concat(casesC.slice(0, 30)), 0.3],
       [R1, "oppadj on (sos off) vs step 3 + embed (sos off)", OFF2b, noSos(casesA.slice(0, 30).concat(casesC.slice(0, 30))), 0.3, OFF1],
-      [R2, "preufc on vs step 3 + embed + oppadj, newcomer bouts", { components: { embed: true, oppadj: false, preufc: true } }, nc.slice(0, 40), 0.3, OFF2]
+      [R2, "preufc on vs step 3 + embed + oppadj, newcomer bouts", { components: { embed: true, oppadj: false, preufc: true, calB: false } }, nc.slice(0, 40), 0.3, OFF2]
     ];
     for (const [REF, nm, P, cs, min, refP] of ON) {
       let diff = 0, n = 0;

@@ -90,7 +90,8 @@ if (baseFile) {
   const G = JSON.parse(fs.readFileSync(GOLDEN, "utf8"));
   // the golden predates v5 Calibrate A, which turned components.v401.mlLevels off by default (research/v5_train_ablation.md):
   // compare with that sub-flag pinned to the golden's state (on)
-  const mineG = caseOutputs(E, { components: { officials: false, v401: { mlLevels: true } } });
+  // and v5 Calibrate B's components.calB (the joint level pass) postdates it as well: off
+  const mineG = caseOutputs(E, { components: { officials: false, v401: { mlLevels: true }, calB: false } });
   CASES.forEach((c, i) => check(`case ${i} (${c.a} vs ${c.b}, ${c.o.division}): flag-off outputs match the golden hashes of ${G.base_engine} (v401.mlLevels pinned on)`,
     mineG[i].fights === G.cases[i].fights && mineG[i].summary === G.cases[i].summary,
     mineG[i].fights === G.cases[i].fights ? "" : "regenerate with --base <engine the component sits on> --write-golden if the base engine changed"));

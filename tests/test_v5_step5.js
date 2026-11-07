@@ -66,10 +66,11 @@ let R0s = null;
     typeof R0.predict !== "function" && typeof R0.loadPreUFC === "function" && typeof E.predict === "function" && typeof E.loadBlend === "function",
     `versions ${R0.VERSION} / ${E.VERSION}; strict step-4 params ${R0s ? R0s.params().version : "skipped"}`);
 }
-check("params: one components block, blend_anchor on, earlier components unchanged; blend settings (mrWeight 0.15, recalT 1, kappa 1.65)",
+// v5 Calibrate B rebuilt blend_anchor on the final engine (research/v5_calB.md): mrWeight 0.3, kappa 2.15 (step 5: 0.15, 1.65)
+check("params: one components block, blend_anchor on, earlier components unchanged; blend settings (mrWeight 0.15 / Calibrate B 0.3, recalT 1, kappa 1.65 / Calibrate B 2.15)",
   FP.components.blend_anchor === true && FP.components.embed === true && FP.components.oppadj === false && FP.components.durability === true &&
   FP.components.dynamics === true && FP.components.officials === false && FP.components.realism_sens === false && FP.components.v401 &&
-  FP.components.styles_sos && FP.components.styles_sos.sos === true && FP.blend.mrWeight === 0.15 && FP.blend.recalT === 1 && FP.blend.boot.inflate === 1.65 &&
+  FP.components.styles_sos && FP.components.styles_sos.sos === true && (FP.components.calB ? FP.blend.mrWeight === 0.3 && FP.blend.boot.inflate === 2.15 : FP.blend.mrWeight === 0.15 && FP.blend.boot.inflate === 1.65) && FP.blend.recalT === 1 &&
   (fs.readFileSync(path.join(ROOT, "src/params3.js"), "utf8").match(/^\s{4}components:\s*\{/mg) || []).length === 1, JSON.stringify(Object.keys(FP.components)));
 
 const dbJson = fs.readFileSync(path.join(ROOT, "data/derived/fighters.json"), "utf8");
@@ -146,7 +147,8 @@ const OFF = { components: { blend_anchor: false } }, ON = { components: { blend_
 function runGroup(label, REF, refName, FLAG, cases, ctx) {
   let nM = 0, nF = 0, bad = 0, badSum = 0, nSum = 0, badPred = 0, nPred = 0, firstBad = null, applied = 0, recs = 0;
   // ctx.pin: components the current engine must take from the reference (the strict groups' v401 sub-flags; see below)
-  const FE = ctx.pin ? { components: Object.assign({}, FLAG.components, ctx.pin) } : FLAG;
+  // v5 Calibrate B: components.calB (a later step: the joint level pass) is off in every comparison with the step-4 engine
+  const FE = { components: Object.assign({}, FLAG.components, ctx.pin || {}, { calB: false }) };
   const go = () => {
     cases.forEach((c, i) => {
       const mr = REF.matchup(c.a, c.b, c.opts), mc = E.matchup(c.a, c.b, withParams(c.opts, FE));
