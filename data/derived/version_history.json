@@ -620,9 +620,9 @@
      "logloss_with": 0.5788248485320001,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -8.727629959482959e-7,
-      "lo": -0.0000015272600814283089,
-      "hi": -2.5655151717160004e-7,
+      "est": -8.727629959482959e-07,
+      "lo": -1.5272600814283089e-06,
+      "hi": -2.5655151717160004e-07,
       "p_gt0": 0.002
      },
      "n": 845
@@ -632,9 +632,9 @@
      "logloss_with": 0.5930335681784208,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -1.0099141584613298e-7,
-      "lo": -1.8138076015023744e-7,
-      "hi": -1.882505288986469e-8,
+      "est": -1.0099141584613298e-07,
+      "lo": -1.8138076015023744e-07,
+      "hi": -1.882505288986469e-08,
       "p_gt0": 0.0105
      },
      "n": 845
@@ -1454,9 +1454,9 @@
      "logloss_with": 0.5930319721344538,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -0.0000016970353827425062,
-      "lo": -0.000002435549185916011,
-      "hi": -9.44685467941618e-7,
+      "est": -1.6970353827425062e-06,
+      "lo": -2.435549185916011e-06,
+      "hi": -9.44685467941618e-07,
       "p_gt0": 0
      },
      "n": 845
@@ -2295,9 +2295,9 @@
      "logloss_with": 0.5788099923758476,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -0.0000157289191484635,
-      "lo": -0.00003115957049440681,
-      "hi": -2.182334234371639e-7,
+      "est": -1.57289191484635e-05,
+      "lo": -3.115957049440681e-05,
+      "hi": -2.182334234371639e-07,
       "p_gt0": 0.0235
      },
      "n": 845
@@ -2312,9 +2312,9 @@
       "hi": 0,
       "p_gt0": null,
       "raw": {
-       "est": -2.947697791072808e-7,
-       "lo": -4.819442412118878e-7,
-       "hi": -1.0681580458083556e-7,
+       "est": -2.947697791072808e-07,
+       "lo": -4.819442412118878e-07,
+       "hi": -1.0681580458083556e-07,
        "p_gt0": 0.002
       },
       "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
@@ -5284,7 +5284,7 @@
      "v4": 0.9399330733473251,
      "v5.0.1": 0.9399711317868685,
      "S": 0.9359561823360422,
-     "diff": 0.00004,
+     "diff": 4e-05,
      "ci95": [
       -0.00963,
       0.00979
@@ -5927,7 +5927,625 @@
    },
    "validation": null,
    "blend": null,
-   "notes": []
+   "notes": [
+    "2026-11-07T06:56:21+00:00 prereg: v6 = the v5.0.1 simulator re-bundled (V6_V10_PLAN 6.1) with review gate 1 done (fold-honest learned rates / embedding recipe, Calibrate A calls and the joint level pass rerun on them) + cycle 1 (ML v2 blend-head stacks by line regime inside FightEngine.predict, explicit routing, S2 cells, pool weight 0.35, JS tree evaluator, predict harness) + lab-3 debut path and stat-line bands. Train gate PASSED on the frozen files with each package on its own input pipeline; a shared-input sensitivity run (seen first) fails two winner checks marginally (disclosed in prereg.train_gate). Pre-registration written before any 2024-25 run of v6; validation empty. Primary: open-regime winner log loss of the package vs the v5.0.1 package, branch 1."
+   ],
+   "prereg": {
+    "written_at": "2026-11-07T06:56:21+00:00",
+    "written_before_any_2024_2025_v6_run": true,
+    "look_number": "first look for v6 (the third 2024-25 look touching the v5-lineage simulator: v5, v5.0.1, v6; see confirmation_look)",
+    "scored_object": {
+     "primary": "FightEngine.predict package of versions/v6 (V6_V10_PLAN 7.1 item 2): winner = the ML v2 head stack of the line regime (src/ml/blend.js 1.2.0 winner 'ml2stack', head 'blend' = ML v2 LR + LightGBM + XGBoost, the CV choice; stacks no line = ML v2 + market rating h 1.5, open = opener + ML v2, close = closing line + ML v2, weights data/derived/v6_stacks.json by_fit_year '2024' = fit 2019-2023), method x round = 0.35 x simulator cells + 0.65 x S2 cells (fold fit < 2024), both rescaled to that winner; debut path and stat-line bands on (no effect on the backtest universe, which has no debut bouts and scores no bands)",
+     "secondary_object": "FightEngine.summarize of versions/v6 for stat lines, base rates and the engine-level winner (tools/evalv.js)",
+     "inputs": "leak-free, built by tools/predict_harness.js: each package on its own frozen input pipeline (v6: versions/v6/mlpathrec.js fold-honest embed recipe coef_fh['2024'], data/derived/mlrates_oof_fh.json whose 2024-2025 rows equal mlrates_oof.json's dev rows; v5.0.1: its frozen mlpathrec.js and mlrates_oof.json), walk-forward durability records + train NORM, SOS pairs (coef fit 2019-2023), as-of priors; ML v2 values static fit < 2024; lines market.json (open p_novig_open, close p_power_close); seeds hash(fight id); 300 sims per corner order; interval off (no point output depends on it)"
+    },
+    "comparators": {
+     "primary_package_comparator": "the v5-lineage package = versions/v5.0.1-rejected FightEngine.predict defaults (MoE expert stacks by lineKind: close-trained 'model', open-trained 'model_open', absent block without a line; S / SM cells, w 0.30) with the stacker data/derived/v6/cmp_stack_v501_fit2023.json (tools/blindtest.py export --fit-through 2023-12-31, BLINDTEST_MOE_ENGINE=engine_v5.0.1), on its own frozen input pipeline. Reason: the latest KEPT version, v4, has no predict(); V6_V10_PLAN section 3 (Validation target) and 4.1 (v5 rejected: v6 = v4 + blend_anchor + cycle 1) name the v5 package as the paired comparator. Paired on identical fights, common random numbers within each package.",
+     "engine_level_comparator": "v4 (latest kept) through node tools/evalv.js --version v6 --split val --compare v4 (secondaries only)"
+    },
+    "primary": {
+     "regime": "open (decisive 2024-2025 fights with an opening line; fights without one are excluded, not fallen back)",
+     "metric": "winner log loss (clip 1e-4), v6 package minus v5.0.1 package, paired, 95% event-cluster bootstrap CI (2,000 resamples of cards = event + date, seed 7; tools/predict_score.py look)",
+     "branch": "decision rule branch 1 (V6_V10_PLAN 6.3 / 7.1 items 1 and 4): KEEP v6 iff the CI upper bound < 0. No branch-2 rescue: 7.1 item 4 decides branch 2 on the pre-registered primary only, and the hygiene branch (7.1 item 3) does not apply (v6's stated purpose is a gain, not removing a contamination)"
+    },
+    "secondaries_reported_never_decisive": [
+     "no-line and close winner log loss (paired, same CI method); Brier, accuracy, ECE (10 bins mirrored), calibration slope (mirrored, no intercept) per regime and per year",
+     "7-bin, method (KO / SUB / DEC) and joint who x how x when log loss per regime (paired); tools/methodround.py --score vs model S per regime",
+     "soft cross-entropy vs the closing line (screen only)",
+     "engine level (evalv --compare v4): winner log loss, Brier, ECE, 7-bin, method, per-fight stat-line deviance (sig landed, attempts, TD, control, KD; Holm-adjusted family as in v5.0.1), per-minute deviance, base-rate table full window AND excluding the announced glove-trial window Jun 1 - Nov 15, 2024 (7.1 item 9; tools/evalv_decide.js paired base-rate test), blend test (MoE stacker refit with v6 rows; the engine weight is in-sample-biased on train rows, review gate 5)"
+    ],
+    "train_gate": {
+     "rule": "V6_V10_PLAN section 3 'Train-only acceptance test' (binding): forward-chained 2021-23 (every weight scoring year Y fit on 2019..Y-1: ML v2 stacks, MoE comparator stackers fit through Y-1, S2 / S cells fit on earlier years, the v6 pool weight fit on 2019..Y-1); pass iff open and no-line winner CI upper < 0 with points <= -0.001, close CI upper <= +0.0005, 7-bin CI upper < 0 and method CI upper <= +0.002 in each regime, corner swap < 1e-12, JS/Python S2 cells <= 1e-9 on 40 pairs, flag-off identity. Rules fixed in tools/predict_score.py before the scored run.",
+     "result": "PASS (9 of 9 metric checks; corner swap max 2.2e-16; S2 JS/Python 3.3e-16 on 40 feature rows; flag-off identity 36 of 36 exact; simulator identity vs v5.0.1 + v6 levels 24 of 24)",
+     "files": {
+      "harness": "data/derived/v6/gate_train.json",
+      "score": "data/derived/v6/gate_train_score.json"
+     },
+     "n": "1,235 fights with an outcome (1,222 decisive), 128 cards, 2021-2023; every one has both lines",
+     "pool_weight_forward_chained": {
+      "2021": 0.45,
+      "2022": 0.35,
+      "2023": 0.35,
+      "fit_2019_2023": 0.35
+     },
+     "paired_v6_minus_v5": {
+      "open": {
+       "winLL": {
+        "diff": -0.00613,
+        "ci95": [
+         -0.01081,
+         -0.00131
+        ]
+       },
+       "bin7": {
+        "diff": -0.01327,
+        "ci95": [
+         -0.02156,
+         -0.00528
+        ]
+       },
+       "method": {
+        "diff": -0.00683,
+        "ci95": [
+         -0.01191,
+         -0.00182
+        ]
+       },
+       "joint": {
+        "diff": -0.01601,
+        "ci95": [
+         -0.02491,
+         -0.00708
+        ]
+       },
+       "brier": {
+        "diff": -0.00266,
+        "ci95": [
+         -0.00471,
+         -0.00051
+        ]
+       }
+      },
+      "none": {
+       "winLL": {
+        "diff": -0.00609,
+        "ci95": [
+         -0.01192,
+         -0.00034
+        ]
+       },
+       "bin7": {
+        "diff": -0.01323,
+        "ci95": [
+         -0.0217,
+         -0.00486
+        ]
+       },
+       "method": {
+        "diff": -0.00663,
+        "ci95": [
+         -0.01164,
+         -0.00167
+        ]
+       },
+       "joint": {
+        "diff": -0.01597,
+        "ci95": [
+         -0.02533,
+         -0.00694
+        ]
+       },
+       "brier": {
+        "diff": -0.00287,
+        "ci95": [
+         -0.00549,
+         -0.00026
+        ]
+       }
+      },
+      "close": {
+       "winLL": {
+        "diff": -0.00331,
+        "ci95": [
+         -0.00651,
+         -4e-05
+        ]
+       },
+       "bin7": {
+        "diff": -0.00777,
+        "ci95": [
+         -0.01502,
+         -0.00044
+        ]
+       },
+       "method": {
+        "diff": -0.00475,
+        "ci95": [
+         -0.01007,
+         0.00033
+        ]
+       },
+       "joint": {
+        "diff": -0.01051,
+        "ci95": [
+         -0.01913,
+         -0.00231
+        ]
+       },
+       "brier": {
+        "diff": -0.0014,
+        "ci95": [
+         -0.0028,
+         8e-05
+        ]
+       }
+      }
+     },
+     "levels": {
+      "open": {
+       "v6": {
+        "winLL": 0.62133,
+        "brier": 0.21618,
+        "acc": 0.6653,
+        "ece": 0.0174,
+        "slope": 1.049,
+        "bin7": 1.60653,
+        "method": 0.96238,
+        "joint": 2.14331
+       },
+       "v501": {
+        "winLL": 0.62746,
+        "brier": 0.21884,
+        "acc": 0.6588,
+        "ece": 0.0158,
+        "slope": 1.003,
+        "bin7": 1.6198,
+        "method": 0.96921,
+        "joint": 2.15932
+       }
+      },
+      "none": {
+       "v6": {
+        "winLL": 0.62791,
+        "brier": 0.21919,
+        "acc": 0.6498,
+        "ece": 0.0112,
+        "slope": 1.068,
+        "bin7": 1.61304,
+        "method": 0.96332,
+        "joint": 2.14982
+       },
+       "v501": {
+        "winLL": 0.634,
+        "brier": 0.22206,
+        "acc": 0.6424,
+        "ece": 0.0224,
+        "slope": 1.062,
+        "bin7": 1.62627,
+        "method": 0.96994,
+        "joint": 2.16579
+       }
+      },
+      "close": {
+       "v6": {
+        "winLL": 0.61502,
+        "brier": 0.21343,
+        "acc": 0.6694,
+        "ece": 0.0139,
+        "slope": 1.056,
+        "bin7": 1.60028,
+        "method": 0.96334,
+        "joint": 2.13707,
+        "softCE_vs_close": 0.62759
+       },
+       "v501": {
+        "winLL": 0.61833,
+        "brier": 0.21483,
+        "acc": 0.6604,
+        "ece": 0.014,
+        "slope": 1.031,
+        "bin7": 1.60805,
+        "method": 0.96809,
+        "joint": 2.14757,
+        "softCE_vs_close": 0.62664
+       }
+      }
+     },
+     "methodround_vs_S_2021_2023": {
+      "v6|open": {
+       "joint": {
+        "submitted": 2.1433127118679396,
+        "model_S": 2.184958672678683,
+        "diff": -0.04165,
+        "ci95": [
+         -0.05769,
+         -0.02637
+        ]
+       },
+       "bin7": {
+        "submitted": 1.6065293459106336,
+        "model_S": 1.6470526295111716,
+        "diff": -0.04052,
+        "ci95": [
+         -0.05564,
+         -0.02501
+        ]
+       },
+       "method3": {
+        "submitted": 0.9623786027986663,
+        "model_S": 0.9746387402351983,
+        "diff": -0.01226,
+        "ci95": [
+         -0.02068,
+         -0.00437
+        ]
+       },
+       "winner": {
+        "submitted": 0.6213323670750425,
+        "model_S": 0.6474427095957909,
+        "diff": -0.02611,
+        "ci95": [
+         -0.03665,
+         -0.01471
+        ]
+       }
+      },
+      "v501|open": {
+       "joint": {
+        "submitted": 2.1593186881757362,
+        "model_S": 2.184958672678683,
+        "diff": -0.02564,
+        "ci95": [
+         -0.03796,
+         -0.01294
+        ]
+       },
+       "bin7": {
+        "submitted": 1.6197978213446318,
+        "model_S": 1.6470526295111716,
+        "diff": -0.02725,
+        "ci95": [
+         -0.03935,
+         -0.01453
+        ]
+       },
+       "method3": {
+        "submitted": 0.9692058335611865,
+        "model_S": 0.9746387402351983,
+        "diff": -0.00543,
+        "ci95": [
+         -0.01052,
+         -0.00045
+        ]
+       },
+       "winner": {
+        "submitted": 0.6274617806624146,
+        "model_S": 0.6474427095957909,
+        "diff": -0.01998,
+        "ci95": [
+         -0.03088,
+         -0.00814
+        ]
+       }
+      },
+      "v6|none": {
+       "joint": {
+        "submitted": 2.149820731264307,
+        "model_S": 2.184958672678683,
+        "diff": -0.03514,
+        "ci95": [
+         -0.04973,
+         -0.02104
+        ]
+       },
+       "bin7": {
+        "submitted": 1.6130373657328687,
+        "model_S": 1.6470526295111716,
+        "diff": -0.03402,
+        "ci95": [
+         -0.04779,
+         -0.02063
+        ]
+       },
+       "method3": {
+        "submitted": 0.963315818155485,
+        "model_S": 0.9746387402351983,
+        "diff": -0.01132,
+        "ci95": [
+         -0.01912,
+         -0.00354
+        ]
+       },
+       "winner": {
+        "submitted": 0.6279096211666919,
+        "model_S": 0.6474427095957909,
+        "diff": -0.01953,
+        "ci95": [
+         -0.02873,
+         -0.01036
+        ]
+       }
+      },
+      "v501|none": {
+       "joint": {
+        "submitted": 2.1657902007576038,
+        "model_S": 2.184958672678683,
+        "diff": -0.01917,
+        "ci95": [
+         -0.02952,
+         -0.00917
+        ]
+       },
+       "bin7": {
+        "submitted": 1.6262693336709149,
+        "model_S": 1.6470526295111716,
+        "diff": -0.02078,
+        "ci95": [
+         -0.03059,
+         -0.01116
+        ]
+       },
+       "method3": {
+        "submitted": 0.9699435205105239,
+        "model_S": 0.9746387402351983,
+        "diff": -0.0047,
+        "ci95": [
+         -0.00921,
+         -0.00024
+        ]
+       },
+       "winner": {
+        "submitted": 0.6340021386223319,
+        "model_S": 0.6474427095957909,
+        "diff": -0.01344,
+        "ci95": [
+         -0.02138,
+         -0.00548
+        ]
+       }
+      },
+      "v6|close": {
+       "joint": {
+        "submitted": 2.1370650266311673,
+        "model_S": 2.184958672678683,
+        "diff": -0.04789,
+        "ci95": [
+         -0.06404,
+         -0.03123
+        ]
+       },
+       "bin7": {
+        "submitted": 1.6002816604631074,
+        "model_S": 1.6470526295111716,
+        "diff": -0.04677,
+        "ci95": [
+         -0.06235,
+         -0.02968
+        ]
+       },
+       "method3": {
+        "submitted": 0.9633359214339855,
+        "model_S": 0.9746387402351983,
+        "diff": -0.0113,
+        "ci95": [
+         -0.01947,
+         -0.00374
+        ]
+       },
+       "winner": {
+        "submitted": 0.6150182169074896,
+        "model_S": 0.6474427095957909,
+        "diff": -0.03242,
+        "ci95": [
+         -0.0445,
+         -0.01984
+        ]
+       }
+      },
+      "v501|close": {
+       "joint": {
+        "submitted": 2.147570035607054,
+        "model_S": 2.184958672678683,
+        "diff": -0.03739,
+        "ci95": [
+         -0.05119,
+         -0.02253
+        ]
+       },
+       "bin7": {
+        "submitted": 1.6080489133918288,
+        "model_S": 1.6470526295111716,
+        "diff": -0.039,
+        "ci95": [
+         -0.05336,
+         -0.02449
+        ]
+       },
+       "method3": {
+        "submitted": 0.9680884628521419,
+        "model_S": 0.9746387402351983,
+        "diff": -0.00655,
+        "ci95": [
+         -0.01256,
+         -0.00093
+        ]
+       },
+       "winner": {
+        "submitted": 0.6183291931950338,
+        "model_S": 0.6474427095957909,
+        "diff": -0.02911,
+        "ci95": [
+         -0.04123,
+         -0.01628
+        ]
+       }
+      }
+     },
+     "sensitivity_shared_inputs_DISCLOSED": {
+      "what": "the same gate with the v6 input pipeline fed to BOTH packages (data/derived/v6/gate_train_shared_score.json). It was run FIRST; the comparator definition 'own frozen pipeline' (the tools/evalv.js convention; the v5.0.1 MoE stacker was fit on engine rows from its own pipeline) was fixed after it, so the gate pass depends on that definition.",
+      "result": "FAILS 2 of 9 checks marginally: no-line winner -0.00535 [-0.0113, +0.00058] (CI upper > 0) and close winner -0.00282 [-0.00614, +0.00055] (upper > +0.0005); open winner -0.00534 [-0.01023, -0.00026] and every 7-bin / method check pass",
+      "paired_v6_minus_v5": {
+       "open": {
+        "winLL": {
+         "diff": -0.00534,
+         "ci95": [
+          -0.01023,
+          -0.00026
+         ]
+        },
+        "bin7": {
+         "diff": -0.01444,
+         "ci95": [
+          -0.02288,
+          -0.00617
+         ]
+        },
+        "method": {
+         "diff": -0.00701,
+         "ci95": [
+          -0.01179,
+          -0.00202
+         ]
+        }
+       },
+       "none": {
+        "winLL": {
+         "diff": -0.00535,
+         "ci95": [
+          -0.0113,
+          0.00058
+         ]
+        },
+        "bin7": {
+         "diff": -0.01445,
+         "ci95": [
+          -0.02354,
+          -0.00576
+         ]
+        },
+        "method": {
+         "diff": -0.00663,
+         "ci95": [
+          -0.01134,
+          -0.00171
+         ]
+        }
+       },
+       "close": {
+        "winLL": {
+         "diff": -0.00282,
+         "ci95": [
+          -0.00614,
+          0.00055
+         ]
+        },
+        "bin7": {
+         "diff": -0.00917,
+         "ci95": [
+          -0.01622,
+          -0.00187
+         ]
+        },
+        "method": {
+         "diff": -0.00492,
+         "ci95": [
+          -0.00993,
+          -8e-05
+         ]
+        }
+       }
+      }
+     },
+     "optimism": "ML v2's blocks, penalty, tree settings and blend weights were chosen by CV on years that include 2021-23, and the no-line half-life by forward-chained CV on 2021-23 itself, so the winner gate is optimistic (plan section 3)"
+    },
+    "expected_effect": {
+     "open_winner": "-0.004 (plan section 3: open + ML v2 vs current experts on the open, 2024-25 already seen -0.0041 [-0.0066, -0.0014]); NOT -0.014: the v5 package already routes openers to open-trained weights",
+     "train_gate_open": "-0.0061 [-0.0108, -0.0013]",
+     "no_line": "about -0.005",
+     "close": "about -0.002 (n.s. expected)",
+     "7bin": "-0.005 to -0.015",
+     "method": "-0.002 to -0.007"
+    },
+    "mde": {
+     "open_winner": "about 0.0037 (V6_V10_PLAN section 2: 2.8 x SE from an observed paired CI of +-0.0026); power about 0.85 at -0.004",
+     "no_line": "about 0.0051",
+     "close": "about 0.003",
+     "7bin": "0.021-0.027",
+     "method": "0.008-0.011"
+    },
+    "failure_criteria": [
+     "primary CI upper bound >= 0: branch 1 fails, v6 is not kept (restore v4 files in src/, keep the work as versions/v6-rejected/)",
+     "a wiring failure aborts the look before scoring (a new version entry is then needed for any re-run): any v6 open-regime row whose source is not 'ml2stack', whose fit is not 'Y2024' or whose method/round variant is not 'S2'; any harness error; simulator cells differing across line kinds within a package",
+     "failing tests on the frozen files (test_v6, test_ml2trees, test_engine3 API surface, director, component tests) void the look"
+    ],
+    "confirmation_look": {
+     "flag": true,
+     "already_scored_on_2024_25": [
+      "ML v2 blend and logistic and their no-line / open / close stacks (research/model_ml2.md sections 4 and 6; blind test)",
+      "S2 and S2 + ML v2 winner (model_ml2 section 7)",
+      "the v5.0.1 simulator (v5.0.1 look; v5 look for its components)",
+      "the v5 package (v5 look: validation.package)",
+      "lab 3: debut method model (172 debut bouts) and statlines (one look each in their labs; neither touches the backtest universe)"
+     ],
+     "new_to_the_window": [
+      "the composition: blend-head ML v2 stacks inside predict with the S2 pool at w 0.35 and v6's routing",
+      "the fold-honest learned rates / embedding recipe and the re-fit joint levels (simulator)",
+      "the JS tree evaluator (live path only; backtests use the stored ML v2 values)"
+     ],
+     "consequence": "V6_V10_PLAN 6.2 item 7: an improvement is claimed only after vault audit 2 and the forward ledger; the look mostly checks the wiring"
+    },
+    "levels_and_drift": "v6 changes knockdown / KO levels only through the train-only joint level pass rerun on the fold-honest inputs (2019-2023; kdLevel3 +0.9%, kdLevel5 -0.5%, convLevel +0.4%, stko/gnp -3.0%, t108 -0.9%; data/derived/v6/v6_levels_fh.json). The 2024 knockdown drift that rejected v5 and v5.0.1 was first seen on 2024-25 and played no part in it; no eradrift tracker is used (V6_V10_PLAN 6.5.3 (b): no vault KD / KO / durability number was read for it). The glove-window amendment (7.1 item 9) concerns the base-rate condition of branch 2 only, which v6 does not use: v6 can never be 'kept under the glove-window amendment'.",
+    "review_gate_1_fold_honest": "done before the merge: mlrates stack weights for year y fit on 2017..y-1 out-of-fold rows (tools/v6_foldhonest.py; folds 2017-2018 added; reproduction of mlrates_oof.json with the pooled weights exact), the embedding recipe fit on 2019..y-1 rows (tools/v6_embed_fh.py; 2019 identity), Calibrate A's embed / preufc calls rerun on them (tools/v5_train_ablation.js --tag v6fh: -embed soft CE +0.0042 [+0.0033, +0.0050], -preufc +0.0004 [-0.0000, +0.0009]: both stay on, unchanged verdicts) and the joint level pass rerun (pre-stated rule: refit when a train base rate moves more than a quarter of its mlcal tolerance; SUB share moved -1.0 pt, so it was rerun; SUB has no lever in the pass: train SUB 16.6% vs 17.5% actual, inside the 1.5-pt tolerance)",
+    "vault_exposure": "this builder read research/vault_audit_v5.md and the BACKLOG audit summary before building. No v6 choice rests on an audit-1 number: re-bundling the v5.0.1 simulator follows docs/ROADMAP.md (written after v5.0.1 at ~04:40 UTC, before audit 1 at 04:57) and V6_V10_PLAN 4.1 (pre-audit); the ML v2 stacks, S2 cells, routing and tree head follow V6_V10_PLAN sections 3 and 7.1 (pre-audit). Nothing from this build is listed 'not clean on the vault' under 6.5.2; audit 2 should still note the builder's exposure.",
+    "lab3": {
+     "adopted_and_wired": {
+      "debut": "debut method model (research/model_debut.md, verifier adopt = true): predict()'s debut path (method given the winner for a bout with a UFC debutant; params.blend.debut). Its CV gate (forward-chained) passed in the lab; it cannot move a scored backtest number (no debut bouts in the universe); its 2024-25 number was its lab's one look (confirmation). The winner for a debut bout stays the regime stack or its fallback (the debut winner model stays monitored).",
+      "statlines": "distributional stat lines (research/model_statlines.md, adopt = true as the stat-line layer): predict().statLines.dist P10 / P50 / P90 (src/ml/statdist.js prod tables; params.blend.statDist); no winner or stack use (its stack gate rejected it); 2024-25 already scored in its lab (confirmation)."
+     },
+     "not_adopted_by_their_verifiers": [
+      "crowd",
+      "linemove",
+      "seqnet",
+      "bayes",
+      "calib"
+     ],
+     "stack_cv_gate": "none of the adopted lab-3 experts enters a winner stack (statlines' and debut's stack gates rejected them), so no new forward-chained 2021-2023 stack-CV run was needed; the not-adopted five were rejected on that gate by their verifiers"
+    },
+    "look_commands": [
+     "node tools/predict_harness.js --split val --sims 300 --workers 3 --pkg v6=versions/v6:v6 --pkg v501=versions/v5.0.1-rejected:v5 --out data/derived/v6/look_val.json",
+     "python3 tools/predict_score.py look data/derived/v6/look_val.json --out data/derived/v6/look_val_score.json   (primary = its 'primary' block)",
+     "node tools/evalv.js --version v6 --split val --sims 300 --workers 3 --compare v4   (engine-level secondaries; history validation block)",
+     "node tools/evalv_decide.js (v6 vs v4: Holm family and the paired base-rate table, full window and excluding Jun 1 - Nov 15, 2024; information) and python3 tools/evalv_blend.py (blend test)"
+    ],
+    "files_sha256": {
+     "versions/v6/engine3.js": "437e0df4d8886de26c13db667758f39a3ca9b2b6234d62545930b5cea60bb661",
+     "versions/v6/params3.js": "ee5a8caf132d7448f02b2d23e051ae44ba8a123278ab8f2fa9a5c6cbb0a9f97a",
+     "versions/v6/mlpathrec.js": "fb805a44b75e3bc786412c617e71147a16f951a1c3a1b73d7e7105fbbb674084",
+     "versions/v6/styles_sos.js": "65678cd6d29b10e49adcd864c779e7d7a3e60fb61b50c224582290fd52b0ab14",
+     "versions/v6/ml/blend.js": "43f877b878defec73c1d2f3aae830e5a67a50ca87bd74460d5692913c2f4bfca",
+     "versions/v6/ml/mlrates.js": "40d870061947f26ad67cf45c1cd5bab75cf7e919599896825be14b384da9bac4",
+     "versions/v6/ml/embed.js": "e3fa72fd6c0b140bb63998bcebe93208127a115b13f500da467726206286f436",
+     "versions/v6/ml/moe.js": "ad1097b488bbb3ac2d6dfd0e29580553d3c195334e5a39c9d385c29c96e23efa",
+     "versions/v6/ml/ml2.js": "0b62c4462dd7a915940779a18aea65c5f87b37ed8adf831fcd8f8723de3f0f6d",
+     "versions/v6/ml/mlpage.js": "d4c72febf5c57666f46bfb0c7c07c97eec52c32fde06dbe704d319223aa69e16",
+     "versions/v6/ml/ml2trees.js": "e505ea5d119200b2ce1fe5c093d832c7858dcec54395751c7dd6b2402371fb5a",
+     "versions/v6/ml/debut.js": "e5bbc188f4cf42c923b43b599cf7f0158b38e5be23b4c9fb5ae300642c5c775d",
+     "versions/v6/ml/statdist.js": "c7facbbc4b406be1a96e3f3e2fb037e5fca29fbe9d9bf24aa6d633be0b8aedd7",
+     "data/derived/v6_stacks.json": "44130c57c22196f6dc4f91098aa54bc4e114d739e92c5057ac3727c7a28c23e2",
+     "data/derived/mr_s2.json": "a308dd8e891aa8bc742fe28cd359c1db8d26a9e029ec3d0acbfe286404fd3070",
+     "data/derived/ml2_trees.json": "a732f9f6f6cd84d5026d81f48a7fd2db004041c46649a7fe8417b586016d69be",
+     "data/derived/mlrates_oof_fh.json": "3dbe07798d7d4d5d47b5310bd014d53cba4dff275d92e15a00d81fdd02d80642",
+     "data/derived/embed_blend_fh.json": "228ffc5775aaf6ef2bed6c9fbfc398a3fa9d24eae73b6490aebe0be169b9ab57",
+     "data/derived/v6/cmp_stack_v501_fit2020.json": "a0657147f70cace27e22e86376e44219df16a960a4e104beb2353862ee971f2d",
+     "data/derived/v6/cmp_stack_v501_fit2021.json": "4fdf1710f5129fb9aef157da73d7d99f8bc100c902f7ee36f13c7490695eabbc",
+     "data/derived/v6/cmp_stack_v501_fit2022.json": "9d8e9491d55b2945b750b5d407613a88f441bd9c21b52404f18942810c2ee815",
+     "data/derived/v6/cmp_stack_v501_fit2023.json": "fafa008fc29d9dbbbaab09ffcccf62df67e5bd9d306ac80d3ff9fa5838b6cb90",
+     "tools/predict_harness.js": "31cd4abe79d94cf9e59be58de0236672142495c13bad035f04b14c0bc089f4c1",
+     "tools/predict_score.py": "e2065cd6b3693679e3b076e5caf3e19dfb7fb9076d291dbaa6d41e0bfad5363d",
+     "tools/predictrec.js": "7e3b4069a63c888a5d0dfa2e64d41debcd14fd453dcd42f94e1bfb44a834711d",
+     "tools/methodround_model.js": "fea58a2f9beff3ca14484148fae4e0c74e6d023c77f7cb20bde7b1e47c64906e"
+    }
+   }
   }
  ],
  "vault_audits": [

@@ -305,8 +305,42 @@ def gate(path, out=None):
     return res
 
 
+def look(path, out=None):
+    """The v6 validation look (2024-01-01..2025-12-31), as pre-registered in data/derived/version_history.json (entry v6,
+    prereg): every package's cells as run (v6 pool weight = params 0.35, fit on 2019-2023; v5 package 0.30), every
+    regime, paired v6 - v5 with event-cluster CIs, calibration, who x how x when vs model S. Primary: open-regime winner
+    log loss, branch 1 (keep if the paired 95% CI upper bound < 0). This function only scores; it writes no history."""
+    D = json.load(open(path))
+    if D["meta"]["split"] != "val":
+        raise SystemExit("look: needs a --split val harness run")
+    recs = D["fights"]
+    v6 = [p["name"] for p in D["meta"]["packages"] if p["mode"] == "v6"][0]
+    v5 = [p["name"] for p in D["meta"]["packages"] if p["mode"] == "v5"][0]
+    pkgs = [v6, v5]
+    yrs = {2024, 2025}
+    res = {"meta": {"tool": "tools/predict_score.py look", "input": os.path.relpath(path, ROOT), "harness": D["meta"]}, "regimes": {}, "by_year": {}}
+    for kind in KINDS:
+        res["regimes"][kind] = score_kind(recs, kind, pkgs, {}, yrs)
+        for Y in sorted(yrs):
+            res["by_year"].setdefault(str(Y), {})[kind] = score_kind(recs, kind, pkgs, {}, {Y})["packages"]
+    res["methodround"] = {}
+    for kind in KINDS:
+        for p in pkgs:
+            try:
+                res["methodround"]["%s|%s" % (p, kind)] = methodround_score(recs, p, kind, {}, yrs, "2024-01-01", "2026-01-01")
+            except Exception as e:  # noqa: BLE001
+                res["methodround"]["%s|%s" % (p, kind)] = {"error": str(e)[:300]}
+    pr = res["regimes"]["open"]["paired"]["%s - %s" % (v6, v5)]["winLL"]
+    res["primary"] = {"metric": "open-regime winner log loss, v6 package minus v5 package", "diff": pr["diff"], "ci": pr["ci"],
+                      "branch1_keep": pr["ci"][1] < 0}
+    if out:
+        json.dump(res, open(out, "w"), indent=1)
+    return res
+
+
 def show(res):
-    print("pool weight by year:", {k: v["w"] for k, v in res["pool_weight"]["by_year"].items()}, "| 2019-2023:", res["pool_weight"]["fit_2019_2023"])
+    if "pool_weight" in res:
+        print("pool weight by year:", {k: v["w"] for k, v in res["pool_weight"]["by_year"].items()}, "| 2019-2023:", res["pool_weight"]["fit_2019_2023"])
     for kind, R in res["regimes"].items():
         print("== %s: n outcome %d, decisive %d, cards %d" % (kind, R["n_outcome"], R["n_decisive"], R["n_cards"]))
         for p, m in R["packages"].items():
@@ -317,17 +351,21 @@ def show(res):
         print("  [%s] %s" % ("PASS" if v else "FAIL", k))
     if "gate" in res:
         print("GATE:", "PASS" if res["gate"]["pass"] else "FAIL")
+    if "primary" in res:
+        print("PRIMARY:", res["primary"])
 
 
 def main():
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["gate"])
+    ap.add_argument("cmd", choices=["gate", "look"])
     ap.add_argument("path")
     ap.add_argument("--out")
     a = ap.parse_args()
     if a.cmd == "gate":
         show(gate(a.path, a.out))
+    elif a.cmd == "look":
+        show(look(a.path, a.out))
 
 
 if __name__ == "__main__":
