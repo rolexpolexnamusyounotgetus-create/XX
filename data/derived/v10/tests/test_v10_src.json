@@ -1,0 +1,106 @@
+{
+ "tool": "tests/test_v10.js",
+ "v10_dir": "src",
+ "passes": 19,
+ "fails": 0,
+ "engine_version": "10.0.0",
+ "params_version": "10.0.0-selfcal-pre2024",
+ "blend_version": "1.4.0",
+ "checks": {
+  "simulator_identity_v4": {
+   "pass": true,
+   "info": "30/30",
+   "name": "simulator identity: every v8 flag off = versions/v4 (summarize both orders + traced fight)"
+  },
+  "bundle_identity_v8": {
+   "pass": true,
+   "info": "20/20",
+   "name": "stat-line bundle as v8 shipped it: v10 default flags = versions/v8-gate-failed (tables + 60 fights)"
+  },
+  "bundle_inputs_applied": {
+   "pass": true,
+   "info": "10/10",
+   "name": "stat-line bundle inputs applied (retarget with a leak-free fold table, embedding from opts)"
+  },
+  "blend140_eq_130": {
+   "pass": true,
+   "info": "36/36",
+   "name": "FightBlend 1.4.0 = 1.3.0 (v7 package) with v8 flags off, debutWinner off, no statTargets (3 regimes x props on/off)"
+  },
+  "corner_swap": {
+   "pass": true,
+   "info": "12 rows, max 1.11e-16",
+   "name": "exact corner symmetry of the v10 package, every flag on (statTargets / embedding swapped by FightBlend 1.4.0)"
+  },
+  "debut_backtest_identity": {
+   "pass": true,
+   "info": "debutant sides 0 of 1999 fights; identical 8/8",
+   "name": "newcomer path: no 2019-2023 backtest side is a debutant, and predict() is bit-identical with debutWinner on / off"
+  },
+  "debut_line": {
+   "pass": true,
+   "info": "p 0.7443 (line-only stack open|production (data/derived/line_stack.json)), candidate 0.4091",
+   "name": "newcomer path, with a line: the line-only stack decides the winner (source 'line'), the debut method model the method"
+  },
+  "debut_seeded": {
+   "pass": true,
+   "info": "p 0.703385 vs 0.703385",
+   "name": "newcomer path, no line: the seeded Elo decides the winner (source 'seeded_elo', p = the Elo formula)"
+  },
+  "debut_none": {
+   "pass": true,
+   "info": "source stack",
+   "name": "newcomer path, no line and no seeded Elo: the headline keeps its source and the record says so"
+  },
+  "debut_off": {
+   "pass": true,
+   "info": "source stack",
+   "name": "newcomer path off (debutWinner false): no routing (the 1.3.0 headline)"
+  },
+  "debut_symmetry": {
+   "pass": true,
+   "info": "0.00e+0",
+   "name": "newcomer path: corner symmetry (seeded Elo swapped with the corners)"
+  },
+  "trace_invariance": {
+   "pass": true,
+   "info": "60/60",
+   "name": "explainer: a trace does not move the random stream (untraced = traced outcome and totals)"
+  },
+  "explainer_no_side_effect": {
+   "pass": true,
+   "info": null,
+   "name": "explainer: predict() is unchanged by showFight"
+  },
+  "explainer_coherence": {
+   "pass": true,
+   "info": "exact 40/40, winner 40/40, mean tries 19.2",
+   "name": "explainer coherence: the shown fight lands in the cell drawn from predict()'s cells (>= 90%) and always on the drawn winner"
+  },
+  "explainer_director": {
+   "pass": true,
+   "info": "6/6",
+   "name": "explainer: the director builds every shown fight (src/director3.js)"
+  },
+  "explainer_off": {
+   "pass": true,
+   "info": "components.explainer is off",
+   "name": "explainer off: the first traced fight of the show seed (the pre-v10 behaviour)"
+  },
+  "refuse_without_blend": {
+   "pass": true,
+   "info": "FightEngine 10.0.0.predict: params.components.blend_anchor is on but src/ml/blen...",
+   "name": "refuses: blend_anchor on and FightBlend missing -> predict throws (no silent one-order summarize)"
+  },
+  "manual_profile_n0": {
+   "pass": true,
+   "info": "n_fights 0",
+   "name": "manualProfile keeps n_fights 0 (v6 review)"
+  },
+  "targets_folds": {
+   "pass": true,
+   "info": "mismatches 0, 2026 rows 0",
+   "name": "statlines targets leak-free by construction (2019 none, 2020-2023 f<year>, 2024-2025 dev, no 2026 fight)"
+  }
+ }
+}
