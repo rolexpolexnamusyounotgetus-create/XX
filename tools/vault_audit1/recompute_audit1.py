@@ -610,6 +610,17 @@ bin7 = {v: dict(zip(("est", "ci", "n"), wmean(L7[v]))) for v in L7}
 for v in ("v5", "v5.0.1"):
     est, ci, nn = wmean(L7[v] - L7["v4"])
     bin7[v + " - v4"] = {"diff": est, "ci": ci, "n": nn}
+# method (KO / SUB / DEC, draws in DEC) from the same b7
+ym = np.where(ybin < 0, -1, np.select([np.isin(ybin, [0, 6]), np.isin(ybin, [1, 5])], [0, 1], 2))
+LM = {}
+for v in B7:
+    pb = B7[v] / B7[v].sum(1, keepdims=True)
+    pm = np.c_[pb[:, 0] + pb[:, 6], pb[:, 1] + pb[:, 5], pb[:, 2] + pb[:, 3] + pb[:, 4]]
+    LM[v] = np.where(ym >= 0, -np.log(np.maximum(pm[np.arange(n), np.maximum(ym, 0)], 1e-12)), np.nan)
+    bin7["method_" + v] = dict(zip(("est", "ci", "n"), wmean(LM[v])))
+for v in ("v5", "v5.0.1"):
+    est, ci, nn = wmean(LM[v] - LM["v4"])
+    bin7["method_" + v + " - v4"] = {"diff": est, "ci": ci, "n": nn}
 
 
 def rule(k):

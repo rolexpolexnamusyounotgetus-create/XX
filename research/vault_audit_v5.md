@@ -363,17 +363,18 @@ f6709d52292ccc83. Output: score_vault.json 934a98c558210aa5.
 - **Not run:** a card-by-card walk-forward inside 2026 (no per-card refit is part of any frozen model); stat-line
   distribution coverage (statlines layer; not in the audit-1 scope).
 - **Openers (added by the recomputation).** Seven vault openers are isolated: BFO's opening line sits on the other
-  side of 50% from every later sparkline point, which agree with the close. Two of them are clear reversals: Demopoulos
-  vs Jauregui (open -850 / +596, then about +530 / -800 from the next point on) and Baraniewski vs Tafa (open +220, then
-  -250 or shorter). The frozen open definition (market.py p_novig_open) is what audit 1 scores, so no number above
-  changes. For description only, without those 7 fights (n 362): open 0.6100 vs close 0.6029; open minus close +0.0071
-  [-0.0141, +0.0270]; production stack + open minus open +0.0063 [-0.0116, +0.0242]; ML v2 open stack (2019-2023) minus
-  open +0.0010 [-0.0120, +0.0148]. The open-regime reading "level with the market" holds either way. The forward
+  side of 50% from every later sparkline point, which agree with the close. Two of them are clear reversals:
+  Demopoulos vs Jauregui (Demopoulos opened at -850; every later point has her at +532 to +625) and Baraniewski vs Tafa
+  (Baraniewski opened at +220; every later point has him at -255 or shorter). The frozen open definition (market.py
+  p_novig_open) is what audit 1 scores, so no number above changes. For description only, without those 7 fights
+  (n 362): open 0.6100 vs close 0.6029; open minus close +0.0071 [-0.0141, +0.0270]; production stack + open minus
+  open +0.0063 [-0.0116, +0.0242]; ML v2 open stack (2019-2023) minus open +0.0010 [-0.0120, +0.0148]. The open-regime
+  reading "level with the market" holds either way. The forward
   ledger's open regime feeds the line captured at prediction time, not BFO's opener field.
 
 ## Recomputation log
 
-Sat Nov 7, 2026, 5:36 to 6:05 am UTC. An independent recomputation of this report's headline rows, under the same
+Sat Nov 7, 2026, 5:36 to 5:55 am UTC. An independent recomputation of this report's headline rows, under the same
 opening: the vault was already open for audit 1, so this is not a second opening. Nothing was tuned, and no model,
 variant or fit was added. Code: tools/vault_audit1/recompute_audit1.py. It shares no scoring code with score_vault.py
 or models_vault.js. The engines were rerun with the frozen tools into <vault>/audit1/recompute/vroot/, and the output
@@ -403,7 +404,7 @@ is <vault>/audit1/recompute/recompute_audit1.json. Everything ran at nice 5 on 3
 | engines | per-fight pA and cells identical to the audit's (max difference 0); engine and params sha256 equal version_history.json |
 | winner rows (log loss, Brier, accuracy, slope) of close, close (multiplicative), open, Elo, ML v1, ML v2 production / static, the nine ML v2 stacks, the three production stacks, MoE no-line, engines v4 / v5 / v5.0.1 | every point equal at the printed precision (largest gaps: log loss 3.5e-6, slope 3e-5). CI endpoints differ only by bootstrap-draw noise: at most 0.004 on log loss, 0.0025 on paired differences, 0.042 on slopes (Elo's very wide slope interval) |
 | 19 paired differences, including v5 / v5.0.1 minus v4 (+0.0004 / -0.0027), the close edge (+0.0069 [-0.0015, +0.0155] here) and the ML v2 stacks against the line | every point equal at 4 dp; no CI changed side of 0 |
-| 7-bin, v4 / v5 / v5.0.1 | 1.6292 / 1.6013 / 1.6035, recomputed from evalv's b7 (the audit used the cells); v5 minus v4 -0.02785 here vs -0.027852 from the cells (a rounding edge: the report's -0.0279 is right) |
+| 7-bin and method, v4 / v5 / v5.0.1 | 7-bin 1.6292 / 1.6013 / 1.6035, recomputed from evalv's b7 (the audit used the cells); v5 minus v4 -0.02785 here vs -0.027852 from the cells (a rounding edge: the report's -0.0279 is right); v5.0.1 minus v4 -0.0257 [-0.0673, +0.0107]. Method (KO / SUB / DEC) 0.9781 / 0.9523 / 0.9597; v5 minus v4 -0.0258 [-0.0478, -0.0057], v5.0.1 minus v4 -0.0184 [-0.0384, +0.0009]: same CI sides as the report |
 | drift rule 6.5.1(a) | primary 0.561 [0.386, 0.773] here vs [0.380, 0.774]. None of the 2,000 resamples reaches 1 (the highest is 0.975), so **NOT TRIGGERED** is confirmed. The secondaries keep their states: ML v2 production no-line 0.684 [0.465, 0.939], MoE 0.547 [0.373, 0.757], and the reference ML v2 2019-2023 no-line 0.804 [0.536, 1.114] |
 
 **Checks.**
@@ -425,18 +426,21 @@ is <vault>/audit1/recompute/recompute_audit1.json. Everything ran at nice 5 on 3
   - Other fits: mlrates train_years 2010-2025; forward_models fit 2023 and earlier; moe_page `coef` fit 2010-2025;
     ml_vault's lr_refit refit on fights before 2026.
   - Every frozen model file was last committed on Nov 6, before the audit, and matches the section 8 hashes; so do the
-    vault input files.
+    vault input files. The two untracked ML v2 cache files (out/ml2_cache/fit.pkl and cv.json) have file times of Nov 6,
+    4:49 and 4:51 pm UTC.
   - The ML v2 rating features equal the frozen ratings_all.pkl (max difference 2e-16).
 - **Closing lines are pre-fight.**
   - All 1,874 stored per-book quotes equal data/raw/odds/bfo_event_lines.csv in the A / B orientation (0 mismatches).
-  - No exchange price is in any close. The raw pages hold 87 Kalshi / Polymarket quotes at 2,000 or beyond in American
-    odds, the post-result kind, and all are excluded.
+  - No exchange price is in any close. The raw pages hold 87 Kalshi / Polymarket quotes (per fight and book) at 2,000
+    or beyond in American odds. In 90 of the 92 raw rows behind them the favourite is the eventual winner, the signature
+    of prices captured after the result, and all are excluded.
   - Every kept sportsbook quote lies inside BFO's fighter-page closing range.
   - BFO's last sparkline point agrees with the book mean: median gap 0.0018 in implied probability, maximum 0.043.
   - The consensus rule dropped one quote as stale or in-play: FanDuel +270 / -380 on Dom Mar Fan vs Kody Steele, where
     the other four books were +125 to +130.
   - One fight (Pitbull vs Choi) has no event-page rows and uses BFO's closing-range midpoint, as market.py does.
-  - The close's 0.6003 is in the normal range for closing lines.
+  - The close's 0.6003 is in line with the 2024-25 close (0.5847 on 844 fights); a post-result price would score far
+    lower.
   - No close was missing, so nothing was fetched from BFO historical pages.
 
 **Corrections made in place (text only; no number changed).**
@@ -446,6 +450,20 @@ is <vault>/audit1/recompute/recompute_audit1.json. Everything ran at nice 5 on 3
    <vault>/audit1/ copy is identical but was copied at 5:26:47 am. The evidence is file timestamps, not git. The first
    winner probabilities were written at 5:05:33 am, not "about 5:04 am". The ordering claim holds.
 3. Deviations and caveats: added the opener note (7 isolated BFO openers, descriptive sensitivity, no number replaced).
+
+**Reproduce** (repository root; about 1 minute):
+
+```
+V=<vault>; R=$V/audit1/recompute/vroot; mkdir -p $R/audit1
+for f in backtest_vault durability_vault market_vault preufc_vault ml_vault ratings_vault; do ln -sf $V/$f.json $R/$f.json; done
+cp $V/audit1/priors_asof_vault.json $R/audit1/
+nice -n 5 python3 tools/vault_audit1/mlrates_vault.py --vault $R
+nice -n 5 python3 tools/vault_audit1/sos_vault.py --vault $R
+nice -n 5 node tools/vault_audit1/evalv_vault.js --vault $R --version v4 --sims 300 --workers 3
+nice -n 5 node tools/vault_audit1/evalv_vault.js --vault $R --version v5 --sims 300 --workers 3 --compare v4
+nice -n 5 node tools/vault_audit1/evalv_vault.js --vault $R --version v5.0.1 --sims 300 --workers 3 --compare v4
+nice -n 5 python3 tools/vault_audit1/recompute_audit1.py --vault $V      # reads the ML v2 table, sides and models_vault for comparison
+```
 
 **Noted, not changed.** evalv's output metadata still says "ml: out-of-fold rates (data/derived/mlrates_oof.json)".
 That label was not substituted; the rates actually used are mlrates_vault.json, from the production mlrates.json fit
