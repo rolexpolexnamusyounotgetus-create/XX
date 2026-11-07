@@ -473,6 +473,22 @@ const m = E.matchup(A, B, opts); XR.assertApplied(m, f.id, params);
   smoothing, common random numbers): base (step 3), embed, embed + preufc, embed + oppadj with SOS off; paired vs base and vs
   embed (data/derived/v5_step4_check.json). About two minutes at 300 sims per order with 3 workers.
 
+## v5_train_ablation.js, v5_train_ablation_mr.py, v5_train_ablation_report.py (v5 Calibrate A, train only)
+
+The leave-one-out train ablation that set v5's default component flags (research/v5_train_ablation.md).
+- `nice -n 5 node tools/v5_train_ablation.js [--sims 300] [--workers 3] [--tag main] [--arms all,-durability,...]
+  [--final '<components json>']`: every 2019-2023 backtest_dev fight in both corner orders, evalv's leak-free inputs (as-of
+  priors, OOF learned rates, durrec, sosrec, mlpathrec; each asserted per arm), one seed per simulated fight shared by every arm
+  (common random numbers). Arms: `all` (as merged), all minus each component / v401 sub-flag, `oppadj` (instead of SOS), `v3p`
+  (v3 params + learned rates) and, with --final, the chosen defaults. evalv's metrics plus soft-label CE vs the closing line
+  (market.json p_power_close) and the total stat-line deviance; paired arm - all with 2,000 event-date cluster resamples
+  (data/derived/v5_train_ablation_<tag>.json; joint cells per arm in out/v5_train_ablation_<tag>/). About 7 minutes for 13 arms
+  at 300 sims per order with 3 workers.
+- `python3 tools/v5_train_ablation_mr.py --tag main`: methodround.py's own scoring (method x round, who x how x when, ...) of
+  each arm's cells, vs model S and paired vs `all` (data/derived/v5_train_ablation_mr_<tag>.json). A second.
+- `python3 tools/v5_train_ablation_report.py --tag main [--json verdicts.json]`: the markdown tables and each arm's verdict under
+  the pre-registered rule in research/v5_train_ablation.md.
+
 ## blend_anchor_*: FightEngine.predict (engine component "blend_anchor") and its 2019-2023 ablation
 
 ```

@@ -1,0 +1,22 @@
+{
+ "v401": {
+  "emJudge": true,
+  "deductions": true,
+  "mlLevels": true,
+  "tdCap": true,
+  "koTargets": true
+ },
+ "durability": true,
+ "dynamics": true,
+ "styles_sos": {
+  "styles": false,
+  "sos": true,
+  "newcomer": false
+ },
+ "officials": false,
+ "realism_sens": false,
+ "embed": true,
+ "oppadj": false,
+ "preufc": true,
+ "blend_anchor": true
+}

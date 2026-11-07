@@ -747,6 +747,430 @@ def stage_base(args):
 STAGES["base"] = stage_base
 
 
+# ====================================================================== method-model adjustment
+R5 = 5
+I_XKO, I_XSUB, I_YKO, I_YSUB = 0, R5, 2 * R5, 3 * R5
+I_XDEC, I_YDEC, I_DRAW = 4 * R5, 4 * R5 + 1, 4 * R5 + 2
+NC_ = 4 * R5 + 3
+M_METRICS = ["bin7", "method3", "finish", "joint", "round_given_fin", "ko_vs_sub", "method_given_winner", "winner"]
+
+
+def adjust_joint(P6w, H, draw_c, a_fin, a_ko, a_r1):
+    """Level-adjusted joint cells (n x 23, methodround order) from the six-class S2+ml2win and hazard round shapes.
+    a_fin: logit offset on P(finish | winner) (same for both winners); a_ko: logit offset on P(KO | finish, winner);
+    a_r1: logit offset on P(round 1 | finish by a method, winner) (shapes renormalised over rounds 2..R).
+    P(A wins) is untouched. Arrays of length n (or scalars)."""
+    n = len(P6w)
+    a_fin, a_ko, a_r1 = (np.broadcast_to(np.asarray(v, float), (n,)) for v in (a_fin, a_ko, a_r1))
+    out = np.zeros((n, NC_))
+    pa = P6w[:, :3].sum(1)
+    sides = ((pa, P6w[:, 0], P6w[:, 1], P6w[:, 2], I_XKO, I_XSUB, I_XDEC),
+             (1 - pa, P6w[:, 5], P6w[:, 4], P6w[:, 3], I_YKO, I_YSUB, I_YDEC))
+    for pw, ko, sb, de, iko, isb, ide in sides:
+        tot = np.maximum(ko + sb + de, 1e-12)
+        f = np.clip((ko + sb) / tot, 1e-6, 1 - 1e-6)
+        k = np.clip(ko / np.maximum(ko + sb, 1e-12), 1e-6, 1 - 1e-6)
+        f2 = sig(logit(f) + a_fin)
+        k2 = sig(logit(k) + a_ko)
+        pko, psb, pde = pw * f2 * k2, pw * f2 * (1 - k2), pw * (1 - f2)
+        for mass, base in ((pko, iko), (psb, isb)):
+            sh = H[:, base:base + R5]
+            sh = sh / np.maximum(sh.sum(1, keepdims=True), 1e-12)
+            s1 = np.clip(sh[:, 0], 1e-6, 1 - 1e-6)
+            s1n = sig(logit(s1) + a_r1)
+            rest = sh[:, 1:] * ((1 - s1n) / np.maximum(1 - s1, 1e-12))[:, None]
+            out[:, base] = mass * s1n
+            out[:, base + 1:base + R5] = mass[:, None] * rest
+        out[:, ide] = pde * (1 - draw_c)
+        out[:, I_DRAW] += pde * draw_c
+    return out
+
+
+def split_inputs(P6w, H, R):
+    """Per-fight mixture components for the three tracked splits: p_i(a) = sum_j W_ij sigmoid(Z_ij + a).
+    fin: finish vs decision (draws count as decision); ko: KO vs SUB given a finish; r1: round 1 given a finish."""
+    pa = P6w[:, :3].sum(1)
+    out = {}
+    fA = (P6w[:, 0] + P6w[:, 1]) / np.maximum(P6w[:, :3].sum(1), 1e-12)
+    fB = (P6w[:, 5] + P6w[:, 4]) / np.maximum(P6w[:, 3:].sum(1), 1e-12)
+    out["fin"] = (np.stack([pa, 1 - pa], 1), logit(np.stack([fA, fB], 1)))
+    kA = P6w[:, 0] / np.maximum(P6w[:, 0] + P6w[:, 1], 1e-12)
+    kB = P6w[:, 5] / np.maximum(P6w[:, 5] + P6w[:, 4], 1e-12)
+    wA, wB = P6w[:, 0] + P6w[:, 1], P6w[:, 5] + P6w[:, 4]
+    s = np.maximum(wA + wB, 1e-12)
+    out["ko"] = (np.stack([wA / s, wB / s], 1), logit(np.stack([kA, kB], 1)))
+    cells = []
+    Wr = []
+    for j, base in ((0, I_XKO), (1, I_XSUB), (5, I_YKO), (4, I_YSUB)):
+        sh = H[:, base:base + R5]
+        sh = sh / np.maximum(sh.sum(1, keepdims=True), 1e-12)
+        cells.append(sh[:, 0])
+        Wr.append(P6w[:, j])
+    Wr = np.stack(Wr, 1)
+    Wr = Wr / np.maximum(Wr.sum(1, keepdims=True), 1e-12)
+    out["r1"] = (Wr, logit(np.stack(cells, 1)))
+    return out
+
+
+def split_targets(y):
+    fin_obs = (y >= 0) & (y != I_DRAW) & (y != I_XDEC) & (y != I_YDEC)
+    ok = y >= 0
+    is_ko = ((y >= I_XKO) & (y < I_XKO + R5)) | ((y >= I_YKO) & (y < I_YKO + R5))
+    rr = np.where(fin_obs, y % R5, -1)
+    return {"fin": (ok, fin_obs.astype(float)), "ko": (fin_obs, is_ko.astype(float)),
+            "r1": (fin_obs, (rr == 0).astype(float))}
+
+
+def mix_p(W, Z, a):
+    s = sig(Z + a)
+    p = (W * s).sum(1)
+    dp = (W * s * (1 - s)).sum(1)
+    return np.clip(p, 1e-9, 1 - 1e-9), dp
+
+
+def solve_offset(W, Z, yv, wt, prec, mean0=0.0, a0=0.0, it=8):
+    """argmax_a sum wt * Bernoulli loglik(y | p(a)) - prec/2 (a - mean0)^2 (Fisher-scoring Newton)."""
+    a = a0
+    if len(yv) == 0 or wt.sum() <= 0:
+        return mean0
+    for _ in range(it):
+        p, dp = mix_p(W, Z, a)
+        g = (wt * (yv - p) * dp / (p * (1 - p))).sum() - prec * (a - mean0)
+        h = (wt * dp * dp / (p * (1 - p))).sum() + prec
+        step = g / h
+        a += float(np.clip(step, -1, 1))
+        if abs(step) < 1e-7:
+            break
+    return a
+
+
+def info_at(W, Z, yv, a):
+    p, dp = mix_p(W, Z, a)
+    return (yv - p) * dp / (p * (1 - p)), dp * dp / (p * (1 - p))
+
+
+def track_split(day, vint, event, W, Z, yv, obs, cfg, scope=None, brk=()):
+    """Walk-forward offsets for one split. Returns, for every row, the offset used to predict it (from rows on
+    strictly earlier days whose split outcome is observed). cfg: {"fam": "ew", "h", "n0", "rho"} or
+    {"fam": "kal", "q", "se", "rho", "vb"} or {"fam": "none"}. Vintage: rows predicted by an older model vintage than
+    the row being predicted get weight rho^(age) (EW); the Kalman state is multiplied by rho at each refit.
+    scope: optional integer group per row (format or division); its offset = league offset + a deviation shrunk to 0
+    with precision cfg["n0s"] * 0.2 (EW family only)."""
+    n = len(day)
+    off = np.zeros(n)
+    if cfg["fam"] == "none":
+        return off
+    u = np.unique(day)
+    fam = cfg["fam"]
+    rho = cfg.get("rho", 1.0)
+    if fam == "ew":
+        lam = math.log(2) / (cfg["h"] * YEAR_D)
+        prec = cfg["n0"] * 0.2
+        a_prev = 0.0
+        hist = np.zeros(n, bool)
+        prev_a_s = {}
+        for d in u:
+            rows = np.where(day == d)[0]
+            hi = np.where(hist)[0]
+            if len(hi):
+                wt = np.exp(-lam * (d - day[hi]))
+                vnow = vint[rows].max()
+                age = np.maximum(vnow - vint[hi], 0)
+                wt = wt * np.power(rho, age) if rho < 1 else wt
+                keep = wt > 1e-4
+                hi, wt = hi[keep], wt[keep]
+                a = solve_offset(W[hi], Z[hi], yv[hi], wt, prec, 0.0, a_prev)
+                a_prev = a
+                off[rows] = a
+                if scope is not None:
+                    prec_s = cfg["n0s"] * 0.2
+                    for g in np.unique(scope[rows]):
+                        m = scope[hi] == g
+                        key = int(g)
+                        a_s = solve_offset(W[hi][m], Z[hi][m], yv[hi][m], wt[m], prec_s, a, prev_a_s.get(key, a))
+                        prev_a_s[key] = a_s
+                        off[rows[scope[rows] == g]] = a_s
+            hist[rows[obs[rows]]] = True
+        return off
+    if fam == "kal":
+        q, se, vb = cfg["q"], cfg["se"], cfg.get("vb", 0.0)
+        P0 = cfg.get("P0", 0.05)
+        a, P = 0.0, P0
+        last = None
+        v_cur = None
+        bdays = sorted(brk)
+        bi = 0
+        for d in u:
+            rows = np.where(day == d)[0]
+            if last is not None:
+                P += q * (d - last) / YEAR_D
+            while bi < len(bdays) and bdays[bi] <= d:
+                P += vb
+                bi += 1
+            vnow = vint[rows].max()
+            if v_cur is not None and vnow > v_cur:
+                a = rho * a
+                P = rho * rho * P + (1 - rho * rho) * P0
+            v_cur = vnow if v_cur is None else max(v_cur, vnow)
+            off[rows] = a
+            ro = rows[obs[rows]]
+            for ev in np.unique(event[ro]):
+                ii = ro[event[ro] == ev]
+                g, h = info_at(W[ii], Z[ii], yv[ii], a)
+                G, Hh = g.sum(), h.sum()
+                if Hh <= 0:
+                    continue
+                Rv = 1.0 / Hh + se * se
+                K = P / (P + Rv)
+                a = a + K * (G / Hh)
+                P = (1 - K) * P
+            last = d
+        return off
+    raise ValueError(fam)
+
+
+def method_grid():
+    G = [{"fam": "none"}]
+    for h in (0.25, 0.5, 1.0, 2.0, 4.0):
+        for n0 in (50, 200, 800):
+            for rho in (0.0, 0.5, 1.0):
+                G.append({"fam": "ew", "h": h, "n0": n0, "rho": rho})
+    for q in (0.005, 0.02, 0.08):
+        for se in (0.0, 0.1):
+            for rho in (0.0, 0.5, 1.0):
+                G.append({"fam": "kal", "q": q, "se": se, "rho": rho})
+    return G
+
+
+def mcfg_name(c):
+    if c["fam"] == "none":
+        return "none"
+    keys = [k for k in ("h", "n0", "q", "se", "rho", "vb", "n0s", "scope") if k in c]
+    return c["fam"] + "(" + ",".join("%s=%s" % (k, c[k]) for k in keys) + ")"
+
+
+SPLIT_METRIC = {"fin": "finish", "ko": "ko_vs_sub", "r1": "round_given_fin"}
+SPLIT_BREAK_TARGET = {"fin": "dec", "ko": "ko", "r1": "r1_fin3"}
+
+
+def method_setup():
+    import methodround as MR
+    b = load("base.pkl")
+    T, y, H, P6w = b["T"], b["y"], b["H"], b["P6w"]
+    m = (b["vint"] >= BASE_FOLDS[0]) & (T["date"] < VAULT).to_numpy()
+    idx = np.where(m)[0]
+    T = T.iloc[idx].reset_index(drop=True)
+    o = np.argsort(T["date"].map(dt.date.toordinal).to_numpy(), kind="stable")
+    T = T.iloc[o].reset_index(drop=True)
+    idx = idx[o]
+    S = {"T": T, "y": y[idx], "H": H[idx], "P6w": P6w[idx], "vint": b["vint"][idx], "draw_c": b["draw_c"],
+         "pwin": b["pwin"][idx], "MR": MR}
+    S["day"] = T["date"].map(dt.date.toordinal).to_numpy()
+    S["year"] = T["year"].to_numpy()
+    S["event"] = T["event"].to_numpy()
+    S["r5"] = (T["rounds"].to_numpy() == 5).astype(int)
+    S["div"] = np.array([DIV_IX.get(d, DIV_ALL) for d in T["division"]])
+    S["split_in"] = split_inputs(S["P6w"], S["H"], None)
+    S["split_y"] = split_targets(S["y"])
+    return S
+
+
+def losses_for(S, offs, rows=None):
+    MR = S["MR"]
+    J = adjust_joint(S["P6w"], S["H"], S["draw_c"], offs["fin"], offs["ko"], offs["r1"])
+    L = MR.per_fight_losses(J, S["y"], S["T"])
+    if rows is not None:
+        L = {k: v[rows] for k, v in L.items()}
+    return L, J
+
+
+def run_split(S, split, cfg, scope_kind=None):
+    W, Z = S["split_in"][split]
+    obs, yv = S["split_y"][split]
+    brk = ()
+    if cfg.get("vb"):
+        tk = SPLIT_BREAK_TARGET[split]
+        brk = [BREAK_DAYS[b["key"]] for b in BREAKS if tk in b["targets"] or (split == "r1" and "r1_fin5" in b["targets"])]
+    if split == "r1":
+        # round shape drifts by format: separate trackers for 3- and 5-round bouts
+        off = np.zeros(len(yv))
+        for f in (0, 1):
+            m = S["r5"] == f
+            off[m] = track_split(S["day"][m], S["vint"][m], S["event"][m], W[m], Z[m], yv[m], obs[m], cfg, brk=brk)
+        return off
+    scope = None
+    if scope_kind == "format":
+        scope = S["r5"]
+    elif scope_kind == "division":
+        scope = S["div"]
+    return track_split(S["day"], S["vint"], S["event"], W, Z, yv, obs, cfg, scope=scope, brk=brk)
+
+
+def stage_method(args):
+    """Rolling-origin CV (annual folds 2016-2023, each fold's S2+ml2win fit on earlier years) of every offset tracker
+    per split, then the nested forward-chained gate on 2021-2023 (config per split chosen on 2016..Y-1, 'none'
+    unless it gains > 0.0005 on the split's own metric), primary 7-bin (fin+ko) and joint (r1). 2024-25 rows are
+    never scored here."""
+    S = method_setup()
+    MR = S["MR"]
+    yr = S["year"]
+    cvm = (yr >= M_CV[0]) & (yr <= M_CV[-1])
+    zero = np.zeros(len(yr))
+    L0, J0 = losses_for(S, {"fin": zero, "ko": zero, "r1": zero})
+    # corner symmetry of the adjustment
+    rng = np.random.default_rng(5)
+    t_off = {k: rng.normal(0, 0.3, len(yr)) for k in ("fin", "ko", "r1")}
+    Ja = adjust_joint(S["P6w"], S["H"], S["draw_c"], t_off["fin"], t_off["ko"], t_off["r1"])
+    Jb = adjust_joint(S["P6w"][:, ::-1], MR.mirror_cells(S["H"]), S["draw_c"], t_off["fin"], t_off["ko"], t_off["r1"])
+    sym = float(np.abs(MR.mirror_cells(Jb) - Ja).max())
+    assert sym < 1e-12, sym
+    dc = S["draw_c"]
+    paA = Ja[:, I_XKO:I_XSUB + R5].sum(1) + Ja[:, I_XDEC] / (1 - dc)
+    assert np.abs(paA - S["P6w"][:, :3].sum(1)).max() < 1e-9, "P(A wins) moved"
+    log("method: corner-swap check max |mirror(adjust(swap)) - adjust| = %.1e; six-class P(A wins) unchanged" % sym)
+    grid = method_grid()
+    variants = []
+    for split in ("fin", "ko", "r1"):
+        for c in grid:
+            variants.append((split, c, None))
+        # scopes and breaks on top of a few base configs (filled after the plain grid is scored)
+    res = {}
+    offs = {}
+    for split, c, sk in variants:
+        nm = split + ":" + mcfg_name(c) + ("" if sk is None else "+" + sk)
+        o = run_split(S, split, c, sk)
+        offs[nm] = o
+        res[nm] = split_scores(S, split, o, L0)
+    # scopes (fin: format / division; ko: division) and breaks on the best plain EW / Kalman per split
+    extra = []
+    for split in ("fin", "ko", "r1"):
+        for fam in ("ew", "kal"):
+            cand = [k for k in res if k.startswith(split + ":" + fam)]
+            best = min(cand, key=lambda k: res[k]["cv"])
+            c = dict(next(cc for (sp, cc, sk) in variants if sp == split and split + ":" + mcfg_name(cc) == best))
+            if fam == "kal":
+                for vb in (0.02, 0.1):
+                    extra.append((split, dict(c, vb=vb), None))
+            elif split in ("fin", "ko"):
+                for n0s in (200, 800):
+                    extra.append((split, dict(c, n0s=n0s), "division"))
+                if split == "fin":
+                    for n0s in (200, 800):
+                        extra.append((split, dict(c, n0s=n0s), "format"))
+    for split, c, sk in extra:
+        nm = split + ":" + mcfg_name(c) + ("" if sk is None else "+" + sk)
+        o = run_split(S, split, c, sk)
+        offs[nm] = o
+        res[nm] = split_scores(S, split, o, L0)
+    log("method: %d split variants scored" % len(res))
+    for split in ("fin", "ko", "r1"):
+        ks = sorted([k for k in res if k.startswith(split + ":")], key=lambda k: res[k]["cv"])
+        log("method: %s best 5: %s" % (split, "; ".join("%s %.5f" % (k.split(":", 1)[1], res[k]["cv"]) for k in ks[:5])))
+        log("method: %s none %.5f" % (split, res[split + ":none"]["cv"]))
+    # nested forward-chained gate 2021-2023
+    gate = {"years": {}, "picks": {}}
+    nested_off = {k: np.zeros(len(yr)) for k in ("fin", "ko", "r1")}
+    for Y in GATE_YEARS:
+        trs = [y_ for y_ in M_CV if y_ < Y]
+        picks = {}
+        for split in ("fin", "ko", "r1"):
+            ks = [k for k in res if k.startswith(split + ":")]
+            def tot(k):
+                return sum(res[k]["sum_by_year"][y_] for y_ in trs) / sum(res[k]["n_by_year"][y_] for y_ in trs)
+            bestk = min(ks, key=tot)
+            gain = tot(bestk) - tot(split + ":none")
+            pick = bestk if gain < -SEL_MIN else split + ":none"
+            picks[split] = {"pick": pick, "train_gain": gain}
+            m = yr == Y
+            nested_off[split][m] = offs[pick][m]
+        gate["picks"][Y] = picks
+        log("method: gate %d picks %s" % (Y, {k: (v["pick"].split(":", 1)[1], round(v["train_gain"], 5))
+                                              for k, v in picks.items()}))
+    gm = np.isin(yr, GATE_YEARS)
+    Ln, Jn = losses_for(S, nested_off)
+    gate["paired"] = paired(S, Ln, L0, gm)
+    g7 = gate["paired"]["bin7"]["diff"]
+    gj = gate["paired"]["joint"]["diff"]
+    gate["pass_bin7"] = bool(g7 < -SEL_MIN)
+    gate["pass_joint"] = bool(gj < -SEL_MIN)
+    log("method: GATE 2021-23 nested vs static: bin7 %+.5f %s | joint %+.5f %s | method3 %+.5f | finish %+.5f" % (
+        g7, gate["paired"]["bin7"]["ci95"], gj, gate["paired"]["joint"]["ci95"], gate["paired"]["method3"]["diff"],
+        gate["paired"]["finish"]["diff"]))
+    # final choice on 2016-2023 (what the 2024-25 confirmation would use)
+    final = {}
+    for split in ("fin", "ko", "r1"):
+        ks = [k for k in res if k.startswith(split + ":")]
+        bestk = min(ks, key=lambda k: res[k]["cv"])
+        gain = res[bestk]["cv"] - res[split + ":none"]["cv"]
+        final[split] = {"pick": bestk if gain < -SEL_MIN else split + ":none", "best": bestk, "cv_gain": gain}
+    fo = {k: offs[final[k]["pick"]] for k in final}
+    Lf, Jf = losses_for(S, fo)
+    cvp = paired(S, Lf, L0, cvm)
+    # decision-share calibration by year (mean predicted vs actual), static vs nested / final
+    dcal = dec_calibration(S, {"static": J0, "nested": Jn, "final_cv": Jf}, years=M_CV)
+    out = {"res": res, "gate": gate, "final": final, "cv_paired_final": cvp, "dec_cal": dec_calibration_rows(dcal),
+           "sym_check": sym, "n_cv": int(cvm.sum()), "n_gate": int(gm.sum()),
+           "static_cv": {k: float(np.nanmean(L0[k][cvm])) for k in M_METRICS},
+           "static_gate": {k: float(np.nanmean(L0[k][gm])) for k in M_METRICS}}
+    jdump(out, "method.json")
+    save({"offs": {k: offs[k] for k in set([final[s]["pick"] for s in final] + [final[s]["best"] for s in final])},
+          "nested_off": nested_off}, "method_offs.pkl")
+    log("method: final (chosen on 2016-2023): %s" % {k: v["pick"].split(":", 1)[1] for k, v in final.items()})
+
+
+def split_scores(S, split, o, L0):
+    z = np.zeros(len(o))
+    offs = {"fin": z, "ko": z, "r1": z}
+    offs[split] = o
+    L, _ = losses_for(S, offs)
+    met = SPLIT_METRIC[split]
+    yr = S["year"]
+    v = L[met]
+    sb, nb = {}, {}
+    for Y in M_CV:
+        m = (yr == Y) & np.isfinite(v)
+        sb[Y] = float(v[m].sum())
+        nb[Y] = int(m.sum())
+    cvm = (yr >= M_CV[0]) & (yr <= M_CV[-1]) & np.isfinite(v)
+    r = {"cv": float(v[cvm].mean()), "sum_by_year": sb, "n_by_year": nb}
+    for k in ("bin7", "joint", "method3"):
+        mm = (yr >= M_CV[0]) & (yr <= M_CV[-1])
+        r[k] = float(np.nanmean(L[k][mm]))
+    return r
+
+
+def paired(S, LA, LB, mask, metrics=M_METRICS):
+    MR = S["MR"]
+    tabs = {"A": {k: np.asarray(LA[k], float)[mask] for k in metrics},
+            "B": {k: np.asarray(LB[k], float)[mask] for k in metrics}}
+    _, st = MR.cluster_bootstrap(tabs, S["event"][mask])
+    return MR.paired_diff(tabs["A"], tabs["B"], st, metrics)
+
+
+def dec_calibration(S, Js, years):
+    yr = S["year"]
+    y = S["y"]
+    ok = y >= 0
+    isdec = ((y == I_XDEC) | (y == I_YDEC) | (y == I_DRAW)).astype(float)
+    isko = (((y >= I_XKO) & (y < I_XKO + R5)) | ((y >= I_YKO) & (y < I_YKO + R5))).astype(float)
+    out = {}
+    for Y in years:
+        m = ok & ((yr == Y) if Y < 2024 else (yr >= 2024))
+        row = {"n": int(m.sum()), "actual_dec": float(isdec[m].mean()), "actual_ko": float(isko[m].mean())}
+        for k, J in Js.items():
+            row["pred_dec_" + k] = float((J[m, I_XDEC] + J[m, I_YDEC] + J[m, I_DRAW]).mean())
+            row["pred_ko_" + k] = float((J[m, I_XKO:I_XKO + R5].sum(1) + J[m, I_YKO:I_YKO + R5].sum(1)).mean())
+        out[int(Y)] = row
+    return out
+
+
+def dec_calibration_rows(d):
+    return d
+
+
+STAGES["method"] = stage_method
+
+
 # ====================================================================== main
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
