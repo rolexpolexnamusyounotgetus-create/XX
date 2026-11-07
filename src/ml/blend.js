@@ -654,8 +654,12 @@
     if (!stk) throw new Error("FightBlend.predict (backtest): the stacker in opts.stack could not be loaded");
     var ft = fitThroughFor(stk.fitThrough, kind);
     if (!ft) throw new Error("FightBlend.predict (backtest): the stacker carries no fit_through (meta.fit_info or doc.fit_through)");
-    if (ft > BACKTEST_STACK_MAX || ft >= date) throw new Error("FightBlend.predict (backtest): the stacker is fit through " + ft +
-      "; a backtest stacker must be fit on 2023 or earlier and before the fight (" + date + ")");
+    if (ft > BACKTEST_STACK_MAX) throw new Error("FightBlend.predict (backtest): the stacker is fit through " + ft +
+      "; a backtest stacker must be fit on 2023 or earlier");
+    // a train-window fight inside the stacker's fit (opts.inSample, e.g. a pre-2024 stacker on a 2019-2023 fight) is allowed
+    // only as an explicit in-sample diagnostic; validation fights always need a stacker fit before them
+    if (ft >= date && !(opts.inSample === true && date < "2024-01-01")) throw new Error("FightBlend.predict (backtest): the stacker is fit through " +
+      ft + ", which contains this fight (" + date + "); pass a stacker fit before it (per-year exports) or opts.inSample = true for a train-window diagnostic");
     if (opts.mrCells === undefined) throw new Error("FightBlend.predict (backtest): pass walk-forward method/round cells in opts.mrCells " +
       "(methodround.json fights[id].S, fit through the previous year; or false for simulator cells only); the loaded S model is fit through 2026-10");
     if (opts.mrCells && opts.mrFitThrough && opts.mrFitThrough >= date) throw new Error("FightBlend.predict (backtest): method/round cells fit through " +
@@ -814,7 +818,8 @@
       winner: source === "ml2" ? "ml2" : "stack",
       stack: stk ? { block: block, regime: r ? r.regime || null : null, fitThrough: stackFT, built: stk.built, from: (opts.stack || opts.moe) ? "opts" : "loaded" } : null,
       ml2: ml2 ? { pA: ml2.pA, pMR: ml2.pMR, stacks: ml2.stacks || null, stack: ml2.stack || null, p: isNum(ml2.p) ? ml2.p : null, note: ml2.note || null } : null,
-      backtest: BT ? { date: date, stackFitThrough: stackFT, mrCells: opts.mrCells ? "passed" : "none", mrFitThrough: opts.mrFitThrough || null } : null,
+      backtest: BT ? { date: date, stackFitThrough: stackFT, inSample: !!(stackFT && date && stackFT >= date), mrCells: opts.mrCells ? "passed" : "none",
+        mrFitThrough: opts.mrFitThrough || null } : null,
       cells: cells, R: R, marginals: mg, bins7: mg.bins7,
       methodRound: { weight: w, pool: cfg.mrPool || "linear", variant: mrVariant, simRescaled: simR, mrRescaled: mrR },
       sim: { p: sim.p, pA: sim.pA, pB: sim.pB, pD: sim.pD, cells: sim.cells, n: N, runs: sim.runs, avgMin: sim.avgMin, rates: sim.rates },
