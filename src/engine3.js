@@ -15,18 +15,37 @@
    submissions, knockdowns with a follow-up sequence, hurt states, standing / ground-and-pound / leg TKOs,
    stamina and pace, three judges (v4: EM round-winner weights with shared + individual noise and a
    margin-based 10-8 rule, all fit on 2019-2023 judges' rounds), and doctor / corner stoppages.
+   v5 (in progress; the merge log is docs/CHANGELOG.md "v5 merge log"): each v5 component sits behind its own
+   params.components.<name> flag, and every flag-off path reproduces v4.0.0 for fixed seeds. Step 1, components.v401:
+   v4.0.1's train-only fixes (pre-2024 EM judging weights, point deductions, learned-path levels, the cumulative
+   takedown cap, KO/TKO composition targets from 2019-2023 fights), one sub-flag each (see resolveParams below).
+   Step 2: components.durability (applyDurability) and components.dynamics (dynTables). Step 3: components.styles_sos
+   (src/styles_sos.js through the public matchup wrapper at the end; strength of schedule on, active only with opts.sos),
+   components.officials (officialsFor / officialsRound; off, opt-in per call) and components.realism_sens
+   (realismFactors; off) with FightEngine.sensitivity / rateSd (tornado data, common random numbers). Step 4: the learned
+   stat-line path and newcomer priors: components.embed (embedTargets: the embedding blend of the learned targets),
+   components.oppadj (oppadjTargets: opponent adjustment of the learned targets; off, exclusive with styles_sos sos) and
+   components.preufc (applyPreUFC: pre-UFC finish-odds priors for fighters with 0-3 UFC fights). Step 5: the final
+   prediction package (the marked block at the end of this file, src/ml/blend.js: the ML v2 package's winner blend by
+   opts.lineKind, rescaled / pooled method x round, anchor mode, interval); it never touches matchup / simulate /
+   summarize / explain.
 
    UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM; all randomness comes from makeRng(seed). */
 (function (root, factory) {
-  var FP = root && root.FightParams, MLR = root && root.MLRates;
-  if (!FP && typeof require === "function") { try { FP = require("./params3.js"); } catch (e) { FP = null; } }
-  if (!MLR && typeof require === "function") { try { MLR = require("./ml/mlrates.js"); } catch (e) { MLR = null; } }
+  // v5.0.1: in Node the sibling files win (require first, the global only when the require fails), so a process that loaded
+  // another version's params or MLRates onto the global object cannot run this engine on them; in a browser / Web Worker
+  // (no require) the globals are the only source. matchupBase also refuses params whose major version differs from VERSION.
+  var FP = null, MLR = null;
+  if (typeof require === "function") { try { FP = require("./params3.js"); } catch (e) { FP = null; } }
+  if (typeof require === "function") { try { MLR = require("./ml/mlrates.js"); } catch (e) { MLR = null; } }
+  if (!FP) FP = (root && root.FightParams) || null;
+  if (!MLR) MLR = (root && root.MLRates) || null;
   var api = factory(FP, root, MLR);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FightEngine = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (FP0, root, MLR0) {
   "use strict";
-  var VERSION = "4.0.0";
+  var VERSION = "5.0.1";   // v5.0.1: v5 (5.0.0, the v5 merge on v4.0.0 + Calibrate A's flags + Calibrate B's levels) + the v5 review's fixes (input guards, dates, rounds, judges, params loading, durability fallback level, dynamics noise and the knockdown level chosen on train); docs/CHANGELOG.md v5.0.1
 
   // Sum keys (spec order; profiles may carry their own order in meta.keys / prof.keys)
   var KEYS = ["min", "n", "rds", "d_att", "d_lnd", "c_att", "c_lnd", "g_att", "g_lnd", "h_att", "h_lnd", "b_att", "b_lnd",
@@ -64,7 +83,62 @@
   function pw(x, e) { return e === 1 ? x : Math.pow(x, e); }
   function lnorm(rng, sd) { return sd > 0 ? Math.exp(sd * rng.normal() - 0.5 * sd * sd) : (rng.normal(), 1); }
   function getParams() { return FP0 || (root && root.FightParams) || null; }
+  // ---- v5.0.1 input guards (v5 review): one bad record, knob or date must fail loudly, never hang or leak
+  // a finite number (strings that parse count; null, "", NaN, +-Infinity do not)
+  function finNum(v) { return v != null && v !== "" && typeof v !== "boolean" && isFinite(+v); }
+  // a finite positive number (multipliers, rates that must be > 0)
+  function posNum(v) { return finNum(v) && +v > 0; }
+  function majorOf(v) { var m = /^\s*(\d+)/.exec(String(v == null ? "" : v)); return m ? +m[1] : null; }
+  // params loaded next to another engine version would silently switch components on or off: refuse a different major
+  function checkParamsVersion(p) {
+    if (!p || p.allowVersionMismatch) return;
+    var a = majorOf(p.version), b = majorOf(VERSION);
+    if (a != null && b != null && a !== b) {
+      throw new Error("FightEngine " + VERSION + ": params version " + p.version + " has a different major version (load this engine's own params3.js)");
+    }
+  }
+  // fight dates: one canonical 'YYYY-MM-DD' (the leak guards compare dates as strings). Accepts 'YYYY-MM-DD' (optionally with a
+  // time part), 'YYYY/MM/DD', a Date object and a millisecond timestamp; anything else throws (a US-style '6/15/2019' compared
+  // as a string sorts after '2026-...' and let the live-fit rosters into a 2019 bout).
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function isoOfTime(ms) { var d = new Date(ms); return d.getUTCFullYear() + "-" + pad2(d.getUTCMonth() + 1) + "-" + pad2(d.getUTCDate()); }
+  function normDate(d) {
+    if (d == null || d === "") return null;
+    var s, mt;
+    if (d instanceof Date || Object.prototype.toString.call(d) === "[object Date]") {
+      if (!isFinite(d.getTime())) throw new Error("FightEngine: invalid Date for opts.date");
+      return isoOfTime(d.getTime());
+    }
+    if (typeof d === "number") {
+      if (!isFinite(d)) throw new Error("FightEngine: opts.date timestamp is not finite");
+      return isoOfTime(d);
+    }
+    s = String(d).trim();
+    mt = /^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})(?:$|[T ])/.exec(s);
+    if (mt) {
+      var y = +mt[1], mo = +mt[2], da = +mt[3];
+      var t = Date.UTC(y, mo - 1, da), chk = new Date(t);
+      if (mo >= 1 && mo <= 12 && da >= 1 && da <= 31 && chk.getUTCMonth() === mo - 1 && chk.getUTCDate() === da) return y + "-" + pad2(mo) + "-" + pad2(da);
+    }
+    throw new Error("FightEngine: opts.date '" + s.slice(0, 40) + "' is not a 'YYYY-MM-DD' date, a Date or a millisecond timestamp");
+  }
+  // scheduled rounds: an integer 1..5 (UFC formats are 3 and 5); the title default only when opts.rounds is not given
+  function normRounds(r, title) {
+    if (r === undefined || r === null) return title ? 5 : 3;
+    var n = finNum(r) ? Math.round(+r) : NaN;
+    if (!(n >= 1 && n <= 5)) throw new Error("FightEngine: opts.rounds must be an integer from 1 to 5 (got " + String(r).slice(0, 20) + ")");
+    return n;
+  }
+  // fight-dynamics component (research/model_dynamics.md E1-E11): on when params.components.dynamics is true and the
+  // params carry the dyn block; off reproduces the engine before the component bit for bit
+  function dynOn(p) { return !!(p && p.components && p.components.dynamics && p.dyn); }
   function getML() { return MLR0 || (root && root.MLRates) || null; }
+  var SS0 = null; if (typeof require === "function") { try { SS0 = require("./styles_sos.js"); } catch (e) { SS0 = null; } }  // [styles_sos]
+  function getSS() { return SS0 || (root && root.StylesSOS) || null; }  // [styles_sos]
+  // v5 merge step 4 (components.embed): the embedding evaluator, needed only to compute task predictors from a loaded roster
+  // (loadEmbed); backtests pass precomputed predictors in opts.embed
+  var EMB0 = null; if (typeof require === "function") { try { EMB0 = require("./ml/embed.js"); } catch (e) { EMB0 = null; } }
+  function getEmbMod() { return EMB0 || (root && root.FightEmbed) || null; }
 
   function mergeParams(base, over) {
     var out = {}, k, k2;
@@ -84,6 +158,82 @@
       } else out[k] = o;
     }
     return out;
+  }
+
+  // ------------------------------------------------------------------ components (engine v5)
+  // params.components.<name> switches each v5 component; every flag-off path reproduces engine v4.0.0 exactly for fixed
+  // seeds (tests/test_v401.js for step 1). Flags can be set in params3.js or per call through opts.params.components.
+  // components.v401 (v5 merge step 1): v4.0.1's train-only fixes. v4.0.1's single validation look rejected them as a
+  // bundle by the decision rule (no CI excluded 0), not because they are wrong; v5 carries them, measured inside v5's own
+  // look, and the Calibrate stage keeps each only if it helps in the train leave-one-out. One sub-flag each:
+  //   emJudge    (a) EM round-winner judging weights refit on 2015-2023 cards (tools/judge_em_train.py), with the judges'
+  //                  noise, fight-level share and 10-8 KD term refit on them (tools/judgecal.js, 2019-2023 rounds) and the
+  //                  10-8 threshold t108 re-levelled with them (tools/v4_levels.js, train fights)
+  //   deductions (b) point deductions judge.ded / judge.ded2 (tools/judgecal.js, 2019-2023 decision rounds; drawn after
+  //                  the last round, so a fight is unchanged up to the cards)
+  //   mlLevels   (c) learned-path levels mlTdLevel / mlCtrlLevel / mlSubLevel (src/ml/mlrates.js opts.levels) with the
+  //                  companion levels of the same tools/v4_levels.js run: kdScale, kdInstant, kdRefStop, stko, gnpTko,
+  //                  subConvScale
+  //   tdCap      (d) mlMaxRatio caps the cumulative takedown-attempt multiplier and the takedown-odds one (src/ml/mlrates.js
+  //                  opts.cumCap; v4.0.0 capped each of three refit steps, so it compounded past x4 on 20 of 3,998 sides)
+  //   koTargets  (e) the self-calibration's KO/TKO composition targets taken from 2019-2023 fights (tools/ko_composition.py:
+  //                  ground 28.6%, clinch 7.1%, standing without a knockdown 7.2%; v4: 28 / 12.5 / 7 from all years):
+  //                  factors params.v401.koComp on kdScale, kdPos[1] (clinch), gnpTko, stko and, on odds, kdInstant /
+  //                  kdRefStop (tools/v401_kocomp.js, league-average pairs on the train-only priors)
+  // params3.js keeps the flag-on values in the usual fields and v4.0.0's values in params.v401.off. A sub-flag that is off
+  // puts those back BEFORE the opts.params overrides, so an explicit override always wins. koTargets multiplies AFTER the
+  // overrides: the stored fields stay the pre-(e) levels, and a tuner that moves them through opts.params still gets the
+  // factor (tools/v4_levels.js --write then writes pre-(e) levels, consistent with what it fitted).
+  // components.v401: true / false switches all five; an object switches each sub-flag (on unless it is false).
+  var V401_SUB = ["emJudge", "deductions", "mlLevels", "tdCap", "koTargets"];
+  function v401Flags(p) {
+    var c = p && p.components ? p.components.v401 : null, o = {}, i;
+    for (i = 0; i < V401_SUB.length; i++) o[V401_SUB[i]] = c === true || (!!c && typeof c === "object" && c[V401_SUB[i]] !== false);
+    return o;
+  }
+  // base params (FightParams) + per-call overrides -> the parameter set a matchup runs on
+  // [calB] components.calB (v5 Calibrate B, tools/v5_calB_levels.js; train 2019-2023 only): the joint level pass of the knockdown /
+  // [calB] finish / stoppage / judging levels. params.calB.set holds the new values (dyn.kdLevel3 / kdLevel5 / convLevel / stkoScale
+  // [calB] / gnpScale, judge.t108); the usual fields keep the values before the pass, so calB off reproduces the engine before
+  // [calB] Calibrate B exactly. The set goes in BEFORE the v401 put-backs and the opts.params overrides: a v401 sub-flag that is
+  // [calB] off still restores v4.0.0's value of a field it owns (judge.t108 under emJudge), and an explicit override always wins.
+  // [v501] components.v501 (engine 5.0.1, the v5 review's behaviour fixes; docs/CHANGELOG.md v5.0.1): params.v501.set[sub] holds
+  // [v501] the new values of each sub-flag; the usual fields keep 5.0.0's values, so v501 off (or a sub-flag off) reproduces engine
+  // [v501] 5.0.0 for valid inputs bit for bit (tests/test_v501.js against versions/v5-rejected/). The sets go in after the calB set
+  // [v501] and BEFORE the v401 put-backs and the opts.params overrides, so an explicit override always wins. true / false switches
+  // [v501] every sub-flag; an object switches each (on unless it is false).
+  var V501_SUB = ["durFallback", "dynNoise", "kdBase", "levels"];
+  function v501Flags(p) {
+    var c = p && p.components ? p.components.v501 : null, o = {}, i;
+    for (i = 0; i < V501_SUB.length; i++) o[V501_SUB[i]] = c === true || (!!c && typeof c === "object" && c[V501_SUB[i]] !== false);
+    return o;
+  }
+  function resolveParams(base, over) {
+    var p = mergeParams(base, over), fl = v401Flags(p), OFF = base.v401 && base.v401.off, i;
+    var CBS = compOn(p, "calB") && base.calB && base.calB.set ? base.calB.set : null, b0 = base;   // [calB]
+    if (CBS) { b0 = mergeParams(base, CBS); p = mergeParams(b0, over); }                              // [calB]
+    var f5 = v501Flags(p), S5 = base.v501 && base.v501.set, set5 = false;                            // [v501]
+    if (S5) for (i = 0; i < V501_SUB.length; i++) if (f5[V501_SUB[i]] && S5[V501_SUB[i]]) { b0 = mergeParams(b0, S5[V501_SUB[i]]); set5 = true; }
+    if (set5) p = mergeParams(b0, over);                                                              // [v501]
+    if (OFF) {
+      var back = null;
+      for (i = 0; i < V401_SUB.length; i++) {
+        var s = V401_SUB[i];
+        if (fl[s] || !OFF[s]) continue;
+        back = back ? mergeParams(back, OFF[s]) : mergeParams({}, OFF[s]);
+      }
+      if (back) p = mergeParams(mergeParams(b0, back), over);   // [calB] b0 (was base): the calB set under the put-backs
+    }
+    var KC = fl.koTargets && base.v401 && base.v401.koComp;
+    if (KC) {
+      if (KC.kdScale) p.kdScale *= KC.kdScale;
+      if (KC.kdInstant) p.kdInstant = prob(odds(p.kdInstant) * KC.kdInstant);
+      if (KC.kdRefStop) p.kdRefStop = prob(odds(p.kdRefStop) * KC.kdRefStop);
+      if (KC.gnpTko) p.gnpTko *= KC.gnpTko;
+      if (KC.stko) p.stko *= KC.stko;
+      if (KC.kdClinch && p.kdPos) { p.kdPos = p.kdPos.slice(); p.kdPos[1] *= KC.kdClinch; }
+    }
+    return p;
   }
 
   function sums(prof) {
@@ -223,13 +373,15 @@
     if (pc && pwt) for (r = 3; r < 5; r++) if (pc[r] != null && pwt[r] > 0) five = true;
     var lc = five ? p.paceLnd5 : p.paceLnd3;
     var rho = [1, 1, 1, 1, 1], rw = [0, 0, 0, 0, 0];
+    var kP = dynOn(p) ? p.dyn.kPace : p.kPace;     // dynamics E10: per-round pace ratio prior strength (train-chosen 45)
     for (r = 1; r < 5; r++) {
       if (pc && pwt && pc[r] != null && pwt[r] > 0 && r < lc.length) {
         var ratio = clip(pc[r] / lc[r], 0.3, 3);
-        rho[r] = (ratio * pwt[r] + p.kPace) / (pwt[r] + p.kPace); rw[r] = pwt[r];
+        rho[r] = (ratio * pwt[r] + kP) / (pwt[r] + kP); rw[r] = pwt[r];
       } else if (r >= 1) { rho[r] = 1 + 0.5 * (rho[r - 1] - 1); }
     }
     R.rho = rho; R.rhoW = rw;
+    if (p.components && p.components.styles_sos && (prof.oppadj || prof.slug)) { var SSr = getSS(); if (SSr && SSr.oppadjR) SSr.oppadjR(R, prof, p); }  // [styles_sos]
     var cs = 0, cn = 0, lastR = Math.max(2, nR || 3);
     for (r = 1; r < Math.min(5, lastR); r++) { cs += rho[r]; cn++; }
     R.cardio = cn ? cs / cn : 1;
@@ -297,27 +449,56 @@
     return x;
   }
 
+  // ------------------------------------------------------------------ components (params.components.<name>: true = on)
+  function compOn(p, name) { return !!(p && p.components && p.components[name]); }
+
+  // realism_sens (v5 merge step 3; OFF: components.realism_sens false): per-division and per-format correction factors fit on
+  // 2019-2023 walk-forward backtest fights where the engine's simulated base rates miss the real ones (tools/realism.js fit;
+  // empirical-Bayes shrunk toward 1). They multiply the division self-calibration factors (p.div: att, kd, ko, sub, ctrl, td),
+  // so they reach the learned-rate targets too (src/ml/mlrates.js re-levels to the engine's own league expectation, built
+  // with the same factors). Off -> null. A factor counts only when it is a finite positive number (null, "", a negative or 0
+  // is ignored = 1: isFinite(null) is true, so a null meant as "unset" would otherwise zero the lever). The shipped factors
+  // were fit on v4.0.1 final: refit (tools/realism.js fit) on the v5 engine before ever turning the flag on.
+  function realismFactors(p, division, nR) {
+    if (!compOn(p, "realism_sens") || !p.realism) return null;
+    var d = (p.realism.div && p.realism.div[division]) || null, f = (p.realism.fmt && p.realism.fmt[String(nR)]) || null, out = {}, k, n = 0;
+    function ok(v) { return v != null && v !== "" && isFinite(v) && +v > 0; }
+    if (d) for (k in d) if (ok(d[k])) { out[k] = +d[k]; n++; }
+    if (f) for (k in f) if (ok(f[k])) { out[k] = (out[k] != null ? out[k] : 1) * +f[k]; n++; }
+    return n ? out : null;
+  }
+
   // ------------------------------------------------------------------ matchup (v3 rate tables, no learned model)
   function matchupBase(profA, profB, opts) {
     opts = opts || {};
     var base = getParams();
     if (!base) throw new Error("FightEngine: FightParams not loaded (load params3.js first)");
-    var p = mergeParams(base, opts.params);
+    checkParamsVersion(base);                   // v5.0.1: never run on another major version's params
+    // v5.0.1: one canonical date for every leak guard (and for styles_sos, which reads m.opts): a copy of opts carries it
+    var dIn = normDate(opts.date);
+    if (opts.date != null && opts.date !== dIn) { var oc = {}, ok_; for (ok_ in opts) oc[ok_] = opts[ok_]; oc.date = dIn; opts = oc; }
+    var p = resolveParams(base, opts.params);   // v5: components flags (components.v401 sub-flags) applied here
+    oppadjExclusive(p);                         // v5 merge step 4: components.oppadj never stacks with styles_sos sos
     profA = resolve(profA); profB = resolve(profB);
     var division = opts.division || profA.division || profA.home || "Lightweight";
     var P = priorFor(division, opts.priors);
-    var nR = opts.rounds || (opts.title ? 5 : 3);
+    var nR = normRounds(opts.rounds, opts.title);   // v5.0.1: an integer 1..5 (a string '5' leaked into the result; 0 became 3)
     var dv = (p.div && p.div[division]) || {};
-    function dvf(k) { return dv[k] != null ? dv[k] : 1; }
+    var rz = realismFactors(p, division, nR);   // realism_sens component: walk-forward division / format factors, null when off
+    function dvf(k) { var v = dv[k] != null ? dv[k] : 1; return rz && rz[k] != null ? v * rz[k] : v; }
     var L = league(P, p);
     var profs = [profA, profB];
     var R = [fighterRates(profA, P, L, p, nR), fighterRates(profB, P, L, p, nR)];
     var adj = [normAdj(opts.adjA), normAdj(opts.adjB)];
     var jud = opts.judges || {};
-    var date = opts.date || (DB && DB.meta && DB.meta.snapshot) || null;
+    var date = dIn || normDate(DB && DB.meta && DB.meta.snapshot) || null;
     var a = p.combA, b = p.combB, i, j, k;
+    // v5.0.1: a judge power that is not a finite number falls back to the params value (NaN scored every round for B)
     var m = { version: VERSION, A: info(profA), B: info(profB), division: division, rounds: nR, title: !!opts.title, date: date,
-      p: p, P: P, L: L, R: R, adj: adj, judgePower: jud.power != null ? +jud.power : p.judge.power, opts: opts };
+      p: p, P: P, L: L, R: R, adj: adj, judgePower: finNum(jud.power) ? +jud.power : p.judge.power, opts: opts };
+    // the two resolved profiles, for sensitivity() rebuilds (non-enumerable: no effect on the tables, copies or JSON)
+    Object.defineProperty(m, "_src", { value: { A: profA, B: profB }, enumerable: false, writable: true, configurable: true });
+    if (rz) m.realism = rz;
 
     // ---- strike attempt rates
     m.dRate = [0, 0]; m.cRate = [0, 0]; m.gRate = [0, 0]; m.gBot = [0, 0];
@@ -440,7 +621,8 @@
         m.mixC[(i * 4 + pc) * 2] = mx[0]; m.mixC[(i * 4 + pc) * 2 + 1] = mx[0] + mx[1];
         var posq = pc < 2 ? pc : 2;
         for (var t = 0; t < 3; t++) {
-          var z = L.accA[t] + L.accB[posq] + a * R[i].accSh[t] + b * R[j].accAgSh[t];
+          var z = dynOn(p) ? L.accA[t] + L.accB[posq] + a * p.dyn.accProfA * R[i].accSh[t] + b * p.dyn.accProfB * R[j].accAgSh[t]
+            : L.accA[t] + L.accB[posq] + a * R[i].accSh[t] + b * R[j].accAgSh[t];
           m.accO[(i * 4 + pc) * 3 + t] = Math.exp(z) * (pc === 3 ? p.botAccOdds : 1) * p.accScale * adj[i].acc;
         }
       }
@@ -562,7 +744,81 @@
       tdLand: p.tdLand,
       tdStam: p.tdStam
     };
+    m.dyn = dynOn(p) ? dynTables(m, p, R, nR) : null;
+    m.off = officialsFor(p, opts, m);           // officials component (null when params.components.officials is off)
     return m;
+  }
+
+  // ------------------------------------------------------------------ fight dynamics (component "dynamics")
+  // research/model_dynamics.md section 8, recipe E1-E11, fit on 2019-2023 round data (data/derived/dynamics.json);
+  // level factors re-fit on 2019-2023 backtest fights (tools/dynamics_calibrate.js). Per-round tables used by simulate():
+  //   pace[i][r]  output multiplier: league distance pace curve (E1) x own cardio ratio (kPace 45) x opponent's^paceMutual
+  //               (E10), normalised over the first rounds, x outLevel
+  //   kdP[r]      knockdown multiplier per landed standing strike: kdRound table by format x kdLevel (E7; replaces the
+  //               stamina, pace and damage terms and the 5-round caution on knockdowns)
+  //   conv[r]     odds multiplier on the instant-KO and follow-up stoppage chances after a knockdown: convLevel x
+  //               exp(convRound (r - 1)) (E8; replaces damage and stamina terms)
+  //   stkoR[r], gnpR[r]  non-knockdown stoppage hazards: scale x exp(noKdRound (r - 1)), with damage slopes
+  //               stkoBase / gnpDmg (E9; replaces attacker stamina)
+  //   tdR[r]      takedown-attempt round curve (tdRound3 / tdRound5, normalised like pace), the marginal round shape the E6
+  //               carry-over multipliers act within (real attempts rise by round; carry-over alone made them fall)
+  function dynTables(m, p, R, nR) {
+    var Y = p.dyn, i, j, k, r;
+    var curve = nR === 5 ? Y.pace5 : (nR === 3 ? Y.pace3 : null);
+    if (!curve) { curve = []; for (k = 0; k < nR; k++) curve.push(Y.pace5[Math.min(k, Y.pace5.length - 1)]); }
+    var nb = Math.min(3, nR), cm0 = 0;
+    for (k = 0; k < nb; k++) cm0 += curve[k];
+    cm0 /= nb;
+    var rel = [[], []], pace = [[], []];
+    for (i = 0; i < 2; i++) {
+      var rho = R[i].rho, rm = 0;
+      for (k = 0; k < nb; k++) rm += rho[k];
+      rm /= nb;
+      for (k = 0; k < nR; k++) rel[i].push(rho[Math.min(4, k)] / rm);
+    }
+    for (i = 0; i < 2; i++) {
+      j = 1 - i;
+      var raw = [], s = 0;
+      for (k = 0; k < nR; k++) { raw.push(rel[i][k] * Math.pow(rel[j][k], Y.paceMutual)); if (k < nb) s += raw[k]; }
+      s /= nb;
+      for (k = 0; k < nR; k++) pace[i].push(curve[k] / cm0 * raw[k] / s * Y.outLevel);
+    }
+    var kdTab = nR === 5 ? Y.kdRound5 : (nR === 3 ? Y.kdRound3 : null);
+    if (!kdTab) { kdTab = []; for (k = 0; k < nR; k++) kdTab.push(Y.kdRound5[Math.min(k, Y.kdRound5.length - 1)]); }
+    var kdL = nR >= 5 ? Y.kdLevel5 : Y.kdLevel3;
+    // takedown-attempt round curve (marginal round shape that the carry-over terms act within), normalised like pace
+    var tdCurve = nR === 5 ? Y.tdRound5 : (nR === 3 ? Y.tdRound3 : null), tdR = [];
+    if (!tdCurve) { tdCurve = []; for (k = 0; k < nR; k++) tdCurve.push(Y.tdRound5 ? Y.tdRound5[Math.min(k, Y.tdRound5.length - 1)] : 1); }
+    var tm0 = 0;
+    for (k = 0; k < nb; k++) tm0 += tdCurve[k];
+    tm0 /= nb;
+    for (k = 0; k < nR; k++) tdR.push(tdCurve[k] / tm0);
+    var kdP = [], conv = [], stkoR = [], gnpR = [];
+    for (r = 0; r < nR; r++) {
+      var kdT = kdTab[Math.min(r, kdTab.length - 1)];
+      kdP.push(kdT * kdL);
+      conv.push(Y.convLevel * Math.exp(Y.convRound * r));
+      // E9 is a hazard per standing head strike absorbed. A standing TKO needs the hurt state, whose incidence already
+      // follows kdRound (hurts are drawn with the knockdown chance), so the realised standing TKO per strike decays as
+      // kdRound x exp(noKdRound r). Knob stkoHurtGate (verifier; default off, it did not score better on train) divides the
+      // hurt gate's round decline back out so that it decays as exp(noKdRound r) alone
+      stkoR.push(Y.stkoScale * Math.exp(Y.noKdRound * r) * (Y.stkoHurtGate ? kdTab[0] / kdT : 1));
+      gnpR.push(Y.gnpScale * Math.exp(Y.noKdRound * r));
+    }
+    // E3: fatigue on output is small (distance -4.5% per 100 own attempts); the other stamina terms stay
+    m.k.outStam = Y.outStam;
+    // AR(1) autocorrelations: valid range [0, 1) (phi >= 1 makes the innovation sd sqrt(1 - phi^2) NaN); a value outside
+    // it is clipped to [0, 0.999] (the defaults 0.85 / 0.73 pass through unchanged)
+    var arPhi = clip(+Y.arPhi, 0, 0.999), aaPhi = clip(+Y.accArPhi, 0, 0.999);
+    return {
+      formPace: Y.formPace, formOut: Y.formOut, formAcc: Y.formAcc, vol: Y.vol, roundPace: Y.roundPace,
+      arPhi: arPhi, arSd: Y.arSd, arInn: Y.arSd * Math.sqrt(1 - arPhi * arPhi), arC: 0.5 * Y.arSd * Y.arSd,
+      accArPhi: aaPhi, accArSd: Y.accArSd, accArInn: Y.accArSd * Math.sqrt(1 - aaPhi * aaPhi), accLevel: Y.accLevel,
+      pace: pace, kdP: kdP, conv: conv, stkoR: stkoR, gnpR: gnpR, stkoBase: Y.stkoBase, gnpDmg: Y.gnpDmg,
+      momScOut: Y.momScorerOut, momScAcc: Y.momScorerAcc, momScTd: Y.momScorerTd, momDrOut: Y.momDroppedOut, momDrTd: Y.momDroppedTd,
+      tdCtrlOpp: Y.tdCtrlOpp, tdTdl: Y.tdTdl, tdCtrlOwn: Y.tdCtrlOwn, distCtrlOpp: Y.distCtrlOpp, lostAcc: Y.lostAcc,
+      tdLevel: Y.tdLevel != null ? Y.tdLevel : 1, tdR: tdR
+    };
   }
 
   // ------------------------------------------------------------------ matchup (v4): base tables + learned stat-line rates
@@ -571,7 +827,10 @@
   // tables for leak-free backtests; base = league rates of the shrinkage division, filled in when missing); { model } ->
   // that model handle instead of the loaded one. opts.mlModel is accepted as a shorthand for { model }.
   // params.mlWeight (0..1) blends toward the base tables (1 = full learned rates); params.mlMaxRatio caps any single
-  // multiplier. The result carries m.mlApplied (true / false) and, when applied, m.ml (targets, ratios) and m.mlPred.
+  // multiplier (components.v401.tdCap: also the cumulative takedown multipliers); params.mlTdLevel / mlCtrlLevel /
+  // mlSubLevel (components.v401.mlLevels) scale the learned takedown-attempt, control and submission-attempt targets (train
+  // level matching with the learned rates on; the plain tables keep their own self-calibrated level).
+  // The result carries m.mlApplied (true / false) and, when applied, m.ml (targets, ratios) and m.mlPred.
   function mlPredFor(MLR, m, pa, pb, opts, model) {
     var x = opts.ml;
     var pred = null;
@@ -591,7 +850,7 @@
     }
     return pred;
   }
-  function matchup(profA, profB, opts) {
+  function matchupML(profA, profB, opts) {
     opts = opts || {};
     var pa = resolve(profA), pb = resolve(profB);
     var m = matchupBase(pa, pb, opts);
@@ -604,8 +863,18 @@
     if (!pred) return m;
     var w = m.p.mlWeight != null ? +m.p.mlWeight : 1;
     if (!(w > 0)) return m;
-    MLR.applyToMatchup(m, pred, { engine: api, model: model || undefined, weight: w, maxRatio: m.p.mlMaxRatio || 4,
-      parts: opts.mlParts || undefined });
+    // v5 merge step 4: the learned targets are rewritten before the adapter re-targets the tables: the embedding blend
+    // (components.embed), then the opponent adjustment (components.oppadj). Off: pred is untouched and the adapter gets
+    // exactly the step-3 inputs.
+    if (compOn(m.p, "embed")) pred = embedTargets(m, pa, pb, opts, pred);
+    if (compOn(m.p, "oppadj")) pred = oppadjTargets(m, opts, pred);
+    var fl = v401Flags(m.p), mo = { engine: api, model: model || undefined, weight: w, maxRatio: m.p.mlMaxRatio || 4,
+      parts: opts.mlParts || undefined };
+    // v5 step 1 (components.v401): (c) learned-path levels on the takedown-attempt / control / sub-attempt targets;
+    // (d) the cap on the cumulative takedown multipliers. Off: the adapter gets exactly v4.0.0's options.
+    if (fl.mlLevels) mo.levels = { td_att: m.p.mlTdLevel || 1, ctrl: m.p.mlCtrlLevel || 1, sub_att: m.p.mlSubLevel || 1 };
+    if (fl.tdCap) mo.cumCap = true;
+    MLR.applyToMatchup(m, pred, mo);
     m.mlPred = { A: pred.A, B: pred.B, base: pred.base };
     m.mlApplied = true;
     return m;
@@ -619,6 +888,391 @@
     return MLMODEL;
   }
   function mlModel() { return MLMODEL; }
+
+  // ------------------------------------------------------------------ embedding blend (engine v5 component: params.components.embed)
+  // research/model_embed.md "Integration recipe" (verified: mean relative deviance over 18 stat-line targets -1.67% [-2.11,
+  // -1.24] on 2024-25; train leave-one-year-out -0.72% [-0.97, -0.49] vs the recalibrated rates and -0.42% [-0.68, -0.16] vs
+  // the raw ones, tools/embed_blend_loyo.py). Per learned target t of one side (X attacking Y), before the adapter re-targets
+  // the tables:
+  //   link(rate_t) = b0 + b1 link(mlrates rate_t) + b2 eta[task(t)]
+  // links: log for per-minute rates (ctrl on minutes per minute), logit for accuracies, log for kd_h (P(KD) per landed head
+  // strike, capped at 0.5); eta = the embedding model's task predictors for X against Y (params.embed.tasks order). The same
+  // arithmetic as src/ml/embed.js blendMLRates (tests/test_v5_step4.js checks it). Coefficients: params.embed.recipe (=
+  // data/derived/embed_model.json mlrates_blend.targets, fit on mlrates' 2019-2023 out-of-fold rows; b2 = 0 for rev, acc_g,
+  // td_acc and kd_h, where time-ordered CV inside 2019-2023 rejected the embedding term), or opts.embed.recipe per call
+  // (backtests: train fights get the refit without their year, tools/mlpathrec.js).
+  // Inputs (first found wins): opts.embed = { etaA, etaB, recipe? } (corner order of this call; false = none), else the roster
+  // registered with loadEmbed(embed_model.json) by slug (a fighter not in it gets the zero vector = the division average), only
+  // for matchups dated on or after its as-of date (the roster is the fit at 2026-01-01, so never for a backtest fight), else
+  // nothing: the targets pass unchanged and m.embed.src is null. It acts only on the learned-rate path.
+  var EMBM = null, EMBASOF = null;
+  function loadEmbed(json) {
+    if (json == null) { EMBM = null; EMBASOF = null; return null; }
+    var FEm = getEmbMod();
+    if (!FEm) throw new Error("FightEngine.loadEmbed: src/ml/embed.js (FightEmbed) is not loaded");
+    var d = typeof json === "string" ? JSON.parse(json) : json, h = FEm.load(d), p = getParams();
+    var tk = (p && p.embed && p.embed.tasks) || null;
+    if (tk && JSON.stringify(h.tasks.map(function (t) { return t[0]; })) !== JSON.stringify(tk)) throw new Error("FightEngine.loadEmbed: task order differs from params.embed.tasks");
+    EMBM = h;
+    EMBASOF = (d.model || d).era_date || null;
+    return { n: Object.keys(h.model.roster || {}).length, asof: EMBASOF };
+  }
+  function embedEtas(m, pa, pb, opts) {
+    var o = opts.embed;
+    if (o === false) return null;
+    if (o && o.etaA && o.etaB) return { etaA: o.etaA, etaB: o.etaB, recipe: o.recipe || null, src: "opts" };
+    if (EMBM && (!m.date || !EMBASOF || String(m.date) >= EMBASOF)) {
+      var eo = { rounds: m.rounds }, va = EMBM.vec((pa && pa.slug) || ""), vb = EMBM.vec((pb && pb.slug) || "");
+      if (m.date) eo.date = m.date;
+      return { etaA: EMBM.eta(va, vb, m.division, eo), etaB: EMBM.eta(vb, va, m.division, eo), recipe: null, src: "roster" };
+    }
+    return null;
+  }
+  function embedBlendSide(side, eta, recipe, tix) {
+    var out = {}, k;
+    for (k in side) out[k] = side[k];
+    for (var tn in recipe) {
+      if (side[tn] == null) continue;
+      var r = recipe[tn], x = +side[tn], z, q, ti = tix[r.task];
+      if (ti == null || eta[ti] == null) throw new Error("FightEngine embed: no task predictor for " + r.task);
+      if (!finNum(eta[ti]) || !finNum(x)) continue;   // v5.0.1: a non-finite predictor (or target) is missing: the target stays unblended
+      if (tn === "ctrl") z = Math.log(Math.max(x / 60, 1e-6));
+      else if (tn === "kd_h") z = Math.log(Math.min(Math.max(x, 1e-6), 1 - 1e-6));
+      else if (r.link === "logit") { q = Math.min(Math.max(x, 1e-6), 1 - 1e-6); z = Math.log(q / (1 - q)); }
+      else z = Math.log(Math.max(x, 1e-9));
+      var e = r.b[0] + r.b[1] * z + r.b[2] * eta[ti];
+      if (r.link === "logit") out[tn] = sigm(e);
+      else if (tn === "ctrl") out[tn] = 60 * Math.exp(e);
+      else if (tn === "kd_h") out[tn] = Math.min(Math.exp(e), 0.5);
+      else out[tn] = Math.exp(e);
+    }
+    return out;
+  }
+  function embedTargets(m, pa, pb, opts, pred) {
+    var eb = embedEtas(m, pa, pb, opts), pe = m.p.embed || {};
+    if (!eb) { m.embed = { src: null }; return pred; }
+    var rc = eb.recipe || pe.recipe, tix = {}, i;
+    if (!rc || !pe.tasks) throw new Error("FightEngine: components.embed is on but params.embed has no tasks / recipe");
+    for (i = 0; i < pe.tasks.length; i++) tix[pe.tasks[i]] = i;
+    m.embed = { src: eb.src, recipe: eb.recipe ? "opts" : "params", raw: { A: pred.A, B: pred.B } };
+    return { A: embedBlendSide(pred.A, eb.etaA, rc, tix), B: embedBlendSide(pred.B, eb.etaB, rc, tix), base: pred.base };
+  }
+
+  // ------------------------------------------------------------------ opponent adjustment (engine v5 component: params.components.oppadj)
+  // research/model_oppadj.md "Recommendation for the engine", item 3 (verified): with the learned rates, scale the learned
+  // targets of X against Y by the walk-forward opponent-adjustment factors (tools/oppadj.py, data/derived/oppadj.json):
+  //   counts:        target_X <- target_X * (F_off,X * F_def,Y)^beta          d_att, c_att, g_att, td_att, ctrl (sub_att: beta 0)
+  //   probabilities: odds(target_X) <- odds(target_X) * (F_off,X * F_def,Y)^beta   acc_h, acc_l, td_acc (acc_b, kd_h: beta 0)
+  //   h_att, b_att, l_att scale with the total attempt change (d_att + c_att + g_att)
+  // beta: params.oppadj.beta (oppadj.json results.recommendation ml_path_beta: fit on 2019-2023 out-of-fold learned rates,
+  // clipped to [0, 1]; knockdowns, body accuracy and submission attempts stay 0 = off). The reference is tools/oppadj_engine.js
+  // adjTargets (identical up to float rounding: a family with beta 0 is skipped here instead of multiplied by 1). topSkill /
+  // escWeak are not applied (the ML-path simulations left them out, so that combination is untested). Factors: opts.oppadj =
+  // { A, B } (corner order of this call; backtests: oppadj.json snapshots[id], tools/mlpathrec.js), else prof.oppadj; a side
+  // without factors is neutral. It competes with the styles_sos strength of schedule (both adjust for the schedule): never
+  // stack them, so matchupBase refuses components.oppadj together with components.styles_sos sos (any source). OFF by default:
+  // the Calibrate ablation picks one of the two by train soft CE + stat lines.
+  function oppadjExclusive(p) {
+    if (!compOn(p, "oppadj")) return;
+    var s = p.components.styles_sos;
+    if (s && (s === true || s.sos !== false)) {
+      throw new Error("FightEngine: components.oppadj and components.styles_sos sos are exclusive (never stack the opponent adjustment " +
+        "with strength of schedule): pass params.components.styles_sos = { sos: false } with oppadj, or switch oppadj off");
+    }
+  }
+  function oppadjSide(t, Fi, Fj, bt) {
+    var o = {}, k;
+    for (k in t) o[k] = t[k];
+    function g(F, key, idx) { var v = F ? (idx != null ? (F[key] ? F[key][idx] : null) : F[key]) : null; return v != null && isFinite(v) && v > 0 ? +v : 1; }
+    function mul(off, def, beta, idx) { return beta ? Math.pow(Math.max(g(Fi, off, idx) * g(Fj, def, idx), 1e-6), beta) : 1; }
+    var att0 = t.d_att + t.c_att + t.g_att, e;
+    if (bt.dAtt) o.d_att = t.d_att * mul("dAtt", "dAttAg", bt.dAtt);
+    if (bt.cAtt) o.c_att = t.c_att * mul("cAtt", "cAttAg", bt.cAtt);
+    if (bt.gAtt) o.g_att = t.g_att * mul("gAtt", "gAttAg", bt.gAtt);
+    if (bt.dAtt || bt.cAtt || bt.gAtt) {
+      var r = att0 > 0 ? (o.d_att + o.c_att + o.g_att) / att0 : 1;
+      o.h_att = t.h_att * r; o.b_att = t.b_att * r; o.l_att = t.l_att * r;
+    }
+    if (bt.tdAtt) o.td_att = t.td_att * mul("tdAtt", "tdAttAg", bt.tdAtt);
+    if (bt.sub) o.sub_att = t.sub_att * mul("sub", "subAg", bt.sub);
+    if (bt.ctrl) o.ctrl = t.ctrl * mul("ctrl", "octrl", bt.ctrl);
+    var ac = [["acc_h", "accH", 0], ["acc_b", "accB", 1], ["acc_l", "accL", 2]];
+    for (k = 0; k < 3; k++) if (bt[ac[k][1]]) { e = mul("acc", "accAg", bt[ac[k][1]], ac[k][2]); o[ac[k][0]] = prob(odds(t[ac[k][0]]) * e); }
+    if (bt.tdAcc) o.td_acc = prob(odds(t.td_acc) * mul("tdAcc", "tdAccAg", bt.tdAcc));
+    if (bt.kd) o.kd_h = t.kd_h * mul("pow", "chin", bt.kd);
+    return o;
+  }
+  function oppadjTargets(m, opts, pred) {
+    var src = m._src || {}, oa = opts.oppadj || null;
+    var FA = oa ? (oa.A || null) : (src.A && src.A.oppadj) || null, FB = oa ? (oa.B || null) : (src.B && src.B.oppadj) || null;
+    var bt = (m.p.oppadj && m.p.oppadj.beta) || {};
+    m.oppadj = { have: [!!FA, !!FB], src: oa ? "opts" : (FA || FB ? "profile" : null) };
+    if (!FA && !FB) return pred;
+    return { A: oppadjSide(pred.A, FA, FB, bt), B: oppadjSide(pred.B, FB, FA, bt), base: pred.base };
+  }
+
+  // ------------------------------------------------------------------ durability (engine v5 component: params.components.durability)
+  // Replaces the chin / power block with the knockdown model of research/model_durability.md (tools/durability.py,
+  // data/derived/durability.json). Knockdown hazard per landed standing head strike by i on j:
+  //   m.kd[i] = kdCal * kdScale * base_ij * relK_ij
+  //   base_ij = level * exp(const + div + five * [5 rounds] + title * [title])        (league level tracked by params)
+  //   relK_ij = (C_j^chinExp * P_i^powExp * size * knobs)^(1 - w) * engRel_ij^w      (w = engineWeight)
+  //   (relative mode, params.durability.level null: base_ij = the engine's division level x context, C x P / NORM,
+  //   and kdCalRel in place of kdCal x kdScale)
+  //   C_j = chin_cov_j * chin_re_j,  P_i = pow_cov_i * pow_re_i
+  //   chin_cov = exp(d_age_c (age - 30) + d_age_h30 max(0, age - 30) + d_age_na [age unknown]
+  //                  + d_okd_r KDabs_365d + d_okd_o KDabs_older + d_kol_r KOL_365d + d_kol_o KOL_older)
+  //   pow_cov  = exp(a_age_c (age - 30) + a_age_h30 max(0, age - 30))
+  //   chin_re = (alphaChin + KD absorbed) / (alphaChin + expected), pow_re = (alphaPow + KD scored) / (alphaPow + expected)
+  // engRel_ij is the engine's own knockdown structure relative to its division level (v3 power x chin ratios, or the
+  // learned v4 rates when they were applied): m.kd_before / (kd0 * kdScale * div kd). GNP and standing TKO hazards scale
+  // with sqrt(rel_ij) and damage per head strike with the blended power ratio, as v3 / v4 do with their own products
+  // (rel_ij = relK_ij with C x P / NORM: mean about 1).
+  // Inputs per side (first found wins): opts.dur.A / opts.dur.B (corner order of this call; backtests pass the
+  // walk-forward records of durability.json backtest[fight_id]), prof.dur, the roster registered with loadDurability()
+  // (by slug), else computed from the profile (age, ko_losses[_365], kd_absorbed[_365]; chin_re / pow_re from career
+  // sums when params.durability.fallbackEB, else 1). opts.dur.base overrides base_ij (backtests: the walk-forward
+  // L730(t) x exp(const + division + context) of the record). The result carries m.dur (inputs and factors).
+  // The roster is the LIVE fit (fighter effects through the durability snapshot, so they contain the outcomes of every
+  // fight up to it). Leak guard: it is used only for matchups dated on or after its snapshot (durability.json
+  // meta.snapshot), never for a backtest fight; earlier fights need opts.dur (the walk-forward backtest records).
+  var DURROSTER = null, DURASOF = null;
+  function loadDurability(json) {
+    if (json == null) { DURROSTER = null; DURASOF = null; return null; }
+    var d = typeof json === "string" ? JSON.parse(json) : json, r = d.roster || d, out = {};
+    for (var s in r) {
+      var x = r[s];
+      if (x && (x.chin_re != null || x.pow_re != null)) out[s] = { chin_re: x.chin_re, pow_re: x.pow_re, chin_cov: x.chin_cov, pow_cov: x.pow_cov };
+    }
+    DURROSTER = out;
+    DURASOF = (d.meta && d.meta.snapshot) || d.asof || null;
+    return { n: Object.keys(out).length, asof: DURASOF };
+  }
+  function durCovariates(dp, prof, age, date) {
+    // chin and power covariate multipliers vs the reference profile (30 years old, no knockdowns absorbed, no KO losses)
+    var T = dp.terms || {}, tm = function (k) { return T[k] != null ? +T[k] : 0; };
+    var kol = +prof.ko_losses || 0, kolR = prof.ko_losses_365 != null ? +prof.ko_losses_365 : 0;
+    var kda = +prof.kd_absorbed || 0, kdaR = prof.kd_absorbed_365 != null ? +prof.kd_absorbed_365 : 0;
+    var kolO = Math.max(0, kol - kolR), kdaO = Math.max(0, kda - kdaR);
+    var lc = 0, lp = 0;
+    if (age != null && isFinite(age)) {
+      var a30 = age - 30, h30 = Math.max(0, a30);
+      lc += tm("d_age_c") * a30 + tm("d_age_h30") * h30;
+      lp += tm("a_age_c") * a30 + tm("a_age_h30") * h30;
+    } else if (!prof.manual) lc += tm("d_age_na");   // the data's "age unknown" (x2.22: obscure short-stint fighters); a hand-made profile without an age is the reference
+    lc += tm("d_okd_r") * kdaR + tm("d_okd_o") * kdaO + tm("d_kol_r") * kolR + tm("d_kol_o") * kolO;
+    // withdrawn first-version terms, kept as labeled knobs (all neutral by default; research/model_durability.md V4)
+    var wd = dp.withdrawn || {};
+    if (prof.layoff != null && isFinite(prof.layoff) && +prof.layoff >= 730 && wd.layoff24 != null) lc += Math.log(wd.layoff24);
+    if (prof.last_ko_loss && wd.lastKO != null) lc += Math.log(wd.lastKO);
+    if (prof.ufc_years != null && wd.ufcYear) lc += wd.ufcYear * (+prof.ufc_years - (wd.ufcYearRef || 0));
+    return { chin: Math.exp(lc), pow: Math.exp(lp), kolR: kolR, kolO: kolO, kdaR: kdaR, kdaO: kdaO };
+  }
+  function durSide(m, prof, i, opts, dp, lvlDiv) {
+    var rost = DURROSTER && prof.slug && DURROSTER[prof.slug] && (!DURASOF || !m.date || String(m.date) >= DURASOF) ? DURROSTER[prof.slug] : null;
+    var od = opts.dur || null, rec = (od && od[SIDE[i]]) || prof.dur || rost || null;
+    var age = m.ages ? m.ages[i] : ageAt(prof, m.date), cov = null;
+    // v5.0.1: a record field counts only when it is a finite positive number (a string 'x', NaN, 0 or a negative value is
+    // missing: it made the knockdown hazard NaN and hung simulate). src is "record" only when all four fields came from the
+    // record, "partial" when some did, "computed" when none did; backtest harnesses refuse anything but "record".
+    var nRec = 0;
+    function rf(k) { if (rec && posNum(rec[k])) { nRec++; return +rec[k]; } return null; }
+    var chinCov = rf("chin_cov"), powCov = rf("pow_cov");
+    if (chinCov == null || powCov == null) {
+      cov = durCovariates(dp, prof, age, m.date);
+      if (chinCov == null) chinCov = cov.chin;
+      if (powCov == null) powCov = cov.pow;
+    }
+    var chinRe = rf("chin_re"), powRe = rf("pow_re"), comp = { chin: false, pow: false };
+    if ((chinRe == null || powRe == null) && dp.fallbackEB) {
+      // walk-forward empirical Bayes from career sums (C, else the decayed S): opponent effects taken as 1 and 90% of
+      // head strikes standing (research/model_durability.md section 1). v5.0.1 (v5 review): re-levelled to the record path the
+      // knockdown levels were matched on (tools/durlevel_fit.js, data/derived/durlevel_fit.json). With career sums C (production
+      // profiles) the raw formula ran about 19% low on chin x power (today's covariates times a whole career's exposure):
+      // normComputedChin / Pow, fit on the live roster. With decayed sums S (backtest snapshots): normComputedChinS / PowS, fit
+      // on the 2019-2023 backtest sides. Backtest harnesses never use this path (they refuse anything but full records).
+      var useC = !!prof.C;
+      var C = useC ? (Array.isArray(prof.C) ? (function () { var o = {}, ks = prof.keys || (DB && DB.meta && DB.meta.keys) || KEYS; for (var q = 0; q < ks.length; q++) o[ks[q]] = +prof.C[q] || 0; return o; })() : prof.C) : sums(prof);
+      var sh = dp.standShare != null ? dp.standShare : 0.9;
+      var kC = useC ? "normComputedChin" : "normComputedChinS", kP = useC ? "normComputedPow" : "normComputedPowS";
+      var ncC = posNum(dp[kC]) ? +dp[kC] : 1, ncP = posNum(dp[kP]) ? +dp[kP] : 1;
+      if (chinRe == null) { chinRe = ncC * ((dp.alphaChin || 3) + (+C.okd || 0)) / ((dp.alphaChin || 3) + lvlDiv * chinCov * sh * (+C.oh_lnd || 0)); comp.chin = true; }
+      if (powRe == null) { powRe = ncP * ((dp.alphaPow || 2.5) + (+C.kd || 0)) / ((dp.alphaPow || 2.5) + lvlDiv * powCov * sh * (+C.h_lnd || 0)); comp.pow = true; }
+    }
+    if (!posNum(chinRe)) chinRe = 1;
+    if (!posNum(powRe)) powRe = 1;
+    var src = nRec === 4 ? "record" : (nRec > 0 ? "partial" : "computed");
+    return { src: src, nRec: nRec, age: age, chin_re: chinRe, pow_re: powRe, chin_cov: chinCov, pow_cov: powCov, cov: cov, computed: comp };
+  }
+  function applyDurability(m, pa, pb, opts) {
+    var p = m.p, dp = p.durability || {}, i, j, k;
+    var T = dp.terms || {}, tm = function (k2) { return T[k2] != null ? +T[k2] : 0; };
+    var od = opts.dur || {};
+    var dv = (p.div && p.div[m.division]) || {}, dvkd = dv.kd != null ? dv.kd : 1;
+    var engLevel = m.L.kd0 * p.kdScale * dvkd;                         // the engine's own division level (v3 / v4 KD)
+    // absolute mode (params.durability.level set): base = tracked league level x division x context, and the fit's
+    // constant already prices the average chin x power, so no NORM on the knockdown hazard. Relative mode (level null):
+    // base = the engine's own division level x context, with C x P divided by NORM (their league mean).
+    var absMode = dp.level != null;
+    var ctx = Math.exp(tm("five") * (m.rounds >= 5 ? 1 : 0) + tm("title") * (m.title ? 1 : 0));
+    var lvl = absMode ? +dp.level : null;                              // league KD per landed standing head strike
+    var lvlDiv = absMode ? lvl * Math.exp(tm("const") + tm("div_" + m.division)) : m.L.kd0;
+    var base = absMode ? (od.base != null && isFinite(od.base) ? +od.base : lvlDiv * ctx) : engLevel * ctx;
+    var norm = (dp.normChin != null ? dp.normChin : 1) * (dp.normPow != null ? dp.normPow : 1);
+    var normK = absMode ? 1 : norm;
+    var w = dp.engineWeight != null ? clip(+dp.engineWeight, 0, 1) : 0;
+    var cExp = dp.chinExp != null ? +dp.chinExp : 1, pExp = dp.powExp != null ? +dp.powExp : 1;
+    var kdCal = absMode ? (dp.kdCal != null ? +dp.kdCal : 1) : (dp.kdCalRel != null ? +dp.kdCalRel : 1);
+    var sd = [durSide(m, pa, 0, opts, dp, lvlDiv), durSide(m, pb, 1, opts, dp, lvlDiv)];
+    var up = [0, 0];
+    for (i = 0; i < 2; i++) {
+      var hl = m.homeLbs ? m.homeLbs[i] : null;
+      up[i] = (m.fightLbs && hl) ? Math.max(0, m.fightLbs - hl) / 10 : 0;
+    }
+    var koF = dv.ko != null ? dv.ko : 1;
+    var engKd = m.kd.slice(), rel = [0, 0], relK = [0, 0], engRel = [0, 0], powRel = [0, 0];
+    for (i = 0; i < 2; i++) {
+      j = 1 - i;
+      var C = Math.pow(sd[j].chin_cov * sd[j].chin_re, cExp) * Math.exp((dp.sizeChin || 0) * up[j]);
+      var P = Math.pow(sd[i].pow_cov * sd[i].pow_re, pExp) * Math.exp(-(dp.sizePow || 0) * up[i]);
+      var cp = C * P * m.adj[i].pow * m.adj[j].chin;
+      engRel[i] = engKd[i] / engLevel;
+      rel[i] = w > 0 ? Math.pow(cp / norm, 1 - w) * Math.pow(engRel[i], w) : cp / norm;     // mean about 1: TKO hazards, damage
+      relK[i] = w > 0 ? Math.pow(cp / normK, 1 - w) * Math.pow(engRel[i], w) : cp / normK;  // knockdown hazard
+      var pd = P / (dp.normPow != null ? dp.normPow : 1) * m.adj[i].pow, pe = m.fac && m.fac[i] ? m.fac[i].pow : 1;
+      powRel[i] = w > 0 ? Math.pow(pd, 1 - w) * Math.pow(pe, w) : pd;
+    }
+    for (i = 0; i < 2; i++) {
+      m.kd[i] = kdCal * (absMode ? p.kdScale : 1) * base * relK[i];
+      m.dw[i] = Math.pow(powRel[i], p.powDmgExp);
+      m.gnp[i] = p.gnpTko * Math.sqrt(rel[i]) * koF * (dp.gnpCal != null ? dp.gnpCal : 1);
+      m.stko[i] = p.stko * Math.sqrt(rel[i]) * koF * (dp.stkoCal != null ? dp.stkoCal : 1);
+    }
+    if (dp.caution5 != null && m.rounds >= 5) {
+      for (k = 0; k < m.rounds; k++) m.finR[k] = (k === 0 ? p.r1Caution5 : 1) * dp.caution5;
+    }
+    function pub(s) {
+      var o = { src: s.src, age: s.age, chin_re: s.chin_re, chin_cov: s.chin_cov, pow_re: s.pow_re, pow_cov: s.pow_cov,
+        chin: s.chin_cov * s.chin_re, pow: s.pow_cov * s.pow_re };
+      if (s.cov) { o.ko_losses_365 = s.cov.kolR; o.ko_losses_older = s.cov.kolO; o.kd_absorbed_365 = s.cov.kdaR; o.kd_absorbed_older = s.cov.kdaO; }
+      return o;
+    }
+    m.dur = { A: pub(sd[0]), B: pub(sd[1]), mode: absMode ? "absolute" : "relative", level: lvl, base: base, baseFromRecord: absMode && od.base != null,
+      ctx: ctx, norm: norm, w: w, kdCal: kdCal, rel: rel, relK: relK, engRel: engRel, engKd: engKd, engLevel: engLevel, lbsUp: up };
+    return m;
+  }
+  function matchup(profA, profB, opts) {
+    opts = opts || {};
+    var m = matchupML(profA, profB, opts);
+    if (m.p.components && m.p.components.durability) applyDurability(m, resolve(profA), resolve(profB), opts);
+    if (compOn(m.p, "preufc")) applyPreUFC(m, resolve(profA), resolve(profB), opts);   // v5 merge step 4
+    checkTables(m);                                                                      // v5.0.1
+    return m;
+  }
+  // v5.0.1 (v5 review): every rate table simulate() reads must be finite and >= 0. A NaN rate made the event clock NaN, so the
+  // round never ended (or every finish was switched off and the fight ended at t = NaN); a bad knob, record or embedding
+  // input now fails here with the field named. Called at the end of matchup() and again after the styles_sos hook.
+  var RATE_FIELDS = ["dRate", "cRate", "gRate", "gBot", "tdD", "tdCC", "tdCU", "tdO", "tdOC", "upPos", "swPos", "gPos", "subTPos",
+    "subBPos", "subOPos", "subO", "gillo", "kd", "dw", "gnp", "stko", "drain", "accO", "mixC", "finR", "kdPace", "clE", "clBreak",
+    "clSwap", "instO", "refO", "pCtl", "subBotO", "subStandO"];
+  var DYN_FIELDS = ["formPace", "formOut", "formAcc", "vol", "roundPace", "arPhi", "arSd", "arInn", "accArPhi", "accArSd", "accArInn",
+    "accLevel", "kdP", "conv", "stkoR", "gnpR", "pace", "tdR", "tdLevel"];
+  function badNum(v) { return typeof v !== "number" || !(v >= 0) || v === Infinity; }
+  function checkField(name, v) {
+    if (v == null) return;
+    if (typeof v === "number") { if (badNum(v)) throw new Error("FightEngine: matchup table " + name + " = " + v + " (must be a finite number >= 0)"); return; }
+    if (ArrayBuffer.isView(v) || Array.isArray(v)) {
+      for (var q = 0; q < v.length; q++) {
+        var x = v[q];
+        if (Array.isArray(x) || ArrayBuffer.isView(x)) checkField(name + "[" + q + "]", x);
+        else if (badNum(x)) throw new Error("FightEngine: matchup table " + name + "[" + q + "] = " + x + " (must be a finite number >= 0)");
+      }
+    }
+  }
+  function checkTables(m) {
+    var q;
+    for (q = 0; q < RATE_FIELDS.length; q++) checkField(RATE_FIELDS[q], m[RATE_FIELDS[q]]);
+    checkField("pace", m.pace);
+    if (m.dyn) for (q = 0; q < DYN_FIELDS.length; q++) checkField("dyn." + DYN_FIELDS[q], m.dyn[DYN_FIELDS[q]]);
+    if (!finNum(m.judgePower)) throw new Error("FightEngine: judgePower " + m.judgePower + " is not a finite number");
+    return m;
+  }
+
+  // ------------------------------------------------------------------ pre-UFC newcomer priors (engine v5 component: params.components.preufc)
+  // research/model_preufc.md "Recommendation for the engine", item 3 (verified): a newcomer's regional (non-UFC pro) record
+  // moves his finish odds. Per side with at most params.preufc.maxUfc (3) prior UFC fights, from the record entering the bout:
+  //   KO rate = (ko_w + 0.3) / (n + 2),  sub rate = (sub_w + 0.2) / (n + 2),  KO-loss rate = (ko_l + 0.2) / (n + 2)
+  //   power  M_pow  = (KO rate / 0.3433)^0.601       odds multiplier on his per-fight KO-win probability
+  //   subs   M_sub  = (sub rate / 0.2466)^0.627      odds multiplier on his per-fight submission-win probability
+  //   chin   M_chin = (KO-loss rate / 0.0436)^0.244  odds multiplier on his per-fight KO-loss probability (weak: the CI includes 0)
+  //   each faded to M^exp(-n_UFC / 8)
+  // (params.preufc; per-side finish models fit on 2015-2023 newcomer sides with time-ordered CV, preufc.json eval.side_finish;
+  // reference rates = the training means; the report rounds them to 0.343 / 0.247 / 0.044 and 0.60 / 0.63 / 0.24). The
+  // engine works on per-strike / per-second hazards, so each multiplier enters as M^scale on the hazards of that finish: X's
+  // knockdown, ground-and-pound and standing TKO hazards x M_pow,X^scale.pow x M_chin,Y^scale.chin, X's submission attempt
+  // rates (top, bottom, standing guillotines) x M_sub,X^scale.sub. params.preufc.scale maps the per-fight odds multiplier to
+  // that hazard multiplier (tools/preufc_scale.js: league-average pairs on the train priors, so that the simulated finish odds
+  // move by M); the Calibrate stage may refit them on 2019-2023 newcomer bouts. Inputs (first found wins): opts.preufc = { A, B }
+  // with { n, ko_w, sub_w, ko_l, n_ufc } per side (corner order of this call; null = no prior; backtests: preufc.json
+  // snapshots, tools/mlpathrec.js), else prof.preufc, else the roster registered with loadPreUFC(preufc.json) by slug (records
+  // as of its ufcstats snapshot: bouts dated on or after it only). n_ufc defaults to the profile's UFC fight count (prof.n).
+  // styles_sos's newcomer sub-flag is the older unimplemented stub: never both (refused).
+  var PREROSTER = null, PREASOF = null;
+  function loadPreUFC(json) {
+    if (json == null) { PREROSTER = null; PREASOF = null; return null; }
+    var d = typeof json === "string" ? JSON.parse(json) : json, out = {}, rp = d.roster_priors || {}, fs = d.fighters || {};
+    for (var s in rp) {
+      var c = fs[s] && fs[s].current;
+      if (c && rp[s].n_ufc != null) out[s] = { n: +c.n || 0, ko_w: +c.ko_w || 0, sub_w: +c.sub_w || 0, ko_l: +c.ko_l || 0, n_ufc: +rp[s].n_ufc };
+    }
+    PREROSTER = out;
+    PREASOF = (d.meta && d.meta.ufcstats_snapshot) || null;
+    return { n: Object.keys(out).length, asof: PREASOF };
+  }
+  function preufcMult(q, rec, prof) {
+    if (!rec) return null;
+    var nU = rec.n_ufc != null ? +rec.n_ufc : (prof && prof.n != null ? +prof.n : null);
+    if (nU == null || !isFinite(nU) || nU > (q.maxUfc != null ? +q.maxUfc : 3)) return null;
+    // v5.0.1: a record with a count that is not a finite number >= 0 is treated as missing (a negative KO count made the
+    // smoothed rate negative and the knockdown hazard NaN)
+    function cnt(v) { return v == null || v === "" ? 0 : (finNum(v) && +v >= 0 ? +v : NaN); }
+    if (!(nU >= 0) || !isFinite(cnt(rec.n)) || !isFinite(cnt(rec.ko_w)) || !isFinite(cnt(rec.sub_w)) || !isFinite(cnt(rec.ko_l))) return null;
+    var sm = q.smooth || {}, rf = q.ref || {}, ex = q.exp || {}, n = Math.max(0, +rec.n || 0);
+    var f = Math.exp(-nU / (q.tau || 8));
+    var ko = ((+rec.ko_w || 0) + sm.ko) / (n + 2), su = ((+rec.sub_w || 0) + sm.sub) / (n + 2), kl = ((+rec.ko_l || 0) + sm.kol) / (n + 2);
+    var out = { pow: Math.pow(ko / rf.ko, ex.pow * f), sub: Math.pow(su / rf.sub, ex.sub * f), chin: Math.pow(kl / rf.kol, ex.chin * f),
+      n_ufc: nU, fade: f, rates: { ko: ko, sub: su, kol: kl } };
+    if (!posNum(out.pow) || !posNum(out.sub) || !posNum(out.chin)) return null;   // v5.0.1: rates must be > 0
+    return out;
+  }
+  function applyPreUFC(m, pa, pb, opts) {
+    var p = m.p, q = p.preufc || {}, sc = q.scale || {}, ss = p.components.styles_sos, i, j, k;
+    if (ss && typeof ss === "object" && ss.newcomer === true) {
+      throw new Error("FightEngine: components.preufc (the verified pre-UFC recipe) and styles_sos newcomer (the unimplemented stub) are exclusive");
+    }
+    var op = opts.preufc || null, profs = [pa, pb], recs = [null, null], src = [null, null];
+    var rost = PREROSTER && (!PREASOF || !m.date || String(m.date) >= PREASOF);
+    for (i = 0; i < 2; i++) {
+      if (op) { recs[i] = op[SIDE[i]] || null; src[i] = recs[i] ? "opts" : null; }
+      else if (profs[i].preufc) { recs[i] = profs[i].preufc; src[i] = "profile"; }
+      else if (rost && profs[i].slug && PREROSTER[profs[i].slug]) { recs[i] = PREROSTER[profs[i].slug]; src[i] = "roster"; }
+    }
+    var mult = [preufcMult(q, recs[0], pa), preufcMult(q, recs[1], pb)], hz = [{ ko: 1, sub: 1 }, { ko: 1, sub: 1 }];
+    var sP = sc.pow != null ? +sc.pow : 1, sS = sc.sub != null ? +sc.sub : 1, sC = sc.chin != null ? +sc.chin : 1;
+    for (i = 0; i < 2; i++) {
+      j = 1 - i;
+      var ko = (mult[i] ? Math.pow(mult[i].pow, sP) : 1) * (mult[j] ? Math.pow(mult[j].chin, sC) : 1);
+      var su = mult[i] ? Math.pow(mult[i].sub, sS) : 1;
+      if (ko !== 1) { m.kd[i] *= ko; m.gnp[i] *= ko; m.stko[i] *= ko; }
+      if (su !== 1) {
+        for (k = 0; k < 5; k++) { m.subTPos[i * 5 + k] *= su; m.subBPos[j * 5 + k] *= su; }
+        m.gillo[i] = clip(m.gillo[i] * su, 0, 0.5);
+      }
+      hz[i].ko = ko; hz[i].sub = su;
+    }
+    m.preufc = { src: src, mult: mult, hazard: hz };
+    return m;
+  }
 
   // ------------------------------------------------------------------ RNG (v2's xoshiro-style generator)
   function makeRng(seed) {
@@ -680,7 +1334,9 @@
   // ------------------------------------------------------------------ judges (one round)
   // Each judge j scores z_j = tS_j * striking + tG_j * grappling + tP_j * damage + shared + individual noise (logits; A
   // minus B differentials; the shared noise has a fight-level part sF, variance share sharedFight, drawn once per fight:
-  // the panel's view beyond the counts persists from round to round), with the EM round-winner weights fit on 7,550 ufcstats cards (research/data_baserates.md):
+  // the panel's view beyond the counts persists from round to round), with the EM round-winner weights (components.v401.emJudge:
+  // refit on the 5,519 ufcstats cards of 2015-2023 only, tools/judge_em_train.py; off: v4.0.0's fit on all 7,550 cards
+  // through 2026-10, research/data_baserates.md):
   // striking = head * dHead + body * dBody + leg * dLeg landed; grappling = td * dTD + ctrlMin * dCtrl / 60 + sub * dSubAtt;
   // damage = kd * dKD + hurt * dHurt + judgePower * head * dPow (engine-only: hurts and power beyond the strike count).
   // The round goes to sign(z_j); a 10-8 when |z_j| > t108 - t108kd * min(2, winner's KD edge). The shared and individual
@@ -695,6 +1351,8 @@
     var shared = (sF || 0) + J.sharedSd * Math.sqrt(1 - rho) * rng.normal(), n108 = 0, kc = J.t108kd || 0;
     for (var j = 0; j < 3; j++) {
       var z = dStr * tS[j] + dGr * tG[j] + dDm * tP[j] + shared + J.indSd * rng.normal();
+      // v5.0.1 (v5 review): a NaN score went to corner B (z > 0 is false); refuse to score the round instead
+      if (!isFinite(z)) throw new Error("FightEngine.judgeRound: judge score " + z + " is not finite (check the judge power and the round's damage inputs)");
       var aw = z > 0, mg = aw ? z : -z, kdE = aw ? dKd : -dKd;
       var big = mg > J.t108 - kc * (kdE <= 0 ? 0 : (kdE >= 2 ? 2 : kdE));
       var scA = aw ? 10 : (big ? 8 : 9), scB = aw ? (big ? 8 : 9) : 10;
@@ -705,27 +1363,231 @@
     return n108;
   }
 
+  // ------------------------------------------------------------------ point deductions (v4.0.1; v5: components.v401.deductions)
+  // Fouls cost points on all three cards: in each round each fighter is docked with probability J.ded (1 point, 2 with
+  // probability J.ded2; tools/judgecal.js on 2019-2023 decision rounds: 0.5% per fighter-round, 3.1% of decisions).
+  // They are drawn once the last round is over and only for fights that go to the cards, so every earlier draw of the
+  // fight is unchanged (common random numbers with v4.0.0 up to the decision) and a finished fight never consumes them.
+  // rounds (trace) gets rec.ded = [A, B] and the per-round judges' scores lose the points, so the round cards still add
+  // up to fight.cards. Returns the points deducted. With J.ded 0 (the sub-flag off) it draws nothing.
+  function deductions(J, nR, rng, cards, rounds) {
+    var pd = J.ded || 0;
+    if (!(pd > 0)) return 0;
+    var p2 = J.ded2 || 0, n = 0;
+    for (var r = 0; r < nR; r++) for (var i = 0; i < 2; i++) {
+      if (rng.u() >= pd) continue;
+      var pts = rng.u() < p2 ? 2 : 1, j;
+      n += pts;
+      for (j = 0; j < 3; j++) cards[j][i] -= pts;
+      var rec = rounds && rounds[r];
+      if (rec) {
+        if (rec.judges) for (j = 0; j < rec.judges.length; j++) rec.judges[j][i] -= pts;
+        if (!rec.ded) rec.ded = [0, 0];
+        rec.ded[i] += pts;
+      }
+    }
+    return n;
+  }
+
+  // ------------------------------------------------------------------ officials (roadmap v8; params.components.officials)
+  // Named judges and referee with tendencies fit walk-forward on real rounds and stoppages (tools/officials_engine.py,
+  // data/derived/officials_engine.json; FightEngine.loadOfficials). Off (components.officials falsy): m.off = null and
+  // the engine is bit-for-bit the v4 engine. On: each judge j scores a round by
+  //   eta_j = exp(n_j) * (exp(v_j) V + exp(k_j) K + exp(g_j) G + u) + e_j,   u ~ N(0, sigmaU^2) shared by the panel (a share
+  //   sharedFight of its variance drawn once per fight, the rest per round), e_j ~ Logistic(0, 1)
+  //   V = head dHead + body dBody + leg dLeg;  G = td dTD + ctrlMin dCtrl/60 + sub dSubAtt + rev dRev;  x = V + kd dKD + G;
+  //   K = kd dKD + head (hurt (dHurt - aH x) + judgePower (dPow - aP x)): the engine-only hurt / power terms enter only as
+  //   their residual on the count index, and its variance comes out of the round part of u (the real panel's shared noise
+  //   already holds what judges see beyond the counts; params.officials.engAdj, tools/officials_engcal.js);
+  //   A - B differentials; 10-8 for the winner W with P = sigmoid(c0 + c_j + thV V_W + thK K_W +
+  //   thG G_W + eps), eps ~ N(0, sigmaE^2) shared; 10-10 with P = p1010. The referee multiplies the follow-up stoppage odds
+  //   after a knockdown (kdf), the standing-TKO hazard (stko) and the ground-and-pound TKO hazard (gnp).
+  // Officials: opts.judges = [names or keys] (or { names, power }), opts.referee = name; opts.judgePool = [[key, weight]...]
+  // to sample judges from (an event's judges); unknown or unnamed judges / referee are drawn from the table's recent
+  // pool, and a judge or referee not in the table gets effects drawn from the population (tau). opts.officials: a
+  // table set (officials_engine.json) to use instead of the loaded one, or false for league judging without tables.
+  // RNG: the main stream sees exactly the v4 draw count (9 + 1 normals at the start, 1 + 3 normals per judged round, the
+  // same stoppage draws), so flag-on and flag-off fights with one seed stay on the same path until officials differ;
+  // judge picks and 10-8 / 10-10 draws use a second stream seeded from the start-of-fight normals.
+  var OFFTAB = null;
+  function nameKey(s) { return String(s == null ? "" : s).toLowerCase().replace(/[^a-z]/g, ""); }
+  function loadOfficials(json) {
+    if (json == null) { OFFTAB = null; return null; }
+    var d = typeof json === "string" ? JSON.parse(json) : json;
+    if (!d || !d.tables) throw new Error("FightEngine.loadOfficials: expected officials_engine.json with tables");
+    OFFTAB = d;
+    return d;
+  }
+  // the table for a fight date: the latest table year <= the fight's year (table Y is fit only on fights before Y);
+  // null when the date precedes every table (no leak from later fits); no date -> the latest (production) table
+  function officialsTableFor(set, date) {
+    if (!set || !set.tables) return null;
+    var ys = Object.keys(set.tables).map(Number).filter(isFinite).sort(function (a, b) { return a - b; });
+    if (!ys.length) return null;
+    var dn = date ? normDate(date) : null;   // v5.0.1: a Date object gave NaN here (no table)
+    var y = dn ? +dn.slice(0, 4) : ys[ys.length - 1], pick = null;
+    for (var i = 0; i < ys.length; i++) if (ys[i] <= y) pick = ys[i];
+    return pick == null ? null : set.tables[String(pick)];
+  }
+  function officialsFor(p, opts, m) {
+    if (!(p.components && p.components.officials)) return null;
+    var O = p.officials || {}, set = opts.officials === false ? null : (opts.officials && opts.officials.tables ? opts.officials : OFFTAB);
+    var tab = opts.officials && opts.officials.league && opts.officials.judges ? opts.officials : officialsTableFor(set, m.date);
+    var lg = (tab && tab.league) || O, b = lg.beta || O.beta, t8 = lg.ten8 || O.ten8, tau = lg.tau || O.tau;
+    var perJ = O.perJudge !== false, useRef = O.referee !== false;
+    var aliases = (set && set.aliases) || {}, jt = (tab && tab.judges) || {}, rt = (tab && tab.referees) || {};
+    function jEff(key) { var r = jt[key]; return r ? [r[1], r[2], r[3], r[4], r[5]] : null; }
+    function jKey(nm) {
+      if (nm == null) return null;
+      var s = String(nm);
+      if (jt[s]) return s;
+      var k = aliases[nameKey(s)];
+      return k && jt[k] ? k : null;
+    }
+    var jl = Array.isArray(opts.judges) ? opts.judges : (opts.judges && Array.isArray(opts.judges.names) ? opts.judges.names : []);
+    var slots = [];
+    for (var i = 0; i < 3; i++) {
+      var nm = jl[i];
+      if (nm == null || nm === "") { slots.push(null); continue; }
+      var key = jKey(nm), eff = key ? jEff(key) : null;
+      slots.push({ name: key ? jt[key][0] : String(nm), key: key, eff: eff });     // eff null = not in the table: drawn from tau
+    }
+    // judge pool for unnamed slots: the given pool (an event's judges), else the table's recent pool
+    var pool = [], src = Array.isArray(opts.judgePool) && opts.judgePool.length ? opts.judgePool : ((tab && tab.pool) || []), wsum = 0;
+    for (i = 0; i < src.length; i++) {
+      var e = src[i], kk = Array.isArray(e) ? e[0] : e, w = Array.isArray(e) ? +e[1] : 1;
+      if (!(w > 0)) continue;
+      var k2 = kk === "_other" ? null : jKey(kk);
+      pool.push({ key: k2, name: k2 ? jt[k2][0] : (kk === "_other" ? null : String(kk)), eff: k2 ? jEff(k2) : null, w: w });
+      wsum += w;
+    }
+    // referee: named (table multipliers; unknown -> population draw), else the table's pool
+    var ref = null, rpool = [], rsum = 0, rnm = opts.referee;
+    if (rnm != null && rnm !== "") {
+      var rk = rt[rnm] ? rnm : null;
+      if (!rk) { var nk = nameKey(rnm); for (var rr in rt) if (nameKey(rr) === nk) { rk = rr; break; } }
+      ref = { name: rk || String(rnm), mult: rk ? [rt[rk][0], rt[rk][1], rt[rk][2]] : null };
+    } else if (tab && tab.ref_pool) {
+      for (i = 0; i < tab.ref_pool.length; i++) {
+        var re0 = tab.ref_pool[i], rk2 = re0[0] !== "_other" && rt[re0[0]] ? re0[0] : null;
+        rpool.push({ name: rk2, mult: rk2 ? [rt[rk2][0], rt[rk2][1], rt[rk2][2]] : null, w: +re0[1] });
+        rsum += +re0[1];
+      }
+    }
+    var rl = (tab && tab.ref_league) || {}, rtau = O.refTau || {};
+    // engine-only terms (hurts, power beyond the count) enter as their residual on the count index; their residual
+    // variance comes out of the round part of the shared noise and (x thK^2) out of the 10-8 shared noise
+    var sigU0 = lg.sigmaU != null ? lg.sigmaU : O.sigmaU, rhoF = clip(lg.sharedFight != null ? +lg.sharedFight : (O.sharedFight || 0), 0, 0.95);
+    var hurtHS = O.hurtHS != null ? O.hurtHS : p.judge.hurt / p.judge.head, ea = O.engAdj || null, aH = 0, aP = 0, varR = 0;
+    if (ea) {
+      aH = ea.aH || 0; aP = ea.aP || 0;
+      varR = b.head * b.head * (hurtHS * hurtHS * (ea.vHH || 0) + 2 * hurtHS * m.judgePower * (ea.vHP || 0) + m.judgePower * m.judgePower * (ea.vPP || 0));
+    }
+    var sigR = Math.sqrt(Math.max(0.05, (1 - rhoF) * sigU0 * sigU0 - varR)), sigF = Math.sqrt(rhoF) * sigU0;
+    var sigE = Math.sqrt(Math.max(0.05, t8.sigmaE * t8.sigmaE - t8.thK * t8.thK * varR));
+    function rtauOf(u) { return rl[u] && rl[u].tau != null ? +rl[u].tau : (rtau[u] || 0); }
+    return {
+      table: !!tab, perJudge: perJ, useRef: useRef,
+      beta: [b.head, b.body, b.leg, b.kd, b.td, b.ctrlMin, b.sub, b.rev || 0], sigU: sigU0, rhoF: rhoF, sigF: sigF, sigR: sigR,
+      hurtHS: hurtHS, jp: m.judgePower, aH: aH, aP: aP, varR: varR,
+      t8: [t8.c0, t8.thV, t8.thK, t8.thG, sigE], p1010: lg.p1010 != null ? lg.p1010 : (O.p1010 || 0),
+      tau: [tau.n || 0, tau.v || 0, tau.k || 0, tau.g || 0, tau.c || 0], slots: slots, pool: pool, wsum: wsum,
+      ref: ref, rpool: rpool, rsum: rsum, rtau: [rtauOf("kdf"), rtauOf("stko"), rtauOf("gnp")]
+    };
+  }
+  // one fight's officials: three judges' effects [n, v, k, g, c], referee multipliers [kdf odds, stko, gnp], second RNG
+  function officialsFight(off, zs) {
+    var h = 2166136261;
+    for (var q = 0; q < zs.length; q++) { h = Math.imul(h ^ ((Math.floor((zs[q] + 16) * 268435456) >>> 0)), 16777619) >>> 0; }
+    var r2 = makeRng(h), tau = off.tau, sel = [], names = [], used = {}, i;
+    function draw() { return [tau[0] * r2.normal(), tau[1] * r2.normal(), tau[2] * r2.normal(), tau[3] * r2.normal(), tau[4] * r2.normal()]; }
+    for (i = 0; i < 3; i++) {
+      var s = off.slots[i], eff = null, nm = null;
+      if (s) { eff = s.eff || draw(); nm = s.name; if (s.key) used[s.key] = 1; }
+      else if (off.pool.length && off.wsum > 0) {
+        for (var tries = 0; tries < 8; tries++) {
+          var u = r2.u() * off.wsum, e = 0;
+          while (e < off.pool.length - 1 && u >= off.pool[e].w) { u -= off.pool[e].w; e++; }
+          var pe = off.pool[e];
+          if (pe.key && used[pe.key] && tries < 7) continue;
+          if (pe.key) used[pe.key] = 1;
+          eff = pe.eff || draw(); nm = pe.name; break;
+        }
+      } else eff = draw();
+      if (!off.perJudge) eff = [0, 0, 0, 0, 0];
+      sel.push(eff); names.push(nm);
+    }
+    var mult = [1, 1, 1], rname = null;
+    if (off.ref) { rname = off.ref.name; mult = off.ref.mult || [Math.exp(off.rtau[0] * r2.normal()), Math.exp(off.rtau[1] * r2.normal()), Math.exp(off.rtau[2] * r2.normal())]; }
+    else if (off.rpool.length && off.rsum > 0) {
+      var ur = r2.u() * off.rsum, er = 0;
+      while (er < off.rpool.length - 1 && ur >= off.rpool[er].w) { ur -= off.rpool[er].w; er++; }
+      var rp = off.rpool[er];
+      rname = rp.name;
+      mult = rp.mult || [Math.exp(off.rtau[0] * r2.normal()), Math.exp(off.rtau[1] * r2.normal()), Math.exp(off.rtau[2] * r2.normal())];
+    }
+    if (!off.useRef) mult = [1, 1, 1];
+    return { sel: sel, names: names, ref: mult, refName: rname, r2: r2 };
+  }
+  // standard normal CDF (Cody-style rational erfc, |error| < 1.2e-7) and the exact Logistic(0, 1) draw from a normal
+  function ncdf(z) {
+    var x = Math.abs(z) / Math.SQRT2, t = 1 / (1 + 0.5 * x);
+    var y = t * Math.exp(-x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 +
+      t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+    return z >= 0 ? 1 - 0.5 * y : 0.5 * y;
+  }
+  function logisticOf(z) { var u = clip(ncdf(z), 1e-15, 1 - 1e-15); return Math.log(u / (1 - u)); }
+  // one judged round under the officials model; draws 1 + 3 normals from rng (as judgeRound) and the rest from OF.r2
+  function officialsRound(off, OF, uF, dHL, dBL, dLL, dKd, dTd, dCtrl, dSub, dRev, dHu, dPow, rng, cards, js) {
+    var b = off.beta, t8 = off.t8;
+    var V = b[0] * dHL + b[1] * dBL + b[2] * dLL;
+    var G = b[4] * dTd + b[5] * dCtrl / 60 + b[6] * dSub + b[7] * dRev;
+    var x = V + b[3] * dKd + G;                                       // count index; engine-only terms enter as their residual on it
+    var Kx = b[3] * dKd + b[0] * (off.hurtHS * (dHu - off.aH * x) + off.jp * (dPow - off.aP * x));
+    var u = (uF || 0) + off.sigR * rng.normal(), r2 = OF.r2, eps = t8[4] * r2.normal(), n108 = 0;
+    for (var j = 0; j < 3; j++) {
+      var e = logisticOf(rng.normal()), ef = OF.sel[j];
+      var eta = Math.exp(ef[0]) * (Math.exp(ef[1]) * V + Math.exp(ef[2]) * Kx + Math.exp(ef[3]) * G + u) + e;
+      if (!isFinite(eta)) throw new Error("FightEngine.officialsRound: judge score " + eta + " is not finite");   // v5.0.1: NaN went to corner B
+      var scA, scB;
+      if (r2.u() < off.p1010) { scA = 10; scB = 10; }
+      else {
+        var sg = eta > 0 ? 1 : -1;
+        var big = r2.u() < sigm(t8[0] + ef[4] + sg * (t8[1] * V + t8[2] * Kx + t8[3] * G) + eps);
+        scA = sg > 0 ? 10 : (big ? 8 : 9); scB = sg > 0 ? (big ? 8 : 9) : 10;
+        if (big) n108++;
+      }
+      cards[j][0] += scA; cards[j][1] += scB;
+      if (js) js.push([scA, scB]);
+    }
+    return n108;
+  }
+
   // ------------------------------------------------------------------ simulate one fight
+  var MAX_EVENTS_ROUND = 200000;   // v5.0.1: backstop event cap per round (a real round has a few hundred events)
   function simulate(m, rng, trace) {
     var p = m.p, K = m.k, F = p.form, J = p.judge, nR = m.rounds, i, j, k;
     var dRate = m.dRate, cRate = m.cRate, tdD = m.tdD, tdCC = m.tdCC, tdCU = m.tdCU, gPos = m.gPos, gBot = m.gBot, gEdge = m.gEdge;
     var swPos = m.swPos, upPos = m.upPos, subTPos = m.subTPos, subBPos = m.subBPos, subOPos = m.subOPos, subO = m.subO, gillo = m.gillo;
     var clE = m.clE, pCtl = m.pCtl, clBreak = m.clBreak, clSwap = m.clSwap, subBotO = m.subBotO, subStandO = m.subStandO;
+    var DY = m.dyn;                              // fight-dynamics tables (component "dynamics"), null when off
     // fight-night form (fixed draw order, independent of trace)
     // every multiplicative draw is a mean-1 lognormal: exp(sd * z - sd^2 / 2)
-    var sharedPace = lnorm(rng, F.pace);
-    var vol = lnorm(rng, F.vol);                 // shared fight volatility: a war vs a tactical fight
+    var sharedPace = lnorm(rng, DY ? DY.formPace : F.pace);
+    var vol = lnorm(rng, DY ? DY.vol : F.vol);   // shared fight volatility: a war vs a tactical fight
     var fOut = [1, 1], fAcc = [1, 1], fPow = [1, 1], fChin = [1, 1], fCard = [1, 1], fGrap = [1, 1], fSubO = [1, 1], fSubD = [1, 1];
     for (i = 0; i < 2; i++) {
-      fOut[i] = lnorm(rng, F.out); fAcc[i] = Math.exp(F.acc * rng.normal());   // accuracy: logit-normal (odds multiplier)
+      fOut[i] = lnorm(rng, DY ? DY.formOut : F.out); fAcc[i] = Math.exp((DY ? DY.formAcc : F.acc) * rng.normal());   // accuracy: logit-normal (odds multiplier)
       fPow[i] = lnorm(rng, F.pow); fChin[i] = lnorm(rng, F.chin);
       fCard[i] = lnorm(rng, F.cardio); fGrap[i] = lnorm(rng, F.grap);
       fSubO[i] = lnorm(rng, F.sub); fSubD[i] = lnorm(rng, F.sub);
     }
     var subK = [fSubO[0] * fSubD[1], fSubO[1] * fSubD[0]], subKs = [Math.sqrt(subK[0]), Math.sqrt(subK[1])];
-    var tS = [1, 1, 1], tG = [1, 1, 1], tP = [1, 1, 1];
-    for (j = 0; j < 3; j++) { tS[j] = lnorm(rng, J.tasteSd); tG[j] = lnorm(rng, J.tasteSd); tP[j] = lnorm(rng, J.tasteSd); }
-    var jF = J.sharedSd * Math.sqrt(J.sharedFight || 0) * rng.normal();   // judges' fight-level shared view (always drawn: fixed draw order)
+    var tS = [1, 1, 1], tG = [1, 1, 1], tP = [1, 1, 1], OF = null;
+    if (m.off) { var zs = []; for (j = 0; j < 9; j++) zs.push(rng.normal()); OF = officialsFight(m.off, zs); }   // officials: same 9 draws
+    else for (j = 0; j < 3; j++) { tS[j] = lnorm(rng, J.tasteSd); tG[j] = lnorm(rng, J.tasteSd); tP[j] = lnorm(rng, J.tasteSd); }
+    var zF = rng.normal(), jF = J.sharedSd * Math.sqrt(J.sharedFight || 0) * zF;   // judges' fight-level shared view (always drawn: fixed draw order)
+    var offUF = OF ? m.off.sigF * zF : 0;                                       // officials: the panel's fight-level shared view (same draw)
     var kdB = [m.kd[0] * fPow[0] * fChin[1] * vol, m.kd[1] * fPow[1] * fChin[0] * vol];
     var dw = [m.dw[0] * Math.pow(fPow[0], K.powDmgExp), m.dw[1] * Math.pow(fPow[1], K.powDmgExp)];
     var pcF = [Math.sqrt(fPow[0] * fChin[1] * vol), Math.sqrt(fPow[1] * fChin[0] * vol)];
@@ -735,6 +1597,7 @@
     var gRs = [Math.sqrt(gR[0]), Math.sqrt(gR[1])];
     var tdO = [m.tdO[0] * gR[0], m.tdO[1] * gR[1]], tdOC = [m.tdOC[0] * gR[0], m.tdOC[1] * gR[1]];
     var instO = m.instO, refO = m.refO;
+    if (OF) { refO *= OF.ref[0]; stkoB[0] *= OF.ref[1]; stkoB[1] *= OF.ref[1]; gnpB[0] *= OF.ref[2]; gnpB[1] *= OF.ref[2]; }
     var kdGnpO = odds(K.kdGnpAcc);
     var mixC = m.mixC, accO = m.accO, pass = K.pass, retain = K.retain;
     var dmgPos = K.dmgPos, kdPos = K.kdPos, gnpTkoPos = K.gnpTkoPos, drainPos = K.drainPos;
@@ -749,16 +1612,40 @@
       form: { A: { out: fOut[0], acc: fAcc[0], pow: fPow[0], chin: 1 / fChin[0], cardio: 1 / fCard[0], grap: fGrap[0], subOff: fSubO[0], subDef: 1 / fSubD[0] },
               B: { out: fOut[1], acc: fAcc[1], pow: fPow[1], chin: 1 / fChin[1], cardio: 1 / fCard[1], grap: fGrap[1], subOff: fSubO[1], subDef: 1 / fSubD[1] } },
       rounds: rounds, fin: null, n108: 0, kdr: 0, kdrf: 0, pace: sharedPace, vol: vol };
+    if (OF) fight.officials = { judges: OF.names.slice(), referee: OF.refName, refMult: OF.ref.slice() };
     var po = [0, 0], fin = null;
+    // dynamics state: fA = accuracy odds multiplier used by strikes (the fight-level form when off); dc / tdc = distance
+    // output and takedown-attempt carry-over; arO / arA = AR(1) round noise on output / accuracy; mom* = knockdown momentum
+    var fA = DY ? [fAcc[0], fAcc[1]] : fAcc, dc = [1, 1], tdc = [1, 1];
+    var arO = [0, 0], arA = [0, 0], momO = [1, 1], momA = [1, 1], momT = [1, 1];
 
     for (var r = 0; r < nR; r++) {
       for (k = 0; k < 2 * NS; k++) st[k] = 0;
-      var t = 0, state = 0, ctl = -1, pos = 0, downed = -1, kdLoc = 0;
+      var t = 0, state = 0, ctl = -1, pos = 0, downed = -1, kdLoc = 0, nEv = 0;
       var ev = trace ? [] : null;
-      var rp = sharedPace * lnorm(rng, F.roundPace);
-      po[0] = m.pace[0][r] * fOut[0] * rp * lnorm(rng, F.roundOut);
-      po[1] = m.pace[1][r] * fOut[1] * rp * lnorm(rng, F.roundOut);
-      var fr = m.finR[r], kdP = m.kdPace[r] * fr;
+      var rp = sharedPace * lnorm(rng, DY ? DY.roundPace : F.roundPace);
+      if (DY) {
+        // E2: each man's round output noise is AR(1) (stationary sd arSd, autocorrelation arPhi); the same two normals
+        // the plain engine spends on its iid round noise, then two more for the accuracy AR(1)
+        var zo0 = rng.normal(), zo1 = rng.normal(), za0 = rng.normal(), za1 = rng.normal();
+        if (r === 0) { arO[0] = DY.arSd * zo0; arO[1] = DY.arSd * zo1; arA[0] = DY.accArSd * za0; arA[1] = DY.accArSd * za1; }
+        else {
+          arO[0] = DY.arPhi * arO[0] + DY.arInn * zo0; arO[1] = DY.arPhi * arO[1] + DY.arInn * zo1;
+          arA[0] = DY.accArPhi * arA[0] + DY.accArInn * za0; arA[1] = DY.accArPhi * arA[1] + DY.accArInn * za1;
+        }
+        for (i = 0; i < 2; i++) {
+          po[i] = DY.pace[i][r] * fOut[i] * rp * Math.exp(arO[i] - DY.arC) * momO[i];
+          fA[i] = fAcc[i] * Math.exp(arA[i]) * DY.accLevel * momA[i];
+          // E6: grappling carry-over from earlier rounds (minutes controlled by the opponent, takedowns landed, own control)
+          var oc = tot[(1 - i) * NS + I_CTRL] / 60, ocw = tot[i * NS + I_CTRL] / 60, otl = tot[i * NS + I_TDL];
+          dc[i] = Math.exp(DY.distCtrlOpp * oc);
+          tdc[i] = Math.exp(DY.tdCtrlOpp * oc + DY.tdTdl * otl + DY.tdCtrlOwn * ocw) * momT[i] * DY.tdLevel * DY.tdR[r];
+        }
+      } else {
+        po[0] = m.pace[0][r] * fOut[0] * rp * lnorm(rng, F.roundOut);
+        po[1] = m.pace[1][r] * fOut[1] * rp * lnorm(rng, F.roundOut);
+      }
+      var fr = m.finR[r], kdP = DY ? DY.kdP[r] : m.kdPace[r] * fr;
 
       while (true) {
         var h0 = t < hurtEnd[0], h1 = t < hurtEnd[1];
@@ -768,20 +1655,20 @@
         var out1 = po[1] * (1 - K.outStam * (1 - S[1])) * (h1 ? K.outHurt : 1) * (1 - K.outMob * (1 - mob1));
         var n = 0, top = -1, bot = -1, k5 = 0;
         if (state === 0) {
-          evT[n] = E_STRIKE; evW[n] = 0; evX[n] = 0; evR[n++] = dRate[0] * out0;
-          evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 0; evR[n++] = dRate[1] * out1;
+          evT[n] = E_STRIKE; evW[n] = 0; evX[n] = 0; evR[n++] = dRate[0] * out0 * dc[0];
+          evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 0; evR[n++] = dRate[1] * out1 * dc[1];
           evT[n] = E_CLINCH; evW[n] = 0; evX[n] = 0; evR[n++] = clE * pCtl;
           evT[n] = E_CLINCH; evW[n] = 1; evX[n] = 0; evR[n++] = clE * (1 - pCtl);
-          evT[n] = E_TD; evW[n] = 0; evX[n] = 0; evR[n++] = tdD[0] * (1 - K.tdAttStam * (1 - S[0])) * (h0 ? 0.5 : 1);
-          evT[n] = E_TD; evW[n] = 1; evX[n] = 0; evR[n++] = tdD[1] * (1 - K.tdAttStam * (1 - S[1])) * (h1 ? 0.5 : 1);
+          evT[n] = E_TD; evW[n] = 0; evX[n] = 0; evR[n++] = tdD[0] * (1 - K.tdAttStam * (1 - S[0])) * (h0 ? 0.5 : 1) * tdc[0];
+          evT[n] = E_TD; evW[n] = 1; evX[n] = 0; evR[n++] = tdD[1] * (1 - K.tdAttStam * (1 - S[1])) * (h1 ? 0.5 : 1) * tdc[1];
         } else if (state === 1) {
           var cs = K.clinchCtrlStrike;
           evT[n] = E_STRIKE; evW[n] = 0; evX[n] = 1; evR[n++] = cRate[0] * out0 * (ctl === 0 ? cs : 2 - cs);
           evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 1; evR[n++] = cRate[1] * out1 * (ctl === 1 ? cs : 2 - cs);
           evT[n] = E_BREAK; evW[n] = 1 - ctl; evX[n] = 0; evR[n++] = clBreak;
           evT[n] = E_SWAP; evW[n] = 1 - ctl; evX[n] = 0; evR[n++] = clSwap * 2 * (ctl === 0 ? 1 - pCtl : pCtl);
-          evT[n] = E_TD; evW[n] = ctl; evX[n] = 1; evR[n++] = tdCC[ctl] * (1 - K.tdAttStam * (1 - S[ctl]));
-          evT[n] = E_TD; evW[n] = 1 - ctl; evX[n] = 1; evR[n++] = tdCU[1 - ctl] * (1 - K.tdAttStam * (1 - S[1 - ctl]));
+          evT[n] = E_TD; evW[n] = ctl; evX[n] = 1; evR[n++] = tdCC[ctl] * (1 - K.tdAttStam * (1 - S[ctl])) * tdc[ctl];
+          evT[n] = E_TD; evW[n] = 1 - ctl; evX[n] = 1; evR[n++] = tdCU[1 - ctl] * (1 - K.tdAttStam * (1 - S[1 - ctl])) * tdc[1 - ctl];
         } else {
           top = state - 2; bot = 1 - top; k5 = top * 5 + pos;
           if (downed === bot) {
@@ -802,6 +1689,10 @@
           }
         }
         var Rs = 0; for (k = 0; k < n; k++) Rs += evR[k];
+        // v5.0.1 (v5 review): a NaN or infinite total rate made t NaN, so the horizon test never fired and the round never
+        // ended; matchup() validates the tables, this is the backstop for anything computed in the loop, with an event cap
+        if (!(Rs >= 0 && Rs < Infinity)) throw new Error("FightEngine.simulate: total event rate " + Rs + " in round " + (r + 1) + " (state " + state + ")");
+        if (++nEv > MAX_EVENTS_ROUND) throw new Error("FightEngine.simulate: more than " + MAX_EVENTS_ROUND + " events in round " + (r + 1));
         var dt = rng.expo() / Rs;
         var horizon = 300;
         if (hurtEnd[0] > t && hurtEnd[0] < horizon) horizon = hurtEnd[0];
@@ -828,7 +1719,7 @@
           else {
             var mb = (i * 4 + pc) * 2;
             tg = ut < mixC[mb] ? 0 : (ut < mixC[mb + 1] ? 1 : 2);
-            o = accO[(i * 4 + pc) * 3 + tg] * fAcc[i] * (1 - K.accSelfStam * (1 - S[i])) * (hj ? K.accHurt : 1) * (1 + K.accStam * (1 - S[j]));
+            o = accO[(i * 4 + pc) * 3 + tg] * fA[i] * (1 - K.accSelfStam * (1 - S[i])) * (hj ? K.accHurt : 1) * (1 + K.accStam * (1 - S[j]));
             if (pc === 0) o *= 1 + K.accMob * (1 - mobj);
           }
           st[so + I_SA]++; st[so + I_HA + 2 * tg]++; S[i] -= K.drainAtt;
@@ -844,23 +1735,26 @@
             D[j] += dw[i] * dmgPos[pc]; st[so + I_DMG] += dw[i];
             if (pc <= 1) {
               st[so + I_SHL]++;
-              var pk = kdB[i] * kdPos[pc] * chinM[j] * (1 + D[j] / K.kdDmg) * (hj ? K.kdHurt : 1) * (1 + K.kdStamDef * (1 - S[j])) *
+              // dynamics E7/E11: per-strike knockdown risk by round only (no damage, stamina or pace terms)
+              var pk = DY ? kdB[i] * kdPos[pc] * chinM[j] * (hj ? K.kdHurt : 1) * kdP * (0.75 + 0.25 * mobi)
+                : kdB[i] * kdPos[pc] * chinM[j] * (1 + D[j] / K.kdDmg) * (hj ? K.kdHurt : 1) * (1 + K.kdStamDef * (1 - S[j])) *
                 Math.max(0.05, 1 - K.kdStamAtt * (1 - S[i])) * kdP * (0.75 + 0.25 * mobi);
               var uk = rng.u();
               if (uk < pk) kind = "kd";
               else if (uk < pk * (1 + K.hurtRatio)) kind = "hurt";
-              else if (hj) { if (rng.u() < stkoB[i] * chinM[j] * (K.stkoBase + D[j] / 100)) { kind = "fin"; finHow = "TKO"; } }
+              else if (hj) { if (rng.u() < stkoB[i] * chinM[j] * (DY ? (DY.stkoBase + D[j] / 100) * DY.stkoR[r] : (K.stkoBase + D[j] / 100))) { kind = "fin"; finHow = "TKO"; } }
             } else if (pc === 2) {
               if (follow) {
-                var ro = refO * chinM[j] * (1 + D[j] / K.refDmg) * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]));
+                var ro = DY ? refO * chinM[j] * DY.conv[r] : refO * chinM[j] * (1 + D[j] / K.refDmg) * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]));
                 if (rng.u() < ro / (1 + ro)) { kind = "fin"; finHow = "TKO"; }
-              } else if (rng.u() < gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / K.gnpDmg) * (hj ? K.gnpHurt : 1) * chinM[j] * fr * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]))) { kind = "fin"; finHow = "GNP"; }
+              } else if (rng.u() < (DY ? gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / DY.gnpDmg) * (hj ? K.gnpHurt : 1) * chinM[j] * fr * DY.gnpR[r]
+                : gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / K.gnpDmg) * (hj ? K.gnpHurt : 1) * chinM[j] * fr * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i])))) { kind = "fin"; finHow = "GNP"; }
             }
           } else if (tg === 1) {
             S[j] -= K.bodyDrain * dw[i]; if (S[j] < 0.05) S[j] = 0.05;
             if (pc <= 1) {
               st[so + I_SBL]++;
-              if (rng.u() < kdB[i] * K.kdBodyRatio * kdPos[pc] * (1 + K.kdStamDef * (1 - S[j])) * kdP) kind = "kd";
+              if (rng.u() < (DY ? kdB[i] * K.kdBodyRatio * kdPos[pc] * kdP : kdB[i] * K.kdBodyRatio * kdPos[pc] * (1 + K.kdStamDef * (1 - S[j])) * kdP)) kind = "kd";
             }
           } else {
             G[j] += dw[i];
@@ -869,7 +1763,7 @@
           }
           if (kind === "kd") {
             st[so + I_KD]++; kdN[j]++; D[j] += K.dmgKD; chinM[j] *= K.kdRepeat;
-            var io = instO * (1 + D[j] / K.kdInstantDmg) * (1 - K.instStam * (1 - S[i]));
+            var io = DY ? instO * DY.conv[r] : instO * (1 + D[j] / K.kdInstantDmg) * (1 - K.instStam * (1 - S[i]));
             if (rng.u() < io / (1 + io)) { kind = "fin"; finHow = "KO"; }
           }
           if (kind === "fin") {
@@ -993,13 +1887,33 @@
       // ---- judges: EM round-winner weights (data fit), shared + individual noise, fight-level tastes, margin 10-8 rule
       var a0 = 0, b0 = NS;
       var js = trace ? [] : null;
-      n108 += judgeRound(J, m.judgePower, st[a0 + I_HL] - st[b0 + I_HL], st[a0 + I_BL] - st[b0 + I_BL], st[a0 + I_LL] - st[b0 + I_LL],
+      var cpre = DY && DY.lostAcc !== 1 ? [cards[0][0] - cards[0][1], cards[1][0] - cards[1][1], cards[2][0] - cards[2][1]] : null;
+      if (OF) n108 += officialsRound(m.off, OF, offUF, st[a0 + I_HL] - st[b0 + I_HL], st[a0 + I_BL] - st[b0 + I_BL], st[a0 + I_LL] - st[b0 + I_LL],
+        st[a0 + I_KD] - st[b0 + I_KD], st[a0 + I_TDL] - st[b0 + I_TDL], st[a0 + I_CTRL] - st[b0 + I_CTRL], st[a0 + I_SUB] - st[b0 + I_SUB],
+        st[a0 + I_REV] - st[b0 + I_REV], st[a0 + I_HURT] - st[b0 + I_HURT], (st[a0 + I_DMG] - st[a0 + I_HL]) - (st[b0 + I_DMG] - st[b0 + I_HL]), rng, cards, js);
+      else n108 += judgeRound(J, m.judgePower, st[a0 + I_HL] - st[b0 + I_HL], st[a0 + I_BL] - st[b0 + I_BL], st[a0 + I_LL] - st[b0 + I_LL],
         st[a0 + I_KD] - st[b0 + I_KD], st[a0 + I_TDL] - st[b0 + I_TDL], st[a0 + I_CTRL] - st[b0 + I_CTRL], st[a0 + I_SUB] - st[b0 + I_SUB],
         st[a0 + I_HURT] - st[b0 + I_HURT], (st[a0 + I_DMG] - st[a0 + I_HL]) - (st[b0 + I_DMG] - st[b0 + I_HL]), tS, tG, tP, jF, rng, cards, js);
       if (trace) rec.judges = js;
 
       // ---- between rounds: recovery, doctor and corner stoppages
       if (r < nR - 1) {
+        if (DY) {
+          // dynamics E4: knockdown momentum for the next round only (the scorer eases off, the dropped man does not slow);
+          // E5 (knob, default off): accuracy odds x lostAcc after a round lost on the majority of cards
+          momO[0] = momO[1] = momA[0] = momA[1] = momT[0] = momT[1] = 1;
+          for (i = 0; i < 2; i++) {
+            if (st[i * NS + I_KD] > 0) {
+              momO[i] *= DY.momScOut; momA[i] *= DY.momScAcc; momT[i] *= DY.momScTd;
+              momO[1 - i] *= DY.momDrOut; momT[1 - i] *= DY.momDrTd;
+            }
+          }
+          if (cpre) {
+            var wA = 0;
+            for (j = 0; j < 3; j++) if (cards[j][0] - cards[j][1] > cpre[j]) wA++;
+            momA[wA >= 2 ? 1 : 0] *= DY.lostAcc;
+          }
+        }
         for (i = 0; i < 2; i++) { S[i] += K.recover * (1 - S[i]); D[i] *= 1 - K.dmgHeal; hurtEnd[i] = -1; }
         var stop = [false, false], kindS = ["", ""];
         for (i = 0; i < 2; i++) {
@@ -1020,7 +1934,8 @@
         }
       }
     }
-    // ---- decision
+    // ---- decision (point deductions first: drawn only now, see deductions(); fight.nDed only when they are on)
+    if (J.ded > 0) fight.nDed = deductions(J, nR, rng, cards, rounds);
     var ja = 0, jb = 0;
     for (var q = 0; q < 3; q++) { if (cards[q][0] > cards[q][1]) ja++; else if (cards[q][1] > cards[q][0]) jb++; }
     var dr = 3 - ja - jb;
@@ -1048,7 +1963,7 @@
     var rng = makeRng(seed == null ? 1 : seed), nR = m.rounds, i, k;
     var bins = [0, 0, 0, 0, 0, 0, 0], finA = [], finB = [], finKO = [], finSUB = [];
     for (k = 0; k < nR; k++) { finA.push(0); finB.push(0); finKO.push(0); finSUB.push(0); }
-    var methods = {}, dist = 0, distA = 0, distB = 0, dec = { UD: 0, SD: 0, MD: 0, DRAW: 0 }, n108 = 0, rndsJudged = 0, secs = 0;
+    var methods = {}, dist = 0, distA = 0, distB = 0, dec = { UD: 0, SD: 0, MD: 0, DRAW: 0 }, n108 = 0, nDed = 0, rndsJudged = 0, secs = 0;
     var sumA = new Float64Array(NS), sumB = new Float64Array(NS);
     var koLoc = { dist: 0, clinch: 0, ground: 0, "between rounds": 0 }, subNames = {}, koKind = { KO: 0, TKO_followup: 0, TKO_standing: 0, GNP: 0, LEG: 0, DOC: 0, CORNER: 0 }, kdr = 0, kdrf = 0;
     var chunk = Math.max(1, Math.floor(N / 50));
@@ -1059,7 +1974,7 @@
       var TA = f.totals.A, TB = f.totals.B;
       for (k = 0; k < NS; k++) { sumA[k] += TA[STK[k]]; sumB[k] += TB[STK[k]]; }
       if (isDecision(f)) {
-        dist++; dec[f.method]++; secs += nR * 300; rndsJudged += nR;
+        dist++; dec[f.method]++; secs += nR * 300; rndsJudged += nR; nDed += f.nDed || 0;
         if (f.winner === "A") distA++; else if (f.winner === "B") distB++;
       } else {
         secs += (f.round - 1) * 300 + f.t; rndsJudged += f.method === "CORNER" || f.method === "DOC" ? f.round : f.round - 1;
@@ -1088,7 +2003,7 @@
     var avgA = avgOf(sumA), avgB = avgOf(sumB);
     var pA = (bins[0] + bins[1] + bins[2]) / N, pB = (bins[4] + bins[5] + bins[6]) / N, pD = bins[3] / N;
     var fins = N - dist;
-    return {
+    var out = {
       n: N, seed: seed, bins: bins.map(function (x) { return x / N; }), counts: bins,
       pA: pA, pB: pB, pD: pD, se: Math.sqrt(pA * (1 - pA) / N),
       finA: finA.map(function (x) { return x / N; }), finB: finB.map(function (x) { return x / N; }),
@@ -1100,6 +2015,141 @@
       avg: { A: avgA, B: avgB },
       kd15: (sumA[I_KD] + sumB[I_KD]) / 2 / mins * 15, ctrl15: (sumA[I_CTRL] + sumB[I_CTRL]) / 2 / mins * 15
     };
+    if (m.p.judge && m.p.judge.ded > 0) out.dedPerDecision = nDed / Math.max(1, dist);   // v4.0.1 / v5 deductions: points per decision
+    return out;
+  }
+
+  // ------------------------------------------------------------------ sensitivity (realism_sens component): tornado data
+  var SENS_KEYS = ["out", "acc", "pow", "chin", "cardio", "tdAtt", "tdDef", "sub"];
+  var SENS_LABEL = { out: "striking output", acc: "striking accuracy", pow: "knockdown power", chin: "chin (KD susceptibility)",
+    cardio: "cardio (stamina drain)", tdAtt: "takedown attempts", tdDef: "takedown defense", sub: "submission threat",
+    judgePower: "judges' credit for power" };
+  var SENS_UP_GOOD = { out: 1, acc: 1, pow: 1, chin: -1, cardio: -1, tdAtt: 1, tdDef: 1, sub: 1 };   // knob up is good (1) / bad (-1) for him
+
+  // Posterior sd of fighter i's key profile rates (log scale for rates, logit for probabilities) from the shrinkage
+  // pseudo-counts: I = his events + prior strength x prior rate (the same k's matchup() shrinks with), times a per-stat
+  // over-dispersion phi fit on 2019-2023 fights against the out-of-fold learned rates (tools/realism.js disp ->
+  // params.realism.disp; 1 = Poisson / binomial):  sd(log rate) = sqrt(phi / I),  sd(logit p) = sqrt(phi / (n p (1 - p))).
+  // pow / chin are scaled by the engine's exponents on the shrunk ratios (powExp, chinExp), so each sd is on the knob's scale.
+  function rateSd(m, i) {
+    var p = m.p, P = m.P, L = m.L, R = m.R[i], s = R.sums, ds = (p.realism && p.realism.disp) || {};
+    function ph(k) { return ds[k] != null && isFinite(ds[k]) && ds[k] > 0 ? +ds[k] : 1; }
+    var att = s.d_att + s.c_att + s.g_att, attP = p.kPM * (P.d_att + P.c_att + P.g_att);
+    var nAcc = s.h_att + s.b_att + s.l_att, lnd = s.h_lnd + s.b_lnd + s.l_lnd;
+    var accP = (P.h_lnd + P.b_lnd + P.l_lnd) / Math.max(1e-9, P.h_att + P.b_att + P.l_att);
+    var nA = nAcc + p.kAcc, acc = clip((lnd + p.kAcc * accP) / nA, 0.02, 0.98), p0 = P.kd_per_h;
+    var tdN = s.otd_att + p.kTdAcc, tdP = clip(R.tdAccAg, 0.02, 0.98);
+    return {
+      out: Math.sqrt(ph("att") / Math.max(1, att + attP)),
+      acc: Math.sqrt(ph("acc") / Math.max(1, nA * acc * (1 - acc))),
+      pow: (p.powExp != null ? p.powExp : 1) * Math.sqrt(ph("kd") / Math.max(0.25, s.kd + p.kKD * p0)),
+      chin: (p.chinExp != null ? p.chinExp : 1) * Math.sqrt(ph("kd") / Math.max(0.25, s.okd + p.kKD * p0)),
+      tdAtt: Math.sqrt(ph("td_att") / Math.max(0.25, s.td_att + p.kTdPM * L.stand * L.tdAtt)),
+      tdDef: Math.sqrt(ph("td_acc") / Math.max(0.25, tdN * tdP * (1 - tdP))),
+      sub: Math.sqrt(ph("sub_att") / Math.max(0.25, s.sub_att + p.kPM * L.ground * L.sub))
+    };
+  }
+  // 1-sd sizes for the knob items: params.realism.knobSd, else the fight-night form sds (params.form), which already carry the
+  // model error the walk-forward fit saw; judges' power is additive (default 0.25 = its own default value).
+  function knobSd(p) {
+    var F = p.form || {}, K = (p.realism && p.realism.knobSd) || {};
+    function g(k, d) { return K[k] != null && isFinite(K[k]) ? +K[k] : d; }
+    return { out: g("out", F.out || 0.15), acc: g("acc", F.acc || 0.12), pow: g("pow", F.pow || 0.3), chin: g("chin", F.chin || 0.3),
+      cardio: g("cardio", F.cardio || 0.15), tdAtt: g("tdAtt", F.grap || 0.3), tdDef: g("tdDef", F.grap || 0.3), sub: g("sub", F.sub || 0.5),
+      judgePower: g("judgePower", 0.25) };
+  }
+
+  // FightEngine.sensitivity(m, opts): the change in P(win) and in the method shares for -z / +z sd of each knob and of each
+  // fighter's key profile rates (tornado data for the page). Every variant is rebuilt with the matchup's own options (same
+  // division, priors, learned rates, knobs) and replays the same per-fight seeds (common random numbers: identical fight-night form
+  // draws, so the differences carry far less Monte Carlo noise than the probabilities themselves).
+  //   opts: { n: sims per variant (default 1000), seed (1), z (1), kinds: ["knob", "rate"], sides: ["A", "B"],
+  //           keys: subset of ["out", "acc", "pow", "chin", "cardio", "tdAtt", "tdDef", "sub", "judgePower"],
+  //           sd: { key: sd, A: { key: sd }, B: {...} } overrides, profA / profB (when m has none), onProgress(f) }
+  //   Knob items scale adjA / adjB[key] by exp(-z sd) / exp(+z sd) (judges' power: -/+ z sd, floored at 0). Rate items move the
+  //   same lever by the fighter's posterior sd (rateSd; rates without a profile estimate, cardio, are knob-only).
+  //   Returns { n, seed, z, base: S, items: [{ id, key, side, kind, label, sd, mult: [lo, hi], upGood, lo: S, hi: S,
+  //   dPA: [lo.pA - base.pA, hi.pA - base.pA], dPWin: (his P(win) at +z) - (at -z) signed to "good for him", swing }], ms },
+  //   items sorted by swing = |hi.pA - lo.pA|; S = { pA, pB, pD, ko, sub, dec, bins[7], finA[r], finB[r] }.
+  function sensitivity(m, opts) {
+    opts = opts || {};
+    var src = m._src || {}, profA = opts.profA || src.A, profB = opts.profB || src.B;
+    if (!profA || !profB) throw new Error("FightEngine.sensitivity: no profiles on the matchup (build it with matchup() or pass opts.profA / opts.profB)");
+    var N = opts.n || 1000, seed = opts.seed == null ? 1 : +opts.seed, z = opts.z == null ? 1 : +opts.z, t0 = Date.now();
+    var kinds = opts.kinds || ["knob", "rate"], sides = opts.sides || ["A", "B"], keys = opts.keys || SENS_KEYS.concat(["judgePower"]);
+    // v5 merge: variants rebuild through the public matchup (api.matchup), so the components that wrap it (styles_sos)
+    // apply to every variant as they did to m; m from matchupBase alone rebuilds with matchupBase
+    var mo = m.opts || {}, build = m.mlApplied === undefined ? matchupBase : (api && api.matchup) || matchup, ov = opts.sd || {};
+    function r4(x) { return Math.round(x * 1e4) / 1e4; }
+    // per-fight seeds: fight k of every variant starts from the same generator state, so one desynchronised fight (a hit
+    // instead of a miss consumes extra draws) cannot desynchronise the rest, as one shared stream (summarize) would
+    var seeds = new Array(N);
+    for (var q = 0; q < N; q++) { var h = Math.imul((seed >>> 0) ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(q + 1, 0xc2b2ae35); h ^= h >>> 15; h = Math.imul(h, 0x27d4eb2d); seeds[q] = (h ^ (h >>> 13)) >>> 0; }
+    function brief(mv) {
+      var b = [0, 0, 0, 0, 0, 0, 0], nR = mv.rounds, fA = [], fB = [], w = new Int8Array(N), k;
+      for (k = 0; k < nR; k++) { fA.push(0); fB.push(0); }
+      for (k = 0; k < N; k++) {
+        var f = simulate(mv, makeRng(seeds[k]), false), bk = bucket(f);
+        b[bk]++; w[k] = bk < 3 ? 2 : (bk === 3 ? 1 : 0);
+        if (!isDecision(f)) { if (f.winner === "A") fA[f.round - 1]++; else if (f.winner === "B") fB[f.round - 1]++; }
+      }
+      for (k = 0; k < 7; k++) b[k] /= N;
+      var out = { pA: r4(b[0] + b[1] + b[2]), pB: r4(b[4] + b[5] + b[6]), pD: r4(b[3]), ko: r4(b[0] + b[6]), sub: r4(b[1] + b[5]),
+        dec: r4(b[2] + b[3] + b[4]), bins: b.map(r4), finA: fA.map(function (x) { return r4(x / N); }), finB: fB.map(function (x) { return r4(x / N); }) };
+      Object.defineProperty(out, "_w", { value: w, enumerable: false });   // per-fight A score (2 win, 1 draw, 0 loss), for paired se
+      return out;
+    }
+    // Monte Carlo se of (y.pA - x.pA) from the per-fight paired differences (draws count half)
+    function pairSe(x, y) {
+      var s = 0, s2 = 0;
+      for (var k = 0; k < N; k++) { var d = (y._w[k] - x._w[k]) / 2; s += d; s2 += d * d; }
+      var mu = s / N; return Math.sqrt(Math.max(0, s2 / N - mu * mu) / N);
+    }
+    function sdOf(side, key, d) {
+      if (side && ov[side] && ov[side][key] != null) return +ov[side][key];
+      return ov[key] != null && typeof ov[key] !== "object" ? +ov[key] : d;
+    }
+    var ks = knobSd(m.p), rs = [rateSd(m, 0), rateSd(m, 1)], specs = [];
+    kinds.forEach(function (kind) {
+      keys.forEach(function (key) {
+        if (key === "judgePower") { if (kind === "knob") specs.push({ key: key, side: null, kind: kind, sd: sdOf(null, key, ks.judgePower) }); return; }
+        if (SENS_UP_GOOD[key] == null) return;
+        sides.forEach(function (sd0) {
+          var i = sd0 === "B" ? 1 : 0, v = kind === "knob" ? ks[key] : rs[i][key];
+          if (v == null || !isFinite(v)) return;
+          specs.push({ key: key, side: SIDE[i], kind: kind, sd: sdOf(SIDE[i], key, v) });
+        });
+      });
+    });
+    var total = 1 + 2 * specs.length, done = 0;
+    function tick() { done++; if (opts.onProgress) opts.onProgress(done / total); }
+    var base = brief(m); tick();
+    var items = specs.map(function (sp) {
+      var res = [null, null], mult = [1, 1];
+      for (var d = 0; d < 2; d++) {
+        var sg = d === 0 ? -1 : 1, o = {}, k;
+        for (k in mo) o[k] = mo[k];
+        o.adjA = {}; for (k in (mo.adjA || {})) o.adjA[k] = mo.adjA[k];
+        o.adjB = {}; for (k in (mo.adjB || {})) o.adjB[k] = mo.adjB[k];
+        if (Array.isArray(mo.judges)) o.judges = { names: mo.judges.slice() };   // v5 merge: officials names (engine3.js officialsFor)
+        else { o.judges = {}; for (k in (mo.judges || {})) o.judges[k] = mo.judges[k]; }
+        if (sp.key === "judgePower") { mult[d] = Math.max(0, m.judgePower + sg * z * sp.sd); o.judges.power = mult[d]; }
+        else {
+          var ak = sp.side === "A" ? "adjA" : "adjB", cur = m.adj[sp.side === "A" ? 0 : 1][sp.key];
+          mult[d] = Math.exp(sg * z * sp.sd); o[ak][sp.key] = cur * mult[d];
+        }
+        res[d] = brief(build(profA, profB, o)); tick();
+      }
+      var up = sp.key === "judgePower" ? 0 : SENS_UP_GOOD[sp.key];
+      var pw0 = sp.side === "B" ? res[0].pB : res[0].pA, pw1 = sp.side === "B" ? res[1].pB : res[1].pA;
+      return { id: (sp.side ? sp.side + "." : "") + sp.key + "." + sp.kind, key: sp.key, side: sp.side, kind: sp.kind,
+        label: (sp.side ? (sp.side === "A" ? m.A.name : m.B.name) + ": " : "") + SENS_LABEL[sp.key] + (sp.kind === "rate" ? " (estimate)" : " (knob)"),
+        sd: r4(sp.sd), mult: [r4(mult[0]), r4(mult[1])], upGood: up, lo: res[0], hi: res[1],
+        dPA: [r4(res[0].pA - base.pA), r4(res[1].pA - base.pA)], dPWin: up ? r4(up * (pw1 - pw0)) : null,
+        swing: r4(Math.abs(res[1].pA - res[0].pA)), se: r4(pairSe(res[0], res[1])) };
+    });
+    items.sort(function (x, y) { return y.swing - x.swing; });
+    return { n: N, seed: seed, z: z, base: base, items: items, ms: Date.now() - t0 };
   }
 
   // ------------------------------------------------------------------ explain: why the matchup looks the way it does
@@ -1137,11 +2187,13 @@
       o.kd = { p0: m.kd[i] / (fc.pow * fo.chin), perHeadLanded: m.kd[i], powerRatio: fc.powRaw, oppChinRatio: fo.chinRaw, ageChinOpp: fo.ageChin, agePow: fc.agePow,
         koLossChinOpp: fo.koChin, oppKoLosses: fo.koLosses, sizeChinOpp: fo.sizeChin, sizePow: fc.sizePow, knobPow: m.adj[i].pow, knobChinOpp: m.adj[j].chin,
         damagePerHead: m.dw[i], instantKO: prob(m.instO) };
+      if (m.dur) o.kd.durability = { mode: m.dur.mode, base: m.dur.base, rel: m.dur.rel[i], engineRel: m.dur.engRel[i], engineWeight: m.dur.w,
+        oppChin: m.dur[SIDE[j]].chin, ownPow: m.dur[SIDE[i]].pow, opp: m.dur[SIDE[j]], own: m.dur[SIDE[i]] };
       o.grappling = { tdAttPer15Stand: m.tdS[i] * 900, tdSuccess: m.pTd[i], tdSuccessClinch: prob(m.tdOC[i] * m.adj[j].tdDef), ctrlTargetPer15: m.ctrlT[i] * 15,
         topSkill: R[i].topSkill, oppEscapeWeakness: R[j].escWeak, passEdge: m.gEdge[i], standUpMeanSecWhenUnder: 1 / Math.max(1e-9, m.up[i]),
         sweepPerMinBottom: m.sw[i] * 60 };
       o.subs = { attemptsPerGroundMin: m.threat[i], conversion: m.subConv[i], careerConvShrunk: R[i].subConv, oppDefFailShrunk: R[j].subDefFail, guillotinePerStuffedShot: m.gillo[i] };
-      o.cardio = { paceByRound: m.pace[i].slice(), cardioIndex: m.cardio[i], drainPerSec: m.drain[i], drainVsLeague: m.drain[i] / m.p.drain,
+      o.cardio = { paceByRound: (m.dyn ? m.dyn.pace[i] : m.pace[i]).slice(), cardioIndex: m.cardio[i], drainPerSec: m.drain[i], drainVsLeague: m.drain[i] / m.p.drain,
         drainSchedule: Math.pow(3 / m.rounds, m.p.drainSchedExp), drainCardio: Math.pow(clip(m.cardio[i], 0.5, 1.6), -m.p.cardioExp) };
       o.knobs = m.adj[i];
       sides.push(o);
@@ -1152,15 +2204,24 @@
       lines.push("  Distance target mix head/body/leg " + m.mixD[i].map(pct).join(" / "));
       lines.push("  Expected per 15 (base): sig att " + f(o.expectedPer15.sigAtt, 1) + ", landed " + f(o.expectedPer15.sigLnd, 1) + " (dist " + f(dl, 1) + ", clinch " + f(cl, 1) + ", ground " + f(gl, 1) +
         "); career landed/min " + f(o.career.slpm) + ", absorbed/min " + f(o.career.sapm));
-      lines.push("  KD per landed standing head strike " + f(100 * m.kd[i], 3) + "% = p0 " + f(100 * o.kd.p0, 3) + "% x power " + f(fc.powRaw) + " x opp chin " + f(fo.chinRaw) +
-        " x opp age " + f(fo.ageChin) + " x own age (power) " + f(fc.agePow) + " x opp KO losses (" + fo.koLosses + ") " + f(fo.koChin) + " x opp size " + f(fo.sizeChin) + " x own size (power) " + f(fc.sizePow) +
-        " x knobs " + f(m.adj[i].pow) + "/" + f(m.adj[j].chin) + "; damage/head " + f(m.dw[i]));
+      if (m.dur) {
+        var dO = m.dur[SIDE[j]], dS = m.dur[SIDE[i]];
+        lines.push("  KD per landed standing head strike " + f(100 * m.kd[i], 3) + "% (durability, " + m.dur.mode + "): base " + f(100 * m.dur.base, 3) + "% x kdCal x kdScale x [opp chin " +
+          f(dO.chin) + " (cov " + f(dO.chin_cov) + " x fighter " + f(dO.chin_re) + ") x own power " + f(dS.pow) + " (cov " + f(dS.pow_cov) + " x fighter " + f(dS.pow_re) + ") x knobs " +
+          f(m.adj[i].pow) + "/" + f(m.adj[j].chin) + "]^" + f(1 - m.dur.w) + " x engine structure " + f(m.dur.engRel[i]) + "^" + f(m.dur.w) + "; damage/head " + f(m.dw[i]));
+      } else {
+        lines.push("  KD per landed standing head strike " + f(100 * m.kd[i], 3) + "% = p0 " + f(100 * o.kd.p0, 3) + "% x power " + f(fc.powRaw) + " x opp chin " + f(fo.chinRaw) +
+          " x opp age " + f(fo.ageChin) + " x own age (power) " + f(fc.agePow) + " x opp KO losses (" + fo.koLosses + ") " + f(fo.koChin) + " x opp size " + f(fo.sizeChin) + " x own size (power) " + f(fc.sizePow) +
+          " x knobs " + f(m.adj[i].pow) + "/" + f(m.adj[j].chin) + "; damage/head " + f(m.dw[i]));
+      }
       lines.push("  Takedowns: " + f(o.grappling.tdAttPer15Stand) + " att per 15 standing min, success " + pct(m.pTd[i]) + " (career " + pct(R[i].tdAcc) + " vs opp allows " + pct(R[j].tdAccAg) + ", league " + pct(P.td_acc) +
         "); control target " + f(o.grappling.ctrlTargetPer15, 0) + " s/15 (league " + f(P.ctrl * 15, 0) + "), top skill " + f(R[i].topSkill) + " x opp escape " + f(R[j].escWeak) + " -> pass edge " + f(m.gEdge[i]));
       lines.push("  When under: mean stand-up " + f(1 / m.up[i], 0) + " s, sweeps " + f(m.sw[i] * 60, 3) + "/min");
       lines.push("  Submissions: " + f(m.threat[i], 3) + " attempts per ground-minute (league " + f(L.sub, 3) + "), conversion " + pct(m.subConv[i]) + " (shrunk own " + pct(R[i].subConv) + " vs opp " + pct(R[j].subDefFail) + ", league " + pct(P.sub_conv) + ")");
       var schedF = Math.pow(3 / m.rounds, m.p.drainSchedExp), cardF = Math.pow(clip(m.cardio[i], 0.5, 1.6), -m.p.cardioExp);
-      lines.push("  Cardio: output by round " + m.pace[i].map(function (x) { return f(x); }).join(" ") + " (division curve x his late-round ratio); cardio index " + f(m.cardio[i]) +
+      lines.push("  Cardio: output by round " + (m.dyn ? m.dyn.pace[i] : m.pace[i]).map(function (x) { return f(x); }).join(" ") +
+        (m.dyn ? " (dynamics: league pace curve x his late-round ratio x opponent's^" + m.p.dyn.paceMutual + "; knockdown risk by round " +
+          m.dyn.kdP.map(function (x) { return f(x); }).join(" ") + ")" : " (division curve x his late-round ratio)") + "; cardio index " + f(m.cardio[i]) +
         "; stamina drain x" + f(m.drain[i] / m.p.drain) + " of the 3-round base (" + m.rounds + "-round pacing x" + f(schedF) + ", cardio x" + f(cardF) + ", knob x" + f(m.adj[i].cardio) + ")");
     }
     out.A = sides[0]; out.B = sides[1];
@@ -1244,11 +2305,59 @@
   var api = {
     VERSION: VERSION, KEYS: KEYS, STATS: STK,
     loadDB: loadDB, profile: profile, matchup: matchup, matchupBase: matchupBase, simulate: simulate, bucket: bucket, makeRng: makeRng,
-    loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound,
+    loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound, deductions: deductions, loadDurability: loadDurability,
+    loadEmbed: loadEmbed, embedBlend: embedBlendSide, oppadjSide: oppadjSide,   // v5 merge step 4: components.embed, .oppadj,
+    loadPreUFC: loadPreUFC, preufcMult: function (rec, prof, q) { return preufcMult(q || (getParams() || {}).preufc || {}, rec, prof); },   // .preufc
+    durabilityCovariates: function (prof, age, dp) { return durCovariates(dp || (getParams() || {}).durability || {}, prof || {}, age, null); },
+    loadOfficials: loadOfficials, officialsTable: function () { return OFFTAB; }, officialsTableFor: officialsTableFor, officialsRound: officialsRound,
     summarize: summarize, explain: explain, manualProfile: manualProfile,
+    sensitivity: sensitivity, rateSd: rateSd, realismFactors: realismFactors,   // realism_sens component (v5 merge step 3)
     // helpers exposed for tests, calibration and the page
     priorFor: priorFor, league: league, fighterRates: fighterRates, occupancy: occupancy, isDecision: isDecision,
-    clip: clip, log5: log5, odds: odds, prob: prob, params: getParams
+    clip: clip, log5: log5, odds: odds, prob: prob, params: getParams,
+    // v5: the parameter set a matchup runs on (base params + components flags + opts.params overrides), and the v401 sub-flags
+    resolveParams: function (over, base) { return resolveParams(base || getParams(), over); }, v401Flags: v401Flags, v501Flags: v501Flags
   };
+  // [styles_sos] begin: component hook (src/styles_sos.js: style rate modifiers, strength of schedule). It runs after
+  // the matchup tables are final (base or learned rates) and only when params.components.styles_sos is truthy; with the
+  // flag off the engine is the engine without these lines (tests/test_styles_sos.js strips them and compares).
+  function matchupStylesSOS(profA, profB, opts) {
+    var m = matchup(profA, profB, opts);
+    var c = m.p && m.p.components, on = !!(c && c.styles_sos), SS = on ? getSS() : null;
+    if (SS) { SS.apply(m, resolve(profA), resolve(profB), m.opts || opts || {}, KEYS); checkTables(m); }   // v5.0.1: m.opts carries the canonical date
+    else if (on) m.stylesSOS = { missing: true };   // flag on but src/styles_sos.js not loaded: tables unchanged, flagged
+    return m;
+  }
+  api.matchup = matchupStylesSOS;
+  // [styles_sos] end
+  /* blend_anchor:begin -- engine component "blend_anchor" (roadmap v9): FightEngine.predict, the final prediction package.
+     params.components.blend_anchor true: src/ml/blend.js (FightBlend) blends P(win) (src/ml/moe.js over the ML v2 package's
+     exported stack, data/derived/blindtest_stack.json, block chosen by opts.lineKind; ML v2 via src/ml/ml2.js), rescales and pools the
+     method x round cells with tools/methodround_model.js, optionally anchors the simulator to the blend, adds ML stat lines
+     and a profile-noise interval. false (or FightBlend missing): the plain engine package, whose numbers are exactly
+     summarize(matchup(profA, profB, opts), sims, seed). Nothing outside this block changes matchup / simulate / summarize. */
+  function getBlend() {
+    if (root && root.FightBlend) return root.FightBlend;
+    if (typeof require === "function") { try { return require("./ml/blend.js"); } catch (e) { return null; } }
+    return null;
+  }
+  api.predict = function (profA, profB, opts) {
+    opts = opts || {};
+    var p = mergeParams(getParams(), opts.params), FB = getBlend();
+    var on = !!(p.components && p.components.blend_anchor);
+    if (on && FB) return FB.predict(api, profA, profB, opts, { meta: DB ? DB.meta : null, params: p });
+    // v5 merge step 5: the public api.matchup (the styles_sos wrapper), so the flag-off package is exactly
+    // summarize(FightEngine.matchup(profA, profB, opts), sims, seed) with every v5 component the call switches on
+    var N = opts.sims || (p.blend && p.blend.sims) || 1000, seed = opts.seed == null ? 1 : opts.seed;
+    var s = summarize(api.matchup(profA, profB, opts), N, seed), dec = s.pA + s.pB;
+    return { component: "blend_anchor", on: false, source: "engine", p: dec > 0 ? s.pA / dec : 0.5, pA: s.pA, pB: s.pB, pD: s.pD,
+      bins7: s.bins, sim: s, reason: on ? "src/ml/blend.js not loaded" : "params.components.blend_anchor is false" };
+  };
+  /** Data for the blend (v5 merge step 5: the ML v2 package): { stack (data/derived/blindtest_stack.json; `moe` is an alias),
+      feat (moe_page.json: the feature LR), mlPage (ml.json), market (market.json ratings), ml2 (ml2.json), methodRound
+      (methodround.json or its js_model), data (blend_anchor.json) }. predict picks the stack block by opts.lineKind
+      ('close' | 'open' | 'none'); backtests pass opts.backtest with a stacker fit on 2023 or earlier (src/ml/blend.js). */
+  api.loadBlend = function (o) { var FB = getBlend(); if (!FB) throw new Error("FightEngine.loadBlend: src/ml/blend.js (FightBlend) is not loaded"); return FB.load(o); };
+  /* blend_anchor:end */
   return api;
 });
