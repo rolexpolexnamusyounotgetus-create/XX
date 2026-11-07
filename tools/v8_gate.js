@@ -97,7 +97,7 @@ if (!isMainThread) {
             const A = o === 0 ? f.A : f.B, B = o === 0 ? f.B : f.A;
             const opts = { division: f.prior_division || f.division, rounds: f.rounds, title: f.title, date: f.date, priors: priors[f.date.slice(0, 4)],
               ml: { pred: o === 0 ? { A: rates(ent.A), B: rates(ent.B) } : { A: rates(ent.B), B: rates(ent.A) } }, params };
-            if (tg.fold) opts.statTargets = o === 0 ? { A: tg.A, B: tg.B } : { A: tg.B, B: tg.A };
+            if (tg.fold) opts.statTargets = o === 0 ? { A: tg.A, B: tg.B, fin: tg.fin } : { A: tg.B, B: tg.A, fin: { t: tg.fin.t, A: tg.fin.B, B: tg.fin.A } };
             XR.apply(opts, f, o === 1, params);
             const m = E.matchup(A, B, opts);
             XR.assertApplied(m, f.id, params);

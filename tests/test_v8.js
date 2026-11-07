@@ -44,7 +44,7 @@ function baseOpts(f, o) {
 function v8Opts(f, o, params) {
   const op = Object.assign(baseOpts(f, o), { params });
   const t = TG[f.id];
-  if (t && t.fold) op.statTargets = o === 0 ? { A: t.A, B: t.B } : { A: t.B, B: t.A };
+  if (t && t.fold) op.statTargets = o === 0 ? { A: t.A, B: t.B, fin: t.fin } : { A: t.B, B: t.A, fin: { t: t.fin.t, A: t.fin.B, B: t.fin.A } };
   XR.apply(op, f, o === 1, params);
   return op;
 }

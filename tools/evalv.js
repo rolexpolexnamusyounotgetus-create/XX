@@ -179,7 +179,7 @@ if (!isMainThread) {
           if (useDur) { opts.dur = durOpts(f.id, o); opts.params = durNorm; }
           if (useSOS) { const so = sosOpts(f, o, opts.params); opts.sos = so.sos; opts.params = so.params; }
           XR.apply(opts, f, o === 1, opts.params);   // step 4: opts.embed / opts.oppadj / opts.preufc for each component that is on
-          if (useRT && rtT.fold) opts.statTargets = o === 0 ? { A: rtT.A, B: rtT.B } : { A: rtT.B, B: rtT.A };
+          if (useRT && rtT.fold) opts.statTargets = o === 0 ? { A: rtT.A, B: rtT.B, fin: rtT.fin } : { A: rtT.B, B: rtT.A, fin: { t: rtT.fin.t, A: rtT.fin.B, B: rtT.fin.A } };
           const m = E.matchup(A, B, opts);
           if (useRT && rtT.fold && !(m.retarget && m.retarget.applied)) throw new Error("retarget: targets not applied for " + f.id);
           if (m.retarget && m.retarget.applied) acc.rtApplied++;
