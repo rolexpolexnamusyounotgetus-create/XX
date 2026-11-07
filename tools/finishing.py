@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 """Fighter finishing tendencies and the joint who x how x when model (task key: finishing).
 
-Run from the project root (stages cache into out/finishing_cache/, each can be re-run alone):
+Run from the project root (stages cache into out/finishing_cache/, each can be re-run alone; about 6 minutes in all):
 
-    nice -n 5 python3 tools/finishing.py base      # methodround table + ML v2 S2 inputs; S2 / S2+ml2win per fold
-    nice -n 5 python3 tools/finishing.py feats     # walk-forward fighter finishing state (events, filter inputs)
-    nice -n 5 python3 tools/finishing.py tune      # hyperparameters by forward-chained CV on 2016-2019
-    nice -n 5 python3 tools/finishing.py cv        # forward-chained CV 2020-2023 vs S2+ml2win (primary decision)
-    nice -n 5 python3 tools/finishing.py stage2    # 2019+ verified layers (statlines, durability, bayes) on top
+    nice -n 5 python3 tools/finishing.py base      # methodround table + ML v2 S2 inputs; S2 / S2+ml2win per fold 2016-2024
+    nice -n 5 python3 tools/finishing.py feats     # walk-forward fighter event table, pointers, filter sequence, pre-UFC
+    nice -n 5 python3 tools/finishing.py tune      # pre-specified route: hyperparameters on the 2016-2019 folds
+    nice -n 5 python3 tools/finishing.py cvfixed   # ... frozen and scored on the 2020-2023 folds (model family there)
+    nice -n 5 python3 tools/finishing.py grid      # OOF 2016-2023 for every method / round candidate
+    nice -n 5 python3 tools/finishing.py nested    # nested forward-chained selection (the decision procedure)
     nice -n 5 python3 tools/finishing.py gate      # stack gate: blend with S2+ml2win, forward-chained 2021-2023
-    nice -n 5 python3 tools/finishing.py holdout   # 2024-01-01..2025-12-31 scored ONCE (refuses a second run)
+    nice -n 5 python3 tools/finishing.py stage2    # 2019+ verified layers (statlines, durability, bayes), gated
+    nice -n 5 python3 tools/finishing.py swap      # corner-swap refit test (fold 2023)
+    nice -n 5 python3 tools/finishing.py holdout   # 2024-01-01..2025-12-31 scored ONCE (a marker refuses a rerun)
     nice -n 5 python3 tools/finishing.py export    # data/derived/finishing.json (+ JS model, roster, test vectors)
-    nice -n 5 python3 tools/finishing.py swap      # corner-swap test of the whole pipeline (refit on swapped rows)
+    python3 tools/finishing.py summary             # print every table of research/model_finishing.md from the JSON
+    node tests/test_finishing.js                   # JS evaluator src/ml/finishing.js vs the export
 
 What it models. The ML v2 winner probability decides who wins (it is taken as given, never re-predicted). This tool
 models HOW (KO/TKO, submission, decision) given the winner, and WHEN (the finishing round) given the winner and the
@@ -55,7 +59,6 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize, minimize_scalar
-from scipy.special import gammaln
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -375,21 +378,6 @@ def person_cumsum(feats, x):
     return at
 
 
-def nb_strength(K, Ex):
-    """Gamma-Poisson (negative binomial) marginal likelihood of person totals K given expected Ex; returns the
-    prior strength m (prior: rate ratio ~ Gamma(m, m), mean 1)."""
-    ok = Ex > 0.05
-    K, Ex = K[ok], Ex[ok]
-
-    def nll(lm):
-        m = math.exp(lm)
-        return -np.sum(gammaln(K + m) - gammaln(m) + m * np.log(m / (m + Ex)) + K * np.log(Ex / (m + Ex)))
-    r = minimize_scalar(nll, bounds=(math.log(0.05), math.log(500.0)), method="bounded")
-    return float(math.exp(r.x))
-
-
-GH_Z, GH_W = np.polynomial.hermite_e.hermegauss(24)        # nodes / weights for N(0, 1)
-GH_W = GH_W / GH_W.sum()
 PRE_IDX = {"ko_w": 1, "sub_w": 2, "dec_w": 3, "ko_l": 4, "sub_l": 5, "dec_l": 6}
 
 
@@ -1833,12 +1821,78 @@ def stage_export(args):
 STAGES["export"] = stage_export
 
 
+# ====================================================================== stage: summary (report tables from the JSON)
+def stage_summary(args):
+    """Print every table in research/model_finishing.md from data/derived/finishing.json (no refit)."""
+    d = jload("finishing.json")
+    f = lambda x: "%+.4f [%+.4f, %+.4f]" % (x["diff"], x["ci95"][0], x["ci95"][1])
+    ms = ("bin7", "joint", "method_given_winner", "round_given_fin", "method3")
+    print("## decision:", d["meta"]["decision"], "| production:", json.dumps(d["meta"]["production"]))
+    h = d["holdout"]
+    print("\n## 2024-2025 single look (n %d, %d cards, scored %s)" % (h["n"], h["n_cards"], h["scored_utc"]))
+    print("| model | " + " | ".join(ms) + " |")
+    for k, v in h["means"].items():
+        print("| %s | " % k + " | ".join("%.4f" % v[m]["mean"] for m in ms) + " |")
+    for k, v in h["paired"].items():
+        print("| %s | " % k + " | ".join(f(v[m]) for m in ms) + " |")
+    print("by year:", h["by_year"])
+    for name, key, ref in (("nested procedure, 2020-2023", "nested", "paired_vs_S2+ml2win"),
+                           ("pre-specified route (tune 2016-2019, frozen), 2020-2023", "cv_fixed", "paired_vs_S2+ml2win")):
+        r = d[key]
+        print("\n## %s (n %d)" % (name, r["n"]))
+        print("| model | " + " | ".join(ms) + " |")
+        for k, v in r["means"].items():
+            print("| %s | " % k + " | ".join("%.4f" % v[m]["mean"] for m in ms) + " |")
+        for k, v in r[ref].items():
+            print("| %s | " % k + " | ".join(f(v[m]) for m in ms) + " |")
+        for k, v in r.get("paired_extra", {}).items():
+            print("| %s | %s |" % (k, f(v["bin7"])))
+    nz = d["nested"]
+    print("\nnested picks:", json.dumps({y: (p["method"], p["round"]) for y, p in nz["picks"].items()}))
+    print("production:", nz["production"], "| oracle on 2020-23:", nz["oracle_2020_23"])
+    print("by year:", nz["by_year"])
+    print("by segment:", json.dumps(nz["by_segment"]))
+    print("family (cv_fixed):", {k: v["bin7"] for k, v in d["cv_fixed"]["family"].items()})
+    g = d["gate"]
+    print("\n## stack gate 2021-2023 (n %d): %s" % (g["n"], g["rule"]))
+    for k, v in g["results"].items():
+        print("| %s | betas %s | blend %s | raw %s | %s |" % (k, v["betas"], f(v["blend_minus_S2+ml2win"]["bin7"]),
+                                                          f(v["raw_minus_S2+ml2win"]["bin7"]),
+                                                          "pass" if v["passes"] else "fail"))
+    print("decision:", g["decision"], "production beta", g["production_beta"])
+    s2 = d["stage2"]
+    print("\n## stage 2 (2019+ layers on S2+ml2win), 2021-2023")
+    for k, v in s2["results"].items():
+        print("| %s | %s | %s |" % (k, f(v["minus_S2+ml2win"]["bin7"]), f(v["minus_S2+ml2win"]["method_given_winner"])))
+    tn = d["tune"]
+    print("\n## tune folds 2016-2019 (n %d): S2+ml2win bin7 %.5f" % (tn["n"], tn["S2+ml2win"]["bin7"]))
+    print("filter grid:", [(r["sigma0"], r["tau"], r["mgw_ll"]) for r in tn["filter_grid"]],
+          "division base rates", tn["filter_base_only_mgw_ll"])
+    print("core grid best 3:", [(r["start"], r["hl"], r["C"], r["bin7"]) for r in sorted(tn["core_grid"], key=lambda r: r["bin7"])[:3]])
+    print("ablation:", {k: v["bin7"] for k, v in tn["ablation"].items()})
+    print("forward:", [(r["add"], r["bin7"]) for r in tn["forward"]])
+    print("gbm:", [(r["num_leaves"], r["min_data_in_leaf"], r["feature_fraction"], r["bin7"]) for r in tn["gbm_grid"]])
+    print("pool:", [(r["a"], r["bin7"]) for r in tn["pool_grid"]])
+    print("round best 3:", [(r["name"], r["C"], r["slope"], r["joint"], r["round_given_fin"])
+                            for r in sorted(tn["round_grid"], key=lambda r: r["joint"])[:3]])
+    for v in ("2016", "2020", "2024"):
+        print("EB fit before %s: sigma %s lam %s" % (v, tn["eb_meta"][v]["sigma"], tn["eb_meta"][v]["lam"]))
+    print("swap:", d["swap"])
+    js = d["js_model"]
+    print("deployment EB (fit through 2025):", js["eb"]["sigma"], js["eb"]["lam_pre"])
+    for s in ("alexander-volkanovski", "justin-gaethje"):
+        print(s, js["roster"].get(s))
+
+
+STAGES["summary"] = stage_summary
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])
     ap.add_argument("--quick", action="store_true")
     args = ap.parse_args()
-    stages = [s for s in STAGES if s not in ("holdout", "swap")] if args.stage == "all" else [args.stage]
+    stages = [s for s in STAGES if s not in ("holdout", "export", "summary")] if args.stage == "all" else [args.stage]
     for s in stages:
         log("== stage %s" % s)
         STAGES[s](args)
