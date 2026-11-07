@@ -268,7 +268,9 @@ def scorecard_block():
                    "line_stack_minus_close_pooled": pr(PO.get("line current+ml2 - close")),
                    "open_stack_minus_open": pr(SP.get("open|static|page: open+ml2lr vs open")),
                    "close_weights_fed_open": pr(SP.get("open|static|close-trained line stack fed the open vs page: open+ml2lr"))}
-    au = (vh.get("vault_audits") or [None])[0]
+    audits = vh.get("vault_audits") or []
+    au = next((a for a in audits if a.get("audit") == 1), audits[0] if audits else None)
+    au2 = next((a for a in audits if a.get("audit") == 2), None)
     if au:
         B = au.get("benchmarks") or {}
         keep = ("close", "open", "ml2_lr", "ml2_stack_close_static", "ml2_stack_open_static", "ml2_stack_noline_static",

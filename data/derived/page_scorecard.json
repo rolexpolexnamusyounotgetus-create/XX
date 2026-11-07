@@ -2,6 +2,7 @@
   "meta": {
     "purpose": "Page-facing numbers for the honest scorecard panel that live only in the verified markdown reports (every other scorecard number is read by build.py from data/derived/ml2.json, forward_models.json and version_history.json). Each entry carries its source file and the exact line it was copied from; tests/test_page_models.js checks every quote is still in its source.",
     "built": "2026-11-07T07:45:00Z",
+    "updated": "2026-11-07T13:30:00Z (final state: engine versions v7-v10, vault audit 2, the props pool on both windows)",
     "rule": "copied, never recomputed; nothing here was fit or scored by the page builder"
   },
   "vault_2026_paired": [
@@ -22,22 +23,62 @@
     "text": "level with the market",
     "source": "research/vault_audit_v5.md", "quote": "**The close edge is absent: level with the market.**"
   },
+  "vault_2026_audit2_readout": {
+    "text": "level with the opener",
+    "source": "research/vault_audit_v10.md", "quote": "**Headline (descriptive): level with the opener.**"
+  },
   "valid_2021_2023_line_vs_close": {
     "diff": -0.0015, "ci": [-0.0061, 0.0030],
     "source": "research/model_ml2.md", "quote": "On 2021-2023 alone, the with-line ML v2 stack is -0.0015 [-0.0061, +0.0030] against the close"
   },
+  "props_pool": [
+    {"key": "valid_2024_2025", "label": "2024-25 test fights, pre-registered", "against": "the finish model alone", "diff": -0.0172, "ci": [-0.0283, -0.0056],
+     "source": "research/model_props.md", "quote": "| pool minus S2 (primary: 7-bin) | **-0.0172 [-0.0283, -0.0056]** |"},
+    {"key": "vault_audit1", "label": "Sealed 2026 fights, first audit", "against": "the finish model alone, same winner odds", "diff": -0.0324, "ci": [-0.0530, -0.0116],
+     "source": "research/vault_audit_v5.md", "quote": "| props pool - S2, same winner (close) | -0.0324 [-0.0530, -0.0116] |"},
+    {"key": "vault_audit2", "label": "Sealed 2026 fights, second audit", "against": "the same package without the props", "diff": -0.0344, "ci": [-0.0571, -0.0123],
+     "source": "research/vault_audit_v10.md", "quote": "| v10 - v10np (props pool) | 0 | -0.0344 [-0.0571, -0.0123] |"}
+  ],
+  "engine_2026": {
+    "values": {"v4": 0.6429, "v10": 0.6445, "v8": 0.6445},
+    "note": "simulator alone, winner log loss on the 369 decisive vault fights; v4 / v5 / v5.0.1 also come from audit 1 (version_history.json vault_audits[0].engines); v8's engine rows are identical to v10's",
+    "source": "research/vault_audit_v10.md", "quote": "| engine v4 / v10 | 0.6429 / 0.6445 |", "quote2": "v8's file gives rows identical to v10's."
+  },
   "engine_versions": {
-    "v3": {"verdict": "replaced", "reason": "The first calibrated simulator; v4 beat it on 2024-25.",
+    "v3": {"verdict": "replaced", "outcome": "replaced by v4", "what": "raw UFC rates",
+      "reason": "The first calibrated simulator; v4 beat it on 2024-25.",
       "source": "data/derived/version_history.json versions[v4].decision.basis", "quote": "validation winner log loss 0.6324 vs 0.6424"},
-    "v4": {"verdict": "kept", "reason": "Beat v3 on 2024-25 winner log loss, -0.0100 [-0.0170, -0.0030], and on every stat line.",
-      "source": "data/derived/version_history.json versions[v4].decision.basis", "quote": "paired -0.0100 [-0.0170, -0.0030]"},
-    "v4.0.1": {"verdict": "rejected", "reason": "No gain beyond noise: -0.0034 [-0.0073, +0.0008].",
+    "v4": {"verdict": "kept", "outcome": "kept", "what": "learned stat lines inside the simulator",
+      "reason": "Beat v3 on its single 2024-25 look: winner log loss −0.0100 [−0.0170, −0.0030], and better on all five stat lines.",
+      "source": "data/derived/version_history.json versions[v4].decision", "quote": "paired -0.0100 [-0.0170, -0.0030]", "quote_entry": "stat-line deviance better on all five stats"},
+    "v4.0.1": {"verdict": "rejected", "outcome": "rejected on its single look", "what": "refit judging and grappling levels",
+      "reason": "No gain beyond noise: −0.0034 [−0.0073, +0.0008].",
       "source": "data/derived/version_history.json versions[v4.0.1].decision.basis", "quote": "paired -0.0034 [-0.0073, +0.0008]"},
-    "v5": {"verdict": "rejected", "reason": "Winner gain within noise (-0.0022 [-0.0099, +0.0053]); knockdowns ran too high on 2024-25 (0.830 per 100 head strikes landed vs 0.684 actual).",
+    "v5": {"verdict": "rejected", "outcome": "rejected on its single look", "what": "durability, fight dynamics, schedule strength",
+      "reason": "Winner gain within noise (−0.0022 [−0.0099, +0.0053]); knockdowns ran too high (0.830 per 100 head strikes landed vs 0.684 actual).",
       "source": "data/derived/version_history.json versions[v5].decision.basis", "quote": "paired -0.0022 [-0.0099, +0.0053]", "quote2": "KD per 100 head landed 0.830 vs actual 0.684"},
-    "v5.0.1": {"verdict": "rejected", "reason": "Winner gain within noise (-0.0057 [-0.0141, +0.0023]); knockdowns still too high (0.827 vs 0.684 actual).",
+    "v5.0.1": {"verdict": "rejected", "outcome": "rejected on its single look", "what": "v5 with robustness fixes",
+      "reason": "Winner gain within noise (−0.0057 [−0.0141, +0.0023]); knockdowns still too high (0.827 vs 0.684 actual).",
       "source": "data/derived/version_history.json versions[v5.0.1].decision.basis", "quote": "paired -0.0057 [-0.0141, +0.0023]", "quote2": "0.827 vs actual 0.684"},
-    "v6": {"verdict": "rejected", "reason": "Its single pre-registered look missed: with an opener, -0.00245 [-0.00588, +0.00099], an interval that crosses zero.",
-      "source": "data/derived/version_history.json versions[v6].decision.basis", "quote": "paired -0.00245 [-0.00588, +0.00099]"}
+    "v6": {"verdict": "rejected", "outcome": "rejected on its single look", "what": "v5 parts re-bundled with the ML v2 pick",
+      "reason": "With a pre-fight line its pick scored −0.00245 [−0.00588, +0.00099] against v5.0.1's: an interval that crosses zero.",
+      "source": "data/derived/version_history.json versions[v6].decision.basis", "quote": "paired -0.00245 [-0.00588, +0.00099]"},
+    "v7": {"verdict": "gate_failed", "outcome": "failed its train gate", "what": "simulator v4 with the ML v2 pick and the props pool",
+      "reason": "One check failed, by a hair: with a closing line its pick could not be shown no worse than v4's package (+0.00060 against a limit of +0.0005). No 2024-25 look.",
+      "source": "data/derived/version_history.json versions[v7].decision.basis", "quote": "+0.00060 > +0.0005", "quote2": "Every other check passes"},
+    "v8": {"verdict": "gate_failed", "outcome": "failed its train gate", "what": "simulator v4 with stat lines pulled toward the stat-line model",
+      "reason": "None of its stat-line parts met its keep rule on the 2020-2023 tuning fights. No 2024-25 look.",
+      "source": "data/derived/version_history.json versions[v8].decision.basis", "quote": "no sub-part met its keep rule on the 2020-2023 train fights"},
+    "v9": {"verdict": "gate_failed", "outcome": "failed its train gate", "what": "simulator v4 with judging refit year by year and levels set by fight length",
+      "reason": "8 of 14 checks failed on the tuning fights. No 2024-25 look.",
+      "source": "data/derived/version_history.json versions[v9].decision.basis", "quote": "8 of 14 applicable checks fail"},
+    "v10": {"verdict": "reversed", "outcome": "kept, then reversed on review", "what": "v7's package plus v8's stat lines and a debut path",
+      "reason": "Its single pre-registered measure, the pick with a pre-fight line against v4's package, missed by a hair: −0.00326 [−0.00653, +0.00004]. It had been kept on a second measure the plan does not allow, and its stat-line parts never reached a live pick.",
+      "source": "data/derived/version_history.json versions[v10].decision.basis and review", "quote": "-0.00326, bootstrap 95% CI [-0.00653, +0.00004]",
+      "quote2": "is a second decisive metric, which 6.1, 6.3 and 7.1 item 4 do not allow", "quote_entry": "statline_bundle_never_live"}
+  },
+  "versions_lesson": {
+    "text": "The lesson: after v4, the remaining gains were a few thousandths of log loss, smaller than one test window can detect.",
+    "source": "docs/BACKLOG.md", "quote": "LESSON: with ~850 validation fights, the remaining package gains (0.002-0.004) are below what one look can detect;"
   }
 }
