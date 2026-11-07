@@ -1,0 +1,14 @@
+{
+ "gate_score": "data/derived/v7/gate_train_score.json",
+ "contrast": "primary",
+ "metric": "bin7",
+ "n_gate": 797,
+ "n_look": 830,
+ "se_gate_normal": 0.007375,
+ "se_look": 0.007227,
+ "mde_80": 0.02024,
+ "effect": -0.03012,
+ "effect_source": "gate point estimate",
+ "power": 0.986,
+ "underpowered": false
+}
