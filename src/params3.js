@@ -697,7 +697,12 @@
         // the ONE joint level pass redone on top of dynNoise (tools/v5_calB_levels.js fit, TRAIN 2019-2023; data/derived/v501_levels.json),
         // with dyn.outLevel re-matched first so the realised sig landed per minute stays at 5.0.0's (less noise raised it 1.9%)
         // 5.0.0 (calB set): outLevel 1.039, kdLevel3 0.6772, kdLevel5 0.5656, convLevel 1.0966, stkoScale 0.6587, gnpScale 0.4322, t108 8.176
-        levels: { dyn: { outLevel: 1.0201, kdLevel3: 0.67504, kdLevel5: 0.56512, convLevel: 1.10682, stkoScale: 0.66495, gnpScale: 0.4363 }, judge: { t108: 7.72547 } }
+        // v6 (review gate 1, docs/BACKLOG.md "v6 GATES"): the same pass rerun on the FOLD-HONEST learned rates and embedding recipe
+        // (tools/v6_foldhonest.py, tools/v6_embed_fh.py; tools/v5_calB_levels.js fit, TRAIN 2019-2023 only; data/derived/v6/v6_levels_fh.json):
+        // kdLevel3 0.67504 -> 0.68103, kdLevel5 0.56512 -> 0.5623, convLevel 1.10682 -> 1.11103, stkoScale 0.66495 -> 0.64512, gnpScale
+        // 0.4363 -> 0.42329, t108 7.72547 -> 7.65587 (outLevel kept). A train-only KD / KO level change; the 2024 knockdown drift that
+        // rejected v5 / v5.0.1 was first seen on 2024-25 and played no part in it (V6_V10_PLAN 6.5.3 (b): no vault number read).
+        levels: { dyn: { outLevel: 1.0201, kdLevel3: 0.68103, kdLevel5: 0.5623, convLevel: 1.11103, stkoScale: 0.64512, gnpScale: 0.42329 }, judge: { t108: 7.65587 } }
       }
     },
 

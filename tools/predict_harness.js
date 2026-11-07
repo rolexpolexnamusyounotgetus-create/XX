@@ -103,8 +103,10 @@ if (!isMainThread) {
       try {
         const b = baseOpts(f);
         let simRef = null;
+        rec.simCellsBy = {};
         for (let k = 0; k < PK.length; k++) {
           const P = PK[k], R0 = rec.pk[P.name] = {};
+          simRef = null;   // common random numbers: one simulator run per package, identical across line kinds (asserted)
           if (P.mode === "v6" && +f.date.slice(0, 4) < (W.v6From || 2019)) continue;
           // the v5 package has no stacker fit before 2021 (per-year MoE exports start with the fit through 2020): it is
           // scored on 2021+ only; the v6 package's 2019-2020 rows exist only to fit its pool weight (flagged inSample)
@@ -114,7 +116,7 @@ if (!isMainThread) {
             if (P.mode === "v5") { delete o.winnerStacks; delete o.winnerFit; }
             const pk = P.E.predict(f.A, f.B, o);
             if (simRef === null) simRef = pk.sim.cells;
-            else if (pk.sim.cells.some((v, i) => v !== simRef[i])) throw new Error("simulator cells differ between packages / kinds for " + f.id + " (" + P.name + " " + kind + ")");
+            else if (pk.sim.cells.some((v, i) => v !== simRef[i])) throw new Error("simulator cells differ between line kinds for " + f.id + " (" + P.name + " " + kind + ")");
             R0[kind] = {
               p: r9(pk.p), source: pk.source, lineKind: pk.lineKind, lineMissing: o.lineMissing || null, line: pk.line ? r9(pk.line.p) : null,
               cells: pk.cells.map(r9), pD: r9(pk.pD), simP: r9(pk.sim.p), simR: pk.methodRound.simRescaled.map(r9),
@@ -123,8 +125,8 @@ if (!isMainThread) {
               head: pk.v6 ? r9(pk.v6.headValue) : null, blendError: pk.blendError || null, inSample: pk.backtest ? pk.backtest.inSample : null
             };
           }
+          if (simRef) rec.simCellsBy[P.name] = simRef.map(r9);
         }
-        rec.simCells = simRef ? simRef.map(r9) : null;
       } catch (e) { rec.err = String((e && e.stack) || e).slice(0, 800); }
       out.push(rec);
     }
