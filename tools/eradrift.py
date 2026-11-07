@@ -600,20 +600,26 @@ def stage_trackers(args):
             def tot(nm):
                 return sum(res[nm]["by_year"][Y] * (cv & (d["year"] == Y)).sum() for Y in tr_years)
             pick = min(names, key=tot)
-            nested[int(Y1)] = {"pick": pick, "loss": res[pick]["by_year"][Y1], "static": res["static"]["by_year"][Y1],
-                               "win5": res["win5"]["by_year"][Y1],
-                               "n": int((cv & (d["year"] == Y1)).sum())}
+            nested[int(Y1)] = {"pick": pick, "loss": res[pick]["by_year"][Y1], "n": int((cv & (d["year"] == Y1)).sum())}
         ny = [Y for Y in nested]
         w = np.array([nested[Y]["n"] for Y in ny], float)
         nest_loss = float(np.dot(w, [nested[Y]["loss"] for Y in ny]) / w.sum())
-        nest_static = float(np.dot(w, [nested[Y]["static"] for Y in ny]) / w.sum())
-        nest_win5 = float(np.dot(w, [nested[Y]["win5"] for Y in ny]) / w.sum())
         best = min(names, key=lambda k: res[k]["cv"])
-        # paired event-cluster bootstrap of the chosen tracker vs static and vs win5 (pooled 2012-2023)
+        # references with the same division layer: the best static+div and win5+div (methodround's 5-year calendar
+        # window by division) on the pooled CV (optimistic for the references)
+        refs = {}
+        for fam in ("static", "win5"):
+            refs[fam] = min([k for k in names if res[k]["fam"] == fam], key=lambda k: res[k]["cv"])
+        fam_best = {}
+        for k in names:
+            f_ = res[k]["fam"] + ("+brk" if "brk" in res[k] else "")
+            if f_ not in fam_best or res[k]["cv"] < res[fam_best[f_]]["cv"]:
+                fam_best[f_] = k
+        # paired event-cluster bootstrap of the chosen tracker vs the references (pooled 2012-2023)
         ci = {}
         nll_b, _ = score_obs(kind, d["y"], d["E"], P[best], k_nb)
         for ref in ("static", "win5"):
-            nll_r, _ = score_obs(kind, d["y"], d["E"], P[ref], k_nb)
+            nll_r, _ = score_obs(kind, d["y"], d["E"], P[refs[ref]], k_nb)
             ci[ref] = boot_diff(nll_b[cv] - nll_r[cv], d["event"][cv])
         # nested picks vs win5, per observation
         nl_n = np.full(len(d["y"]), np.nan)
@@ -621,19 +627,20 @@ def stage_trackers(args):
             m = cv & (d["year"] == Y1)
             nl_n[m], _ = score_obs(kind, d["y"][m], d["E"][m], P[rr["pick"]][m], k_nb)
         mN = np.isfinite(nl_n)
-        nll_w, _ = score_obs(kind, d["y"], d["E"], P["win5"], k_nb)
-        nll_s, _ = score_obs(kind, d["y"], d["E"], P["static"], k_nb)
+        nll_w, _ = score_obs(kind, d["y"], d["E"], P[refs["win5"]], k_nb)
+        nll_s, _ = score_obs(kind, d["y"], d["E"], P[refs["static"]], k_nb)
         ci["nested_vs_win5"] = boot_diff(nl_n[mN] - nll_w[mN], d["event"][mN])
         ci["nested_vs_static"] = boot_diff(nl_n[mN] - nll_s[mN], d["event"][mN])
+        nest_static, nest_win5 = float(nll_s[mN].mean()), float(nll_w[mN].mean())
         # year-level base-rate error: league prediction at the first card of each year vs the realised year level
-        yerr = year_level_error(d, P, [best, "static", "win5"], prior)
+        yerr = year_level_error(d, P, [best, refs["static"], refs["win5"]], prior)
         out["targets"][key] = {"label": t["label"], "kind": kind, "unit": t.get("unit", 1.0), "prior": prior,
-                               "k_nb": k_nb, "n_cv": int(cv.sum()), "best": best, "res": res, "nested": nested,
-                               "nested_loss": nest_loss, "nested_static": nest_static, "nested_win5": nest_win5,
-                               "ci": ci, "year_err": yerr}
-        preds[key] = {"fid": d["fid"], "day": d["day"], "best": P[best]}
-        log("trackers: %-9s best %-34s cv %.5f | static %.5f win5 %.5f | nested %.5f (vs win5 %+.5f [%+.5f, %+.5f])" % (
-            key, best, res[best]["cv"], res["static"]["cv"], res["win5"]["cv"], nest_loss,
+                               "k_nb": k_nb, "n_cv": int(cv.sum()), "best": best, "refs": refs, "fam_best": fam_best,
+                               "res": res, "nested": nested, "nested_loss": nest_loss, "nested_static": nest_static,
+                               "nested_win5": nest_win5, "ci": ci, "year_err": yerr}
+        preds[key] = {"fid": d["fid"], "day": d["day"], "best": P[best], "win5": P[refs["win5"]]}
+        log("trackers: %-9s best %-36s cv %.5f | static %.5f win5 %.5f (%s) | nested %.5f vs win5 %+.5f [%+.5f, %+.5f]" % (
+            key, best, res[best]["cv"], res[refs["static"]]["cv"], res[refs["win5"]]["cv"], refs["win5"], nest_loss,
             ci["nested_vs_win5"][0], ci["nested_vs_win5"][1], ci["nested_vs_win5"][2]))
     jdump(out, "trackers.json")
     save(preds, "tracker_preds.pkl")

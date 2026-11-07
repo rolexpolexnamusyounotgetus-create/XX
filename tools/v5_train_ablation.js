@@ -2,7 +2,9 @@
 /* v5_train_ablation.js: Calibrate A, the leave-one-out TRAIN ablation that sets v5's default component flags.
 
    TRAIN 2019-01-01..2023-12-31 only: every backtest_dev fight in that window (1,999), both corner orders, common random numbers
-   across arms (fight f, order o uses makeRng(mix(mix(hash(id), o), seed)), as tools/evalv.js). Nothing dated 2024 or later is
+   across arms: simulated fight i of fight f in order o uses makeRng(mix(mix(mix(hash(id), o), seed), i + 1)), the same in every
+   arm. (tools/evalv.js runs one stream per fight and order; a seed per simulated fight keeps arms that draw a different number
+   of random numbers, e.g. deductions after the last round, paired from the next fight on.) Nothing dated 2024 or later is
    simulated or scored, and 2026 is never read (backtest_dev.json holds none; the window filter drops 2024-25).
 
    Inputs are evalv's, leak-free: walk-forward as-of priors (mlcal_priors_asof.json[year]), out-of-fold learned rates
@@ -133,9 +135,9 @@ if (!isMainThread) {
             SR.assertApplied(m, f.id, opts.params);
             XR.assertApplied(m, f.id, opts.params);
             if (m.mlApplied) acc.ml++;
-            const rng = E.makeRng(mix(mix(hash32(f.id), o), W.seed));
+            const s0 = mix(mix(hash32(f.id), o), W.seed);
             for (let i = 0; i < W.sims; i++) {
-              const s = E.simulate(m, rng, false);
+              const s = E.simulate(m, E.makeRng(mix(s0, i + 1)), false);   // one seed per simulated fight: tighter CRN pairing
               const wD = s.winner === "D" ? "D" : ((s.winner === "A") === (o === 0) ? "A" : "B");
               const meth = s.method, isDec = meth === "UD" || meth === "SD" || meth === "MD" || meth === "DRAW";
               const r = Math.max(1, Math.min(R, s.round));
