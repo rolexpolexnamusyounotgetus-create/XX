@@ -1171,6 +1171,264 @@ def dec_calibration_rows(d):
 STAGES["method"] = stage_method
 
 
+# ====================================================================== statlines adjustment
+ST_STATS = ["sig_att", "sig_lnd", "h_att", "h_lnd", "b_att", "b_lnd", "l_att", "l_lnd", "d_att", "d_lnd", "c_att",
+            "c_lnd", "g_att", "g_lnd", "kd", "td_att", "td_lnd", "ctrl", "sub_att", "rev"]
+ST_CV = (2021, 2022, 2023)
+ST_KEY = ("sig_lnd", "sig_att", "kd", "td_att", "ctrl")     # the stat levels named in the brief (reported first)
+
+
+def side_actuals():
+    """Per fight id: the 20 statlines stats for side A (first-named) and B, from build_db's ufcstats vectors."""
+    lg = {}
+    fights, _ = B.parse_fights(lg)
+    B.build_vectors(fights, lg)
+    out = {}
+    for f in fights:
+        if not f.stats or f.date >= VAULT:
+            continue
+        sides = []
+        for v in f.stats["v"]:
+            g = lambda k: float(v[B.KI[k]])
+            d = {"h_att": g("h_att"), "h_lnd": g("h_lnd"), "b_att": g("b_att"), "b_lnd": g("b_lnd"),
+                 "l_att": g("l_att"), "l_lnd": g("l_lnd"), "d_att": g("d_att"), "d_lnd": g("d_lnd"),
+                 "c_att": g("c_att"), "c_lnd": g("c_lnd"), "g_att": g("g_att"), "g_lnd": g("g_lnd"), "kd": g("kd"),
+                 "td_att": g("td_att"), "td_lnd": g("td_lnd"), "ctrl": g("ctrl"), "sub_att": g("sub_att"),
+                 "rev": g("rev")}
+            d["sig_att"] = d["h_att"] + d["b_att"] + d["l_att"]
+            d["sig_lnd"] = d["h_lnd"] + d["b_lnd"] + d["l_lnd"]
+            sides.append(d)
+        out[f.fid] = sides
+    return out
+
+
+def stat_setup():
+    """Rows = fight-sides of statlines_oof.json (sets cv2020, cv, valid; raw2019 has no distributions), joined to the
+    realised lines. Vintage = the fold that produced the row (2020, 2021, 2022, 2023; valid = 2024)."""
+    so = json.load(open(os.path.join(DERIVED, "statlines_oof.json")))
+    act = side_actuals()
+    rows = []
+    for fid, r in so["fights"].items():
+        if r.get("set") not in ("cv2020", "cv", "valid") or r["date"] >= "2026-01-01" or fid not in act:
+            continue
+        d = dt.date.fromisoformat(r["date"])
+        vint = {"cv2020": 2020, "valid": 2024}.get(r["set"], d.year)
+        for si, side in enumerate(("A", "B")):
+            if side not in r:
+                continue
+            rows.append((fid, d.toordinal(), d.year, vint, r["t"], r["R"], side, r[side], act[fid][si]))
+    rows.sort(key=lambda x: x[1])
+    n = len(rows)
+    S = {"fid": np.array([x[0] for x in rows]), "day": np.array([x[1] for x in rows]),
+         "year": np.array([x[2] for x in rows]), "vint": np.array([x[3] for x in rows]),
+         "t": np.array([x[4] for x in rows], float), "side": np.array([x[6] for x in rows])}
+    S["event"] = S["fid"]                                      # card ids are not in the OOF file: cluster by date
+    S["card"] = S["day"]
+    for st in ST_STATS:
+        par = np.array([x[7][st] for x in rows], float)
+        S[st] = {"par": par, "y": np.array([x[8][st] for x in rows], float), "kind": so["meta"]["kinds"][st]}
+    assert S["day"].max() < VAULT.toordinal()
+    return S
+
+
+def st_loglik(kind, y, par, t, a):
+    """Per-row log likelihood of the statlines distribution with its mean moved by offset a (log scale for NB counts,
+    logit of the mean share for the zero-inflated Beta control model)."""
+    from scipy.special import gammaln, betaln
+    if kind == "nb":
+        mu = par[:, 0] * np.exp(a)
+        k = par[:, 1]
+        return gammaln(y + k) - gammaln(k) - gammaln(y + 1) + k * np.log(k / (k + mu)) + y * np.log(mu / (k + mu))
+    if kind == "zibeta":
+        m = sig(logit(par[:, 0]) + a)
+        phi, pi = par[:, 1], np.clip(par[:, 2], 1e-9, 1 - 1e-9)
+        sh = np.clip(y / (60.0 * t), 1e-6, 1 - 1e-6)
+        al, be = m * phi, (1 - m) * phi
+        lb = (al - 1) * np.log(sh) + (be - 1) * np.log(1 - sh) - betaln(al, be) - np.log(60.0 * t)
+        return np.where(y <= 0, np.log(pi), np.log(1 - pi) + lb)
+    raise ValueError(kind)
+
+
+def st_mean(kind, par, t, a):
+    if kind == "nb":
+        return par[:, 0] * np.exp(a)
+    m = sig(logit(par[:, 0]) + a)
+    return (1 - par[:, 2]) * m * 60.0 * t
+
+
+def st_solve(kind, y, par, t, wt, prec, a0=0.0, it=6):
+    """argmax_a sum wt * loglik(a) - prec/2 a^2 by Newton with numeric derivatives."""
+    a = a0
+    if len(y) == 0:
+        return 0.0
+    e = 1e-3
+    for _ in range(it):
+        f0 = (wt * st_loglik(kind, y, par, t, a)).sum() - 0.5 * prec * a * a
+        fp = (wt * st_loglik(kind, y, par, t, a + e)).sum() - 0.5 * prec * (a + e) ** 2
+        fm = (wt * st_loglik(kind, y, par, t, a - e)).sum() - 0.5 * prec * (a - e) ** 2
+        g = (fp - fm) / (2 * e)
+        h = (fp - 2 * f0 + fm) / (e * e)
+        if h >= 0:
+            break
+        step = float(np.clip(-g / h, -0.5, 0.5))
+        a += step
+        if abs(step) < 1e-6:
+            break
+    return a
+
+
+def st_info(kind, y, par, t, a):
+    """Per-row score and observed information (numeric) at a."""
+    e = 1e-3
+    f0 = st_loglik(kind, y, par, t, a)
+    fp = st_loglik(kind, y, par, t, a + e)
+    fm = st_loglik(kind, y, par, t, a - e)
+    return (fp - fm) / (2 * e), -(fp - 2 * f0 + fm) / (e * e)
+
+
+def st_track(S, st, cfg):
+    """Walk-forward offset for one stat (rows on strictly earlier days only)."""
+    D = S[st]
+    kind, y, par = D["kind"], D["y"], D["par"]
+    t, day, vint = S["t"], S["day"], S["vint"]
+    n = len(y)
+    off = np.zeros(n)
+    if cfg["fam"] == "none":
+        return off
+    u = np.unique(day)
+    rho = cfg.get("rho", 1.0)
+    # prior precision in fight-side equivalents: n0 x the median per-row information at a = 0 (pre-2021 rows)
+    _, inf0 = st_info(kind, y, par, t, 0.0)
+    unit = float(np.median(np.maximum(inf0[S["year"] < 2021], 1e-6)))
+    if cfg["fam"] == "ew":
+        lam = math.log(2) / (cfg["h"] * YEAR_D)
+        prec = cfg["n0"] * unit
+        a_prev = 0.0
+        for d in u:
+            rows = np.where(day == d)[0]
+            hi = np.where(day < d)[0]
+            if len(hi):
+                wt = np.exp(-lam * (d - day[hi]))
+                vnow = vint[rows].max()
+                if rho < 1:
+                    wt = wt * np.power(rho, np.maximum(vnow - vint[hi], 0))
+                keep = wt > 1e-4
+                hi, wt = hi[keep], wt[keep]
+                a_prev = st_solve(kind, y[hi], par[hi], t[hi], wt, prec, a_prev) if len(hi) else 0.0
+                off[rows] = a_prev
+        return off
+    if cfg["fam"] == "kal":
+        q, se = cfg["q"], cfg["se"]
+        P0 = cfg.get("P0", 0.01)
+        a, P = 0.0, P0
+        last, v_cur = None, None
+        for d in u:
+            rows = np.where(day == d)[0]
+            if last is not None:
+                P += q * (d - last) / YEAR_D
+            vnow = vint[rows].max()
+            if v_cur is not None and vnow > v_cur:
+                a = rho * a
+                P = rho * rho * P + (1 - rho * rho) * P0
+            v_cur = vnow if v_cur is None else max(v_cur, vnow)
+            off[rows] = a
+            g, h = st_info(kind, y[rows], par[rows], t[rows], a)
+            G, Hh = g.sum(), max(h.sum(), 1e-9)
+            Rv = 1.0 / Hh + se * se
+            K = P / (P + Rv)
+            a = a + K * (G / Hh)
+            P = (1 - K) * P
+            last = d
+        return off
+    raise ValueError(cfg)
+
+
+def stat_grid():
+    G = [{"fam": "none"}]
+    for h in (0.25, 0.5, 1.0, 2.0):
+        for n0 in (50, 200, 800):
+            for rho in (0.0, 0.5, 1.0):
+                G.append({"fam": "ew", "h": h, "n0": n0, "rho": rho})
+    for q in (0.002, 0.01, 0.04):
+        for se in (0.0, 0.05):
+            for rho in (0.0, 0.5, 1.0):
+                G.append({"fam": "kal", "q": q, "se": se, "rho": rho})
+    return G
+
+
+def st_dev(kind, y, par, t, a):
+    mu = np.maximum(st_mean(kind, par, t, a), 1e-9)
+    return 2 * (np.where(y > 0, y * np.log(np.maximum(y, 1e-12) / mu), 0.0) - (y - mu))
+
+
+def stage_stat(args):
+    """Forward-chained CV 2021-2023 (statlines folds fit on 2019..Y-1; 2020 rows warm the trackers) of per-stat mean
+    offsets. Rule (statlines' own): a stat is adjusted only if the best tracker lowers the pooled 2021-2023 log score
+    by more than 0.001 nats per fight-side AND in at least 2 of the 3 years. Nested check: choose on 2021 -> score
+    2022; choose on 2021-2022 -> score 2023. 2024-25 rows are never scored here."""
+    S = stat_setup()
+    yr = S["year"]
+    cvm = np.isin(yr, ST_CV)
+    grid = stat_grid()
+    out = {"stats": {}, "n_rows_cv": int(cvm.sum()), "n_rows": int(len(yr))}
+    offs = {}
+    for st in ST_STATS:
+        D = S[st]
+        res = {}
+        O = {}
+        for c in grid:
+            nm = mcfg_name(c)
+            o = st_track(S, st, c)
+            ll = st_loglik(D["kind"], D["y"], D["par"], S["t"], o)
+            dv = st_dev(D["kind"], D["y"], D["par"], S["t"], o)
+            O[nm] = o
+            res[nm] = {"cv": float(-ll[cvm].mean()), "by_year": {int(Y): float(-ll[yr == Y].mean()) for Y in ST_CV},
+                       "dev": float(dv[cvm].mean())}
+        base = res["none"]
+        best = min(res, key=lambda k: res[k]["cv"])
+        gain = res[best]["cv"] - base["cv"]
+        wins = sum(res[best]["by_year"][Y] < base["by_year"][Y] for Y in ST_CV)
+        adopt = bool(gain < -0.001 and wins >= 2)
+        ll0 = st_loglik(D["kind"], D["y"], D["par"], S["t"], 0.0)
+        llb = st_loglik(D["kind"], D["y"], D["par"], S["t"], O[best])
+        ci = boot_diff(-(llb - ll0)[cvm], S["card"][cvm])
+        dv0 = st_dev(D["kind"], D["y"], D["par"], S["t"], 0.0)
+        dvb = st_dev(D["kind"], D["y"], D["par"], S["t"], O[best])
+        ci_dev = boot_diff((dvb - dv0)[cvm], S["card"][cvm])
+        # nested: choose on earlier CV years only
+        nested = {}
+        nl = np.full(len(yr), np.nan)
+        for Y in (2022, 2023):
+            trs = [y_ for y_ in ST_CV if y_ < Y]
+            def tot(k):
+                return np.mean([res[k]["by_year"][y_] for y_ in trs])
+            bk = min(res, key=tot)
+            pick = bk if tot(bk) - tot("none") < -0.001 else "none"
+            nested[Y] = pick
+            m = yr == Y
+            nl[m] = -st_loglik(D["kind"], D["y"][m], D["par"][m], S["t"][m], O[pick][m])
+        mN = np.isfinite(nl)
+        ci_n = boot_diff(nl[mN] - (-ll0[mN]), S["card"][mN])
+        # mean level check: realised / predicted total by year, static vs adjusted
+        lv = {}
+        for Y in (2020,) + ST_CV:
+            m = yr == Y
+            lv[int(Y)] = [float(D["y"][m].sum() / st_mean(D["kind"], D["par"][m], S["t"][m], 0.0).sum()),
+                          float(D["y"][m].sum() / st_mean(D["kind"], D["par"][m], S["t"][m], O[best][m]).sum())]
+        out["stats"][st] = {"kind": D["kind"], "best": best, "gain": gain, "wins": wins, "adopt": adopt, "ci": ci,
+                            "ci_dev": ci_dev, "dev_static": float(dv0[cvm].mean()), "nested": nested,
+                            "nested_ci": ci_n, "level_ratio": lv, "res": res}
+        offs[st] = O[best]
+        log("stat: %-7s best %-30s gain %+.5f [%+.5f, %+.5f] wins %d adopt %s | dev %+.4f | nested %+.5f | act/pred %s" % (
+            st, best, gain, ci[1], ci[2], wins, adopt, ci_dev[0], ci_n[0],
+            " ".join("%d:%.3f" % (Y, v[0]) for Y, v in lv.items())))
+    jdump(out, "stat.json")
+    save(offs, "stat_offs.pkl")
+
+
+STAGES["stat"] = stage_stat
+
+
 # ====================================================================== main
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
