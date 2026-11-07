@@ -1,0 +1,1261 @@
+{
+ "meta": {
+  "tool": "tools/predict_score.py gate",
+  "input": "data/derived/v6/gate_train_dev.json",
+  "harness": {
+   "tool": "tools/predict_harness.js",
+   "built": "2026-11-07T06:20:45.001Z",
+   "split": "train",
+   "range": [
+    "2019-01-01",
+    "2024-01-01"
+   ],
+   "sims_per_order": 300,
+   "kinds": [
+    "close",
+    "open",
+    "none"
+   ],
+   "packages": [
+    {
+     "name": "v6",
+     "mode": "v6",
+     "dir": "src",
+     "engine_version": "6.0.0",
+     "params_version": "6.0.0-selfcal-pre2024",
+     "engine_sha256": "3b1b48813186013917ab7acd4f47b4b98cdc710a27ad055850c84e1f2ac203cc",
+     "params_sha256": "e75ed4ad8dd91304079dfe4082c8727871f6cc7c5d639b23ab08bb74bf4c8c2d",
+     "blend_sha256": "e1e3b21945bcbe26a92ec71d965a09c035b242355dec1670c0b07c1a433db0c5"
+    },
+    {
+     "name": "v501",
+     "mode": "v5",
+     "dir": "versions/v5.0.1-rejected",
+     "engine_version": "5.0.1",
+     "params_version": "5.0.1-selfcal-pre2024",
+     "engine_sha256": "beccb4c53c73ac3abc71d034766de45355b20b29ec294be273ccd0fb574223ef",
+     "params_sha256": "8c27856e6fc3c63eb3827bb8203f4c0ac8e24b0720029248808872d1654a1dcf",
+     "blend_sha256": "e0ee08fbe5ef3afc7f3a1a84aafd3bde9fad967c355c6ad600739a78faaf7b39"
+    }
+   ],
+   "inputs": {
+    "v6_stacks_sha256": "44130c57c22196f6dc4f91098aa54bc4e114d739e92c5057ac3727c7a28c23e2",
+    "mr_s2_sha256": "a308dd8e891aa8bc742fe28cd359c1db8d26a9e029ec3d0acbfe286404fd3070",
+    "oof": "data/derived/mlrates_oof.json",
+    "cmp_stacks": {
+     "2019": "data/derived/v6/cmp_stack_v501_fit2020.json",
+     "2020": "data/derived/v6/cmp_stack_v501_fit2020.json",
+     "2021": "data/derived/v6/cmp_stack_v501_fit2020.json",
+     "2022": "data/derived/v6/cmp_stack_v501_fit2021.json",
+     "2023": "data/derived/v6/cmp_stack_v501_fit2022.json",
+     "2024": "data/derived/v6/cmp_stack_v501_fit2023.json",
+     "2025": "data/derived/v6/cmp_stack_v501_fit2023.json"
+    }
+   },
+   "n_fights": 1999,
+   "failed": 0,
+   "wall_s": 106
+  },
+  "rules": "BEFORE the full gate run was scored (written with the harness, Nov 7 2026 ~06:25 UTC):\n- Scored years: 2021, 2022, 2023 (forward-chained: every weight that scores year Y is fit on 2019..Y-1).\n- Pool weight w (v6 package only; the v5 package keeps its frozen 0.30): for scoring year Y, the w in {0, 0.05, ..., 1}\n  minimising the joint method x round log loss (who x how x when) of the no-line package cells on 2019..Y-1 (all\n  fights with an outcome); the same w is used in all three regimes. The look uses w fit on 2019-2023.\n- Regimes: 'close' and 'open' are scored on fights that HAVE that line (no fallback rows); 'none' on all fights.\n- Winner metrics on decisive fights (clip 1e-4); 7-bin, method (KO / SUB / DEC, a draw counts as DEC) and joint on fights\n  with an outcome (cells normalised, clip 1e-6), as tools/predict_eval.js.\n- Paired differences v6 - v5 with 2,000 event-cluster bootstrap resamples (cluster = card: event + date), seed 7.\n- GATE (V6_V10_PLAN section 3, \"Train-only acceptance test\"), all must hold:\n    open and no-line winner log loss: CI upper < 0 and point <= -0.001;\n    close winner: CI upper <= +0.0005;\n    7-bin: CI upper < 0 in EACH of the three regimes; method: CI upper <= +0.002 in each regime;\n    (checked elsewhere, reported here when the files exist) corner swap < 1e-12, JS / Python S2 cells <= 1e-9 on 40 pairs,\n    flag-off identity.\n- Soft cross-entropy against the closing line is reported as a screen only (never decisive)."
+ },
+ "pool_weight": {
+  "by_year": {
+   "2021": {
+    "w": 0.25,
+    "joint": 2.0592,
+    "n": 737,
+    "years": [
+     2019,
+     2020
+    ]
+   },
+   "2022": {
+    "w": 0.25,
+    "joint": 2.08014,
+    "n": 1156,
+    "years": [
+     2019,
+     2020,
+     2021
+    ]
+   },
+   "2023": {
+    "w": 0.25,
+    "joint": 2.10525,
+    "n": 1577,
+    "years": [
+     2019,
+     2020,
+     2021,
+     2022
+    ]
+   }
+  },
+  "fit_2019_2023": {
+   "w": 0.2,
+   "joint": 2.11651,
+   "n": 1972,
+   "years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+   ]
+  }
+ },
+ "regimes": {
+  "open": {
+   "n_outcome": 1235,
+   "n_decisive": 1222,
+   "n_cards": 128,
+   "packages": {
+    "v6": {
+     "winLL": 0.62133,
+     "brier": 0.21618,
+     "acc": 0.6653,
+     "ece": 0.0174,
+     "slope": 1.049,
+     "bin7": 1.60505,
+     "method": 0.9628,
+     "joint": 2.14424
+    },
+    "v501": {
+     "winLL": 0.62746,
+     "brier": 0.21884,
+     "acc": 0.6588,
+     "ece": 0.0158,
+     "slope": 1.003,
+     "bin7": 1.6198,
+     "method": 0.96921,
+     "joint": 2.15932
+    }
+   },
+   "paired": {
+    "v6 - v501": {
+     "bin7": {
+      "diff": -0.01475,
+      "ci": [
+       -0.02263,
+       -0.00659
+      ]
+     },
+     "method": {
+      "diff": -0.00641,
+      "ci": [
+       -0.01147,
+       -0.00102
+      ]
+     },
+     "joint": {
+      "diff": -0.01508,
+      "ci": [
+       -0.02302,
+       -0.00694
+      ]
+     },
+     "winLL": {
+      "diff": -0.00613,
+      "ci": [
+       -0.01081,
+       -0.00131
+      ]
+     },
+     "brier": {
+      "diff": -0.00266,
+      "ci": [
+       -0.00471,
+       -0.00051
+      ]
+     },
+     "acc": {
+      "diff": 0.00655,
+      "ci": [
+       -0.00723,
+       0.0207
+      ]
+     }
+    }
+   }
+  },
+  "none": {
+   "n_outcome": 1235,
+   "n_decisive": 1222,
+   "n_cards": 128,
+   "packages": {
+    "v6": {
+     "winLL": 0.62791,
+     "brier": 0.21919,
+     "acc": 0.6498,
+     "ece": 0.0112,
+     "slope": 1.068,
+     "bin7": 1.61156,
+     "method": 0.96373,
+     "joint": 2.15074
+    },
+    "v501": {
+     "winLL": 0.634,
+     "brier": 0.22206,
+     "acc": 0.6424,
+     "ece": 0.0224,
+     "slope": 1.062,
+     "bin7": 1.62627,
+     "method": 0.96994,
+     "joint": 2.16579
+    }
+   },
+   "paired": {
+    "v6 - v501": {
+     "bin7": {
+      "diff": -0.01471,
+      "ci": [
+       -0.02311,
+       -0.00633
+      ]
+     },
+     "method": {
+      "diff": -0.00622,
+      "ci": [
+       -0.01122,
+       -0.00098
+      ]
+     },
+     "joint": {
+      "diff": -0.01505,
+      "ci": [
+       -0.02364,
+       -0.00652
+      ]
+     },
+     "winLL": {
+      "diff": -0.00609,
+      "ci": [
+       -0.01192,
+       -0.00034
+      ]
+     },
+     "brier": {
+      "diff": -0.00287,
+      "ci": [
+       -0.00549,
+       -0.00026
+      ]
+     },
+     "acc": {
+      "diff": 0.00736,
+      "ci": [
+       -0.00917,
+       0.02498
+      ]
+     }
+    }
+   }
+  },
+  "close": {
+   "n_outcome": 1235,
+   "n_decisive": 1222,
+   "n_cards": 128,
+   "packages": {
+    "v6": {
+     "winLL": 0.61502,
+     "brier": 0.21343,
+     "acc": 0.6694,
+     "ece": 0.0139,
+     "slope": 1.056,
+     "bin7": 1.5988,
+     "method": 0.9638,
+     "joint": 2.13799,
+     "softCE_vs_close": 0.62759
+    },
+    "v501": {
+     "winLL": 0.61833,
+     "brier": 0.21483,
+     "acc": 0.6604,
+     "ece": 0.014,
+     "slope": 1.031,
+     "bin7": 1.60805,
+     "method": 0.96809,
+     "joint": 2.14757,
+     "softCE_vs_close": 0.62664
+    }
+   },
+   "paired": {
+    "v6 - v501": {
+     "bin7": {
+      "diff": -0.00925,
+      "ci": [
+       -0.01673,
+       -0.00144
+      ]
+     },
+     "method": {
+      "diff": -0.00429,
+      "ci": [
+       -0.00983,
+       0.00167
+      ]
+     },
+     "joint": {
+      "diff": -0.00958,
+      "ci": [
+       -0.01704,
+       -0.00177
+      ]
+     },
+     "winLL": {
+      "diff": -0.00331,
+      "ci": [
+       -0.00651,
+       -4e-05
+      ]
+     },
+     "brier": {
+      "diff": -0.0014,
+      "ci": [
+       -0.0028,
+       8e-05
+      ]
+     },
+     "acc": {
+      "diff": 0.009,
+      "ci": [
+       0.0,
+       0.01809
+      ]
+     },
+     "soft": {
+      "diff": 0.00095,
+      "ci": [
+       0.00071,
+       0.00119
+      ]
+     }
+    }
+   }
+  }
+ },
+ "by_year": {
+  "2021": {
+   "open": {
+    "v6": {
+     "winLL": 0.63649,
+     "brier": 0.22236,
+     "acc": 0.6522,
+     "ece": 0.0235,
+     "slope": 0.947,
+     "bin7": 1.6049,
+     "method": 0.95104,
+     "joint": 2.11722
+    },
+    "v501": {
+     "winLL": 0.63903,
+     "brier": 0.22371,
+     "acc": 0.6329,
+     "ece": 0.0168,
+     "slope": 0.927,
+     "bin7": 1.60896,
+     "method": 0.95519,
+     "joint": 2.12105
+    }
+   },
+   "none": {
+    "v6": {
+     "winLL": 0.63625,
+     "brier": 0.22222,
+     "acc": 0.6498,
+     "ece": 0.0209,
+     "slope": 1.003,
+     "bin7": 1.60467,
+     "method": 0.95116,
+     "joint": 2.11698
+    },
+    "v501": {
+     "winLL": 0.64085,
+     "brier": 0.22447,
+     "acc": 0.6498,
+     "ece": 0.0394,
+     "slope": 1.049,
+     "bin7": 1.61076,
+     "method": 0.95539,
+     "joint": 2.12284
+    }
+   },
+   "close": {
+    "v6": {
+     "winLL": 0.63291,
+     "brier": 0.22097,
+     "acc": 0.6329,
+     "ece": 0.0518,
+     "slope": 0.969,
+     "bin7": 1.60136,
+     "method": 0.95149,
+     "joint": 2.11368,
+     "softCE_vs_close": 0.638
+    },
+    "v501": {
+     "winLL": 0.63387,
+     "brier": 0.22145,
+     "acc": 0.6304,
+     "ece": 0.0399,
+     "slope": 0.969,
+     "bin7": 1.60053,
+     "method": 0.95101,
+     "joint": 2.11293,
+     "softCE_vs_close": 0.63724
+    }
+   }
+  },
+  "2022": {
+   "open": {
+    "v6": {
+     "winLL": 0.60983,
+     "brier": 0.21127,
+     "acc": 0.6826,
+     "ece": 0.0395,
+     "slope": 1.229,
+     "bin7": 1.58108,
+     "method": 0.97106,
+     "joint": 2.15692
+    },
+    "v501": {
+     "winLL": 0.61494,
+     "brier": 0.21316,
+     "acc": 0.6921,
+     "ece": 0.0531,
+     "slope": 1.208,
+     "bin7": 1.60195,
+     "method": 0.97947,
+     "joint": 2.17872
+    }
+   },
+   "none": {
+    "v6": {
+     "winLL": 0.62717,
+     "brier": 0.21949,
+     "acc": 0.6611,
+     "ece": 0.0561,
+     "slope": 1.125,
+     "bin7": 1.59834,
+     "method": 0.97315,
+     "joint": 2.17419
+    },
+    "v501": {
+     "winLL": 0.6352,
+     "brier": 0.22316,
+     "acc": 0.6301,
+     "ece": 0.0216,
+     "slope": 1.1,
+     "bin7": 1.62211,
+     "method": 0.98133,
+     "joint": 2.19888
+    }
+   },
+   "close": {
+    "v6": {
+     "winLL": 0.60392,
+     "brier": 0.20912,
+     "acc": 0.6826,
+     "ece": 0.0572,
+     "slope": 1.163,
+     "bin7": 1.5752,
+     "method": 0.97359,
+     "joint": 2.15105,
+     "softCE_vs_close": 0.62392
+    },
+    "v501": {
+     "winLL": 0.60732,
+     "brier": 0.21039,
+     "acc": 0.6683,
+     "ece": 0.0218,
+     "slope": 1.132,
+     "bin7": 1.59315,
+     "method": 0.98212,
+     "joint": 2.16963,
+     "softCE_vs_close": 0.62315
+    }
+   }
+  },
+  "2023": {
+   "open": {
+    "v6": {
+     "winLL": 0.61759,
+     "brier": 0.21489,
+     "acc": 0.6607,
+     "ece": 0.0135,
+     "slope": 0.992,
+     "bin7": 1.63076,
+     "method": 0.96645,
+     "joint": 2.15938
+    },
+    "v501": {
+     "winLL": 0.62864,
+     "brier": 0.21978,
+     "acc": 0.6504,
+     "ece": 0.035,
+     "slope": 0.907,
+     "bin7": 1.65032,
+     "method": 0.97313,
+     "joint": 2.17924
+    }
+   },
+   "none": {
+    "v6": {
+     "winLL": 0.61983,
+     "brier": 0.21565,
+     "acc": 0.6375,
+     "ece": 0.0455,
+     "slope": 1.08,
+     "bin7": 1.63295,
+     "method": 0.96701,
+     "joint": 2.16158
+    },
+    "v501": {
+     "winLL": 0.62542,
+     "brier": 0.2183,
+     "acc": 0.6478,
+     "ece": 0.0494,
+     "slope": 1.04,
+     "bin7": 1.64715,
+     "method": 0.97324,
+     "joint": 2.17607
+    }
+   },
+   "close": {
+    "v6": {
+     "winLL": 0.60793,
+     "brier": 0.21006,
+     "acc": 0.6941,
+     "ece": 0.0349,
+     "slope": 1.035,
+     "bin7": 1.62124,
+     "method": 0.96642,
+     "joint": 2.14986,
+     "softCE_vs_close": 0.62046
+    },
+    "v501": {
+     "winLL": 0.61364,
+     "brier": 0.21258,
+     "acc": 0.6838,
+     "ece": 0.0425,
+     "slope": 0.991,
+     "bin7": 1.63191,
+     "method": 0.97125,
+     "joint": 2.16079,
+     "softCE_vs_close": 0.61913
+    }
+   }
+  }
+ },
+ "methodround": {
+  "v6|open": {
+   "n": 1235,
+   "from": "2021-01-01",
+   "until": "2024-01-01",
+   "has_rounds": true,
+   "metrics": {
+    "joint": {
+     "submitted": 2.1442357586197724,
+     "model_S": 2.184958672678683,
+     "diff": -0.04072,
+     "ci95": [
+      -0.0557,
+      -0.02636
+     ]
+    },
+    "method3": {
+     "submitted": 0.9627955825705091,
+     "model_S": 0.9746387402351983,
+     "diff": -0.01184,
+     "ci95": [
+      -0.01948,
+      -0.00448
+     ]
+    },
+    "finish": {
+     "submitted": 0.6566227338233818,
+     "model_S": 0.6637602477477444,
+     "diff": -0.00714,
+     "ci95": [
+      -0.01177,
+      -0.00245
+     ]
+    },
+    "bin7": {
+     "submitted": 1.6050503545394648,
+     "model_S": 1.6470526295111716,
+     "diff": -0.042,
+     "ci95": [
+      -0.05673,
+      -0.02717
+     ]
+    },
+    "method_round": {
+     "submitted": 1.5022516395098513,
+     "model_S": 1.5125913905979071,
+     "diff": -0.01034,
+     "ci95": [
+      -0.01855,
+      -0.00258
+     ]
+    },
+    "round_given_fin": {
+     "submitted": 1.062765306851739,
+     "model_S": 1.057951369398835,
+     "diff": 0.00481,
+     "ci95": [
+      0.00146,
+      0.00825
+     ]
+    },
+    "ko_vs_sub": {
+     "submitted": 0.6030677323807054,
+     "model_S": 0.6123364245964997,
+     "diff": -0.00927,
+     "ci95": [
+      -0.0204,
+      0.00146
+     ]
+    },
+    "method_given_winner": {
+     "submitted": 0.940913939364993,
+     "model_S": 0.9566971953905642,
+     "diff": -0.01578,
+     "ci95": [
+      -0.02599,
+      -0.00608
+     ]
+    },
+    "winner": {
+     "submitted": 0.621332367091884,
+     "model_S": 0.6474427095957909,
+     "diff": -0.02611,
+     "ci95": [
+      -0.03665,
+      -0.01471
+     ]
+    },
+    "winner_brier": {
+     "submitted": 0.21618135540065522,
+     "model_S": 0.22807653816547288,
+     "diff": -0.0119,
+     "ci95": [
+      -0.01686,
+      -0.00665
+     ]
+    },
+    "winner_acc": {
+     "submitted": 0.6653027823240589,
+     "model_S": 0.6252045826513911,
+     "diff": 0.0401,
+     "ci95": [
+      0.01515,
+      0.06694
+     ]
+    },
+    "method3_brier": {
+     "submitted": 0.5791299893364341,
+     "model_S": 0.5860351495953425,
+     "diff": -0.00691,
+     "ci95": [
+      -0.01139,
+      -0.00248
+     ]
+    }
+   }
+  },
+  "v501|open": {
+   "n": 1235,
+   "from": "2021-01-01",
+   "until": "2024-01-01",
+   "has_rounds": true,
+   "metrics": {
+    "joint": {
+     "submitted": 2.1593186881757362,
+     "model_S": 2.184958672678683,
+     "diff": -0.02564,
+     "ci95": [
+      -0.03796,
+      -0.01294
+     ]
+    },
+    "method3": {
+     "submitted": 0.9692058335611865,
+     "model_S": 0.9746387402351983,
+     "diff": -0.00543,
+     "ci95": [
+      -0.01052,
+      -0.00045
+     ]
+    },
+    "finish": {
+     "submitted": 0.6622438592116966,
+     "model_S": 0.6637602477477444,
+     "diff": -0.00152,
+     "ci95": [
+      -0.00442,
+      0.00138
+     ]
+    },
+    "bin7": {
+     "submitted": 1.6197978213446318,
+     "model_S": 1.6470526295111716,
+     "diff": -0.02725,
+     "ci95": [
+      -0.03935,
+      -0.01453
+     ]
+    },
+    "method_round": {
+     "submitted": 1.5088221300389266,
+     "model_S": 1.5125913905979071,
+     "diff": -0.00377,
+     "ci95": [
+      -0.00943,
+      0.00178
+     ]
+    },
+    "round_given_fin": {
+     "submitted": 1.0634627022512992,
+     "model_S": 1.057951369398835,
+     "diff": 0.00551,
+     "ci95": [
+      0.00166,
+      0.00944
+     ]
+    },
+    "ko_vs_sub": {
+     "submitted": 0.6046220706883891,
+     "model_S": 0.6123364245964997,
+     "diff": -0.00771,
+     "ci95": [
+      -0.01525,
+      -0.0005
+     ]
+    },
+    "method_given_winner": {
+     "submitted": 0.9493149532151229,
+     "model_S": 0.9566971953905642,
+     "diff": -0.00738,
+     "ci95": [
+      -0.01271,
+      -0.00228
+     ]
+    },
+    "winner": {
+     "submitted": 0.6274617806624146,
+     "model_S": 0.6474427095957909,
+     "diff": -0.01998,
+     "ci95": [
+      -0.03088,
+      -0.00814
+     ]
+    },
+    "winner_brier": {
+     "submitted": 0.21884161422768683,
+     "model_S": 0.22807653816547288,
+     "diff": -0.00923,
+     "ci95": [
+      -0.01426,
+      -0.00384
+     ]
+    },
+    "winner_acc": {
+     "submitted": 0.6587561374795418,
+     "model_S": 0.6252045826513911,
+     "diff": 0.03355,
+     "ci95": [
+      0.00666,
+      0.06021
+     ]
+    },
+    "method3_brier": {
+     "submitted": 0.5833455501888997,
+     "model_S": 0.5860351495953425,
+     "diff": -0.00269,
+     "ci95": [
+      -0.00577,
+      0.00038
+     ]
+    }
+   }
+  },
+  "v6|none": {
+   "n": 1235,
+   "from": "2021-01-01",
+   "until": "2024-01-01",
+   "has_rounds": true,
+   "metrics": {
+    "joint": {
+     "submitted": 2.1507437780414427,
+     "model_S": 2.184958672678683,
+     "diff": -0.03421,
+     "ci95": [
+      -0.04719,
+      -0.02166
+     ]
+    },
+    "method3": {
+     "submitted": 0.9637253829753929,
+     "model_S": 0.9746387402351983,
+     "diff": -0.01091,
+     "ci95": [
+      -0.01819,
+      -0.00389
+     ]
+    },
+    "finish": {
+     "submitted": 0.6567541524850045,
+     "model_S": 0.6637602477477444,
+     "diff": -0.00701,
+     "ci95": [
+      -0.01156,
+      -0.00244
+     ]
+    },
+    "bin7": {
+     "submitted": 1.611558374366431,
+     "model_S": 1.6470526295111716,
+     "diff": -0.03549,
+     "ci95": [
+      -0.04861,
+      -0.02305
+     ]
+    },
+    "method_round": {
+     "submitted": 1.5032693115658653,
+     "model_S": 1.5125913905979071,
+     "diff": -0.00932,
+     "ci95": [
+      -0.0174,
+      -0.00182
+     ]
+    },
+    "round_given_fin": {
+     "submitted": 1.06275466693588,
+     "model_S": 1.057951369398835,
+     "diff": 0.0048,
+     "ci95": [
+      0.00136,
+      0.00828
+     ]
+    },
+    "ko_vs_sub": {
+     "submitted": 0.6046403024810681,
+     "model_S": 0.6123364245964997,
+     "diff": -0.0077,
+     "ci95": [
+      -0.0184,
+      0.00244
+     ]
+    },
+    "method_given_winner": {
+     "submitted": 0.940913939406707,
+     "model_S": 0.9566971953905642,
+     "diff": -0.01578,
+     "ci95": [
+      -0.02599,
+      -0.00608
+     ]
+    },
+    "winner": {
+     "submitted": 0.6279096211271227,
+     "model_S": 0.6474427095957909,
+     "diff": -0.01953,
+     "ci95": [
+      -0.02873,
+      -0.01036
+     ]
+    },
+    "winner_brier": {
+     "submitted": 0.2191901708505518,
+     "model_S": 0.22807653816547288,
+     "diff": -0.00889,
+     "ci95": [
+      -0.01311,
+      -0.00484
+     ]
+    },
+    "winner_acc": {
+     "submitted": 0.6497545008183306,
+     "model_S": 0.6252045826513911,
+     "diff": 0.02455,
+     "ci95": [
+      0.0,
+      0.04926
+     ]
+    },
+    "method3_brier": {
+     "submitted": 0.5796942387831198,
+     "model_S": 0.5860351495953425,
+     "diff": -0.00634,
+     "ci95": [
+      -0.01063,
+      -0.00199
+     ]
+    }
+   }
+  },
+  "v501|none": {
+   "n": 1235,
+   "from": "2021-01-01",
+   "until": "2024-01-01",
+   "has_rounds": true,
+   "metrics": {
+    "joint": {
+     "submitted": 2.1657902007576038,
+     "model_S": 2.184958672678683,
+     "diff": -0.01917,
+     "ci95": [
+      -0.02952,
+      -0.00917
+     ]
+    },
+    "method3": {
+     "submitted": 0.9699435205105239,
+     "model_S": 0.9746387402351983,
+     "diff": -0.0047,
+     "ci95": [
+      -0.00921,
+      -0.00024
+     ]
+    },
+    "finish": {
+     "submitted": 0.6626174318439884,
+     "model_S": 0.6637602477477444,
+     "diff": -0.00114,
+     "ci95": [
+      -0.00373,
+      0.00136
+     ]
+    },
+    "bin7": {
+     "submitted": 1.6262693336709149,
+     "model_S": 1.6470526295111716,
+     "diff": -0.02078,
+     "ci95": [
+      -0.03059,
+      -0.01116
+     ]
+    },
+    "method_round": {
+     "submitted": 1.5096703601803076,
+     "model_S": 1.5125913905979071,
+     "diff": -0.00292,
+     "ci95": [
+      -0.00812,
+      0.00224
+     ]
+    },
+    "round_given_fin": {
+     "submitted": 1.0635885776830538,
+     "model_S": 1.057951369398835,
+     "diff": 0.00564,
+     "ci95": [
+      0.00169,
+      0.00969
+     ]
+    },
+    "ko_vs_sub": {
+     "submitted": 0.6053392655552974,
+     "model_S": 0.6123364245964997,
+     "diff": -0.007,
+     "ci95": [
+      -0.01373,
+      -0.0007
+     ]
+    },
+    "method_given_winner": {
+     "submitted": 0.9493149534532817,
+     "model_S": 0.9566971953905642,
+     "diff": -0.00738,
+     "ci95": [
+      -0.01271,
+      -0.00228
+     ]
+    },
+    "winner": {
+     "submitted": 0.6340021386223319,
+     "model_S": 0.6474427095957909,
+     "diff": -0.01344,
+     "ci95": [
+      -0.02138,
+      -0.00548
+     ]
+    },
+    "winner_brier": {
+     "submitted": 0.2220556374423441,
+     "model_S": 0.22807653816547288,
+     "diff": -0.00602,
+     "ci95": [
+      -0.00968,
+      -0.00252
+     ]
+    },
+    "winner_acc": {
+     "submitted": 0.6423895253682488,
+     "model_S": 0.6252045826513911,
+     "diff": 0.01718,
+     "ci95": [
+      -0.0041,
+      0.03923
+     ]
+    },
+    "method3_brier": {
+     "submitted": 0.5837972422248704,
+     "model_S": 0.5860351495953425,
+     "diff": -0.00224,
+     "ci95": [
+      -0.00494,
+      0.00049
+     ]
+    }
+   }
+  },
+  "v6|close": {
+   "n": 1235,
+   "from": "2021-01-01",
+   "until": "2024-01-01",
+   "has_rounds": true,
+   "metrics": {
+    "joint": {
+     "submitted": 2.1379880731853125,
+     "model_S": 2.184958672678683,
+     "diff": -0.04697,
+     "ci95": [
+      -0.06226,
+      -0.03039
+     ]
+    },
+    "method3": {
+     "submitted": 0.9638002410002775,
+     "model_S": 0.9746387402351983,
+     "diff": -0.01084,
+     "ci95": [
+      -0.01821,
+      -0.00353
+     ]
+    },
+    "finish": {
+     "submitted": 0.6578006781775405,
+     "model_S": 0.6637602477477444,
+     "diff": -0.00596,
+     "ci95": [
+      -0.01048,
+      -0.00124
+     ]
+    },
+    "bin7": {
+     "submitted": 1.5988026690518653,
+     "model_S": 1.6470526295111716,
+     "diff": -0.04825,
+     "ci95": [
+      -0.0635,
+      -0.03128
+     ]
+    },
+    "method_round": {
+     "submitted": 1.503289371869867,
+     "model_S": 1.5125913905979071,
+     "diff": -0.0093,
+     "ci95": [
+      -0.01759,
+      -0.00149
+     ]
+    },
+    "round_given_fin": {
+     "submitted": 1.0628504695528445,
+     "model_S": 1.057951369398835,
+     "diff": 0.0049,
+     "ci95": [
+      0.00155,
+      0.00835
+     ]
+    },
+    "ko_vs_sub": {
+     "submitted": 0.6027264116205424,
+     "model_S": 0.6123364245964997,
+     "diff": -0.00961,
+     "ci95": [
+      -0.02071,
+      0.00109
+     ]
+    },
+    "method_given_winner": {
+     "submitted": 0.9409139393188571,
+     "model_S": 0.9566971953905642,
+     "diff": -0.01578,
+     "ci95": [
+      -0.02599,
+      -0.00608
+     ]
+    },
+    "winner": {
+     "submitted": 0.61501821690963,
+     "model_S": 0.6474427095957909,
+     "diff": -0.03242,
+     "ci95": [
+      -0.0445,
+      -0.01984
+     ]
+    },
+    "winner_brier": {
+     "submitted": 0.213433942061294,
+     "model_S": 0.22807653816547288,
+     "diff": -0.01464,
+     "ci95": [
+      -0.02,
+      -0.00906
+     ]
+    },
+    "winner_acc": {
+     "submitted": 0.6693944353518821,
+     "model_S": 0.6252045826513911,
+     "diff": 0.04419,
+     "ci95": [
+      0.01725,
+      0.07143
+     ]
+    },
+    "method3_brier": {
+     "submitted": 0.5799574188975578,
+     "model_S": 0.5860351495953425,
+     "diff": -0.00608,
+     "ci95": [
+      -0.01055,
+      -0.0017
+     ]
+    }
+   }
+  },
+  "v501|close": {
+   "n": 1235,
+   "from": "2021-01-01",
+   "until": "2024-01-01",
+   "has_rounds": true,
+   "metrics": {
+    "joint": {
+     "submitted": 2.147570035607054,
+     "model_S": 2.184958672678683,
+     "diff": -0.03739,
+     "ci95": [
+      -0.05119,
+      -0.02253
+     ]
+    },
+    "method3": {
+     "submitted": 0.9680884628521419,
+     "model_S": 0.9746387402351983,
+     "diff": -0.00655,
+     "ci95": [
+      -0.01256,
+      -0.00093
+     ]
+    },
+    "finish": {
+     "submitted": 0.6610817106999348,
+     "model_S": 0.6637602477477444,
+     "diff": -0.00268,
+     "ci95": [
+      -0.0064,
+      0.00097
+     ]
+    },
+    "bin7": {
+     "submitted": 1.6080489133918288,
+     "model_S": 1.6470526295111716,
+     "diff": -0.039,
+     "ci95": [
+      -0.05336,
+      -0.02449
+     ]
+    },
+    "method_round": {
+     "submitted": 1.507844893796717,
+     "model_S": 1.5125913905979071,
+     "diff": -0.00475,
+     "ci95": [
+      -0.01115,
+      0.00138
+     ]
+    },
+    "round_given_fin": {
+     "submitted": 1.0636915328368954,
+     "model_S": 1.057951369398835,
+     "diff": 0.00574,
+     "ci95": [
+      0.00186,
+      0.00972
+     ]
+    },
+    "ko_vs_sub": {
+     "submitted": 0.6047102693907114,
+     "model_S": 0.6123364245964997,
+     "diff": -0.00763,
+     "ci95": [
+      -0.01673,
+      0.00071
+     ]
+    },
+    "method_given_winner": {
+     "submitted": 0.9466195772938739,
+     "model_S": 0.9566971953905642,
+     "diff": -0.01008,
+     "ci95": [
+      -0.01704,
+      -0.00354
+     ]
+    },
+    "winner": {
+     "submitted": 0.6183291931950338,
+     "model_S": 0.6474427095957909,
+     "diff": -0.02911,
+     "ci95": [
+      -0.04123,
+      -0.01628
+     ]
+    },
+    "winner_brier": {
+     "submitted": 0.21483425192460298,
+     "model_S": 0.22807653816547288,
+     "diff": -0.01324,
+     "ci95": [
+      -0.01864,
+      -0.0078
+     ]
+    },
+    "winner_acc": {
+     "submitted": 0.660392798690671,
+     "model_S": 0.6252045826513911,
+     "diff": 0.03519,
+     "ci95": [
+      0.00828,
+      0.0626
+     ]
+    },
+    "method3_brier": {
+     "submitted": 0.5825315222506833,
+     "model_S": 0.5860351495953425,
+     "diff": -0.0035,
+     "ci95": [
+      -0.00727,
+      -2e-05
+     ]
+    }
+   }
+  }
+ },
+ "gate": {
+  "checks": {
+   "open winner: CI upper < 0 and point <= -0.001": true,
+   "no-line winner: CI upper < 0 and point <= -0.001": true,
+   "close winner: CI upper <= +0.0005": true,
+   "7-bin (open): CI upper < 0": true,
+   "method (open): CI upper <= +0.002": true,
+   "7-bin (none): CI upper < 0": true,
+   "method (none): CI upper <= +0.002": true,
+   "7-bin (close): CI upper < 0": true,
+   "method (close): CI upper <= +0.002": true
+  },
+  "pass": true
+ }
+}
