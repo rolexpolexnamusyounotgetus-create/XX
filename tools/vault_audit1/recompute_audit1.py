@@ -98,30 +98,65 @@ def mult_devig(da, db):
 
 # ------------------------------------------------------------------ 1. market: close / open from raw fields
 EXCH = {"Kalshi", "Polymarket"}
+
+
+def consensus(books, max_dev=0.15):
+    """the frozen close definition (tools/market.py book_consensus, re-implemented): sportsbooks only; a book is dropped if
+    its overround is outside 0.98-1.25 or its no-vig p is more than 0.15 from the median book's (stale / in-play quotes);
+    returns the mean decimal price per side of the kept books and the dropped books"""
+    d = []
+    for k, (qa, qb) in books.items():
+        if k in EXCH or not qa or not qb:
+            continue
+        x = (dec_odds(qa), dec_odds(qb))
+        if not (0.98 <= 1 / x[0] + 1 / x[1] <= 1.25):
+            continue
+        d.append((k, x, mult_devig(*x)))
+    if not d:
+        return None, []
+    med = float(np.median([t[2] for t in d]))
+    keep = [t for t in d if abs(t[2] - med) <= max_dev]
+    return (float(np.mean([t[1][0] for t in keep])), float(np.mean([t[1][1] for t in keep]))), [t[0] for t in d if t not in keep]
+
+
 close, close_mult, opn = np.full(n, np.nan), np.full(n, np.nan), np.full(n, np.nan)
-mk_diff, mk_diff_mult, mk_diff_open, src_count = [], [], [], defaultdict(int)
+mk_diff, mk_diff_mult, mk_diff_open, src_count, dropped = [], [], [], defaultdict(int), []
 for i, fid in enumerate(ids):
     m = MV[fid]
-    books = {k: v for k, v in (m.get("books") or {}).items() if k not in EXCH and v and v[0] is not None and v[1] is not None}
     src_count[m.get("src")] += 1
-    if books:
-        da = float(np.mean([dec_odds(v[0]) for v in books.values()]))
-        db = float(np.mean([dec_odds(v[1]) for v in books.values()]))
-    else:                                    # no per-book quotes stored: market.py's closing-range midpoint (American)
-        da, db = dec_odds(m["close"][0]), dec_odds(m["close"][1])
-    close[i], close_mult[i] = power_devig(da, db), mult_devig(da, db)
+    md, drop = consensus(m.get("books") or {})
+    if drop:
+        dropped.append({"id": fid, "dropped": drop, "quotes": {k: m["books"][k] for k in drop}})
+    if md is None or m.get("src") != "bfo_books":
+        # no per-book quotes (closing-range midpoint) or BFO's own mean over more books than were stored: the stored
+        # mean decimal close (market.py), de-vigged here
+        md = tuple(m["close_dec"]) if m.get("close_dec") else (dec_odds(m["close"][0]), dec_odds(m["close"][1]))
+    close[i], close_mult[i] = power_devig(*md), mult_devig(*md)
     opn[i] = mult_devig(dec_odds(m["open"][0]), dec_odds(m["open"][1]))
     mk_diff.append(abs(close[i] - m["p_power_close"]))
     mk_diff_mult.append(abs(close_mult[i] - m["p_novig_close"]))
     mk_diff_open.append(abs(opn[i] - m["p_novig_open"]))
 chk["market_rebuild"] = {"sources": dict(src_count), "max_abs_vs_p_power_close": max(mk_diff),
                          "max_abs_vs_p_novig_close": max(mk_diff_mult), "max_abs_vs_p_novig_open": max(mk_diff_open),
-                         "exchange_books_in_close": sum(1 for f in ids for k in (MV[f].get("books") or {}) if k in EXCH)}
+                         "exchange_books_in_close": sum(1 for f in ids for k in (MV[f].get("books") or {}) if k in EXCH),
+                         "books_dropped_by_consensus_rule": dropped}
 
 
 def norm_name(s):
-    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower().replace("-", " ")
     return re.sub(r"[^a-z ]", "", s).split()
+
+
+def overlap(x, y):
+    return len(set(norm_name(x)) & set(norm_name(y)))
+
+
+def best_row(rows_by_name, nm, other):
+    """the fighter-page row owned by `nm` (token overlap with nm minus overlap with the opponent; ties -> None)"""
+    sc = sorted(((overlap(k, nm) - overlap(k, other), k) for k in rows_by_name), reverse=True)
+    if not sc or sc[0][0] <= 0 or (len(sc) > 1 and sc[1][0] == sc[0][0]):
+        return None
+    return rows_by_name[sc[0][1]]
 
 
 # raw BFO event-page lines (per book, t1/t2 orientation) and fighter-page closing ranges
@@ -145,11 +180,11 @@ for i, fid in enumerate(ids):
         raw_none.append(fid)
         continue
     rows = raw[mu]
-    nmA = norm_name(f["A"]["name"])
+    nA_, nB_ = f["A"]["name"], f["B"]["name"]
     for bk, (t1, t2, a1, a2) in rows.items():
         if bk in EXCH:
             continue
-        flip = not (norm_name(t1)[-1:] == nmA[-1:] or norm_name(t1) == nmA)
+        flip = (overlap(t1, nB_) + overlap(t2, nA_)) > (overlap(t1, nA_) + overlap(t2, nB_))
         qa, qb = (a2, a1) if flip else (a1, a2)
         if bk in books:
             if [int(float(qa)), int(float(qb))] == [int(books[bk][0]), int(books[bk][1])]:
@@ -163,18 +198,19 @@ for i, fid in enumerate(ids):
         if max(abs(v[0]), abs(v[1])) >= 2000:
             extreme.append((fid, bk, v))
     fr = rng_.get(mu, {})
-    for side, nm in (("A", f["A"]["name"]), ("B", f["B"]["name"])):
-        r = next((x for k, x in fr.items() if norm_name(k)[-1:] == norm_name(nm)[-1:]), None)
+    keep_books = {k: v for k, v in books.items() if k not in [d_ for x in dropped if x["id"] == fid for d_ in x["dropped"]]}
+    for side, nm, ot in (("A", nA_, nB_), ("B", nB_, nA_)):
+        r = best_row(fr, nm, ot)
         if not r:
             continue
         lo, hi = sorted([float(r["lo1"]), float(r["hi1"])], key=lambda x: dec_odds(x))
-        for bk, v in books.items():
+        for bk, v in keep_books.items():
             q = v[0] if side == "A" else v[1]
             if not (dec_odds(lo) - 1e-9 <= dec_odds(q) <= dec_odds(hi) + 1e-9):
                 outside.append((fid, side, bk, q, (r["lo1"], r["hi1"])))
         sp = [float(x) for x in r["spark"].split(";") if x]
-        if sp and books:
-            dmean = float(np.mean([dec_odds(v[0] if side == "A" else v[1]) for v in books.values()]))
+        if sp and keep_books:
+            dmean = float(np.mean([dec_odds(v[0] if side == "A" else v[1]) for v in keep_books.values()]))
             spark_gap.append(abs(1 / sp[-1] - 1 / dmean))
 chk["close_vs_raw_bfo"] = {"book_quotes_matching_raw_csv": raw_ok, "mismatches": raw_mis[:10], "n_mismatch": len(raw_mis),
                            "fights_without_raw_rows": raw_none,
@@ -184,7 +220,8 @@ chk["close_vs_raw_bfo"] = {"book_quotes_matching_raw_csv": raw_ok, "mismatches":
                            "sparkline_last_vs_book_mean_implied_prob": {"n": len(spark_gap),
                                                                          "median_abs": float(np.median(spark_gap)),
                                                                          "p95_abs": float(np.percentile(spark_gap, 95)),
-                                                                         "max_abs": float(np.max(spark_gap))}}
+                                                                         "max_abs": float(np.max(spark_gap)),
+                                                                         "n_over_0.05": int(np.sum(np.array(spark_gap) > 0.05))}}
 
 # opener sanity: openers whose favourite flips against BOTH the BFO sparkline's second point and the close (reversed openers)
 flip_open = []
@@ -192,7 +229,7 @@ for i, fid in enumerate(ids):
     m, f = MV[fid], FIGHTS[i]
     mu = (m.get("bfo") or {}).get("matchup")
     fr = rng_.get(mu, {}) if mu else {}
-    r = next((x for k, x in fr.items() if norm_name(k)[-1:] == norm_name(f["A"]["name"])[-1:]), None)
+    r = best_row(fr, f["A"]["name"], f["B"]["name"])
     if not r:
         continue
     sp = [float(x) for x in r["spark"].split(";") if x]
