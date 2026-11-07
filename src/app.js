@@ -1106,10 +1106,13 @@
     if (key in sdCache) return sdCache[key];
     var out = null;
     try {
+      // a fighter with no embedding (every UFC debut from 2026 on: the export stops at 2025) gets null from embedding();
+      // as in tools/forward_statlines.js, the embedding term is then off (hasEmb false, win logit 0), the case the model trained on
       var em = null, hasEmb = false;
       if (EMB) {
-        em = EMB.matchup(S.a, S.b, { division: S.div, rounds: R, date: todayISO() });
-        hasEmb = (EMB.embedding(S.a).expo || 0) > 0 && (EMB.embedding(S.b).expo || 0) > 0;
+        var ea = EMB.embedding(S.a), eb = EMB.embedding(S.b);
+        hasEmb = !!(ea && eb && ea.expo > 0 && eb.expo > 0);
+        if (hasEmb) em = EMB.matchup(S.a, S.b, { division: S.div, rounds: R, date: todayISO() });
       }
       var P = SDM.prepare({ mlA: pred.A, mlB: pred.B, etaA: em ? em.etaA : null, etaB: em ? em.etaB : null, hasEmb: hasEmb,
         winLogit: hasEmb && em ? em.logit : 0, oppA: (OPP && OPP[S.a]) || null, oppB: (OPP && OPP[S.b]) || null, rounds: R });
