@@ -477,10 +477,11 @@
     var R = [fighterRates(profA, P, L, p, nR), fighterRates(profB, P, L, p, nR)];
     var adj = [normAdj(opts.adjA), normAdj(opts.adjB)];
     var jud = opts.judges || {};
-    var date = opts.date || (DB && DB.meta && DB.meta.snapshot) || null;
+    var date = dIn || normDate(DB && DB.meta && DB.meta.snapshot) || null;
     var a = p.combA, b = p.combB, i, j, k;
+    // v5.0.1: a judge power that is not a finite number falls back to the params value (NaN scored every round for B)
     var m = { version: VERSION, A: info(profA), B: info(profB), division: division, rounds: nR, title: !!opts.title, date: date,
-      p: p, P: P, L: L, R: R, adj: adj, judgePower: jud.power != null ? +jud.power : p.judge.power, opts: opts };
+      p: p, P: P, L: L, R: R, adj: adj, judgePower: finNum(jud.power) ? +jud.power : p.judge.power, opts: opts };
     // the two resolved profiles, for sensitivity() rebuilds (non-enumerable: no effect on the tables, copies or JSON)
     Object.defineProperty(m, "_src", { value: { A: profA, B: profB }, enumerable: false, writable: true, configurable: true });
     if (rz) m.realism = rz;
