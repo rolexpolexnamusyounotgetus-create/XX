@@ -620,9 +620,9 @@
      "logloss_with": 0.5788248485320001,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -8.727629959482959e-7,
-      "lo": -0.0000015272600814283089,
-      "hi": -2.5655151717160004e-7,
+      "est": -8.727629959482959e-07,
+      "lo": -1.5272600814283089e-06,
+      "hi": -2.5655151717160004e-07,
       "p_gt0": 0.002
      },
      "n": 845
@@ -632,9 +632,9 @@
      "logloss_with": 0.5930335681784208,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -1.0099141584613298e-7,
-      "lo": -1.8138076015023744e-7,
-      "hi": -1.882505288986469e-8,
+      "est": -1.0099141584613298e-07,
+      "lo": -1.8138076015023744e-07,
+      "hi": -1.882505288986469e-08,
       "p_gt0": 0.0105
      },
      "n": 845
@@ -1454,9 +1454,9 @@
      "logloss_with": 0.5930319721344538,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -0.0000016970353827425062,
-      "lo": -0.000002435549185916011,
-      "hi": -9.44685467941618e-7,
+      "est": -1.6970353827425062e-06,
+      "lo": -2.435549185916011e-06,
+      "hi": -9.44685467941618e-07,
       "p_gt0": 0
      },
      "n": 845
@@ -2295,9 +2295,9 @@
      "logloss_with": 0.5788099923758476,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -0.0000157289191484635,
-      "lo": -0.00003115957049440681,
-      "hi": -2.182334234371639e-7,
+      "est": -1.57289191484635e-05,
+      "lo": -3.115957049440681e-05,
+      "hi": -2.182334234371639e-07,
       "p_gt0": 0.0235
      },
      "n": 845
@@ -2312,9 +2312,9 @@
       "hi": 0,
       "p_gt0": null,
       "raw": {
-       "est": -2.947697791072808e-7,
-       "lo": -4.819442412118878e-7,
-       "hi": -1.0681580458083556e-7,
+       "est": -2.947697791072808e-07,
+       "lo": -4.819442412118878e-07,
+       "hi": -1.0681580458083556e-07,
        "p_gt0": 0.002
       },
       "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
@@ -3124,7 +3124,1153 @@
       }
      }
     },
-    "file": "data/derived/evalv/v5_val.json"
+    "file": "data/derived/evalv/v5_val.json",
+    "package": {
+     "file": "data/derived/evalv/v5_val_package.json",
+     "tool": "tools/predict_eval.js",
+     "setup": "FightEngine.predict defaults (sims 1000 per order, mrWeight 0.30, linear pool, recalT 1, calibrated interval kappa 2.15) with tools/predictrec.js inputs; stacker data/derived/blindtest_stack_pre2024_v5.json (blindtest.py export --fit-through 2023-12-31, engine expert engine_v5 = evalv v5 train rows; engine weight close 0.070 / open 0.175 / none 0.088); 865 fights, 0 failed; close/open fall back to none on 9 / 11 fights without that line",
+     "package": {
+      "close": {
+       "winLL": {
+        "est": 0.581,
+        "lo": 0.556,
+        "hi": 0.6061,
+        "n": 853
+       },
+       "brier": {
+        "est": 0.1986,
+        "lo": 0.1875,
+        "hi": 0.2095,
+        "n": 853
+       },
+       "acc": {
+        "est": 0.7022,
+        "lo": 0.6725,
+        "hi": 0.7339,
+        "n": 853
+       },
+       "ece": {
+        "est": 0.0434,
+        "lo": 0.0208,
+        "hi": 0.0756
+       },
+       "calSlope": {
+        "est": 1.1183,
+        "lo": 0.9497,
+        "hi": 1.2916
+       },
+       "bin7": {
+        "est": 1.5062,
+        "lo": 1.4649,
+        "hi": 1.5501,
+        "n": 857
+       },
+       "method": {
+        "est": 0.9271,
+        "lo": 0.8991,
+        "hi": 0.9556,
+        "n": 857
+       }
+      },
+      "open": {
+       "winLL": {
+        "est": 0.5868,
+        "lo": 0.5646,
+        "hi": 0.6075,
+        "n": 853
+       },
+       "brier": {
+        "est": 0.201,
+        "lo": 0.191,
+        "hi": 0.2103,
+        "n": 853
+       },
+       "acc": {
+        "est": 0.6858,
+        "lo": 0.6591,
+        "hi": 0.7146,
+        "n": 853
+       },
+       "ece": {
+        "est": 0.0241,
+        "lo": 0.0153,
+        "hi": 0.0542
+       },
+       "calSlope": {
+        "est": 1.2612,
+        "lo": 1.0936,
+        "hi": 1.4638
+       },
+       "bin7": {
+        "est": 1.5118,
+        "lo": 1.4718,
+        "hi": 1.5546,
+        "n": 857
+       },
+       "method": {
+        "est": 0.9286,
+        "lo": 0.9,
+        "hi": 0.9586,
+        "n": 857
+       }
+      },
+      "none": {
+       "winLL": {
+        "est": 0.593,
+        "lo": 0.5705,
+        "hi": 0.6136,
+        "n": 853
+       },
+       "brier": {
+        "est": 0.2039,
+        "lo": 0.1938,
+        "hi": 0.2133,
+        "n": 853
+       },
+       "acc": {
+        "est": 0.6882,
+        "lo": 0.6598,
+        "hi": 0.7172,
+        "n": 853
+       },
+       "ece": {
+        "est": 0.0368,
+        "lo": 0.0185,
+        "hi": 0.0676
+       },
+       "calSlope": {
+        "est": 1.2852,
+        "lo": 1.0882,
+        "hi": 1.5492
+       },
+       "bin7": {
+        "est": 1.518,
+        "lo": 1.4769,
+        "hi": 1.5614,
+        "n": 857
+       },
+       "method": {
+        "est": 0.9276,
+        "lo": 0.8993,
+        "hi": 0.9571,
+        "n": 857
+       }
+      }
+     },
+     "package_anchor_mode": {
+      "close": {
+       "bin7": {
+        "est": 1.5073,
+        "lo": 1.4668,
+        "hi": 1.5511,
+        "n": 857
+       },
+       "method": {
+        "est": 0.9286,
+        "lo": 0.9008,
+        "hi": 0.957,
+        "n": 857
+       }
+      },
+      "open": {
+       "bin7": {
+        "est": 1.515,
+        "lo": 1.4747,
+        "hi": 1.5572,
+        "n": 857
+       },
+       "method": {
+        "est": 0.9305,
+        "lo": 0.902,
+        "hi": 0.9601,
+        "n": 857
+       }
+      },
+      "none": {
+       "bin7": {
+        "est": 1.5196,
+        "lo": 1.4785,
+        "hi": 1.5622,
+        "n": 857
+       },
+       "method": {
+        "est": 0.9294,
+        "lo": 0.9012,
+        "hi": 0.9585,
+        "n": 857
+       }
+      }
+     },
+     "benchmarks": {
+      "market_close": {
+       "winLL": {
+        "est": 0.5847,
+        "lo": 0.5595,
+        "hi": 0.6103,
+        "n": 844
+       },
+       "brier": {
+        "est": 0.2002,
+        "lo": 0.1886,
+        "hi": 0.2115,
+        "n": 844
+       },
+       "acc": {
+        "est": 0.6931,
+        "lo": 0.6608,
+        "hi": 0.7266,
+        "n": 844
+       },
+       "ece": {
+        "est": 0.0251,
+        "lo": 0.0158,
+        "hi": 0.059
+       },
+       "calSlope": {
+        "est": 1.1142,
+        "lo": 0.9311,
+        "hi": 1.2956
+       }
+      },
+      "market_open": {
+       "winLL": {
+        "est": 0.6092,
+        "lo": 0.589,
+        "hi": 0.6286,
+        "n": 842
+       },
+       "brier": {
+        "est": 0.2107,
+        "lo": 0.2013,
+        "hi": 0.2197,
+        "n": 842
+       },
+       "acc": {
+        "est": 0.6692,
+        "lo": 0.6439,
+        "hi": 0.6952,
+        "n": 842
+       },
+       "ece": {
+        "est": 0.0288,
+        "lo": 0.0195,
+        "hi": 0.0577
+       },
+       "calSlope": {
+        "est": 1.3075,
+        "lo": 1.1085,
+        "hi": 1.5179
+       }
+      },
+      "ml_lr_walkforward": {
+       "winLL": {
+        "est": 0.6053,
+        "lo": 0.5881,
+        "hi": 0.6221,
+        "n": 853
+       },
+       "brier": {
+        "est": 0.2085,
+        "lo": 0.2007,
+        "hi": 0.2161,
+        "n": 853
+       },
+       "acc": {
+        "est": 0.6753,
+        "lo": 0.644,
+        "hi": 0.7054,
+        "n": 853
+       },
+       "ece": {
+        "est": 0.0495,
+        "lo": 0.0385,
+        "hi": 0.0867
+       },
+       "calSlope": {
+        "est": 1.4897,
+        "lo": 1.2795,
+        "hi": 1.7377
+       }
+      },
+      "ml_lr_static": {
+       "winLL": {
+        "est": 0.6057,
+        "lo": 0.5892,
+        "hi": 0.6221,
+        "n": 853
+       },
+       "brier": {
+        "est": 0.2086,
+        "lo": 0.2009,
+        "hi": 0.2161,
+        "n": 853
+       },
+       "acc": {
+        "est": 0.68,
+        "lo": 0.6506,
+        "hi": 0.709,
+        "n": 853
+       },
+       "ece": {
+        "est": 0.0556,
+        "lo": 0.0376,
+        "hi": 0.0877
+       },
+       "calSlope": {
+        "est": 1.5492,
+        "lo": 1.3316,
+        "hi": 1.7936
+       }
+      },
+      "ml2_lr": {
+       "winLL": {
+        "est": 0.5881,
+        "lo": 0.5695,
+        "hi": 0.6068,
+        "n": 853
+       },
+       "brier": {
+        "est": 0.2011,
+        "lo": 0.1926,
+        "hi": 0.2096,
+        "n": 853
+       },
+       "acc": {
+        "est": 0.6905,
+        "lo": 0.6629,
+        "hi": 0.7179,
+        "n": 853
+       },
+       "ece": {
+        "est": 0.0466,
+        "lo": 0.028,
+        "hi": 0.075
+       },
+       "calSlope": {
+        "est": 1.4554,
+        "lo": 1.26,
+        "hi": 1.6934
+       }
+      },
+      "elo_walkforward": {
+       "winLL": {
+        "est": 0.6768,
+        "lo": 0.6681,
+        "hi": 0.6852,
+        "n": 853
+       },
+       "brier": {
+        "est": 0.2421,
+        "lo": 0.2378,
+        "hi": 0.2462,
+        "n": 853
+       },
+       "acc": {
+        "est": 0.5504,
+        "lo": 0.5228,
+        "hi": 0.5803,
+        "n": 853
+       },
+       "ece": {
+        "est": 0.0213,
+        "lo": 0.008,
+        "hi": 0.0543
+       },
+       "calSlope": {
+        "est": 1.1376,
+        "lo": 0.8257,
+        "hi": 1.5243
+       }
+      },
+      "mkt_rating": {
+       "winLL": {
+        "est": 0.6258,
+        "lo": 0.6088,
+        "hi": 0.6425,
+        "n": 844
+       },
+       "brier": {
+        "est": 0.2181,
+        "lo": 0.21,
+        "hi": 0.226,
+        "n": 844
+       },
+       "acc": {
+        "est": 0.6552,
+        "lo": 0.6237,
+        "hi": 0.6873,
+        "n": 844
+       },
+       "ece": {
+        "est": 0.05,
+        "lo": 0.0243,
+        "hi": 0.0815
+       },
+       "calSlope": {
+        "est": 1.5638,
+        "lo": 1.2751,
+        "hi": 1.9058
+       }
+      },
+      "model_S": {
+       "winLL": {
+        "est": 0.6193,
+        "lo": 0.6044,
+        "hi": 0.6342,
+        "n": 853
+       },
+       "brier": {
+        "est": 0.2146,
+        "lo": 0.2078,
+        "hi": 0.2215,
+        "n": 853
+       },
+       "acc": {
+        "est": 0.6706,
+        "lo": 0.6422,
+        "hi": 0.6989,
+        "n": 853
+       },
+       "ece": {
+        "est": 0.0601,
+        "lo": 0.0399,
+        "hi": 0.0873
+       },
+       "calSlope": {
+        "est": 1.6133,
+        "lo": 1.3737,
+        "hi": 1.8492
+       },
+       "bin7": {
+        "est": 1.5504,
+        "lo": 1.51,
+        "hi": 1.5913,
+        "n": 857
+       },
+       "method": {
+        "est": 0.9339,
+        "lo": 0.9031,
+        "hi": 0.9655,
+        "n": 857
+       }
+      },
+      "model_SM": {
+       "winLL": {
+        "est": 0.5808,
+        "lo": 0.5569,
+        "hi": 0.6051,
+        "n": 853
+       },
+       "brier": {
+        "est": 0.1983,
+        "lo": 0.1875,
+        "hi": 0.209,
+        "n": 853
+       },
+       "acc": {
+        "est": 0.6952,
+        "lo": 0.6643,
+        "hi": 0.7257,
+        "n": 853
+       },
+       "ece": {
+        "est": 0.0176,
+        "lo": 0.0107,
+        "hi": 0.0513
+       },
+       "calSlope": {
+        "est": 1.146,
+        "lo": 0.9786,
+        "hi": 1.3263
+       },
+       "bin7": {
+        "est": 1.5123,
+        "lo": 1.47,
+        "hi": 1.5573,
+        "n": 857
+       },
+       "method": {
+        "est": 0.9301,
+        "lo": 0.8991,
+        "hi": 0.9618,
+        "n": 857
+       }
+      },
+      "sim_package": {
+       "winLL": {
+        "est": 0.6278,
+        "lo": 0.6136,
+        "hi": 0.6416,
+        "n": 853
+       },
+       "brier": {
+        "est": 0.2184,
+        "lo": 0.2116,
+        "hi": 0.2251,
+        "n": 853
+       },
+       "acc": {
+        "est": 0.6553,
+        "lo": 0.6221,
+        "hi": 0.6893,
+        "n": 853
+       },
+       "ece": {
+        "est": 0.0608,
+        "lo": 0.0404,
+        "hi": 0.0949
+       },
+       "calSlope": {
+        "est": 1.859,
+        "lo": 1.5395,
+        "hi": 2.2021
+       },
+       "bin7": {
+        "est": 1.5568,
+        "lo": 1.5191,
+        "hi": 1.5982,
+        "n": 857
+       },
+       "method": {
+        "est": 0.9368,
+        "lo": 0.9083,
+        "hi": 0.9671,
+        "n": 857
+       }
+      }
+     },
+     "paired_winLL": {
+      "close": {
+       "market_close": {
+        "diff": -0.0067,
+        "lo": -0.0096,
+        "hi": -0.0036,
+        "n": 844
+       },
+       "market_open": {
+        "diff": -0.0311,
+        "lo": -0.0429,
+        "hi": -0.0189,
+        "n": 842
+       },
+       "ml_lr_walkforward": {
+        "diff": -0.0243,
+        "lo": -0.042,
+        "hi": -0.0066,
+        "n": 853
+       },
+       "ml_lr_static": {
+        "diff": -0.0248,
+        "lo": -0.0424,
+        "hi": -0.0065,
+        "n": 853
+       },
+       "ml2_lr": {
+        "diff": -0.0071,
+        "lo": -0.022,
+        "hi": 0.0081,
+        "n": 853
+       },
+       "elo_walkforward": {
+        "diff": -0.0958,
+        "lo": -0.1187,
+        "hi": -0.0703,
+        "n": 853
+       },
+       "model_S": {
+        "diff": -0.0384,
+        "lo": -0.0564,
+        "hi": -0.0202,
+        "n": 853
+       },
+       "model_SM": {
+        "diff": 0.0002,
+        "lo": -0.0074,
+        "hi": 0.0075,
+        "n": 853
+       },
+       "sim_package": {
+        "diff": -0.0469,
+        "lo": -0.0652,
+        "hi": -0.0272,
+        "n": 853
+       }
+      },
+      "open": {
+       "market_close": {
+        "diff": -0.0008,
+        "lo": -0.0124,
+        "hi": 0.0102,
+        "n": 844
+       },
+       "market_open": {
+        "diff": -0.0252,
+        "lo": -0.0325,
+        "hi": -0.0178,
+        "n": 842
+       },
+       "ml_lr_walkforward": {
+        "diff": -0.0185,
+        "lo": -0.0313,
+        "hi": -0.0056,
+        "n": 853
+       },
+       "ml_lr_static": {
+        "diff": -0.0189,
+        "lo": -0.0317,
+        "hi": -0.0058,
+        "n": 853
+       },
+       "ml2_lr": {
+        "diff": -0.0013,
+        "lo": -0.0111,
+        "hi": 0.0092,
+        "n": 853
+       },
+       "elo_walkforward": {
+        "diff": -0.09,
+        "lo": -0.1101,
+        "hi": -0.0688,
+        "n": 853
+       },
+       "model_S": {
+        "diff": -0.0326,
+        "lo": -0.0463,
+        "hi": -0.0185,
+        "n": 853
+       },
+       "model_SM": {
+        "diff": 0.006,
+        "lo": -0.0044,
+        "hi": 0.0173,
+        "n": 853
+       },
+       "sim_package": {
+        "diff": -0.041,
+        "lo": -0.0562,
+        "hi": -0.0254,
+        "n": 853
+       }
+      },
+      "none": {
+       "market_close": {
+        "diff": 0.0054,
+        "lo": -0.0111,
+        "hi": 0.022,
+        "n": 844
+       },
+       "market_open": {
+        "diff": -0.019,
+        "lo": -0.0341,
+        "hi": -0.0044,
+        "n": 842
+       },
+       "ml_lr_walkforward": {
+        "diff": -0.0123,
+        "lo": -0.0222,
+        "hi": -0.0015,
+        "n": 853
+       },
+       "ml_lr_static": {
+        "diff": -0.0128,
+        "lo": -0.023,
+        "hi": -0.0013,
+        "n": 853
+       },
+       "ml2_lr": {
+        "diff": 0.0049,
+        "lo": -0.0019,
+        "hi": 0.0122,
+        "n": 853
+       },
+       "elo_walkforward": {
+        "diff": -0.0838,
+        "lo": -0.1024,
+        "hi": -0.0621,
+        "n": 853
+       },
+       "model_S": {
+        "diff": -0.0264,
+        "lo": -0.0391,
+        "hi": -0.0127,
+        "n": 853
+       },
+       "model_SM": {
+        "diff": 0.0122,
+        "lo": -0.0017,
+        "hi": 0.0272,
+        "n": 853
+       },
+       "sim_package": {
+        "diff": -0.0349,
+        "lo": -0.0494,
+        "hi": -0.0189,
+        "n": 853
+       }
+      }
+     },
+     "paired_cells_vs": {
+      "close": {
+       "model_S": {
+        "bin7": {
+         "diff": -0.0441,
+         "lo": -0.0639,
+         "hi": -0.0243,
+         "n": 857
+        },
+        "method": {
+         "diff": -0.0068,
+         "lo": -0.0134,
+         "hi": 0.0004,
+         "n": 857
+        }
+       },
+       "model_SM": {
+        "bin7": {
+         "diff": -0.006,
+         "lo": -0.0167,
+         "hi": 0.0034,
+         "n": 857
+        },
+        "method": {
+         "diff": -0.003,
+         "lo": -0.0077,
+         "hi": 0.0021,
+         "n": 857
+        }
+       },
+       "sim_package": {
+        "bin7": {
+         "diff": -0.0506,
+         "lo": -0.0713,
+         "hi": -0.0295,
+         "n": 857
+        },
+        "method": {
+         "diff": -0.0097,
+         "lo": -0.0186,
+         "hi": -0.0009,
+         "n": 857
+        }
+       }
+      },
+      "open": {
+       "model_S": {
+        "bin7": {
+         "diff": -0.0386,
+         "lo": -0.0539,
+         "hi": -0.0226,
+         "n": 857
+        },
+        "method": {
+         "diff": -0.0052,
+         "lo": -0.0112,
+         "hi": 0.0008,
+         "n": 857
+        }
+       },
+       "model_SM": {
+        "bin7": {
+         "diff": -0.0005,
+         "lo": -0.013,
+         "hi": 0.0121,
+         "n": 857
+        },
+        "method": {
+         "diff": -0.0014,
+         "lo": -0.007,
+         "hi": 0.0043,
+         "n": 857
+        }
+       },
+       "sim_package": {
+        "bin7": {
+         "diff": -0.045,
+         "lo": -0.0639,
+         "hi": -0.0259,
+         "n": 857
+        },
+        "method": {
+         "diff": -0.0081,
+         "lo": -0.0176,
+         "hi": 0.0009,
+         "n": 857
+        }
+       }
+      },
+      "none": {
+       "model_S": {
+        "bin7": {
+         "diff": -0.0324,
+         "lo": -0.0463,
+         "hi": -0.0184,
+         "n": 857
+        },
+        "method": {
+         "diff": -0.0063,
+         "lo": -0.012,
+         "hi": -0.0005,
+         "n": 857
+        }
+       },
+       "model_SM": {
+        "bin7": {
+         "diff": 0.0057,
+         "lo": -0.0089,
+         "hi": 0.0215,
+         "n": 857
+        },
+        "method": {
+         "diff": -0.0025,
+         "lo": -0.0087,
+         "hi": 0.0039,
+         "n": 857
+        }
+       },
+       "sim_package": {
+        "bin7": {
+         "diff": -0.0389,
+         "lo": -0.0586,
+         "hi": -0.0197,
+         "n": 857
+        },
+        "method": {
+         "diff": -0.0092,
+         "lo": -0.0184,
+         "hi": -0.0004,
+         "n": 857
+        }
+       }
+      }
+     },
+     "methodround_vs_S": {
+      "close": {
+       "joint": {
+        "submitted": 1.9943,
+        "model_S": 2.0418,
+        "diff": -0.0475,
+        "ci95": [
+         -0.0675,
+         -0.0279
+        ]
+       },
+       "bin7": {
+        "submitted": 1.5062,
+        "model_S": 1.5538,
+        "diff": -0.0476,
+        "ci95": [
+         -0.067,
+         -0.0281
+        ]
+       },
+       "method3": {
+        "submitted": 0.9271,
+        "model_S": 0.936,
+        "diff": -0.0089,
+        "ci95": [
+         -0.0157,
+         -0.0019
+        ]
+       },
+       "method_round": {
+        "submitted": 1.4144,
+        "model_S": 1.424,
+        "diff": -0.0095,
+        "ci95": [
+         -0.0164,
+         -0.0025
+        ]
+       },
+       "round_given_fin": {
+        "submitted": 1.0564,
+        "model_S": 1.0601,
+        "diff": -0.0037,
+        "ci95": [
+         -0.0082,
+         0.0008
+        ]
+       },
+       "method_given_winner": {
+        "submitted": 0.9002,
+        "model_S": 0.9073,
+        "diff": -0.0071,
+        "ci95": [
+         -0.0146,
+         0.0009
+        ]
+       },
+       "winner": {
+        "submitted": 0.581,
+        "model_S": 0.6213,
+        "diff": -0.0403,
+        "ci95": [
+         -0.057,
+         -0.0231
+        ]
+       }
+      },
+      "open": {
+       "joint": {
+        "submitted": 1.9999,
+        "model_S": 2.0418,
+        "diff": -0.0419,
+        "ci95": [
+         -0.0582,
+         -0.0264
+        ]
+       },
+       "bin7": {
+        "submitted": 1.5118,
+        "model_S": 1.5538,
+        "diff": -0.042,
+        "ci95": [
+         -0.0573,
+         -0.0267
+        ]
+       },
+       "method3": {
+        "submitted": 0.9286,
+        "model_S": 0.936,
+        "diff": -0.0073,
+        "ci95": [
+         -0.0129,
+         -0.0018
+        ]
+       },
+       "method_round": {
+        "submitted": 1.4159,
+        "model_S": 1.424,
+        "diff": -0.008,
+        "ci95": [
+         -0.0142,
+         -0.002
+        ]
+       },
+       "round_given_fin": {
+        "submitted": 1.0563,
+        "model_S": 1.0601,
+        "diff": -0.0038,
+        "ci95": [
+         -0.0082,
+         0.0007
+        ]
+       },
+       "method_given_winner": {
+        "submitted": 0.8998,
+        "model_S": 0.9073,
+        "diff": -0.0075,
+        "ci95": [
+         -0.0131,
+         -0.0018
+        ]
+       },
+       "winner": {
+        "submitted": 0.5868,
+        "model_S": 0.6213,
+        "diff": -0.0345,
+        "ci95": [
+         -0.0482,
+         -0.0209
+        ]
+       }
+      },
+      "none": {
+       "joint": {
+        "submitted": 2.006,
+        "model_S": 2.0418,
+        "diff": -0.0358,
+        "ci95": [
+         -0.0495,
+         -0.0206
+        ]
+       },
+       "bin7": {
+        "submitted": 1.518,
+        "model_S": 1.5538,
+        "diff": -0.0358,
+        "ci95": [
+         -0.0494,
+         -0.0212
+        ]
+       },
+       "method3": {
+        "submitted": 0.9276,
+        "model_S": 0.936,
+        "diff": -0.0083,
+        "ci95": [
+         -0.0133,
+         -0.0033
+        ]
+       },
+       "method_round": {
+        "submitted": 1.4149,
+        "model_S": 1.424,
+        "diff": -0.0091,
+        "ci95": [
+         -0.015,
+         -0.0034
+        ]
+       },
+       "round_given_fin": {
+        "submitted": 1.0559,
+        "model_S": 1.0601,
+        "diff": -0.0042,
+        "ci95": [
+         -0.0086,
+         0.0002
+        ]
+       },
+       "method_given_winner": {
+        "submitted": 0.8998,
+        "model_S": 0.9073,
+        "diff": -0.0075,
+        "ci95": [
+         -0.0131,
+         -0.0018
+        ]
+       },
+       "winner": {
+        "submitted": 0.593,
+        "model_S": 0.6213,
+        "diff": -0.0283,
+        "ci95": [
+         -0.0408,
+         -0.0155
+        ]
+       }
+      }
+     },
+     "interval_cover_close": {
+      "close": {
+       "n": 856,
+       "cover80_close": 0.9206,
+       "cover95_close": 0.9918,
+       "width80": 0.0777,
+       "width95": 0.1186
+      },
+      "open": {
+       "n": 856,
+       "cover80_close": 0.7523,
+       "cover95_close": 0.9124,
+       "width80": 0.1723,
+       "width95": 0.26
+      },
+      "none": {
+       "n": 856,
+       "cover80_close": 0.771,
+       "cover95_close": 0.9287,
+       "width80": 0.2688,
+       "width95": 0.398
+      }
+     },
+     "baseRates": {
+      "close": {
+       "n": 857,
+       "KO": [
+        0.3288,
+        0.2905
+       ],
+       "SUB": [
+        0.1859,
+        0.1692
+       ],
+       "DEC": [
+        0.4852,
+        0.5403
+       ]
+      },
+      "close_anchor": {
+       "n": 857,
+       "KO": [
+        0.3356,
+        0.2905
+       ],
+       "SUB": [
+        0.1854,
+        0.1692
+       ],
+       "DEC": [
+        0.4791,
+        0.5403
+       ]
+      },
+      "open": {
+       "n": 857,
+       "KO": [
+        0.3276,
+        0.2905
+       ],
+       "SUB": [
+        0.1872,
+        0.1692
+       ],
+       "DEC": [
+        0.4852,
+        0.5403
+       ]
+      },
+      "open_anchor": {
+       "n": 857,
+       "KO": [
+        0.3326,
+        0.2905
+       ],
+       "SUB": [
+        0.187,
+        0.1692
+       ],
+       "DEC": [
+        0.4805,
+        0.5403
+       ]
+      },
+      "none": {
+       "n": 857,
+       "KO": [
+        0.3256,
+        0.2905
+       ],
+       "SUB": [
+        0.1884,
+        0.1692
+       ],
+       "DEC": [
+        0.486,
+        0.5403
+       ]
+      },
+      "none_anchor": {
+       "n": 857,
+       "KO": [
+        0.3298,
+        0.2905
+       ],
+       "SUB": [
+        0.1884,
+        0.1692
+       ],
+       "DEC": [
+        0.4819,
+        0.5403
+       ]
+      },
+      "sim": {
+       "n": 857,
+       "KO": [
+        0.3188,
+        0.2905
+       ],
+       "SUB": [
+        0.1804,
+        0.1692
+       ],
+       "DEC": [
+        0.5008,
+        0.5403
+       ]
+      }
+     }
+    }
    },
    "blend": {
     "market": {
@@ -3155,9 +4301,43 @@
    },
    "notes": [
     "2026-11-07T01:38 train: Calibrate B freeze (engine 5.0.0, params 5.0.0-selfcal-pre2024): train only; validation is the Measure stage's single look",
-    "2026-11-07T01:52 val: Measure stage: v5's single validation look, paired vs v4 (versions/v4). Pre-registered before the run: decision rule = keep v5 if val winner log loss paired CI vs v4 excludes 0 on the good side, OR winLL CI includes 0 AND 7-bin, method or a stat-line deviance improves with CI excluding 0 and no base rate newly out of (or further out of) the mlcal tolerances (KO 2 pts, SUB 1.5 pts, R1/R3 share of 3-round finishes 3 pts, SD+MD 4 pts, KD per 100 head 12%, TD 10%, control 10%, sig landed 6%); otherwise restore versions/v4. Package scoring (tools/predict_eval.js, predict defaults, kinds close/open/none + anchor mode, stacker re-exported with engine_v5 train rows) follows once, after this run."
+    "2026-11-07T01:52 val: Measure stage: v5's single validation look, paired vs v4 (versions/v4). Pre-registered before the run: decision rule = keep v5 if val winner log loss paired CI vs v4 excludes 0 on the good side, OR winLL CI includes 0 AND 7-bin, method or a stat-line deviance improves with CI excluding 0 and no base rate newly out of (or further out of) the mlcal tolerances (KO 2 pts, SUB 1.5 pts, R1/R3 share of 3-round finishes 3 pts, SD+MD 4 pts, KD per 100 head 12%, TD 10%, control 10%, sig landed 6%); otherwise restore versions/v4. Package scoring (tools/predict_eval.js, predict defaults, kinds close/open/none + anchor mode, stacker re-exported with engine_v5 train rows) follows once, after this run.",
+    "2026-11-07T02:10 decision: REJECTED by the decision rule (winner n.s.; stat-line gains on 4 of 5 stats, but KD per 100 head and KO share newly out of the base-rate tolerances). v4 restored in src/; v5 kept in versions/v5-rejected/ (versions/v5 symlink). Package scored once with tools/predict_eval.js (validation.package). See docs/CHANGELOG.md v5."
    ],
-   "validated_at": "2026-11-07T01:52:08.453Z"
+   "validated_at": "2026-11-07T01:52:08.453Z",
+   "methodround_paired_vs_v4": {
+    "file": "data/derived/evalv/v5_vs_v4_val_methodround_paired.json",
+    "joint": {
+     "v4": 2.070684806832696,
+     "v5": 2.079814581713778,
+     "S": 2.0417760105410894,
+     "diff": 0.00913,
+     "ci95": [
+      -0.01877,
+      0.03959
+     ]
+    },
+    "method_given_winner": {
+     "v4": 0.9107052225583608,
+     "v5": 0.9063298734960539,
+     "S": 0.9072786667286212,
+     "diff": -0.00438,
+     "ci95": [
+      -0.01636,
+      0.00876
+     ]
+    }
+   },
+   "decision": {
+    "against": "v4",
+    "kept": false,
+    "rule": "keep if validation winner log loss beats the previous version with a paired 95% CI excluding 0, or is not worse and clearly better on 7-bin / method / stat-line deviance (CI excluding 0) without base rates drifting out of tolerance (mlcal tolerances: KO 2 pts, SUB 1.5 pts, R1/R3 share of 3-round finishes 3 pts, SD+MD 4 pts, KD 12%, TD 10%, control 10%, sig landed 6%)",
+    "basis": "branch 1 fails: validation winner log loss 0.6301 vs v4 0.6324, paired -0.0022 [-0.0099, +0.0053] (CI includes 0). Branch 2: not worse on the winner and clearly better on four stat-line deviances (sig landed -0.71 [-1.13, -0.29], attempts -1.23 [-2.10, -0.38], TD -0.048 [-0.072, -0.025], control -4.1 s [-7.2, -1.4]; KD -0.001 n.s.), BUT two base rates drift out of tolerance where v4 was inside: KD per 100 head landed 0.830 vs actual 0.684 (+21.3%; tolerance 12%; v4 +9.0%) and KO/TKO share 31.8% vs 29.1% (+2.7 pts; tolerance 2 pts; v4 +1.5). Branch 2 fails on its base-rate condition.",
+    "also": "7-bin +0.0029 [-0.0224, +0.0287], method -0.0005 [-0.0107, +0.0100], who x how x when +0.0091 [-0.0188, +0.0396] vs v4 (all n.s.); vs model S who x how x when +0.0380 [+0.0068, +0.0742], winner +0.0089 [+0.0004, +0.0168]; Brier -0.0011 n.s.; ECE 0.059, calibration slope 1.81 (v4 1.72: more underconfident); finish 49.9% vs 46.0% (v4 48.5%); 10-8 share 4.53% vs 2.46% (v4 3.38%); sig landed per 15 +6.2% (v4 +9.0%; still just outside 6%), TD -1.5% (v4 -7.1%), control +3.5% (v4 -2.9%) closer. Blend test: engine weight 0.070 with the close (log loss -0.0001 [-0.0007, +0.0005]) and 0.088 without a line (-0.0006 [-0.0013, +0.0002]), both n.s. Package (predict, not part of the rule): close kind 0.5810 vs close 0.5847 on 844 shared fights, paired -0.0067 [-0.0096, -0.0036]; no-line 0.5930, +0.0054 [-0.0111, +0.0220] vs the close; who x how x when vs S -0.0475 / -0.0419 / -0.0358 (close / open / none), all CIs exclude 0.",
+    "context": "descriptive, from the stored cells of this look (no new simulation): the KO excess sits in the 2024 glove-trial window (Jun 1 - Nov 15, 2024: actual KO share 22.1%, v5 31.9%, v4 30.7%; research/model_eradrift.md for the dates); outside it v5 is level (31.7% vs 31.4%). KD per 100 head by period cannot be split without re-simulating (evalv stores no per-fight KD); eradrift reports actual 0.54 in the trial vs 0.68 before and 0.87 from Feb 15, 2025. The rule is applied to the full window as registered; this context does not change it.",
+    "action": "2026-11-07T02:00: src/engine3.js, src/params3.js, src/ml/mlrates.js restored from versions/v4/ (sha256 6c661f68..., e16a6481..., b563032d..., = the v4 entry); tests/test_engine3.js and data/derived/v4_levels.json restored to the v4 final commit 122c31a; versions/v5 moved to versions/v5-rejected/ (frozen files unchanged; + README, tests/ = the twelve v5-engine tests and v5 test_engine3.js, data/v4_levels.json, logs/); versions/v5 is a compatibility symlink. Tests on restored src: test_engine3 8000 69 passed; test_director3 300 OK (300 of 300 learned-rate matchups) and NO_ML OK; test_mlrates, test_mlcal, test_v5_calA, test_embed, test_moe, test_mlpage, test_blindtest_stack, test_ml2, test_statdist, test_calib, test_forward_models, test_forward_v42, test_debut, test_finishing, test_propspool, test_eradrift pass; build.py builds. Current engine: v4 (4.0.0).",
+    "decided_at": "2026-11-07T02:10Z"
+   }
   }
  ]
 }
