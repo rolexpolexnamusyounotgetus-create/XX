@@ -63,23 +63,27 @@ const V6S = readJSON("data/derived/v6_stacks.json");
 {
   let simSame = 0, simN = 0, pkSame = 0, pkN = 0, maxd = 0;
   const off = { blend: { winner: "stack", mrModel: "S", debut: false, statDist: false, mrWeight: 0.3 } };
+  // v6's only simulator change: the joint level pass rerun on the fold-honest inputs (params v501.set.levels); passed to the
+  // frozen v5.0.1 engine as an explicit override, the two simulators must agree bit for bit
+  const LV = E6.params().v501.set.levels, lv = { dyn: Object.assign({}, LV.dyn), judge: Object.assign({}, LV.judge) };
+  const withLv = (o) => Object.assign({}, o, { params: Object.assign({}, o.params || {}, { dyn: Object.assign({}, (o.params || {}).dyn || {}, lv.dyn), judge: Object.assign({}, (o.params || {}).judge || {}, lv.judge) }) });
   for (const f of pick.slice(0, Math.min(12, pick.length))) {
     const b = baseOpts(f);
     for (const [A, B, o] of [[f.A, f.B, b], [f.B, f.A, FB.swapOpts(b)]]) {
-      const s6 = E6.summarize(E6.matchup(A, B, o), 80, 7), s5 = E5.summarize(E5.matchup(A, B, o), 80, 7);
+      const s6 = E6.summarize(E6.matchup(A, B, o), 80, 7), s5 = E5.summarize(E5.matchup(A, B, withLv(o)), 80, 7);
       simN++; if (JSON.stringify(s6) === JSON.stringify(s5)) simSame++;
     }
     for (const kind of KINDS) {
-      const o5 = Object.assign({}, b, PR5.opts(f, false, { lineKind: kind }), { seed: hash32(f.id), sims: SIMS, interval: false });
-      const o6 = Object.assign({}, o5, { params: Object.assign({}, b.params, off) });
+      const o5 = withLv(Object.assign({}, b, PR5.opts(f, false, { lineKind: kind }), { seed: hash32(f.id), sims: SIMS, interval: false }));
+      const o6 = Object.assign({}, b, PR5.opts(f, false, { lineKind: kind }), { seed: hash32(f.id), sims: SIMS, interval: false }, { params: Object.assign({}, b.params, off) });
       const p5 = E5.predict(f.A, f.B, o5), p6 = E6.predict(f.A, f.B, o6);
       pkN++;
       const d = Math.max(Math.abs(p5.p - p6.p), ...p5.cells.map((v, i) => Math.abs(v - p6.cells[i])));
       maxd = Math.max(maxd, d); if (d === 0) pkSame++;
     }
   }
-  check("simulator identity: v6 summarize(matchup) = frozen v5.0.1 for the same inputs and seeds", simSame === simN, simSame + "/" + simN);
-  check("flag-off identity: v6 predict with v5 blend settings = frozen v5.0.1 predict (p and cells)", pkSame === pkN, pkSame + "/" + pkN + " exact, max |diff| " + maxd);
+  check("simulator identity: v6 summarize(matchup) = frozen v5.0.1 + v6's re-fit levels, same inputs and seeds", simSame === simN, simSame + "/" + simN);
+  check("flag-off identity: v6 predict with v5 blend settings = frozen v5.0.1 predict + v6 levels (p and cells)", pkSame === pkN, pkSame + "/" + pkN + " exact, max |diff| " + maxd);
 }
 
 // 3 + 4 + 5: routing, Python parity, corner symmetry
