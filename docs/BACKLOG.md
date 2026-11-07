@@ -96,6 +96,16 @@ Findings from verified research that the next engine versions must use. Each lin
   co-primary total stat deviance vs v4 -1.13% [-1.76%, -0.51%]: PASS. The look (not yet run): primary open winner vs cmp4 (branch 1),
   branch 2 = total stat deviance vs v4 + glove-excluded paired base-rate test; power ~0.50; confirmation look. Audit 2 pre-registered
   (vault_audits[audit 2]). src/ holds v10 until the look; control MAE +1.6 s on train is a known risk (v8's finding).
+- VAULT AUDIT 2 (FINAL opening, ~13:40 UTC Nov 7; research/vault_audit_v10.md; case if_v4_stays, pre-committed 12:43
+  UTC). Open regime on 369 decisive 2026 fights: shipped forward package (ML v2 open stack) 0.6150 vs opener 0.6199
+  (-0.0048 [-0.0196, +0.0097]); v4 package (cmp4) 0.6213; close 0.6003. v10 package winner vs cmp4: open -0.0033 n.s.
+  (same as 2024-25), no line -0.0242 [-0.0420, -0.0058] (cmp4's MoE no-line over-sharp, slope 0.556), close -0.0006.
+  METHOD/ROUND: package cells with the props pool beat cmp4 clearly, 7-bin -0.046 [-0.074, -0.019], method -0.032;
+  props-pool effect alone -0.034 [-0.057, -0.012] (2024-25: -0.025) -> the props pool is the one late addition that
+  replicated on both windows. Stat lines: v10/v8 engine vs v4 -0.33% n.s. (the train/2024-25 gains did not replicate);
+  engine-level 7-bin for v10 WORSE than v4 (+0.0545 [+0.0183, +0.0944]) -> the v10 rejection was right. 2026 finished
+  more than any engine predicts (55.6% vs v4 48.3%, v10 46.9%). Contamination: fwd-4.3 no-line chosen after audit 1;
+  v4 EM judging saw 2026 cards. Protocol closed: v4 stays the engine; the live predictions are the ML v2 + line stack.
 - CORRECTION (~12:55 UTC Nov 7): ENGINE v10 NOT KEPT. The 12:30 UTC "v10 KEPT" entry below is superseded. The
   adversarial review (version_history.json v10 "review"; decision_superseded keeps the earlier record) found, and
   Claude accepts: (1) the branch-2 keep rested on a second decisive metric (stat-line deviance), which V6_V10_PLAN 7.1
