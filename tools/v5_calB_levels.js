@@ -12,8 +12,9 @@
    asserted applied on every matchup.
 
    Levers (one per target; durability.kdCal is held, so knockdowns have exactly one free scale per format):
-     dyn.kdLevel3              knockdowns per 15 fight-minutes, 3-round fights        (2019-2023 backtest actuals)
-     dyn.kdLevel5              knockdowns per 15 fight-minutes, 5-round fights        (same)
+     dyn.kdLevel3              knockdowns in 3-round fights: geometric mean of the factors that match KD per 15 fight-minutes and KD
+                               per 100 head strikes landed (2019-2023 backtest actuals of the same fights)
+     dyn.kdLevel5              same, 5-round fights
      dyn.convLevel             same-round strike finish by the man who scored a KD, per KD (dynamics.json kd_conversion
                                rate_train 0.512, the 2019-2023 round panel)
      dyn.stkoScale, gnpScale   one joint factor (their data ratio kept): the KO/TKO share of fights with an outcome (actuals)
@@ -293,8 +294,10 @@ const odds = (p) => p / (1 - p), logit = (p) => Math.log(p / (1 - p));
       console.log(line(`iter ${it}`, v));
       console.log("   levels " + JSON.stringify(Object.fromEntries(Object.entries(L).map(([k, x]) => [k, +x.toFixed(4)]))) + ` (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
       if (it === ITERS - 1) break;
-      L.kdLevel3 *= ACT.kd15_3 / v.kd15_3;
-      L.kdLevel5 *= Math.pow(ACT.kd15_5 / v.kd15_5, 0.8);
+      // knockdowns: the geometric mean of the per-15-minute and per-100-head-landed factors of each format (both are targets;
+      // the engine's head strikes per minute differ slightly from real, so the two disagree by a few percent in 5-round fights)
+      L.kdLevel3 *= Math.sqrt((ACT.kd15_3 / v.kd15_3) * (ACT.kd100h_3 / v.kd100h_3));
+      L.kdLevel5 *= Math.pow((ACT.kd15_5 / v.kd15_5) * (ACT.kd100h_5 / v.kd100h_5), 0.4);   // fewer 5-round fights: damped
       L.convLevel *= Math.pow(odds(ACT.conv) / odds(v.conv), 1.2);
       const fk = Math.pow(ACT.ko / v.ko, 2.5);               // non-KD stoppages are about a third of KO/TKOs
       L.stkoScale *= fk; L.gnpScale *= fk;
