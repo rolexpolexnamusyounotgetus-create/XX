@@ -1,7 +1,157 @@
 # Changelog
 
-Each engine version records its held-out numbers here (docs/ROADMAP.md). "Test" means UFC fights from
-2024-01-01 to 2026-10-31 whose profiles were frozen before the fight and which no tuning step ever saw.
+Each engine version records its held-out numbers here (docs/ROADMAP.md). From v4 on, "validation" means UFC fights from
+2024-01-01 to 2025-12-31 (version selection only, profiles frozen before each fight) and "train" 2019-2023; every fight from
+2026-01-01 is in the sealed vault (docs/BACKLOG.md "Hidden-data protocol"). Older entries that say "test" meant 2024-01-01 to the
+snapshot; that window is retired.
+
+## v5.0.1 (2026-11-07): the v5 review's fixes, validated once and REJECTED; v4 (4.0.0) stays
+
+**Status: rejected by the pre-registered decision rule.** src/ holds v4 (hashes = the v4 entry); the work is frozen in
+versions/v5.0.1-rejected/ (`versions/v5.0.1` symlink). Train-side detail: research/v501_fixes.md. Numbers:
+data/derived/version_history.json (entry v5.0.1), data/derived/evalv/v5.0.1_{train,val,blend}.json,
+v5.0.1_vs_v4_val_decide.json, v5.0.1_vs_v4_val_methodround_paired.json.
+
+Timeline (ET; UTC is 5 hours ahead), all on the night of Nov 6: robustness fixes and the train-side work from about 10:20 pm;
+train evaluation 11:32 pm; the pre-registration note 11:33 pm, written before the run; the single validation look 11:33 pm; the
+decision 11:35 pm. This is the **second look at 2024-25 for the v5 lineage**. The knockdown and dynamics fixes were motivated by
+v5's look and its review, so every 5.0.1-vs-v4 and 5.0.1-vs-5.0.0 validation delta below is an upper bound. The forward ledger
+and the vault (with its KD / KO exposure, below) are the clean arbiters.
+
+### The review's issues: reproduced, fixed, and whether behaviour changed
+
+| issue (severity) | reproduced | fix | changes backtest numbers? |
+|---|---|---|---|
+| Durability and styles research scored the 2026 vault (high) | yes: durability.json held 373 vault records, the 2026 KD series rows and held-out tables over 2024-01-01..2026-10-31 (1,503 fights); styles' test had 1,223 decisive incl. 369 in 2026 | moved to the vault directory (durability_vault.json, durability_verify_vault.json, styles_vault.json, styles_verify_vault.json); held-out tables re-scored on 2024-25 only (tools/durability_heldout_dev.py, durability_verify.py and styles_verify.py with a 2025-12-31 end, styles.py on the 2019-2025 backtest.json); reports redacted with a cleanup banner; durability.py now ends held-out scoring at 2025-12-31 and writes vault records to the vault dir; exposure written into the audit pre-registration (docs/V6_V10_PLAN.md 6.5.3): KD / KO / durability results on the vault are not blind, and v6 calibration must not read these numbers | no (the dev backtest records and every 2008-2023 fit are unchanged; styles' engine coefficients identical) |
+| v5's KD base rate has a structural cause: the durability L730 level lags breaks (medium) | yes: on train 2023 is the worst year (+8.6%) | per-year KD / KO checks added to the standard evaluation (baseRatesByYear); the three alternatives compared by a pre-registered forward-chained CV inside 2019-2023 (tools/v501_kdlevel_cv.js): L730 kept (RMSE 0.141 vs 0.149-0.175) | no (incumbent kept; `kdBase` has no set) |
+| Base-rate gate tolerances below the sampling noise; KO is a coin flip (medium) | yes: the 2024-25 actual KD SE is 0.039 (12% tolerance = 0.082) | tools/evalv_decide.js: paired version-vs-version base-rate test with event-cluster CIs, tolerance = max(registered, 1.96 x SE of the actual); glove-window sensitivity (information only); pre-registered for 5.0.1 before the look | n/a (rule) |
+| 2024-25 looked at many times before v5's look (medium) | yes | data/derived/val_look_ledger.json (every known look per component); v6 components selected by train-only forward-chained CV; deltas quoted as upper bounds | n/a |
+| "Out-of-fold" tables in-sample for low-dimensional fitted pieces (low) | yes by code reading: mlrates stack weights fit on pooled cv2019-2023 OOF rows, embed calibration on 2010-2023 walk rows, embed hyperparameter CV and preufc exponents on 2019-2023 | not refit in 5.0.1 (the review scopes it "before any v6 merge"); recorded as a v6 gate: fold-honest stack weights / calibration, then rerun Calibrate A's preufc and embed calls and calB on them | no |
+| Stacker engine weight learned on v5's in-sample train rows (low) | yes | the bias is stated next to every engine weight (v5 and 5.0.1); a non-zero no-line weight is not cited as evidence | no |
+| Stat-line deviance unconditional; Branch 2 without multiplicity control (low) | yes | per-minute deviance conditioned on the real fight length (devpm_*); Holm over the seven registered secondaries | n/a (rule and reporting) |
+| Latent leakage: incomplete durability records fall back to live values (low) | yes (0 of 2,864 records incomplete today) | engine labels src record / partial / computed; evalv, predict_eval and durrec refuse anything but full records | no |
+| v4_val.json 10-8 actual stale; b7 stored at 4 decimals (low) | yes | corrected actual written into v4_val.json and the v4 history block (old value kept as actual_before_fix); per-fight b7 / cells now 6 decimals; v4 and v5 looks reproduced deterministically with them (v4_repro_dev_val.json, v5-rejected_repro_dev_val.json; pA identical on all 865 fights) | no |
+| NaN rates hang simulate or end fights at t = NaN (high) | yes: dur_string_fields looped past 20 s; NaN strikeScale / tdScale gave 20 of 20 LEG wins at t = NaN | checkTables at the end of matchup (throws naming the table), a total-rate check and a 200,000-event cap per round in simulate, invalid record / pre-UFC / embedding inputs treated as missing | no (bit-identical on train) |
+| NaN judge score scores the round for B (medium) | yes: power 'abc' gave B 246 of 300 | non-finite judge power falls back; judgeRound / officialsRound throw on a non-finite score | no |
+| String-compared dates let live rosters into pre-2024 bouts (medium) | yes: '6/15/2019' and a Date object picked up the durability and embed rosters | one canonical YYYY-MM-DD in matchupBase (Date / timestamp converted, unparsable strings refused), passed to styles_sos via m.opts; officialsTableFor normalises; tests for every accepted form | no |
+| Page build runs a different model from Node (medium) | yes for any v5.x: the parity test fails on versions/v5.0.1 (embed / blend modules not bundled, durability / pre-UFC / embed rosters not loaded) | tests/test_page_parity.js (npm run test:page): bundle vs Node summarize() identical, plus component coverage; passes on the shipped v4 page; build.py notes what a v5+ page must bundle | no (v4 page unaffected) |
+| Computed durability path ~9% low on knockdowns (medium) | yes: raw computed chin x power 0.79 vs record 0.94 on the live roster | `v501.durFallback`: normComputedChin / Pow (career sums, live roster, a production constant) and ...S (decayed sums, 2019-2023 sides); test within 2% | no (backtests always use full records) |
+| Engine takes a global FightParams before its own (low) | yes | Node requires the sibling params3.js / mlrates.js first; params major version must match; evalv checks every worker's engine / params version | no |
+| Invalid odds silently become no-line (low) | yes | FightBlend validates odds (finite, abs >= 100, de-vig in (0, 1)) and refuses with "needs a line" | no (package not part of the rule) |
+| Rounds not coerced (low) | yes: '5' leaked as a string, 0 became 3 | integer 1..5, title default only when not given | no |
+| Director test never runs the v5 paths (low) | yes | FUZZ=1 mode in tests/test_director3.js (rosters, random flags, officials, SOS pairs, dates); `npm run test:director` runs it; passes on 5.0.1 (600 fights, officials on 360) | no |
+| Within-fight noise too large, too little shared; flattens win probabilities (high) | yes: fight-level residual / sim sd 0.90 / 0.88, A-B attempts corr 0.59 vs 0.71, own R1-R3 corr 0.59 vs 0.49; train slope 1.18 | `v501.dynNoise`: formOut 0.21 -> 0.15, arSd 0.32 -> 0.24, arPhi 0.85 -> 0.6, formPace 0.45 -> 0.42, roundPace 0.10 -> 0.15, formAcc 0.43 -> 0.40, chosen by realism distance on 2019-2023; `v501.levels` re-levels output and the joint KD / finish / judging levels | **yes** |
+
+### Train 2019-2023 (tuning data; not a selection criterion)
+
+5.0.1 vs 5.0.0 (deterministic reproduction): winner log loss 0.6542 vs 0.6565, -0.0023 [-0.0050, +0.0005]; calibration slope 1.12 vs
+1.18; 7-bin +0.0004 and method +0.0009 (n.s.); KD deviance -0.0041 [-0.0077, -0.0005]. vs v4: winner -0.0093 [-0.0143, -0.0039].
+Realism (5.0.1 / real): fight-level noise ratios 0.99 / 0.96 / 0.99 (attempts / landed / accuracy), A-B fight attempts corr 0.705 /
+0.710, within-round A-B corr 0.661 / 0.660, own R1-R3 corr 0.508 / 0.490. Per-year gate: 2023 KD per 100 head +8% (5.0.0 +8%, v4
+-2%).
+
+### Validation 2024-2025 (the single 5.0.1 look), paired against v4
+
+865 fights, 853 decisive, symmetric, 300 sims per order, common random numbers, ML 100%, 0 failures, 2,000 event-cluster resamples.
+
+| validation 2024-25 | v4 | 5.0.0 | **5.0.1** | 5.0.1 - v4 [95% CI] |
+|---|---|---|---|---|
+| **Winner log loss** | 0.6324 | 0.6301 | **0.6267** [0.6116, 0.6415] | **-0.0057 [-0.0141, +0.0023]** |
+| Brier | 0.2206 | 0.2195 | 0.2180 | -0.0026 [-0.0065, +0.0012] |
+| Accuracy | 65.7% | 65.3% | 66.6% | +0.9 pts [-1.4, +3.0] |
+| ECE / calibration slope | 0.063 / 1.72 | 0.059 / 1.81 | 0.065 / 1.72 | |
+| 7-bin | 1.5712 | 1.5741 | 1.5653 | -0.0060 [-0.0321, +0.0194] |
+| Method | 0.9399 | 0.9394 | 0.9400 | +0.0000 [-0.0096, +0.0103] |
+| who x how x when (methodround) | 2.0707 | 2.0798 | 2.0590 | -0.0117 [-0.0402, +0.0162] |
+| Stat-line deviance sig landed / attempts (Holm) | 21.866 / 43.422 | 21.158 / 42.196 | 21.066 / 42.019 | **-0.80 [-1.22, -0.39] / -1.40 [-2.26, -0.56]** |
+| TD / control s / KD (Holm) | 1.806 / 154.12 / 0.652 | 1.758 / 150.00 / 0.651 | 1.763 / 149.78 / 0.653 | **-0.043 [-0.066, -0.020] / -4.34 [-7.23, -1.49]** / +0.002 n.s. |
+| Per-minute deviance (real length; information) sig landed / attempts / TD / control / KD | | | | -0.29* / -0.48* / -0.042* / -4.69* / -0.002 (* CI excludes 0) |
+
+vs model S: who x how x when +0.0172 [-0.0097, +0.0444] (v4 +0.0289 and v5 +0.0380, both CIs excluding 0); winner +0.0054
+[-0.0029, +0.0140]. 5.0.1 is the first engine level with S on who x how x when.
+
+| base rate (paired test vs v4) | actual | v4 | 5.0.1 | D = abs err new - old [95% CI] | tolerance (max of registered, 1.96 SE) | verdict |
+|---|---|---|---|---|---|---|
+| KO share | 29.1% | 30.6% | 31.7% | +1.1 pts [-1.0, +1.5] | 2.96 pts | pass |
+| SUB share | 16.9% | 17.9% | 18.1% | +0.2 [-0.3, +0.4] | 2.5 | pass |
+| R1 / R3 share of 3-round finishes | 52.3 / 17.4% | 51.4 / 18.7% | 54.2 / 17.9% | +0.9 / -0.9 n.s. | 4.6 / 3.8 | pass |
+| SD + MD share of decisions | 18.5% | 20.6% | 22.1% | +1.5 [-1.5, +1.7] | 4.0 | pass |
+| **KD per 100 head landed** | 0.684 | 0.746 | **0.827** | **+0.081 [+0.059, +0.095]** | 0.082 (abs err 0.143) | **fail** |
+| sig landed / TD / control per 15 | 58.1 / 1.41 / 168 | 63.3 / 1.31 / 163 | 61.8 / 1.39 / 174 | -1.51* / -0.08 / +1.3 | 3.5 / 0.14 / 16.8 | pass |
+
+Blend test (MoE stacker refit on 2019-2023 with 5.0.1's train rows, 845 fights): engine weight 0.105 with the close (blend -0.0002
+[-0.0011, +0.0008]) and 0.182 without a line (-0.0015 [-0.0031, +0.0003]); both n.s. The weights are learned on train rows that are
+in-sample for 5.0.1's train-fit levels, so they are biased upward and are not evidence of value.
+
+### Decision: 5.0.1 is rejected (v4 stays)
+
+- Branch 1 fails: winner -0.0057 [-0.0141, +0.0023].
+- Branch 2 fails on its base-rate condition: the winner is not worse and sig landed, attempts, TD and control deviance are better
+  after Holm, but KD per 100 head drifts out of tolerance by the paired test (5.0.1's error exceeds v4's with a CI above 0, and the
+  error 0.143 exceeds the tolerance 0.082).
+- v5's registered rule gives the same verdict (KO and KD out). Re-analysing v5's own look under the 5.0.1 rule also rejects it
+  (KD fails; KO passes), as the review predicted.
+- Information only (never a rule input): by window, simulated vs actual KD per 100 head is 0.86 / 0.61 (Jan-May 2024), 0.84 / 0.54
+  (glove trial, Jun 1-Nov 15, 2024), 0.80 / 0.63 (Nov 16, 2024-Feb 14, 2025) and 0.81 / 0.83 (Feb 15-Dec 31, 2025); by year 0.85 /
+  0.57 (2024) and 0.81 / 0.81 (2025). KO share 32.4% / 27.3% (2024), 31.0% / 30.8% (2025). The paired test without the glove window
+  passes KD and fails SD+MD.
+- Descriptive 5.0.1 vs 5.0.0 on validation: winner -0.0035 [-0.0072, +0.0003], nothing else significant.
+
+### Read this honestly
+
+1. **The dynamics fix worked as designed and helped the winner a little; it did not touch the reason v5 failed.** The noise now
+   matches the real fights on train, the train slope fell from 1.18 to 1.12, and 5.0.1 is the best engine yet on 2024-25 winner log
+   loss (0.6267) and the first level with model S on who x how x when. None of those gains is significant, and all are upper bounds.
+2. **The knockdown excess is a 2024 phenomenon.** 2025 is level; 2024 runs 49% hot. The forward-chained train check found no
+   level tracker that predicts year-to-year swings better than L730, so the fix the review hoped for (a smarter level) has no train
+   support. The likely real answer is an era / equipment break (the 2024 glove trial and the low early-2024 rate), which is v9's
+   tracker and variance-bump work. Choosing a tracker on 2024-25 now would be fitting the failure.
+3. **The rule change was requested by the review and pre-registered, and it did not decide anything.** Under either gate the
+   verdict is the same; KO stopped being a coin-flip failure, KD is a real one.
+4. **The vault is now known to be partly seen.** The durability / styles exposure means KD / KO / durability results on the vault
+   cannot confirm anything; winner-level and stat-line questions are unaffected beyond the earlier list.
+5. **For v6:** rebuild from versions/v5.0.1-rejected/ (it carries every v5 component plus these fixes, flag-isolated); fix the
+   in-sample "OOF" pieces first; keep the per-year gate; ship a page that passes tests/test_page_parity.js; treat the KD level as a
+   v9 era question unless train CV finds a tracker.
+
+### Restore and tests (on the restored src/)
+
+- src/engine3.js, params3.js, ml/mlrates.js copied from versions/v4 (sha256 6c661f68..., e16a6481..., b563032d... = the v4 entry);
+  tests/test_engine3.js is v4's again; the 5.0.1-engine tests moved to versions/v5.0.1-rejected/tests/.
+- `node tests/test_engine3.js 8000`: 69 passed. `node tests/test_director3.js 300`, `NO_ML=1 ... 100` and `FUZZ=1 ... 200` (stock
+  matchups on v4): OK. `node tests/test_page_parity.js`: 11 passed (the page bundle = Node on v4).
+- On 5.0.1 before the restore: test_engine3 81, test_v501 13, test_v501_guards 29, test_durlevel 8, test_v401 15, test_v5_step2-5,
+  test_v5_calA / calB, test_durability, test_dynamics, test_styles_sos, test_officials, test_realism_sens, test_blend_anchor all
+  pass; director stock / NO_ML / FUZZ 600 OK.
+- src/ml/blend.js keeps the odds validation (1.1.1); src/styles_sos.js and src/ml/embed.js are unchanged and unused by v4.
+- New tools: tools/evalv_decide.js, tools/v501_dynfit.js, tools/v501_real_rounds.py, tools/v501_kdlevels.py, tools/v501_kdlevel_cv.js,
+  tools/durlevel_fit.js, tools/durability_heldout_dev.py; tools/evalv.js extended (per-minute deviance, per-year / per-window base
+  rates, 6-decimal per-fight stats, version checks, record guard).
+- Nothing from 2026 was read for any fit or score. Vault files were moved without being read, except two quick structure checks of
+  the moved styles file (its decisive-test count, and a field comparison that printed a few pooled 2024-2026 style-modifier
+  deviance changes; no KD / KO level). The agent had seen the review's quoted 2026 KD / KO levels; no fit or rule used them.
+
+### Every v5 component: what it does, its train ablation, and where it stands
+
+| component (flag) | what | train ablation (Calibrate A, leave-one-out, soft CE vs the close; + = removing it hurts) | 2024-25 status |
+|---|---|---|---|
+| v401.emJudge | EM judging weights refit on 2015-2023 cards, judge noise / 10-8 rule refit | -0.0001 (would go off; kept for the protocol: its off state uses cards through 2026-10) | in v5 / 5.0.1 |
+| v401.deductions | point deductions | neutral; 7-bin +0.0194 [+0.0067, +0.0345] without them (draws) | in |
+| v401.mlLevels | learned-path TD / control / sub levels | -0.0001, levels overshoot with embed: **off** | off |
+| v401.tdCap | cumulative takedown-multiplier cap | neutral; kept on secondaries (20 of 3,998 sides) | in |
+| v401.koTargets | KO/TKO composition targets from 2019-2023 | neutral; method x round +0.0027 [+0.0001, +0.0051] without | in |
+| durability | knockdown chin / power model, absolute L730 level | +0.0009 [+0.0004, +0.0015] | in; its level is the 2024 KD excess |
+| dynamics | fight dynamics (pace, AR(1) noise, momentum, KD by round) | +0.0002 n.s. (structure, kept) | in; noise refit in 5.0.1 |
+| styles_sos (SOS "wf") | strength of schedule | +0.0009 [+0.0004, +0.0015] vs neither; oppadj instead +0.0005 n.s. | in |
+| officials | named judges / referees | not ablated (off; named-judge effects do not predict) | off, opt-in |
+| realism_sens | division / format factors + FightEngine.sensitivity | not ablated (factor layer off) | capability only |
+| embed | embedding blend of the learned targets | +0.0038 [+0.0030, +0.0047] (largest) | in |
+| oppadj | opponent adjustment of the learned targets | off (exclusive with SOS) | off |
+| preufc | pre-UFC finish-odds priors for newcomers | +0.0004 [-0.0000, +0.0009]; winner, 7-bin, method worse without | in |
+| blend_anchor | FightEngine.predict (the package) | acts only in predict; train OOF vs the simulator alone: winner -0.0229, 7-bin -0.0450 | package scored once with v5 (close 0.5810, beats the close by -0.0067 [-0.0096, -0.0036]); not re-scored for 5.0.1 |
+| calB | the joint KD / finish / stoppage / judging level pass | outcome-neutral on train | in (5.0.1 redid it on top of dynNoise) |
+| v501.* (5.0.1) | durFallback, dynNoise, levels (kdBase no set) | 5.0.1 vs 5.0.0 on train: winner -0.0023 [-0.0050, +0.0005], KD deviance -0.0041* | validation: rejected (KD) |
+
 
 ## v5 (2026-11-07): the merged roadmap engine, validated once and REJECTED; v4 (4.0.0) restored
 
