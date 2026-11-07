@@ -248,7 +248,7 @@ def part7(tmp):
         if "EVENT" in h:
             ie = h.index("EVENT")
             for r in rows:
-                if r[ie] == src_ev:
+                if r[ie].strip() == src_ev:
                     r2 = list(r)
                     r2[ie] = new_ev
                     if "DATE" in h:
