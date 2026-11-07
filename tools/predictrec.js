@@ -111,6 +111,31 @@ module.exports = function predictrec(E, root, cfg) {
     if (f.date < VALID ? r.set !== "oof" : r.set !== "valid") throw new Error("predictrec: ml2.json row " + f.id + " is set " + r.set);
     return { pA: r.ml2_lr, pMR: isNum(r.mr) ? r.mr : null };
   }
+  // ---------------------------------------------------------------- engine v6 (cfg.v6 = true): ML v2 heads + S2 cells
+  //   winnerStacks  data/derived/v6_stacks.json (tools/v6_prep.py stacks); winnerFit = the fight's year for 2021-2023 (weights
+  //                 fit on 2019..year-1, the forward-chained gate), 2024 for 2024-2025 (fit through 2023-12-31); fights before
+  //                 2021 get winnerFit 2021 flagged inSample (only used to fit the method/round pool weight, never scored)
+  //   ml2           { pA: ML v2 logistic, pBlend: ML v2 blend, pMR: market rating } from v6_stacks.json inputs (annual OOF
+  //                 2019-2023, static fit < 2024 for 2024-2025; full precision)
+  //   mrCells       data/derived/mr_s2.json fights[id].S2 (fold fit on earlier years only), variant 'S2', mirrored on a swap
+  function v6opts(f, swap, out) {
+    const W = J(cfg.winnerStacks || "data/derived/v6_stacks.json"), yr = +f.date.slice(0, 4);
+    const fitY = yr >= 2024 ? 2024 : Math.max(2021, yr);
+    out.winnerStacks = W; out.winnerFit = fitY;
+    if (yr < 2021) out.inSample = true;
+    const r = W.inputs[f.id];
+    if (!r) throw new Error("predictrec v6: no v6_stacks.json inputs for " + f.id);
+    if (r.year !== yr) throw new Error("predictrec v6: inputs year mismatch for " + f.id);
+    const m2 = { pA: r.ml2lr, pBlend: r.ml2, pMR: isNum(r.mkt_rating) ? r.mkt_rating : null };
+    out.ml2 = swap ? { pA: 1 - m2.pA, pBlend: 1 - m2.pBlend, pMR: flip(m2.pMR) } : m2;
+    const S2 = J(cfg.mrS2 || "data/derived/mr_s2.json").fights[f.id];
+    if (!S2) throw new Error("predictrec v6: no S2 cells for " + f.id);
+    if (!S2.fit_through || S2.fit_through >= f.date) throw new Error("predictrec v6: S2 cells for " + f.id + " fit through " + S2.fit_through + ", not before " + f.date);
+    const R = S2.rounds;
+    out.mrCells = swap ? mirror(S2.S2, R) : S2.S2.slice();
+    out.mrVariant = "S2"; out.mrFitThrough = S2.fit_through; out.mrModel = "S2";
+    return out;
+  }
   /** predict options for backtest fight f (backtest_dev.json entry), corners swapped when swap is true.
       o = { lineKind: 'close' | 'open' | 'none' (default 'none'), strictLine: throw when the fight has no such line (else
       lineKind falls back to 'none' and lineMissing is set) }. */
@@ -130,6 +155,7 @@ module.exports = function predictrec(E, root, cfg) {
     if (m2) out.ml2 = swap ? { pA: 1 - m2.pA, pMR: flip(m2.pMR) } : m2;
     const FM = J("data/derived/forward_models.json");
     if (FM && FM.ml2_static) out.ml2Stack = FM.ml2_static;
+    if (cfg.v6) v6opts(f, swap, out);
     return out;
   }
   return { opts, experts, line, mrCells, ml2, stackFor, mirror, STACK_PATH };

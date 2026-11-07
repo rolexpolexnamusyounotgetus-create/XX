@@ -713,6 +713,15 @@ class MoEStack(Model):
                 zs.append(z[dd >= lo])
                 ys.append(yy[dd >= lo])
                 gs.append(g[dd >= lo])
+            if not zs:
+                # v6 (forward-chained train gate): a fit through 2020 has no forward out-of-fold year (the folds start in
+                # 2021), so there is nothing to fit a temperature on: no calibration for that fit, recorded in fit_info
+                self.cal = self.MO.Calib("none").fit(None, None)
+                self.cal_g = None
+                info = {"fit_through": max(self.ctx.date[i] for i in ids), "n_train": len(ids),
+                        "calibration": self.cal.export() if hasattr(self.cal, "export") else None,
+                        "calibration_note": "no forward out-of-fold year before %s: temperature not fit" % cutoff}
+                return info
             Z, Yc, Gc = np.concatenate(zs), np.concatenate(ys), np.concatenate(gs)
             self.cal = self.MO.Calib(self.cal_kind).fit(Z, Yc)
             self.cal_g = None
