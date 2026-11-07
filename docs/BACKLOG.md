@@ -74,6 +74,15 @@ Findings from verified research that the next engine versions must use. Each lin
   fits to 0. Descriptive all-on vs v4: control deviance -3.2 s [-5.4, -1.1] BUT control MAE +1.7 s [+0.8, +2.6]. No
   pre-registration, no look, src/ stays v4. A next attempt needs a new protocol; re-specify the 7-bin / method bound and the
   absolute base-rate check before running, never from this run. tools/evalv.js now reports per-stat PIT coverage for every run.
+- ENGINE v8 GATE FAILED (~10:15 UTC Nov 7; no look; protocol committed 1d8e729): stat-line fidelity on the v4
+  simulator (embed blend, retarget toward the statlines layer with fold-honest targets, per-fight TD-intent spread
+  1.1, control spread 0). Binding gate = per-sub-part leave-one-out on 2020-23 (1,606 fights): no sub-part passed
+  (retarget: total stat deviance -0.38% [-0.74, -0.01], TD attempts -0.050, but method +0.0037 n.s. and the rule's
+  other conditions; embed and tdIntent slightly worse on stat lines). Descriptive only, all-on vs v4: winner -0.0080
+  [-0.0125, -0.0036], total stat deviance -0.80% [-1.35, -0.24], control -3.2 s, TD attempts -0.085; TD-attempt 80%
+  band coverage 0.68 -> 0.79. The bundle helps; the pre-committed per-part rule did not let any single part in.
+- PATTERN after v5-v8: every candidate improves most metrics on train and/or validation, but none clears its
+  pre-committed bar (single looks on ~850 fights cannot detect 0.002-0.008 gains; strict per-part gates). v4 stays.
 - ENGINE v7 GATE FAILED (Nov 7, ~08:36 UTC; docs/CHANGELOG.md v7; version_history.json v7 `status: gate_failed`, `train_gate`;
   versions/v7-gate-failed/): v7 = the v4 simulator + predict() with cycle 1 (ML v2 head stacks, S2 pool) re-bundled and cycle 2
   (the verified props pool; finishing not adopted by its verifier, not in v7). Binding gate run once under data/derived/v7/
