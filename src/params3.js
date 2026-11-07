@@ -22,42 +22,7 @@
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "9.0.0-selfcal-pre2024",   // v9 (docs/V6_V10_PLAN.md cycle 4): the v4 parameter set unchanged + the v9 blocks below (components, judgeWF, format). Earlier label 4.0.0-selfcal-pre2024   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01)
-
-
-    // ---------------- v9 components (docs/V6_V10_PLAN.md cycle 4: walk-forward levels, drift and judging, joint level pass by
-    // format; engine3.js header). Every flag off = engine 4.0.0 bit for bit (tests/test_v9.js).
-    components: {
-      levels: false,    // walk-forward level anchoring of the learned targets (needs opts.level; tools/v9_levels.js). OFF in v9: the
-                        // 2019-2020 rolling-origin choice kept no tracker (each raised its stat's deviance; data/derived/v9/levels_select.json)
-      judgeWF: true,    // walk-forward EM judging weights by year + tracked 10-8 threshold (needs opts.level.r108 for the threshold)
-      format: true      // joint level pass by format: 5-round knockdown factor, championship-round factor, conversion, doctor / corner scale
-    },
-    // walk-forward judging (tools/v9_judge_wf.py -> data/derived/v9/judge_wf.json, recipe "win3" chosen on 2019-2020 decisions):
-    // row Y = EM round-winner weights on judges' cards dated before Jan 1 of Y; later dates use the last row
-    judgeWF: {
-      byYear: {
-        "2019": { head: 0.184701, body: 0.13979, leg: 0.093147, kd: 1.91182, td: 0.290388, ctrlMin: 0.446155, sub: 0.849402 },
-        "2020": { head: 0.199167, body: 0.132768, leg: 0.101313, kd: 1.772051, td: 0.236906, ctrlMin: 0.460164, sub: 0.891582 },
-        "2021": { head: 0.191968, body: 0.120963, leg: 0.101209, kd: 2.409991, td: 0.223314, ctrlMin: 0.457239, sub: 0.804571 },
-        "2022": { head: 0.178904, body: 0.115982, leg: 0.107548, kd: 2.843636, td: 0.129675, ctrlMin: 0.502025, sub: 0.882625 },
-        "2023": { head: 0.156692, body: 0.110941, leg: 0.099861, kd: 3.585794, td: 0.180746, ctrlMin: 0.479659, sub: 0.795772 },
-        "2024": { head: 0.154172, body: 0.111511, leg: 0.100266, kd: 2.877199, td: 0.248732, ctrlMin: 0.469351, sub: 0.713199 },
-        "2025": { head: 0.166729, body: 0.122055, leg: 0.098398, kd: 3.126959, td: 0.307698, ctrlMin: 0.458974, sub: 0.729786 },
-        "2026": { head: 0.187162, body: 0.140182, leg: 0.097257, kd: 3.102658, td: 0.351663, ctrlMin: 0.423899, sub: 0.698115 }
-      },
-      // 10-8 threshold from the tracked card-implied 10-8 share (eradrift r108 Kalman): target = sRef x r108 / lRef,
-      // t108 = (alpha - ln target) / beta; sRef = v4's matched 3.5% share (tools/v4_levels.js, 2021-2023), lRef = the tracker's
-      // 2021-01..2023-12 month mean (per 100 judged rounds); alpha / beta: ln(sim 10-8 share) = alpha - beta t108, least squares
-      // on a 7-10 grid of train simulations with the walk-forward weights on (data/derived/v9/t108_map.json; residuals <= 0.007)
-      r108: { sRef: 0.035, lRef: 5.263578, alpha: 0.59164, beta: 0.45779 }
-    },
-    // joint level pass by format (tools/v9_format_fit.py, one damped fixed point on the 2019-2023 train fights, development seed
-    // 102, data/derived/v9/format_fit.json): kd5 <- 5-round KD per 100 head landed 0.641 (v4 0.473; gap z -3.05 > 2, so the
-    // plan's 5-round format KD factor is added), late5 <- share of 5-round fights finished in round 4 or 5 10.1% (v4 14.7%),
-    // conv <- KO/TKO share 31.7% (v4 32.7%), stop <- between-round stoppages per round-interval reached 0.37% (v4 1.11%; 11
-    // events in 2,983 intervals, one scale for both formats)
-    format: { kd5: 1.579, late5: 0.575, conv: 0.928, stop: 0.321 },
+    version: "4.0.0-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01)
 
     // ---------------- learned stat-line rates (engine v4) ----------------
     mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base
