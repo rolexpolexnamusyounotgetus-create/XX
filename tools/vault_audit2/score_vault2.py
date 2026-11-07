@@ -291,6 +291,12 @@ head = {"note": "case if_v4_stays: no confirmatory primary; descriptive headline
         "fwd_minus_opener": win_paired("fwd_open", "opener", IDS, 0.002),
         "cmp4_minus_fwd": win_paired("cmp4_open", "fwd_open", IDS),
         "side_lines_vs_cmp4_open_winner": {"v10 (= v7 = v6 winner: ML v2 blend-head production stack)": win_paired("v10_open", "cmp4_open", IDS, 0.002)}}
+# descriptive sensitivity (never the headline): without the 7 isolated BFO openers listed by audit 1's recomputation (before audit 2)
+ISO = J(os.path.join(AUD1, "recompute", "recompute_audit1.json"))["checks"]["isolated_opener_screen"]["ids"]
+ids_iso = [i for i in IDS if i not in set(ISO)]
+head["sensitivity_without_7_isolated_openers"] = {"excluded": ISO, "opener": win_level("opener", ids_iso)["winLL"], "cmp4": win_level("cmp4_open", ids_iso)["winLL"],
+                                                  "fwd": win_level("fwd_open", ids_iso)["winLL"], "cmp4_minus_opener": win_paired("cmp4_open", "opener", ids_iso, 0.002),
+                                                  "fwd_minus_opener": win_paired("fwd_open", "opener", ids_iso, 0.002), "v10_minus_cmp4": win_paired("v10_open", "cmp4_open", ids_iso, 0.002)}
 OUT["headline"] = head
 
 # =============================================================== 5. regimes: packages vs cmp4 (winner and cells), with and without props
