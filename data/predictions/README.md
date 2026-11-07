@@ -119,7 +119,7 @@ stack with the market line captured at prediction time as one of its experts (it
 `fwd-4.1` instead (section "Forward model v4.1" below: the primary `p_a` and every scored secondary model). For events
 dated 2026-11-14 or later it writes `fwd-4.2` (section "Forward model v4.2" below: the debut method model and the
 stat-line block; `--fwd` picks the version by event date). From Nov 7, 2026 those events get `fwd-4.3` instead
-(section "Forward model v4.3" below: `p_a_noline` becomes the ML v2 no-line stack). From Nov 7, 2026, about 11:35 am
+(section "Forward model v4.3" below: `p_a_noline` becomes the ML v2 no-line stack). From Nov 7, 2026, about 11:30 am
 UTC, they get `fwd-4.4` (section "Forward model v4.4" below: fwd-4.3's models on roster inputs refreshed to the newest
 verified results by `tools/live_refresh.py`).
 `python3 tools/forward_ledger.py score`
@@ -724,8 +724,9 @@ of them is a ledger file.
 
 ## Forward model v4.4 (Nov 7, 2026)
 
-Pre-registered on Nov 7, 2026, about 11:35 am UTC, and committed on its own before the code that implements it
-(`tools/live_refresh.py` and `--fwd 4.4`). At that time no file with a `model.version` starting `fwd-4.2`, `fwd-4.3` or
+Pre-registered on Nov 7, 2026, about 11:30 am UTC, before the code that implements it (`tools/live_refresh.py` and
+`--fwd 4.4`). The repository's autosave committed this text first, at 11:30:05 am UTC (5321d1c, together with unrelated
+v10 gate files); the README-only commit that follows it marks the pre-registration. At that time no file with a `model.version` starting `fwd-4.2`, `fwd-4.3` or
 `fwd-4.4` existed and no UFC 334 prediction existed. The only ledger file was the Vegas 124 file (Nov 7, `fwd-4.1`,
 lock 10:00 pm UTC Nov 7), which this section does not touch. No forward result had been recorded (there is no
 results.json). The newest UFC event in the Greco1899 CSVs was UFC Fight Night: Moicano vs. Nolan (Oct 31), the same as the
