@@ -1,0 +1,12 @@
+PASS  the bundle defines FightEngine, FightParams and MLRates  (src/params3.js + src/ml/mlrates.js + src/styles_sos.js + src/engine3.js)
+PASS  same engine and params versions  (9.0.0 / 9.0.0-selfcal-pre2024)
+PASS  alexander-volkanovski vs justin-gaethje: page bundle = Node (summarize, 3000 sims)  (pA 0.670 / 0.670)
+PASS  tom-aspinall vs ciryl-gane: page bundle = Node (summarize, 3000 sims)  (pA 0.454 / 0.454)
+PASS  zhang-weili vs tatiana-suarez: page bundle = Node (summarize, 3000 sims)  (pA 0.350 / 0.350)
+PASS  islam-makhachev vs belal-muhammad: page bundle = Node (summarize, 3000 sims)  (pA 0.618 / 0.618)
+PASS  component embed: off in the page's params (nothing to ship)
+PASS  component blend_anchor: off in the page's params (nothing to ship)
+PASS  component styles_sos: off in the page's params (nothing to ship)
+PASS  component durability: off in the page's params (nothing to ship)
+PASS  component preufc: off in the page's params (nothing to ship)
+11 passed, 0 failed
