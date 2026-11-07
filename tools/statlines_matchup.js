@@ -32,18 +32,20 @@ const model = ML.load(rd(which === "dev" ? "data/derived/mlrates_dev.json" : "da
 const ctx = { division, rounds, title: rounds === 5, year: 2026, priors: F.priors };
 const pr = ML.predict(model, pa, pb, ctx);
 const E = FE.load(rd("data/derived/embed_model.json"));
-const em = E.matchup(a, b, { division, rounds });
-const hasEmb = (E.embedding(a).expo || 0) > 0 && (E.embedding(b).expo || 0) > 0;
+// a fighter with no embedding (UFC debut from 2026 on) gets null: embedding term off, win logit 0 (as tools/forward_statlines.js)
+const ea = E.embedding(a), eb = E.embedding(b);
+const hasEmb = !!(ea && eb && ea.expo > 0 && eb.expo > 0);
+const em = hasEmb ? E.matchup(a, b, { division, rounds }) : null;
 const OA = rd("data/derived/oppadj.json").roster;
 const SD = SDm.load(rd("data/derived/statlines.json"), { which });
-const P = SD.prepare({ mlA: pr.A, mlB: pr.B, etaA: em.etaA, etaB: em.etaB, hasEmb, winLogit: em.logit,
+const P = SD.prepare({ mlA: pr.A, mlB: pr.B, etaA: em ? em.etaA : null, etaB: em ? em.etaB : null, hasEmb, winLogit: em ? em.logit : 0,
   oppA: OA[a] || null, oppB: OA[b] || null, rounds });
 const prof = rounds === 5 ? [0.30, 0.24, 0.18, 0.15, 0.13] : [0.45, 0.33, 0.22];
 const grid = SD.lengthGridSimple(pdec, prof.map((x) => x * (1 - pdec)));
 const full = 5 * rounds;
 const L = { A: { dist: P.line("A", full), mix: P.line("A", grid) }, B: { dist: P.line("B", full), mix: P.line("B", grid) } };
 console.log(`${a} (A) vs ${b} (B), ${division}, ${rounds} rounds; statlines ${which} tables; embedding win logit ` +
-  `${em.logit.toFixed(3)}; P(decision) ${pdec} for the mixture`);
+  `${em ? em.logit.toFixed(3) : "off (a fighter has no embedding)"}; P(decision) ${pdec} for the mixture`);
 const f = (v) => `${String(v.p10).padStart(4)} ${String(v.p50).padStart(4)} ${String(v.p90).padStart(4)} (${v.mean.toFixed(1).padStart(6)})`;
 console.log("stat        | A goes the distance P10 P50 P90 (mean) | A mixed          | B goes the distance | B mixed");
 for (const st of SD.stats) {

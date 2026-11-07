@@ -1107,7 +1107,8 @@
     var out = null;
     try {
       // a fighter with no embedding (every UFC debut from 2026 on: the export stops at 2025) gets null from embedding();
-      // as in tools/forward_statlines.js, the embedding term is then off (hasEmb false, win logit 0), the case the model trained on
+      // as in tools/forward_statlines.js, the embedding term is then off (hasEmb false, win logit 0); about one training row in
+      // five had no embedding (statlines.json has_emb mean 0.81), so the model has a fitted term for it
       var em = null, hasEmb = false;
       if (EMB) {
         var ea = EMB.embedding(S.a), eb = EMB.embedding(S.b);
@@ -1214,7 +1215,14 @@
     });
     note.textContent = "Low, typical and high are the 10th, 50th and 90th percentiles of each fighter's total, over the fight lengths the finish model expects (about " +
       fx(L.minutes, 1) + " of " + S.rounds * 5 + " minutes on average), so eight fights in ten should land between low and high. Tested on 2024-25 fights (fit on earlier years), the same recipe put 77% to 82% of real totals inside that range, for every stat. " +
-      "The simulator column is its average over the 20,000 fights as played" + (A0 ? "" : " (still running)") + ". Each line is one fighter and one stat on its own; they are not a joint forecast.";
+      "The simulator column is its average over the 20,000 fights as played" + (A0 ? "" : " (still running)") + ". Each line is one fighter and one stat on its own; they are not a joint forecast." + noProfileNote(L);
+  }
+  // fighters whose UFC career began after the last style-profile export (fights through 2025): that input is off for the pair
+  function noProfileNote(L) {
+    if (!L || L.hasEmb || !EMB) return "";
+    var miss = ["A", "B"].filter(function (s) { var e = EMB.embedding(s === "A" ? S.a : S.b); return !(e && e.expo > 0); }).map(nameOf);
+    if (!miss.length) return "";
+    return " " + miss.join(" and ") + (miss.length > 1 ? " have" : " has") + " no fighter-style profile yet (the profiles are built from fights through 2025), so that input is left out for both fighters and these ranges rest on the stats alone.";
   }
 
   function numWord(n) { return ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"][n] || String(n); }
@@ -1765,7 +1773,7 @@
     grid.appendChild(c1); grid.appendChild(c2); box.appendChild(grid);
     c1.appendChild(el("h3", "mini", "How the testing works"));
     var ol = el("ol", "proto");
-    [["Tuning years, 2019-2023.", " Every weight on this page was fit on these fights only."],
+    [["Tuning years, 2019-2023.", " The weights that combine the models into the pick were fit on these fights only. Once testing was done, the stats model under them was refit on fights through 2025, as were the finish, stat-line and debut models. The left column scores the stats model's earlier copy, fit before 2024; the right column scores the copy this page runs."],
       ["Test years, 2024-2025.", " Used to choose between models and versions. Left column."],
       ["A sealed vault, 2026.", " Every fight from Jan 1, 2026 on, kept apart from the project and opened once by an auditor. It chooses nothing. Right column."],
       ["The forward test.", " Before each card the picks are committed with a timestamp, then scored after the fights (next panel)."]
