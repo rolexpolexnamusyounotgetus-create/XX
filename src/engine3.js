@@ -32,15 +32,20 @@
 
    UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM; all randomness comes from makeRng(seed). */
 (function (root, factory) {
-  var FP = root && root.FightParams, MLR = root && root.MLRates;
-  if (!FP && typeof require === "function") { try { FP = require("./params3.js"); } catch (e) { FP = null; } }
-  if (!MLR && typeof require === "function") { try { MLR = require("./ml/mlrates.js"); } catch (e) { MLR = null; } }
+  // v5.0.1: in Node the sibling files win (require first, the global only when the require fails), so a process that loaded
+  // another version's params or MLRates onto the global object cannot run this engine on them; in a browser / Web Worker
+  // (no require) the globals are the only source. matchupBase also refuses params whose major version differs from VERSION.
+  var FP = null, MLR = null;
+  if (typeof require === "function") { try { FP = require("./params3.js"); } catch (e) { FP = null; } }
+  if (typeof require === "function") { try { MLR = require("./ml/mlrates.js"); } catch (e) { MLR = null; } }
+  if (!FP) FP = (root && root.FightParams) || null;
+  if (!MLR) MLR = (root && root.MLRates) || null;
   var api = factory(FP, root, MLR);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FightEngine = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (FP0, root, MLR0) {
   "use strict";
-  var VERSION = "5.0.0";   // v5: the v5 merge on v4.0.0 + Calibrate A's flags + Calibrate B's levels (components.calB); frozen in versions/v5/
+  var VERSION = "5.0.1";   // v5.0.1: v5 (5.0.0, the v5 merge on v4.0.0 + Calibrate A's flags + Calibrate B's levels) + the v5 review's fixes (input guards, dates, rounds, judges, params loading, durability fallback level, dynamics noise and the knockdown level chosen on train); docs/CHANGELOG.md v5.0.1
 
   // Sum keys (spec order; profiles may carry their own order in meta.keys / prof.keys)
   var KEYS = ["min", "n", "rds", "d_att", "d_lnd", "c_att", "c_lnd", "g_att", "g_lnd", "h_att", "h_lnd", "b_att", "b_lnd",
@@ -78,6 +83,52 @@
   function pw(x, e) { return e === 1 ? x : Math.pow(x, e); }
   function lnorm(rng, sd) { return sd > 0 ? Math.exp(sd * rng.normal() - 0.5 * sd * sd) : (rng.normal(), 1); }
   function getParams() { return FP0 || (root && root.FightParams) || null; }
+  // ---- v5.0.1 input guards (v5 review): one bad record, knob or date must fail loudly, never hang or leak
+  // a finite number (strings that parse count; null, "", NaN, +-Infinity do not)
+  function finNum(v) { return v != null && v !== "" && typeof v !== "boolean" && isFinite(+v); }
+  // a finite positive number (multipliers, rates that must be > 0)
+  function posNum(v) { return finNum(v) && +v > 0; }
+  function majorOf(v) { var m = /^\s*(\d+)/.exec(String(v == null ? "" : v)); return m ? +m[1] : null; }
+  // params loaded next to another engine version would silently switch components on or off: refuse a different major
+  function checkParamsVersion(p) {
+    if (!p || p.allowVersionMismatch) return;
+    var a = majorOf(p.version), b = majorOf(VERSION);
+    if (a != null && b != null && a !== b) {
+      throw new Error("FightEngine " + VERSION + ": params version " + p.version + " has a different major version (load this engine's own params3.js)");
+    }
+  }
+  // fight dates: one canonical 'YYYY-MM-DD' (the leak guards compare dates as strings). Accepts 'YYYY-MM-DD' (optionally with a
+  // time part), 'YYYY/MM/DD', a Date object and a millisecond timestamp; anything else throws (a US-style '6/15/2019' compared
+  // as a string sorts after '2026-...' and let the live-fit rosters into a 2019 bout).
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function isoOfTime(ms) { var d = new Date(ms); return d.getUTCFullYear() + "-" + pad2(d.getUTCMonth() + 1) + "-" + pad2(d.getUTCDate()); }
+  function normDate(d) {
+    if (d == null || d === "") return null;
+    var s, mt;
+    if (d instanceof Date || Object.prototype.toString.call(d) === "[object Date]") {
+      if (!isFinite(d.getTime())) throw new Error("FightEngine: invalid Date for opts.date");
+      return isoOfTime(d.getTime());
+    }
+    if (typeof d === "number") {
+      if (!isFinite(d)) throw new Error("FightEngine: opts.date timestamp is not finite");
+      return isoOfTime(d);
+    }
+    s = String(d).trim();
+    mt = /^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})(?:$|[T ])/.exec(s);
+    if (mt) {
+      var y = +mt[1], mo = +mt[2], da = +mt[3];
+      var t = Date.UTC(y, mo - 1, da), chk = new Date(t);
+      if (mo >= 1 && mo <= 12 && da >= 1 && da <= 31 && chk.getUTCMonth() === mo - 1 && chk.getUTCDate() === da) return y + "-" + pad2(mo) + "-" + pad2(da);
+    }
+    throw new Error("FightEngine: opts.date '" + s.slice(0, 40) + "' is not a 'YYYY-MM-DD' date, a Date or a millisecond timestamp");
+  }
+  // scheduled rounds: an integer 1..5 (UFC formats are 3 and 5); the title default only when opts.rounds is not given
+  function normRounds(r, title) {
+    if (r === undefined || r === null) return title ? 5 : 3;
+    var n = finNum(r) ? Math.round(+r) : NaN;
+    if (!(n >= 1 && n <= 5)) throw new Error("FightEngine: opts.rounds must be an integer from 1 to 5 (got " + String(r).slice(0, 20) + ")");
+    return n;
+  }
   // fight-dynamics component (research/model_dynamics.md E1-E11): on when params.components.dynamics is true and the
   // params carry the dyn block; off reproduces the engine before the component bit for bit
   function dynOn(p) { return !!(p && p.components && p.components.dynamics && p.dyn); }
@@ -408,12 +459,16 @@
     opts = opts || {};
     var base = getParams();
     if (!base) throw new Error("FightEngine: FightParams not loaded (load params3.js first)");
+    checkParamsVersion(base);                   // v5.0.1: never run on another major version's params
+    // v5.0.1: one canonical date for every leak guard (and for styles_sos, which reads m.opts): a copy of opts carries it
+    var dIn = normDate(opts.date);
+    if (opts.date != null && opts.date !== dIn) { var oc = {}, ok_; for (ok_ in opts) oc[ok_] = opts[ok_]; oc.date = dIn; opts = oc; }
     var p = resolveParams(base, opts.params);   // v5: components flags (components.v401 sub-flags) applied here
     oppadjExclusive(p);                         // v5 merge step 4: components.oppadj never stacks with styles_sos sos
     profA = resolve(profA); profB = resolve(profB);
     var division = opts.division || profA.division || profA.home || "Lightweight";
     var P = priorFor(division, opts.priors);
-    var nR = opts.rounds || (opts.title ? 5 : 3);
+    var nR = normRounds(opts.rounds, opts.title);   // v5.0.1: an integer 1..5 (a string '5' leaked into the result; 0 became 3)
     var dv = (p.div && p.div[division]) || {};
     var rz = realismFactors(p, division, nR);   // realism_sens component: walk-forward division / format factors, null when off
     function dvf(k) { var v = dv[k] != null ? dv[k] : 1; return rz && rz[k] != null ? v * rz[k] : v; }
