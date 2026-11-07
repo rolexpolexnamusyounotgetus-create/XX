@@ -64,6 +64,15 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- ENGINE v6 BUILT AND PRE-REGISTERED (Nov 7, 06:56 UTC; docs/CHANGELOG.md v6; version_history.json v6 `prereg`; versions/v6/):
+  the v5.0.1 simulator re-bundled (V6_V10_PLAN 6.1) after review gate 1 (fold-honest learned-rate stack weights and embedding
+  recipe; Calibrate A's embed / preufc verdicts unchanged; joint level pass rerun, train only) + cycle 1: ML v2 blend-head
+  stacks by explicit line regime inside FightEngine.predict (open-trained for any non-closing line), S2 method / round cells
+  (pool w 0.35), JS tree evaluator (src/ml/ml2trees.js), predict harness (tools/predict_harness.js, predict_score.py); lab-3
+  debut path and stat-line bands (live only). Train gate (forward-chained 2021-23) PASSED vs the v5.0.1 package on its own
+  input pipeline: open winner -0.0061 [-0.0108, -0.0013], no line -0.0061 [-0.0119, -0.0003], close -0.0033 [-0.0065,
+  -0.0000], 7-bin and method better in every regime; DISCLOSED: with shared (v6) inputs two winner checks fail marginally.
+  Look pending: primary open-regime winner log loss vs the v5.0.1 package, branch 1; confirmation look. The page stays v4.
 - eradrift (lab 5, VERIFIED ~01:50 UTC Nov 7, research/model_eradrift.md): NOT adopted into production method/round
   (level-adjusting S2 + ML v2 winner fails the forward-chained 2021-23 gate; M2's 2024-25 -0.0055 7-bin is descriptive).
   OFFER to v9 engine calibration (train-only test): stat-level league trackers (sig landed/attempted, TD attempts,

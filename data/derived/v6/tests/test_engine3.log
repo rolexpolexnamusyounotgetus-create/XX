@@ -1,7 +1,7 @@
 Fight engine 6.0.0, params 6.0.0-selfcal-pre2024; 1229 fighters; N = 8000
 
 === API and determinism ===
-FAIL  API surface  (VERSION 6.0.0)
+PASS  API surface  (VERSION 6.0.0)
 PASS  no learned model loaded by default: matchup = base tables
 PASS  engine source has no Math.random
 PASS  engine runs with Math.random disabled
@@ -399,7 +399,7 @@ TD landed                   0.90     1.63     1.31 |        0.85     0.30     0.
 TD accuracy %              28.25    34.34    30.21 |       34.28    26.67    27.86
 control s                  89.51   177.09   126.59 |       79.50    59.15    92.27
 sub attempts                0.14     0.19     0.17 |        0.08     0.00     0.00
-PASS  summarize(Volk vs Gaethje, 20000) under 6 s of CPU on one core  (1529 ms CPU, 1517 ms wall, load average 1.8 on 4 cores)
+PASS  summarize(Volk vs Gaethje, 20000) under 6 s of CPU on one core  (1581 ms CPU, 1556 ms wall, load average 0.4 on 4 cores)
 PASS  Volk vs Gaethje probabilities sum to 1
 
 === explain(Volkanovski vs Gaethje) ===
@@ -428,4 +428,4 @@ Expected position time (fit): distance 84.2%, clinch 7.1% (Alexander Volkanovski
   Submissions: 0.039 attempts per ground-minute (league 0.087), conversion 28.1% (shrunk own 30.9% vs opp 28.1%, league 30.9%)
   Cardio: output by round 0.89 1.09 1.07 1.20 1.35 (dynamics: league pace curve x his late-round ratio x opponent's^0.4; knockdown risk by round 0.81 0.71 0.41 0.30 0.30); cardio index 0.92; stamina drain x1.02 of the 3-round base (5-round pacing x0.90, cardio x1.13, knob x1.00)
 
-79 passed, 2 failed
+80 passed, 1 failed
