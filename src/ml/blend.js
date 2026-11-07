@@ -670,7 +670,7 @@
     if (o.mrS2 !== undefined) STATE.mrS2 = o.mrS2 ? (o.mrS2.js_model || o.mrS2) : null;
     if (o.debut !== undefined) { var DL = debutLib(); STATE.debut = o.debut && DL ? { M: DL.load(o.debut.model || o.debut), lib: DL, model: o.debut.model || o.debut } : null; }
     if (o.statDist !== undefined) { var SL = statLib(); STATE.statDist = o.statDist && SL ? SL.load(o.statDist, { which: "prod" }) : null; }
-    if (o.ml2Trees !== undefined) { var TL = treesLib(); STATE.ml2Trees = o.ml2Trees && TL ? TL.load(o.ml2Trees) : null; }
+    if (o.ml2Trees !== undefined) { var TL = treesLib(); STATE.ml2Trees = o.ml2Trees && TL ? TL.load(o.ml2Trees, STATE.ml2) : null; }
     if (o.preufc !== undefined) STATE.preufc = o.preufc || null;
     return { stack: !!STATE.stack, stackOpen: !!(STATE.stack && STATE.stack.open), feat: !!STATE.feat, mlPage: !!STATE.mlPage,
       market: !!STATE.mktRatings, ml2: !!STATE.ml2, methodRound: !!STATE.mr, data: !!STATE.data,
@@ -867,7 +867,8 @@
       if (head === "blend") {
         if (ml2src && !ml2live && isNum(ml2src.pBlend)) { hv = ml2src.pBlend; hsrc = "given"; }
         else if (!BT && STATE.ml2Trees && ml2 && isNum(ml2.pA) && pa.slug && pb.slug) {
-          try { var tb = STATE.ml2Trees.predict(pa.slug, pb.slug, { date: date, lbs: LBS[division] || 155, five: rounds === 5 ? 1 : 0 }, ml2.pA);
+          try { var tb = STATE.ml2Trees.predict(pa.slug, pb.slug, { date: date, lbs: LBS[division] || 155, five: rounds === 5 ? 1 : 0, title: m.title ? 1 : 0,
+              division: division, women: /^Women/.test(division || "") ? 1 : 0, "catch": LBS[division] ? 0 : 1 }, ml2.pA, (ml2src && ml2src.predictSides) ? ml2src : STATE.ml2);
             if (tb && isNum(tb.p)) { hv = tb.p; hsrc = "trees"; } } catch (e) { note6 = "tree evaluator: " + String((e && e.message) || e); }
         }
         if (!isNum(hv) && !BT && ml2 && isNum(ml2.pA)) {
