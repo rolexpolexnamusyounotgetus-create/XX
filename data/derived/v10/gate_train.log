@@ -4,3 +4,6 @@ predict_harness on train 2019-01-01..2024-01-01: 1999 fights, kinds close/open/n
   600/1999 fights, 46 s
   800/1999 fights, 63 s
   1000/1999 fights, 79 s
+  1200/1999 fights, 96 s
+  1400/1999 fights, 113 s
+  1600/1999 fights, 130 s
