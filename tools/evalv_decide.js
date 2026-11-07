@@ -18,7 +18,11 @@
      registered (v5's rule, reported): a base rate that was inside the mlcal tolerance for old and is outside for new, or is
        further outside, fails.
    Sensitivity (information only, never a rule input): the same paired test with the dated 2024 glove-trial window
-   (2024-06-01..2024-11-15) excluded. */
+   (2024-06-01..2024-11-15) excluded.
+   v10 review (reported per rate as rows[k].fixed_actual and per test as fixed_actual_drift_6_3; never a rule input for a past
+   version): the paired D above is bounded by +-|new - old| once the actual is resampled, so it almost never excludes 0; the
+   fixed-actual block holds the actual at its full-sample value and applies plan 6.3's proposed definition (moves out of the
+   registered tolerance, OR further from the actual with a CI excluding 0). */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -75,14 +79,20 @@ function baseRateTest(ix, label) {
     const rn = rates(SN, "s"), ro = rates(SO, "s"), ra = rates(SN, "a");
     return { rn, ro, ra };
   }
-  const pt = stat(ix), draws = Object.fromEntries(keys.map((k) => [k, { d: [], a: [] }]));
+  const pt = stat(ix), draws = Object.fromEntries(keys.map((k) => [k, { d: [], a: [], df: [], e: [] }]));
   for (let b = 0; b < B; b++) {
     const sel = []; for (let g = 0; g < groups.length; g++) for (const i of groups[Math.floor(rnd() * groups.length)]) sel.push(i);
     const s = stat(sel);
-    for (const k of keys) { draws[k].d.push(Math.abs(s.rn[k] - s.ra[k]) - Math.abs(s.ro[k] - s.ra[k])); draws[k].a.push(s.ra[k]); }
+    for (const k of keys) {
+      draws[k].d.push(Math.abs(s.rn[k] - s.ra[k]) - Math.abs(s.ro[k] - s.ra[k])); draws[k].a.push(s.ra[k]);
+      // v10 review: with the actual resampled, D is bounded by +-|new - old| and almost never excludes 0; with the actual held at its
+      // full-sample value, D measures how much further the new simulator sits from it (both arms resampled on the same fights)
+      draws[k].df.push(Math.abs(s.rn[k] - pt.ra[k]) - Math.abs(s.ro[k] - pt.ra[k])); draws[k].e.push(s.rn[k] - s.ra[k]);
+    }
   }
   const out = { label, n_fights: ix.length, rows: {} };
-  let failP = [], failR = [];
+  let failP = [], failR = [], drift63 = [], driftOut = [];
+  const q = (arr) => { const v = arr.slice().sort((a, b) => a - b); return [v[Math.floor(0.025 * B)], v[Math.floor(0.975 * B)]]; };
   for (const k of keys) {
     const d = draws[k].d.slice().sort((a, b) => a - b), av = draws[k].a, m = av.reduce((x, y) => x + y, 0) / av.length;
     const se = Math.sqrt(av.reduce((x, y) => x + (y - m) * (y - m), 0) / (av.length - 1));
@@ -94,8 +104,19 @@ function baseRateTest(ix, label) {
     if (pairedFail) failP.push(k); if (regFail) failR.push(k);
     out.rows[k] = { actual: act, new: pt.rn[k], old: pt.ro[k], err_new: eN, err_old: eO, D_abs_err: D, D_ci: [lo, hi], se_actual: se,
       tol_registered: tolReg, tol_paired: tol, paired_fail: pairedFail, registered_fail: regFail };
+    // v10 review (reported, not a registered rule for any past version): plan 6.3's proposed drift definition with a test that has
+    // power: moves out of the registered tolerance, OR further from the (fixed) actual with a CI excluding 0
+    const dF = q(draws[k].df), eC = q(draws[k].e), movesOut = Math.abs(eN) > tolReg && Math.abs(eO) <= tolReg, further = dF[0] > 0;
+    // drift_6_3 flags any significant move away from the actual, even well inside the tolerance (it has power); drift_outside also
+    // requires the new rate to sit outside the registered tolerance (moved out, or outside and further with a CI excluding 0)
+    const outside = Math.abs(eN) > tolReg && (Math.abs(eO) <= tolReg || further);
+    out.rows[k].fixed_actual = { D_ci: dF, err_new_ci_paired: eC, moves_out_of_tolerance: movesOut, further_with_ci_excluding_0: further, drift_6_3: movesOut || further, drift_outside: outside };
+    if (movesOut || further) drift63.push(k);
+    if (outside) driftOut.push(k);
   }
   out.paired_fail = failP; out.registered_fail = failR;
+  out.fixed_actual_drift_6_3 = drift63;   // v10 review: the powered test for audit 2 and the forward ledger (the paired test stays as a sensitivity)
+  out.fixed_actual_drift_outside = driftOut;
   return out;
 }
 // ---- paired metric tests with bootstrap p-values (same event clusters), Holm over the registered secondary family

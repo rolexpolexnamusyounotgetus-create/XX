@@ -620,9 +620,9 @@
      "logloss_with": 0.5788248485320001,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -8.727629959482959e-7,
-      "lo": -0.0000015272600814283089,
-      "hi": -2.5655151717160004e-7,
+      "est": -8.727629959482959e-07,
+      "lo": -1.5272600814283089e-06,
+      "hi": -2.5655151717160004e-07,
       "p_gt0": 0.002
      },
      "n": 845
@@ -632,9 +632,9 @@
      "logloss_with": 0.5930335681784208,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -1.0099141584613298e-7,
-      "lo": -1.8138076015023744e-7,
-      "hi": -1.882505288986469e-8,
+      "est": -1.0099141584613298e-07,
+      "lo": -1.8138076015023744e-07,
+      "hi": -1.882505288986469e-08,
       "p_gt0": 0.0105
      },
      "n": 845
@@ -1454,9 +1454,9 @@
      "logloss_with": 0.5930319721344538,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -0.0000016970353827425062,
-      "lo": -0.000002435549185916011,
-      "hi": -9.44685467941618e-7,
+      "est": -1.6970353827425062e-06,
+      "lo": -2.435549185916011e-06,
+      "hi": -9.44685467941618e-07,
       "p_gt0": 0
      },
      "n": 845
@@ -2295,9 +2295,9 @@
      "logloss_with": 0.5788099923758476,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -0.0000157289191484635,
-      "lo": -0.00003115957049440681,
-      "hi": -2.182334234371639e-7,
+      "est": -1.57289191484635e-05,
+      "lo": -3.115957049440681e-05,
+      "hi": -2.182334234371639e-07,
       "p_gt0": 0.0235
      },
      "n": 845
@@ -2312,9 +2312,9 @@
       "hi": 0,
       "p_gt0": null,
       "raw": {
-       "est": -2.947697791072808e-7,
-       "lo": -4.819442412118878e-7,
-       "hi": -1.0681580458083556e-7,
+       "est": -2.947697791072808e-07,
+       "lo": -4.819442412118878e-07,
+       "hi": -1.0681580458083556e-07,
        "p_gt0": 0.002
       },
       "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
@@ -5284,7 +5284,7 @@
      "v4": 0.9399330733473251,
      "v5.0.1": 0.9399711317868685,
      "S": 0.9359561823360422,
-     "diff": 0.00004,
+     "diff": 4e-05,
      "ci95": [
       -0.00963,
       0.00979
@@ -6615,7 +6615,7 @@
           "diff": -0.00095,
           "ci": [
            -0.00192,
-           0.00008
+           8e-05
           ]
          },
          "acc": {
@@ -7162,7 +7162,7 @@
         "diff": -0.00331,
         "ci95": [
          -0.00651,
-         -0.00004
+         -4e-05
         ]
        },
        "bin7": {
@@ -7190,7 +7190,7 @@
         "diff": -0.0014,
         "ci95": [
          -0.0028,
-         0.00008
+         8e-05
         ]
        }
       }
@@ -7564,7 +7564,7 @@
          "diff": -0.00492,
          "ci95": [
           -0.00993,
-          -0.00008
+          -8e-05
          ]
         }
        }
@@ -8327,7 +8327,7 @@
      "C1 close winner: CI upper <= +0.0005": {
       "pass": false,
       "boot_upper": 0.00054,
-      "mcse_upper": 0.000029,
+      "mcse_upper": 2.9e-05,
       "normal_upper": 0.0006,
       "threshold": 0.0005,
       "marginal": true,
@@ -8536,8 +8536,8 @@
          -0.00097
         ],
         "ci_mcse": [
-         0.000049,
-         0.00004
+         4.9e-05,
+         4e-05
         ],
         "normal_ci95": [
          -0.00967,
@@ -8551,8 +8551,8 @@
          -0.00967
         ],
         "ci_mcse": [
-         0.000057,
-         0.000055
+         5.7e-05,
+         5.5e-05
         ],
         "normal_ci95": [
          -0.02656,
@@ -8566,8 +8566,8 @@
          -0.00228
         ],
         "ci_mcse": [
-         0.000066,
-         0.000046
+         6.6e-05,
+         4.6e-05
         ],
         "normal_ci95": [
          -0.01381,
@@ -8581,8 +8581,8 @@
          -0.01017
         ],
         "ci_mcse": [
-         0.000056,
-         0.000057
+         5.6e-05,
+         5.7e-05
         ],
         "normal_ci95": [
          -0.02734,
@@ -8596,8 +8596,8 @@
          -0.00034
         ],
         "ci_mcse": [
-         0.000024,
-         0.000018
+         2.4e-05,
+         1.8e-05
         ],
         "normal_ci95": [
          -0.00421,
@@ -8611,8 +8611,8 @@
          -0.00382
         ],
         "ci_mcse": [
-         0.000071,
-         0.000056
+         7.1e-05,
+         5.6e-05
         ],
         "normal_ci95": [
          -0.01992,
@@ -8623,15 +8623,15 @@
         "diff": -0.00127,
         "ci95": [
          -0.00249,
-         -0.00005
+         -5e-05
         ],
         "ci_mcse": [
-         0.000017,
-         0.000012
+         1.7e-05,
+         1.2e-05
         ],
         "normal_ci95": [
          -0.00248,
-         -0.00005
+         -5e-05
         ]
        }
       }
@@ -8678,8 +8678,8 @@
          -0.00111
         ],
         "ci_mcse": [
-         0.00004,
-         0.00005
+         4e-05,
+         5e-05
         ],
         "normal_ci95": [
          -0.01185,
@@ -8693,8 +8693,8 @@
          -0.01056
         ],
         "ci_mcse": [
-         0.000068,
-         0.000052
+         6.8e-05,
+         5.2e-05
         ],
         "normal_ci95": [
          -0.02787,
@@ -8708,8 +8708,8 @@
          -0.00206
         ],
         "ci_mcse": [
-         0.000055,
-         0.000052
+         5.5e-05,
+         5.2e-05
         ],
         "normal_ci95": [
          -0.01338,
@@ -8723,8 +8723,8 @@
          -0.01116
         ],
         "ci_mcse": [
-         0.00007,
-         0.000047
+         7e-05,
+         4.7e-05
         ],
         "normal_ci95": [
          -0.02868,
@@ -8738,8 +8738,8 @@
          -0.00056
         ],
         "ci_mcse": [
-         0.000024,
-         0.00003
+         2.4e-05,
+         3e-05
         ],
         "normal_ci95": [
          -0.00544,
@@ -8753,8 +8753,8 @@
          -0.00382
         ],
         "ci_mcse": [
-         0.000071,
-         0.000056
+         7.1e-05,
+         5.6e-05
         ],
         "normal_ci95": [
          -0.01992,
@@ -8768,8 +8768,8 @@
          -0.00011
         ],
         "ci_mcse": [
-         0.00002,
-         0.000017
+         2e-05,
+         1.7e-05
         ],
         "normal_ci95": [
          -0.00261,
@@ -8822,8 +8822,8 @@
          0.00054
         ],
         "ci_mcse": [
-         0.000039,
-         0.000029
+         3.9e-05,
+         2.9e-05
         ],
         "normal_ci95": [
          -0.00541,
@@ -8837,8 +8837,8 @@
          -0.00422
         ],
         "ci_mcse": [
-         0.000067,
-         0.00007
+         6.7e-05,
+         7e-05
         ],
         "normal_ci95": [
          -0.02071,
@@ -8852,12 +8852,12 @@
          0.00015
         ],
         "ci_mcse": [
-         0.000055,
-         0.000059
+         5.5e-05,
+         5.9e-05
         ],
         "normal_ci95": [
          -0.01224,
-         0.00009
+         9e-05
         ]
        },
        "joint": {
@@ -8867,8 +8867,8 @@
          -0.00485
         ],
         "ci_mcse": [
-         0.00006,
-         0.000076
+         6e-05,
+         7.6e-05
         ],
         "normal_ci95": [
          -0.02147,
@@ -8882,8 +8882,8 @@
          0.0003
         ],
         "ci_mcse": [
-         0.000018,
-         0.000011
+         1.8e-05,
+         1.1e-05
         ],
         "normal_ci95": [
          -0.00238,
@@ -8897,8 +8897,8 @@
          -0.0005
         ],
         "ci_mcse": [
-         0.000071,
-         0.000089
+         7.1e-05,
+         8.9e-05
         ],
         "normal_ci95": [
          -0.01773,
@@ -8912,8 +8912,8 @@
          -0.00011
         ],
         "ci_mcse": [
-         0.000018,
-         0.000013
+         1.8e-05,
+         1.3e-05
         ],
         "normal_ci95": [
          -0.00278,
@@ -8999,7 +8999,7 @@
        ],
        "ci_mcse": [
         0.000116,
-        0.000069
+        6.9e-05
        ],
        "normal_ci95": [
         -0.02209,
@@ -9058,8 +9058,8 @@
         0.00125
        ],
        "ci_mcse": [
-        0.000005,
-        0.000008
+        5e-06,
+        8e-06
        ],
        "normal_ci95": [
         -0.00025,
@@ -9090,8 +9090,8 @@
          0.00109
         ],
         "ci_mcse": [
-         0.000047,
-         0.000035
+         4.7e-05,
+         3.5e-05
         ],
         "normal_ci95": [
          -0.00564,
@@ -9121,7 +9121,7 @@
         ],
         "ci_mcse": [
          0.000145,
-         0.000095
+         9.5e-05
         ],
         "normal_ci95": [
          -0.03193,
@@ -9136,7 +9136,7 @@
         ],
         "ci_mcse": [
          0.000172,
-         0.000097
+         9.7e-05
         ],
         "normal_ci95": [
          -0.04551,
@@ -9150,8 +9150,8 @@
          0.00061
         ],
         "ci_mcse": [
-         0.00002,
-         0.000017
+         2e-05,
+         1.7e-05
         ],
         "normal_ci95": [
          -0.00237,
@@ -9180,8 +9180,8 @@
          0.00089
         ],
         "ci_mcse": [
-         0.000023,
-         0.000014
+         2.3e-05,
+         1.4e-05
         ],
         "normal_ci95": [
          -0.00223,
@@ -9229,7 +9229,7 @@
        ],
        "ci_mcse": [
         0.000101,
-        0.000078
+        7.8e-05
        ],
        "normal_ci95": [
         -0.02138,
@@ -9288,8 +9288,8 @@
         0.00119
        ],
        "ci_mcse": [
-        0.000005,
-        0.000008
+        5e-06,
+        8e-06
        ],
        "normal_ci95": [
         -0.00028,
@@ -9336,7 +9336,7 @@
        ],
        "ci_mcse": [
         0.000113,
-        0.000051
+        5.1e-05
        ],
        "normal_ci95": [
         -0.02073,
@@ -9395,8 +9395,8 @@
         0.00116
        ],
        "ci_mcse": [
-        0.000005,
-        0.000008
+        5e-06,
+        8e-06
        ],
        "normal_ci95": [
         -0.00032,
@@ -9434,7 +9434,7 @@
         ],
         "ci_mcse": [
          0.000121,
-         0.000057
+         5.7e-05
         ],
         "normal_ci95": [
          -0.02348,
@@ -9448,8 +9448,8 @@
          -0.00329
         ],
         "ci_mcse": [
-         0.000087,
-         0.000067
+         8.7e-05,
+         6.7e-05
         ],
         "normal_ci95": [
          -0.01807,
@@ -9464,7 +9464,7 @@
         ],
         "ci_mcse": [
          0.000121,
-         0.000057
+         5.7e-05
         ],
         "normal_ci95": [
          -0.02348,
@@ -9494,7 +9494,7 @@
         ],
         "ci_mcse": [
          0.00014,
-         0.000062
+         6.2e-05
         ],
         "normal_ci95": [
          -0.02365,
@@ -9508,11 +9508,11 @@
          0.00135
         ],
         "ci_mcse": [
-         0.000005,
-         0.000006
+         5e-06,
+         6e-06
         ],
         "normal_ci95": [
-         0.00008,
+         8e-05,
          0.00135
         ]
        }
@@ -10220,7 +10220,7 @@
         ]
        },
        "dev_kd": {
-        "diff": 0.00005,
+        "diff": 5e-05,
         "ci": [
          -0.003745,
          0.003795
@@ -10325,7 +10325,7 @@
        "total": {
         "diff": 0.002621,
         "ci": [
-         0.000036,
+         3.6e-05,
          0.005182
         ]
        },
@@ -11633,7 +11633,7 @@
      "G1 year-level acc error falls: CI upper < 0": {
       "pass": false,
       "boot_upper": 0.000303,
-      "mcse_upper": 0.000001,
+      "mcse_upper": 1e-06,
       "normal_upper": 0.00041,
       "threshold": 0,
       "marginal": false,
@@ -11642,7 +11642,7 @@
      "G1 year-level kd100 error falls: CI upper < 0": {
       "pass": false,
       "boot_upper": 0.015952,
-      "mcse_upper": 0.000062,
+      "mcse_upper": 6.2e-05,
       "normal_upper": 0.021362,
       "threshold": 0,
       "marginal": false,
@@ -11651,8 +11651,8 @@
      "G1 year-level td15 error falls: CI upper < 0": {
       "pass": false,
       "boot_upper": 0.0002,
-      "mcse_upper": 0.000011,
-      "normal_upper": 0.000012,
+      "mcse_upper": 1.1e-05,
+      "normal_upper": 1.2e-05,
       "threshold": 0,
       "marginal": false,
       "decided_by": "bootstrap"
@@ -11669,7 +11669,7 @@
      "G1 year-level finish error falls: CI upper < 0": {
       "pass": false,
       "boot_upper": 0.009605,
-      "mcse_upper": 0.000007,
+      "mcse_upper": 7e-06,
       "normal_upper": 0.010107,
       "threshold": 0,
       "marginal": false,
@@ -11687,7 +11687,7 @@
      "G2b total stat deviance not worse: CI upper <= +0.005 (0.5% of level)": {
       "pass": true,
       "boot_upper": 0.00207,
-      "mcse_upper": 0.000025,
+      "mcse_upper": 2.5e-05,
       "normal_upper": 0.0021,
       "threshold": 0.005,
       "marginal": false,
@@ -11726,7 +11726,7 @@
      "G7 winLL: CI upper <= +0.002": {
       "pass": true,
       "boot_upper": 0.001414,
-      "mcse_upper": 0.000009,
+      "mcse_upper": 9e-06,
       "normal_upper": 0.00141,
       "threshold": 0.002,
       "marginal": false,
@@ -11744,7 +11744,7 @@
      "G7 method: CI upper <= +0.002": {
       "pass": false,
       "boot_upper": 0.003069,
-      "mcse_upper": 0.000017,
+      "mcse_upper": 1.7e-05,
       "normal_upper": 0.00309,
       "threshold": 0.002,
       "marginal": false,
@@ -11864,14 +11864,14 @@
      "acc": {
       "diff": 0.000216,
       "ci": [
-       -0.000049,
+       -4.9e-05,
        0.000303
       ],
       "err_cand": 0.009203,
       "err_cmp4": 0.008987
      },
      "kd100": {
-      "diff": -0.000046,
+      "diff": -4.6e-05,
       "ci": [
        -0.011956,
        0.015952
@@ -11937,7 +11937,7 @@
        ],
        "ci_mcse": [
         0.000274,
-        0.000014
+        1.4e-05
        ],
        "pass": true
       },
@@ -11979,7 +11979,7 @@
        ],
        "ci_mcse": [
         0.000279,
-        0.000023
+        2.3e-05
        ],
        "pass": false
       },
@@ -12183,12 +12183,12 @@
        "acc": {
         "diff": 0.000216,
         "ci": [
-         -0.000049,
+         -4.9e-05,
          0.000303
         ]
        },
        "kd100": {
-        "diff": -0.000046,
+        "diff": -4.6e-05,
         "ci": [
          -0.011956,
          0.015952
@@ -12240,7 +12240,7 @@
         ]
        },
        "winLL": {
-        "diff": 0.000066,
+        "diff": 6.6e-05,
         "ci": [
          -0.000544,
          0.000679
@@ -13589,33 +13589,33 @@
       "diff": -0.00326,
       "ci95": [
        -0.00653,
-       0.00004
+       4e-05
       ],
       "ci_mcse": [
-       0.000029,
-       0.00003
+       2.9e-05,
+       3e-05
       ],
       "normal": {
        "se": 0.001674,
        "ci": [
         -0.00654,
-        0.00002
+        2e-05
        ]
       },
       "branch1_check": {
        "pass": false,
-       "boot_upper": 0.00004,
-       "mcse_upper": 0.00003,
-       "normal_upper": 0.00002,
+       "boot_upper": 4e-05,
+       "mcse_upper": 3e-05,
+       "normal_upper": 2e-05,
        "threshold": 0,
        "marginal": true,
        "decided_by": "normal"
       },
       "not_worse_check": {
        "pass": true,
-       "boot_upper": 0.00004,
-       "mcse_upper": 0.00003,
-       "normal_upper": 0.00002,
+       "boot_upper": 4e-05,
+       "mcse_upper": 3e-05,
+       "normal_upper": 2e-05,
        "threshold": 0.002,
        "marginal": false,
        "decided_by": "bootstrap"
@@ -13634,8 +13634,8 @@
        -0.000731
       ],
       "ci_mcse": [
-       0.00009,
-       0.000066
+       9e-05,
+       6.6e-05
       ],
       "normal": {
        "se": 0.004127,
@@ -13647,7 +13647,7 @@
       "check": {
        "pass": true,
        "boot_upper": -0.000731,
-       "mcse_upper": 0.000066,
+       "mcse_upper": 6.6e-05,
        "normal_upper": -0.0007,
        "threshold": 0,
        "marginal": false,
@@ -13970,14 +13970,14 @@
           "diff": -0.00326,
           "ci": [
            -0.00653,
-           0.00004
+           4e-05
           ]
          },
          "brier": {
           "diff": -0.00143,
           "ci": [
            -0.00289,
-           0.00004
+           4e-05
           ]
          },
          "acc": {
@@ -14183,21 +14183,21 @@
           "diff": -0.01006,
           "ci": [
            -0.02017,
-           -0.00008
+           -8e-05
           ]
          },
          "winLL": {
           "diff": -0.00226,
           "ci": [
            -0.00455,
-           0.00005
+           5e-05
           ]
          },
          "brier": {
           "diff": -0.00096,
           "ci": [
            -0.00194,
-           0.00003
+           3e-05
           ]
          },
          "acc": {
@@ -14308,14 +14308,14 @@
           "diff": -0.00326,
           "ci": [
            -0.00653,
-           0.00004
+           4e-05
           ]
          },
          "brier": {
           "diff": -0.00143,
           "ci": [
            -0.00289,
-           0.00004
+           4e-05
           ]
          },
          "acc": {
@@ -14528,14 +14528,14 @@
           "diff": -0.00226,
           "ci": [
            -0.00455,
-           0.00005
+           5e-05
           ]
          },
          "brier": {
           "diff": -0.00096,
           "ci": [
            -0.00194,
-           0.00003
+           3e-05
           ]
          },
          "acc": {
@@ -14635,7 +14635,7 @@
        ]
       },
       "rgf": {
-       "diff": -0.00001,
+       "diff": -1e-05,
        "ci": [
         -0.00447,
         0.00446
@@ -15397,9 +15397,9 @@
       "hi": 0,
       "p_gt0": null,
       "raw": {
-       "est": -0.0000010160457635899362,
-       "lo": -0.0000016705291281985487,
-       "hi": -4.039958275342407e-7,
+       "est": -1.0160457635899362e-06,
+       "lo": -1.6705291281985487e-06,
+       "hi": -4.039958275342407e-07,
        "p_gt0": 0.0005
       },
       "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
@@ -15416,9 +15416,9 @@
       "hi": 0,
       "p_gt0": null,
       "raw": {
-       "est": 6.370543993818552e-8,
-       "lo": -4.4096442667096906e-8,
-       "hi": 1.7749123509874926e-7,
+       "est": 6.370543993818552e-08,
+       "lo": -4.4096442667096906e-08,
+       "hi": 1.7749123509874926e-07,
        "p_gt0": 0.879
       },
       "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
@@ -15431,9 +15431,10 @@
     "2026-11-07T11:31 train: v10 candidate (binding bundle gate PASSED: data/derived/v10/gate_train_score.json); standard TRAIN evaluation of the frozen files (every flag as shipped), descriptive",
     "2026-11-07T11:34 v10 built (v4 simulator + v8's stat-line bundle as shipped + v7's predict package + cycle 5: newcomer path in FightBlend 1.4.0, explainer FightEngine.showFight), frozen in versions/v10 (engine e5c05d2f, params 8c20073f); ONE bundle-level gate protocol committed first (0358a0c 11:19:34 UTC), binding runs once (11:19-11:25 UTC), scored: PASS (primary -0.00528 [-0.00964, -0.00097] = v7's C1 open number reproduced; co-primary total stat deviance -1.13% [-1.76%, -0.51%]). Status preregistered; validation null. src/ holds v10 until the look decides.",
     "2026-11-07T11:42 val: the single pre-registered v10 look (engine level, secondaries + base rates)",
-    "2026-11-07T11:50 val: the single pre-registered v10 look scored once (look_protocol.json commands in order). KEPT by branch 2 (not worse on the open winner -0.00326 [-0.00653, +0.00004]; total stat-line deviance -0.88% [-1.69%, -0.07%]; glove-excluded base rates pass), labelled 'kept under the glove-window amendment'; branch 1 missed on a marginal bound. Confirmation look: claimed only after audit 2 and the forward ledger. pre-registered secondaries the scorer does not compute (methodround vs S per regime; engine per-stat deviance / MAE, PIT, stat-harness base rates) came from tools/v10_look_secondaries.py on the same binding files, after the decision was scored; never decisive"
+    "2026-11-07T11:50 val: the single pre-registered v10 look scored once (look_protocol.json commands in order). KEPT by branch 2 (not worse on the open winner -0.00326 [-0.00653, +0.00004]; total stat-line deviance -0.88% [-1.69%, -0.07%]; glove-excluded base rates pass), labelled 'kept under the glove-window amendment'; branch 1 missed on a marginal bound. Confirmation look: claimed only after audit 2 and the forward ledger. pre-registered secondaries the scorer does not compute (methodround vs S per regime; engine per-stat deviance / MAE, PIT, stat-harness base rates) came from tools/v10_look_secondaries.py on the same binding files, after the decision was scored; never decisive",
+    "2026-11-07T12:40 review (v10 finish): decision corrected to NOT KEPT on the pre-registered primary (branch 1 fails, normal upper +0.00002); the registered branch-2 rescue conflicts with V6_V10_PLAN 6.1 / 6.3 / 7.1 item 4 and the re-scope was the workflow script's, not Kira's (7.1 item 1); provisional reinstatement only by Kira's ratification (decision.ratification_path). src/ restored to versions/v4; versions/v10 -> versions/v10-rejected. No 10.0.1, no new look."
    ],
-   "status": "kept",
+   "status": "rejected",
    "train_gate": {
     "rule": "ONE bundle-level train gate (data/derived/v10/gate_protocol.json; RULES dict of tools/v10_gate.py): PRIMARY open-regime winner log loss of the v10 predict package minus cmp4 (the honest v4 package exactly as v7 defined it) on 2021-2023, pass iff point < 0 AND paired 95% CI upper <= +0.002 (V6_V10_PLAN 6.3); CO-PRIMARY total stat-line relative deviance of the v10 engine minus v4, 2021-2023, CI upper <= +0.5%; INTEGRITY 0 failed fights + frozen tests pass; per-part leave-one-out descriptive only; 20,000 event-cluster resamples (seed 7), Monte Carlo SE, marginal bounds decided by the clustered normal bound",
     "design_disclosure": "the bundle design and this gate were chosen AFTER v7's and v8's binding TRAIN results (v7 32 / 33 checks, failing only the close-regime winner bound; v8 all-on vs v4 on train winner -0.0080 [-0.0125, -0.0036], total stat deviance -0.80% [-1.35%, -0.24%]); no validation or vault number informed it. The primary is v7's C1 open contrast (same fights, comparator files, winner rows and bootstrap), so its result was predictable and reproduced exactly; the gate is a pre-stated consistency / wiring check of the consolidated bundle, not independent evidence. Label: 'gate design informed by v7 / v8 train results'.",
@@ -15470,8 +15471,8 @@
       -0.00097
      ],
      "ci_mcse": [
-      0.000049,
-      0.00004
+      4.9e-05,
+      4e-05
      ],
      "normal_ci95": [
       -0.00967,
@@ -15487,7 +15488,7 @@
      "check": {
       "pass": true,
       "boot_upper": -0.00097,
-      "mcse_upper": 0.00004,
+      "mcse_upper": 4e-05,
       "normal_upper": -0.0009,
       "threshold": 0.002,
       "marginal": false,
@@ -15505,7 +15506,7 @@
      ],
      "ci_mcse": [
       0.000109,
-      0.000071
+      7.1e-05
      ],
      "normal_ci95": [
       -0.01759,
@@ -15515,7 +15516,7 @@
      "check": {
       "pass": true,
       "boot_upper": -0.005139,
-      "mcse_upper": 0.000071,
+      "mcse_upper": 7.1e-05,
       "normal_upper": -0.00507,
       "threshold": 0.005,
       "marginal": false,
@@ -15664,7 +15665,7 @@
         "diff": -0.00608,
         "ci": [
          -0.01221,
-         0.00003
+         3e-05
         ]
        },
        "joint": {
@@ -15906,7 +15907,7 @@
         ]
        },
        "bin7": {
-        "diff": 0.00007,
+        "diff": 7e-05,
         "ci": [
          -0.00226,
          0.00233
@@ -16312,7 +16313,7 @@
        "kd100": {
         "sim": 0.76276,
         "actual": 0.76283,
-        "err": -0.00007,
+        "err": -7e-05,
         "tol": 0.09154,
         "inside": true
        },
@@ -16566,6 +16567,25 @@
       "2023": 0.43,
       "fit_2021_2023": 0.47
      }
+    },
+    "review_relabel": {
+     "label": "gate re-specified after v7 / v8 gate failures; parts entered without passing their own gates",
+     "why": "the bundle gate was written after v7, v8 and v9 failed their gates and drops exactly the checks they failed; it keeps the contrast v7 had already passed (C1 open, reproduced exactly as predicted before the run) and the stat total v8 had already shown passing, so it could not fail: 'no look unless the train gate passes' was empty for v10. Cuts against 7.1 item 10 (a), 6.1 (only gate-passed parts may be re-bundled; v7's and v8's parts had none) and the v8 note ('re-specify ... before running, never from this run'). The 'gate design informed by v7 / v8 train results' label understated this.",
+     "dropped_checks_with_v10_train_values": {
+      "v7 C1 close winner (CI upper <= +0.0005)": "v10 package - cmp4, close, 2021-23: -0.0024 [-0.0054, +0.00054]: FAILS (the same numbers v7 failed on)",
+      "v8 K3 TD / control MAE not worse (CI lower <= 0)": "control MAE +1.638 s [+0.629, +2.637]: FAILS (TD landed +0.0014 n.s., TD attempts -0.013 n.s.)",
+      "v8 K5 winner / 7-bin / method CI upper <= +0.002": "engine method +0.0033 [-0.0033, +0.0098] and 7-bin +0.0113 [-0.0107, +0.0355]: FAIL (winner -0.0109 passes); retarget leave-one-out method +0.0060 [+0.0009, +0.0112]",
+      "v8 K2 no stat's deviance worse": "passes on train (no dev_* CI lower > 0); on the look sub-attempt deviance is worse with CI excluding 0",
+      "v8 K6 base rates inside mlcal tolerance": "passes on train; on the look KO / SUB leave tolerance in the glove-excluded window",
+      "v8 / v9 7-bin / method +0.002 bounds at engine level": "see K5",
+      "MAE worse on train (not a registered check)": "body landed +0.1005 [+0.0415, +0.1616], leg landed +0.1006 [+0.0481, +0.1527], sub attempts +0.0071 [+0.0053, +0.0088]"
+     },
+     "carried_into_validation": "engine method +0.0071 [+0.0004, +0.0140]; sub-attempt deviance +0.0110 [+0.0002, +0.0220]; leg-landed MAE +0.074 [+0.030, +0.119]",
+     "use": "not evidence for v10 in audit 2 or in the page copy; any future bundle reruns the original component criteria, fixed before the run"
+    },
+    "capability_checks_not_run": {
+     "cycle_5_train_acceptance_as_written": "not run: explainer LOYO criteria (anchored cells within median TV 0.02 of the package, P(finish) within 0.01, stat-line 80% bands 78-82% per stat, P(win) 80% interval covering the close 77-83% per fold, corner symmetry) were replaced by a showFight coherence check; the debut criteria were cited from research/model_debut.md, not recomputed; 'backtest-universe predictions bit-identical' does not hold for the bundle",
+     "look_band_coverage_descriptive": "v10 engine 'all' in80 on 2024-25: sig_lnd 0.865, sig_att 0.869, td_lnd 0.769, td_att 0.776 (outside 78-82%); others 0.80-0.82"
     }
    },
    "prereg": {
@@ -16731,6 +16751,41 @@
     "base_rate_no_glove_paired_fail": []
    },
    "decision": {
+    "decided_at": "2026-11-07T12:40:00+00:00",
+    "kept": false,
+    "branch": "none (branch 1 fails on the pre-registered primary; no branch-2 rescue on another metric)",
+    "against": "primary: cmp4 = the honest v4 package (versions/v7:cmp4), as pre-registered; branch-2 metric and base rates: the v4 simulator (versions/v4) on the same honest inputs / evalv v4 reference",
+    "rule": "V6_V10_PLAN 6.3 (last bullet) and 7.1 item 4, both written before the v6 look: 'branch 2 is decided on the pre-registered primary metric only'; 6.1: 'one pre-registered primary metric per look'. v10's pre-registered primary is the open-regime winner log loss of the package vs cmp4, so the look keeps v10 only if that metric beats cmp4 (CI upper < 0, decided by the clustered normal bound when the bootstrap bound is within 2 MC SE). A winner primary has no separate branch-2 metric; v6's pre-registration read 7.1 item 4 exactly this way ('No branch-2 rescue: 7.1 item 4 decides branch 2 on the pre-registered primary only').",
+    "basis": "Branch 1 fails: open-regime winner log loss 0.58173 vs 0.58499 on 842 decisive fights (84 cards), v10 package minus cmp4 -0.00326, bootstrap 95% CI [-0.00653, +0.00004] (20,000 resamples, seed 7); the upper bound is within 2 Monte Carlo SE (0.00003) of 0, so the clustered normal bound decides: +0.00002 (the review's exact value +0.0000246; +0.0000050 without the G/(G-1) factor) > 0. v10 is NOT kept. The registered branch-2 rescue (total stat-line relative deviance -0.88% [-1.69%, -0.07%] plus the glove-excluded paired base-rate test) is a second decisive metric, which 6.1, 6.3 and 7.1 item 4 do not allow; it is reported, not applied. Independently, 7.1 item 1 fixed v10 as a capability look ('identical scored numbers by construction'; cycle 5's train test requires bit-identical backtest-universe predictions); the re-scope to a consolidated bundle came from the workflow script (scratchpad/wf_engine_v6_v10.js, ~10:57 UTC), not from Kira, and 7.1 lets only Kira override a decision before its look, so under the plan as written the look could not keep a package that changes every scored number either.",
+    "labels": [
+     "protocol deviation: v10 re-scoped by the workflow script (not Kira) against V6_V10_PLAN 7.1 item 1 / 6.6 / cycle 5 (capability look); needs Kira's ratification",
+     "branch-2 rescue on a second metric registered against 6.1 / 6.3 / 7.1 item 4 (v6's reading); not applied",
+     "gate re-specified after v7 / v8 gate failures; parts entered without passing their own gates (train_gate.review_relabel); the gate is not evidence",
+     "branch-2 metric informed by the statlines layer's 2024-25 comparison with engine v4 (research/model_statlines.md)",
+     "confirmation look (every ingredient scored on 2024-25 before)",
+     "comparator chosen with 2024-25 information on record (validation-informed)",
+     "judging weights fit on cards through 2026-10 (v4's EM table; plan 4.1 required judge_em_train.json): method / 7-bin / SD+MD not clean"
+    ],
+    "registered_branch_2_reported_not_applied": {
+     "result": "all three registered conditions held: (a) primary upper +0.00004 <= +0.002; (b) total stat-line deviance -0.88% [-1.69%, -0.07%] on 865 fights (normal upper -0.0007, about p 0.03); (c) glove-excluded paired base-rate test (647 fights): empty paired_fail list",
+     "what_the_total_hides": {
+      "worse_with_ci_excluding_0": {
+       "dev_sub_att": "+0.01102 [+0.00018, +0.02195] (normal lower +0.00001) = +1.33% of level 0.831, outside 6.3's per-stat 'not worse' tolerance (+0.5% of level)",
+       "engine_method": "+0.00709 [+0.00044, +0.01396]",
+       "mae_l_lnd": "+0.0741 [+0.0300, +0.1190]"
+      },
+      "by_year_total": "2024 -0.21% [-1.10%, +0.75%] (433 fights), 2025 -1.54% [-2.87%, -0.27%] (432): the gain sits in 2025 (re-slicing of the stored look rows; descriptive)",
+      "audit_2_failure_criterion_already_met_on_2024_25": "any_stat_line_deviance_worse_with_ci_excluding_0 (sub attempts)"
+     },
+     "base_rates_governing_window": "glove-excluded window (647 fights): KO 0.2910 vs actual 0.3141 (v4 0.3053) and SUB 0.1836 vs 0.1656 (v4 0.1788) are outside the registered mlcal tolerance (0.02 / 0.015) where v4 is inside (registered_fail true for both); the paired test passes them because its bootstrap of |new-actual| - |old-actual| is bounded by +-|new-old| once actual is resampled (KO D CI [-0.0149, +0.0170]) and its tolerance is widened to 1.96 x SE of the actual (KO 0.033 vs 0.02). Plan 6.3's proposed definition ('moves out of tolerance, OR further from actual with CI excluding 0') would flag drift. Full window (stat harness): SUB +1.55 pts (tolerance 1.5) and KD per 100 head 0.774 vs 0.684 (+13%, tolerance 12%), cmp4 inside on both; the full-window paired test fails on KD per 100 head."
+    },
+    "also": "secondaries, never decisive. Package vs cmp4: no line -0.00477 [-0.00847, -0.00091], close -0.00226 [-0.00455, +0.00005]; open Brier -0.00143 [-0.00289, +0.00004], accuracy +0.0048 n.s., ECE 0.025 vs 0.026, calibration slope 1.26 vs 1.28 (no line 1.29 vs 1.28, close 1.15 vs 1.14); 7-bin props off -0.0106 [-0.0196, -0.0016] open, -0.0123 none, -0.0101 close; with the props pool -0.0250 [-0.0393, -0.0111] open, -0.0268 none, -0.0240 close; method props off -0.0021 n.s., with props -0.0115 [-0.0213, -0.0018] open; joint who x how x when props off -0.0106 [-0.0204, -0.0009] open; round given a finish -0.0009 n.s.; method given the winner -0.0072 [-0.0159, +0.0012]; both packages under-predict decisions (P(decision) 0.492 vs 0.538 actual, cmp4 0.486). Vs model S (methodround, package with props) who x how x when -0.058 / -0.063 / -0.068 (none / open / close; cmp4 -0.031 / -0.038 / -0.044). Vs the v5.0.1 package (v6 look rows, descriptive) open winner -0.00265 [-0.00606, +0.00081]. Engine level (v10 simulator vs v4, stat harness): winner -0.0043 [-0.0110, +0.0023], 7-bin +0.0049 n.s., method +0.0071 [+0.0004, +0.0140] WORSE, control deviance -4.65 [-8.03, -1.53], TD landed -0.043 [-0.074, -0.013], submission attempts +0.011 [+0.0002, +0.022] WORSE, leg-landed MAE +0.074 [+0.030, +0.119] WORSE, control MAE +0.13 s n.s. (the train risk +1.6 s did not show), TD-attempt 80% PIT coverage 0.66 -> 0.78. evalv (300 sims, vs v4's look file): winner 0.6273 vs 0.6324, -0.0051 [-0.0127, +0.0024]; Holm family: control deviance clearly better, none worse. Blend test: engine weight 0.000 with and without a market (v4 0.037 / 0.000): the simulator alone adds nothing to the standard MoE experts.",
+    "context": "Expected effect: the pre-registration took -0.0053 from the gate, a selected estimate (the design was chosen after v7's result) on a different ML v2 refit schedule (annual out-of-fold in the gate vs monthly rolling in the look), so it was optimistic. The realised clustered SE was 0.001674, 38% below the projected 0.002695, so the realised MDE was about 0.0047: branch 1 missed because the effect was smaller (-0.00326, about 60% of the gate's), not mainly because power was low. For audit 2, expect about -0.003 for the v10 package side line, not -0.005. The keep would have rested on an engine-level stat-line metric whose components (retarget, tdIntent, ctrlSpread, embed) never run on the live path (page, live predict, forward ledger): tools/live_component_check.js on versions/v10-rejected fails 6 of 6 checks (retarget {applied:false, reason:'no targets'}, embed source null, spread unset, and the frozen copy's method-round pool silently dropped).",
+    "ratification_path": "If Kira ratifies BOTH the v10 re-scope (overriding 7.1 item 1) AND the branch-2 reading (stating in 7.1 that a winner-primary look may register one non-winner branch-2 metric; v6 registered none, so v6 stays rejected under either reading), the recorded branch-2 result can be reinstated with no new look, as 'provisional', carrying every label above. A ratification before vault audit 2 runs switches audit 2 to its pre-registered 'if_v10_kept' case; one after audit 2 is read counts as selection (7.1 preamble) and is recorded as such. Until then v4 is the latest kept version.",
+    "direction_of_the_correction": "the 11:50 UTC 'kept' decision (decision_superseded) applied the pre-registration's branch 2; this review applies the plan's pre-look text (6.1 / 6.3 / 7.1 items 1 and 4), which can only remove a keep. No number was recomputed for the decision, no simulation was run on 2024-25 and nothing dated 2026 was read.",
+    "action": "src/engine3.js and src/params3.js restored from versions/v4 (sha256 6c661f68..., e16a6481...; src/ml/mlrates.js was already b563032d...) = the v4 entry; versions/v10 renamed versions/v10-rejected (frozen files unchanged, engine e5c05d2f, params 8c20073f; versions/v10 is a compatibility symlink); tests/test_v10.js defaults to versions/v10-rejected; the full standard test list passed on the restored tree (versions/v10-rejected/logs/restore/_status.txt). v4 (4.0.0) is the latest kept version again; audit 2's pre-registered 'if_v4_stays' case applies. No 10.0.1: no fix changes a scored backtest number of the v10 package, the look budget (one look per version, v6-v10) is spent, and re-deciding v10 on 2024-25 would be selection."
+   },
+   "decision_superseded": {
     "against": "primary: cmp4 = the honest v4 package (versions/v7:cmp4), as pre-registered; branch-2 metric and base rates: the v4 simulator (versions/v4) on the same honest inputs / evalv v4 reference",
     "kept": true,
     "branch": "branch 2",
@@ -16746,7 +16801,30 @@
     "also": "secondaries, never decisive. Package vs cmp4: no line -0.00477 [-0.00847, -0.00091], close -0.00226 [-0.00455, +0.00005]; open Brier -0.00143 [-0.00289, +0.00004], accuracy +0.0048 n.s., ECE 0.025 vs 0.026, calibration slope 1.26 vs 1.28 (no line 1.29 vs 1.28, close 1.15 vs 1.14); 7-bin props off -0.0106 [-0.0196, -0.0016] open, -0.0123 none, -0.0101 close; with the props pool -0.0250 [-0.0393, -0.0111] open, -0.0268 none, -0.0240 close; method props off -0.0021 n.s., with props -0.0115 [-0.0213, -0.0018] open; joint who x how x when props off -0.0106 [-0.0204, -0.0009] open; round given a finish -0.0009 n.s.; method given the winner -0.0072 [-0.0159, +0.0012]; both packages under-predict decisions (P(decision) 0.492 vs 0.538 actual, cmp4 0.486). Vs model S (methodround, package with props) who x how x when -0.058 / -0.063 / -0.068 (none / open / close; cmp4 -0.031 / -0.038 / -0.044). Vs the v5.0.1 package (v6 look rows, descriptive) open winner -0.00265 [-0.00606, +0.00081]. Engine level (v10 simulator vs v4, stat harness): winner -0.0043 [-0.0110, +0.0023], 7-bin +0.0049 n.s., method +0.0071 [+0.0004, +0.0140] WORSE, control deviance -4.65 [-8.03, -1.53], TD landed -0.043 [-0.074, -0.013], submission attempts +0.011 [+0.0002, +0.022] WORSE, leg-landed MAE +0.074 [+0.030, +0.119] WORSE, control MAE +0.13 s n.s. (the train risk +1.6 s did not show), TD-attempt 80% PIT coverage 0.66 -> 0.78. evalv (300 sims, vs v4's look file): winner 0.6273 vs 0.6324, -0.0051 [-0.0127, +0.0024]; Holm family: control deviance clearly better, none worse. Blend test: engine weight 0.000 with and without a market (v4 0.037 / 0.000): the simulator alone adds nothing to the standard MoE experts.",
     "context": "the look ran data/derived/v10/look_protocol.json's commands once, in order, 11:39-11:44 UTC Nov 7, on the committed protocol (HEAD 688b9a8) with the v10 ledger row committed; exactly the 11 pre-announced fights failed (no ML v2 monthly-rolling row), so the look is valid. The realised primary effect (-0.0033) is about 60% of the gate's -0.0053 and the look had power about 0.5, as stated. The keep rests on the stat-line branch, whose metric is an engine-level stat-line fit, not winner accuracy; the package's 7-bin / method gains come mostly from S2 cells and the props pool (gate leave-one-out). Not clean: every ingredient was scored on 2024-25 in research and the v6 look scored the same ML v2 head; nothing in v10 was chosen because of audit 1. Audit 2's 'if_v10_kept' primary now applies (v10 package minus cmp4, open regime, on the vault) with the glove label repeated.",
     "action": "none to the files: v10 stays in src/ (engine3.js e5c05d2f, params3.js 8c20073f, ml/blend.js 1.4.0 = versions/v10, checked with cmp) and versions/v10 is the kept frozen copy; v10 is now the latest kept version (v4 was). Not done in this step and still open: the page still runs v4 (a v10 page must bundle embed.js / blend.js and pass tests/test_page_parity.js); the forward ledger needs a new fwd version for v10 pre-registered in data/predictions/README.md before the next lock (6.4; the fwd-4.4 work in flight is v4-based); HANDOFF.md / page copy numbers.",
-    "decided_at": "2026-11-07T11:50:00+00:00"
+    "decided_at": "2026-11-07T11:50:00+00:00",
+    "superseded_at": "2026-11-07T12:40:00+00:00",
+    "superseded_by": "decision (v10 finish, review): the registered branch-2 rescue conflicts with V6_V10_PLAN 6.1 / 6.3 / 7.1 item 4, and the v10 re-scope was not Kira's (7.1 item 1)"
+   },
+   "review": {
+    "reviewed_at": "2026-11-07T12:40:00+00:00",
+    "outcome": "v10 NOT KEPT (decision corrected; decision_superseded keeps the 11:50 UTC record); src/ = versions/v4 again; no new version (no fix changes a scored backtest number of the v10 package; the look budget is spent). Every issue reproduced from the stored files, train-only runs or code; nothing new was simulated on 2024-25 and nothing dated 2026 was read.",
+    "issues": {
+     "rescope_not_kira (high)": "reproduced: V6_V10_PLAN 7.1 item 1 / 6.6 / cycle 5 fix v10 as a capability look; the consolidated-bundle scope, the bundle gate and the 'branch 2 via stat-line deviance' design are in scratchpad/wf_engine_v6_v10.js (the CYCLES v10 entry), not in any Kira message. Recorded as a protocol deviation needing Kira's ratification (decision.labels, ratification_path).",
+     "gate_could_not_fail (high)": "reproduced from data/derived/v10/gate_protocol.json and gate_train_score.json: relabelled (train_gate.review_relabel) with every dropped check and its v10 train value; not counted as evidence.",
+     "branch_2_second_metric (high)": "reproduced: v6 prereg 'No branch-2 rescue: 7.1 item 4 decides branch 2 on the pre-registered primary only'; v10's normal upper +0.00002 fails branch 1. Applied the plan's reading: v10 rejected, src restored to versions/v4, versions/v10 -> versions/v10-rejected. Kira picks the reading for future looks; under either reading v6 stays rejected.",
+     "total_hides_per_stat (medium)": "reproduced: dev_sub_att +0.01102 [+0.00018, +0.02195] (+1.33% of 0.831), method +0.00709 [+0.00044, +0.01396], mae_l_lnd +0.0741 [+0.0300, +0.1190]; by year 2024 -0.21%, 2025 -1.54% (stored rows). In decision.registered_branch_2_reported_not_applied; audit 2 pre-warned (vault_audits[audit 2].prewarnings); data/predictions/README.md stat block tracking requested for the next fwd version (BACKLOG).",
+     "base_rate_test_no_power (medium)": "reproduced from v10_vs_v4_val_decide.json sensitivity_no_glove_trial: KO / SUB registered_fail true, v4 inside; the D statistic is bounded by +-|new-old| once actual is resampled (triangle inequality). Named in decision basis. tools/evalv_decide.js now also reports, per rate, a fixed_actual block (actual held at its full-sample value, both simulators resampled on the same fights): drift_6_3 = plan 6.3's proposed definition (moves out of tolerance, OR further from actual with a CI excluding 0; it has power and flags small moves inside the tolerance: on train, v10 vs v4 flags SUB, R1 share and SD+MD) and drift_outside (outside the registered tolerance AND moved out or further with a CI excluding 0; none on train). For audit 2 and the ledger; the paired test stays as a sensitivity. Not run on 2024-25 (that would be a further look at v10's validation base rates).",
+     "judging_not_train_only (medium)": "reproduced: versions/v10-rejected/params3.js:317 'EM round-winner fit over all 7,550 ufcstats cards' (v4's table) vs plan 4.1's 'v6 must carry judge_em_train.json' (v6-rejected params3.js:591). A hygiene variant (v4 + judge_em_train.json) needs a look and none is left in the v6-v10 budget: open item for Kira (BACKLOG); audit 2 flags method / 7-bin / SD+MD of every v4-judging package as 'not clean (judging fit on vault cards)'.",
+     "branch_2_metric_informed (low)": "reproduced: research/model_statlines.md finding 4 scored engine v4 vs the statlines layer on 2024-25 (control -7.0 s [-14.0, -0.6], sig landed -0.61 ...) before v10 was designed. Label added (decision.labels).",
+     "cycle5_acceptance_not_run (low)": "reproduced: anchored cells TV, P(finish), stat-line 80% bands 78-82% per stat and P(win) interval coverage were replaced by a showFight check; the debut criteria were cited, not recomputed. Marked 'not run' (train_gate.capability_checks_not_run). On the look, 'all' in80 sig_lnd 0.865, sig_att 0.869, td_lnd 0.769, td_att 0.776 fall outside 78-82%.",
+     "smoothing_prior_from_scored_fights (low)": "reproduced: tools/v10_gate.py cmd_look -> tools/v8_gate.py table(Hs, Fs) -> outcome_base(validation fights). Fixed: table(H, fights, base_fights) refuses 2024+ fights without a train base; cmd_look and tools/v10_look_secondaries.py pass the gate's train stat harness (2021-2023). Train identity checked (1,254 fights). The stored v10 secondaries are not re-scored (weight 1/601, symmetric, secondaries only).",
+     "tests_missing_from_jobs (low)": "reproduced: test_props_capture.py (0 failed) and test_engine2.js (rc 0) were in neither job list; also test_forward_v44.js and test_live_refresh.py. tools/test_jobs_standard.txt now lists every tests/test_* file plus tools/live_component_check.js; tools/v10_run_tests.sh uses it when a run dir has no job list.",
+     "expected_effect_optimistic (low)": "reproduced from power_primary.json (projected SE 0.002695) and look_val_score.json (realised 0.001674): stated in decision.context; audit 2 expectation for the v10 side line about -0.003.",
+     "statline_bundle_never_live (high)": "reproduced on versions/v10-rejected with production files: matchup().retarget {applied:false, reason:'no targets'}, spread undefined, embed source null; predict() has no statdist path into the engine and FightBlend loads StatDist without {enable:true}. Not fixed in engine code (v10 is rejected; frozen files are never edited); requirements for any re-bundle written to docs/BACKLOG.md; tools/live_component_check.js (new, in the standard job list) fails 6 of 6 on versions/v10-rejected and passes on src (v4); tests/test_page_parity.js now covers retarget / tdIntent / ctrlSpread / explainer (fails 7 on versions/v10-rejected, passes on src).",
+     "live_statdist_inputs_differ (medium)": "reproduced: data/derived/v8/statlines_inputs.json 2,864 / 2,864 fights carry a non-zero winLogit and oppA; on 205 train fights (2020-23, fold tables) zeroing them moves the targets by mean |log ratio| TD attempts 0.194 (p90 0.383, max 0.768), control 0.106 (p90 0.226), ground landed 0.120, clinch / ground attempts 0.043 / 0.034. Live statLines.dist already labels its source 'matchup (winLogit 0)'; requirement for any re-bundle (BACKLOG): live inputs from FightEmbed and oppadj snapshots, or a refit labelled variant without them.",
+     "frozen_copy_drops_mr_pool (medium)": "reproduced: versions/v10-rejected/ml/blend.js resolves ../../tools to versions/tools (missing): live predict gives methodRound weight 1, variant null, no blendError; src gives weight 0.2, S2. The look was not affected (tools/predict_harness.js builds S2 rows with ROOT's tools/predictrec.js and the scorer pools). Fixed in src/ml/blend.js 1.4.1: mrLib() searches up from its own file and the working directory (a frozen copy finds its own tools/ copy) and predict() records methodRound.mrLib {missing, note} when a requested S / S2 pool could not be computed; the frozen 1.4.0 copy is unchanged.",
+     "issue_list_truncated": "the review text handed to this step was cut off inside the mrLib issue; issues after it, if any, were not seen"
+    }
    }
   }
  ],
@@ -17847,10 +17925,27 @@
    "glove_flag": "if the v10 entry is labelled 'kept under the glove-window amendment', audit 2 repeats that label",
    "report_rules": "one report, no changes after it; numbers recorded in this entry's results block and research/vault_audit_v10.md; the exposure list attached; a second opening is not allowed",
    "case_that_applies": {
+    "case": "if_v4_stays",
+    "fixed_by": "the v10 entry decision as corrected by the v10 review (2026-11-07T12:40 UTC: not kept; branch 1 fails on the pre-registered primary)",
+    "glove_flag_applies": false,
+    "note": "pre-registered text above unchanged. Headline (descriptive, no confirmatory primary): open-regime winner log loss of cmp4 and of the shipped forward-model package vs the opener; the v10, v7, v8 and v6 packages as descriptive side lines paired vs cmp4 (v8 at engine level vs v4); failure criteria reported for cmp4 vs the opener and for each side line, without a decision. If Kira ratifies the v10 re-scope and the branch-2 reading BEFORE the audit runs, the case reverts to 'if_v10_kept' with the glove label; after the audit is read, a ratification counts as selection."
+   },
+   "case_that_applies_superseded": {
     "case": "if_v10_kept",
     "fixed_by": "the v10 entry decision (2026-11-07T11:50 UTC: kept by branch 2)",
     "glove_flag_applies": true,
-    "note": "recorded by the v10 look step after the look; the pre-registered text above is unchanged. Primary: open-regime winner log loss, v10 package minus cmp4, on the vault; the label 'kept under the glove-window amendment' is repeated in the audit report"
+    "note": "recorded by the v10 look step after the look; the pre-registered text above is unchanged. Primary: open-regime winner log loss, v10 package minus cmp4, on the vault; the label 'kept under the glove-window amendment' is repeated in the audit report",
+    "superseded_at": "2026-11-07T12:40:00+00:00"
+   },
+   "prewarnings": {
+    "written_at": "2026-11-07T12:40:00+00:00",
+    "note": "written by the v10 review before audit 2 runs; the pre-registered criteria and text are unchanged; nothing here reads a 2026 number",
+    "v10_side_line_already_meets_a_failure_criterion_on_2024_25": "any_stat_line_deviance_worse_with_ci_excluding_0: v10 engine sub-attempt deviance +0.0110 [+0.0002, +0.0220] vs v4 on 2024-25; engine method +0.0071 [+0.0004, +0.0140] and leg-landed MAE worse too",
+    "expected_effect_v10_side_line": "about -0.003 (the 2024-25 realised -0.00326), not the gate's -0.005; with SE about 0.0028 on ~365 decisive vault fights (look SE 0.001674 x sqrt(842 / 365)) the power at -0.003 is about 0.18",
+    "not_clean_judging": "method, 7-bin and SD+MD results of every package on v4's simulator (cmp4, v10, v7, v8) are 'not clean (judging fit on vault cards: v4's EM table through 2026-10)'",
+    "v10_gate_not_evidence": "the v10 train gate is relabelled 'gate re-specified after v7 / v8 gate failures' (v10 train_gate.review_relabel): not to be cited as evidence",
+    "base_rate_test": "report the paired test as a sensitivity and, as the powered tests, tools/evalv_decide.js's fixed_actual block (actual held fixed): drift_6_3 (plan 6.3 proposed definition) and drift_outside (outside the registered tolerance and moved out or further with a CI excluding 0)",
+    "live_path": "the v10 package's stat-line components never run on the live path (tools/live_component_check.js); its vault numbers describe the backtest harness only"
    }
   }
  ]
