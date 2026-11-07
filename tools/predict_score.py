@@ -21,6 +21,10 @@ Rules fixed BEFORE the full gate run was scored (written with the harness, Nov 7
     (checked elsewhere, reported here when the files exist) corner swap < 1e-12, JS / Python S2 cells <= 1e-9 on 40 pairs,
     flag-off identity.
 - Soft cross-entropy against the closing line is reported as a screen only (never decisive).
+- Comparator inputs (fixed ~07:00 UTC, after the fold-honest refits made the two input pipelines differ; disclosed in the
+  v6 version entry): each package runs on its OWN frozen input pipeline (its copy's mlpathrec.js and its version's
+  learned-rate table), the convention of tools/evalv.js; the v5 package's MoE stacker was fit on engine rows from that
+  pipeline. A run with shared inputs (the v6 pipeline fed to both packages) is reported as a sensitivity, never decisive.
 """
 from __future__ import annotations
 

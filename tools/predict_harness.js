@@ -48,12 +48,16 @@ if (!isMainThread) {
     const E = require(path.join(p.dir, "engine3.js"));
     return { name: p.name, mode: p.mode, dir: p.dir, E, FB: require(path.join(p.dir, "ml", "blend.js")), PRM: E.params() };
   });
-  const E = PK[0].E, PRM = PK[0].PRM;   // matchup inputs are built once (the first package's engine) and shared
+  // matchup inputs: each package runs on ITS OWN frozen input pipeline (its copy's mlpathrec.js and its version's learned-rate
+  // table: mlrates_oof_fh.json for engine major >= 6, else mlrates_oof.json), as tools/evalv.js evaluates versions; with
+  // --shared-inputs every package gets the first package's inputs (a sensitivity run)
+  const E = PK[0].E, PRM = PK[0].PRM;
   const fights = loadBacktest();
   const byId = new Map(fights.map((f) => [f.id, f]));
   const priors = readJSON("data/derived/mlcal_priors_asof.json");
-  const OOF = readJSON(W.oof || (+String(E.VERSION).split(".")[0] >= 6 ? "data/derived/mlrates_oof_fh.json" : "data/derived/mlrates_oof.json"));
-  const names = OOF.meta.targets;
+  const oofFor = (Ek) => readJSON(W.oof || (+String(Ek.VERSION).split(".")[0] >= 6 ? "data/derived/mlrates_oof_fh.json" : "data/derived/mlrates_oof.json"));
+  const OOFS = PK.map((p, k) => (W.shared && k > 0) ? null : oofFor(p.E));
+  const names = OOFS[0].meta.targets;
   const rates = (arr) => { const o = {}; names.forEach((n, i) => { o[n] = arr[i]; }); return o; };
   const useDur = typeof E.loadDurability === "function" && !!(PRM.components && PRM.components.durability);
   const DURJ = useDur ? readJSON("data/derived/durability.json") : null;
@@ -79,9 +83,10 @@ if (!isMainThread) {
     p.stylesSOS = Object.assign({}, p.stylesSOS || {}, { sosCoef: coef });
     return p;
   }
-  const XR = require(W.mlpathrec)(E, ROOT);
+  const XRS = PK.map((p, k) => (W.shared && k > 0) ? null : require(fs.existsSync(path.join(p.dir, "mlpathrec.js")) ? path.join(p.dir, "mlpathrec.js") : path.join(ROOT, "tools/mlpathrec.js"))(p.E, ROOT));
   const PRs = PK.map((p) => require(path.join(ROOT, "tools/predictrec.js"))(p.E, ROOT, { stacks: CMP_STACKS(W.stackDir), inSample: true, v6: p.mode === "v6" }));
-  function baseOpts(f) {
+  function baseOpts(f, k) {
+    const OOF = OOFS[k], XR = XRS[k];
     const opts = { division: f.prior_division || f.division, rounds: f.rounds, title: f.title, date: f.date, priors: priors[f.date.slice(0, 4)] };
     const ent = OOF.fights[f.id];
     opts.ml = ent && ent.A && ent.B ? { pred: { A: rates(ent.A), B: rates(ent.B) } } : false;
@@ -101,7 +106,7 @@ if (!isMainThread) {
       const f = byId.get(id);
       const rec = { id, date: f.date, event: f.event, rounds: f.rounds, err: null, pk: {} };
       try {
-        const b = baseOpts(f);
+        const B0 = baseOpts(f, 0);
         let simRef = null;
         rec.simCellsBy = {};
         for (let k = 0; k < PK.length; k++) {
@@ -111,6 +116,7 @@ if (!isMainThread) {
           // the v5 package has no stacker fit before 2021 (per-year MoE exports start with the fit through 2020): it is
           // scored on 2021+ only; the v6 package's 2019-2020 rows exist only to fit its pool weight (flagged inSample)
           if (P.mode === "v5" && +f.date.slice(0, 4) < (W.cmpFrom || 2021)) continue;
+          const b = (W.shared || k === 0) ? B0 : baseOpts(f, k);
           for (const kind of W.kinds) {
             const o = Object.assign({}, b, PRs[k].opts(f, false, { lineKind: kind }), { seed: hash32(f.id), sims: W.sims, interval: false });
             if (P.mode === "v5") { delete o.winnerStacks; delete o.winnerFit; }
@@ -181,7 +187,7 @@ function runAll() {
     }
     for (let k = 0; k < Math.min(WORKERS, chunks.length); k++) {
       const w = new Worker(__filename, { workerData: { pkgs: PKGS, kinds: KINDS, sims: SIMS, mlpathrec: MLP_FILE, stackDir: STACK_DIR,
-        oof: args.oof || null, v6From: +(args["v6-from"] || 2019) } });
+        oof: args.oof || null, v6From: +(args["v6-from"] || 2019), shared: !!args["shared-inputs"] } });
       live++;
       w.on("message", (m) => {
         if (m.cmd === "done") {
@@ -213,7 +219,9 @@ function runAll() {
       blend_sha256: sha(path.join(p.dir, "ml", "blend.js")) }; }),
     inputs: { v6_stacks_sha256: sha(path.join(ROOT, "data/derived/v6_stacks.json")), mr_s2_sha256: sha(path.join(ROOT, "data/derived/mr_s2.json")),
       oof: args.oof || (+String(require(path.join(PKGS[0].dir, "engine3.js")).VERSION).split(".")[0] >= 6 ? "data/derived/mlrates_oof_fh.json" : "data/derived/mlrates_oof.json"),
-      embed_recipe: "tools/mlpathrec.js: fold-honest coef_fh for engine major >= 6 (data/derived/embed_blend_fh.json)", cmp_stacks: CMP_STACKS("data/derived/v6") },
+      embed_recipe: "each package's frozen mlpathrec.js: fold-honest coef_fh for engine major >= 6 (data/derived/embed_blend_fh.json), leave-one-year-out / exported recipe before",
+      input_pipelines: args["shared-inputs"] ? "shared (the first package's inputs for every package; sensitivity run)" : "own (each package's frozen mlpathrec.js and learned-rate table)",
+      cmp_stacks: CMP_STACKS("data/derived/v6") },
     n_fights: recs.length, failed: recs.filter((r) => r.err).length, wall_s: Math.round((Date.now() - t0) / 1000) };
   fs.writeFileSync(path.isAbsolute(OUT) ? OUT : path.join(ROOT, OUT), JSON.stringify({ meta, fights: recs }));
   console.log(`wrote ${OUT}: ${recs.length} fights, ${meta.failed} failed, ${meta.wall_s} s`);
