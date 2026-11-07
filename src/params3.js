@@ -678,7 +678,8 @@
         dynNoise: { dyn: { formOut: 0.15, arSd: 0.24, arPhi: 0.6, formPace: 0.42, roundPace: 0.15, formAcc: 0.40 } },
         // the ONE joint level pass redone on top of dynNoise (tools/v5_calB_levels.js fit, TRAIN 2019-2023; data/derived/v501_levels.json),
         // with dyn.outLevel re-matched first so the realised sig landed per minute stays at 5.0.0's (less noise raised it 1.9%)
-        levels: { dyn: { outLevel: 1.0201 } }
+        // 5.0.0 (calB set): outLevel 1.039, kdLevel3 0.6772, kdLevel5 0.5656, convLevel 1.0966, stkoScale 0.6587, gnpScale 0.4322, t108 8.176
+        levels: { dyn: { outLevel: 1.0201, kdLevel3: 0.67504, kdLevel5: 0.56512, convLevel: 1.10682, stkoScale: 0.66495, gnpScale: 0.4363 }, judge: { t108: 7.72547 } }
       }
     },
 
