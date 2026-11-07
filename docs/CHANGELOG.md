@@ -567,6 +567,79 @@ No validation (2024-2025) number is computed in these steps; the Measure stage t
     - 10-8 share 4.5% vs 5.3%.
   - Nothing from 2024-25 was simulated or scored, and no 2026 fight was read. No parameter was fit: the step chose flags only.
 
+### Calibrate B (Nov 6, 8:50 pm ET): the joint level pass, the global-scale re-tune, blend_anchor rebuilt, v5 frozen as 5.0.0
+
+- **Base.** The Calibrate A commit 2e24835 (src/engine3.js sha256 923ffd1b..., params3.js 416c863c...; the working tree matched).
+  Frozen as tests/fixtures/engine3_pre_calB.js and params3_pre_calB.js. TRAIN 2019-2023 only throughout (research/v5_calB.md, rules
+  written before each run).
+- **(1) ONE joint level pass, new flag `components.calB` (on).** tools/v5_calB_levels.js: all 1,999 train fights x 2 orders, one
+  seed per simulated fight, evalv's leak-free inputs asserted; damped fixed point, one lever per target, durability.kdCal held
+  (one knockdown scale per format). The values sit in `params.calB.set`; resolveParams applies them before the v401 put-backs and
+  the overrides, so calB off = the Calibrate A engine bit for bit and a v401 sub-flag that is off still restores its own fields.
+  data/derived/v5_calB_levels.json.
+
+  | lever -> target | before | after | target value |
+  |---|---|---|---|
+  | dyn.kdLevel3 -> KD per 15 / per 100 head, 3 rounds | 0.655 (0.595 / 0.791) | 0.6772 (0.613 / 0.815) | 0.611 / 0.814 |
+  | dyn.kdLevel5 -> same, 5 rounds | 0.559 (0.504 / 0.621) | 0.5656 (0.509 / 0.627) | 0.500 / 0.641 |
+  | dyn.convLevel -> strike finish per KD | 1.045 (0.505) | 1.0966 (0.511) | 0.512 |
+  | dyn.stkoScale / gnpScale -> KO share | 0.733 / 0.481 (31.7%) | 0.6587 / 0.4322 (31.8%) | 31.7% |
+  | judge.t108 -> 10-8 share of decision judge-rounds (cards) | 8.31 (4.47%) | 8.176 (4.75%) | 4.71% (2021-23; 2019-23 5.29%) |
+
+  - KD per 100 head landed 0.759 -> 0.780 (actual 0.782). KD per 100 standing head by round now matches: 3 rounds 1.47 / 0.71 / 0.44
+    (real 1.47 / 0.74 / 0.44). KO / SUB / DEC 31.8 / 17.5 / 50.7 (real 31.7 / 17.5 / 50.8).
+  - Not fixable by levels (documented for v6 / v8): 3-round finish timing 25.9 / 13.5 / 8.8% vs 24.4 / 16.7 / 7.5% (R2 below the
+    actual's interval for KO and SUB alike); 5-round R4 8.0% vs 5.3%; MD 1.0% vs 2.0% and draws 0.62% vs 1.01% (MDs do not follow
+    10-8s in the 2019-2023 cards; a threshold giving 6.6% 10-8s lifts MDs only to 1.3%).
+  - Paired train effect (tools/v5_train_ablation.js --arms all,-calB, 300 sims per order; calB off minus on): soft CE vs close +0.0001
+    [-0.0000, +0.0002], winner +0.0002 n.s., 7-bin -0.0001 n.s., method 0, method x round -0.0008 n.s., who x how x when -0.0042
+    [-0.0120, +0.0007], stat lines -0.07% [-0.12, -0.01]. Outcome-neutral: a realism calibration, not a score gain.
+- **(2) Global-scale re-tune with tools/mlcal: nothing adopted.** New `"inject": "overrides"` mode in tools/mlcal.js: the old full-tree
+  injection would have silently undone v401.mlLevels off and the calB set, so its "current" set was not the shipped engine; the new
+  mode bases candidates on the engine's effective defaults (FightEngine.resolveParams, koComp held out) and passes only changed
+  leaves. tools/mlcal_spec_engine5.json (strikeScale, accScale, tdScale, tdOddsScale, ctrlScale, subAttScale, subConvScale,
+  mlWeight; the knockdown / finish levels stay with the joint pass), `--no-val`, 1,300 tuning / 672 confirmation fights. Tuning-window
+  gains up to -0.022 did not survive confirmation: best confirmed 1.5321 vs baseline 1.5323 (pre-registered bar 0.002), worse on
+  winner and base rates. data/derived/mlcal_candidates_v5.json.
+- **(3) blend_anchor rebuilt on the final engine** (blend_anchor_bt.js plain -> eval targets -> pilot -> anchor -> eval report, 2019-2023;
+  data/derived/blend_anchor.json rewritten): `blend.mrWeight` 0.15 -> **0.30** (LOYO optimum, per fold 0.30-0.40), `blend.anchor.slope0`
+  0.86 -> **0.771** (se 0.014), `blend.boot.inflate` 1.65 -> **2.15** (smaller bootstrap sd; out of fold 79.6% / 94.2% cover of the
+  close). Package vs simulator alone (LOYO): winner -0.0143, soft CE -0.0123, 7-bin -0.0235, joint -0.0407 (all intervals exclude 0);
+  joint 2.1368 (v4-engine cells 2.1415). The v5 cells now add to S in the pool (S alone +0.0053 joint, +0.0076 7-bin, +0.0044 method).
+- **(4) Freeze.** Engine VERSION "5.0.0", params "5.0.0-selfcal-pre2024". versions/v5/: engine3.js (951a7e63ce43...), params3.js
+  (bebc8d052fdb...), styles_sos.js, mlpathrec.js, ml/{mlrates (unchanged since v4), embed, blend, moe, ml2, mlpage}.js. versions/README.md
+  has the row.
+- **Tests (all pass).**
+  - New `node tests/test_v5_calB.js`: 18 passed. Fixtures = 2e24835's files; engine = Calibrate A + the [calB] lines; params change
+    only where listed; calB off = the Calibrate A engine on its own params over 450 matchups (random pairs with learned rates, roster,
+    SOS + step-4 inputs; plain tables; 2019-2023 backtest fights x 2 orders with every walk-forward input: whole fight JSON incl.
+    traces, summaries, explain()); calB on = the Calibrate A engine with the set as an override (300 matchups); components false
+    identical; resolveParams order (emJudge off still restores t108 8.555; overrides win); fights change; trace keys unchanged.
+  - Tests comparing with engines that predate calB now pin `calB: false`, as Calibrate A pinned mlLevels: test_v5_step3 / 4 / 5 (OFF
+    objects, page-path checks, strict groups), test_dynamics (flag-off identity; the stkoHurtGate check reads the resolved
+    stkoScale), test_realism_sens (stored digest), test_officials (golden). test_v5_calA now checks the Calibrate A transition on the
+    frozen 2e24835 files. test_v5_step5 accepts the rebuilt blend settings. Two tolerances, both explained in the test: test_engine3's
+    ground-landed check 40% -> 50% (Volkanovski vs Gaethje +37% -> +42% over base from the higher KD level's follow-up flurries) and
+    test_realism_sens' att-direction check per fight-minute (per fight x1.09 because the att 1.2 fights now end sooner; per minute x1.16).
+  - `node tests/test_engine3.js 20000`: 81 passed. `node tests/test_director3.js 300`: OK, 300 of 300 with learned rates; `NO_ML=1 ... 100`:
+    OK. test_mlrates 47 OK, test_v401 15, test_v5_step2 16, step3 28, step4 45, step5 34, calA 14, calB 18, test_durability 34 OK,
+    test_dynamics 23, test_mlcal 33, test_styles_sos 42, test_officials 24, test_realism_sens 45, test_blend_anchor 64, test_embed OK,
+    test_moe 21, test_mlpage 5, test_calib 14, test_statdist 3,059, test_forward_models PASS, test_blindtest_stack PASS, test_ml2 365,
+    test_forward_v42 457, test_debut 23, test_finishing 371, test_propspool 732, test_eradrift 2,283.
+  - `python3 build.py <tmp>` builds (10.4 MB). The published page was not rebuilt.
+- **Standard evaluation, TRAIN only** (`tools/evalv.js --version v5 --split train --sims 300 --compare v4`; version_history.json v5 entry:
+  train block, validation null). Winner log loss 0.6565 [0.6472, 0.6666] (v5 - v4 -0.0070 [-0.0119, -0.0020]); Brier 0.2324 (-0.0031
+  [-0.0057, -0.0007]); accuracy 60.4%; ECE 0.011, slope 1.18; 7-bin 1.6345 (-0.0365 [-0.0540, -0.0198]); method 0.9578 (-0.0093
+  [-0.0175, -0.0013]); who x how x when 2.1759 (vs S +0.0236 [+0.0060, +0.0425]; vs v4 -0.0272 [-0.0488, -0.0064]); method x round 1.4906
+  (vs S +0.0096 n.s.); stat-line deviance better than v4 on TD, control and KD (intervals exclude 0), sig landed / attempts n.s. The blend
+  test is a validation measurement: left to the Measure stage (train-only dry check, stacker 2019-2022 scored on 2023: engine weight
+  0.25 / 0.38, blend not better on 2023, +0.0032 / +0.0038 n.s.; v4 the same).
+- **Volkanovski vs Gaethje** (information only; 5 x 5 title, production learned rates and durability roster, 20,000 fights, seed 11):
+  62.1% Volk with calB off, 62.8% on (Monte Carlo noise about 0.3 pts); finish 48.5% -> 48.6%.
+- **For the Measure stage.** evalv `--split val` on versions/v5 (one look). Re-export the pre-2024 stacker with v5's train rows
+  (BLINDTEST_MOE_ENGINE=engine_v5, train rows only) before scoring the package with tools/predictrec.js. Nothing from 2024-25 was
+  simulated or scored here, no 2026 fight was read, and every number fit here used 2019-2023 fights only.
+
 ## v4.0.1 (2026-11-06): the v4 review's fixes, REJECTED; v4 (4.0.0) restored
 
 **Status: rejected by the decision rule.** The validation look ran once, at 11:45 am ET, paired against v4. The

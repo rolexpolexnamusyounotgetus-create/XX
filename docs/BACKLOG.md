@@ -410,6 +410,15 @@ Findings from verified research that the next engine versions must use. Each lin
     round without them; dynamics kept (structure). SOS over oppadj (+0.0005 [-0.0001, +0.0012] for oppadj). emJudge kept on as a
     protocol exception (off = the all-cards EM through 2026-10; -0.0001 on train). v3 params + learned rates not better.
     tests/test_v5_calA.js proves step 5's flags passed explicitly reproduce step 5 bit for bit.
+  - Calibrate B done (~01:50 UTC Nov 7; research/v5_calB.md, docs/CHANGELOG.md "v5 merge log"), train 2019-2023 only. (1) ONE joint
+    level pass behind new flag components.calB (tools/v5_calB_levels.js): kdLevel3/5, convLevel, stkoScale/gnpScale and judge.t108 now
+    hit the actuals (KD per 100 head 0.759 -> 0.780 vs 0.782; conversion 0.511 vs 0.512; KO 31.8 vs 31.7; 10-8 4.75 vs 4.71% of
+    2021-23); outcome-neutral on train (all paired deltas n.s.). Structural misfits left for v6/v8: 3-round round-2 finishes (13.5 vs
+    16.7%), MD 1.0 vs 2.0%, draws 0.62 vs 1.01%. (2) mlcal re-tune (new "inject": "overrides"; the full-tree injection would have undone
+    mlLevels off and the calB set): nothing survived confirmation. (3) blend_anchor rebuilt: mrWeight 0.30, slope0 0.771, kappa 2.15.
+    (4) Engine 5.0.0 frozen in versions/v5/. Train evalv vs v4: winner -0.0070 [-0.0119, -0.0020], 7-bin -0.0365, method -0.0093, who x
+    how x when -0.0272 [-0.0488, -0.0064]; still behind model S on train (who x how x when +0.0236). Next: the Measure stage's single
+    2024-25 look (re-export the pre-2024 stacker with v5 train rows first).
 - blindtest harness (VERIFIED ~21:10 UTC, research/model_blindtest.md "Verification log"): independent no-cache
   replay, own scorer and own stacker reproduce every headline. MoE stack + close 0.5774 vs close 0.5854
   (-0.0081 [-0.0125, -0.0036], ahead on 56 of 84 cards); no-line stack ties the close (+0.0001); removing the
