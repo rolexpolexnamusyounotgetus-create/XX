@@ -218,7 +218,7 @@ def slope_ci(ps, ys, groups, B):
         k = rng.integers(0, len(G), len(G))
         sel = np.concatenate([G[t] for t in k])
         bs.append(fit(x[sel], ys[sel]))
-    return round(float(point), 3), [round(float(np.percentile(bs, 2.5)), 3), round(float(np.percentile(bs, 97.5)), 3)]
+    return float(point), [round(float(np.percentile(bs, 2.5)), 3), round(float(np.percentile(bs, 97.5)), 3)]
 
 
 def win_level(model, ids):
@@ -232,7 +232,7 @@ def win_level(model, ids):
     e, _ = PS.calib(ps, ysv)
     s, sci = slope_ci(ps, ysv, g, a.slope_boot)
     return {"n": len(rows), "n_cards": len(set(g)), "winLL": round(float(ll.mean()), 5), "ci": PS.ci(bs), "brier": round(float(np.mean([l["brier"] for l in L])), 5),
-            "acc": round(float(np.mean([l["acc"] for l in L])), 4), "ece": e, "slope": s, "slope_ci": sci,
+            "acc": round(float(np.mean([l["acc"] for l in L])), 4), "ece": e, "slope": round(s, 4), "slope_ci": sci,
             "slope_outside_0.8_1.6": bool(s < 0.8 or s > 1.6)}
 
 
@@ -472,6 +472,27 @@ for side, stat in (("v10", "v10"), ("v7", None), ("v6", None), ("v8 (engine)", "
         rec["stat_lines"] = "the v4 simulator (v7) / the v6 engine: no stat-line contrast pre-registered for this side line"
     fc[side] = rec
 OUT["failure_criteria_no_decision"] = fc
+OUT["debut_method_model"] = {"note": "tools/vault_audit1/debut_vault.py re-run into <vault>/audit2/debut_vroot (frozen debut.json f6709d52292ccc83, unchanged since audit 1); identical to audit 1's summary (seen fights)",
+                              "summary": J(os.path.join(AUD, "debut_vroot", "audit1", "debut_vault.json"))["summary"],
+                              "identical_to_audit1": J(os.path.join(AUD, "debut_vroot", "audit1", "debut_vault.json"))["summary"] == J(os.path.join(AUD1, "debut_vault.json"))["summary"]}
+import hashlib
+sha16 = lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest()[:16]
+OUT["inputs_sha256_16"] = {os.path.relpath(p, V) if p.startswith(V) else os.path.relpath(p, ROOT): sha16(p) for p in [
+    os.path.join(V, "backtest_vault.json"), os.path.join(V, "market_vault.json"), os.path.join(V, "durability_vault.json"), os.path.join(V, "preufc_vault.json"),
+    os.path.join(AUD1, "mlrates_vault.json"), os.path.join(AUD1, "priors_asof_vault.json"), os.path.join(AUD1, "sos_wf_vault.json"), os.path.join(AUD1, "models_vault.json"),
+    os.path.join(AUD1, "ml2_cache", "table_vault.pkl"), os.path.join(AUD, "ml2s2_vault.json"), os.path.join(AUD, "statlines_targets_vault.json"),
+    os.path.join(AUD, "cmp_stack_v4pkg_fit2025.json"), os.path.join(AUD, "harness_vault.json"), os.path.join(AUD, "stat_v10_vault.json"), os.path.join(AUD, "stat_v8_vault.json"),
+    os.path.join(AUD, "evalv", "v4_vault.json"), os.path.join(AUD, "evalv", "v10_vault.json"), os.path.join(AUD, "evalv", "v8_vault.json"), os.path.join(AUD, "evalv", "v7cmp_val.json"),
+    os.path.join(AUD, "aux_vault.json"), os.path.join(ROOT, DER + "v6_stacks.json"), os.path.join(ROOT, DER + "mr_s2.json"), os.path.join(ROOT, DER + "methodround.json"),
+    os.path.join(ROOT, DER + "props.json"), os.path.join(ROOT, DER + "statlines.json"), os.path.join(ROOT, DER + "ml2_trees.json"), os.path.join(ROOT, DER + "ml2.json"),
+    os.path.join(ROOT, DER + "forward_models.json"), os.path.join(ROOT, DER + "embed_model.json"), os.path.join(ROOT, DER + "embed_blend_fh.json"), os.path.join(ROOT, DER + "oppadj.json"),
+    os.path.join(ROOT, DER + "blindtest.json"), os.path.join(ROOT, DER + "v10/gate_train.json"), os.path.join(ROOT, DER + "v10/look_val.json"),
+    os.path.join(ROOT, DER + "v6/gate_train.json"), os.path.join(ROOT, DER + "v6/look_val.json"), os.path.join(ROOT, DER + "v10/gate_stat.json")]}
+OUT["harness_meta"] = {k: H["meta"][k] for k in ("packages", "sims_per_order", "kinds", "n_fights", "failed", "wall_s")}
+OUT["pkg_manifest"] = J(os.path.join(AUD, "pkgs", "manifest.json"))
+OUT["ml2s2_checks"] = J(os.path.join(AUD, "ml2s2_vault.json"))["meta"]["checks"]
+OUT["cmp_stack_fit2025"] = {k: J(os.path.join(AUD, "cmp_stack_v4pkg_fit2025.json"))["meta"][k] for k in ("fit_info", "rows_2024_2025", "reproduction_fit2023")}
+OUT["targets_meta"] = {k: v for k, v in J(os.path.join(AUD, "statlines_targets_vault.json"))["meta"].items()}
 json.dump(OUT, open(os.path.join(AUD, "score_vault2.json"), "w"), indent=1, default=float)
 
 # =============================================================== summary
