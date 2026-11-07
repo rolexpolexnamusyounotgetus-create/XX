@@ -3,11 +3,11 @@
  "readme_section": "data/predictions/README.md 'Forward model v4.4 (Nov 7, 2026)'",
  "as_of": "2026-10-31",
  "until": "2026-11-07",
- "built_utc": "2026-11-07T11:47:13Z",
- "code_commit": "45539643e9dfbd1c294f684d4e0ef4fa44baa959",
+ "built_utc": "2026-11-07T11:59:40Z",
+ "code_commit": "e436595346fcd226935f8024d9c8ecb1943399e0",
  "uncommitted_code": false,
  "code_sha256": {
-  "tools/live_refresh.py": "1c72aa06dc782ea4812ecfbd050e3672ddbf73c150844bcbef9cb04804166e40",
+  "tools/live_refresh.py": "53f6bfd3777960ac2b42e728b240fd5d49272c8960502e60f66d3f144c4a9456",
   "tools/build_db.py": "6ca8d038b3d59d349b9cdc6606ffdc9ef218b88ed418e7e911988751cb80638b",
   "tools/ml.py": "5a68db870dd8b5f474b9c402f61e6dbc578fd7030c9cd4d6b9af5ae9e45517f0",
   "tools/ratings.py": "7d4b24e5747303fb3f435f3452410fb269d9cd69db4c44639d343b748e44dea1",
@@ -542,7 +542,7 @@
    "n_changed": 0
   }
  },
- "seconds": 50.0,
- "work_dir": "out/live_refresh/build_20261107-114623",
+ "seconds": 52.0,
+ "work_dir": "out/live_refresh/build_20261107-115848",
  "ok": true
 }
