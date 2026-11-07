@@ -9987,7 +9987,8 @@
    "blend": null,
    "notes": [
     "2026-11-07T10:01 train: v8 candidate (gate run once: FAILED, no sub-part kept); standard TRAIN evaluation of the gated configuration (all four flags on), descriptive",
-    "2026-11-07T10:03 v8 built (v4 simulator + cycle 3: embed, retarget toward statlines, tdIntent / ctrlSpread), protocol committed (1d8e729), binding train gate run once (09:56-10:00 UTC) and scored: FAIL (no sub-part kept). Status gate_failed; no pre-registration; validation null. Frozen candidate: versions/v8-gate-failed (engine cb68df43, params ce637891)."
+    "2026-11-07T10:03 v8 built (v4 simulator + cycle 3: embed, retarget toward statlines, tdIntent / ctrlSpread), protocol committed (1d8e729), binding train gate run once (09:56-10:00 UTC) and scored: FAIL (no sub-part kept). Status gate_failed; no pre-registration; validation null. Frozen candidate: versions/v8-gate-failed (engine cb68df43, params ce637891).",
+    "2026-11-07T10:05 note: the development runs the protocol lists under out/v8/ are local scratch (out/ is gitignored); the final sd fits are committed in data/derived/v8/dev/. Tests on the frozen copy: tests/test_v8.js 26/26 (data/derived/v8/tests/test_v8_frozen.json); restored v4 src: tests/test_engine3.js 8000 69/69."
    ],
    "status": "gate_failed",
    "train_gate": {
