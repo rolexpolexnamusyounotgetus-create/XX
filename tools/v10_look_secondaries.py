@@ -56,7 +56,9 @@ def main():
     Hs = json.load(open(a.stat))
     Fs = [f for f in Hs["fights"] if not f.get("err")]
     assert all("2024-01-01" <= f["date"] < "2026-01-01" for f in Fs)
-    arms, Ls, groups = G8.table(Hs, Fs)
+    # smoothing prior from the gate's TRAIN stat harness (v10 review fix; the stored v10 secondaries predate it: weight 1/601)
+    _, Fbase = G8.load(os.path.join(ROOT, G["meta"]["stat_harness"]), V.YEARS)
+    arms, Ls, groups = G8.table(Hs, Fs, base_fights=Fbase)
     norm = {s: float(np.nanmean(G8.col(Ls["cmp4"], "dev_" + s))) for s in G8.STATS}
     keys = ["total", "total_raw", "winLL", "bin7", "method"] + ["dev_" + s for s in G8.STATS] + ["mae_" + s for s in G8.STATS]
     out["engine_all_vs_cmp4"] = G8.paired(groups, Ls["all"], Ls["cmp4"], keys, norm)
