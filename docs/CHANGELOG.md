@@ -379,6 +379,118 @@ No validation (2024-2025) number is computed in these steps; the Measure stage t
   - Nothing from 2024-25 was scored, no 2026 fight was read, and every number fit here (the leave-one-year-out blend
     coefficients) used 2019-2023 fights; the preufc scales use train priors and no outcomes.
 
+### Step 5 (Nov 6, 7:30 pm ET): blend_anchor and the prediction package (`components.blend_anchor`, FightEngine.predict)
+
+- **Base.** The step-4 commit 6210f69 (src/engine3.js sha256 f93ff8d1..., params3.js 9ed290d7..., mlrates.js 40d87006...; the
+  working tree matched). Frozen as tests/fixtures/engine3_pre_blend_anchor.js.
+- **Applied.** scratchpad/components/blend_anchor.patch (re-issued against v4 final 122c31a: the component plus the verifier's two
+  fixes) with `git apply --3way`.
+  - New files went in clean: src/ml/blend.js, tests/test_blend_anchor.js, tools/blend_anchor_{prep.py,bt.js,eval.js},
+    data/derived/blend_anchor{,_dev}.json, research/model_blend_anchor.md.
+  - Conflicts:
+    - engine3.js: the end-of-file append, styles_sos's public-matchup wrapper vs the marked blend_anchor block. Both kept,
+      wrapper first.
+    - tools/README.md: append/append, both kept.
+    - params3.js: the patch's own `components: { blend_anchor }` key would have been a second `components` key and dropped
+      every earlier flag. Folded into the single block. The `blend` settings block is kept as verified: mrWeight 0.15, linear
+      pool, recalT 1, anchor 0.5 / 1 / 1 with slope0 0.86, kappa 1.65.
+  - Merge fix: the flag-off path of predict now calls the public `api.matchup` instead of the internal `matchup`, which would
+    have dropped styles_sos (SOS inputs).
+  - Merge fix: `FightBlend.swapOpts`, which builds the mirrored B-A run, now also swaps the v5 per-call inputs: `dur`, `sos`,
+    `embed` (etaA/etaB), `oppadj` and `preufc`. Without it, predict's B-A run gave each fighter the other's durability record,
+    SOS pair, embedding etas and pre-UFC record. The test now checks that the B-A matchup equals the harness's own swapped
+    matchup on 24 train fights.
+- **Winner blend upgraded to the verified ML v2 package** (src/ml/blend.js 1.1.0).
+  - The production stacker is data/derived/blindtest_stack.json in src/ml/moe.js's format, replacing moe_page.json.
+    `opts.lineKind` chooses its block explicitly:
+    - `'close'`: the close-trained `model`, line de-vigged by the power method;
+    - `'open'`: the open-trained `model_open`, proportional de-vig as in market.json p_novig_open;
+    - `'none'`: the shared no-line block.
+  - Refused: a line without lineKind, a lineKind without a line, `'open'` on a stacker without `model_open` (e.g. legacy
+    moe_page.json), and unknown kinds.
+  - `FightEngine.loadBlend({ stack, feat, mlPage, market, ml2, methodRound })` loads the same experts tools/forward_ledger.js
+    computes:
+    - feat_lr from moe_page.json `feat`;
+    - ml + elo_sig from the ml.json page model;
+    - mkt_rating from market.json ratings;
+    - engine = the simulator, both corner orders.
+  - ML v2's page logistic and page stacks (src/ml/ml2.js) are returned as `ml2`; `ml2.p` is the lineKind-matched stack.
+    `opts.winner = 'ml2'` makes it the headline. The default headline is the stack.
+  - SM is used only with a closing line; an opener goes to S, the same close-vs-open rule as the stack.
+  - Anchor mode, the interval (kappa 1.65) and recalT 1 are unchanged. The stack's no-line block carries its own temperature.
+  - A legacy `moe` key still loads as a stacker without an open-trained block.
+- **Backtests can no longer use production defaults** (`opts.backtest = true`).
+  - The loaded stack, the S model (fit through 2026-10) and every live roster are refused.
+  - Required: `opts.stack` with a fit_through on or before 2023-12-31 and before the fight. A train-window fight inside it needs
+    an explicit `opts.inSample`.
+  - Also required: `opts.mrCells` (walk-forward cells, or false). A live ML v2 handle and dates from 2026-01-01 on are refused.
+  - New `python3 tools/blindtest.py export --fit-through 2023-12-31` writes data/derived/blindtest_stack_pre2024.json.
+    - It uses the production stackers' configuration and expert map (`model` + `model_open`) and is fit on the 1,955 decisive
+      2019-2023 fights' out-of-sample expert rows only. Nothing from 2024-25 is read; no blind scores are copied.
+    - All three blocks are fit through 2023-12-16. No-line temperature 1.043.
+    - Full-pattern weights: close market 0.86 / mkt_rating 0.11 / ml 0.14 / feat_lr 0.04 / engine 0.04; no line mkt_rating
+      0.85 / ml 0.56 / feat_lr 0.03 / engine 0; open market 0.74 / mkt_rating 0.21 / ml 0.33 / engine 0.09.
+    - The engine expert is engine_v4. Re-export with v5's own train rows once they exist.
+  - New tools/predictrec.js builds predict's backtest inputs per fight and corner order:
+    - the pre-2024 stacker;
+    - the line;
+    - walk-forward experts: 2019-2023 from ml.json oof, blend_anchor_dev.json and market.json; 2024-25 from the blind replay's
+      blindtest.json rows, each fit_through checked;
+    - methodround.json S / SM cells fit before the fight, mirrored with the corners;
+    - ML v2 rows with the 2019-2023 page-stack weights from forward_models.json.
+  - tools/blend_anchor_bt.js now passes the durrec / sosrec / mlpathrec inputs and asserts them on both corner orders. Smoke run:
+    50 train fights, 0 errors.
+- **Version labels.** Engine VERSION stays "5.0.0-dev"; params label "5.0.0-dev.5-selfcal-pre2024".
+- **Tests (all pass).**
+  - New `node tests/test_v5_step5.js`: 34 passed.
+    - Identity against the step-4 engine, with blend_anchor off AND on: 450 matchups each. Whole fight JSON incl. traces (4,500
+      fights), 45 summaries and explain() outputs.
+    - Groups: random pairs with learned rates, the durability roster and random SOS + step-4 inputs; plain tables; 2019-2023
+      backtest fights x 2 corner orders with every walk-forward input.
+    - With the flag off, predict = summarize of the step-4 engine (45 calls).
+    - Strict: the step-4 engine on 6210f69's own params3.js and mlrates.js, 300 matchups, 0 mismatches.
+    - Package: the stack block and p per lineKind equal MoE.load(blindtest_stack[, 'model_open']).predict on the reported
+      experts. Exact corner symmetry for every kind (p, 7 bins, calibrated interval). ML v2 equals src/ml/ml2.js. Also checked:
+      winner 'ml2', the refusals, the swaps, a corner-symmetric backtest predict with every v5 input, the backtest guard and
+      predictrec.
+  - `node tests/test_blend_anchor.js`: 64 passed (the flag-on section now loads blindtest_stack.json and checks the open block).
+  - `node tests/test_blindtest_stack.js`: PASS for both exports, 180 vectors each, 2.2e-16. The pre-2024 file's fit_through is
+    checked.
+  - `node tests/test_engine3.js 20000`: 81 passed. `node tests/test_director3.js 300`: OK, 300 of 300 matchups with learned rates;
+    `NO_ML=1 ... 100`: OK.
+  - test_mlrates 47 OK, test_v401 15, test_v5_step2 16, test_v5_step3 28, test_v5_step4 45, test_durability 34 OK, test_dynamics
+    23, test_mlcal 33, test_styles_sos 42, test_officials 24, test_realism_sens 45, test_embed OK, test_moe 21, test_mlpage 5,
+    test_calib 14, test_statdist 3,059, test_forward_models PASS, test_ml2 365, test_forward_v42 457, test_debut 23,
+    test_finishing 371, test_propspool 732.
+- **Volkanovski vs Gaethje** (information only; 5 x 5 title, production learned rates and durability roster, 10,000 fights per
+  corner order, opener +160 / -180):
+
+  | lineKind | P(Volk) | stack block | simulator | ML v2 page stack | 80% calibrated |
+  |---|---|---|---|---|---|
+  | none | 79.2% | no-line | 62.6% | 75.9% | 61-90% |
+  | open | 55.8% | model_open | 62.6% | 58.3% | 44-67% |
+  | close (same odds, for comparison) | 48.1% | model | 62.6% | 51.3% | 42-55% |
+
+  - Finish 49-52%.
+  - The no-line number leans on the market rating (63.5%, built from his featherweight lines) and the ML page model (67%).
+- **For the next stages.**
+  - Calibrate: rebuild the method x round cells only after the final flags are fixed. Run tools/blend_anchor_bt.js plain ->
+    blend_anchor_eval.js targets -> pilot -> anchor -> report on train, then refit mrWeight (0.15) and slope0 (0.86) on them.
+    The current values were fit on the v4 engine.
+  - Measure: evalv scores summarize, not predict.
+    - To score the package, call predict with tools/predictrec.js inputs: the pre-2024 stacker on 2024-25, per-year stackers or
+      an explicit in-sample flag on train.
+    - First re-export the pre-2024 stacker with v5's train rows: BLINDTEST_MOE_ENGINE=engine_v5 after evalv writes
+      data/derived/evalv/v5_*.json. The stacker fit reads train rows only.
+    - The blend test's MoE refit is separate and unchanged.
+  - Freeze: copy src/ml/blend.js together with ml/moe.js, ml/ml2.js and ml/mlpage.js into versions/v5/ml/.
+    - blend.js requires ../../tools/methodround_model.js, which a frozen copy cannot reach.
+    - With a frozen copy, pass method/round handles or cells (backtests always pass cells).
+  - Release / page: build.py has no slot for src/ml/blend.js, src/ml/ml2.js or the stack JSONs, so the page does not call
+    predict yet (verifier condition 3). The forward ledger keeps its own pre-registered routing (fwd-4.1 / 4.2).
+  - Nothing from 2024-25 was scored and no 2026 fight was read. The one new fit (the pre-2024 stacker export) used only
+    2019-2023 rows.
+
 ## v4.0.1 (2026-11-06): the v4 review's fixes, REJECTED; v4 (4.0.0) restored
 
 **Status: rejected by the decision rule.** The validation look ran once, at 11:45 am ET, paired against v4. The

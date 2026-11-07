@@ -382,6 +382,16 @@ Findings from verified research that the next engine versions must use. Each lin
     - preufc vs embed on train: method -0.0060 [-0.0115, -0.0005], newcomer KO-win -0.0092 [-0.0168, -0.0014] (exponents fit on
       2015-2023, not out of sample on train). oppadj vs SOS: nothing significant; Calibrate picks one.
     - versions/v5/ must also include ml/embed.js and mlpathrec.js.
+  - Step 5 done (~00:30 UTC Nov 7; docs/CHANGELOG.md "v5 merge log"): components.blend_anchor (on), FightEngine.predict. The winner
+    blend is now the ML v2 package: blindtest_stack.json `model` / `model_open` chosen by an explicit opts.lineKind ('close' |
+    'open' | 'none'; a line without it is refused), with ML v2 (src/ml/ml2.js) reported next to it and selectable as the headline
+    (opts.winner 'ml2'). Anchor mode, kappa 1.65 and recalT 1 are unchanged. Flag off or on = step 4 bit for bit for
+    matchup / simulate / summarize / explain (tests/test_v5_step5.js).
+    - Backtests: opts.backtest refuses production defaults. Use data/derived/blindtest_stack_pre2024.json (tools/blindtest.py export
+      --fit-through 2023-12-31, train rows only) and tools/predictrec.js (walk-forward experts and method/round cells).
+    - Merge fix: predict's mirrored run now swaps the v5 per-call inputs (dur, sos, embed, oppadj, preufc).
+    - Calibrate rebuilds the method x round cells (tools/blend_anchor_bt.js, now with every v5 input), mrWeight and slope0 after
+      the final flags. versions/v5/ must also include ml/blend.js, ml/moe.js, ml/ml2.js and ml/mlpage.js.
 - blindtest harness (VERIFIED ~21:10 UTC, research/model_blindtest.md "Verification log"): independent no-cache
   replay, own scorer and own stacker reproduce every headline. MoE stack + close 0.5774 vs close 0.5854
   (-0.0081 [-0.0125, -0.0036], ahead on 56 of 84 cards); no-line stack ties the close (+0.0001); removing the
