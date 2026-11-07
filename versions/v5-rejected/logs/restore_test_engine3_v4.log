@@ -1,0 +1,64 @@
+Fight engine 4.0.0, params 4.0.0-selfcal-pre2024; 1229 fighters; N = 8000
+
+=== API and determinism ===
+PASS  API surface  (VERSION 4.0.0)
+PASS  no learned model loaded by default: matchup = base tables
+PASS  engine source has no Math.random
+PASS  engine runs with Math.random disabled
+PASS  same seed, same fight
+PASS  same seed, same summary
+PASS  trace on/off gives the same fight (400 seeds)
+PASS  trace parity holds over a shared rng stream
+PASS  worker-style concatenation (self.FightParams + self.MLRates + self.FightEngine) reproduces Node results
+PASS  worker-style loadMLRates reproduces Node's learned-rate matchup
+
+=== Engine v4: learned stat-line rates (loadMLRates / opts.ml) ===
+PASS  matchup without a model equals matchupBase
+PASS  with a model loaded matchup applies the learned rates  (distance attempt ratio Volk 0.86, Gaethje 0.93)
+PASS  opts.ml === false keeps the base tables
+PASS  params.mlWeight 0 keeps the base tables
+PASS  opts.ml = { pred } reproduces the loaded model's tables  (max rel diff dRate 0.0e+0)
+PASS  ML: same seed, same fight
+PASS  ML: matchup is deterministic (same tables twice)
+PASS  ML: trace on/off gives the same fight (150 seeds)
+PASS  ML: predict(A, B) and predict(B, A) swap exactly
+PASS  ML: swapping corners mirrors the learned tables  (max rel diff 2.2e-16)
+PASS  ML: swapping corners swaps the probabilities  (Volk 70.0% as A vs 69.5% as B; base tables 60.2%)
+PASS  ML: a fighter vs his clone wins about 50%  (50.0% of non-draws)
+PASS  ML: Volk chin knob 1.6 raises Gaethje's KO/TKO share  (11.8% -> 16.4%)
+PASS  ML: league-average pair keeps the league level (finish rate within 4 pts, sig landed within 8%)  (finish 54.2% -> 51.3%, sig landed 39.6 -> 40.6)
+
+=== Engine v4: train-only priors (hidden-data protocol) ===
+PASS  data/derived/priors_dev.json exists and stops before 2024-01-01
+PASS  train-only priors hold fewer fights than the production priors  (Lightweight 406 vs 608)
+PASS  params are labelled as self-calibrated on the train-only priors  (4.0.0-selfcal-pre2024)
+
+=== Engine v4: judges (EM weights, shared + fight-level noise, 10-8 rule) ===
+PASS  judge weights are the EM fit
+PASS  an even round is a coin flip  (P(A) 50.2%)
+PASS  judging is corner-symmetric (mirrored differentials mirror the round)  (86.5% vs 86.6%)
+PASS  more output wins more rounds  (P(A) 86.5% for +6 head, +2 body, +1 leg, +1 TD, +30 s control)
+PASS  10-8s come with lopsided rounds, rarely with even ones  (lopsided 62.4%, even 0.00%)
+PASS  a lone knockdown edge usually wins the round  (P(KD scorer) 91.2%)
+PASS  non-unanimous share of even-looking rounds near the data (MMA Decisions |EM| < 0.5: 43%)  (42.3%)
+PASS  decision split and 10-8 share in a sane band  (UD 80.9%, SD 18.4%, 10-8 3.80% per judge-round)
+
+=== Trace format ===
+PASS  event kinds are from the spec table (+ esc)  (miss hit clinch break tdx td up hurt)
+PASS  events carry t, k, w, s, snapshots; strikes carry tg and loc; subs carry name; fin carries how
+PASS  event times are ordered within each round
+PASS  all spec kinds occur over 300 traced fights  (miss hit tdx td up clinch break esc kd recover fin pass reset hurt subx sweep sub)
+  sample event: {"t":38.73,"k":"hit","w":"B","s":0,"dA":0,"dB":0,"gA":0.8,"gB":0,"sA":0.976,"sB":0.95,"tg":2,"loc":"dist"}
+  result: A SD | Split Decision (48-47, 47-48, 48-47) | round 5 at 300.0 s | cards [[48,47],[47,48],[48,47]]
+
+=== Symmetry and clones ===
+PASS  swapping corners swaps the probabilities  (Volk 60.6% as A vs 61.2% as B; 4 se = 3.1)
+PASS  swapping corners mirrors the 7 outcome bins  (max bin diff 0.6 pts)
+PASS  alexander-volkanovski vs his clone wins about 50%  (50.1% of non-draws, 4 se = 2.2)
+PASS  justin-gaethje vs his clone wins about 50%  (50.3% of non-draws, 4 se = 2.2)
+PASS  league-average vs league-average wins about 50%  (50.0%)
+
+=== Knob directions (Volk = A, Gaethje = B) ===
+PASS  chin knob up on A -> more KO losses for A  (18.1 -> 25.4)
+PASS  chin knob down on B -> fewer KO losses for B  (13.9 -> 10.4)
+PASS  power knob up on A -> more KO wins for A  (13.9 -> 22.9)
