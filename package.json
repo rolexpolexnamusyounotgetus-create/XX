@@ -9,6 +9,7 @@
     "check": "python3 tests/func_check.py",
     "serve": "python3 -m http.server 8000",
     "test:engine3": "node tests/test_engine3.js 8000 && node tests/test_director3.js 300 && FUZZ=1 node tests/test_director3.js 600",
-    "test:director": "node tests/test_director3.js 300 && NO_ML=1 node tests/test_director3.js 100 && FUZZ=1 node tests/test_director3.js 600"
+    "test:director": "node tests/test_director3.js 300 && NO_ML=1 node tests/test_director3.js 100 && FUZZ=1 node tests/test_director3.js 600",
+    "test:page": "node tests/test_page_parity.js"
   }
 }

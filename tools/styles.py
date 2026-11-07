@@ -1784,6 +1784,17 @@ def render_report(J):
       "clusters, prior strengths, penalties and coefficients are fit on 2019-2023 only; 2024-01-01 onward "
       "(%d decisive fights) is reported, never tuned on." % (m["built"][:10], m["snapshot"], m["n_test_decisive"]))
     A("")
+    A("**Vault cleanup, Nov 7, 2026 (engine v5.0.1; v5 review).** The first version of this analysis (built Nov 6 10:59 UTC, after the "
+      "hidden-data protocol was committed) read `backtest.json` while it still held 2026 fights, so its held-out tables covered "
+      "2024-01-01..2026-10-31 (1,223 decisive fights, 369 of them in the sealed 2026 vault). That `styles.json` and `styles_verify.json` "
+      "were moved to the vault directory (`styles_vault.json`, `styles_verify_vault.json`), and both tools were re-run on the "
+      "development data only (`backtest.json` now holds 2019-2025; `tools/styles_verify.py` TEST = 2024, 2025): every held-out number "
+      "in this report is on 2024-2025. Selection never used the test period (fixed in the Nov 6 verification), so no engine "
+      "coefficient changed. Hand-written figures in the verification narrative below that predate this cleanup (for example the "
+      "2024+ log losses 0.6807 / 0.6272 quoted from the first version) were computed on the old window and are superseded by the "
+      "re-scored tables; per-year rows labelled 26 are empty. 2024-25 had been looked at before this re-score, so treat it as "
+      "descriptive.")
+    A("")
     # ------------------------------------------------------------------ summary
     surv_w = [k for k, c in wl["candidates"].items() if c["verdict"] == "survives"]
     supp_w = [k for k, c in wl["candidates"].items() if c["verdict"] == "supported"]
@@ -1863,8 +1874,8 @@ def render_report(J):
     # ------------------------------------------------------------------ data
     A("## 1. Data and design")
     A("")
-    A("- Fights: %d walk-forward backtest entries 2019-01-01 to %s (both men with a prior UFC fight), %d decisive; "
-      "tune 2019-2023, test 2024+ (%d decisive). Per-fight actual stats by position and target come from "
+    A("- Fights: %d walk-forward backtest entries 2019-01-01 to 2025-12-31 (both men with a prior UFC fight; ufcstats snapshot %s; "
+      "the sealed 2026 vault is not read), %d decisive; tune 2019-2023, test 2024-2025 (%d decisive). Per-fight actual stats by position and target come from "
       "`data/raw/ufc_fight_stats.csv` through `tools/build_db.py` (round rows summed per fighter)."
       % (m["n_fights"], m["snapshot"], m["n_decisive"], m["n_test_decisive"]))
     A("- Symmetry: winner models are antisymmetric (every feature is A minus B, no intercept), so the first-named "
@@ -2114,7 +2125,7 @@ def render_report(J):
       "skill baseline the scorecard adds nothing, as expected: the baseline already holds the same main effects."
       % (_f(wl["elo_only"]["test"]["log_loss"], 4), _f(tr["variants"]["none"]["elo_plus_impact"]["test"]["log_loss"], 4)))
     A("")
-    A("Median relative change in the expected per-minute stats from the modifiers (2019-2026 sides): " +
+    A("Median relative change in the expected per-minute stats from the modifiers (2019-2025 sides): " +
       "; ".join("%s: %s" % (vn, ", ".join("%s %.1f%%" % (k, 100 * v) for k, v in sh_.items()))
                 for vn, sh_ in tr["median_abs_rel_shift"].items()) + ".")
     A("")
