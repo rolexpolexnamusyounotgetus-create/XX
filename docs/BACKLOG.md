@@ -64,6 +64,14 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- ENGINE v10 LOOKED AT ONCE AND KEPT (Nov 7, 11:39-11:44 UTC; docs/CHANGELOG.md "v10 look"; version_history.json v10 `status: kept`,
+  `decision`): branch 1 missed on a marginal bound (open winner vs cmp4 -0.00326 [-0.00653, +0.00004], 842 decisive fights; normal
+  upper +0.00002); branch 2 kept it (not worse; total stat-line deviance vs v4 -0.88% [-1.69%, -0.07%]; glove-excluded paired
+  base-rate test passes, full window fails on KD per 100 head 0.771 vs 0.684) -> "kept under the glove-window amendment". Confirmation
+  look: claimed only after audit 2 (its `if_v10_kept` primary now applies) and the forward ledger. Secondaries: no line -0.0048
+  [-0.0085, -0.0009], close -0.0023 n.s.; 7-bin with props -0.025 [-0.039, -0.011] open; engine alone worse on method +0.0071
+  [+0.0004, +0.0140], sub-attempt deviance and leg-landed MAE; blend-test engine weight 0. v10 is the latest kept version; src/ =
+  versions/v10. Open: a v10 page (embed.js / blend.js, page parity), a fwd version for v10, HANDOFF / page copy numbers.
 - ENGINE v10 BUILT, GATE PASSED, PRE-REGISTERED (Nov 7, ~11:45 UTC; docs/CHANGELOG.md v10; version_history.json v10 `status:
   preregistered`, `train_gate`, `prereg`; versions/v10/; look protocol data/derived/v10/look_protocol.json): v10 = the v4 simulator +
   v8's stat-line bundle as shipped + v7's predict package (ML v2 head stacks, S2, props pool; FightBlend 1.4.0) + cycle 5 (newcomer
@@ -349,7 +357,15 @@ Findings from verified research that the next engine versions must use. Each lin
 
 ## Prediction status after the ML-core round (verified, Nov 6 ~11:00 UTC)
 
-**Current (Nov 7, 6:45 am ET; after v10's train gate):**
+**Current (Nov 7, 6:50 am ET; after v10's look):**
+- **The latest kept engine is v10 (10.0.0)** (versions/v10 = src/), kept by branch 2 of its single pre-registered look and labelled
+  "kept under the glove-window amendment". Best verified prediction object: v10's FightEngine.predict package (ML v2 head stacks by
+  line regime, S2 cells at w 0.2, props pool). On 2024-25 vs the honest v4 package: open winner -0.0033 [-0.0065, +0.0000], no line
+  -0.0048 [-0.0085, -0.0009], close -0.0023 [-0.0046, +0.0001]; 7-bin with props about -0.025 in every regime. It is a confirmation
+  look (ingredients seen on 2024-25); vault audit 2 and the forward ledger are the clean tests. The page and the forward ledger
+  still run v4-era code until they are rebuilt / re-registered for v10.
+
+**Earlier (Nov 7, 6:45 am ET; after v10's train gate):**
 - **The latest kept engine is still v4 (4.0.0)** (versions/v4). v10 (the consolidated bundle) passed its one bundle-level train gate
   and is pre-registered for its single 2024-25 look; src/ holds v10 until the look decides (on a reject src/ returns to versions/v4).
   The gate was a pre-stated consistency check (its primary reproduces v7's train number); the look is a confirmation look with power

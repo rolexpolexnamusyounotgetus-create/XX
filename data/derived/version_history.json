@@ -13530,7 +13530,1861 @@
       }
      }
     },
-    "file": "data/derived/evalv/v10_val.json"
+    "file": "data/derived/evalv/v10_val.json",
+    "package": {
+     "tool": "data/derived/v10/look_protocol.json commands run once in order (precheck, harness, look_stat, evalv, decide, score): tools/predict_harness.js --split val --binding (300 sims per order, 3 workers, own input pipelines, --ml2-rolling) + tools/v10_stat_gate.js --split val --binding (seed 10) + tools/evalv.js --split val --compare v4 + tools/evalv_decide.js + tools/v10_gate.py look; secondaries not computed by the scorer: tools/v10_look_secondaries.py (no new simulation)",
+     "run_utc": "2026-11-07 11:39-11:44 UTC (harness 11:39:59-11:41:13, look_stat 11:41-11:42, evalv 11:42, decide and score 11:43-11:44)",
+     "files": {
+      "data/derived/v10/look_val.json": "721b8796678a6caa599c6c5444d590c669e0be14dd81f12bb389a39e062a3209",
+      "data/derived/v10/look_stat_val.json": "dc0e4f7c766a654cc0a09b3f1a002b522ef1703c1b8598fa812db5784e49593a",
+      "data/derived/v10/look_val_score.json": "41e4e4272116f2b67060bf8023a0a4ec6a8d552c932c8beab9cbba183d4a5d7c",
+      "data/derived/evalv/v10_val.json": "d690a4cab6d8e062d4d462ded547befd5ae4485c2be85967ee37b80c5b9f4780",
+      "data/derived/evalv/v10_vs_v4_val_decide.json": "889e6e96980ebb25d33261e0e7fa06b1e307448a43f306f6662d99ba892d59bb",
+      "data/derived/evalv/v10_blend.json": "02a1748921da2fbae930982da2daa47124df17ae1dfaad60285de18211d70f9c",
+      "data/derived/v10/look_val_secondaries.json": "da376ffca4d847d1d22ee697039b1d62b701bc72f4c8972fcae84019b04661d8"
+     },
+     "logs": [
+      "data/derived/v10/look_val.log",
+      "data/derived/v10/look_stat_val.log",
+      "data/derived/v10/evalv_v10_val.log",
+      "data/derived/v10/decide_v10_vs_v4_val.log",
+      "data/derived/v10/look_val_score.log",
+      "data/derived/v10/look_val_secondaries.log",
+      "data/derived/v10/look_tests/_status.txt"
+     ],
+     "packages": {
+      "v10": "versions/v10 (10.0.0) mode v10: ML v2 head stack of the line regime (v6_stacks.json weights fit through 2023, ML v2 monthly-rolling rows), cells 0.2 x v10 simulator + 0.8 x S2, props pool pi 0.47 where the bout has props",
+      "cmp4": "versions/v7:cmp4 = the honest v4 package (v4 simulator, MoE expert stack by line regime with stacker data/derived/v7/cmp_stack_v4pkg_fit2023.json, methodround S / SM cells, w 0.2)"
+     },
+     "precheck": {
+      "hashes": "30 / 30 sha256 of data/derived/v10/look_protocol.json match; versions/v10 engine / params = the v10 entry; src/ engine3.js, params3.js, ml/blend.js = versions/v10",
+      "tests": "tests/test_v10.js 19 / 19 on the frozen files (data/derived/v10/look_tests/test_v10.json); full suite 39 of 40 jobs pass, test_page_parity fails exactly its 4 pre-registered tolerated checks (data/derived/v10/look_tests/)"
+     },
+     "integrity": {
+      "predict_harness_failed": 11,
+      "failed_all_known": "all 11 are 'no ML v2 monthly-rolling row' (the pre-announced input gap); no other failure, so the look is not void",
+      "failed_ids": [
+       "08c04f18b0f58d71",
+       "13e2ff8b3a122094",
+       "415ea2520b7ba720",
+       "46fa8e79fe8a9539",
+       "47149f3187661509",
+       "6390c8e74630473e",
+       "6cd542650d886c22",
+       "6d6ab10cbaa45e8c",
+       "a7fd9da657bbce8e",
+       "d822ebc7dbc6c259",
+       "de85ef2fd4769070"
+      ],
+      "stat_harness_failed": 0,
+      "evalv_ml_applied": "100.0% of matchups",
+      "excluded_by_scorer_rule": "1 decisive DQ fight (28c6de749d0d0e9d) has no method class in tools/predict_score.py and is outside every package metric, as in the gate and the v6 look"
+     },
+     "primary": {
+      "metric": "open-regime winner log loss (clip 1e-4), v10 package minus cmp4, paired, 20,000 event-cluster resamples (seed 7), MC SE of each bound, marginal bounds by the clustered normal bound",
+      "n_decisive": 842,
+      "n_cards": 84,
+      "v10": 0.58173,
+      "cmp4": 0.58499,
+      "diff": -0.00326,
+      "ci95": [
+       -0.00653,
+       0.00004
+      ],
+      "ci_mcse": [
+       0.000029,
+       0.00003
+      ],
+      "normal": {
+       "se": 0.001674,
+       "ci": [
+        -0.00654,
+        0.00002
+       ]
+      },
+      "branch1_check": {
+       "pass": false,
+       "boot_upper": 0.00004,
+       "mcse_upper": 0.00003,
+       "normal_upper": 0.00002,
+       "threshold": 0,
+       "marginal": true,
+       "decided_by": "normal"
+      },
+      "not_worse_check": {
+       "pass": true,
+       "boot_upper": 0.00004,
+       "mcse_upper": 0.00003,
+       "normal_upper": 0.00002,
+       "threshold": 0.002,
+       "marginal": false,
+       "decided_by": "bootstrap"
+      },
+      "expected": -0.00528,
+      "mde_80": 0.00755,
+      "power_at_expected": 0.5,
+      "independent_recheck": "own code from the harness rows (843 decisive incl. the DQ fight): diff -0.00326, card bootstrap [-0.00648, +0.00000], clustered normal upper +0.00001"
+     },
+     "branch2_metric": {
+      "metric": "total stat-line relative deviance (tools/v8_gate.py 'total', normalised by v4's mean deviance per stat on the look's fights), v10 engine minus v4 (arms all vs cmp4), 2024-2025",
+      "n": 865,
+      "diff": -0.008789,
+      "ci95": [
+       -0.016894,
+       -0.000731
+      ],
+      "ci_mcse": [
+       0.00009,
+       0.000066
+      ],
+      "normal": {
+       "se": 0.004127,
+       "ci": [
+        -0.01688,
+        -0.0007
+       ]
+      },
+      "check": {
+       "pass": true,
+       "boot_upper": -0.000731,
+       "mcse_upper": 0.000066,
+       "normal_upper": -0.0007,
+       "threshold": 0,
+       "marginal": false,
+       "decided_by": "bootstrap"
+      },
+      "independent_recheck": "own Poisson-deviance code from the stat harness rows: -0.008789, card bootstrap [-0.016892, -0.000538]"
+     },
+     "base_rates": {
+      "governing": "evalv_decide paired base-rate test, 2024-2025 EXCLUDING the glove-trial window 2024-06-01..2024-11-15 (647 fights): paired_fail [] -> pass",
+      "governing_paired_fail": [],
+      "governing_registered_fail": [
+       "KO",
+       "SUB"
+      ],
+      "full_window_paired_fail": [
+       "kd100"
+      ],
+      "full_window_registered_fail": [
+       "kd100"
+      ],
+      "no_glove_rows": {
+       "KO": {
+        "actual": 0.3141,
+        "new": 0.291,
+        "old": 0.3053,
+        "D_abs_err": 0.0142,
+        "D_ci": [
+         -0.014944027200000487,
+         0.01698324512987026
+        ],
+        "tol_paired": 0.0332,
+        "paired_fail": false,
+        "registered_fail": true
+       },
+       "SUB": {
+        "actual": 0.1656,
+        "new": 0.1836,
+        "old": 0.1788,
+        "D_abs_err": 0.0049,
+        "D_ci": [
+         -0.005373892575039396,
+         0.0068394192073166216
+        ],
+        "tol_paired": 0.0293,
+        "paired_fail": false,
+        "registered_fail": true
+       },
+       "R1_3rd": {
+        "actual": 0.5112,
+        "new": 0.5172,
+        "old": 0.5138,
+        "D_abs_err": 0.0034,
+        "D_ci": [
+         -0.005916761986101915,
+         0.006623061882723991
+        ],
+        "tol_paired": 0.0522,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "R3_3rd": {
+        "actual": 0.1754,
+        "new": 0.1866,
+        "old": 0.187,
+        "D_abs_err": -0.0004,
+        "D_ci": [
+         -0.00303861805816083,
+         0.002725002751453043
+        ],
+        "tol_paired": 0.0435,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "SDMD": {
+        "actual": 0.1611,
+        "new": 0.1971,
+        "old": 0.2057,
+        "D_abs_err": -0.0086,
+        "D_ci": [
+         -0.011025110016949141,
+         0.006565088879930042
+        ],
+        "tol_paired": 0.0434,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "kd100": {
+        "actual": 0.7386,
+        "new": 0.7643,
+        "old": 0.7391,
+        "D_abs_err": 0.0252,
+        "D_ci": [
+         -0.029090524329563272,
+         0.03055639511360264
+        ],
+        "tol_paired": 0.0902,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "td15": {
+        "actual": 1.4342,
+        "new": 1.3817,
+        "old": 1.3103,
+        "D_abs_err": -0.0715,
+        "D_ci": [
+         -0.09150004807855794,
+         0.05902854585968953
+        ],
+        "tol_paired": 0.1434,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "ctrl15": {
+        "actual": 166.6903,
+        "new": 173.119,
+        "old": 162.3905,
+        "D_abs_err": 2.129,
+        "D_ci": [
+         -11.16564071923878,
+         11.409594703122877
+        ],
+        "tol_paired": 16.669,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "sig15": {
+        "actual": 57.7987,
+        "new": 61.0053,
+        "old": 63.2985,
+        "D_abs_err": -2.2932,
+        "D_ci": [
+         -2.7029907802227555,
+         -1.8793351580492654
+        ],
+        "tol_paired": 3.4679,
+        "paired_fail": false,
+        "registered_fail": false
+       }
+      },
+      "full_rows": {
+       "KO": {
+        "actual": 0.2905,
+        "new": 0.2916,
+        "old": 0.3058,
+        "D_abs_err": -0.0142,
+        "D_ci": [
+         -0.016453012820513147,
+         0.015415729792148003
+        ],
+        "tol_paired": 0.0296,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "SUB": {
+        "actual": 0.1692,
+        "new": 0.1839,
+        "old": 0.1788,
+        "D_abs_err": 0.0051,
+        "D_ci": [
+         -0.005734713641488393,
+         0.006950042806183082
+        ],
+        "tol_paired": 0.025,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "R1_3rd": {
+        "actual": 0.5235,
+        "new": 0.5172,
+        "old": 0.5135,
+        "D_abs_err": -0.0038,
+        "D_ci": [
+         -0.006316139550308408,
+         0.006064505545423482
+        ],
+        "tol_paired": 0.0464,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "R3_3rd": {
+        "actual": 0.1735,
+        "new": 0.1863,
+        "old": 0.1874,
+        "D_abs_err": -0.001,
+        "D_ci": [
+         -0.003143508912085813,
+         0.0025454879863090196
+        ],
+        "tol_paired": 0.0378,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "SDMD": {
+        "actual": 0.1852,
+        "new": 0.1963,
+        "old": 0.2057,
+        "D_abs_err": -0.0093,
+        "D_ci": [
+         -0.011471085647543483,
+         0.010304675084677223
+        ],
+        "tol_paired": 0.04,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "kd100": {
+        "actual": 0.6844,
+        "new": 0.771,
+        "old": 0.7459,
+        "D_abs_err": 0.025,
+        "D_ci": [
+         0.00040604221635764937,
+         0.03037565500509476
+        ],
+        "tol_paired": 0.0821,
+        "paired_fail": true,
+        "registered_fail": true
+       },
+       "td15": {
+        "actual": 1.4128,
+        "new": 1.3877,
+        "old": 1.3127,
+        "D_abs_err": -0.075,
+        "D_ci": [
+         -0.09280613528031512,
+         0.052845936085542444
+        ],
+        "tol_paired": 0.1413,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "ctrl15": {
+        "actual": 168.3007,
+        "new": 174.3689,
+        "old": 163.4752,
+        "D_abs_err": 1.2426,
+        "D_ci": [
+         -11.01700330009632,
+         11.289342701614856
+        ],
+        "tol_paired": 16.8301,
+        "paired_fail": false,
+        "registered_fail": false
+       },
+       "sig15": {
+        "actual": 58.1061,
+        "new": 61.0104,
+        "old": 63.3076,
+        "D_abs_err": -2.2971,
+        "D_ci": [
+         -2.678458819716255,
+         -1.9284158408107572
+        ],
+        "tol_paired": 3.4864,
+        "paired_fail": false,
+        "registered_fail": false
+       }
+      },
+      "note": "the governing condition is the paired test (|new-actual| - |old-actual| with CI above 0 AND |new-actual| above max(mlcal tolerance, 1.96 SE of the actual)), as pre-registered; the absolute mlcal-tolerance flags ('registered_fail') are reported: glove-excluded KO 29.1% vs 31.4% actual (v4 30.5%) and SUB 18.4% vs 16.6% (v4 17.9%); full window KD per 100 head 0.771 vs 0.684 (v4 0.746)"
+     },
+     "regimes_props_off": {
+      "open": {
+       "n_outcome": 842,
+       "n_decisive": 842,
+       "n_cards": 84,
+       "packages": {
+        "v10": {
+         "winLL": 0.58173,
+         "brier": 0.19879,
+         "acc": 0.6912,
+         "ece": 0.0251,
+         "slope": 1.258,
+         "bin7": 1.4873,
+         "method": 0.92773,
+         "joint": 1.97843,
+         "rgf": 1.05885,
+         "mgw": 0.89942,
+         "pdec": 0.4924,
+         "ydec": 0.538
+        },
+        "cmp4": {
+         "winLL": 0.58499,
+         "brier": 0.20022,
+         "acc": 0.6865,
+         "ece": 0.0258,
+         "slope": 1.278,
+         "bin7": 1.49789,
+         "method": 0.92986,
+         "joint": 1.98905,
+         "rgf": 1.05977,
+         "mgw": 0.90662,
+         "pdec": 0.4864,
+         "ydec": 0.538
+        }
+       },
+       "paired": {
+        "v10 - cmp4": {
+         "bin7": {
+          "diff": -0.01058,
+          "ci": [
+           -0.01964,
+           -0.00156
+          ]
+         },
+         "method": {
+          "diff": -0.00213,
+          "ci": [
+           -0.00812,
+           0.00395
+          ]
+         },
+         "joint": {
+          "diff": -0.01062,
+          "ci": [
+           -0.02035,
+           -0.00085
+          ]
+         },
+         "winLL": {
+          "diff": -0.00326,
+          "ci": [
+           -0.00653,
+           0.00004
+          ]
+         },
+         "brier": {
+          "diff": -0.00143,
+          "ci": [
+           -0.00289,
+           0.00004
+          ]
+         },
+         "acc": {
+          "diff": 0.00475,
+          "ci": [
+           -0.00479,
+           0.01471
+          ]
+         },
+         "mgw": {
+          "diff": -0.0072,
+          "ci": [
+           -0.01589,
+           0.00118
+          ]
+         },
+         "rgf": {
+          "diff": -0.00092,
+          "ci": [
+           -0.00368,
+           0.00179
+          ]
+         },
+         "pdec_bias_v10": {
+          "diff": -0.0456,
+          "ci": [
+           -0.07725,
+           -0.01403
+          ]
+         },
+         "pdec_bias_cmp4": {
+          "diff": -0.05159,
+          "ci": [
+           -0.0829,
+           -0.02023
+          ]
+         }
+        }
+       }
+      },
+      "none": {
+       "n_outcome": 853,
+       "n_decisive": 853,
+       "n_cards": 84,
+       "packages": {
+        "v10": {
+         "winLL": 0.58899,
+         "brier": 0.20206,
+         "acc": 0.6835,
+         "ece": 0.0355,
+         "slope": 1.292,
+         "bin7": 1.49221,
+         "method": 0.92575,
+         "joint": 1.98277,
+         "rgf": 1.05717,
+         "mgw": 0.89707,
+         "pdec": 0.4927,
+         "ydec": 0.5381
+        },
+        "cmp4": {
+         "winLL": 0.59377,
+         "brier": 0.20424,
+         "acc": 0.6846,
+         "ece": 0.0334,
+         "slope": 1.277,
+         "bin7": 1.50447,
+         "method": 0.92779,
+         "joint": 1.99495,
+         "rgf": 1.05811,
+         "mgw": 0.90442,
+         "pdec": 0.4872,
+         "ydec": 0.5381
+        }
+       },
+       "paired": {
+        "v10 - cmp4": {
+         "bin7": {
+          "diff": -0.01225,
+          "ci": [
+           -0.02101,
+           -0.00347
+          ]
+         },
+         "method": {
+          "diff": -0.00204,
+          "ci": [
+           -0.00804,
+           0.00402
+          ]
+         },
+         "joint": {
+          "diff": -0.01219,
+          "ci": [
+           -0.02154,
+           -0.00278
+          ]
+         },
+         "winLL": {
+          "diff": -0.00477,
+          "ci": [
+           -0.00847,
+           -0.00091
+          ]
+         },
+         "brier": {
+          "diff": -0.00217,
+          "ci": [
+           -0.00384,
+           -0.00041
+          ]
+         },
+         "acc": {
+          "diff": -0.00117,
+          "ci": [
+           -0.01593,
+           0.0137
+          ]
+         },
+         "mgw": {
+          "diff": -0.00735,
+          "ci": [
+           -0.01594,
+           0.00098
+          ]
+         },
+         "rgf": {
+          "diff": -0.00094,
+          "ci": [
+           -0.00372,
+           0.00181
+          ]
+         },
+         "pdec_bias_v10": {
+          "diff": -0.0454,
+          "ci": [
+           -0.07686,
+           -0.01401
+          ]
+         },
+         "pdec_bias_cmp4": {
+          "diff": -0.05092,
+          "ci": [
+           -0.08197,
+           -0.01998
+          ]
+         }
+        }
+       }
+      },
+      "close": {
+       "n_outcome": 844,
+       "n_decisive": 844,
+       "n_cards": 84,
+       "packages": {
+        "v10": {
+         "winLL": 0.576,
+         "brier": 0.19649,
+         "acc": 0.7002,
+         "ece": 0.0371,
+         "slope": 1.152,
+         "bin7": 1.48124,
+         "method": 0.92756,
+         "joint": 1.97349,
+         "rgf": 1.0584,
+         "mgw": 0.89909,
+         "pdec": 0.4917,
+         "ydec": 0.5367,
+         "softCE_vs_close": 0.60325
+        },
+        "cmp4": {
+         "winLL": 0.57826,
+         "brier": 0.19745,
+         "acc": 0.6991,
+         "ece": 0.036,
+         "slope": 1.136,
+         "bin7": 1.49132,
+         "method": 0.92832,
+         "joint": 1.98355,
+         "rgf": 1.05912,
+         "mgw": 0.9068,
+         "pdec": 0.4861,
+         "ydec": 0.5367,
+         "softCE_vs_close": 0.6018
+        }
+       },
+       "paired": {
+        "v10 - cmp4": {
+         "bin7": {
+          "diff": -0.01008,
+          "ci": [
+           -0.01968,
+           -0.00063
+          ]
+         },
+         "method": {
+          "diff": -0.00076,
+          "ci": [
+           -0.00759,
+           0.00584
+          ]
+         },
+         "joint": {
+          "diff": -0.01006,
+          "ci": [
+           -0.02017,
+           -0.00008
+          ]
+         },
+         "winLL": {
+          "diff": -0.00226,
+          "ci": [
+           -0.00455,
+           0.00005
+          ]
+         },
+         "brier": {
+          "diff": -0.00096,
+          "ci": [
+           -0.00194,
+           0.00003
+          ]
+         },
+         "acc": {
+          "diff": 0.00118,
+          "ci": [
+           -0.00833,
+           0.01078
+          ]
+         },
+         "mgw": {
+          "diff": -0.00771,
+          "ci": [
+           -0.0169,
+           0.00131
+          ]
+         },
+         "soft": {
+          "diff": 0.00146,
+          "ci": [
+           0.00128,
+           0.00164
+          ]
+         },
+         "rgf": {
+          "diff": -0.00073,
+          "ci": [
+           -0.00351,
+           0.00201
+          ]
+         },
+         "pdec_bias_v10": {
+          "diff": -0.04503,
+          "ci": [
+           -0.07662,
+           -0.01362
+          ]
+         },
+         "pdec_bias_cmp4": {
+          "diff": -0.05063,
+          "ci": [
+           -0.08189,
+           -0.0195
+          ]
+         }
+        }
+       }
+      }
+     },
+     "package_with_props_vs_cmp4": {
+      "open": {
+       "n_outcome": 842,
+       "n_decisive": 842,
+       "n_cards": 84,
+       "packages": {
+        "v10": {
+         "winLL": 0.58173,
+         "brier": 0.19879,
+         "acc": 0.6912,
+         "ece": 0.0251,
+         "slope": 1.258,
+         "bin7": 1.4729,
+         "method": 0.9184,
+         "joint": 1.96403,
+         "rgf": 1.05844,
+         "mgw": 0.8842,
+         "pdec": 0.4813,
+         "ydec": 0.538
+        },
+        "cmp4": {
+         "winLL": 0.58499,
+         "brier": 0.20022,
+         "acc": 0.6865,
+         "ece": 0.0258,
+         "slope": 1.278,
+         "bin7": 1.49789,
+         "method": 0.92986,
+         "joint": 1.98905,
+         "rgf": 1.05977,
+         "mgw": 0.90662,
+         "pdec": 0.4864,
+         "ydec": 0.538
+        }
+       },
+       "paired": {
+        "v10 - cmp4": {
+         "bin7": {
+          "diff": -0.02498,
+          "ci": [
+           -0.03927,
+           -0.01105
+          ]
+         },
+         "method": {
+          "diff": -0.01146,
+          "ci": [
+           -0.02134,
+           -0.00184
+          ]
+         },
+         "joint": {
+          "diff": -0.02502,
+          "ci": [
+           -0.03958,
+           -0.01079
+          ]
+         },
+         "winLL": {
+          "diff": -0.00326,
+          "ci": [
+           -0.00653,
+           0.00004
+          ]
+         },
+         "brier": {
+          "diff": -0.00143,
+          "ci": [
+           -0.00289,
+           0.00004
+          ]
+         },
+         "acc": {
+          "diff": 0.00475,
+          "ci": [
+           -0.00479,
+           0.01471
+          ]
+         },
+         "mgw": {
+          "diff": -0.02242,
+          "ci": [
+           -0.03666,
+           -0.00864
+          ]
+         },
+         "rgf": {
+          "diff": -0.00133,
+          "ci": [
+           -0.00418,
+           0.00147
+          ]
+         },
+         "pdec_bias_v10": {
+          "diff": -0.05673,
+          "ci": [
+           -0.08802,
+           -0.0253
+          ]
+         },
+         "pdec_bias_cmp4": {
+          "diff": -0.05159,
+          "ci": [
+           -0.0829,
+           -0.02023
+          ]
+         }
+        }
+       }
+      },
+      "none": {
+       "n_outcome": 853,
+       "n_decisive": 853,
+       "n_cards": 84,
+       "packages": {
+        "v10": {
+         "winLL": 0.58899,
+         "brier": 0.20206,
+         "acc": 0.6835,
+         "ece": 0.0355,
+         "slope": 1.292,
+         "bin7": 1.47766,
+         "method": 0.91648,
+         "joint": 1.96821,
+         "rgf": 1.05678,
+         "mgw": 0.88169,
+         "pdec": 0.4819,
+         "ydec": 0.5381
+        },
+        "cmp4": {
+         "winLL": 0.59377,
+         "brier": 0.20424,
+         "acc": 0.6846,
+         "ece": 0.0334,
+         "slope": 1.277,
+         "bin7": 1.50447,
+         "method": 0.92779,
+         "joint": 1.99495,
+         "rgf": 1.05811,
+         "mgw": 0.90442,
+         "pdec": 0.4872,
+         "ydec": 0.5381
+        }
+       },
+       "paired": {
+        "v10 - cmp4": {
+         "bin7": {
+          "diff": -0.02681,
+          "ci": [
+           -0.04063,
+           -0.01318
+          ]
+         },
+         "method": {
+          "diff": -0.01131,
+          "ci": [
+           -0.0209,
+           -0.00191
+          ]
+         },
+         "joint": {
+          "diff": -0.02674,
+          "ci": [
+           -0.04081,
+           -0.01285
+          ]
+         },
+         "winLL": {
+          "diff": -0.00477,
+          "ci": [
+           -0.00847,
+           -0.00091
+          ]
+         },
+         "brier": {
+          "diff": -0.00217,
+          "ci": [
+           -0.00384,
+           -0.00041
+          ]
+         },
+         "acc": {
+          "diff": -0.00117,
+          "ci": [
+           -0.01593,
+           0.0137
+          ]
+         },
+         "mgw": {
+          "diff": -0.02273,
+          "ci": [
+           -0.03684,
+           -0.00907
+          ]
+         },
+         "rgf": {
+          "diff": -0.00133,
+          "ci": [
+           -0.00416,
+           0.00147
+          ]
+         },
+         "pdec_bias_v10": {
+          "diff": -0.05622,
+          "ci": [
+           -0.08701,
+           -0.02523
+          ]
+         },
+         "pdec_bias_cmp4": {
+          "diff": -0.05092,
+          "ci": [
+           -0.08197,
+           -0.01998
+          ]
+         }
+        }
+       }
+      },
+      "close": {
+       "n_outcome": 844,
+       "n_decisive": 844,
+       "n_cards": 84,
+       "packages": {
+        "v10": {
+         "winLL": 0.576,
+         "brier": 0.19649,
+         "acc": 0.7002,
+         "ece": 0.0371,
+         "slope": 1.152,
+         "bin7": 1.46732,
+         "method": 0.91826,
+         "joint": 1.95957,
+         "rgf": 1.058,
+         "mgw": 0.88436,
+         "pdec": 0.4806,
+         "ydec": 0.5367,
+         "softCE_vs_close": 0.60325
+        },
+        "cmp4": {
+         "winLL": 0.57826,
+         "brier": 0.19745,
+         "acc": 0.6991,
+         "ece": 0.036,
+         "slope": 1.136,
+         "bin7": 1.49132,
+         "method": 0.92832,
+         "joint": 1.98355,
+         "rgf": 1.05912,
+         "mgw": 0.9068,
+         "pdec": 0.4861,
+         "ydec": 0.5367,
+         "softCE_vs_close": 0.6018
+        }
+       },
+       "paired": {
+        "v10 - cmp4": {
+         "bin7": {
+          "diff": -0.024,
+          "ci": [
+           -0.0383,
+           -0.01021
+          ]
+         },
+         "method": {
+          "diff": -0.01007,
+          "ci": [
+           -0.02015,
+           -0.00023
+          ]
+         },
+         "joint": {
+          "diff": -0.02397,
+          "ci": [
+           -0.03848,
+           -0.00999
+          ]
+         },
+         "winLL": {
+          "diff": -0.00226,
+          "ci": [
+           -0.00455,
+           0.00005
+          ]
+         },
+         "brier": {
+          "diff": -0.00096,
+          "ci": [
+           -0.00194,
+           0.00003
+          ]
+         },
+         "acc": {
+          "diff": 0.00118,
+          "ci": [
+           -0.00833,
+           0.01078
+          ]
+         },
+         "mgw": {
+          "diff": -0.02243,
+          "ci": [
+           -0.03664,
+           -0.00873
+          ]
+         },
+         "soft": {
+          "diff": 0.00146,
+          "ci": [
+           0.00128,
+           0.00164
+          ]
+         },
+         "rgf": {
+          "diff": -0.00112,
+          "ci": [
+           -0.00395,
+           0.00164
+          ]
+         },
+         "pdec_bias_v10": {
+          "diff": -0.05614,
+          "ci": [
+           -0.08734,
+           -0.02484
+          ]
+         },
+         "pdec_bias_cmp4": {
+          "diff": -0.05063,
+          "ci": [
+           -0.08189,
+           -0.0195
+          ]
+         }
+        }
+       }
+      }
+     },
+     "vs_v501_open_descriptive": {
+      "bin7": {
+       "diff": -0.00514,
+       "ci": [
+        -0.01392,
+        0.00363
+       ]
+      },
+      "method": {
+       "diff": 0.00021,
+       "ci": [
+        -0.00555,
+        0.00605
+       ]
+      },
+      "joint": {
+       "diff": -0.00521,
+       "ci": [
+        -0.0145,
+        0.0045
+       ]
+      },
+      "winLL": {
+       "diff": -0.00265,
+       "ci": [
+        -0.00606,
+        0.00081
+       ]
+      },
+      "brier": {
+       "diff": -0.0011,
+       "ci": [
+        -0.00259,
+        0.00042
+       ]
+      },
+      "acc": {
+       "diff": -0.00238,
+       "ci": [
+        -0.01535,
+        0.01056
+       ]
+      },
+      "mgw": {
+       "diff": -0.0014,
+       "ci": [
+        -0.00929,
+        0.0065
+       ]
+      },
+      "rgf": {
+       "diff": -0.00001,
+       "ci": [
+        -0.00447,
+        0.00446
+       ]
+      }
+     },
+     "methodround_vs_S_package_with_props": {
+      "none": {
+       "n": 853,
+       "v10": {
+        "joint": {
+         "submitted": 1.9682129267788206,
+         "model_S": 2.02591601405525,
+         "diff": -0.0577,
+         "ci95": [
+          -0.07824,
+          -0.03685
+         ]
+        },
+        "method3": {
+         "submitted": 0.9164795083430495,
+         "model_S": 0.9346650633019308,
+         "diff": -0.01819,
+         "ci95": [
+          -0.0285,
+          -0.00732
+         ]
+        },
+        "bin7": {
+         "submitted": 1.4776585438237189,
+         "model_S": 1.535664198645138,
+         "diff": -0.05801,
+         "ci95": [
+          -0.07807,
+          -0.03741
+         ]
+        },
+        "round_given_fin": {
+         "submitted": 1.0567792567683654,
+         "model_S": 1.0601277423205628,
+         "diff": -0.00335,
+         "ci95": [
+          -0.00805,
+          0.00085
+         ]
+        },
+        "winner": {
+         "submitted": 0.5889943624554942,
+         "model_S": 0.6212640384394862,
+         "diff": -0.03227,
+         "ci95": [
+          -0.04527,
+          -0.01855
+         ]
+        }
+       },
+       "cmp4": {
+        "joint": {
+         "submitted": 1.9949531485151153,
+         "model_S": 2.02591601405525,
+         "diff": -0.03096,
+         "ci95": [
+          -0.04391,
+          -0.01796
+         ]
+        },
+        "method3": {
+         "submitted": 0.9277899616644566,
+         "model_S": 0.9346650633019308,
+         "diff": -0.00688,
+         "ci95": [
+          -0.01023,
+          -0.00337
+         ]
+        },
+        "bin7": {
+         "submitted": 1.5044653955526524,
+         "model_S": 1.535664198645138,
+         "diff": -0.0312,
+         "ci95": [
+          -0.04365,
+          -0.01792
+         ]
+        },
+        "round_given_fin": {
+         "submitted": 1.058111432973251,
+         "model_S": 1.0601277423205628,
+         "diff": -0.00202,
+         "ci95": [
+          -0.00601,
+          0.00167
+         ]
+        },
+        "winner": {
+         "submitted": 0.5937689715540295,
+         "model_S": 0.6212640384394862,
+         "diff": -0.0275,
+         "ci95": [
+          -0.04012,
+          -0.01454
+         ]
+        }
+       }
+      },
+      "open": {
+       "n": 842,
+       "v10": {
+        "joint": {
+         "submitted": 1.964027160638727,
+         "model_S": 2.026872675090817,
+         "diff": -0.06285,
+         "ci95": [
+          -0.0851,
+          -0.04085
+         ]
+        },
+        "method3": {
+         "submitted": 0.9184038478665938,
+         "model_S": 0.9355975758608835,
+         "diff": -0.01719,
+         "ci95": [
+          -0.02806,
+          -0.00543
+         ]
+        },
+        "bin7": {
+         "submitted": 1.4729030788572612,
+         "model_S": 1.5359912366212,
+         "diff": -0.06309,
+         "ci95": [
+          -0.08462,
+          -0.04146
+         ]
+        },
+        "round_given_fin": {
+         "submitted": 1.0584417431813105,
+         "model_S": 1.0615459032431331,
+         "diff": -0.0031,
+         "ci95": [
+          -0.00796,
+          0.00112
+         ]
+        },
+        "winner": {
+         "submitted": 0.5817315952653572,
+         "model_S": 0.619084772847969,
+         "diff": -0.03735,
+         "ci95": [
+          -0.05205,
+          -0.02284
+         ]
+        }
+       },
+       "cmp4": {
+        "joint": {
+         "submitted": 1.9890505160873284,
+         "model_S": 2.026872675090817,
+         "diff": -0.03782,
+         "ci95": [
+          -0.05268,
+          -0.02356
+         ]
+        },
+        "method3": {
+         "submitted": 0.9298591326366606,
+         "model_S": 0.9355975758608835,
+         "diff": -0.00574,
+         "ci95": [
+          -0.00964,
+          -0.00195
+         ]
+        },
+        "bin7": {
+         "submitted": 1.4978857729350017,
+         "model_S": 1.5359912366212,
+         "diff": -0.03811,
+         "ci95": [
+          -0.05239,
+          -0.0241
+         ]
+        },
+        "round_given_fin": {
+         "submitted": 1.0597692098190556,
+         "model_S": 1.0615459032431331,
+         "diff": -0.00178,
+         "ci95": [
+          -0.00563,
+          0.00188
+         ]
+        },
+        "winner": {
+         "submitted": 0.5849883157497551,
+         "model_S": 0.619084772847969,
+         "diff": -0.0341,
+         "ci95": [
+          -0.04824,
+          -0.02005
+         ]
+        }
+       }
+      },
+      "close": {
+       "n": 844,
+       "v10": {
+        "joint": {
+         "submitted": 1.9595722484179587,
+         "model_S": 2.0273405385978434,
+         "diff": -0.06777,
+         "ci95": [
+          -0.09147,
+          -0.04454
+         ]
+        },
+        "method3": {
+         "submitted": 0.918256314123596,
+         "model_S": 0.9353687865198088,
+         "diff": -0.01711,
+         "ci95": [
+          -0.02826,
+          -0.005
+         ]
+        },
+        "bin7": {
+         "submitted": 1.4673208652422256,
+         "model_S": 1.5354115123015442,
+         "diff": -0.06809,
+         "ci95": [
+          -0.09145,
+          -0.04483
+         ]
+        },
+        "round_given_fin": {
+         "submitted": 1.058000332068519,
+         "model_S": 1.0610486579503675,
+         "diff": -0.00305,
+         "ci95": [
+          -0.00794,
+          0.00119
+         ]
+        },
+        "winner": {
+         "submitted": 0.5759975643660175,
+         "model_S": 0.6187782904048093,
+         "diff": -0.04278,
+         "ci95": [
+          -0.05937,
+          -0.0257
+         ]
+        }
+       },
+       "cmp4": {
+        "joint": {
+         "submitted": 1.9835453946513437,
+         "model_S": 2.0273405385978434,
+         "diff": -0.0438,
+         "ci95": [
+          -0.06247,
+          -0.02522
+         ]
+        },
+        "method3": {
+         "submitted": 0.9283242029846511,
+         "model_S": 0.9353687865198088,
+         "diff": -0.00704,
+         "ci95": [
+          -0.01268,
+          -0.00148
+         ]
+        },
+        "bin7": {
+         "submitted": 1.4913198103395644,
+         "model_S": 1.5354115123015442,
+         "diff": -0.04409,
+         "ci95": [
+          -0.06263,
+          -0.02572
+         ]
+        },
+        "round_given_fin": {
+         "submitted": 1.0591207778549234,
+         "model_S": 1.0610486579503675,
+         "diff": -0.00193,
+         "ci95": [
+          -0.00607,
+          0.00187
+         ]
+        },
+        "winner": {
+         "submitted": 0.5782581421331431,
+         "model_S": 0.6187782904048093,
+         "diff": -0.04052,
+         "ci95": [
+          -0.05773,
+          -0.02323
+         ]
+        }
+       }
+      }
+     },
+     "engine_all_vs_cmp4_stat_harness": {
+      "total": {
+       "diff": -0.008789,
+       "ci": [
+        -0.016894,
+        -0.000731
+       ],
+       "n": 865
+      },
+      "total_raw": {
+       "diff": -5.514493,
+       "ci": [
+        -9.184708,
+        -2.104966
+       ],
+       "n": 865
+      },
+      "winLL": {
+       "diff": -0.004297,
+       "ci": [
+        -0.010976,
+        0.002282
+       ],
+       "n": 853
+      },
+      "bin7": {
+       "diff": 0.004858,
+       "ci": [
+        -0.007684,
+        0.017443
+       ],
+       "n": 857
+      },
+      "method": {
+       "diff": 0.007085,
+       "ci": [
+        0.000435,
+        0.013962
+       ],
+       "n": 857
+      },
+      "dev_sig_lnd": {
+       "diff": -0.240678,
+       "ci": [
+        -0.568608,
+        0.092207
+       ],
+       "n": 865
+      },
+      "dev_sig_att": {
+       "diff": -0.344637,
+       "ci": [
+        -0.959247,
+        0.27005
+       ],
+       "n": 865
+      },
+      "dev_h_lnd": {
+       "diff": -0.1745,
+       "ci": [
+        -0.47282,
+        0.130268
+       ],
+       "n": 865
+      },
+      "dev_b_lnd": {
+       "diff": -0.015574,
+       "ci": [
+        -0.092514,
+        0.060545
+       ],
+       "n": 865
+      },
+      "dev_l_lnd": {
+       "diff": 0.016256,
+       "ci": [
+        -0.05935,
+        0.092984
+       ],
+       "n": 865
+      },
+      "dev_kd": {
+       "diff": 0.002721,
+       "ci": [
+        -0.004012,
+        0.009778
+       ],
+       "n": 865
+      },
+      "dev_td_lnd": {
+       "diff": -0.043459,
+       "ci": [
+        -0.07362,
+        -0.012959
+       ],
+       "n": 865
+      },
+      "dev_td_att": {
+       "diff": -0.07567,
+       "ci": [
+        -0.166459,
+        0.017366
+       ],
+       "n": 865
+      },
+      "dev_ctrl": {
+       "diff": -4.649975,
+       "ci": [
+        -8.033241,
+        -1.52706
+       ],
+       "n": 865
+      },
+      "dev_sub_att": {
+       "diff": 0.011022,
+       "ci": [
+        0.000176,
+        0.021954
+       ],
+       "n": 865
+      },
+      "mae_sig_lnd": {
+       "diff": -0.138675,
+       "ci": [
+        -0.40003,
+        0.128074
+       ],
+       "n": 865
+      },
+      "mae_sig_att": {
+       "diff": -0.015668,
+       "ci": [
+        -0.497853,
+        0.466937
+       ],
+       "n": 865
+      },
+      "mae_h_lnd": {
+       "diff": -0.314541,
+       "ci": [
+        -0.510837,
+        -0.113331
+       ],
+       "n": 865
+      },
+      "mae_b_lnd": {
+       "diff": 0.015973,
+       "ci": [
+        -0.037486,
+        0.06914
+       ],
+       "n": 865
+      },
+      "mae_l_lnd": {
+       "diff": 0.074126,
+       "ci": [
+        0.03004,
+        0.118965
+       ],
+       "n": 865
+      },
+      "mae_kd": {
+       "diff": -0.001375,
+       "ci": [
+        -0.003119,
+        0.000444
+       ],
+       "n": 865
+      },
+      "mae_td_lnd": {
+       "diff": 0.000285,
+       "ci": [
+        -0.012445,
+        0.014303
+       ],
+       "n": 865
+      },
+      "mae_td_att": {
+       "diff": -0.027477,
+       "ci": [
+        -0.074099,
+        0.021984
+       ],
+       "n": 865
+      },
+      "mae_ctrl": {
+       "diff": 0.129312,
+       "ci": [
+        -1.017527,
+        1.318056
+       ],
+       "n": 865
+      },
+      "mae_sub_att": {
+       "diff": 0.012398,
+       "ci": [
+        0.009772,
+        0.015018
+       ],
+       "n": 865
+      }
+     },
+     "engine_pit_and_base_rates_stat_harness": {
+      "cmp4": {
+       "pit": {
+        "sig_lnd": {
+         "in80": 0.8538,
+         "gtP90": 0.0526,
+         "ltP10": 0.0936,
+         "n": 1730,
+         "ce": 0.1075
+        },
+        "sig_att": {
+         "in80": 0.8445,
+         "gtP90": 0.0665,
+         "ltP10": 0.089,
+         "n": 1730,
+         "ce": 0.089
+        },
+        "h_lnd": {
+         "in80": 0.8145,
+         "gtP90": 0.0751,
+         "ltP10": 0.1104,
+         "n": 1730,
+         "ce": 0.0497
+        },
+        "b_lnd": {
+         "in80": 0.7896,
+         "gtP90": 0.0792,
+         "ltP10": 0.1312,
+         "n": 1730,
+         "ce": 0.0624
+        },
+        "l_lnd": {
+         "in80": 0.7757,
+         "gtP90": 0.1023,
+         "ltP10": 0.122,
+         "n": 1730,
+         "ce": 0.0486
+        },
+        "kd": {
+         "in80": 0.815,
+         "gtP90": 0.0838,
+         "ltP10": 0.1012,
+         "n": 1730,
+         "ce": 0.0324
+        },
+        "td_lnd": {
+         "in80": 0.7225,
+         "gtP90": 0.1422,
+         "ltP10": 0.1353,
+         "n": 1730,
+         "ce": 0.1549
+        },
+        "td_att": {
+         "in80": 0.6647,
+         "gtP90": 0.1751,
+         "ltP10": 0.1601,
+         "n": 1730,
+         "ce": 0.2705
+        },
+        "ctrl": {
+         "in80": 0.7653,
+         "gtP90": 0.1191,
+         "ltP10": 0.1156,
+         "n": 1730,
+         "ce": 0.0694
+        },
+        "sub_att": {
+         "in80": 0.8029,
+         "gtP90": 0.0971,
+         "ltP10": 0.1,
+         "n": 1730,
+         "ce": 0.0058
+        }
+       },
+       "base_rates": {
+        "KO": {
+         "sim": 0.30676,
+         "actual": 0.29055,
+         "err": 0.01621,
+         "tol": 0.02,
+         "inside": true
+        },
+        "SUB": {
+         "sim": 0.17869,
+         "actual": 0.16919,
+         "err": 0.0095,
+         "tol": 0.015,
+         "inside": true
+        },
+        "DEC": {
+         "sim": 0.51455,
+         "actual": 0.54026,
+         "err": -0.02571,
+         "tol": 0.035,
+         "inside": true
+        },
+        "kd100": {
+         "sim": 0.74551,
+         "actual": 0.68439,
+         "err": 0.06113,
+         "tol": 0.08213,
+         "inside": true
+        },
+        "td15": {
+         "sim": 1.31536,
+         "actual": 1.41282,
+         "err": -0.09746,
+         "tol": 0.14128,
+         "inside": true
+        },
+        "ctrl15": {
+         "sim": 163.69295,
+         "actual": 168.30074,
+         "err": -4.60779,
+         "tol": 16.83007,
+         "inside": true
+        }
+       }
+      },
+      "all": {
+       "pit": {
+        "sig_lnd": {
+         "in80": 0.8653,
+         "gtP90": 0.0543,
+         "ltP10": 0.0803,
+         "n": 1730,
+         "ce": 0.1306
+        },
+        "sig_att": {
+         "in80": 0.8688,
+         "gtP90": 0.0549,
+         "ltP10": 0.0763,
+         "n": 1730,
+         "ce": 0.1376
+        },
+        "h_lnd": {
+         "in80": 0.8231,
+         "gtP90": 0.0838,
+         "ltP10": 0.0931,
+         "n": 1730,
+         "ce": 0.0462
+        },
+        "b_lnd": {
+         "in80": 0.811,
+         "gtP90": 0.0659,
+         "ltP10": 0.1231,
+         "n": 1730,
+         "ce": 0.0682
+        },
+        "l_lnd": {
+         "in80": 0.804,
+         "gtP90": 0.0867,
+         "ltP10": 0.1092,
+         "n": 1730,
+         "ce": 0.0266
+        },
+        "kd": {
+         "in80": 0.8214,
+         "gtP90": 0.0786,
+         "ltP10": 0.1,
+         "n": 1730,
+         "ce": 0.0428
+        },
+        "td_lnd": {
+         "in80": 0.7694,
+         "gtP90": 0.1127,
+         "ltP10": 0.1179,
+         "n": 1730,
+         "ce": 0.0613
+        },
+        "td_att": {
+         "in80": 0.7763,
+         "gtP90": 0.1225,
+         "ltP10": 0.1012,
+         "n": 1730,
+         "ce": 0.0474
+        },
+        "ctrl": {
+         "in80": 0.8092,
+         "gtP90": 0.0809,
+         "ltP10": 0.1098,
+         "n": 1730,
+         "ce": 0.0382
+        },
+        "sub_att": {
+         "in80": 0.8075,
+         "gtP90": 0.0913,
+         "ltP10": 0.1012,
+         "n": 1730,
+         "ce": 0.0173
+        }
+       },
+       "base_rates": {
+        "KO": {
+         "sim": 0.29135,
+         "actual": 0.29055,
+         "err": 0.0008,
+         "tol": 0.02,
+         "inside": true
+        },
+        "SUB": {
+         "sim": 0.18467,
+         "actual": 0.16919,
+         "err": 0.01548,
+         "tol": 0.015,
+         "inside": false
+        },
+        "DEC": {
+         "sim": 0.52398,
+         "actual": 0.54026,
+         "err": -0.01627,
+         "tol": 0.035,
+         "inside": true
+        },
+        "kd100": {
+         "sim": 0.77444,
+         "actual": 0.68439,
+         "err": 0.09005,
+         "tol": 0.08213,
+         "inside": false
+        },
+        "td15": {
+         "sim": 1.38852,
+         "actual": 1.41282,
+         "err": -0.0243,
+         "tol": 0.14128,
+         "inside": true
+        },
+        "ctrl15": {
+         "sim": 174.6008,
+         "actual": 168.30074,
+         "err": 6.30006,
+         "tol": 16.83007,
+         "inside": true
+        }
+       }
+      }
+     },
+     "decision_by_scorer": {
+      "keep": true,
+      "branch": "branch 2",
+      "kept_under_glove_amendment": true,
+      "flags": [
+       "confirmation look",
+       "gate design informed by v7 / v8 train results"
+      ]
+     }
+    }
    },
    "blend": {
     "market": {
@@ -13576,9 +15430,10 @@
    "notes": [
     "2026-11-07T11:31 train: v10 candidate (binding bundle gate PASSED: data/derived/v10/gate_train_score.json); standard TRAIN evaluation of the frozen files (every flag as shipped), descriptive",
     "2026-11-07T11:34 v10 built (v4 simulator + v8's stat-line bundle as shipped + v7's predict package + cycle 5: newcomer path in FightBlend 1.4.0, explainer FightEngine.showFight), frozen in versions/v10 (engine e5c05d2f, params 8c20073f); ONE bundle-level gate protocol committed first (0358a0c 11:19:34 UTC), binding runs once (11:19-11:25 UTC), scored: PASS (primary -0.00528 [-0.00964, -0.00097] = v7's C1 open number reproduced; co-primary total stat deviance -1.13% [-1.76%, -0.51%]). Status preregistered; validation null. src/ holds v10 until the look decides.",
-    "2026-11-07T11:42 val: the single pre-registered v10 look (engine level, secondaries + base rates)"
+    "2026-11-07T11:42 val: the single pre-registered v10 look (engine level, secondaries + base rates)",
+    "2026-11-07T11:50 val: the single pre-registered v10 look scored once (look_protocol.json commands in order). KEPT by branch 2 (not worse on the open winner -0.00326 [-0.00653, +0.00004]; total stat-line deviance -0.88% [-1.69%, -0.07%]; glove-excluded base rates pass), labelled 'kept under the glove-window amendment'; branch 1 missed on a marginal bound. Confirmation look: claimed only after audit 2 and the forward ledger. pre-registered secondaries the scorer does not compute (methodround vs S per regime; engine per-stat deviance / MAE, PIT, stat-harness base rates) came from tools/v10_look_secondaries.py on the same binding files, after the decision was scored; never decisive"
    ],
-   "status": "preregistered",
+   "status": "kept",
    "train_gate": {
     "rule": "ONE bundle-level train gate (data/derived/v10/gate_protocol.json; RULES dict of tools/v10_gate.py): PRIMARY open-regime winner log loss of the v10 predict package minus cmp4 (the honest v4 package exactly as v7 defined it) on 2021-2023, pass iff point < 0 AND paired 95% CI upper <= +0.002 (V6_V10_PLAN 6.3); CO-PRIMARY total stat-line relative deviance of the v10 engine minus v4, 2021-2023, CI upper <= +0.5%; INTEGRITY 0 failed fights + frozen tests pass; per-part leave-one-out descriptive only; 20,000 event-cluster resamples (seed 7), Monte Carlo SE, marginal bounds decided by the clustered normal bound",
     "design_disclosure": "the bundle design and this gate were chosen AFTER v7's and v8's binding TRAIN results (v7 32 / 33 checks, failing only the close-regime winner bound; v8 all-on vs v4 on train winner -0.0080 [-0.0125, -0.0036], total stat deviance -0.80% [-1.35%, -0.24%]); no validation or vault number informed it. The primary is v7's C1 open contrast (same fights, comparator files, winner rows and bootstrap), so its result was predictable and reproduced exactly; the gate is a pre-stated consistency / wiring check of the consolidated bundle, not independent evidence. Label: 'gate design informed by v7 / v8 train results'.",
@@ -14783,7 +16638,116 @@
     "methodround.json held S / SM cells for vault fights (audit 1 exposure): cmp4's method cells come from it",
     "audit 1's side line scored the props pool and the debut method model on the vault: their audit-2 side-line results are not blind (same fights)"
    ],
-   "validated_at": "2026-11-07T11:42:34.073Z"
+   "validated_at": "2026-11-07T11:42:34.073Z",
+   "decide_vs_v4": {
+    "note": "engine level (v10 simulator vs v4 at 300 sims); the base-rate test is branch 2 (c); the rest is information only",
+    "file": "data/derived/evalv/v10_vs_v4_val_decide.json",
+    "old_reference": "data/derived/evalv/v4_repro_dev_val.json",
+    "branch1": {
+     "winLL": {
+      "diff": -0.005069402110199294,
+      "ci": [
+       -0.012673341232227499,
+       0.0024461358313817376
+      ],
+      "p_two_sided": 0.186,
+      "n": 853
+     },
+     "pass": false
+    },
+    "clearly_better_holm": [
+     "dev_ctrl"
+    ],
+    "clearly_worse_holm": [],
+    "family": {
+     "bin7": {
+      "diff": -0.00606,
+      "ci": [
+       -0.02238,
+       0.00872
+      ],
+      "p": 0.443,
+      "holm_reject": false
+     },
+     "method": {
+      "diff": 0.00207,
+      "ci": [
+       -0.005,
+       0.00975
+      ],
+      "p": 0.548,
+      "holm_reject": false
+     },
+     "dev_sig_lnd": {
+      "diff": -0.32157,
+      "ci": [
+       -0.70227,
+       0.07108
+      ],
+      "p": 0.11,
+      "holm_reject": false
+     },
+     "dev_sig_att": {
+      "diff": -0.42505,
+      "ci": [
+       -1.13696,
+       0.36137
+      ],
+      "p": 0.278,
+      "holm_reject": false
+     },
+     "dev_td_lnd": {
+      "diff": -0.04033,
+      "ci": [
+       -0.07054,
+       -0.00861
+      ],
+      "p": 0.01,
+      "holm_reject": false
+     },
+     "dev_ctrl": {
+      "diff": -4.48059,
+      "ci": [
+       -7.53817,
+       -1.47067
+      ],
+      "p": 0.004,
+      "holm_reject": true
+     },
+     "dev_kd": {
+      "diff": 0.001,
+      "ci": [
+       -0.00567,
+       0.00769
+      ],
+      "p": 0.775,
+      "holm_reject": false
+     }
+    },
+    "general_engine_branch2_would_keep": false,
+    "base_rate_full_paired_fail": [
+     "kd100"
+    ],
+    "base_rate_no_glove_paired_fail": []
+   },
+   "decision": {
+    "against": "primary: cmp4 = the honest v4 package (versions/v7:cmp4), as pre-registered; branch-2 metric and base rates: the v4 simulator (versions/v4) on the same honest inputs / evalv v4 reference",
+    "kept": true,
+    "branch": "branch 2",
+    "labels": [
+     "kept under the glove-window amendment (V6_V10_PLAN 7.1 item 9): the full-window paired base-rate test fails on KD per 100 head strikes; the governing glove-excluded test passes",
+     "confirmation look: an improvement is claimed only after vault audit 2 and the forward ledger (6.2 item 7)",
+     "gate design informed by v7 / v8 train results",
+     "comparator chosen with 2024-25 information on record (validation-informed)",
+     "branch 1 missed on a marginal bound (decided by the clustered normal bound)"
+    ],
+    "rule": "pre-registered (version_history.json v10 prereg, written 11:34:57 UTC before any 2024-25 v10 run): branch 1 keeps iff the open-regime winner log loss paired 95% CI upper (v10 package minus cmp4) < 0; otherwise branch 2 keeps iff ALL of (a) primary not worse: upper <= +0.002, (b) total stat-line relative deviance of the v10 engine minus v4 on 2024-25 has CI upper < 0, (c) evalv_decide's paired base-rate test has an empty paired_fail list on 2024-25 excluding the glove-trial window 2024-06-01..2024-11-15; hygiene branch not applicable",
+    "basis": "branch 1 fails, marginally: open-regime winner log loss 0.58173 vs 0.58499 on 842 decisive fights (84 cards), v10 package minus cmp4 -0.00326, bootstrap 95% CI [-0.00653, +0.00004] (20,000 resamples, seed 7); the upper bound is within 2 Monte Carlo SE (0.00003) of 0, so the clustered normal bound decides: +0.00002 > 0, fail. Branch 2 holds: (a) not worse, upper +0.00004 <= +0.002; (b) total stat-line relative deviance -0.88% [-1.69%, -0.07%] on 865 fights (MC SE of the upper 0.007 pts, not marginal); (c) glove-excluded paired base-rate test (647 fights): no failure. Full window (reported next to it): KD per 100 head strikes 0.771 vs 0.684 actual (v4 0.746) fails the paired test, hence the glove-window label. Both headline numbers were re-derived with independent code from the harness rows (primary -0.00326; stat-line -0.008789).",
+    "also": "secondaries, never decisive. Package vs cmp4: no line -0.00477 [-0.00847, -0.00091], close -0.00226 [-0.00455, +0.00005]; open Brier -0.00143 [-0.00289, +0.00004], accuracy +0.0048 n.s., ECE 0.025 vs 0.026, calibration slope 1.26 vs 1.28 (no line 1.29 vs 1.28, close 1.15 vs 1.14); 7-bin props off -0.0106 [-0.0196, -0.0016] open, -0.0123 none, -0.0101 close; with the props pool -0.0250 [-0.0393, -0.0111] open, -0.0268 none, -0.0240 close; method props off -0.0021 n.s., with props -0.0115 [-0.0213, -0.0018] open; joint who x how x when props off -0.0106 [-0.0204, -0.0009] open; round given a finish -0.0009 n.s.; method given the winner -0.0072 [-0.0159, +0.0012]; both packages under-predict decisions (P(decision) 0.492 vs 0.538 actual, cmp4 0.486). Vs model S (methodround, package with props) who x how x when -0.058 / -0.063 / -0.068 (none / open / close; cmp4 -0.031 / -0.038 / -0.044). Vs the v5.0.1 package (v6 look rows, descriptive) open winner -0.00265 [-0.00606, +0.00081]. Engine level (v10 simulator vs v4, stat harness): winner -0.0043 [-0.0110, +0.0023], 7-bin +0.0049 n.s., method +0.0071 [+0.0004, +0.0140] WORSE, control deviance -4.65 [-8.03, -1.53], TD landed -0.043 [-0.074, -0.013], submission attempts +0.011 [+0.0002, +0.022] WORSE, leg-landed MAE +0.074 [+0.030, +0.119] WORSE, control MAE +0.13 s n.s. (the train risk +1.6 s did not show), TD-attempt 80% PIT coverage 0.66 -> 0.78. evalv (300 sims, vs v4's look file): winner 0.6273 vs 0.6324, -0.0051 [-0.0127, +0.0024]; Holm family: control deviance clearly better, none worse. Blend test: engine weight 0.000 with and without a market (v4 0.037 / 0.000): the simulator alone adds nothing to the standard MoE experts.",
+    "context": "the look ran data/derived/v10/look_protocol.json's commands once, in order, 11:39-11:44 UTC Nov 7, on the committed protocol (HEAD 688b9a8) with the v10 ledger row committed; exactly the 11 pre-announced fights failed (no ML v2 monthly-rolling row), so the look is valid. The realised primary effect (-0.0033) is about 60% of the gate's -0.0053 and the look had power about 0.5, as stated. The keep rests on the stat-line branch, whose metric is an engine-level stat-line fit, not winner accuracy; the package's 7-bin / method gains come mostly from S2 cells and the props pool (gate leave-one-out). Not clean: every ingredient was scored on 2024-25 in research and the v6 look scored the same ML v2 head; nothing in v10 was chosen because of audit 1. Audit 2's 'if_v10_kept' primary now applies (v10 package minus cmp4, open regime, on the vault) with the glove label repeated.",
+    "action": "none to the files: v10 stays in src/ (engine3.js e5c05d2f, params3.js 8c20073f, ml/blend.js 1.4.0 = versions/v10, checked with cmp) and versions/v10 is the kept frozen copy; v10 is now the latest kept version (v4 was). Not done in this step and still open: the page still runs v4 (a v10 page must bundle embed.js / blend.js and pass tests/test_page_parity.js); the forward ledger needs a new fwd version for v10 pre-registered in data/predictions/README.md before the next lock (6.4; the fwd-4.4 work in flight is v4-based); HANDOFF.md / page copy numbers.",
+    "decided_at": "2026-11-07T11:50:00+00:00"
+   }
   }
  ],
  "vault_audits": [
@@ -15881,7 +17845,13 @@
    },
    "exposures_attached": "V6_V10_PLAN 6.5.3 list (methodround 2026 S / SM rows; durability 2026 level and KO share; preufc pooled 2024-2026 evaluations; first market / ml builds; styles' window; the Nov 7 durability / styles cleanup) + v4's all-cards EM judging weights (through 2026-10) + methodround.json S / SM cells for vault fights + audit 1 itself (same fights)",
    "glove_flag": "if the v10 entry is labelled 'kept under the glove-window amendment', audit 2 repeats that label",
-   "report_rules": "one report, no changes after it; numbers recorded in this entry's results block and research/vault_audit_v10.md; the exposure list attached; a second opening is not allowed"
+   "report_rules": "one report, no changes after it; numbers recorded in this entry's results block and research/vault_audit_v10.md; the exposure list attached; a second opening is not allowed",
+   "case_that_applies": {
+    "case": "if_v10_kept",
+    "fixed_by": "the v10 entry decision (2026-11-07T11:50 UTC: kept by branch 2)",
+    "glove_flag_applies": true,
+    "note": "recorded by the v10 look step after the look; the pre-registered text above is unchanged. Primary: open-regime winner log loss, v10 package minus cmp4, on the vault; the label 'kept under the glove-window amendment' is repeated in the audit report"
+   }
   }
  ]
 }

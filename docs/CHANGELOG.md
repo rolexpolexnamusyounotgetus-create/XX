@@ -5,6 +5,69 @@ Each engine version records its held-out numbers here (docs/ROADMAP.md). From v4
 2026-01-01 is in the sealed vault (docs/BACKLOG.md "Hidden-data protocol"). Older entries that say "test" meant 2024-01-01 to the
 snapshot; that window is retired.
 
+## v10 look (2026-11-07, 11:39-11:44 UTC): the single pre-registered 2024-25 look run once; v10 KEPT by branch 2, "kept under the glove-window amendment"; v10 replaces v4 as the latest kept version
+
+**Outcome.** The look ran data/derived/v10/look_protocol.json's commands once, in order (precheck, predict harness, stat
+harness, evalv, evalv_decide, tools/v10_gate.py look), on the committed protocol (HEAD 688b9a8) with the v10 ledger row committed
+first. Pre-checks: 30 / 30 protocol hashes, tests/test_v10.js 19 / 19 on the frozen files, 39 of 40 test jobs (test_page_parity
+fails exactly its 4 pre-registered tolerated checks). Integrity: exactly the 11 pre-announced fights failed (no ML v2
+monthly-rolling row), none other, so the look is valid; the stat harness had 0 failures. Decision by the pre-registered rule:
+**branch 1 fails on a marginal bound, branch 2 keeps v10.** Labels carried into audit 2: kept under the glove-window amendment
+(7.1 item 9), confirmation look (an improvement is claimed only after vault audit 2 and the forward ledger), gate design informed
+by v7 / v8 train results, comparator chosen with 2024-25 information on record. Nothing dated 2026 was read.
+
+**Primary (open-regime winner log loss, v10 package minus cmp4 = the honest v4 package; 842 decisive fights, 84 cards; 20,000
+event-cluster resamples, seed 7).** 0.58173 vs 0.58499: **-0.00326 [-0.00653, +0.00004]**. The upper bound sits within 2 Monte
+Carlo SE (0.00003) of 0, so the clustered normal bound decides: +0.00002 > 0, branch 1 fails. Expected -0.0053 (the gate), MDE
+0.0076, power about 0.5: the realised effect is about 60% of the gate's. An independent recomputation from the harness rows gives
+the same difference (-0.00326; card bootstrap [-0.00648, +0.00000]).
+
+**Branch 2 (all three hold).**
+- (a) not worse: upper +0.00004 <= +0.002.
+- (b) total stat-line relative deviance, v10 engine minus v4 (10 stats, normalised by v4's mean deviance per stat on the look's
+  865 fights): **-0.88% [-1.69%, -0.07%]**; not marginal (MC SE 0.007 pts); recomputed independently (-0.8789%).
+- (c) evalv_decide's paired base-rate test on 2024-25 without the glove-trial window (647 fights): no failure. Full window
+  (reported, not governing): KD per 100 head strikes 0.771 vs 0.684 actual (v4 0.746) fails, hence the glove label. The absolute
+  mlcal-tolerance flags (not the pre-registered condition) also mark, without the glove window, KO 29.1% vs 31.4% actual (v4 30.5%)
+  and SUB 18.4% vs 16.6% (v4 17.9%).
+
+**Secondaries (never decisive).**
+- Package vs cmp4: no line -0.00477 [-0.00847, -0.00091]; close -0.00226 [-0.00455, +0.00005]. Open: Brier -0.00143
+  [-0.00289, +0.00004], ECE 0.025 vs 0.026, slope 1.26 vs 1.28.
+- 7-bin, props off: -0.0106 [-0.0196, -0.0016] open, -0.0123 none, -0.0101 close. With the props pool: -0.0250 [-0.0393, -0.0111]
+  open, -0.0268 none, -0.0240 close.
+- Method: props off -0.0021 n.s.; with props -0.0115 [-0.0213, -0.0018] open.
+- Other package metrics: joint (props off, open) -0.0106 [-0.0204, -0.0009]; round given a finish n.s.; both packages
+  under-predict decisions (0.492 vs 0.538 actual).
+- Vs model S (methodround --score, package with props), who x how x when: v10 -0.058 / -0.063 / -0.068 (none / open / close);
+  cmp4 -0.031 / -0.038 / -0.044.
+- Vs the v5.0.1 package (the v6 look's rows; descriptive only): open winner -0.00265 [-0.00606, +0.00081].
+- Engine level, v10 simulator vs v4 on honest inputs. Better: control deviance -4.65 [-8.03, -1.53], TD landed -0.043
+  [-0.074, -0.013], TD-attempt 80% PIT coverage 0.66 -> 0.78. Worse: method +0.0071 [+0.0004, +0.0140], submission-attempt
+  deviance +0.011 [+0.0002, +0.022], leg-landed MAE +0.074 [+0.030, +0.119]. Neither: winner -0.0043 [-0.0110, +0.0023]; control
+  MAE +0.13 s n.s. (the train risk of +1.6 s did not show).
+- evalv vs v4: winner 0.6273 vs 0.6324, -0.0051 [-0.0127, +0.0024]. In the Holm family only control deviance is clearly better,
+  and nothing is clearly worse.
+- Blend test: engine weight 0.000 with and without a market (v4 0.037 / 0.000). The simulator alone adds nothing to the MoE
+  experts.
+
+**Reading it honestly.** The keep rests on the engine's stat-line fit (branch 2), not on a proven winner gain. The winner lean
+favours v10 in all three regimes, but only the no-line CI excludes 0, and that is a secondary. The package's 7-bin and method
+gains come mostly from the S2 cells and the props pool (the gate's leave-one-out). The v10 simulator alone is worse on method and
+on three per-stat measures. Every ingredient had been scored on 2024-25 before. Audit 2's pre-registered `if_v10_kept` primary
+now applies (v10 package minus cmp4, open regime, on the vault; power about 0.2), with the glove label.
+
+**Files.** version_history.json v10: `status: kept`, `validation` (evalv engine block + `package` with every look number and
+file hash), `blend`, `decide_vs_v4`, `decision`; vault_audits[audit 2] `case_that_applies` recorded (pre-registered text
+unchanged); val_look_ledger.json v10 looks 1. Outputs: data/derived/v10/look_val.json, look_stat_val.json, look_val_score.json,
+look_val_secondaries.json (tools/v10_look_secondaries.py: the pre-registered secondaries the scorer does not compute, from the
+same files, no new simulation), data/derived/evalv/v10_val.json, v10_vs_v4_val_decide.json, v10_blend.json, logs beside them,
+data/derived/v10/look_tests/. src/ already equals versions/v10 (no file restored).
+
+**Still open (not part of this step).** The page still runs v4: a v10 page must bundle embed.js and blend.js and pass
+tests/test_page_parity.js. The forward ledger needs a new fwd version for v10, pre-registered in data/predictions/README.md
+before the next lock (6.4); the fwd-4.4 work in flight is v4-based. The HANDOFF.md and page-copy numbers also need updating.
+
 ## v10 (2026-11-07): consolidated bundle + newcomer path + explainer built and frozen; ONE bundle-level binding train gate PASSED; single 2024-25 look pre-registered (not yet run); audit 2 pre-registered
 
 **Outcome.** v10 = the v4 simulator + v8's stat-line bundle exactly as v8 shipped it + v7's prediction package + cycle 5's

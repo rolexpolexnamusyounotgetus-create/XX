@@ -1,6 +1,11 @@
 # Engine roadmap: v3 to v10
 
-**Status, Nov 7, 2026, 6:45 am ET (after v10's train gate).** The latest kept engine is still **v4 (4.0.0)**. v10 (the consolidated
+**Status, Nov 7, 2026, 6:50 am ET (after v10's look).** The latest kept engine is now **v10 (10.0.0)** (versions/v10 = src/). Its
+single pre-registered 2024-25 look missed branch 1 on a marginal bound (open winner vs the honest v4 package -0.00326 [-0.00653,
++0.00004]) and was kept by branch 2 (not worse; total stat-line deviance vs v4 -0.88% [-1.69%, -0.07%]; glove-excluded base rates
+pass), labelled "kept under the glove-window amendment" and a confirmation look; audit 2's `if_v10_kept` primary applies
+(docs/CHANGELOG.md "v10 look"). Next: a v10 page, a fwd version for v10, vault audit 2. Earlier status (6:45 am ET, after v10's
+train gate): the latest kept engine was still **v4 (4.0.0)**. v10 (the consolidated
 bundle: the v4 simulator + v8's stat-line bundle + v7's prediction package + cycle 5's newcomer path and explainer) passed its one
 bundle-level binding train gate (open winner vs the honest v4 package -0.00528 [-0.00964, -0.00097], total stat deviance vs v4 -1.13%
 [-1.76%, -0.51%]; design chosen after v7 / v8 train results, disclosed) and is pre-registered for its single 2024-25 look; audit 2 is
@@ -63,7 +68,7 @@ What remains, in the order of docs/V6_V10_PLAN.md section 3 (re-ranked after v5.
    train gate FAILED 8 of 14 checks: year-level base-rate errors fall only for control, sig-landed deviance n.s., 7-bin / method
    above the +0.002 bounds; the 5-round shape and doctor / corner checks pass where v4 fails; level trackers built but dropped on
    2019-20 because the learned rates already carry the level; versions/v9-gate-failed/. Kept as tooling: tools/drift_monitor.py.)
-5. **v10 (cycle 5): newcomers, explainer, the page.** (Built Nov 7 as the consolidated bundle; bundle-level train gate PASSED; look pre-registered, not yet run; versions/v10/. The page is not rebuilt: it still runs v4 and src/ml/pagepredict.js; a v10 page must bundle embed.js / blend.js and pass tests/test_page_parity.js.)
+5. **v10 (cycle 5): newcomers, explainer, the page.** (Built Nov 7 as the consolidated bundle; bundle-level train gate PASSED; single look run 11:39-11:44 UTC: KEPT by branch 2, kept under the glove-window amendment; versions/v10/. The page is not rebuilt: it still runs v4 and src/ml/pagepredict.js; a v10 page must bundle embed.js / blend.js and pass tests/test_page_parity.js.)
 
 The 3D show and the page improve alongside: modern renderer, image-based lighting, post-processing, likeness avatars from the tale
 of the tape and the scouting files, technique choices from each fighter's real style, and a matchup explorer for any two fighters.

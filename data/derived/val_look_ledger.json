@@ -51,9 +51,9 @@
   {
    "version": "v10 (10.0.0)",
    "looks": 1,
-   "when": "2026-11-07 11:39 UTC (look started)",
-   "status": "look running: started 2026-11-07 11:39 UTC by the v10 look step (prechecks passed: hashes 30/30, tests/test_v10.js 19/19 on the frozen files, 39 of 40 test jobs, test_page_parity failing only its 4 tolerated checks)",
-   "note": "the single pre-registered v10 look (version_history.json v10 prereg; data/derived/v10/look_protocol.json): predict package v10 vs cmp4 (open-regime winner, branch 1; branch 2 total stat-line deviance vs v4 + glove-excluded paired base-rate test). Confirmation look. The look step sets looks 1 and when."
+   "when": "2026-11-07 11:39-11:44 UTC",
+   "status": "look run once and scored; KEPT by branch 2 (kept under the glove-window amendment)",
+   "note": "the single pre-registered v10 look (version_history.json v10 prereg; data/derived/v10/look_protocol.json commands run once, in order, on committed protocol HEAD 688b9a8 with this row committed at looks 0): predict package v10 vs cmp4, open-regime winner -0.00326 [-0.00653, +0.00004] (842 decisive fights; branch 1 missed on a marginal bound, normal upper +0.00002); branch 2: not worse, total stat-line deviance vs v4 -0.88% [-1.69%, -0.07%], glove-excluded paired base-rate test passes (full window fails on KD per 100 head) -> kept under the glove-window amendment. Confirmation look (every ingredient already scored on 2024-25; the fifth and last v6-v10 look). Engine-level secondaries via tools/evalv.js --split val --compare v4 + evalv_decide + blend test. Run by the v10 look step."
   }
  ],
  "components": [
