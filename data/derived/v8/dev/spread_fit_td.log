@@ -1,11 +1,6 @@
-v8_gate: 1999 train fights x 2 orders x 150 sims, arms td0, td0.3, td0.5, td0.7, td0.9, td1.1, 3 workers, seed 1
-  200/1999 fights, 9 s
-  400/1999 fights, 19 s
-  600/1999 fights, 44 s
-  800/1999 fights, 68 s
-  1000/1999 fights, 92 s
-  1200/1999 fights, 116 s
-  1400/1999 fights, 139 s
-  1600/1999 fights, 164 s
-  1800/1999 fights, 187 s
-wrote data/derived/v8/dev/spread_fit_td.json (1999 fights, 0 failed, 211 s); engine/params 8.0.0 | 8.0.0-selfcal-pre2024
+v8_gate: 1999 train fights x 2 orders x 150 sims, arms td0, td0.7, td0.9, td1.1, td1.3, td1.5, 3 workers, seed 1
+  200/1999 fights, 10 s
+  400/1999 fights, 20 s
+  600/1999 fights, 45 s
+  800/1999 fights, 71 s
+  1000/1999 fights, 94 s

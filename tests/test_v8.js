@@ -8,8 +8,8 @@
    2. spread flags with sd 0, and the spread / retarget flags without their inputs, leave the fights identical to flag-off
    3. the spread draws do not touch the main random stream (form draws identical) and are mean-1 lognormal (empirical means)
    4. retarget: deterministic, corner-symmetric (A-B and B-A get identical per-fighter multipliers), cache replay = computed
-      result bit for bit, every cumulative multiplier inside [1 / mlMaxRatio, mlMaxRatio], realised decision rates move toward
-      the targets, knockdown / conversion / stoppage tables untouched
+      result bit for bit, every cumulative multiplier inside [1 / mlMaxRatio, mlMaxRatio], realised totals move toward the
+      like-for-like targets, knockdown / conversion / stoppage tables untouched
    5. embed: applied with opts.embed, equals the blend formula (embedBlend), off without inputs
    6. targets: data/derived/v8/statlines_targets.json reproduces src/ml/statdist.js engineTargets on the fold tables (sample),
       fold per year as registered (2019 none, 2020-2023 f<year>, 2024-2025 dev), no 2026 fight anywhere in the v8 inputs
@@ -135,19 +135,28 @@ function sims(Ex, m, seed, n, trace) { const rng = Ex.makeRng(seed), out = []; f
   const mE = E.matchup(f.A, f.B, Object.assign(v8Opts(f, 0, { components: { embed: true, retarget: false } }), {}));
   ok("retarget leaves knockdown / GNP / standing-TKO / submission-conversion / guillotine tables untouched",
     JSON.stringify([mE.kd, mE.gnp, mE.stko, mE.subO, mE.gillo, Array.from(mE.subOPos)]) === JSON.stringify([mAB.kd, mAB.gnp, mAB.stko, mAB.subO, mAB.gillo, Array.from(mAB.subOPos)]));
-  // realised decision-subset rates move toward the targets (distance attempts, takedown attempts, sig landed) on a few fights
+  // realised totals move toward the like-for-like targets (each simulation at its own length and finished status)
   let closer = 0, tot = 0;
   for (const g of fights.filter((x) => TG[x.id] && TG[x.id].fold).slice(0, 6)) {
-    const t = TG[g.id];
+    const t = TG[g.id], R = g.rounds === 5 ? 5 : 3;
     const m0 = E.matchup(g.A, g.B, v8Opts(g, 0, { components: { embed: true } })), m1 = E.matchup(g.A, g.B, v8Opts(g, 0, P));
-    const dr = (m) => { const r = E.makeRng(77), acc = { d_att: 0, td_att: 0, sig_lnd: 0 }; let n = 0; for (let i = 0; i < 1500; i++) { const s = E.simulate(m, r, false); if (!E.isDecision(s)) continue; n++; for (const k in acc) acc[k] += (s.totals.A[k] + s.totals.B[k]); } for (const k in acc) acc[k] /= n * 5 * g.rounds; return acc; };
-    const a0 = dr(m0), a1 = dr(m1);
-    for (const k of ["d_att", "td_att", "sig_lnd"]) { const want = t.A[k] + t.B[k]; tot++; if (Math.abs(a1[k] - want) <= Math.abs(a0[k] - want) + 0.02 * want) closer++; }
+    const gap = (m) => {
+      const r = E.makeRng(77), real = { d_att: 0, td_att: 0, ctrl: 0 }, want = { d_att: 0, td_att: 0, ctrl: 0 };
+      for (let i = 0; i < 1500; i++) {
+        const s = E.simulate(m, r, false), dec = E.isDecision(s), mn = dec ? 5 * R : (s.round - 1) * 5 + s.t / 60;
+        for (const k in real) for (const sd of ["A", "B"]) { real[k] += s.totals[sd][k]; want[k] += dec ? t[sd][k] * 5 * R : E._rt.finMean(t.fin.t, t.fin[sd][k], mn); }
+      }
+      const o = {}; for (const k in real) o[k] = Math.abs(Math.log(real[k] / want[k])); return o;
+    };
+    const a0 = gap(m0), a1 = gap(m1);
+    for (const k in a0) { tot++; if (a1[k] <= a0[k] + 0.03) closer++; }
   }
-  ok("realised decision rates move toward the statlines targets (>= 80% of fight x stat)", closer >= 0.8 * tot, closer + "/" + tot);
+  ok("realised totals move toward the like-for-like statlines targets (>= 80% of fight x stat)", closer >= 0.8 * tot, closer + "/" + tot);
   // swapOpts swaps every corner-specific input
-  const so = E._rt.swapOpts(v8Opts(f, 0, P), mAB);
-  ok("swapOpts swaps learned rates, etas and targets and pins the division", so.ml.pred.A === v8Opts(f, 0, P).ml.pred.B || JSON.stringify(so.ml.pred.A) === JSON.stringify(v8Opts(f, 1, P).ml.pred.A) && JSON.stringify(so.statTargets.A) === JSON.stringify(TG[f.id].B) && so.division === mAB.division);
+  const o0 = v8Opts(f, 0, P), o1 = v8Opts(f, 1, P), so = E._rt.swapOpts(o0, mAB);
+  ok("swapOpts swaps learned rates, etas, targets (with the finished grid) and pins the division",
+    JSON.stringify(so.ml.pred.A) === JSON.stringify(o1.ml.pred.A) && JSON.stringify(so.embed.etaA) === JSON.stringify(o1.embed.etaA) &&
+    JSON.stringify(so.statTargets) === JSON.stringify(o1.statTargets) && so.division === mAB.division && so._noRetarget === true);
 }
 // ---------------------------------------------------------------- 5. embed
 {

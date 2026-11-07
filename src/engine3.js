@@ -1664,7 +1664,7 @@
     // v8: components embed / retarget / tdIntent / ctrlSpread
     loadEmbed: loadEmbed, embedBlend: embedBlendSide, compOn: compOn,
     resolveParams: function (over, base) { return mergeParams(base || getParams(), over || {}); },
-    retargetCacheClear: retargetCacheClear, _rt: { step: rtStep, apply: rtApply, ipf: rtIpf, pilot: rtPilot, swapOpts: swapOpts, auxSeed: auxSeed, spreadOf: spreadOf },
+    retargetCacheClear: retargetCacheClear, _rt: { finMean: rtFinMean, step: rtStep, apply: rtApply, ipf: rtIpf, pilot: rtPilot, swapOpts: swapOpts, auxSeed: auxSeed, spreadOf: spreadOf },
     summarize: summarize, explain: explain, manualProfile: manualProfile,
     // helpers exposed for tests, calibration and the page
     priorFor: priorFor, league: league, fighterRates: fighterRates, occupancy: occupancy, isDecision: isDecision,
