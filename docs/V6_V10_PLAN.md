@@ -735,6 +735,19 @@ data, with held-out numbers not worse.
    - preufc ran three evaluations pooled over 2024-2026;
    - the first market and ml builds scored 2024-2026, including the Kalshi check;
    - styles' 2024+ window runs through 2026-10.
+   - (Added Nov 7, 2026 by the v5.0.1 cleanup, before audit 1; v5 review.) The durability research (first commit 09:46 UTC Nov 6,
+     after the protocol at 09:29) and the styles research (built 10:59 UTC) scored their held-out tables on 2024-01-01..2026-10-31,
+     and `durability.json` held 373 walk-forward records of vault fights plus 2026 rows of its KD level series (2026H1, 2026H2),
+     and the durability report quoted the 2026 KO share, an observed / expected ratio for 2026 and a Nov 2025-Oct 2026 KD rate.
+     All of it sat in the repo for about 17 hours and was read by later agents, including the v5 review and the v5.0.1 agent (the
+     review quotes the 2026 KD levels, KO share and O/E). Moved out on Nov 7: those items, the old `durability_verify.json`,
+     `styles.json` and `styles_verify.json` are in the vault directory (`durability_vault.json`, `durability_verify_vault.json`,
+     `styles_vault.json`, `styles_verify_vault.json`); the held-out tables were re-scored on 2024-25 only, and the reports were
+     redacted. Consequences, pre-registered: (a) **KD / KO-level and durability results on the vault are not blind** for any
+     version, in either audit, so the audit reports them as "seen-level" descriptives and they cannot confirm a KD / KO / durability
+     claim; (b) **v6+ calibration must not read these numbers** (no KD / KO level, window or durability base may be chosen with them;
+     the v5.0.1 knockdown-base check was run on 2019-2023 only, with a rule written before it ran, and kept the incumbent);
+     (c) winner-level, stat-line and judging questions are unaffected beyond the items above.
 
    So the vault is close to clean for winner-level questions about new packages, but not for method or KD levels.
 

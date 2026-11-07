@@ -1,0 +1,23 @@
+{
+ "S": {
+  "n_sides": 3998,
+  "normComputedChinS": 0.9566,
+  "normComputedPowS": 1.0043,
+  "geo_record_chin_x_pow": 0.9464,
+  "geo_computed_chin_x_pow_raw": 0.9851
+ },
+ "C": {
+  "n_fighters": 1114,
+  "normComputedChin": 1.1786,
+  "normComputedPow": 1.0125,
+  "geo_record_chin_x_pow": 0.9435,
+  "geo_computed_chin_x_pow_raw": 0.7907
+ },
+ "meta": {
+  "tool": "tools/durlevel_fit.js",
+  "built": "2026-11-07T03:35:21.824Z",
+  "engine": "5.0.1",
+  "params": "5.0.0-selfcal-pre2024",
+  "note": "S path fit on 2019-2023 backtest sides (train only); C path on the live roster (production constant, never used in backtests)"
+ }
+}
