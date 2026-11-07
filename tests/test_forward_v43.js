@@ -21,7 +21,8 @@
    6. Guards: --fwd auto picks fwd-4.3 from 2026-11-14 (fwd-4.1 before); writing under another version is refused and
       writes nothing; the README fwd-4.3 hash table equals the tool's pins; the README addendum names the code on disk.
    Since fwd-4.4 (README "Forward model v4.4", Nov 7) the README assigns fwd-4.4 to events from 2026-11-14, so --fwd auto
-   and the refusal messages name fwd-4.4 (tests/test_forward_v44.js covers fwd-4.4 and the byte identity of fwd-4.3). */
+   and the refusal messages named fwd-4.4 (tests/test_forward_v44.js covers fwd-4.4 and the byte identity of fwd-4.3); since
+   fwd-4.5 (README "Forward model v4.5", Nov 7) they name fwd-4.5 (tests/test_forward_v45.js). */
 "use strict";
 const fs = require("fs");
 const os = require("os");
@@ -121,7 +122,7 @@ const A = P43.doc;
 ok(/^fwd-4\.3: primary ml2_stack_open, no-line primary ml2_stack_noline /.test(A.model.version) && A.model.tool === "tools/forward_ledger.py 1.3" &&
   A.model.fwd === "4.3", "2. model block: fwd-4.3 version string, tool 1.3");
 // fwd-4.4 (README "Forward model v4.4", Nov 7) supersedes fwd-4.3 from 2026-11-14: auto now picks fwd-4.4 there
-ok(/^fwd-4\.4:/.test(Pa.model.version), "2. --fwd auto writes fwd-4.4 (which superseded fwd-4.3) for an event dated " + DATE);
+ok(/^fwd-4\.5:/.test(Pa.model.version), "2. --fwd auto writes fwd-4.5 (which superseded fwd-4.4 and fwd-4.3) for an event dated " + DATE);
 ok(A.model.noline_primary === "ml2_stack_noline" && A.model.noline_fallback === "moe_noline" && /6\.5\.1\(b\) reads p_a_noline/.test(A.model.drift_rule_b) &&
   /Forward model v4\.3/.test(A.model.preregistration.readme_section) && /not clean on the vault/.test(A.model.preregistration.audit1_flag),
 "2. model block names the no-line primary, its fallback, the rule (b) column, the README section and the audit-1 flag");
@@ -270,11 +271,11 @@ console.log("5. fallback: %s missing from the ML v2 roster -> p_a_noline from th
 
 // ---------------------------------------------------------------- 6. guards, README tables
 const fv = pyJSON("print(json.dumps([F.fwd_for_date(d) for d in ['2026-11-07', '2026-11-13', '2026-11-14', '2026-12-30', '2027-06-01']]))");
-ok(fv.join() === "4.1,4.1,4.4,4.4,4.4", "6. --fwd auto: fwd-4.1 before 2026-11-14, fwd-4.4 (superseding fwd-4.3) from it (" + fv.join() + ")");
+ok(fv.join() === "4.1,4.1,4.5,4.5,4.5", "6. --fwd auto: fwd-4.1 before 2026-11-14, fwd-4.5 (superseding fwd-4.4, fwd-4.3) from it (" + fv.join() + ")");
 const r42 = py(cF, ["--fwd", "4.2"]);
-ok(r42.status !== 0 && /refused: data\/predictions\/README\.md assigns fwd-4\.4/.test(r42.stderr + r42.stdout), "6. writing fwd-4.2 for an event the README assigns to fwd-4.4 (formerly fwd-4.3) is refused");
+ok(r42.status !== 0 && /refused: data\/predictions\/README\.md assigns fwd-4\.5/.test(r42.stderr + r42.stdout), "6. writing fwd-4.2 for an event the README assigns to fwd-4.5 (formerly fwd-4.3, fwd-4.4) is refused");
 const r41 = py(cF, ["--fwd", "4.1"]);
-ok(r41.status !== 0 && /assigns fwd-4\.4/.test(r41.stderr + r41.stdout), "6. writing fwd-4.1 for a fwd-4.4 event is refused");
+ok(r41.status !== 0 && /assigns fwd-4\.5/.test(r41.stderr + r41.stdout), "6. writing fwd-4.1 for a fwd-4.5 event is refused");
 const vegas = cp.spawnSync("python3", [path.join(ROOT, "tools/forward_ledger.py"), "predict", "--event", "2026-11-07", "--fwd", "4.3",
   "--dir", path.join(tmp, "ledger")], { cwd: ROOT, encoding: "utf8" });
 ok(vegas.status !== 0 && /refused/.test(vegas.stderr + vegas.stdout), "6. writing fwd-4.3 for the Vegas 124 card (fwd-4.1) is refused");

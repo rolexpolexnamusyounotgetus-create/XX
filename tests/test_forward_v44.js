@@ -15,7 +15,11 @@
       check_live passes) moves that fighter's bout (market-rating expert, ML v2 no-line stack, p_a_noline) and no other.
    5. Corner symmetry of the fwd-4.4 ledger document on live inputs (a/b swapped).
    6. Guards: --fwd auto picks fwd-4.4 from 2026-11-14 (fwd-4.1 before); a fwd-4.3 write is refused; --live-dir is refused
-      outside a dry run; the README fwd-4.4 addendum names the code on disk. */
+      outside a dry run; the README fwd-4.4 addendum names the code on disk.
+   Since fwd-4.5 (README "Forward model v4.5", Nov 7) the README assigns fwd-4.5 to events from 2026-11-14, so part 6 expects
+   fwd-4.5 from --fwd auto and in the refusal messages, runs the --live-dir guard under fwd-4.5, and reads the latest code hash
+   from the fwd-4.4 section through the later sections (tests/test_forward_v45.js covers fwd-4.5 and the byte identity of
+   fwd-4.4 against tests/fixtures/forward_v44_golden.json). */
 "use strict";
 const fs = require("fs");
 const os = require("os");
@@ -203,17 +207,18 @@ else {
 // ---------------------------------------------------------------- 6. guards, README
 const fv = JSON.parse(cp.execFileSync("python3", ["-c", "import sys, json; sys.path.insert(0, 'tools'); import forward_ledger as F; " +
   "print(json.dumps([F.fwd_for_date(d) for d in ('2026-11-07', '2026-11-13', '2026-11-14', '2026-11-21', '2026-12-12')]))"], { cwd: ROOT }).toString());
-ok(fv.join() === "4.1,4.1,4.4,4.4,4.4", "6. --fwd auto: fwd-4.1 before 2026-11-14, fwd-4.4 from it (" + fv.join() + ")");
-const Pa = dry(cF, "pauto.json", []);
-ok(/^fwd-4\.4:/.test(Pa.model.version), "6. --fwd auto writes fwd-4.4 for an event dated " + DATE);
+ok(fv.join() === "4.1,4.1,4.5,4.5,4.5", "6. --fwd auto: fwd-4.1 before 2026-11-14, fwd-4.5 (superseding fwd-4.4) from it (" + fv.join() + ")");
+const Pa = dry(cF, "pauto.json", ["--props-dir", path.join(tmp, "no_props")]);
+ok(/^fwd-4\.5:/.test(Pa.model.version), "6. --fwd auto writes fwd-4.5 (which superseded fwd-4.4) for an event dated " + DATE);
 const r43 = py(cF, ["--fwd", "4.3"]);
-ok(r43.status !== 0 && /refused: data\/predictions\/README\.md assigns fwd-4\.4/.test(r43.stderr + r43.stdout), "6. writing fwd-4.3 for a fwd-4.4 event is refused");
-const rl = py(cF, ["--fwd", "4.4", "--live-dir", LIVE]);
+ok(r43.status !== 0 && /refused: data\/predictions\/README\.md assigns fwd-4\.5/.test(r43.stderr + r43.stdout), "6. writing fwd-4.3 for a fwd-4.5 event is refused");
+const rl = py(cF, ["--fwd", "4.5", "--live-dir", LIVE]);
 ok(rl.status !== 0 && /--live-dir is for dry runs/.test(rl.stderr + rl.stdout), "6. --live-dir outside a dry run is refused");
 ok(fs.readdirSync(path.join(tmp, "ledger")).length === 0, "6. refused runs wrote nothing");
 const readme = fs.readFileSync(path.join(ROOT, "data/predictions/README.md"), "utf8");
 const i44 = readme.indexOf("## Forward model v4.4");
-const sec44 = i44 >= 0 ? readme.slice(i44, readme.indexOf("\n## ", i44 + 5)) : "";
+// from the fwd-4.4 section through the later ones (a later version's addendum re-lists the shared tool code)
+const sec44 = i44 >= 0 ? readme.slice(i44, readme.indexOf("## Card snapshot notes")) : "";
 ok(sec44.length > 0, "6. README has the fwd-4.4 section");
 for (const f of ["tools/forward_ledger.py", "tools/forward_ledger.js", "tools/forward_statlines.js", "tools/live_refresh.py"]) {
   const re = new RegExp("`" + f.replace(/[./]/g, (c) => "\\" + c) + "`[^:\\n]*:\\s*([0-9a-f]{16})", "g");

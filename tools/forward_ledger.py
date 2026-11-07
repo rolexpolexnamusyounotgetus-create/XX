@@ -898,6 +898,8 @@ def cmd_predict(args):
         for ob in out_bouts:
             ob.pop("_cells", None)
             ob["statlines"] = sl["bouts"][ob["bout_id"]]
+            if v45:
+                ob["props_pool"] = ob.pop("props_pool")      # fwd-4.5's record after fwd-4.4's fields
     commit = git("rev-parse", "HEAD")
     dirty = git("status", "--porcelain", "--", "src", "tools", "data/derived")
     doc = {
@@ -1688,6 +1690,36 @@ def score_method_debut(rows, B):
     return out
 
 
+METHOD_SECONDARIES_45 = ("fwd44_cells", "debut_props_pool")    # README v4.5 item 6
+
+
+def score_method_secondary(rows, B):
+    """fwd-4.5: each method secondary (fwd44_cells, debut_props_pool) against its bout's primary, per version and secondary;
+    the metrics and intervals of fwd-4.2's debut method scoring (paired: primary minus secondary)."""
+    out = {}
+    nl = lambda x: -math.log(max(x, 1e-6))
+    for v in sorted({r["version"] for r in rows}):
+        ov = {}
+        for key in METHOD_SECONDARIES_45:
+            rs = [r for r in rows if r["version"] == v and r["key"] == key]
+            if not rs:
+                continue
+            o = {"n": len(rs), "n_events": len({r["date"] for r in rs}), "primary": {}, "secondary": {}, "paired": {}}
+            cl = [r["date"] for r in rs]
+            for j, name in enumerate(("log_loss_7way", "log_loss_given_winner", "log_loss_method3")):
+                a = [nl(r["prim"][j]) for r in rs]
+                c = [nl(r["sec"][j]) for r in rs]
+                o["primary"][name], o["secondary"][name] = sum(a) / len(a), sum(c) / len(c)
+                o["paired"][name] = boot_ci([x - y for x, y in zip(a, c)], cl, B) if len(rs) >= 2 else None
+            a = [(r["dist"][0] - r["dist"][2]) ** 2 for r in rs]
+            c = [(r["dist"][1] - r["dist"][2]) ** 2 for r in rs]
+            o["primary"]["distance_brier"], o["secondary"]["distance_brier"] = sum(a) / len(a), sum(c) / len(c)
+            o["paired"]["distance_brier"] = boot_ci([x - y for x, y in zip(a, c)], cl, B) if len(rs) >= 2 else None
+            ov[key] = o
+        out[v] = ov
+    return out
+
+
 def score_statlines(rows, B):
     """fwd-4.2 stat lines vs ufcstats totals, per version and stat (fight-sides)."""
     out = {}
@@ -1715,7 +1747,7 @@ def score_statlines(rows, B):
 def compute_scores(files, results, B, stats=None):
     res = {r["bout_id"]: r for r in results}
     srec = {x["bout_id"]: x for x in (stats or [])}
-    rows, void, mrows, srows = [], [], [], []
+    rows, void, mrows, srows, mrows45 = [], [], [], [], []
     for f, created, doc, ct in files:
         for b in doc["bouts"]:
             r = res.get(b["bout_id"])
@@ -1752,6 +1784,13 @@ def compute_scores(files, results, B, stats=None):
                                       "prim": method_probs(b["p_method"], r["winner"], k),
                                       "sec": method_probs(sec["p_method"], r["winner"], k),
                                       "dist": (b["p_distance"], sec["p_distance"], went)})
+                    for key in METHOD_SECONDARIES_45:      # fwd-4.5 (README v4.5 item 6): primary vs each secondary
+                        s45 = (b.get("p_method_secondary") or {}).get(key)
+                        if s45:
+                            mrows45.append({"version": doc["model"]["version"], "date": doc["date"], "bout_id": b["bout_id"],
+                                            "key": key, "prim": method_probs(b["p_method"], r["winner"], k),
+                                            "sec": method_probs(s45["p_method"], r["winner"], k),
+                                            "dist": (b["p_distance"], s45["p_distance"], 1.0 if k == "dec" else 0.0)})
             rows.append({"bout_id": b["bout_id"], "event": doc["event"], "date": doc["date"], "file": os.path.basename(f),
                          "version": doc["model"]["version"], "y": y, "p": pv, "p_method_actual": m7,
                          "m": {k: v for k, v in (b.get("models") or {}).items() if v is not None},
@@ -1815,6 +1854,8 @@ def compute_scores(files, results, B, stats=None):
     # fwd-4.2 additions (README "Forward model v4.2", Scoring); absent until such bouts are scored
     if mrows:
         out["method_debut"] = score_method_debut(mrows, B)
+    if mrows45:
+        out["method_secondary"] = score_method_secondary(mrows45, B)
     if srows:
         out["statlines"] = score_statlines(srows, B)
         out["n_statline_bouts"] = len({r["bout_id"] for r in srows})
@@ -1870,6 +1911,15 @@ def scores_md(S):
               "| metric | debut method | base rates | difference [CI] (n) |", "|---|---|---|---|"]
         for k in ("log_loss_7way", "log_loss_given_winner", "log_loss_method3", "distance_brier"):
             L.append("| %s | %.4f | %.4f | %s |" % (k, o["primary"][k], o["base_rates"][k], ci(o["paired"].get(k))))
+    for v, ov in (S.get("method_secondary") or {}).items():
+        for key, o in ov.items():
+            lab = {"fwd44_cells": "props pool (primary) vs fwd-4.4's cells", "debut_props_pool":
+                   "debut method model (primary) vs the debut-bout props pool (monitored)"}.get(key, key)
+            L += ["", "Method secondary, %s: %s (%d bouts, %d events; paired differences: negative = the primary is "
+                  "better):" % (v, lab, o["n"], o["n_events"]), "",
+                  "| metric | primary | `%s` | difference [CI] (n) |" % key, "|---|---|---|---|"]
+            for k in ("log_loss_7way", "log_loss_given_winner", "log_loss_method3", "distance_brier"):
+                L.append("| %s | %.4f | %.4f | %s |" % (k, o["primary"][k], o["secondary"][k], ci(o["paired"].get(k))))
     for v, mv in (S.get("statlines") or {}).items():
         L += ["", "Stat lines, %s (fight-sides vs ufcstats totals; Poisson deviance of the mean, paired difference vs the "
               "blend mean: negative = the stat-line layer is better; band [p10, p90] inclusive):" % v, "",
