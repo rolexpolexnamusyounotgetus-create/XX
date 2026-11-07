@@ -1,4 +1,20 @@
-/* Fight engine v4: a data-driven, continuous-time simulation of an MMA bout between any two fighters.
+/* Fight engine v9 (v4.0.0 + docs/V6_V10_PLAN.md cycle 4 behind flags): a data-driven, continuous-time simulation of an MMA
+   bout between any two fighters.
+   v9 components (params.components.<name>; every one off = engine 4.0.0 bit for bit, tests/test_v9.js):
+   - components.levels: walk-forward level anchoring. opts.level = { att, acc, td, ctrl, kd } multiplies the learned stat-line
+     targets of BOTH corners (strike attempts by position and target; accuracies as probabilities; takedown attempts; control;
+     knockdowns per landed head strike) before the adapter re-targets the tables, so the simulated league level follows a
+     trailing tracker of the real level built from fights strictly before the bout (tools/v9_levels.js: the realised level of
+     a reference engine against the actual one, eradrift's verified tracker settings). Acts only when the learned rates are
+     applied and opts.level is given (m.level records it). League-pooled: one factor per stat for every division.
+   - components.judgeWF: walk-forward judging. The EM round-winner weights come from params.judgeWF.byYear[fight year] (each
+     fit on judges' cards strictly before Jan 1 of that year, tools/v9_judge_wf.py) instead of the all-cards fit; with
+     opts.level.r108 (the tracked card-implied 10-8 share at the fight date, eradrift's verified tracker) the 10-8 threshold
+     follows it: target share = sRef x r108 / lRef, t108 = (alpha - ln target) / beta (mapping fit on train simulations).
+   - components.format: the joint level pass by format: 5-round fights get a knockdown factor kd5 and a championship-round
+     factor late5 on rounds 4-5 (knockdown, GNP TKO and submission-conversion hazards, like caution5); doctor / corner hazards
+     between rounds are scaled per format (stop3 / stop5) to the 2019-2023 per-round-reached rates.
+   Fight engine v4: a data-driven, continuous-time simulation of an MMA bout between any two fighters.
    Contract: docs/ENGINE_V3_SPEC.md (+ "Engine v4" section). Parameters: src/params3.js (FightParams).
    The file names stay engine3.js / params3.js for every version; VERSION below is the engine version.
 
@@ -26,7 +42,7 @@
   else root.FightEngine = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (FP0, root, MLR0) {
   "use strict";
-  var VERSION = "4.0.0";
+  var VERSION = "9.0.0";   // v9: v4.0.0 + components levels / judgeWF / format (all off = 4.0.0 bit for bit)
 
   // Sum keys (spec order; profiles may carry their own order in meta.keys / prof.keys)
   var KEYS = ["min", "n", "rds", "d_att", "d_lnd", "c_att", "c_lnd", "g_att", "g_lnd", "h_att", "h_lnd", "b_att", "b_lnd",
@@ -85,6 +101,8 @@
     }
     return out;
   }
+
+  function compOn(p, name) { return !!(p && p.components && p.components[name]); }
 
   function sums(prof) {
     var S = prof.S, keys = prof.keys || (DB && DB.meta && DB.meta.keys) || KEYS, o = {}, i;
@@ -303,6 +321,7 @@
     var base = getParams();
     if (!base) throw new Error("FightEngine: FightParams not loaded (load params3.js first)");
     var p = mergeParams(base, opts.params);
+    var jwInfo = compOn(p, "judgeWF") ? applyJudgeWF(p, opts, opts.date || (DB && DB.meta && DB.meta.snapshot) || null) : null;
     profA = resolve(profA); profB = resolve(profB);
     var division = opts.division || profA.division || profA.home || "Lightweight";
     var P = priorFor(division, opts.priors);
@@ -318,6 +337,7 @@
     var a = p.combA, b = p.combB, i, j, k;
     var m = { version: VERSION, A: info(profA), B: info(profB), division: division, rounds: nR, title: !!opts.title, date: date,
       p: p, P: P, L: L, R: R, adj: adj, judgePower: jud.power != null ? +jud.power : p.judge.power, opts: opts };
+    if (jwInfo) m.judgeWF = jwInfo;
 
     // ---- strike attempt rates
     m.dRate = [0, 0]; m.cRate = [0, 0]; m.gRate = [0, 0]; m.gBot = [0, 0];
@@ -491,6 +511,12 @@
     m.paceCurve = []; m.kdPace = []; m.pace = [[], []]; m.finR = [];
     var c5 = p.caution5 != null ? p.caution5 : 1;   // 5-round (main event / title) caution on knockdowns, GNP TKOs and submission conversion, every round
     for (k = 0; k < nR; k++) m.finR.push(nR >= 5 ? (k === 0 ? p.r1Caution5 : 1) * c5 : 1);
+    var fmt = compOn(p, "format") ? (p.format || {}) : null;   // v9 components.format (joint level pass by format)
+    if (fmt && nR >= 5) {
+      var l5 = fmt.late5 != null ? +fmt.late5 : 1, kd5 = fmt.kd5 != null ? +fmt.kd5 : 1;
+      for (k = 3; k < nR; k++) m.finR[k] *= l5;
+      m.kd[0] *= kd5; m.kd[1] *= kd5;
+    }
     for (k = 0; k < nR; k++) { m.paceCurve.push(curve[k] / cm0); m.kdPace.push(Math.pow(curve[k] / cm0, p.kdPaceExp)); }
     m.drain = [0, 0]; m.cardio = [0, 0];
     for (i = 0; i < 2; i++) {
@@ -562,7 +588,59 @@
       tdLand: p.tdLand,
       tdStam: p.tdStam
     };
+    if (fmt) {
+      var stS = nR >= 5 ? (fmt.stop5 != null ? +fmt.stop5 : 1) : (fmt.stop3 != null ? +fmt.stop3 : 1);
+      m.k.doc = p.doc * stS; m.k.corner = p.corner * stS;
+      m.format = { kd5: nR >= 5 ? (fmt.kd5 != null ? +fmt.kd5 : 1) : 1, late5: nR >= 5 ? (fmt.late5 != null ? +fmt.late5 : 1) : 1, stop: stS };
+    }
     return m;
+  }
+
+  // ------------------------------------------------------------------ v9 components.judgeWF: walk-forward judging
+  // p is the matchup's own merged parameter copy (mergeParams copies nested blocks), so p.judge can be replaced in place.
+  // Weights: opts.judgeWF.w (explicit, e.g. a test) or params.judgeWF.byYear[year]; a date after the table's last year uses
+  // the last row (fit on everything before it); a date before the first row, or no date, keeps the v4 weights (src "none").
+  // 10-8 threshold: with opts.level.r108 (tracked card-implied 10-8 share), target = sRef x r108 / lRef and
+  // t108 = (alpha - ln target) / beta (params.judgeWF.r108, fit on train simulations with the walk-forward weights on).
+  function applyJudgeWF(p, opts, date) {
+    var jw = p.judgeWF || {}, by = jw.byYear || {}, out = { src: "none", year: null, t108: null };
+    var J = {}, k; for (k in p.judge) J[k] = p.judge[k];
+    var ow = opts.judgeWF && opts.judgeWF.w;
+    var yr = date ? +String(date).slice(0, 4) : null, row = null, ys = Object.keys(by).map(Number).sort(function (a, b) { return a - b; });
+    if (ow) { row = ow; out.src = "opts"; }
+    else if (yr != null && ys.length) {
+      var use = yr > ys[ys.length - 1] ? ys[ys.length - 1] : (by[String(yr)] ? yr : null);
+      if (use != null) { row = by[String(use)]; out.src = "byYear"; out.year = use; }
+    }
+    if (row) { var W = ["head", "body", "leg", "kd", "td", "ctrlMin", "sub"]; for (k = 0; k < W.length; k++) if (row[W[k]] != null) J[W[k]] = +row[W[k]]; }
+    var lv = opts.level, rm = jw.r108;
+    if (lv && lv.r108 != null && rm && isFinite(+lv.r108) && +lv.r108 > 0) {
+      var tgt = rm.sRef * (+lv.r108) / rm.lRef;
+      J.t108 = (rm.alpha - Math.log(tgt)) / rm.beta;
+      out.t108 = J.t108; out.r108 = +lv.r108;
+    }
+    p.judge = J;
+    out.w = { head: J.head, body: J.body, leg: J.leg, kd: J.kd, td: J.td, ctrlMin: J.ctrlMin, sub: J.sub };
+    return out;
+  }
+
+  // ------------------------------------------------------------------ v9 components.levels: walk-forward level anchoring
+  // Multiplies the learned targets of both corners (a copy; the caller's object is untouched). Factors are clipped to
+  // [0.7, 1.4]; accuracies stay below 0.98. Symmetric by construction (league-level factors, no corner input).
+  var LV_ATT = ["d_att", "c_att", "g_att", "h_att", "b_att", "l_att"], LV_ACC = ["acc_h", "acc_b", "acc_l", "acc_d", "acc_c", "acc_g"];
+  function levelFactor(lv, k) { var v = lv[k]; if (v == null || !isFinite(+v)) return 1; return clip(+v, 0.7, 1.4); }
+  function applyLevel(pred, lv) {
+    var g = { att: levelFactor(lv, "att"), acc: levelFactor(lv, "acc"), td: levelFactor(lv, "td"), ctrl: levelFactor(lv, "ctrl"), kd: levelFactor(lv, "kd") };
+    function side(src) {
+      var o = {}, k, i; for (k in src) o[k] = src[k];
+      for (i = 0; i < LV_ATT.length; i++) if (o[LV_ATT[i]] != null) o[LV_ATT[i]] = o[LV_ATT[i]] * g.att;
+      for (i = 0; i < LV_ACC.length; i++) if (o[LV_ACC[i]] != null) o[LV_ACC[i]] = Math.min(0.98, o[LV_ACC[i]] * g.acc);
+      if (o.td_att != null) o.td_att *= g.td;
+      if (o.ctrl != null) o.ctrl *= g.ctrl;
+      if (o.kd_h != null) o.kd_h *= g.kd;
+      return o;
+    }
+    return { pred: { A: side(pred.A), B: side(pred.B), base: pred.base }, g: g };
   }
 
   // ------------------------------------------------------------------ matchup (v4): base tables + learned stat-line rates
@@ -604,6 +682,10 @@
     if (!pred) return m;
     var w = m.p.mlWeight != null ? +m.p.mlWeight : 1;
     if (!(w > 0)) return m;
+    if (compOn(m.p, "levels") && opts.level) {               // v9 components.levels
+      var lvA = applyLevel(pred, opts.level);
+      pred = lvA.pred; m.level = { applied: true, g: lvA.g };
+    }
     MLR.applyToMatchup(m, pred, { engine: api, model: model || undefined, weight: w, maxRatio: m.p.mlMaxRatio || 4,
       parts: opts.mlParts || undefined });
     m.mlPred = { A: pred.A, B: pred.B, base: pred.base };
@@ -1248,7 +1330,10 @@
     summarize: summarize, explain: explain, manualProfile: manualProfile,
     // helpers exposed for tests, calibration and the page
     priorFor: priorFor, league: league, fighterRates: fighterRates, occupancy: occupancy, isDecision: isDecision,
-    clip: clip, log5: log5, odds: odds, prob: prob, params: getParams
+    clip: clip, log5: log5, odds: odds, prob: prob, params: getParams,
+    // v9: components levels / judgeWF / format
+    resolveParams: function (over, base) { return mergeParams(base || getParams(), over || {}); },
+    applyLevel: applyLevel
   };
   return api;
 });
