@@ -64,7 +64,7 @@
   else root.FightBlend = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (root) {
   "use strict";
-  var VERSION = "1.4.0";   // 1.4.0 (engine v10, cycle 5 + the v8 bundle): swapOpts also swaps the v8 engine's per-call inputs (opts.statTargets with its finished-fight grid, opts.statdist) for the B-A order; the newcomer path (params.blend.debutWinner: a bout with a UFC debutant takes its winner from the line where there is one, else opts.seededElo; the debut winner model reported as a monitored candidate). With debutWinner off and no statTargets / statdist, every output equals 1.3.0 (tests/test_v10.js). 1.3.0 (engine v7, cycle 2): market props for method given the winner (params.blend.props, opts.props; item 7 above); with props off or absent every output equals 1.2.1. 1.2.1 (v6 review; not part of any kept version): line fallback for debut / manual bouts (source 'line'), isDebutant honours record.ufc, the ml2stack interval perturbs the head without the MoE handle and has its own kappa; backtest-universe outputs are unchanged (every backtest row is ml2stack or stack). 1.2.0 (engine v6): ML v2 winner heads by line regime (winner 'ml2stack', data/derived/v6_stacks.json), S2 method/round cells (tools/methodround_model.js createS2), debut method path, distributional stat lines; every v6 path is off unless params.blend switches it on, so 1.1.1 behaviour is unchanged for v5 params
+  var VERSION = "1.4.1";   // 1.4.1 (v10 review; not part of any kept version): mrLib() also searches up from this file and the working directory for tools/methodround_model.js (a frozen copy under versions/vN/ml could not reach it and silently pooled nothing), and predict() records methodRound.mrLib {missing, note} when a requested S / S2 pool could not be computed; every output with the library found is unchanged. 1.4.0 (engine v10, cycle 5 + the v8 bundle): swapOpts also swaps the v8 engine's per-call inputs (opts.statTargets with its finished-fight grid, opts.statdist) for the B-A order; the newcomer path (params.blend.debutWinner: a bout with a UFC debutant takes its winner from the line where there is one, else opts.seededElo; the debut winner model reported as a monitored candidate). With debutWinner off and no statTargets / statdist, every output equals 1.3.0 (tests/test_v10.js). 1.3.0 (engine v7, cycle 2): market props for method given the winner (params.blend.props, opts.props; item 7 above); with props off or absent every output equals 1.2.1. 1.2.1 (v6 review; not part of any kept version): line fallback for debut / manual bouts (source 'line'), isDebutant honours record.ufc, the ml2stack interval perturbs the head without the MoE handle and has its own kappa; backtest-universe outputs are unchanged (every backtest row is ml2stack or stack). 1.2.0 (engine v6): ML v2 winner heads by line regime (winner 'ml2stack', data/derived/v6_stacks.json), S2 method/round cells (tools/methodround_model.js createS2), debut method path, distributional stat lines; every v6 path is off unless params.blend switches it on, so 1.1.1 behaviour is unchanged for v5 params
   var VERSION_PREV = "1.1.1";   // 1.1.1 (v5.0.1): invalid market lines are refused, never treated as no line; 1.1.0 (v5 merge step 5): ML v2 package winner blend, opts.lineKind, backtest guard, v5 corner swaps
   var STATE = { stack: null, feat: null, ml2: null, mlPage: null, mktRatings: null, mr: null, mrModel: null, data: null,
     winnerStacks: null, mrS2: null, debut: null, statDist: null, ml2Trees: null, preufc: null, lineStack: null, props: null };
@@ -80,9 +80,25 @@
     if (typeof require === "function") { try { return require("./moe.js"); } catch (e) { return null; } }
     return null;
   }
+  // 1.4.1 (v10 review): a frozen copy (versions/vN/ml/blend.js) cannot reach tools/ by "../../tools", so v10's frozen copy silently
+  // dropped the S / S2 pool live (method x round = simulator only, weight 1, no note). Search up from this file and from the working
+  // directory for tools/methodround_model.js, and say so in predict()'s methodRound.mrLib when it is still missing.
+  var MRLIB = { tried: false, lib: null, from: null };
   function mrLib() {
     if (root && root.MethodRound) return root.MethodRound;
-    if (typeof require === "function") { try { return require("../../tools/methodround_model.js"); } catch (e) { return null; } }
+    if (MRLIB.tried) return MRLIB.lib;
+    MRLIB.tried = true;
+    if (typeof require !== "function") return null;
+    var cands = ["../../tools/methodround_model.js"];
+    try {
+      var P = require("path"), FS = require("fs"), d = typeof __dirname === "string" ? __dirname : null, k;
+      for (k = 0; d && k < 6; k++, d = P.dirname(d)) cands.push(P.join(d, "tools", "methodround_model.js"));
+      if (typeof process !== "undefined" && process.cwd) cands.push(P.join(process.cwd(), "tools", "methodround_model.js"));
+      cands = cands.filter(function (c, i) { return i === 0 || FS.existsSync(c); });
+    } catch (e) { /* no fs / path: only the relative require */ }
+    for (var i = 0; i < cands.length; i++) {
+      try { MRLIB.lib = require(cands[i]); MRLIB.from = cands[i]; return MRLIB.lib; } catch (e) { /* next */ }
+    }
     return null;
   }
   function ml2Lib() {
@@ -1122,6 +1138,13 @@
         } catch (e) { mrCells = null; }
       }
     }
+    // 1.4.1: a requested S / S2 pool whose library or model could not be loaded is recorded, never silently replaced by the simulator
+    var mrMissing = null;
+    if (!mrCells && opts.mrCells !== false && !BT) {
+      var wantS2 = mrModel === "S2" && STATE.mrS2 && STATE.mrModel, wantS = !!(opts.methodRound || STATE.mrModel);
+      if ((wantS2 || wantS) && !mrLib()) mrMissing = "tools/methodround_model.js not found from " + (typeof __dirname === "string" ? __dirname : "this bundle") + ": method x round is the simulator's cells alone (weight 1)";
+      else if (wantS2 || wantS) mrMissing = "S / S2 cells could not be computed for this bout: method x round is the simulator's cells alone (weight 1)";
+    }
     var w = isNum(opts.mrWeight) ? opts.mrWeight : cfg.mrWeight;
     var cellN = anc ? anc.sim.cellN : sim.cellN;
     if (cfg.smooth > 0 && cellN) cellSim = smoothCells(cellN, cfg.smooth);
@@ -1243,7 +1266,7 @@
       backtest: BT ? { date: date, stackFitThrough: stackFT, inSample: !!(stackFT && date && stackFT >= date), mrCells: opts.mrCells ? "passed" : "none",
         mrFitThrough: opts.mrFitThrough || null } : null,
       cells: cells, R: R, marginals: mg, bins7: mg.bins7,
-      methodRound: { weight: w, pool: cfg.mrPool || "linear", variant: mrVariant, model: mrModel, s2Inputs: s2in ? { src: s2in.src } : null, simRescaled: simR, mrRescaled: mrR },
+      methodRound: { weight: w, pool: cfg.mrPool || "linear", variant: mrVariant, model: mrModel, s2Inputs: s2in ? { src: s2in.src } : null, simRescaled: simR, mrRescaled: mrR, mrLib: mrMissing ? { missing: true, note: mrMissing } : undefined },
       sim: { p: sim.p, pA: sim.pA, pB: sim.pB, pD: sim.pD, cells: sim.cells, n: N, runs: sim.runs, avgMin: sim.avgMin, rates: sim.rates },
       // anchor.adjA / adjB: the knobs that reproduce the anchored matchup (e.g. FightEngine.matchup(a, b, {..., adjA, adjB})
       // for the 3D show's traced fight)
