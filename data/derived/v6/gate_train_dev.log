@@ -1,0 +1,8 @@
+predict_harness on train 2019-01-01..2024-01-01: 1999 fights, kinds close/open/none, 300 sims per order; v6: engine 6.0.0 params 6.0.0-selfcal-pre2024 (v6); v501: engine 5.0.1 params 5.0.1-selfcal-pre2024 (v5)
+  200/1999 fights, 5 s
+  400/1999 fights, 8 s
+  600/1999 fights, 11 s
+  800/1999 fights, 20 s
+  1000/1999 fights, 39 s
+  1200/1999 fights, 58 s
+  1400/1999 fights, 77 s

@@ -61,7 +61,7 @@
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "5.0.1-selfcal-pre2024",   // v5.0.1: + components.v501 (block v501). Parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics), 3 (styles_sos, officials, realism_sens), 4 (embed, oppadj, preufc) and 5 (blend_anchor); Calibrate A default flags (v401.mlLevels off); Calibrate B levels (components.calB) and blend_anchor refits; frozen in versions/v5/
+    version: "6.0.0-selfcal-pre2024",   // v6 (cycle 1, docs/V6_V10_PLAN.md section 3): the v5.0.1 simulator re-bundled unchanged (V6_V10_PLAN 6.1) + the prediction package's v6 settings in blend (winner / ml2Head / mrModel / mrWeight / debut / statDist). Earlier label:   // v5.0.1: + components.v501 (block v501). Parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics), 3 (styles_sos, officials, realism_sens), 4 (embed, oppadj, preufc) and 5 (blend_anchor); Calibrate A default flags (v401.mlLevels off); Calibrate B levels (components.calB) and blend_anchor refits; frozen in versions/v5/
 
     // ---------------- engine v5 components (src/engine3.js resolveParams; each flag off reproduces v4.0.0) ----------------
     components: {
@@ -319,6 +319,19 @@
                            // model S/SM (tools/methodround_model.js) rescaled to the same P(win). Leave-one-year-out 2019-2023 optimum
                            // of the joint method x round log loss. v5 Calibrate B (rebuilt on the final v5 engine, research/v5_calB.md):
                            // 0.30, per-fold optima 0.30-0.40, joint 2.1368 (the v4-engine cells: 0.15, per fold 0.10-0.20, 2.1415)
+      // engine v6 (cycle 1): FightEngine.predict's winner is the ML v2 head stack of the line regime (src/ml/blend.js
+      // v6Stack: no line = ML v2 + market rating, h 1.5; open = opener + ML v2; close = closing line + ML v2; weights in
+      // data/derived/v6_stacks.json: production fit 2019-2025, backtests the forward-chained fits), routed by the explicit
+      // lineKind (an opener never reaches close-trained weights); the method/round pool takes S2 cells (S2 = methodround's
+      // model with ML v2's columns, research/model_ml2.md section 7) rescaled to that winner; debut bouts take method given
+      // the winner from the debut model (lab 3, research/model_debut.md); statDist adds P10 / P50 / P90 stat lines (lab 3,
+      // research/model_statlines.md). winner 'stack' + mrModel 'S' restore the v5 package exactly.
+      winner: "ml2stack",
+      ml2Head: "blend",    // the ML v2 CV choice (LR + LightGBM + XGBoost; OOF 2019-2023 0.6338 vs 0.6356 for the logistic) now that
+                           // the page has a JS tree evaluator (src/ml/ml2trees.js) within budget (V6_V10_PLAN 7.1 item 7)
+      mrModel: "S2",
+      debut: true,
+      statDist: true,
       mrPool: "linear",    // linear pool (beat the log pool out of fold: 2.1415 vs 2.1420 joint log loss, data/derived/blend_anchor.json)
       recalT: 1,           // temperature on top of the blend's logit. 1: the stack already applies the scheme rolling-origin CV picks
                            // inside 2019-2023 (recency weights h = 1-1.5 y + a temperature fit on forward out-of-fold logits; T through
