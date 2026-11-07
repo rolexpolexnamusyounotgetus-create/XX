@@ -1842,7 +1842,7 @@
     if (V2 && V2.forward_open != null) {
       c2.appendChild(el("h3", "mini", "Second and final audit, after v10"));
       var ul3 = el("ul", "caveats");
-      ul3.appendChild(el("li", null, "The same " + (VA ? nf.format(VA.n_decisive || 0) + " " : "") + "decisive fights, with every model fit only on fights before 2026. It chose nothing."));
+      ul3.appendChild(el("li", null, "The same " + (VA ? nf.format(VA.n_decisive || 0) + " " : "") + "decisive fights, with every model fit only on fights before 2026 except one input the audit flags: the simulator's judging weights, fit on scorecards through October 2026, which the v4 package carries. It chose nothing."));
       ul3.appendChild(el("li", null, "With a pre-fight line, the page's pick scored " + fx(V2.forward_open, 4) + ", the opening line " + fx(V2.opener, 4) + " and the older package built on simulator v4 " + fx(V2.cmp4_open, 4) +
         ". Against the opener: the page's pick " + dCell(V2.forward_minus_opener) + ", the v4 package " + dCell(V2.cmp4_minus_opener) + ". Level with the market; the closing line (" + fx(V2.close, 4) + ") stayed ahead of both."));
       if (V2.v10_minus_cmp4_open) ul3.appendChild(el("li", null, "v10's package, scored on the side: " + dCell(V2.v10_minus_cmp4_open) + " against v4's package with a pre-fight line, the same small gain as on 2024-25 and still inside the noise."));
