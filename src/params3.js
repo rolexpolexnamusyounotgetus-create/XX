@@ -22,54 +22,7 @@
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "8.0.0-selfcal-pre2024",   // v8 (docs/V6_V10_PLAN.md cycle 3): the v4 parameter set unchanged + the v8 blocks below (components, embed, retarget, spread). Earlier label 4.0.0-selfcal-pre2024: [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01)
-
-    // ---------------- v8 components (stat-line fidelity; docs/V6_V10_PLAN.md cycle 3; engine3.js header) ----------------
-    // Each sub-part acts only when its flag is true; all false = engine 4.0.0 bit for bit (tests/test_v8.js). Defaults = the
-    // sub-parts kept by the binding train gate (data/derived/v8/gate_protocol.json, tools/v8_gate.py RULES).
-    components: {
-      embed: true,       // embedding blend of the learned stat-line targets (block embed; needs opts.embed or a loaded roster)
-      retarget: true,    // realised-rate retarget toward the statlines layer (block retarget; needs opts.statTargets or opts.statdist)
-      tdIntent: true,    // fight-level mean-1 lognormal takedown intent per fighter (spread.td); acts only on a retargeted matchup
-      ctrlSpread: true   // fight-level mean-1 lognormal top-stint length per fighter (spread.ctrl); acts only on a retargeted matchup
-    },
-    // embedding blend recipe (= data/derived/embed_model.json mlrates_blend.targets, fit on mlrates' 2019-2023 out-of-fold rows;
-    // the v6 engine's block): link(rate) = b[0] + b[1] link(mlrates rate) + b[2] eta[task]. Backtests pass fold-honest
-    // coefficients per call (data/derived/embed_blend_fh.json coef_fh[year], fit on 2019..year-1; tools/mlpathrec.js).
-    embed: {
-      tasks: ["d_att", "c_att", "g_att", "h_att", "b_att", "l_att", "ns_att", "d_acc", "c_acc", "g_acc", "h_acc", "b_acc", "l_acc", "kd", "td_att", "td_acc", "ctrl", "sub_att", "rev", "ko_fin", "sub_fin"],
-      recipe: {
-        d_att: { task: "d_att", link: "log", b: [-0.069982, 0.711099, 0.322209] },
-        c_att: { task: "c_att", link: "log", b: [-0.003585, 0.581088, 0.406225] },
-        g_att: { task: "g_att", link: "log", b: [-0.038304, 0.657976, 0.37345] },
-        h_att: { task: "h_att", link: "log", b: [-0.177151, 0.725199, 0.360312] },
-        b_att: { task: "b_att", link: "log", b: [-0.000881, 0.686235, 0.32603] },
-        l_att: { task: "l_att", link: "log", b: [0.01211, 0.796754, 0.202168] },
-        td_att: { task: "td_att", link: "log", b: [0.043751, 0.573656, 0.425045] },
-        sub_att: { task: "sub_att", link: "log", b: [0.352258, 0.851244, 0.229988] },
-        rev: { task: "rev", link: "log", b: [-0.490037, 0.88882, 0.0] },
-        ctrl: { task: "ctrl", link: "log", b: [0.064459, 0.557073, 0.455859] },
-        acc_h: { task: "h_acc", link: "logit", b: [0.011774, 0.521711, 0.515074] },
-        acc_b: { task: "b_acc", link: "logit", b: [0.07556, 0.554021, 0.388165] },
-        acc_l: { task: "l_acc", link: "logit", b: [-0.011057, 0.481682, 0.51298] },
-        acc_d: { task: "d_acc", link: "logit", b: [-0.011446, 0.434249, 0.503721] },
-        acc_c: { task: "c_acc", link: "logit", b: [0.19873, 0.255241, 0.563796] },
-        acc_g: { task: "g_acc", link: "logit", b: [0.014659, 0.946195, 0.0] },
-        td_acc: { task: "td_acc", link: "logit", b: [-0.056387, 0.889465, 0.0] },
-        kd_h: { task: "kd", link: "log", b: [-0.703483, 0.849507, 0.0] }
-      }
-    },
-    // realised-rate retarget (engine3.js retarget): design constants set before any gate number (not tuned): pilot simulations
-    // per corner order and iteration, iterations, damping and the shrink of the step toward 1 with few decision simulations
-    // (s = damp x n / (n + kDec)), smoothing of the realised rates toward the target (kMin minutes, kAcc attempts), pilot seed
-    retarget: { pilot: 200, iters: 2, damp: 0.9, kDec: 20, kMin: 5, kAcc: 5, seed: 20261107 },
-    // fight-level spread draws: lognormal sds (mean 1), fit to the 2019-2023 PIT coverage (non-binding development runs before the
-    // gate protocol, embed + retarget on, 150 sims per order, seed 1; data/derived/v8/dev/spread_fit_td*.json, spread_fit_ctrl*.json):
-    // td = the smallest grid value whose train takedown-attempt PIT meets the plan's band (inside the 80% band >= 0.78, above P90
-    // <= 0.12): 1.1 (0.781 / 0.117; v4 0.68 / 0.16; the PIT-uniformity minimum is 1.25-1.3, whose extra spread costs Monte Carlo
-    // noise in the per-fight means); ctrl = the minimiser of the control PIT calibration error given td 1.1: 0 (the takedown-intent
-    // draw alone brings control to 0.799 / 0.101 / 0.100), so components.ctrlSpread is a no-op at this value
-    spread: { td: 1.1, ctrl: 0 },
+    version: "4.0.0-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01)
 
     // ---------------- learned stat-line rates (engine v4) ----------------
     mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base

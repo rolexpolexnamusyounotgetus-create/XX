@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* test_v8.js: engine v8 (docs/V6_V10_PLAN.md cycle 3) checks on the candidate files (ENGINE_DIR, default src/).
 
-     node tests/test_v8.js [--json out.json]         ENGINE_DIR=versions/v8 node tests/test_v8.js
+     node tests/test_v8.js [--json out.json]    (default ENGINE_DIR=versions/v8-gate-failed: the frozen candidate; src/ is v4 again)
 
    1. flag-off identity: every v8 flag off = versions/v4 (engine 4.0.0) bit for bit (matchup tables and 300 simulated fights per
       matchup, traced and untraced) on backtest fights with the learned rates, and on the live Volkanovski vs Gaethje matchup
@@ -19,7 +19,7 @@
 const fs = require("fs");
 const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
-const ENG = path.resolve(ROOT, process.env.ENGINE_DIR || "src");
+const ENG = path.resolve(ROOT, process.env.ENGINE_DIR || "versions/v8-gate-failed");   // the gate-failed v8 candidate (src/ is v4 again)
 const E = require(path.join(ENG, "engine3.js"));
 const E4 = require(path.join(ROOT, "versions/v4/engine3.js"));
 const SD0 = require(path.join(ROOT, "src/ml/statdist.js"));
