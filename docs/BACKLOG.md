@@ -159,6 +159,15 @@ Findings from verified research that the next engine versions must use. Each lin
   no-line +0.0013 n.s. Descriptive only: a per-card trailing temperature would have helped no-line -0.0047 on
   2024-25 (already-seen window: judge it only on the forward ledger / audit 2). Proposed v9 refinements to the
   pre-registered drift rule (one-sided test, longer ledger window, named column) AFTER audit 1 only.
+- ENGINE v6 MEASURED AND REJECTED (~07:15 UTC Nov 7; pre-registered primary = open-regime winner log loss of the
+  predict() package vs the v5.0.1 package, because v4 has no predict()): 0.58193 vs 0.58438 on 842 fights, paired
+  -0.00245 [-0.00588, +0.00099] (CI includes 0). Every point estimate in all three regimes favours v6 (no line
+  -0.0032, close -0.0023), none excludes 0; realised MDE ~0.0048 vs expected effect 0.004. Engine level vs v4: winner
+  -0.0065 [-0.0148, +0.0016], stat lines better after Holm (sig landed, TD, control); KD fails full-window tolerance and,
+  with the glove window excluded (amendment), the SD+MD share fails (22.2% vs 16.1% actual; v4 20.6%). src stays v4.
+  LESSON: with ~850 validation fights, the remaining package gains (0.002-0.004) are below what one look can detect;
+  the forward ledger and audit 2 are the realistic arbiters. The SD+MD (split/majority decision) over-prediction is a
+  real v5-lineage judging issue to fix on train in a later cycle.
 - VAULT AUDIT 1 (first of two openings; 373 sealed 2026 fights, 369 decisive; research/vault_audit_v5.md, recomputed
   independently, no number changed). Winner log loss: close 0.6003 (71.5%); ML v2 close stacks 0.603-0.608; production
   stack + close 0.6072; ML v2 open stack, 2019-23 weights (the forward ledger's primary) 0.6150 vs open 0.6199; ML v2
