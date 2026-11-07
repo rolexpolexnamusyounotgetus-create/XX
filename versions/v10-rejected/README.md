@@ -1,4 +1,22 @@
-# v10 (10.0.0): consolidated bundle, binding bundle-level train gate PASSED, single look run: KEPT by branch 2 (kept under the glove-window amendment)
+# v10 (10.0.0): consolidated bundle; single look run; NOT KEPT (decision corrected by the v10 review, Nov 7 12:40 UTC)
+
+**v10 review (Nov 7, 12:40 UTC; docs/CHANGELOG.md "v10 finish"; version_history.json v10 `status: rejected`, `decision`,
+`decision_superseded`, `review`).** The look's numbers are unchanged; the decision was re-read on the pre-registered primary only
+(V6_V10_PLAN 6.1 / 6.3 / 7.1 item 4, v6's reading): open-regime winner log loss vs cmp4 -0.00326 [-0.00653, +0.00004], normal
+upper +0.00002 > 0, so branch 1 fails and v10 is not kept. The registered branch-2 rescue (total stat-line deviance) was a second
+decisive metric the plan does not allow, and the re-scope from a capability look to this bundle came from the workflow script,
+not from Kira (7.1 item 1). The folder was renamed from versions/v10 (versions/v10 is a compatibility symlink); the frozen files
+are unchanged (engine e5c05d2f, params 8c20073f, ml/blend.js 55e072c4). src/ holds versions/v4 again. Known defects of these
+frozen files, reproduced by the review and NOT fixed here (never edit a frozen folder): the stat-line bundle (embed, retarget,
+tdIntent, ctrlSpread) never acts on the live path (tools/live_component_check.js --engine-dir versions/v10-rejected: 0 of 6), live
+statdist inputs zero the win logit and the oppadj factors, and ml/blend.js 1.4.0 resolves ../../tools to versions/tools, so live
+predict() from this folder drops the S / S2 method-round pool without a note (src/ml/blend.js 1.4.1 fixes the lookup). Kira may
+reinstate the recorded branch-2 result, provisionally and without a new look, by ratifying both the re-scope and the branch-2
+reading (version_history.json v10 decision.ratification_path). logs/restore/ holds the full test run on the restored tree.
+
+## As recorded before the review
+
+### v10 (10.0.0): consolidated bundle, binding bundle-level train gate PASSED, single look run: KEPT by branch 2 (kept under the glove-window amendment)
 
 - engine3.js: v8's simulator code (the v4 simulator + components embed / retarget / tdIntent / ctrlSpread exactly as v8 shipped
   them; every v8 flag off = versions/v4 bit for bit, defaults = versions/v8-gate-failed bit for bit; tests/test_v10.js) + v7's
