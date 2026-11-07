@@ -38,7 +38,7 @@ const SUBS = [
    `const ROOT = ${J(ROOT)}; const VAULT_DIR = ${J(VAULT)}; const AUD = ${J(AUD)};`],
   ['const SPLITS = { train: ["2019-01-01", "2024-01-01"], val: ["2024-01-01", "2026-01-01"] };',
    'const SPLITS = { train: ["2019-01-01", "2024-01-01"], val: ["2024-01-01", "2026-01-01"], vault: ["2026-01-01", "2026-11-01"] };\n' +
-   'function loadDevTrain() { const bt = readJSON("data/derived/backtest_dev.json"); const keys = bt.meta.keys; const fs_ = bt.fights.filter((f) => f.date >= "2019-01-01" && f.date < "2024-01-01"); for (const f of fs_) { f.A.keys = keys; f.B.keys = keys; } return fs_; }'],
+   'function loadDevTrain() { const btd = readJSON("data/derived/backtest_dev.json"); const keys = btd.meta.keys; const fs_ = btd.fights.filter((f) => f.date >= "2019-01-01" && f.date < "2024-01-01"); for (const f of fs_) { f.A.keys = keys; f.B.keys = keys; } return fs_; }'],
   ['const bt = readJSON("data/derived/backtest_dev.json");', 'const bt = readJSON(path.join(VAULT_DIR, "backtest_vault.json"));'],
   ['const fights = bt.fights.filter((f) => f.date < VAULT_FROM);', 'const fights = bt.fights.filter((f) => f.date >= VAULT_FROM && f.date < "2026-11-01");'],
   ['const priors = readJSON("data/derived/mlcal_priors_asof.json");', 'const priors = readJSON(path.join(AUD, "priors_asof_vault.json"));'],
