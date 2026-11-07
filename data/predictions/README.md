@@ -908,6 +908,65 @@ of them is a ledger file, and none touched a data/derived input, a backtest or e
   `predict --event <date>` (fwd-4.4 by default) before the lock. If the build fails or is not run, the prediction file
   falls back to fwd-4.3's pinned inputs and says so.
 
+### Addendum: verification (Nov 7, 2026, about 12:25 pm UTC; before any fwd-4.4 file)
+
+An adversarial check of the pre-registration, tools/live_refresh.py and `--fwd 4.4`. Three places where the code did not do
+what sections 1 and 2 say were fixed in tools/live_refresh.py. No rule changed. The live numbers did not change either,
+because no event after Oct 31 is in the CSVs yet.
+
+- **What was checked and holds.**
+  - Order. The pre-registration text was committed first: autosave 5321d1c (11:30:05 am UTC), then the README-only commit
+    f963070 (11:30:24). The first fwd-4.4 code or output is the golden fixture in 2e5cb3e (11:32:07); live_refresh.py
+    first appears in 0374cc0 (11:40:11). The only ledger file is Vegas 124's.
+  - Nothing frozen changed. Every fwd-4.3 pin matches on disk. From 5321d1c^ to HEAD, the only data/derived JSON files
+    changed outside data/derived/live/ are version_history.json and val_look_ledger.json, both with v10 look entries from
+    the other workflow. backtest*.json, *_oof*.json and research/ were not modified on disk after 11:25 am, and no file in
+    the vault folder is newer than 5:39 am.
+  - Zero-diff rule re-run (`regress`): all six files are byte-identical (27 s).
+  - By-hand forward filter. No fighter has fought after Oct 31 in the CSVs, so this ran on the tests' synthetic Nov 7
+    card. It covered six fighters in three bouts: Szabova vs Lisboa, Moicano vs Nolan and Klein vs Kropschot. Each
+    by-hand value equals the live file: build_db Elo exactly after rounding, the rest within 5e-5 (the 4-decimal rounding).
+    The by-hand values were:
+    - build_db Elo: an independent run on the pinned CSVs, plus one hand update (K 44, x1.5 below 5 fights);
+    - the market Kalman result update from market.json's stored state (Szabova and Kropschot are new to it and start at
+      (0, 1.5));
+    - ratings.json elo_ref.
+  - Corner symmetry. The synthetic card built as is, and again with every bout's corners reversed, gives identical
+    values in all six live files. A UFC 334 fwd-4.4 dry run on that live set mirrors under an a/b swap to 1e-16.
+  - fwd-4.1, 4.2 and 4.3 outputs are byte-identical (tests/test_forward_v44.js part 1).
+- **Fixed** (tools/live_refresh.py 1.0, verifier edit):
+  1. **Pinned period.** Section 2 says fights dated on or before 2026-10-31 are taken as the pinned build took them. The
+     builder instead fed the fetched CSVs whole, so an upstream rewrite of an earlier row would have reached the live
+     inputs, and upstream does rewrite: the Oct 25 to Oct 31 refresh (5d6622f to 3d4886d) rewrote 62 stats rows of
+     UFC 333 (KD "0" became "0.0"). `merge_pinned` now takes every row of an event dated on or before the snapshot from the
+     pinned CSVs, and only rows of later events from the fetched ones. The manifest (`results.pinned_period`) counts the
+     fetched rows of the pinned period that differ from the pinned rows.
+  2. **Two-source rule.** The finish-versus-decision comparison was skipped for draws and no contests. It now applies to
+     every bout, as section 2 says.
+  3. **Pre-fight odds.** A capture's `pre_start` phase was set against the start time known when it was captured. A
+     capture now must also be earlier than the bout's latest `start_utc` in the timeline, and the close is the latest such
+     capture by time. On today's timeline the 29 closing proxies are unchanged.
+- **Tool code hash** after the fix: `tools/live_refresh.py` (1.0, verifier edit): 3f5c10f95e00f7d0. forward_ledger.py,
+  forward_ledger.js and forward_statlines.js are unchanged. The live set is rebuilt with this code (as_of 2026-10-31, the
+  same numbers) and committed after this addendum.
+- **Still open** (wording or rare cases, not code that breaks a rule):
+  - Section 1 lists oppadj_live.json as live, and section 4 says a missing live file triggers the fallback. The
+    implementation addendum reads oppadj at its pin under the zero-diff clause, so check_live does not ask for
+    oppadj_live.json. That is the only reading under which fwd-4.4 can use live inputs at all, and it is the one applied.
+  - The fighter files (ufc_fighter_details, ufc_fighter_tott) still come from the refresh, because a debutant needs his
+    row. An upstream correction to the height, reach or date of birth of a fighter already in the pinned CSVs would
+    therefore reach his profile. Neither file changed between the Oct 25 and Oct 31 refreshes.
+  - `pre_start` relies on the card's scheduled segment start. A bout moved ahead of its segment's start could have a
+    capture taken between the two times. This has not been seen.
+- **Tests.**
+  - test_live_refresh.py: 66 checks, adding the pinned-period merge, a draw whose finish class differs, and post-start odds.
+  - test_forward_v44.js: 42/42.
+  - test_forward_v43.js: 434/434.
+  - test_forward_v42.js: 453/453.
+  - test_forward_models.js: PASS.
+  - test_forward_score42.py: 271/271.
+  - test_drift_monitor.py: 0 failures.
+
 ## Drift monitor (Nov 7, 2026; engine cycle 4 tooling, no model change)
 
 `python3 tools/drift_monitor.py ledger` regenerates `drift_monitor.json` from the scored files (the same file selection as

@@ -11,7 +11,11 @@
 2. Two-source rule on a real dev-period card (UFC Fight Night: Royval vs. Kape, Dec 13 2025; data/raw CSVs and the ESPN
    fixture): all 12 bouts pass, including a draw and reversed corner orders; a changed winner, round or finish class, a
    missing stats round, a bout missing on ESPN and an unavailable scoreboard are held out (or stop the cutoff).
-3. Filtered CSV copies: byte copies when nothing is dropped; events after as_of and held-out bouts are removed.
+3. Filtered CSV copies: byte copies when nothing is dropped; events after as_of and held-out bouts are removed. Pinned
+   period (verifier fix): rows of events up to 2026-10-31 come from the pinned CSVs even when the fetched copy rewrote
+   them, later events from the fetched copy; the rewrites are counted. The finish-vs-decision rule also covers a draw.
+3b. Odds: the closing proxy is the last capture before the bout's start; post-start captures and pre_start captures made
+   after the latest start_utc are never used.
 4. Guards and check_live: the frozen part of each live file equals the pinned file's; check_live passes on a good live
    folder and fails (fallback) on a missing manifest, a changed live file, a changed frozen key, a build after the lock,
    an as_of before 2026-10-31 and a failed status.
