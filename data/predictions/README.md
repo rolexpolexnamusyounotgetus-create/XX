@@ -480,6 +480,206 @@ rules above. No fwd-4.2 ledger file exists; the UFC 334 dry run (`predict --even
   tests/test_forward_v42.js part 4 now checks that the latest hash listed here for each tool file is the one on disk.
   New hash: `tools/forward_ledger.py` (1.2, verifier fix): a9e9359dbd638bbf
 
+## Forward model v4.3 (Nov 7, 2026)
+
+Pre-registered on Nov 7, 2026, about 7:35 am UTC, and committed on its own before the code that implements it. At that
+time no file with a `model.version` starting `fwd-4.2` or `fwd-4.3` existed and no UFC 334 prediction existed. The only
+ledger file was the Vegas 124 file (Nov 7, `fwd-4.1`, committed 9:40 pm UTC Nov 6, lock 10:00 pm UTC Nov 7), which this
+section does not touch. No forward result had been recorded (there is no results.json).
+
+- **Scope.** fwd-4.3 applies to every ledger file for an event dated **2026-11-14 (UFC 334) or later**, until a later
+  section of this README says otherwise. It supersedes fwd-4.2 for those events. No fwd-4.2 file was ever written, so
+  none will be; `--fwd 4.2` stays available for dry runs with its output unchanged (tested). Events dated before
+  2026-11-14 stay `fwd-4.1`.
+- **What changes.** Everything in fwd-4.2 stays as it is: winner rules, method, debut handling, stat-line block,
+  scoring, version switch and guards. The exceptions are the three items below, plus a re-pin of two evaluator files
+  in the hash table that changes no number ("Files and hashes fwd-4.3 reads").
+  1. `p_a_noline` becomes the ML v2 no-line stack.
+  2. The MoE no-line stack becomes the scored secondary `models.moe_noline`.
+  3. Drift rule 6.5.1(b) reads `p_a_noline` from fwd-4.3 on, and tracks the MoE column beside it.
+- This section governs the ledger only. It changes nothing on the page or in the engine's `predict()`.
+
+### 1. No-line primary `p_a_noline`: `ml2_stack_noline`
+
+**Definition.** For a bout without a debutant, `p_a_noline` = `models.ml2_stack_noline`, the ML v2 no-line stack with
+weights fit on 2019-2023 only:
+
+`logit p_a_noline = 0.7049 logit(ML v2 logistic) + 0.5526 logit(market rating)`
+
+- **The export it reads.** The weights are used exactly as exported for the ledger: data/derived/forward_models.json,
+  block `ml2_static.noline`, written by tools/forward_models.py 1.0 at 2026-11-06T21:08:55Z, before audit 1. The
+  file's sha256 is `20269ec7642c1db8305a483e5bf79ffa8b2267d4d0c871f48eef1ce4d9aca91a`, which fwd-4.2 already pins as
+  `20269ec7642c1db8`.
+  - Inputs `[ml2lr, mkt_rating]`, weights `[0.7049087055847891, 0.5526351104765688]`.
+  - Recency half-life 1.5 y (CV-chosen). Inputs clipped to [0.01, 0.99]. No intercept, no temperature.
+  - Fit on 1,955 decisive fights dated 2019-2023 by tools/ml2.py's `stack_predict` ('static', key
+    `noline|page: ml2lr+mkt_rating`). It reproduces ml2.json's cached static predictions exactly (max diff 0).
+- **Evaluation.** fwd-4.1 and fwd-4.2 already compute `models.ml2_stack_noline` this way: tools/forward_ledger.js calls
+  src/ml/ml2.js `predict(...).pStack` with `stack` = forward_models.json `ml2_static`.
+  - The inputs at prediction time are the ML v2 logistic page model (ml2.json `page_model`, refit 2010-2025) and
+    ml2.json's market rating. A missing market rating enters as logit 0.
+  - The weights were fit on out-of-fold logistic predictions. The ledger feeds the production logistic, as it does for
+    fwd-4.1's primary.
+- **Not the CV choice, and why.** The forward-chained CV 2021-2023 in research/model_ml2.md (section 6, verified)
+  prefers the **blend-based** no-line stack, 0.62854 against 0.62984 for this logistic-based one. That gap is above the
+  0.0005 rule. The blend combines the ML v2 logistic, LightGBM and XGBoost with the market rating.
+  - The ledger's JS cannot evaluate the blend's trees. ml2.json exports only the logistic, and no blend-based no-line
+    stack was ever exported for the forward ledger.
+  - Engine v6 has since added a JS tree evaluator (src/ml/ml2trees.js with data/derived/ml2_trees.json) and a
+    `none|blend` stack in v6_stacks.json. Those exports were built on Nov 7 at 6:08 and 6:29 am UTC, after audit 1.
+    They belong to the rejected v6 package and were never verified as ledger inputs, so fwd-4.3 does not read them.
+  - fwd-4.3 therefore uses the verified logistic-based no-line stack, the page's JS-constrained variant, and says so.
+    Its slightly better 2024-25 score (0.5890 against 0.5898 for the blend-based stack) is one look. It is not a reason
+    to prefer it.
+- **Fallback.** For a bout without a debutant, if the ML v2 no-line stack cannot run (a fighter missing from the ML v2
+  roster), `p_a_noline` = the MoE no-line stack (`models.moe_noline`) and the bout is flagged `noline_fallback`.
+- **Debutants: unchanged.** For a bout with a debutant, `p_a_noline` = `p_elo`: Elo with the debutant seeded, as in
+  fwd-4.1 "Debutants". No stack runs on such a bout.
+- **Consequences under the unchanged fwd-4.2 rules.**
+  - A bout without a debutant and without a captured line gets `p_a` = `p_a_noline` (fwd-4.1's "No line for the bout"
+    fallback). Its `p_a`, its method cells (rescaled to `p_a`) and its stat-line length grid now follow the ML v2
+    no-line stack.
+  - `--headline noline` likewise sets `p_a` to the new `p_a_noline`.
+  - Bouts with a line, and every bout with a debutant, keep fwd-4.2's `p_a`, `p_method`, `p_distance`,
+    `p_finish_round` and stat lines exactly.
+- **Recorded as** `p_a_noline_source` on each bout: `ml2_stack_noline`, `moe_stack (noline_fallback)`,
+  `elo_debut_seeded` or `elo_debut_prior`.
+
+### 2. Scored secondary `models.moe_noline`
+
+`models.moe_noline` is the MoE stack without a line: blindtest_stack.json `model`, absent block (h 1.5, temperature
+1.1607, fit through 2025-12-13). It is the column fwd-4.1 and fwd-4.2 publish as `p_a_noline` on bouts without a
+debutant.
+
+- On a bout with a debutant it is null, like every stack.
+- It is the same number as `models.stack_noline`, which stays in the block unchanged. The second name marks the series
+  that rule 6.5.1(b) tracks.
+- It is scored like every other `models` entry: log loss, Brier, accuracy, and the paired difference against the market
+  at prediction time and against the close.
+- The fwd-4.2 column can be rebuilt from any fwd-4.3 file: `models.moe_noline` on a bout without a debutant,
+  `p_a_noline` (= `p_elo`) on a bout with one.
+
+### 3. Drift rule 6.5.1(b): the column it reads
+
+docs/V6_V10_PLAN.md 6.5.1(b) switches "the production no-line stack" when the forward ledger's trailing-200-bout
+mirrored slope has a CI that includes 1 at two consecutive quarterly checks (src/ml/calib.js `ruleB`, tools/calib.py
+`drift_rule_b`). Its text did not name the ledger column (research/model_calib.md, rule-consistency check). From fwd-4.3
+on:
+
+- **Trigger series: `p_a_noline`.** Each scored row uses the `p_a_noline` of its own file. In fwd-4.1 and fwd-4.2 files
+  (Vegas 124) that is the MoE stack. In fwd-4.3 files it is the ML v2 no-line stack. The earlier rows leave the
+  trailing window as later bouts arrive.
+- **Tracked series: the MoE no-line stack.** This is `p_a_noline` in fwd-4.1 and fwd-4.2 files and `models.moe_noline`
+  from fwd-4.3 on. In every version it is the same number as `models.stack_noline`. The monitor computes and reports
+  rule (b) on this series too, so the MoE history continues unbroken. This series never triggers anything.
+- **Rows.** The rows are scored bouts with outcome `win`; draws, no contests and cancellations are left out. Bouts with
+  a debutant are left out, because their `p_a_noline` is seeded Elo, not a stack, in every version. Rows run in date
+  order, with ties in file order. A `noline_fallback` row enters the trigger series with the MoE value it carries.
+- **What the switch means for the new column.** "h 3, T 1" applied to the ML v2 no-line stack means the same stack refit
+  on 2019-2023 with a recency half-life of 3 y by tools/ml2.py's own `stack_predict`. Half-life 3 is in its CV grid
+  (0.63029 in ml2.json `stacks.cv`). The stack has no temperature, so T is already 1.
+  - If the rule fires, that refit enters as a new version (fwd-4.3.x or later), with a README addendum naming its
+    weights and hashes before its first file.
+  - If only the MoE series would fire, nothing changes.
+- The monitor itself belongs to cycle 4 (plan 6.5.1). fwd-4.3 does not change the rule's window, test or threshold.
+
+### Evidence, and the audit-1 flag
+
+- **Before the vault** (research/model_ml2.md sections 4 and 6, verified Nov 6):
+  - CV 2021-2023: the no-line stack on the ML v2 logistic and the market rating scores 0.62984, against 0.63646 for the
+    stack on the MoE experts (h 1.5).
+  - 2024-25, static weights, 854 fights: the ML v2 no-line stack scores 0.5898 against 0.5949 for the MoE experts'
+    stack, -0.0051 [-0.0086, -0.0015]. That row is the blend-based stack, the CV choice. The logistic-based stack used
+    here scores 0.5890 on the same fights; no paired interval was reported for it.
+  - Pooled 2021-2025, the blend-based ML v2 no-line stack beats the current one by -0.0060 [-0.0092, -0.0027]. The
+    2021-2023 rows are out of sample for the stack weights only.
+  - The same report warned that ML v2's production no-line weights (refit 2019-2025, sum 1.42 against 1.26 for the
+    weights fit before 2024) would be too sharp if 2026 looked like 2019-2023. fwd-4.3 uses the 2019-2023 weights.
+  - In the blind 2024-25 replay (research/model_blindtest.md, 843 fights), ML v2's rolling no-line stack and
+    `moe_noline` were level: 0.5847 against 0.5856.
+- **Audit 1** (research/vault_audit_v5.md sections 2-3; the 2026 vault, 369 decisive fights):
+  - The ledger's `p_a_noline`, the production MoE no-line stack, scored 0.6602 [0.5996, 0.7253] with a mirrored slope
+    of 0.56 [0.38, 0.77], so it was over-confident.
+  - It was worse than the ML v2 logistic alone (0.6287) by +0.0315 [+0.0039, +0.0603].
+  - The column fwd-4.3 adopts (forward_models.json `ml2_static.noline` fed the production logistic) scored 0.6356
+    [0.5929, 0.6834], slope 0.80 [0.53, 1.10]. Against the MoE stack that is -0.0246 [-0.0467, -0.0032].
+- **Flag (plan 6.5.2).** This change was decided on Nov 7, after audit 1 had been read. Audit 1 ran from 4:57 to 5:35 am
+  UTC and its report was committed by 5:51 am.
+  - Plan 6.5.1 says no setting other than the pre-registered rules reacts to audit 1. Audit 1's section 7 lists any
+    change to the drift rule's column, and any change to the no-line stacks' sharpening, as items to flag.
+  - So both the switch of `p_a_noline` and the column rule (b) reads go into audit 2's list as "**not clean on the
+    vault**". The vault cannot confirm either one. Their clean test is this ledger.
+  - The pre-vault evidence above already supported the change on its own. Before the vault, research/model_calib.md had
+    also asked for the rule's column to be named. Nothing is refit: the weights are the Nov 6 export, fit on 2019-2023.
+- **Nothing selected on forward results.** No forward result exists. Vegas 124 has not been fought.
+
+### Scoring (fwd-4.3 files)
+
+- Scoring is exactly as for fwd-4.2. `p_a_noline` is scored as a column (the new definition) and `models.moe_noline` as
+  a models entry.
+- **Questions these answer** (exploratory; nothing switches within fwd-4.3 except through rule (b)):
+  - the ML v2 no-line stack against the MoE no-line stack on forward bouts (`p_a_noline` against `models.moe_noline`);
+  - the calibration slope of each.
+
+### Files and hashes fwd-4.3 reads (sha256, first 16 hex)
+
+The tool refuses to write a fwd-4.3 file when any file below has a different hash (a dry run reports the mismatch). A
+change to any of them, a roster refresh included, is a new version (fwd-4.3.1 or later). It needs a dated addendum here
+naming the new hashes before its first file.
+
+| file | sha256-16 | role |
+|---|---|---|
+| data/derived/fighters.json | df4d868a2195fb4a | roster snapshot 2026-10-31, profiles, Elo, division priors |
+| data/derived/moe_page.json | 34a33d1837e9b912 | feature LR expert |
+| data/derived/ml.json | 444b7b1e62086cc1 | ML page model expert |
+| data/derived/market.json | 8edb0a6cc9c3ca4f | market rating expert |
+| data/derived/methodround.json | b26b7e373367f346 | method-and-round model |
+| data/derived/mlrates.json | 6dec930e670f7c70 | learned stat-line rates (engine and stat-line inputs) |
+| data/derived/ml2.json | 0837826dbc05cd1f | ML v2 logistic, market rating and production stacks |
+| data/derived/forward_models.json | 20269ec7642c1db8 | ML v2 stacks fit 2019-2023 (both primaries' weights) |
+| data/derived/ratings.json | 5fc4f8a3be14051f | whr_rounds, ratings stack |
+| data/derived/preufc.json | 30111c93e864dfe0 | debut seeding betas, roster_priors |
+| data/derived/blindtest_stack.json | ded17ce026bbff29 | MoE stacks (close, open, no line = models.moe_noline) |
+| data/derived/debut.json | f6709d52292ccc83 | debut method model, debut winner model, roster_gnet |
+| data/derived/statlines.json | 30c3a959a1a3ac2a | stat-line tables ("prod") and finish-time table |
+| data/derived/embed_model.json | 061d9fba48cc6633 | embedding (stat-line inputs) |
+| data/derived/oppadj.json | c27c8c6de3733c59 | oppadj roster factors (stat-line inputs) |
+| versions/v4/engine3.js | 6c661f68a4c41c1d | engine 4.0.0 |
+| versions/v4/params3.js | e16a6481319f9b15 | params 4.0.0-selfcal-pre2024 |
+| versions/v4/ml/mlrates.js | b563032dd9468f7b | MLRates evaluator (engine adapter and stat-line inputs) |
+| src/ml/moe.js | ad1097b488bbb3ac | MoE evaluator |
+| src/ml/mlpage.js | d4c72febf5c57666 | ML page evaluator |
+| src/ml/ml2.js | 0b62c4462dd7a915 | ML v2 evaluator (re-pinned, see below) |
+| src/ml/debut.js | e5bbc188f4cf42c9 | debut model evaluator and side builders |
+| src/ml/statdist.js | c7facbbc4b406be1 | stat-line evaluator |
+| src/ml/embed.js | e3fa72fd6c0b140b | embedding evaluator |
+| tools/methodround_model.js | fea58a2f9beff3ca | method-and-round evaluator (re-pinned, see below) |
+
+- **Re-pin of two evaluators.** Two files moved from their fwd-4.2 hashes: src/ml/ml2.js (`a840ae6ad9e6bcc3` to
+  `0b62c4462dd7a915`) and tools/methodround_model.js (`60d90d231bb4300f` to `fea58a2f9beff3ca`). Both gained additive
+  code for engine v6 (autosaves at 6:09 and 6:27 am UTC, Nov 7):
+  - ml2.js: `termValues`, `baseTerm` and an optional term-recording argument;
+  - methodround_model.js: `features` and `createS2`, with `predict` refactored through `features`.
+- **The re-pin changes no ledger number.** Two checks ran before this pre-registration:
+  - with the current files, tools/forward_ledger.js on tests/fixtures/forward_v41_golden.json's input reproduces both
+    golden outputs byte for byte;
+  - a UFC 334 `--fwd 4.2 --dry-run --sims 300`, run from a copy of the tree with the two fwd-4.2-pinned versions
+    restored, equals the same run on the current tree. The comparison covers every field except the run's timestamp,
+    commit and code hashes.
+- These two files also make a fwd-4.2 write refuse today. fwd-4.2 keeps its own pins.
+- **Per-event inputs.** As in fwd-4.2.
+- **Tool code.** `tools/forward_ledger.py` 1.3 (`predict --fwd 4.3`), `tools/forward_ledger.js` (`--fwd 4.3`) and
+  `tools/forward_statlines.js`.
+  - The code is written after this commit. The implementation commit and the code hashes go into a dated addendum
+    below before any fwd-4.3 file exists. Each fwd-4.3 file records the code commit and those hashes.
+  - The fwd-4.1 and fwd-4.2 outputs of the same tools stay byte-identical. The tests compare them with
+    tests/fixtures/forward_v41_golden.json and with a fwd-4.2 fixture captured from the current code before the edit.
+- **Version switch.** `--fwd auto` (the default) picks fwd-4.3 for events dated 2026-11-14 or later and fwd-4.1 before.
+  Writing a ledger file under any other version is refused; dry runs may use any.
+- **Version string.** `model.version` starts `fwd-4.3:`. It names both primaries (`ml2_stack_open` with a line,
+  `ml2_stack_noline` without), the forward_models.json hash, the debut.json and statlines.json hashes and the engine.
+  `model.preregistration` names this section and the pinned table.
+
 ## Card snapshot notes (`cards_upcoming.json`)
 
 - `order` 1 is the main event, then down the card. `segment` is `main`, `prelims`, `early_prelims`
