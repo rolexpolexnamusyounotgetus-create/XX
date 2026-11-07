@@ -237,7 +237,9 @@ def cpaired(a_, b_, met):
 CPAIRS = [(e, "S") for e in CELLS if e != "S"] + [("engine_v5", "engine_v4"), ("engine_v5.0.1", "engine_v4"),
                                                   ("S2+ml2win (fit<2024)", "S2 (fit<2024)"), ("engine_v4", "S2+ml2win (fit<2024)"),
                                                   ("engine_v5", "S2+ml2win (fit<2024)"), ("engine_v5.0.1", "S2+ml2win (fit<2024)"),
-                                                  ("S_refit", "S")]
+                                                  ("S_refit", "S"), ("props_pool@close", "S2@close"),
+                                                  ("predict_close", "SM_refit"), ("predict_open", "S_refit"), ("predict_none", "S_refit"),
+                                                  ("predict_close", "engine_v4"), ("predict_none", "engine_v4")]
 cpair_out = {}
 for a_, b_ in CPAIRS:
     if a_ in Lc and b_ in Lc:
