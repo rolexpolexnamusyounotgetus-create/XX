@@ -364,8 +364,16 @@ def cmd_look(a):
     fits = {"w": {"v10": {str(y): {"w": w10} for y in LOOK_YEARS}, "cmp4": {str(y): {"w": wc} for y in LOOK_YEARS}},
             "pi": {str(y): {"pi": pi} for y in LOOK_YEARS}}
     names = [p["name"] for p in D["meta"]["packages"]]
-    if "v501" in names:
-        fits["w"]["v501"] = {str(y): {"w": None} for y in LOOK_YEARS}
+    if a.v501:
+        # descriptive continuity with v6 (never decisive): the v5.0.1 package's rows from the v6 look (data/derived/v6/look_val.json, static
+        # ML v2 schedule, its own inputs) paired by fight id with v10's rows; w 0.30 is v5.0.1's frozen pool weight (the winner ignores it)
+        V6 = {f["id"]: f for f in json.load(open(a.v501))["fights"] if not f.get("err")}
+        for r in recs:
+            g = V6.get(r["id"])
+            if g and (g["pk"].get("v501")):
+                r["pk"]["v501"] = g["pk"]["v501"]
+        names = names + ["v501"]
+        fits["w"]["v501"] = {str(y): {"w": 0.30} for y in LOOK_YEARS}
     res = {"meta": {"tool": "tools/v10_gate.py look", "predict_harness": os.path.relpath(a.harness, ROOT), "stat_harness": os.path.relpath(a.stat, ROOT),
                     "decide": os.path.relpath(a.decide, ROOT), "gate": os.path.relpath(a.gate, ROOT), "boot": dict(PS.BOOT), "weights": {"w_v10": w10, "w_cmp4": wc, "pi": pi}},
            "rules": LOOK_RULES}
@@ -430,6 +438,7 @@ def main():
     lk.add_argument("--decide", required=True)
     lk.add_argument("--gate", required=True)
     lk.add_argument("--out", required=True)
+    lk.add_argument("--v501", help="data/derived/v6/look_val.json (descriptive v5.0.1-package contrast, v6 continuity)")
     w = sp.add_parser("power")
     w.add_argument("path")
     w.add_argument("--n-look", type=int, required=True)
