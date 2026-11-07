@@ -64,6 +64,13 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- FORWARD v4.2 (VERIFIED ~00:15 UTC Nov 7; data/predictions/README.md "Forward model v4.2", pre-registered in
+  6011e6f before any code): effective for events dated >= 2026-11-14. Winner primaries as fwd-4.1; debut bouts take
+  method / distance / finish round from the debut method model (base rates kept as a scored secondary); debut
+  winner model monitored; per-fighter stat-line block (mean, P10/P50/P90 for 7 stats from statdist prod tables)
+  scored later against ufcstats per-fight totals. Pinned inputs by sha256 (frozen engine versions/v4); fwd-4.1
+  output byte-identical; `--fwd auto` picks the version by event date. Verifier fixed the stat-line CI to resample
+  bouts, not fight-sides. A kept v5+ needs its own pre-registered forward version before it governs a card.
 - seqnet (lab 3, VERIFIED): NOT adopted anywhere. Deep career-sequence net 0.6193 on 2024-25 (+0.0276 vs ML v2
   blend, +0.0315 vs close); every stack gate rejects it; method x round far worse than S; stat-line term -0.10%
   (tiny). Do-not-do: deep winner models over UFC-only careers (3.7-6.7k fights per refit overfit); revisit only with

@@ -32,11 +32,16 @@
      (off; block officials, opt-in per call to show real officials) and components.realism_sens (off; block realism, factors fit
      on v4.0.1). SOS acts only when a caller passes opts.sos (backtest harnesses: tools/sosrec.js / tools/evalv.js). Each flag
      off reproduces the engine before it (tests/test_v5_step3.js).
+   - step 4, components.embed (on; block embed: the embedding blend of the learned targets), components.oppadj (off; block oppadj:
+     opponent adjustment of the learned targets, exclusive with styles_sos sos) and components.preufc (on; block preufc: pre-UFC
+     finish-odds priors for fighters with 0-3 UFC fights). Each acts only with its input (opts.embed / opts.oppadj / opts.preufc;
+     backtest harnesses: tools/mlpathrec.js) or a loaded roster (FightEngine.loadEmbed / loadPreUFC, live bouts only). Each flag
+     off reproduces the engine before it (tests/test_v5_step4.js).
    Units inside the engine: seconds and per-second rates unless a comment says otherwise. */
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "5.0.0-dev.3-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics) and 3 (styles_sos, officials, realism_sens)
+    version: "5.0.0-dev.4-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics), 3 (styles_sos, officials, realism_sens) and 4 (embed, oppadj, preufc)
 
     // ---------------- engine v5 components (src/engine3.js resolveParams; each flag off reproduces v4.0.0) ----------------
     components: {
