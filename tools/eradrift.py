@@ -1644,6 +1644,50 @@ def stage_holdout(args):
 STAGES["holdout"] = stage_holdout
 
 
+# ====================================================================== stage: periods (descriptive, after the look)
+PERIODS = [("2022", "2022-01-01", "2022-12-31"), ("2023", "2023-01-01", "2023-12-31"),
+           ("2024 old gloves", "2024-01-01", "2024-05-31"), ("new gloves", "2024-06-01", "2024-11-15"),
+           ("transition", "2024-11-16", "2025-02-14"), ("2025 old gloves", "2025-02-15", "2025-12-31")]
+
+
+def stage_periods(args):
+    """League outcome mix and stat levels by glove period (break dates from BREAKS). DESCRIPTIVE ONLY: it reads the
+    2024-25 window after the single look and selects nothing; card-cluster bootstrap CIs."""
+    if not os.path.exists(cpath(LOCK)):
+        raise SystemExit("run holdout first: periods reads the 2024-25 window")
+    L = load("league.pkl")
+    T = target_frames(L)
+    out = {}
+    for nm, a, b in PERIODS:
+        m = (L["date"] >= dt.date.fromisoformat(a)) & (L["date"] <= dt.date.fromisoformat(b))
+        m = m.to_numpy()
+        row = {"from": a, "to": b, "cards": int(L.loc[m, "event"].nunique())}
+        for key in ("dec", "ko", "sub", "kd100", "slpm", "r108", "tdpm", "ctrlpm"):
+            t = T[key]
+            mm = m & t["mask"]
+            y, E, ev = t["y"][mm], t["E"][mm], L["event"].to_numpy()[mm]
+            cl = pd.factorize(ev)[0]
+            nc = cl.max() + 1
+            sy = np.bincount(cl, weights=y, minlength=nc)
+            se = np.bincount(cl, weights=E, minlength=nc)
+            rng = np.random.default_rng(3)
+            bs = []
+            for _ in range(2000):
+                w = np.bincount(rng.integers(0, nc, nc), minlength=nc)
+                bs.append((w * sy).sum() / max((w * se).sum(), 1e-12))
+            u = t.get("unit", 1.0) if t["kind"] == "cnt" else 100.0
+            row[key] = [r5(y.sum() / E.sum() * u, 4), r5(np.percentile(bs, 2.5) * u, 4),
+                        r5(np.percentile(bs, 97.5) * u, 4), int(mm.sum())]
+        out[nm] = row
+        log("periods %-16s cards %3d | dec %5.1f%% [%4.1f, %4.1f] | KO %5.1f%% | KD/100 head %.3f [%.3f, %.3f] | SLpM %.2f | 10-8 %.2f%%" % (
+            nm, row["cards"], row["dec"][0], row["dec"][1], row["dec"][2], row["ko"][0], row["kd100"][0],
+            row["kd100"][1], row["kd100"][2], row["slpm"][0], row["r108"][0]))
+    jdump(out, "periods.json")
+
+
+STAGES["periods"] = stage_periods
+
+
 # ====================================================================== main
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

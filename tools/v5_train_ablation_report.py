@@ -91,7 +91,7 @@ def main():
             print("| %s | %.4f [%.4f, %.4f]; model S %.4f, all - S %+.4f [%+.4f, %+.4f] |" % (nm, d["mean"], d["ci95"][0], d["ci95"][1], s["mean"], vs["diff"], vs["ci95"][0], vs["ci95"][1]))
     print()
     print("### Paired differences: arm minus %s (> 0 = removing the component hurts; bold = 95%% interval excludes 0)\n" % RL)
-    hdr = "| arm (removed / changed) | soft CE vs close | winner LL | 7-bin | method | method x round | who x how x when | stat lines (% rel.) | verdict |"
+    hdr = "| arm (removed / changed) | soft CE vs close | winner LL | 7-bin | method | method x round | who x how x when | stat lines (% rel.) | rule verdict |"
     print(hdr)
     print("|" + "---|" * 9)
     V = {}
