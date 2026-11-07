@@ -309,6 +309,19 @@ node tests/test_forward_v42.js          # fwd-4.1 byte identity (golden), corner
 python3 tests/test_forward_score42.py   # Greco stat parse, match rules, debut-method and stat-line scoring
 ```
 
+Forward model v4.3 (README "Forward model v4.3", pre-registered Nov 7, 2026) supersedes fwd-4.2 for events dated
+2026-11-14 on, so `--fwd auto` now picks fwd-4.3 there. Everything is as in fwd-4.2 except the no-line column.
+`p_a_noline` is the ML v2 no-line stack fit 2019-2023 (`models.ml2_stack_noline`, forward_models.json
+`ml2_static.noline`). The MoE no-line stack becomes the scored secondary `models.moe_noline`; it is also the fallback,
+flagged `noline_fallback`. `p_a_noline_source` records which one a bout used. A bout without a line therefore gets
+`p_a` from the ML v2 no-line stack. Drift rule 6.5.1(b) reads `p_a_noline` from fwd-4.3 on and tracks the MoE series
+beside it. The fwd-4.1 and fwd-4.2 outputs stay byte-identical (golden fixtures).
+
+```
+python3 tools/forward_ledger.py predict --event 2026-11-14 --fwd 4.3 --dry-run
+node tests/test_forward_v43.js          # 4.1 / 4.2 byte identity, 4.3 vs 4.2 diff, symmetry, no-line stack vs Python 1e-12
+```
+
 
 ## ml2.py: ML v2 feature union (winner model, stacks, method/round refit)
 

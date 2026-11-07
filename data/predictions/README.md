@@ -680,6 +680,45 @@ naming the new hashes before its first file.
   `ml2_stack_noline` without), the forward_models.json hash, the debut.json and statlines.json hashes and the engine.
   `model.preregistration` names this section and the pinned table.
 
+### Addendum: fwd-4.3 implementation (Nov 7, 2026, about 7:40 am UTC; before any fwd-4.3 file)
+
+The code was written after the pre-registration commit (386b99c, 7:32:17 am UTC). It follows the rules above without
+changing them. The repository's periodic autosave commits picked up some in-flight edits between the two commits; none
+of them is a ledger file.
+
+- **UFC 334 dry run** (`predict --event 2026-11-14 --fwd 4.3 --dry-run`, 2,000 sims per corner order). It wrote nothing
+  under data/predictions and read every pinned input at its pinned hash (`pinned_inputs_ok` true).
+  - On all 11 bouts without a debutant, `p_a_noline` comes from the ML v2 no-line stack. Elder vs Sanches keeps
+    seeded Elo.
+  - Every UFC 334 bout has a line in the newest snapshot, so `p_a` is the same as under fwd-4.2.
+- **Tool code hashes** (sha256, first 16 hex), recorded in every fwd-4.3 file as `model.code_sha256_16`:
+  - `tools/forward_ledger.py` (1.3): 7678ea131cc16990
+  - `tools/forward_ledger.js`: 21cfa219be5910a7
+  - `tools/forward_statlines.js` (unchanged): 267beac95846c7df
+- **What the code adds.**
+  - JS `--fwd 4.3`: `models.moe_noline` and `meta.fwd`.
+  - Python `predict --fwd 4.3`: `p_a_noline` from `models.ml2_stack_noline`; the MoE fallback with `noline_fallback`;
+    `p_a_noline_source`; the model-block fields `noline_primary`, `noline_fallback` and `drift_rule_b`; a
+    `preregistration` block with the fwd-4.3 pins and the audit-1 flag; tool 1.3.
+  - `--fwd auto` picks fwd-4.3 from 2026-11-14.
+  - `score` is unchanged apart from listing `moe_noline` in its models-block order. The rule (b) monitor is not part of
+    this code; it belongs to cycle 4.
+- **Tests.**
+  - `node tests/test_forward_v43.js` checks:
+    - fwd-4.1 identity against tests/fixtures/forward_v41_golden.json, across the re-pin;
+    - fwd-4.2 identity, JS and ledger documents, against tests/fixtures/forward_v42_golden.json;
+    - that fwd-4.3 differs from fwd-4.2 only in the pre-registered fields;
+    - corner symmetry;
+    - that the no-line stack equals forward_models.json's Python test vectors to 1e-12 (27 vectors, max 6e-17);
+    - the `noline_fallback` path, with a fighter removed from a temporary copy of ml2.json;
+    - the version guards, and that this README's hash table and code hashes match the tool and the files on disk.
+  - tests/fixtures/forward_v42_golden.json was captured at 7:33 am UTC from the tools before the edit. Their hashes at
+    capture are in the fixture.
+  - In tests/test_forward_v42.js, two assertions now expect fwd-4.3 where the README assigns it: the `--fwd auto` pick
+    and the refusal message.
+- A later edit to these files must keep the fwd-4.1 and fwd-4.2 outputs byte-identical and the fwd-4.3 output
+  unchanged, or it starts a new version.
+
 ## Card snapshot notes (`cards_upcoming.json`)
 
 - `order` 1 is the main event, then down the card. `segment` is `main`, `prelims`, `early_prelims`
