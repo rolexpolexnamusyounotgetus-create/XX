@@ -92,7 +92,9 @@ if (!isMainThread) {
   const fights = loadBacktest();
   const byId = new Map(fights.map((f) => [f.id, f]));
   const priors = readJSON("data/derived/mlcal_priors_asof.json");
-  const OOF = useML ? readJSON("data/derived/mlrates_oof.json") : null;
+  // v6 (review gate 1): engines of major version 6+ read the fold-honest learned rates (tools/v6_foldhonest.py: stack weights
+  // for year y fit on 2017..y-1 out-of-fold rows; 2024-2025 rows identical); earlier versions keep mlrates_oof.json
+  const OOF = useML ? readJSON(+String(E.VERSION).split(".")[0] >= 6 ? "data/derived/mlrates_oof_fh.json" : "data/derived/mlrates_oof.json") : null;
   // durability component (engine v5, params.components.durability): leak-free per-fight inputs. Without them the engine
   // falls back to the live-fit terms (2008..2026-10, which include the validation years and the vault) and the Oct 2026
   // league level. durability.json backtest[id] is strict walk-forward (2019-2023 entries fit on 2008..Y-1, 2024-2025
@@ -582,7 +584,7 @@ function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && ty
   const result = {
     meta: { tool: "tools/evalv.js", version: VERSION, split: SPLIT, range: [d0, d1], built: new Date().toISOString(), dev: DEV,
       engine_dir: path.relative(ROOT, ENGINE_DIR), engine_version: E0.VERSION, params_version: P0.version,
-      engine_sha256: engineSha, params_sha256: paramsSha, mlrates_js_sha256: mlSha, ml: useML ? "out-of-fold rates (data/derived/mlrates_oof.json)" : "off",
+      engine_sha256: engineSha, params_sha256: paramsSha, mlrates_js_sha256: mlSha, ml: useML ? ("out-of-fold rates (data/derived/" + (+String(E0.VERSION).split(".")[0] >= 6 ? "mlrates_oof_fh.json, fold-honest stack weights" : "mlrates_oof.json") + ")") : "off",
       ml_applied_share: mlShare, sims_per_order: SIMS, seed: SEED, bootstrap: B, n_fights: pfs.length, n_decisive: nWin, n_outcome: nOut, failed: errs.length,
       wall_s: (Date.now() - t0) / 1000, main_cpu_s: (cpu.user + cpu.system) / 1e6,
       priors: "data/derived/mlcal_priors_asof.json (walk-forward 5-year windows)",

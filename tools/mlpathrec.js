@@ -33,7 +33,11 @@ const path = require("path");
 
 const VAULT_FROM = "2026-01-01", VAL_FROM = "2024-01-01";
 
-module.exports = function mlpathrec(E, root) {
+module.exports = function mlpathrec(E, root, cfg) {
+  // v6 (review gate 1, fold-honest calibration): engines of major version 6 or later take the embedding-blend recipe from
+  // data/derived/embed_blend_fh.json coef_fh[year] (fit on 2019..year-1 fold-honest rows; 2019 identity; '2024' for
+  // 2024-2025; tools/v6_embed_fh.py); earlier engines keep coef_loyo / the exported recipe exactly. cfg.foldHonest overrides.
+  const FOLD_HONEST = cfg && cfg.foldHonest != null ? !!cfg.foldHonest : (+String((E && E.VERSION) || "0").split(".")[0] >= 6);
   root = root || path.resolve(__dirname, "..");   // data/derived/* is read under root (falls back to this file's repo)
   const J = {};
   const rd = (rel) => {
@@ -90,6 +94,11 @@ module.exports = function mlpathrec(E, root) {
   }
   function embedRecipe(date) {
     const d = guardDate(date, "embed");
+    if (FOLD_HONEST) {
+      const L = rd("data/derived/embed_blend_fh.json").coef_fh, y = d < VAL_FROM ? d.slice(0, 4) : "2024";
+      if (!L || !L[y]) throw new Error("embed: no fold-honest blend coefficients for " + y + " (run tools/v6_embed_fh.py)");
+      return L[y];
+    }
     if (d < VAL_FROM) {
       const L = rd("data/derived/embed_blend_loyo.json").coef_loyo, y = d.slice(0, 4);
       if (!L || !L[y]) throw new Error("embed: no leave-one-year-out blend coefficients for " + y + " (run tools/embed_blend_loyo.py)");
@@ -155,7 +164,7 @@ module.exports = function mlpathrec(E, root) {
     if (fl.oppadj && m.mlApplied && !(m.oppadj && m.oppadj.have && m.oppadj.have[0] && m.oppadj.have[1])) throw new Error("oppadj: walk-forward factors not applied for " + id);
     if (fl.preufc && !m.preufc) throw new Error("preufc: component did not run for " + id);
   }
-  return { flags, apply, assertApplied, embedFor, embedEtas, embedRecipe, oppadjFor, preufcFor, table: rd };
+  return { flags, apply, assertApplied, embedFor, embedEtas, embedRecipe, oppadjFor, preufcFor, table: rd, foldHonest: FOLD_HONEST };
 };
 
 // ---------------------------------------------------------------- CLI: dump train etas for tools/embed_blend_loyo.py

@@ -52,7 +52,7 @@ if (!isMainThread) {
   const fights = loadBacktest();
   const byId = new Map(fights.map((f) => [f.id, f]));
   const priors = readJSON("data/derived/mlcal_priors_asof.json");
-  const OOF = readJSON(W.oof || "data/derived/mlrates_oof.json");
+  const OOF = readJSON(W.oof || (+String(E.VERSION).split(".")[0] >= 6 ? "data/derived/mlrates_oof_fh.json" : "data/derived/mlrates_oof.json"));
   const names = OOF.meta.targets;
   const rates = (arr) => { const o = {}; names.forEach((n, i) => { o[n] = arr[i]; }); return o; };
   const useDur = typeof E.loadDurability === "function" && !!(PRM.components && PRM.components.durability);
@@ -210,7 +210,8 @@ function runAll() {
       params_version: E.params().version, engine_sha256: sha(path.join(p.dir, "engine3.js")), params_sha256: sha(path.join(p.dir, "params3.js")),
       blend_sha256: sha(path.join(p.dir, "ml", "blend.js")) }; }),
     inputs: { v6_stacks_sha256: sha(path.join(ROOT, "data/derived/v6_stacks.json")), mr_s2_sha256: sha(path.join(ROOT, "data/derived/mr_s2.json")),
-      oof: args.oof || "data/derived/mlrates_oof.json", cmp_stacks: CMP_STACKS("data/derived/v6") },
+      oof: args.oof || (+String(require(path.join(PKGS[0].dir, "engine3.js")).VERSION).split(".")[0] >= 6 ? "data/derived/mlrates_oof_fh.json" : "data/derived/mlrates_oof.json"),
+      embed_recipe: "tools/mlpathrec.js: fold-honest coef_fh for engine major >= 6 (data/derived/embed_blend_fh.json)", cmp_stacks: CMP_STACKS("data/derived/v6") },
     n_fights: recs.length, failed: recs.filter((r) => r.err).length, wall_s: Math.round((Date.now() - t0) / 1000) };
   fs.writeFileSync(path.isAbsolute(OUT) ? OUT : path.join(ROOT, OUT), JSON.stringify({ meta, fights: recs }));
   console.log(`wrote ${OUT}: ${recs.length} fights, ${meta.failed} failed, ${meta.wall_s} s`);
