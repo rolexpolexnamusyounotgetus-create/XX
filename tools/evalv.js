@@ -259,6 +259,7 @@ console.log(`evalv ${VERSION} (engine ${E0.VERSION}, params ${P0.version}) on ${
   `${WORKERS} workers, ML ${useML ? "on (out-of-fold)" : "off"}${DEV ? ", DEV run (no history)" : ""}`);
 
 // ------------------------------------------------------------------ run the workers
+const WORKER_VERSIONS = new Set();
 function runAll() {
   return new Promise((resolve, reject) => {
     const ids = fights.map((f) => f.id);
@@ -278,6 +279,7 @@ function runAll() {
       live++;
       w.on("message", (m) => {
         if (m.cmd === "done") {
+          WORKER_VERSIONS.add(m.version + " | " + m.params);
           res.push(...m.out); done += m.out.length;
           if (done % 400 < m.out.length) console.log(`  ${done}/${ids.length} fights, ${((Date.now() - t0) / 1000).toFixed(0)} s`);
           feed(w);
@@ -348,11 +350,15 @@ function losses(pf, f) {
     }
   }
   if (f.actual && f.actual.A && f.actual.B) {
+    // v5.0.1 (v5 review): per-minute deviance conditioned on the actual fight length: the simulated per-minute rate (ratio of
+    // means over the sims) times the real minutes, so finish-rate and duration errors do not mix with rate accuracy
+    const am = +f.actual.minutes || 0, smin = pf.mins > 0 ? pf.mins : null;
     for (const k of DEVK) {
       const ya = f.actual.A[k], yb = f.actual.B[k];
       if (ya == null || yb == null) continue;
       L["dev_" + k] = 0.5 * (poisDev(ya, pf.stats.A[k]) + poisDev(yb, pf.stats.B[k]));
       L["mae_" + k] = 0.5 * (Math.abs(ya - pf.stats.A[k]) + Math.abs(yb - pf.stats.B[k]));
+      if (am > 0 && smin) L["devpm_" + k] = 0.5 * (poisDev(ya, pf.stats.A[k] / smin * am) + poisDev(yb, pf.stats.B[k] / smin * am));
     }
   }
   return L;
@@ -496,11 +502,21 @@ function compactCells(pf) {
   return pf.cells.map((v) => +v.toFixed(6));
 }
 function r4(x) { return x == null || !isFinite(x) ? x : Math.round(x * 1e4) / 1e4; }
+function r6(x) { return x == null || !isFinite(x) ? x : Math.round(x * 1e6) / 1e6; }
 function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && typeof o === "object") { const q = {}; for (const k in o) q[k] = roundObj(o[k]); return q; } return typeof o === "number" ? r4(o) : o; }
 
 (async function main() {
   const t0 = Date.now(), c0 = process.cpuUsage();
   const sims = await runAll();
+  // v5.0.1 (v5 review): every worker must have run this version's own engine and params (a process that loaded another version's
+  // params on the global object once ran a v5 engine on v4 params with every component silently off)
+  const expectV = E0.VERSION + " | " + P0.version;
+  if (WORKER_VERSIONS.size !== 1 || !WORKER_VERSIONS.has(expectV)) { console.error("evalv: workers ran " + [...WORKER_VERSIONS].join(", ") + ", expected " + expectV); process.exit(4); }
+  if (!DEV) {
+    const he = historyEntry(loadHistory());
+    if (he && he.params_version && he.params_version !== P0.version) { console.error("evalv: params version " + P0.version + " differs from the history entry's " + he.params_version); process.exit(4); }
+  }
+  console.log("  engine / params (all workers): " + expectV);
   const errs = sims.filter((s) => s.err);
   if (errs.length) console.log(`  ${errs.length} fights failed, e.g. ${errs[0].id}: ${errs[0].err}`);
   const simById = new Map(sims.filter((s) => !s.err).map((s) => [s.id, s]));
@@ -508,9 +524,25 @@ function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && ty
   const base = baseDist(trainFights);
   const pfs = fsOk.map((f) => perFight(simById.get(f.id), f, base));
   const L = pfs.map((pf, i) => losses(pf, fsOk[i]));
-  const keys = ["winLL", "brier", "acc", "bin7", "method"].concat(DEVK.map((k) => "dev_" + k), DEVK.map((k) => "mae_" + k));
+  const keys = ["winLL", "brier", "acc", "bin7", "method"].concat(DEVK.map((k) => "dev_" + k), DEVK.map((k) => "mae_" + k), DEVK.map((k) => "devpm_" + k));
   const met = bootstrap(pfs, L, fsOk, keys);
   const br = baseRates(pfs, fsOk);
+  // v5.0.1 (v5 review): base rates by calendar year (the Calibrate gate's per-year KD / KO checks, 2023 the pseudo-holdout on
+  // train) and, on validation, by the dated glove-trial windows (research/model_eradrift.md; information only, never a rule input)
+  const brByYear = {};
+  for (const y of [...new Set(pfs.map((pf) => pf.date.slice(0, 4)))].sort()) {
+    const ix = pfs.map((pf, i) => (pf.date.slice(0, 4) === y ? i : -1)).filter((i) => i >= 0);
+    brByYear[y] = baseRates(ix.map((i) => pfs[i]), ix.map((i) => fsOk[i]));
+  }
+  let brByWindow = null;
+  if (SPLIT === "val") {
+    const W = { pre_trial: ["2024-01-01", "2024-06-01"], glove_trial: ["2024-06-01", "2024-11-16"], post_trial: ["2024-11-16", "2025-02-15"], old_gloves_2025: ["2025-02-15", "2026-01-01"] };
+    brByWindow = {};
+    for (const [k, [a, b]] of Object.entries(W)) {
+      const ix = pfs.map((pf, i) => (pf.date >= a && pf.date < b ? i : -1)).filter((i) => i >= 0);
+      if (ix.length) brByWindow[k] = Object.assign({ range: [a, b] }, baseRates(ix.map((i) => pfs[i]), ix.map((i) => fsOk[i])));
+    }
+  }
   const nWin = L.filter((l) => l.winLL != null).length, nOut = L.filter((l) => l.bin7 != null).length;
   const mlShare = sims.reduce((a, s) => a + (s.mlApplied || 0), 0) / Math.max(1, 2 * sims.length);
   console.log(`\n${VERSION} ${SPLIT}: ${pfs.length} fights (${nWin} decisive, ${nOut} with an outcome), ML applied ${(100 * mlShare).toFixed(1)}% of matchups`);
@@ -562,13 +594,20 @@ function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && ty
         "card totals (19 x judged rounds - card sum; deductions count as 10-8s); the simulated share counts judges' 10-8s plus " +
         "3 x deduction points (engines with deductions, v4.0.1+). Stat-line deviance: Poisson deviance of each fighter's " +
         "actual fight total vs the simulated mean (unconditional on fight length), averaged over both fighters" },
-    metrics: met, baseRates: br, methodround: mr, compare: cmp,
-    fights: pfs.map((pf, i) => ({ id: pf.id, date: pf.date, pA: r4(pf.pA), b7: pf.b7.map(r4), finR: pf.finR.map(r4), L: roundObj(L[i]),
-      sig: [r4(pf.stats.A.sig_lnd), r4(pf.stats.B.sig_lnd)] }))
+    metrics: met, baseRates: br, baseRatesByYear: brByYear, baseRatesByWindow: brByWindow, methodround: mr, compare: cmp,
+    // v5.0.1 (v5 review): b7 and the cells at 6 decimals (4 rounded draw cells to 0 and the 7-bin score could not be reproduced
+    // from the file), plus the per-fight simulated stats and shares the paired base-rate tests use (tools/evalv_decide.js)
+    fights: pfs.map((pf, i) => ({ id: pf.id, date: pf.date, event: pf.event, rounds: pf.rounds, pA: r6(pf.pA), b7: pf.b7.map(r6), cells: pf.cells.map(r6),
+      finR: pf.finR.map(r6), pKO: r6(pf.pKO), pSUB: r6(pf.pSUB), pDEC: r6(pf.pDEC), mins: r6(pf.mins),
+      dec: pf.dec.map((v) => r6(v / pf.n)), decN108: r6(pf.decN108 / pf.n), decRounds: r6(pf.decRounds / pf.n), L: roundObj(L[i]),
+      sig: [r4(pf.stats.A.sig_lnd), r4(pf.stats.B.sig_lnd)],
+      st: Object.fromEntries(STATK.map((k) => [k, [r6(pf.stats.A[k]), r6(pf.stats.B[k])]])) }))
   };
   fs.mkdirSync(OUTDIR, { recursive: true });
   const outFile = path.join(OUTDIR, `${VERSION}${DEV ? "_dev" : ""}_${SPLIT}.json`);
-  fs.writeFileSync(outFile, JSON.stringify(roundObj(result)));
+  const fightsOut = result.fights; result.fights = null;
+  const res4 = roundObj(result); res4.fights = fightsOut; result.fights = fightsOut;
+  fs.writeFileSync(outFile, JSON.stringify(res4));
   console.log(`wrote ${path.relative(ROOT, outFile)} (${((Date.now() - t0) / 1000).toFixed(0)} s wall)`);
   if (DEV) return;
 
