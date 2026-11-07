@@ -141,6 +141,21 @@ Findings from verified research that the next engine versions must use. Each lin
   no-line +0.0013 n.s. Descriptive only: a per-card trailing temperature would have helped no-line -0.0047 on
   2024-25 (already-seen window: judge it only on the forward ledger / audit 2). Proposed v9 refinements to the
   pre-registered drift rule (one-sided test, longer ledger window, named column) AFTER audit 1 only.
+- VAULT AUDIT 1 (first of two openings; 373 sealed 2026 fights, 369 decisive; research/vault_audit_v5.md, recomputed
+  independently, no number changed). Winner log loss: close 0.6003 (71.5%); ML v2 close stacks 0.603-0.608; production
+  stack + close 0.6072; ML v2 open stack, 2019-23 weights (the forward ledger's primary) 0.6150 vs open 0.6199; ML v2
+  blend 0.6242; ML v2 logistic 0.6287; WHR 0.6343; engines 0.640-0.643; production NO-LINE stack 0.6602 (slope 0.56,
+  over-confident; worse than the ML v2 logistic alone by +0.0315 [+0.0039, +0.0603]; the ML v2 no-line stacks beat it
+  by ~0.02); Elo 0.6868. THE CLOSE EDGE IS GONE on 2026: production stack + close minus close +0.0069 [-0.0013,
+  +0.0158] -> page and ledger copy must say "level with the market". The 2024-25 underconfidence REVERSED (every
+  production stack slope < 1; close 0.96). Drift rule 6.5.1(a) NOT triggered (slope CI excludes 1 from below; the rule
+  only acts on underconfidence) -> a two-sided rule is a v9 question, "not clean on the vault". Engines: v5/v5.0.1 vs
+  v4 winner n.s.; method and KD better; v5-lineage KD level right on 2026 (0.97 vs 0.97 actual). Side line: S2 beats
+  S; props pool beats S2 (7-bin -0.0324); debut method model beats base rates on 105 debut bouts (-0.102). 2026 finished
+  more than any model predicted (55.6%; KO 38.4%). Exposures: v4's EM judging weights saw 2026 cards; methodround.json
+  held S/SM cells for vault fights. Contamination (6.5.2): anything changed because of these numbers is "not clean on
+  the vault" in audit 2 — but replacing the no-line MoE stack with the ML v2 no-line stack was already planned for v6
+  on pre-vault evidence (research/model_ml2.md: -0.0051 on 2024-25; CV preferred it).
 - ENGINE v5.0.1 MEASURED AND REJECTED (decided 04:35 UTC Nov 7; version_history.json entry v5.0.1; docs/CHANGELOG.md v5.0.1;
   research/v501_fixes.md). Every review issue reproduced; robustness fixes (input guards, dates, rounds, judges, params loading, odds,
   record guards) are bit-identical on train; behaviour fixes chosen on 2019-2023 only: dynNoise (within-fight noise now matches the
