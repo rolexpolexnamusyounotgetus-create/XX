@@ -44,6 +44,10 @@
      the simulated stats, shares and minutes (b7 / cells, pKO / pSUB / pDEC, st, mins, dec), which tools/evalv_decide.js needs
      for the paired base-rate tests and the Holm-adjusted decision; every worker must report this version's engine and params
      (and the history entry's params version), and a durability record must be complete and fully applied (src "record").
+   v8 additions (V6_V10_PLAN cycle 3): engines with components.retarget get the leak-free statlines targets per fight
+     (data/derived/v8/statlines_targets.json; forward-chained fold tables on train, the 2019-2023 dev table on 2024-2025, none for
+     2019) and must report the retarget applied; every run reports per-stat PIT coverage (pitCoverage: shares of fight-sides inside
+     the central 80% band / above P90 / below P10; a pre-registered diagnostic, never a rule input in this tool).
    Outputs: data/derived/evalv/<version>_<split>.json (metrics + per-fight predictions), and the version's entry in
    data/derived/version_history.json {version, date, engine_sha256, params_sha256, train, validation, blend, notes}.
    A train run creates or updates the entry's train block (and leaves validation null). A validation run fills
@@ -63,6 +67,11 @@ const SPLITS = { train: ["2019-01-01", "2024-01-01"], val: ["2024-01-01", "2026-
 const STATK = ["sig_lnd", "sig_att", "td_lnd", "td_att", "ctrl", "kd", "h_lnd", "sub_att"];
 const NSTAT = STATK.length;
 const DEVK = ["sig_lnd", "sig_att", "td_lnd", "ctrl", "kd"];
+// v8 (V6_V10_PLAN cycle 3 item 5): per-stat PIT coverage, a reported diagnostic (never a rule input here): each fighter's randomized
+// PIT of the real total in the simulated distribution (both orders pooled; u from a hash of fight, side and stat; control in whole
+// seconds); share of fight-sides inside the central 80% band, above P90 and below P10, for every stat backtest_dev records
+const PITK = ["sig_lnd", "sig_att", "h_lnd", "b_lnd", "l_lnd", "kd", "td_lnd", "td_att", "ctrl", "sub_att"];
+const NPIT = PITK.length;
 
 function hash32(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return h >>> 0; }
 function mix(a, b) { let h = (a ^ Math.imul(b + 0x6d2b79f5, 0x9e3779b1)) >>> 0; h = Math.imul(h ^ (h >>> 16), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); return (h ^ (h >>> 16)) >>> 0; }
@@ -138,6 +147,12 @@ if (!isMainThread) {
   // engine v5 merge step 4 (components.embed / .oppadj / .preufc): leak-free per-fight inputs from tools/mlpathrec.js, or the
   // frozen copy's own mlpathrec.js when the version directory holds one; for engines without these components it is a no-op
   const XR = require(W.mlpathrec)(E, ROOT);
+  // engine v8 components.retarget: leak-free per-fight targets (tools/v8_targets.js: statdist engineTargets from forward-chained
+  // statlines fold tables for 2020-2023, the dev table fit on 2019-2023 for 2024-2025; 2019 fights have none, so the retarget is
+  // off for them), passed as opts.statTargets in the simulation's corner order; a fight with a table must get the retarget applied
+  const P8 = typeof E.resolveParams === "function" ? E.resolveParams({}) : null;
+  const useRT = !!(P8 && P8.components && P8.components.retarget);
+  const RTJ = useRT ? readJSON("data/derived/v8/statlines_targets.json") : null;
   const names = OOF ? OOF.meta.targets : null;
   const rates = (arr) => { const o = {}; names.forEach((n, i) => { o[n] = arr[i]; }); return o; };
   parentPort.on("message", (msg) => {
@@ -148,8 +163,11 @@ if (!isMainThread) {
       const R = f.rounds === 5 ? 5 : 3;
       const NCELL = 4 * R + 3;
       const acc = { id, cells: new Float64Array(NCELL), dec: [0, 0, 0], draw: 0, n108: 0, judged: 0, decRounds: 0, decN108: 0,
-        stats: new Float64Array(2 * NSTAT), mins: 0, n: 0, mlApplied: 0, err: null };
+        stats: new Float64Array(2 * NSTAT), mins: 0, n: 0, mlApplied: 0, rtApplied: 0, err: null, pit: null };
+      const pv = []; for (let k = 0; k < 2 * NPIT; k++) pv.push([]);
       try {
+        const rtT = useRT ? RTJ.fights[f.id] : null;
+        if (useRT && !rtT) throw new Error("retarget: no statlines targets entry for fight " + f.id);
         for (let o = 0; o < 2; o++) {
           const A = o === 0 ? f.A : f.B, B = o === 0 ? f.B : f.A;
           const opts = { division: f.prior_division || f.division, rounds: f.rounds, title: f.title, date: f.date, priors: priors[f.date.slice(0, 4)] };
@@ -161,7 +179,10 @@ if (!isMainThread) {
           if (useDur) { opts.dur = durOpts(f.id, o); opts.params = durNorm; }
           if (useSOS) { const so = sosOpts(f, o, opts.params); opts.sos = so.sos; opts.params = so.params; }
           XR.apply(opts, f, o === 1, opts.params);   // step 4: opts.embed / opts.oppadj / opts.preufc for each component that is on
+          if (useRT && rtT.fold) opts.statTargets = o === 0 ? { A: rtT.A, B: rtT.B } : { A: rtT.B, B: rtT.A };
           const m = E.matchup(A, B, opts);
+          if (useRT && rtT.fold && !(m.retarget && m.retarget.applied)) throw new Error("retarget: targets not applied for " + f.id);
+          if (m.retarget && m.retarget.applied) acc.rtApplied++;
           XR.assertApplied(m, f.id, opts.params);
           if (useDur && !(m.dur && m.dur.baseFromRecord)) throw new Error("durability: walk-forward record not applied for " + f.id);
           if (useDur && (m.dur.A.src !== "record" || m.dur.B.src !== "record")) throw new Error("durability: computed chin / power fields used for " + f.id + " (" + m.dur.A.src + " / " + m.dur.B.src + ")");
@@ -191,12 +212,28 @@ if (!isMainThread) {
             acc.mins += isDec ? R * 5 : (s.round - 1) * 5 + s.t / 60;
             const TA = o === 0 ? s.totals.A : s.totals.B, TB = o === 0 ? s.totals.B : s.totals.A;
             for (let k = 0; k < NSTAT; k++) { acc.stats[k] += TA[STATK[k]]; acc.stats[NSTAT + k] += TB[STATK[k]]; }
+            for (let k = 0; k < NPIT; k++) {
+              let va = TA[PITK[k]], vb = TB[PITK[k]];
+              if (PITK[k] === "ctrl") { va = Math.round(va); vb = Math.round(vb); }
+              pv[k].push(va); pv[NPIT + k].push(vb);
+            }
             acc.n++;
+          }
+        }
+        if (f.actual && f.actual.A && f.actual.B) {
+          acc.pit = new Array(2 * NPIT).fill(null);
+          for (let sd = 0; sd < 2; sd++) for (let k = 0; k < NPIT; k++) {
+            const y = f.actual[sd ? "B" : "A"][PITK[k]];
+            if (y == null) continue;
+            const v = pv[sd * NPIT + k]; let lt = 0, eq = 0;
+            for (const x of v) { if (x < y) lt++; else if (x === y) eq++; }
+            acc.pit[sd * NPIT + k] = (lt + (hash32(f.id + "|" + sd + "|" + PITK[k]) / 4294967296) * eq) / v.length;
           }
         }
       } catch (e) { acc.err = String(e && e.message || e); }
       out.push({ id: acc.id, cells: Array.from(acc.cells), dec: acc.dec, draw: acc.draw, n108: acc.n108, judged: acc.judged,
-        decRounds: acc.decRounds, decN108: acc.decN108, stats: Array.from(acc.stats), mins: acc.mins, n: acc.n, mlApplied: acc.mlApplied, err: acc.err });
+        decRounds: acc.decRounds, decN108: acc.decN108, stats: Array.from(acc.stats), mins: acc.mins, n: acc.n, mlApplied: acc.mlApplied,
+        rtApplied: acc.rtApplied, pit: acc.pit, err: acc.err });
     }
     parentPort.postMessage({ cmd: "done", out, version: E.VERSION, params: PRM && PRM.version });
   });
@@ -561,6 +598,14 @@ function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && ty
       if (ix.length) brByWindow[k] = Object.assign({ range: [a, b] }, baseRates(ix.map((i) => pfs[i]), ix.map((i) => fsOk[i])));
     }
   }
+  // v8: per-stat PIT coverage (reported diagnostic)
+  const pitCov = {};
+  for (let k = 0; k < NPIT; k++) {
+    let n = 0, i80 = 0, hi = 0, lo = 0;
+    for (const f of fsOk) { const pt = simById.get(f.id).pit; if (!pt) continue; for (const v of [pt[k], pt[NPIT + k]]) { if (v == null) continue; n++; if (v > 0.9) hi++; else if (v < 0.1) lo++; else i80++; } }
+    if (n) pitCov[PITK[k]] = { in80: r4(i80 / n), gtP90: r4(hi / n), ltP10: r4(lo / n), n };
+  }
+  const rtShare = sims.reduce((a, s) => a + (s.rtApplied || 0), 0) / Math.max(1, 2 * sims.length);
   const nWin = L.filter((l) => l.winLL != null).length, nOut = L.filter((l) => l.bin7 != null).length;
   const mlShare = sims.reduce((a, s) => a + (s.mlApplied || 0), 0) / Math.max(1, 2 * sims.length);
   console.log(`\n${VERSION} ${SPLIT}: ${pfs.length} fights (${nWin} decisive, ${nOut} with an outcome), ML applied ${(100 * mlShare).toFixed(1)}% of matchups`);
@@ -573,6 +618,8 @@ function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && ty
     `10-8 ${(100 * br.r108.sim).toFixed(2)} vs ${(100 * br.r108.actual).toFixed(2)}`);
   console.log(`  finish by round 3-rd sim ${br.finByRound3.sim.map((v) => (100 * v).toFixed(1)).join("/")} vs ${br.finByRound3.actual.map((v) => (100 * v).toFixed(1)).join("/")}; ` +
     `5-rd sim ${br.finByRound5.sim.map((v) => (100 * v).toFixed(1)).join("/")} vs ${br.finByRound5.actual.map((v) => (100 * v).toFixed(1)).join("/")}`);
+  console.log("  PIT coverage (in80 / >P90 / <P10): " + Object.entries(pitCov).map(([k, v]) => `${k} ${v.in80.toFixed(3)}/${v.gtP90.toFixed(3)}/${v.ltP10.toFixed(3)}`).join(", ") +
+    (rtShare ? `; retarget applied ${(100 * rtShare).toFixed(1)}% of matchups` : ""));
   let mr = null;
   if (!args["no-methodround"]) {
     mr = methodroundScore(pfs);
@@ -613,6 +660,7 @@ function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && ty
         "3 x deduction points (engines with deductions, v4.0.1+). Stat-line deviance: Poisson deviance of each fighter's " +
         "actual fight total vs the simulated mean (unconditional on fight length), averaged over both fighters" },
     metrics: met, baseRates: br, baseRatesByYear: brByYear, baseRatesByWindow: brByWindow, methodround: mr, compare: cmp,
+    pitCoverage: pitCov, retargetAppliedShare: rtShare,
     // v5.0.1 (v5 review): b7 and the cells at 6 decimals (4 rounded draw cells to 0 and the 7-bin score could not be reproduced
     // from the file), plus the per-fight simulated stats and shares the paired base-rate tests use (tools/evalv_decide.js)
     fights: pfs.map((pf, i) => ({ id: pf.id, date: pf.date, event: pf.event, rounds: pf.rounds, pA: r6(pf.pA), b7: pf.b7.map(r6), cells: pf.cells.map(r6),
@@ -630,7 +678,7 @@ function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && ty
   if (DEV) return;
 
   // ---------------- version history
-  const summary = { n_fights: pfs.length, n_decisive: nWin, sims_per_order: SIMS, metrics: roundObj(met), baseRates: roundObj(br),
+  const summary = { n_fights: pfs.length, n_decisive: nWin, sims_per_order: SIMS, metrics: roundObj(met), baseRates: roundObj(br), pitCoverage: pitCov,
     methodround: mr && mr.metrics ? roundObj(mr.metrics) : null, compare: cmp ? roundObj(cmp) : null, file: path.relative(ROOT, outFile) };
   const H = loadHistory();
   H.meta = { tool: "tools/evalv.js", rule: "validation numbers are computed once per version (tools/evalv.js --split val refuses a second look at the same files); " +
