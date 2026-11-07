@@ -7,3 +7,5 @@ v8_gate: 1999 train fights x 2 orders x 300 sims, arms cmp4, all, -embed, -retar
   1200/1999 fights, 134 s
   1400/1999 fights, 162 s
   1600/1999 fights, 185 s
+  1800/1999 fights, 210 s
+wrote data/derived/v8/gate_train.json (1999 fights, 0 failed, 235 s); engine/params 8.0.0 | 8.0.0-selfcal-pre2024
