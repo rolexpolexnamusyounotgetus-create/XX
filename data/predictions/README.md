@@ -121,7 +121,8 @@ dated 2026-11-14 or later it writes `fwd-4.2` (section "Forward model v4.2" belo
 stat-line block; `--fwd` picks the version by event date). From Nov 7, 2026 those events get `fwd-4.3` instead
 (section "Forward model v4.3" below: `p_a_noline` becomes the ML v2 no-line stack). From Nov 7, 2026, about 11:30 am
 UTC, they get `fwd-4.4` (section "Forward model v4.4" below: fwd-4.3's models on roster inputs refreshed to the newest
-verified results by `tools/live_refresh.py`).
+verified results by `tools/live_refresh.py`). From Nov 7, 2026, about 1:25 pm UTC, they get `fwd-4.5` (section "Forward model
+v4.5" below: fwd-4.4 with the props pool's method cells on bouts without a debutant whose props snapshot has method props).
 `python3 tools/forward_ledger.py score`
 fetches results for finished ledger events (ufcstats through the Greco1899 CSVs and ESPN's scoreboard as the
 second source), appends them to `results.json` and regenerates `scores.json` / `scores.md`. The backtest-side
@@ -1000,6 +1001,212 @@ and odds snapshots used and the minutes between them. **No forward model version
 version that uses props can be checked against timestamped T-25h..T-8h props (the props pool was fit on closing props). Such a
 version needs its own pre-registration here first. Engine v7 failed its train gate (docs/CHANGELOG.md v7), so no fwd version
 uses props. tools/forward_ledger.py is unchanged, and so is the code hash the fwd-4.2 / fwd-4.3 addenda pin.
+
+## Forward model v4.5 (Nov 7, 2026)
+
+Pre-registered on Nov 7, 2026, about 1:25 pm UTC, and committed on its own (this README only) before the code that implements
+it. At that time no file with a `model.version` starting `fwd-4.2`, `fwd-4.3`, `fwd-4.4` or `fwd-4.5` existed and no UFC 334
+prediction existed. The only ledger file was the Vegas 124 file (Nov 7, `fwd-4.1`, lock 10:00 pm UTC Nov 7), which this section
+does not touch. No forward result had been recorded (there is no results.json). The live set (data/derived/live) was as of
+2026-10-31. The only props snapshot in this folder was `props_snapshot_20261107-0001.json` (12:01 am UTC Nov 7).
+
+- **Scope.** fwd-4.5 applies to every ledger file for an event dated **2026-11-14 (UFC 334) or later**, until a later section of
+  this README says otherwise. It supersedes fwd-4.4 for those events. No fwd-4.4 file was ever written, so none will be;
+  `--fwd 4.4`, `--fwd 4.3` and `--fwd 4.2` stay available for dry runs with their output unchanged (tested). Events dated before
+  2026-11-14 stay `fwd-4.1`.
+- **What stays.** Everything in fwd-4.4 is unchanged: the winner (`p_a`, `p_a_line`, `p_a_noline`, `p_elo`, every `models`
+  entry, the primaries and their fallbacks), the live inputs with their manifest rule and fallback, the flags, the debut seeding,
+  the debut method model as the primary method of a debut bout, the stat-line block (item 5), scoring (item 6 only adds) and the
+  drift-rule column.
+- **What changes.** One thing, plus two recorded secondaries:
+  1. For a bout **without a debutant** whose props snapshot has **method props**, the primary `p_method`, `p_distance` and
+     `p_finish_round` come from the props pool (src/ml/propspool.js on data/derived/props.json) fed the bout's primary `p_a`
+     and fwd-4.4's method cells for the bout.
+  2. On those bouts, fwd-4.4's cells are kept as the scored secondary `p_method_secondary.fwd44_cells`.
+  3. On a **debut** bout with method props, the debut method model stays the primary and the debut-bout props pool is recorded as
+     the monitored secondary `p_method_secondary.debut_props_pool`.
+- Bouts without method props keep fwd-4.4's cells exactly.
+- This section governs the ledger only. It changes nothing on the page, in build.py, in src/app.js or in the engine
+  (src/engine3.js and src/params3.js are v4 and stay).
+
+### 1. The props input
+
+- **Snapshot.** The newest `data/predictions/props_snapshot_<stamp>.json` written by `python3 tools/props.py capture` whose
+  `meta.snapshot_utc` is before the event's lock: the rule the odds snapshot and tools/props_ledger.py already use. A snapshot
+  without `snapshot_utc` (a `--replay` rebuild) is not used. With no such snapshot, every bout counts as "no method props".
+- **Matching a bout.** By `bout_id`, comparing each fighter part after slugifying it (capture writes a null-slug fighter's name
+  lower-cased with hyphens; the ledger slugifies it, so the two can differ only in accents and punctuation).
+  - A snapshot bout listed the other way round (b / a) is mirrored, as tools/props_ledger.py `mirror_props` does: `m6` swaps
+    its halves, `wr`, `mr`, `itd` swap sides, `ml` becomes 1 - `ml`; `gd`, `er`, `ou` are unchanged.
+  - If several snapshot entries match one bout (BestFightOdds lists some cards on two event pages), the one used has the most
+    books on the method family (`consensus.n_books.m6`); ties go to the entry with more families present, then to the first
+    in the file. Outcome-blind, and recorded.
+  - The entry's own page must have been fetched before the lock (`fetched_utc`); otherwise the bout counts as "no method props".
+- **Method props.** `consensus.m6` is a list of six finite, non-negative numbers with a positive sum. Any number of books counts:
+  there is no book-count threshold. The book-count weight was rejected in CV (research/model_props.md table 4), so it is not
+  added here. Single-book props were weaker than S2 in 2021-23 (+0.0285, verifier); such bouts are flagged `props_single_book`
+  and monitored.
+- **What is read.** The snapshot's de-vigged consensus, oriented to the ledger's a / b: tools/props.py `book_families` /
+  `consensus` (power de-vig per family per book, mean over books, the 0.15 outlier rule), the de-vig PropsPool's
+  `bookFamilies` / `consensus` mirror (tests/test_propspool.js: raw prices to cells, JS vs Python, 1.7e-16). Raw book prices
+  are not de-vigged again. Only `m6` moves a number, because the chosen pool
+  takes its round shapes from the cells.
+- **Recorded, not pinned.** The props snapshot is a per-event input like the odds snapshot. Each file records its path,
+  `snapshot_utc` and sha256, the minutes between it and the odds snapshot, and for each bout the entry used (event page, fetch
+  time, orientation, books per family, the other matching entries).
+- `<date>_<slug>.props.json` (tools/props_ledger.py, section "Props capture") stays a record that no version reads. fwd-4.5
+  reads the snapshot itself.
+
+### 2. Primary method cells: bout without a debutant, with method props
+
+`PropsPool.create(props.json model).predict({ pA, rounds, model, props, params: "production" })`:
+
+- `pA` = the bout's primary `p_a` as the file writes it (fwd-4.4's winner rules, unchanged). The pool leaves the winner alone:
+  P(a) / (P(a) + P(b)) of its cells equals `p_a` exactly.
+- `model` = fwd-4.4's method cells for the bout by round, in MethodRound form. These are the cells fwd-4.4 already builds and
+  feeds the stat-line grid as `S` = [a KO r1..R, a SUB r1..R, b KO r1..R, b SUB r1..R, a DEC, b DEC, draw]:
+  - normally the method-and-round model's head (SM with a line, S without), rescaled per side to `p_a`;
+  - when the method-and-round model failed, the engine head split into KO and SUB, or the division base-rate profile when there
+    is no head.
+- `pModel` = PropsPool's default, the cells' own P(a). Because fwd-4.4's cells are rescaled to `p_a`, this equals `p_a` up to
+  rounding. In training the jlin weights read the cells expert's own winner probability; this is that.
+- `props` = the bout's consensus from item 1.
+- `params: "production"`: the CV-chosen joint-linear pool ("pool: S2+P jlin / S2 shapes", props.json `model.spec`).
+  - Weights: cells `0.4267112136092824`, props `0.5732887863907177` (props.json `model.params_production.m.w`). They were refit
+    on 2021-2025 by the pre-registered forward-chained procedure: the weight fit on every complete props year before the scored
+    period. This is the integration recipe's live choice (research/model_props.md section 11) and the weight of audit 2's
+    props-pool benchmark (research/vault_audit_v10.md section 5).
+  - Not the `fit_2021_2023` weights (0.4602 / 0.5398). Those were the parameters scored on 2024-25.
+- **Decision tilt 0.** `params_production.m.beta` = [0, 0, 0]: the decision debias was rejected in CV (+0.0018). The tool refuses
+  to run if it is not all zero.
+- **Round shapes from the cells.** `spec.r_exp` = ["S2"], the cells expert's shapes; round props failed the CV gate.
+- **The draw** is props.json `draw_c` (0.01457) x P(decision), the pool's composer, not fwd-4.4's draw share.
+- **Written to the file.**
+  - `p_method` = the pool's seven cells;
+  - `p_distance` = a_dec + b_dec + draw;
+  - `p_finish_round` = per side, KO + SUB in each round r = 1..R;
+  - `p_method_source` = "props pool (props.json, production weights) on " + fwd-4.4's source;
+  - all rounded to 5 decimals as in fwd-4.4.
+- **Check.** If the pool's cells do not sum to 1 within 1e-9, any cell is negative or not finite, or P(a | not a draw) differs
+  from `p_a` by more than 1e-9, the bout keeps fwd-4.4's cells and is flagged `props_pool_failed`.
+- **Scored secondary** `p_method_secondary.fwd44_cells`: fwd-4.4's `p_method`, `p_distance` and `p_finish_round` for the same
+  bout (the pre-4.5 cells), with their source.
+- **Record.** Every fwd-4.5 bout carries a `props_pool` block: whether a snapshot entry was found and used, the reason when not,
+  the books per family, and on pooled bouts P(method | winner) of the cells, of the props and of the pool, with each one's
+  P(decision).
+
+### 3. Bouts without method props
+
+fwd-4.4's `p_method`, `p_distance`, `p_finish_round` and `p_method_source` are unchanged, and so is every other fwd-4.4 bout
+field. The one addition is the `props_pool` block, with `applied` false and the reason (no snapshot, no matching entry, no `m6`
+family, page fetched after the lock).
+
+### 4. Debut bouts
+
+- **Primary: unchanged.** The debut method model fed `p_a` (section "Forward model v4.2"). The scored secondary
+  `p_method_secondary.division_base_rates` is unchanged.
+- **Monitored secondary** when the bout has method props: `p_method_secondary.debut_props_pool`.
+  - It comes from PropsPool `debutMethod({ debut: { A: given_a, B: given_b }, pW: p_a, props, rounds, params: "production" })`:
+    the log-linear pool with debut 0.4004 / props 0.6329 (props.json `model.debut.params_production`) and beta 0.
+  - It is composed exactly as the primary: a_m = p_a (1 - dr) A[m], b_m = (1 - p_a)(1 - dr) B[m], draw = dr, and
+    `p_distance` = a_dec + b_dec + draw. `p_finish_round` uses the division base-rate round profile.
+  - It is scored like the other method secondaries (item 6) and is never the primary in fwd-4.5.
+  - The props verifier's decision (b) says the debut-bout pool needs its own pre-registered forward version before it governs a
+    card. This section records it; it does not let it govern.
+
+### 5. Stat lines: unchanged
+
+The stat-line block keeps fwd-4.4's fight-length grid (the pre-4.5 cells) on every bout, so `statlines` equals fwd-4.4's. The
+stat-line layer's checks used the method-and-round model's length distribution, and a pool-based grid is not pre-registered. In
+fwd-4.5 files, fwd-4.2's "the bout's primary method cells" for the stat-line grid therefore means fwd-4.4's cells.
+
+### 6. Scoring (fwd-4.5 files)
+
+- **As fwd-4.4.** The README secondary metrics (7-way log loss over `p_method`, goes-the-distance Brier) read the primary as each
+  file writes it. The drift monitor's level alarms likewise read each file's `p_distance` and `p_finish_round`.
+- **Added: the method secondaries.** For each fwd-4.5 version, every scored decisive bout carrying `p_method_secondary.fwd44_cells`
+  or `p_method_secondary.debut_props_pool` is scored against its primary, separately for each secondary:
+  - 7-way log loss (the props study's pre-registered 7-bin metric, and this comparison's headline);
+  - method given the winner;
+  - marginal KO / SUB / DEC;
+  - goes-the-distance Brier;
+  - paired differences, primary minus secondary, with the event-cluster bootstrap widened to the bout-level one, as fwd-4.2's
+    debut method scoring does.
+
+  The method is mapped as in fwd-4.2; DQ and other methods are void for these metrics.
+- **Questions these answer** (exploratory; nothing switches within fwd-4.5):
+  - the pool against fwd-4.4's cells on forward bouts, and the P(decision) of each;
+  - single-book bouts;
+  - the props snapshot's lead time before the lock.
+
+### 7. Evidence, and the flag
+
+- **2024-25** (research/model_props.md section 6 and its Verification log; pre-registered single look, verified):
+  - pool minus S2, 7-bin: **-0.0172 [-0.0283, -0.0056]** (verifier -0.0171 [-0.0282, -0.0059]);
+  - method given the winner: -0.0177 [-0.0289, -0.0061];
+  - against the page's earlier 40/60 props blend it is a tie, -0.0008 [-0.0023, +0.0005]. The gain is the one that blend already
+    had. The ledger never had a props blend, so for the ledger it is new.
+- **Train, v7's binding gate** (docs/CHANGELOG.md v7, check C2): v7 minus v7 with props off, close+props rows, forward folds
+  2022-2023: 7-bin -0.0149 [-0.0273, -0.0028]. That pooled package cells (simulator mixed with S2), not S2 alone. v7 failed its
+  gate on a cycle-1 winner check, not on the props check.
+- **Audit 2** (research/vault_audit_v10.md sections 2, 5 and 6; descriptive, seen fights):
+  - the props-pool effect inside v10, open regime: 7-bin **-0.034 [-0.057, -0.012]** (-0.0344 [-0.0571, -0.0123]); method given
+    the winner -0.0340. That pooled v10's package cells with v10's own props weight (pi 0.44, refit through 2025), not
+    props.json's 0.573;
+  - props pool minus S2 at the same close winner, with props.json's production weights (the setting adopted here): 7-bin
+    -0.0339 [-0.0562, -0.0116] (audit 1: -0.0324);
+  - P(decision) on the vault: actual 0.443, v10 with the pool 0.462, the props-off packages about 0.50.
+- **Untested anywhere.**
+  - The pool on the ledger's own cells. The pool's weight was fit with S2 as the cells expert, and v7 / v10 pooled their package
+    cells; the ledger's cells are methodround S / SM rescaled to `p_a`. On the vault, SM (refit through 2025) scored 7-bin 1.5518
+    and the props pool at the close winner 1.5075. Those two use different cells experts and are not paired, so they are not an
+    effect.
+  - Closing props against the snapshots the ledger reads, which come T-25h to T-8h before the lock or earlier. The pool was fit
+    on closing props, and earlier props are thinner.
+  - Single-book props (above).
+  - The 2024-25 decision share was missed by every source: 54.2% observed, pool 47.8%.
+- **Flag: adopted after both vault openings.** This change was decided on Nov 7, after audit 1 (4:57 to 5:35 am UTC) and audit 2
+  (12:43 to 1:06 pm UTC) had been read. The props pool's vault numbers are in both reports.
+  - By plan 6.5.2 it is **not clean on the vault**. Audit 2 was the last allowed opening, so no vault test remains. **Its clean
+    test is this forward ledger.**
+  - Plan 6.4 routed props into the ledger through a kept engine version ("v7 adds props capture"). v7 was not kept. This is a
+    ledger-only adoption of a verified lab result, as fwd-4.2's debut method model was, except that fwd-4.2's came before the vault.
+  - Nothing is refit or retuned. props.json and propspool.js are the files verified on Nov 7 (12:05 to 12:40 am UTC), the ones
+    both audits read (audit 2 records props.json as `6870d44c20cc2e99`).
+- **Nothing selected on forward results.** No forward result exists. Vegas 124 has not been fought.
+
+### 8. Files, hashes, version
+
+- **Pinned files.** fwd-4.4's: the fwd-4.3 table, with fighters, market, ratings, ml, ml2, methodround and oppadj handled by the
+  fwd-4.4 manifest rule. Two files are added:
+
+  | file | sha256-16 | role |
+  |---|---|---|
+  | src/ml/propspool.js | 78f5574d20d0bf2c | PropsPool evaluator (pool, debut pool, composer) |
+  | data/derived/props.json | 6870d44c20cc2e99 | pool spec, production and fit-2021-2023 weights, draw_c, debut pool |
+
+  - Full sha256 of src/ml/propspool.js: `78f5574d20d0bf2c8a275b07b0eea9ebcbb30f1f965c07a382759d052ceca96a`.
+  - Full sha256 of data/derived/props.json: `6870d44c20cc2e990ab4fc06d4871e800c5eeaa46d6cff8a39e3c5179d169bdd`.
+  - The tool checks both full hashes and refuses to write a fwd-4.5 file when either differs (a dry run reports the mismatch). A
+    change to either is a new version (fwd-4.5.1 or later) that needs a dated addendum here first.
+- **Per-event inputs.** As in fwd-4.4, plus the props snapshot (item 1).
+- **Tool code.**
+  - `tools/forward_ledger.py` 1.5: `predict --fwd 4.5`, plus `score`'s method-secondary block.
+  - `tools/forward_ledger.js`: `--fwd 4.5`, which is exactly the `--fwd 4.4` computation with `meta.fwd` "4.5", plus a props-pool
+    mode that loads only propspool.js and props.json.
+  - tools/forward_statlines.js and tools/live_refresh.py are unchanged.
+  - The code is written after this commit. The implementation commit and the code hashes go into a dated addendum below before
+    any fwd-4.5 file exists. Each fwd-4.5 file records the code commit and those hashes.
+  - The fwd-4.1 to fwd-4.4 outputs of the same tools stay byte-identical. Golden fixtures check this:
+    tests/fixtures/forward_v43_golden.json, and a fwd-4.4 fixture captured from the current tools before the edit.
+- **Options.** `--props-dir` (read the snapshot from another folder) is for dry runs only, like `--live-dir`. There is no option
+  to pick a snapshot other than the newest before the lock.
+- **Version switch.** `--fwd auto` (the default) picks fwd-4.5 for events dated 2026-11-14 or later and fwd-4.1 before. Writing a
+  ledger file under any other version is refused; dry runs may use any.
+- **Version string.** `model.version` starts `fwd-4.5:`, then fwd-4.4's string. It adds the props pool (props.json sha256-16,
+  production weights) and the props snapshot stamp, or "no props snapshot before the lock". `model.preregistration` names this
+  section, the two added pins and the vault flag.
+- **The page is out of scope.**
 
 ## Card snapshot notes (`cards_upcoming.json`)
 
