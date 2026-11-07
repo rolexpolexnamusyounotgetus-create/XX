@@ -120,7 +120,7 @@ const waitTally = (pg) => pg.waitForFunction(() => /simulated fights/.test(docum
   check(["line", "open", "noline"].every((k) => JSON.stringify(reg.weights[k].weights) === JSON.stringify(FMW[k].weights)), "the page's stack weights are the forward ledger's (fit 2019-2023)");
   const hd = await pg.evaluate(() => { const H = window.FightLab.blend().head; return { variant: H && H.variant, src: H && H.src, s: H ? H.bins7.reduce((a, b) => a + b, 0) : null, pA: H && H.pA, pD: H && H.pD }; });
   check(hd.src === "mr" && hd.variant === "S2" && Math.abs(hd.s - 1) < 1e-9, "how it ends: S2 cells scaled to the headline, summing to 1", hd);
-  const sl = await pg.evaluate(() => { const L = window.FightLab.statLines(); return { L, rows: document.querySelectorAll("#slBody table.slt tbody tr").length }; });
+  const sl = await pg.evaluate(() => { const L = window.FightLab.statLines(); return { L, rows: document.querySelectorAll("#slBody table.slt tbody tr").length, note: document.getElementById("slNote").textContent }; });
   const ord = sl.L && ["A", "B"].every((s) => Object.values(sl.L[s]).every((q) => q.p10 <= q.p50 && q.p50 <= q.p90));
   check(sl.L && sl.rows === 14 && ord, "stat lines: 7 rows per fighter, low <= typical <= high", sl.rows);
 
@@ -129,6 +129,10 @@ const waitTally = (pg) => pg.waitForFunction(() => /simulated fights/.test(docum
   check(/level with the market/i.test(sc.bt), "the scorecard says plainly: level with the market");
   check(/0\.6003/.test(sc.bt) && /0\.5887/.test(sc.bt) && /0\.5854/.test(sc.bt) && /−0\.0087/.test(sc.bt) && /0\.6150/.test(sc.bt), "scorecard quotes the verified numbers (2026 close 0.6003, ML v2 0.5887 vs close 0.5854, -0.0087, open stack 0.6150)");
   check(/v5\.0\.1/.test(sc.bt) && /v6/.test(sc.bt) && /rejected/.test(sc.bt) && /kept, on this page/.test(sc.bt), "engine versions table: v4 kept, v5 / v5.0.1 / v6 rejected");
+  check(!/Every weight on this page was fit on these fights only/.test(sc.bt) && /combine the models into the pick were fit on these fights only/.test(sc.bt) && /refit on fights through 2025/.test(sc.bt),
+    "testing protocol: only the stack weights are 2019-2023; the stats model was refit through 2025 (QA, Nov 7)");
+  const metaD = (/<meta name="description" content="([^"]*)"/.exec(fs.readFileSync(PAGE, "utf8")) || [])[1] || "";
+  check(metaD && !/seven models/.test(metaD) && /level with the market/.test(metaD), "meta description matches the page (stats model + line or market rating; level with the market)", metaD.slice(0, 120));
   const LED = fs.readdirSync(path.join(ROOT, "data/predictions")).filter((n) => /^\d{4}-\d{2}-\d{2}_.*\.json$/.test(n));
   for (const n of LED) {
     const sha = require("child_process").execFileSync("git", ["-C", ROOT, "log", "--diff-filter=A", "--format=%H", "--", "data/predictions/" + n]).toString().trim().split("\n").pop();
@@ -154,6 +158,24 @@ const waitTally = (pg) => pg.waitForFunction(() => /simulated fights/.test(docum
     return bad;
   });
   check(!scan.length, "no project paths or jargon in the visible copy", scan.slice(0, 8));
+
+  console.log("stat lines without an embedding (first UFC fight in 2026)");
+  const noEmb = [];
+  for (const [a, bb] of [["abdul-hussein", "asaf-chopurov"], ["asaf-chopurov", "abdul-hussein"], ["alexander-volkanovski", "abdul-hussein"]]) {
+    await pg.evaluate(([a, bb]) => { location.hash = "a=" + a + "&b=" + bb; }, [a, bb]);
+    await pg.waitForFunction(([a, bb]) => window.FightLab.state.a === a && window.FightLab.state.b === bb, [a, bb]);
+    await pg.waitForTimeout(300);
+    noEmb.push(await pg.evaluate(() => { const L = window.FightLab.statLines(); return { L: L && { A: L.A, B: L.B, hasEmb: L.hasEmb }, rows: document.querySelectorAll("#slBody table.slt tbody tr").length,
+      note: document.getElementById("slNote").textContent }; }));
+  }
+  const ordOk = (L) => L && ["A", "B"].every((s) => Object.values(L[s]).every((q) => q.p10 <= q.p50 && q.p50 <= q.p90));
+  check(noEmb.every((x) => x.L && x.L.hasEmb === false && x.rows === 14 && ordOk(x.L)), "bands render for 2026 debutants (both sides, and one side), embedding term off, low <= typical <= high",
+    noEmb.map((x) => [x.rows, x.L && x.L.hasEmb]));
+  const swapd = noEmb[0].L && noEmb[1].L ? Math.max(...Object.keys(noEmb[0].L.A).flatMap((k) => ["mean", "p10", "p50", "p90"].map((q) => Math.max(Math.abs(noEmb[0].L.A[k][q] - noEmb[1].L.B[k][q]), Math.abs(noEmb[0].L.B[k][q] - noEmb[1].L.A[k][q]))))) : null;
+  check(swapd != null && swapd < 1e-9, "debutant pair: swapping corners swaps the lines", swapd);
+  check(/Abdul Hussein and Asaf Chopurov have no fighter-style profile yet/.test(noEmb[0].note) && /Abdul Hussein has no fighter-style profile yet/.test(noEmb[2].note) && !/Volkanovski has no/.test(noEmb[2].note),
+    "the note names the fighters without a style profile", noEmb[2].note.slice(-200));
+  check(!/style profile/.test(sl.note || ""), "no such note for Volkanovski vs Gaethje");
 
   console.log("another pair");
   await pg.evaluate(() => { location.hash = "#islam-makhachev-vs-belal-muhammad"; });

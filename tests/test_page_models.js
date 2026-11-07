@@ -10,6 +10,8 @@
 // 3. Method x round S2: the page block (vectors stripped) reproduces mr_s2.json's Python parity vectors to 1e-9.
 // 4. Stat lines: the page block (prod tables, pruned embedding, compact oppadj) gives bit-identical lines to the full files,
 //    and the prod fixtures of tests/fixtures/statdist_fixtures.json to the same tolerances as tests/test_statdist.js.
+//    4b. Fighters with no embedding (first UFC fight in 2026): the null-safe guard gives finite, ordered, corner-symmetric
+//    lines with the embedding term off for the pair, and src/app.js / tools/statlines_matchup.js carry that guard.
 // 5. Debut method model: the page block equals the full debut.json model on the card desk's debutants.
 // 6. Scorecard: every report-only number in data/derived/page_scorecard.json is quoted verbatim from its source; the
 //    JSON-derived numbers equal their sources; the 2026 readout says "level with the market".
@@ -174,6 +176,53 @@ for (const s of Object.keys(B.sd.opp.roster)) { const row = B.sd.opp.roster[s], 
     nC++;
   }
   check(nC >= 20 && maxP < 1e-7, "stat lines: page block reproduces the Python prod fixtures (" + nC + " cases)", maxP);
+}
+
+// ---------------------------------------------------------------- 4b. stat lines for fighters with no embedding
+// The embedding export stops at 2025, so every fighter whose first UFC fight was in 2026 gets null from embedding().
+// The page (src/app.js statLines) and tools/statlines_matchup.js must turn the embedding term off for the pair (hasEmb
+// false, win logit 0, as tools/forward_statlines.js does) instead of reading .expo off null (QA, Nov 7: the bands vanished).
+{
+  const MLR = require(path.join(ROOT, "src/ml/mlrates.js")), FJ = rd("data/derived/fighters.json");
+  const M = MLR.load(rd("data/derived/mlrates.json"));
+  const prof = (s) => Object.assign({ keys: FJ.meta.keys }, FJ.fighters[s]);
+  const miss = Object.keys(FJ.fighters).filter((s) => { const e = EMp.embedding(s); return !(e && e.expo > 0); });
+  const missFull = Object.keys(FJ.fighters).filter((s) => { const e = EMf.embedding(s); return !(e && e.expo > 0); });
+  check(miss.length > 100 && JSON.stringify(miss) === JSON.stringify(missFull), "fighters with no embedding: the same " + miss.length + " in the page block and the full export", [miss.length, missFull.length]);
+  check(miss.every((s) => EMp.embedding(s) === null), "embedding() is null for each of them (so .expo on it throws)");
+  // the guarded recipe, written as tools/forward_statlines.js writes it
+  const lines = (SD, EM, OA, a, b, div, R) => {
+    const pr = MLR.predict(M, prof(a), prof(b), { division: div, rounds: R, title: R === 5, date: "2026-11-07", priors: FJ.priors });
+    const ea = EM.embedding(a), eb = EM.embedding(b), has = !!(ea && eb && ea.expo > 0 && eb.expo > 0);
+    const em = has ? EM.matchup(a, b, { division: div, rounds: R, date: "2026-11-07" }) : null;
+    const P = SD.prepare({ mlA: pr.A, mlB: pr.B, etaA: em ? em.etaA : null, etaB: em ? em.etaB : null, hasEmb: has, winLogit: em ? em.logit : 0,
+      oppA: OA[a] || null, oppB: OA[b] || null, rounds: R });
+    const grid = SD.lengthGridSimple(0.5, (R === 5 ? [0.3, 0.24, 0.18, 0.15, 0.13] : [0.45, 0.33, 0.22]).map((x) => x * 0.5));
+    return { has, A: P.line("A", grid), B: P.line("B", grid) };
+  };
+  let okAll = true, nP = 0, bad = null;
+  const ordered = (L) => ["A", "B"].every((s) => Object.keys(L[s]).every((k) => { const q = L[s][k]; return [q.p10, q.p50, q.p90, q.mean].every(Number.isFinite) && q.p10 <= q.p50 && q.p50 <= q.p90; }));
+  miss.forEach((s, i) => {
+    const div = FJ.fighters[s].division || "Lightweight";
+    for (const [a, b] of [[s, "alexander-volkanovski"], [s, miss[(i + 1) % miss.length]]]) {
+      let L = null; try { L = lines(SDp, EMp, OPP, a, b, div, 3); } catch (e) { L = null; }
+      if (!L || L.has || !ordered(L)) { okAll = false; bad = bad || [a, b]; }
+      nP++;
+    }
+  });
+  check(okAll && nP === 2 * miss.length, "stat lines for every unembedded fighter (vs Volkanovski and vs another unembedded fighter): finite, low <= typical <= high", bad);
+  const x1 = lines(SDp, EMp, OPP, "abdul-hussein", "asaf-chopurov", "Bantamweight", 3), x2 = lines(SDp, EMp, OPP, "asaf-chopurov", "abdul-hussein", "Bantamweight", 3);
+  check(JSON.stringify(x1.A) === JSON.stringify(x2.B) && JSON.stringify(x1.B) === JSON.stringify(x2.A), "unembedded pair: swapping corners swaps the lines exactly");
+  check(JSON.stringify(x1) === JSON.stringify(lines(SDf, EMf, OAfull, "abdul-hussein", "asaf-chopurov", "Bantamweight", 3)), "unembedded pair: page block = full files, bit for bit");
+  // a fighter missing from the embedding turns the term off for both sides: the embedded opponent's line equals a run with no embedding at all
+  const v1 = lines(SDp, EMp, OPP, "alexander-volkanovski", "abdul-hussein", "Lightweight", 5);
+  const v0 = lines(SDp, { embedding: () => null, matchup: () => { throw new Error("no"); } }, OPP, "alexander-volkanovski", "abdul-hussein", "Lightweight", 5);
+  check(!v1.has && JSON.stringify(v1) === JSON.stringify(v0), "one side unembedded: embedding term off for the pair (win logit 0)");
+  // the sources no longer read .expo straight off embedding()
+  for (const f of ["src/app.js", "tools/statlines_matchup.js"]) {
+    const src = fs.readFileSync(path.join(ROOT, f), "utf8");
+    check(!/\.embedding\([^)]*\)\.expo/.test(src) && /hasEmb = !!\(ea && eb && ea\.expo > 0 && eb\.expo > 0\)/.test(src), f + ": the null-safe embedding guard (as tools/forward_statlines.js)");
+  }
 }
 
 // ---------------------------------------------------------------- 5. debut method model
