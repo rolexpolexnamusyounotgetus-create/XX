@@ -329,10 +329,12 @@ function rnd4(o) { if (Array.isArray(o)) return o.map(rnd4); if (o && typeof o =
   if (EV.size) models["engine_evalv_" + VERSION] = fsOk.map((f) => (EV.get(f.id) || {}).pA ?? null);
   models.market_close = fsOk.map((f) => num((MK[f.id] || {}).p_power_close) ?? num((MK[f.id] || {}).p_novig_close));
   models.market_open = fsOk.map((f) => num((MK[f.id] || {}).p_novig_open));
-  models.ml_lr_walkforward = fsOk.map((f) => (f.date >= "2024-01-01" ? bt(f, "ml_lr") : null));
+  // the package's own `ml` / `elo` expert inputs (tools/predictrec.js): blind replay rows on 2024-2025, ml.json oof / blend_anchor_dev.json on train
+  const BAD = fs.existsSync(path.join(ROOT, "data/derived/blend_anchor_dev.json")) ? readJSON("data/derived/blend_anchor_dev.json").fights : {};
+  models.ml_lr_walkforward = fsOk.map((f) => (f.date >= "2024-01-01" ? bt(f, "ml_lr") : ((MLJ[f.id] || {}).set === "oof" ? num(MLJ[f.id].lr) : null)));
   models.ml_lr_static = fsOk.map((f) => { const r = MLJ[f.id] || {}; return f.date >= "2024-01-01" ? (r.set === "test" ? num(r.lr) : null) : (r.set === "oof" ? num(r.lr) : null); });
   models.ml2_lr = fsOk.map((f) => { const r = ML2[f.id] || {}; return (f.date >= "2024-01-01" ? r.set === "valid" : r.set === "oof") ? num(r.ml2_lr) : null; });
-  models.elo_walkforward = fsOk.map((f) => (f.date >= "2024-01-01" ? bt(f, "elo") : null));
+  models.elo_walkforward = fsOk.map((f) => (f.date >= "2024-01-01" ? bt(f, "elo") : num((BAD[f.id] || {}).elo)));
   models.mkt_rating = fsOk.map((f) => num((MK[f.id] || {}).p_market_rating));
   models.model_S = fsOk.map((f) => sP(sCells(f, "S"), f.rounds === 5 ? 5 : 3));
   models.model_SM = fsOk.map((f) => sP(sCells(f, "SM"), f.rounds === 5 ? 5 : 3));
@@ -400,7 +402,18 @@ function rnd4(o) { if (Array.isArray(o)) return o.map(rnd4); if (o && typeof o =
         "package's `ml` expert); ml_lr_static = ml.json lr (trained through 2023); ml2_lr = ml2.json (static fit < 2024); elo_walkforward = blindtest.json elo; " +
         "model_S / model_SM = methodround.json cells (fit through the previous year), P(A) = A cells / (A + B). Winner metrics on decisive fights with clip 1e-4." },
     results: rnd4(res), errors: errs.slice(0, 20).map((e) => ({ id: e.id, err: e.err })),
-    fights: fsOk.map((f) => ({ id: f.id, date: f.date, kinds: byId.get(f.id).kinds })) };
+    // per fight: the simulator once (identical for every line kind: same seeds and matchup), experts once, then per kind the package
+    fights: fsOk.map((f) => {
+      const K = byId.get(f.id).kinds, k0 = K[kinds[0]];
+      const ex = Object.assign({}, k0.experts); delete ex.market;
+      const per = {};
+      for (const k of kinds) {
+        const r = K[k];
+        per[k] = { p: r.p, src: r.source + (r.blendError ? "!" : ""), lk: r.lineKind, miss: r.lineMissing || undefined, line: r.line, reg: r.regime, cells: r.cells,
+          iv80: r.iv80, iv95: r.iv95, ml2p: r.ml2p, mrW: r.mrWeight, mrV: r.mrVariant, anchorS: r.anchorS == null ? undefined : r.anchorS };
+      }
+      return { id: f.id, date: f.date, R: k0.R, simP: k0.simP, simCells: k0.simCells, experts: ex, kinds: per };
+    }) };
   fs.mkdirSync(path.dirname(path.join(ROOT, OUT)), { recursive: true });
   fs.writeFileSync(path.isAbsolute(OUT) ? OUT : path.join(ROOT, OUT), JSON.stringify(doc));
   // console summary
