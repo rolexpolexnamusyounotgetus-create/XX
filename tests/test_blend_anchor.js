@@ -131,12 +131,14 @@ for (const [a, b, o] of cases) {
 
 // ---------------------------------------------------------------- flag on: the package
 {
-  E.loadBlend({ moe: J("moe_page.json"), methodRound: J("methodround.json") });
+  // v5 merge step 5: the ML v2 package's exported stack (blindtest_stack.json; `model` / `model_open` by opts.lineKind) with the
+  // feature LR from moe_page.json; tests/test_v5_step5.js checks the stack blocks, ML v2 and the backtest guard
+  E.loadBlend({ stack: J("blindtest_stack.json"), feat: J("moe_page.json"), methodRound: J("methodround.json") });
   const [a, b, o] = cases[0];
   const oo = Object.assign({}, o, { sims: 300, seed: 5 });
   const t0 = Date.now();
   const r = E.predict(a, b, oo), rs = E.predict(b, a, oo);
-  check("predict (flag on) returns the blend package", r.on === true && r.source === "moe" && r.p > 0 && r.p < 1 && r.experts.engine === r.sim.p,
+  check("predict (flag on) returns the blend package", r.on === true && r.source === "stack" && r.p > 0 && r.p < 1 && r.experts.engine === r.sim.p,
     `p ${r.p.toFixed(4)} (engine ${r.sim.p.toFixed(4)}, ${Date.now() - t0} ms for two calls)`);
   check("predict is exactly corner-symmetric", Math.abs(r.p + rs.p - 1) < 1e-12 && r.bins7.every((x, i) => Math.abs(x - rs.bins7[6 - i]) < 1e-12),
     (r.p + rs.p).toString());
@@ -147,8 +149,10 @@ for (const [a, b, o] of cases) {
   const iv = r.interval;
   check("interval is ordered and contains the point", iv && iv.levels["0.95"][0] <= iv.levels["0.8"][0] && iv.levels["0.8"][0] <= r.p && r.p <= iv.levels["0.8"][1] &&
     iv.levels["0.8"][1] <= iv.levels["0.95"][1], JSON.stringify(iv.levels));
-  const rl = E.predict(a, b, Object.assign({}, oo, { line: { oddsA: 160, oddsB: -180 }, interval: false }));
-  check("a market line switches the blend to the line regime", rl.blend.regime === "present" && Math.abs(rl.p - r.p) > 0.01, `p with line ${rl.p.toFixed(4)}`);
+  const rl = E.predict(a, b, Object.assign({}, oo, { line: { oddsA: 160, oddsB: -180 }, lineKind: "close", interval: false }));
+  check("a market line (lineKind 'close') switches the blend to the line regime", rl.blend.regime === "present" && rl.stack.block === "model" && Math.abs(rl.p - r.p) > 0.01, `p with line ${rl.p.toFixed(4)}`);
+  const ro = E.predict(a, b, Object.assign({}, oo, { line: { oddsA: 160, oddsB: -180 }, lineKind: "open", interval: false }));
+  check("an opener (lineKind 'open') uses the open-trained block", ro.blend.regime === "present" && ro.stack.block === "model_open" && Math.abs(ro.p - rl.p) > 1e-6, `p with opener ${ro.p.toFixed(4)}`);
   const ra = E.predict(a, b, Object.assign({}, oo, { anchor: true, interval: false }));
   check("anchor moves the simulator toward the blend", ra.anchor && Math.abs(ra.anchor.p - ra.p) < Math.abs(r.sim.p - r.p) + 0.02 && Math.sign(ra.anchor.s) === Math.sign(logitOf(r.p) - logitOf(r.sim.p)),
     `sim ${r.sim.p.toFixed(3)} -> anchored ${ra.anchor.p.toFixed(3)} (target ${ra.p.toFixed(3)}, s ${ra.anchor.s.toFixed(3)}, ${ra.anchor.iters} evals)`);

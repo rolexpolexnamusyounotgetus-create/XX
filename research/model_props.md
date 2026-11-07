@@ -27,6 +27,11 @@ differences. Negative = better for losses.
    | pool minus current 40/60 blend: 7-bin | -0.0003 (not bootstrapped) | -0.0008 [-0.0023, +0.0005] |
    | pool minus current 40/60 blend: method given the winner | -0.0002 | -0.0008 [-0.0022, +0.0005] |
 
+   Verifier's bootstrap of the two unbootstrapped CV rows (tools/props_verify.py, own join, n = 798): pool minus props
+   alone 7-bin -0.0124 [-0.0225, -0.0032]; pool minus the 40/60 blend -0.0004 [-0.0019, +0.0009]. The pool-vs-blend
+   gap is under the 0.0005 rule in CV, so the pool does not pass the gate **against the incumbent**. See the
+   verification log.
+
    The CV-chosen form is not the log-linear pool the plan sketched. It is a **joint-linear pool**: each side's method
    mix is a weighted average of S2's and the props' mixes, with each source weighted by its own P(that side wins).
    That is exactly the structure of the current 40/60 blend. CV refits the weight to 0.46 S2 / 0.54 props (fit on
@@ -43,7 +48,8 @@ differences. Negative = better for losses.
    pool predicted 47.8%, S2 48.8%, the props 47.0% and the 40/60 blend 47.3%. Every source missed by 5-7 points. This
    is the 2024-25 decision drift research/model_market.md already reports (props 47.5% vs 54.2%). No term fit on
    2021-2023 could have caught it. It belongs to the v9 drift monitor.
-4. **Debut bouts: the debut method model plus props beats the debut model alone.** It uses a log-linear pool, chosen
+4. **Debut bouts: the debut method model plus props beats the debut model alone on 2024-25; in CV the gain passes the
+   0.0005 point rule but its CI includes 0.** It uses a log-linear pool, chosen
    by CV over the joint-linear and linear forms (all three within 0.00003). CV (193 bouts): -0.0150 [-0.0514, +0.0198]
    on method given the winner. 2024-25 look (163 bouts): **-0.0364 [-0.0726, -0.0027]**. Against props alone it is
    -0.0026 [-0.0297, +0.0260]. Small samples. Use it where props exist and log it as monitored.
@@ -63,6 +69,11 @@ differences. Negative = better for losses.
    W_close), and P(A) / (P(A) + P(B)) equals it exactly (JS test: 1e-12).
 
 **Recommendation for v7 (integration):**
+- Verifier's correction: the swap below is **not** a gain over production. Against the incumbent 40/60 blend the pool
+  is -0.0003 in CV (verifier -0.0004 [-0.0019, +0.0009]; -0.0002 on rows where both prop sources exist). That fails
+  the 0.0005 rule. Use the pool as the integration vehicle for props in predict(): the same model as the blend, with
+  a forward-chained weight and one de-vig from raw book prices in training and live. Do not log it as an
+  improvement. The part that adds something production lacks is the debut-bout pool.
 - Replace the 40/60 joint blend with this pool: `PropsPool.create(props.json.model).predict(...)`.
   - It is the same structure, with the weight refit forward-chained.
   - It reads the full-family extract. Its method coverage equals market.json's (2,071 bouts 2021-2025), and it adds
@@ -127,7 +138,11 @@ by more than 0.25 while agreeing with the flipped close).
 | 2024 | 433 | 99.1% | 98.6% | 97.9% | 97.2% | 5.14 |
 | 2025 | 432 | 94.7% | 94.7% | 94.0% | 94.4% | 4.32 |
 
-2025 misses the 9 July-19 undercard bouts that BFO never listed (research/model_market.md) plus a few late pages.
+2025 misses 24 backtest bouts (verifier's count):
+- the 9 July-19 undercard bouts that BFO never listed (research/model_market.md);
+- 2 more July-19 bouts and the whole 2025-07-12 card (12 bouts). That card's page is not in market.py's page list
+  (`bfo_event_props.csv`), which `event_list()` inherits, so it was never fetched;
+- 1 matched bout without a six-way market.
 
 **By card position** (fightweek.json card segments):
 
@@ -369,6 +384,10 @@ Production weights (2021-2025): debut 0.400, props 0.633. JS: `pool.debutMethod(
 - **Debut samples are small.** 193 CV bouts and 163 look bouts. The look's CI just excludes 0.
 - **BFO coverage limits.** US books only (BetMGM, BetRivers, BetWay, Caesars, DraftKings, FanDuel, Unibet); no sharp
   book. 2021 has 3.4 books per bout, versus 5+ from 2022.
+- **Single-book props are weak (verifier).** On the 196 single-book bouts of 2021-2023 (194 of them BetWay-only in
+  2021), the props' method given the winner is +0.0285 worse than S2. On 3+ book bouts it is -0.0117 better. The
+  forward-chained folds hold only 8 single-book bouts, so CV could not test the book-count weight. Early-week
+  captures with one book quoting get the full props weight. Monitor this on the ledger. Do not tune it on 2024-25.
 
 ## 10. Reproduce
 

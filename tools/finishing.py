@@ -21,10 +21,10 @@ What it models. The ML v2 winner probability decides who wins (it is taken as gi
 models HOW (KO/TKO, submission, decision) given the winner, and WHEN (the finishing round) given the winner and the
 method, from fighter-level finishing tendencies:
   (a) empirical-Bayes shrunk finishing and being-finished rates by method and by round (round 1, late rounds per late
-      round started: early finishers and cardio fade), as observed / expected ratios with a gamma prior whose strength
-      is fit by marginal likelihood on the training years; the expected counts come from a baseline logit of division x
-      era x age x format fit on training years only; for low-sample fighters the prior mean moves with the pre-UFC
-      record (preufc.json walk-forward snapshots);
+      round started: early finishers and cardio fade): a logit-normal fighter random effect around a baseline logit
+      of division x era x age x format (fit on training years only), its sd and pre-UFC weight fit by marginal
+      likelihood on the training years; for low-sample fighters the prior mean moves with the pre-UFC record
+      (preufc.json walk-forward snapshots);
   (b) an online opponent-adjusted finishing rating (KO / submission offence and vulnerability per fighter, a diagonal
       Gaussian filter over every UFC bout, walk-forward by construction);
   (c) five- vs three-round structure and title fights (fight terms and their interactions with the tendencies);
@@ -397,8 +397,8 @@ def pre_shift(feats, base, rate, v, a=4.0):
 def eb_block(feats, base, v, use_pre=True, fixed=None, roster=False):
     """Logit-normal random-effects EB per finishing indicator. For fighter i and indicator q:
     logit P(y_ij = 1) = logit p0_j + u_i, u_i ~ N(lam * pre_shift_i, sigma^2), with p0 the baseline logit
-    (division x era x age x format, fit on events before v). sigma and lam are fit by marginal likelihood (24-node
-    Gauss-Hermite quadrature) on every person's events dated before v; each row side then gets the posterior mean
+    (division x era x age x format, fit on events before v). sigma and lam are fit by marginal likelihood (fixed
+    81-point grid of u on [-4, 4], U_GRID) on every person's events dated before v; each row side then gets the posterior mean
     and sd of u_i given his events strictly before the bout. Returns ({rate: (n, 2) post mean}, {rate: (n, 2) post
     sd}, meta)."""
     T = base["T"]
@@ -855,7 +855,12 @@ def summ(base, P6, H, rows):
 def get_folds(base, feats, fcfg, use_pre=True, years=FOLDS):
     """FoldData for each fold (cached by filter settings and the pre-UFC switch)."""
     key = "fd_s%g_t%g_p%d.pkl" % (fcfg["sigma0"], fcfg["tau"], int(use_pre))
-    if os.path.exists(cpath(key)):
+    # verifier fix: a FoldData pickles its own copy of base (S2 design, ML v2 winner) and the EB block built from
+    # feats, so a cache older than base.pkl / feats.pkl (e.g. after an ml2 or methodround rebuild) is stale: rebuild
+    stale = os.path.exists(cpath(key)) and any(
+        os.path.getmtime(cpath(k)) > os.path.getmtime(cpath(key)) for k in ("base.pkl", "feats.pkl")
+        if os.path.exists(cpath(k)))
+    if os.path.exists(cpath(key)) and not stale:
         FD = load(key)
         if all(v in FD for v in years):
             return FD

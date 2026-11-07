@@ -37,11 +37,15 @@
      finish-odds priors for fighters with 0-3 UFC fights). Each acts only with its input (opts.embed / opts.oppadj / opts.preufc;
      backtest harnesses: tools/mlpathrec.js) or a loaded roster (FightEngine.loadEmbed / loadPreUFC, live bouts only). Each flag
      off reproduces the engine before it (tests/test_v5_step4.js).
+   - step 5, components.blend_anchor (on; block blend): FightEngine.predict, the prediction package (src/ml/blend.js): the ML v2
+     package's winner blend (data/derived/blindtest_stack.json, `model` / `model_open` by an explicit opts.lineKind; ML v2 via
+     src/ml/ml2.js), method x round rescaled and pooled with S (mrWeight 0.15), anchor mode, interval (kappa 1.65), recalT 1.
+     It never touches matchup / simulate / summarize / explain (tests/test_v5_step5.js, tests/test_blend_anchor.js).
    Units inside the engine: seconds and per-second rates unless a comment says otherwise. */
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "5.0.0-dev.4-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics), 3 (styles_sos, officials, realism_sens) and 4 (embed, oppadj, preufc)
+    version: "5.0.0-dev.5-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics), 3 (styles_sos, officials, realism_sens), 4 (embed, oppadj, preufc) and 5 (blend_anchor)
 
     // ---------------- engine v5 components (src/engine3.js resolveParams; each flag off reproduces v4.0.0) ----------------
     components: {
@@ -274,10 +278,12 @@
                            // model S/SM (tools/methodround_model.js) rescaled to the same P(win). Leave-one-year-out 2019-2023 optimum
                            // of the joint method x round log loss (per-fold optima 0.10-0.20)
       mrPool: "linear",    // linear pool (beat the log pool out of fold: 2.1415 vs 2.1420 joint log loss, data/derived/blend_anchor.json)
-      recalT: 1,           // temperature on top of the blend's logit. 1: the MoE production refit (moe_page.json) already applies the
-                           // scheme rolling-origin CV picks inside 2019-2023 (recency weights h = 1-1.5 y + a temperature fit on
-                           // forward out-of-fold logits; T through 2023 = 1.09 without a line, no temperature with one), so a second
-                           // temperature would double-count. Use it only with a blend that has no calibration of its own.
+      recalT: 1,           // temperature on top of the blend's logit. 1: the stack already applies the scheme rolling-origin CV picks
+                           // inside 2019-2023 (recency weights h = 1-1.5 y + a temperature fit on forward out-of-fold logits; T through
+                           // 2023 = 1.09 without a line, no temperature with one). v5 step 5: blindtest_stack.json's no-line block
+                           // carries its own temperature (1.161, refit 2019-2025; 1.043 in the pre-2024 backtest stacker) and its
+                           // close / open blocks none, so a second temperature would double-count. Use it only with a blend that has
+                           // no calibration of its own.
       // anchor mode: offset s split +s/2 / -s/2 on the log-odds of A's / B's striking accuracy (x cAcc), takedown success (x cTd) and
       // knockdown power (x cPow). Mix chosen on 2019-2023 among four (acc/td/pow = 1/1/0, 0.5/1/1, 0/1/2, 0.5/2/0.5) as the one that hits
       // the blend without worsening the stat lines: 0.5/1/1 improves sig-landed, head-landed, control and sub-attempt deviance vs the plain

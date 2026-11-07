@@ -25,7 +25,10 @@
    (realismFactors; off) with FightEngine.sensitivity / rateSd (tornado data, common random numbers). Step 4: the learned
    stat-line path and newcomer priors: components.embed (embedTargets: the embedding blend of the learned targets),
    components.oppadj (oppadjTargets: opponent adjustment of the learned targets; off, exclusive with styles_sos sos) and
-   components.preufc (applyPreUFC: pre-UFC finish-odds priors for fighters with 0-3 UFC fights).
+   components.preufc (applyPreUFC: pre-UFC finish-odds priors for fighters with 0-3 UFC fights). Step 5: the final
+   prediction package (the marked block at the end of this file, src/ml/blend.js: the ML v2 package's winner blend by
+   opts.lineKind, rescaled / pooled method x round, anchor mode, interval); it never touches matchup / simulate /
+   summarize / explain.
 
    UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM; all randomness comes from makeRng(seed). */
 (function (root, factory) {
