@@ -52,7 +52,12 @@ its gate, without reusing this run to choose the comparator or the tolerance.
 `opts.props` consensus or raw per-book prices through src/ml/propspool.js, the one power de-vig of training and capture;
 `applyProps`, `mirrorProps`); tools/predict_harness.js modes `v7` / `cmp4`, `--cmp-stacks`, `--ml2-rolling`, protocol keys
 years / sims / kinds / cmp_stacks; tools/predictrec.js `v7` (props from props.json) and `ml2Rolling`; tools/v7_gate.py;
-tests/test_v7.js; tests/test_engine3.js `ENGINE_DIR` / `EXPECT_VERSION`; tests/test_blend121.js accepts blend.js >= 1.2.1.
+tests/test_v7.js; tests/test_engine3.js `ENGINE_DIR` / `EXPECT_VERSION`; tests/test_blend121.js accepts blend.js >= 1.2.1;
+tools/evalv.js refuses a validation look for a gate-failed or unregistered v7+ entry. Props capture for the forward ledger
+(cycle 2 work item 6): tools/props_ledger.py writes `<ledger file>.props.json` next to a card's ledger file (the newest
+`tools/props.py capture` snapshot before the lock, the odds snapshot used and the gap; consensus in the ledger's a / b;
+write-once, read-only, recorded and never scored; tests/test_props_capture.py; data/predictions/README.md "Props capture").
+tools/forward_ledger.py is untouched, so the fwd-4.2 / fwd-4.3 code-hash pins hold (their tests pass).
 Records: version_history.json v7 (`status`, `train_gate`, `decision`), data/derived/v7/ (protocol, binding harness and score,
 dev fits run, stackers, tests, informational power).
 

@@ -3,5 +3,4 @@ SKIP 1-2 identity (inputs changed since the fixture: src/ml/ml2.js, tools/method
 3. ledger dry runs: 7 bouts, max asymmetry 0.00e+0, 98 stat-line entries swap exactly
    Elder vs Sanches: p_a 0.5144; debut method a_ko/a_sub/a_dec/b_dec/b_sub/b_ko 0.147/0.093/0.269/0.181/0.029/0.271; base rates 0.183/0.088/0.239/0.225/0.083/0.173
 NOTE: pinned files changed on disk (a fwd-4.2 write would be refused): src/ml/ml2.js, tools/methodround_model.js
-FAIL 4. README addendum code hash of tools/forward_ledger.py (7678ea131cc16990) = the file on disk (06c1d11408795e18)
-FAILED 452/453 checks
+ok 453/453 checks

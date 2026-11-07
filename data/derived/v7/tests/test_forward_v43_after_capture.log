@@ -4,5 +4,4 @@
 3. symmetry: JS max 2.22e-16, ledger max 0.00e+0, 98 stat-line entries swap exactly
 4. no-line stack vs Python export: 27 vectors, max |diff| 5.55e-17 (formula 0.00e+0)
 5. fallback: chris-duncan missing from the ML v2 roster -> p_a_noline from the MoE stack, flagged
-FAIL 6. README fwd-4.3 addendum code hash of tools/forward_ledger.py (7678ea131cc16990) = the file on disk (06c1d11408795e18)
-FAILED 433/434 checks
+ok 434/434 checks

@@ -719,6 +719,20 @@ of them is a ledger file.
 - A later edit to these files must keep the fwd-4.1 and fwd-4.2 outputs byte-identical and the fwd-4.3 output
   unchanged, or it starts a new version.
 
+## Props capture (Nov 7, 2026; recorded, never scored)
+
+Engine v7 work (docs/V6_V10_PLAN.md cycle 2, work item 6). Before each lock, next to the odds snapshot:
+
+    python3 tools/props.py capture                    # data/predictions/props_snapshot_<UTC>.json (raw per-book prices + consensus)
+    python3 tools/props_ledger.py --event <date>      # data/predictions/<date>_<slug>.props.json (write-once, read-only)
+
+`<date>_<slug>.props.json` holds, per ledger bout, the de-vigged props consensus (power de-vig per family per book, mean over
+books: the one de-vig of training, `tools/props.py capture` and src/ml/propspool.js) oriented to the ledger's a / b, the props
+and odds snapshots used and the minutes between them. **No forward model version reads or scores it.** It exists so a later
+version that uses props can be checked against timestamped T-25h..T-8h props (the props pool was fit on closing props). Such a
+version needs its own pre-registration here first. Engine v7 failed its train gate (docs/CHANGELOG.md v7), so no fwd version
+uses props. tools/forward_ledger.py is unchanged, and so is the code hash the fwd-4.2 / fwd-4.3 addenda pin.
+
 ## Card snapshot notes (`cards_upcoming.json`)
 
 - `order` 1 is the main event, then down the card. `segment` is `main`, `prelims`, `early_prelims`
