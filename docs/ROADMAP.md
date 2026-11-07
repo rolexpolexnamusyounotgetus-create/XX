@@ -1,6 +1,9 @@
 # Engine roadmap: v3 to v10
 
-**Status, Nov 7, 2026 (after v5.0.1).** The current validated engine is **v4 (4.0.0)**. The whole roadmap was built into v5 (Kira's
+**Status, Nov 7, 2026, 3:00 am ET (after v6 and its review).** The current validated engine is **v4 (4.0.0)**. v6 (the
+prediction package with ML v2 heads) was validated once and rejected; its review changed no scored number and added no version,
+but relabelled v6's train gate as not honestly passed, so v6's cycle-1 parts must pass v7's own gate before they can return
+(docs/V6_V10_PLAN.md 7.1 item 10). Earlier status (after v5.0.1): The whole roadmap was built into v5 (Kira's
 call, Nov 6): each v5-v10 component behind its own flag, verified in isolation, merged with a train leave-one-out ablation, then
 measured once. v5 (5.0.0) and its review-fix release v5.0.1 were each validated once and **rejected** by the decision rule: both are
 level with or slightly better than v4 on the winner (v5.0.1 -0.0057 [-0.0141, +0.0023], n.s.) and clearly better on four stat
@@ -30,10 +33,14 @@ the paired base-rate test and Holm adjustment, per-minute stat-line deviance, pe
 ledger (data/derived/val_look_ledger.json), and the vault cleanup of the durability and styles research.
 
 What remains, in the order of docs/V6_V10_PLAN.md section 3 (re-ranked after v5.0.1):
-1. **v6 (cycle 1): the prediction package as the kept object.** (Done Nov 7: built, validated once, REJECTED by branch 1, open winner -0.00245 [-0.00588, +0.00099] vs the v5.0.1 package; v4 stays; docs/CHANGELOG.md v6.) Rebuild on versions/v5.0.1-rejected/; first fit the "out-of-fold"
+1. **v6 (cycle 1): the prediction package as the kept object.** (Done Nov 7: built, validated once, REJECTED by branch 1, open winner -0.00245 [-0.00588, +0.00099] vs the v5.0.1 package; v4 stays; docs/CHANGELOG.md v6. Review done ~8:00 am UTC: the gate is relabelled "failed as first run; passes only under a comparator chosen after the failure", the look had power about 0.26, src/ml/blend.js 1.2.1 fixes the debut / manual line fallback and the interval; no new version; docs/CHANGELOG.md "v6 review".) Rebuild on versions/v5.0.1-rejected/; first fit the "out-of-fold"
    pieces fold-honestly (mlrates stack weights, embed calibration) and rerun Calibrate A / calB on them; ML v2 heads in predict(),
    line routing; one pre-registered look. KD level stays the v5 one unless train CV finds better (it did not in v5.0.1).
-2. **v7 (cycle 2): market props for how and when.**
+2. **v7 (cycle 2): market props for how and when.** Base: v4 (latest kept). It may re-bundle cycle 1's parts (ML v2 head stacks,
+   routing, S2 cells, tree head, harness) only through its own gate, run once under a comparator committed beforehand, with
+   honest per-year comparator inputs, one refit schedule for both packages, power from the gate's SE and 20,000-resample CIs
+   (V6_V10_PLAN 7.1 item 10; docs/BACKLOG.md "v7 gate and look requirements"). The v5-lineage simulator has used its re-bundle;
+   predict() therefore has to be carried onto the v4 simulator (refusing, not falling back, when FightBlend is missing).
 3. **v8 (cycle 3): stat-line fidelity** (control, attempts; the one cycle most likely to pass).
 4. **v9 (cycle 4): levels and drift.** The 2024 knockdown and KO drop (glove trial and early 2024) is the main open level question;
    handle dated breaks as variance bumps on the forward ledger, never as a tilt fit on 2024-25.

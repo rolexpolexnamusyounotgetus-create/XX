@@ -13,3 +13,7 @@ names stay engine3.js / params3.js for every version; `FightEngine.VERSION` and 
 | v4.0.1-rejected/ | 4.0.1 | 4.0.1-pre2024 | the v4 review's fixes (train-only EM judging weights, point deductions, learned-path TD/control/sub levels, cumulative takedown cap); validated Nov 6 and rejected: val winner log loss 0.6289 vs v4 0.6324, paired -0.0034 [-0.0073, +0.0008], nothing else significant. `v4.0.1` is a symlink to it. See its README.md |
 
 Never edit a frozen folder: a change is a new version. Hashes are recorded in data/derived/version_history.json.
+
+v6 review (Nov 7, ~08:00 UTC): no new version. v6 stays rejected; its train gate is relabelled "failed as first run; passes
+only under a comparator chosen after the failure" (docs/CHANGELOG.md "v6 review"). versions/v6-rejected/tools/ holds the
+look-time harness tools.

@@ -1,6 +1,6 @@
 {
  "meta": {
-  "what": "every v6 train-gate harness run, in time order, with its inputs and result (v6 review, 2026-11-07 ~08:15 UTC). Sources: git autosaves (commit, time), file mtimes, harness meta, tools/predict_score.py gate (B 2,000 as recorded; B 20,000 re-score data/derived/v6/review/*_rescore_B20000.json)",
+  "what": "every v6 train-gate harness run, in time order, with its inputs and result (v6 review, 2026-11-07 ~08:00 UTC). Sources: git autosaves (commit, time), file mtimes, harness meta, tools/predict_score.py gate (B 2,000 as recorded; B 20,000 re-score data/derived/v6/review/*_rescore_B20000.json)",
   "finding": "v6's winner p is identical in every run (its head stack does not use the simulator); only the comparator (the v5.0.1 package, whose MoE stack carries the simulator as an expert with weight 0.18-0.55) moved with its inputs. The option that gives each package its own inputs was written at 06:52, after the two failing post-refit runs; the passing definition was therefore chosen after seeing the failures."
  },
  "runs": [

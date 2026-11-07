@@ -846,7 +846,7 @@ before the look it governs (an override after a look is read counts as selection
    a logged variance bump, not a level. This amendment was written after two looks showed the problem, so any
    version kept because of it is flagged "kept under the glove-window amendment" in its entry and in audit 2.
 
-10. **Amendment (Nov 7, ~08:30 UTC, after the v6 look, before any v7 work; the v6 review).** Binding for v7-v10 gates and
+10. **Amendment (Nov 7, ~08:00 UTC, after the v6 look, before any v7 work; the v6 review).** Binding for v7-v10 gates and
     looks. Items (c) and (d) are VALIDATION-INFORMED (the review read the v6 look's design and realised SE), recorded as
     such; none was chosen with a 2024-25 outcome of a v7 candidate, and none reacts to audit 1.
     - (a) **Comparator committed first, gate run once.** The gate's comparator definition (packages, input pipelines,

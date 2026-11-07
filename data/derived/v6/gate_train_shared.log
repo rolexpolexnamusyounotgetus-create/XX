@@ -10,4 +10,4 @@ predict_harness on train 2019-01-01..2024-01-01: 1999 fights, kinds close/open/n
   1800/1999 fights, 98 s
 wrote data/derived/v6/gate_train.json: 1999 fights, 0 failed, 111 s
 
-# provenance note (v6 review, 2026-11-07 ~08:10 UTC): the 'wrote' line above names the file this run first wrote; it was renamed to data/derived/v6/gate_train_shared.json before 06:52 UTC. data/derived/v6/gate_train.json now holds the own-input run of 06:53 (gate_train.log).
+# provenance note (v6 review, 2026-11-07 ~08:00 UTC): the 'wrote' line above names the file this run first wrote; it was renamed to data/derived/v6/gate_train_shared.json before 06:52 UTC. data/derived/v6/gate_train.json now holds the own-input run of 06:53 (gate_train.log).

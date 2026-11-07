@@ -36,3 +36,17 @@ Look outputs: data/derived/v6/look_val.json (harness), look_val_wiring.json (pre
 data/derived/evalv/v6_val.json, v6_blend.json, v6_vs_v4_val_decide.json, v6_vs_v4_val_methodround_paired.json.
 
 `versions/v6` is a symlink to this folder.
+
+## v6 review (Nov 7, 2026, ~08:00 UTC; docs/CHANGELOG.md "v6 review"; version_history.json v6 `review`)
+- The train gate is relabelled **"failed as first run; passes only under a comparator chosen after the failure"**
+  (`prereg.train_gate.review_relabel`; data/derived/v6/review/gate_runs_provenance.json). Cycle 1's parts here are therefore
+  not gate-passed for the V6_V10_PLAN 6.1 re-bundle; they can enter v7 only through v7's own gate (7.1 item 10).
+- Nothing in this folder's engine / params / ml files changed (hashes = the prereg). The review's fixes live elsewhere:
+  src/ml/blend.js 1.2.1 (line-only fallback for debut / manual bouts, debut detection from record.ufc, the ml2stack interval
+  with its own kappa), tools/predict_score.py (20,000 resamples, Monte Carlo SE, marginal rule, power), tools/predict_harness.js
+  (--protocol for binding runs), tools/predictrec.js (fit-date label). With 1.2.1 every scored backtest row is unchanged.
+- **Do not serve this engine live.** params3.js's durability block (level 0.010274 = trailing 730 days at Oct 31, 2026;
+  terms from a fit through 2026-10-31) used 2026 vault fights, and its live knockdown base is 1.31x the walk-forward base it
+  was scored with (tools/live_parity.js: KD per 100 head 0.745 -> 0.961 on train pairs; FAIL).
+- tools/: the harness, scorer, predictrec and wiring check exactly as the look ran them (sha256 = the prereg). They resolve
+  ROOT from their own location, so run them from tools/ (e.g. `git show 633285e:tools/predict_score.py`), not from here.

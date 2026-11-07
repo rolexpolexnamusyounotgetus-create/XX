@@ -64,6 +64,13 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- v6 REVIEW DONE (Nov 7, ~08:00 UTC; docs/CHANGELOG.md "v6 review"; version_history.json v6 `review`): every issue reproduced,
+  the real ones fixed, no new version (no scored backtest number of the v6 package changes; re-deciding v6 on 2024-25 would be
+  selection). The v6 TRAIN GATE IS RELABELLED "failed as first run; passes only under a comparator chosen after the failure"
+  (two shared-input runs failed before the own-input option existed), so cycle 1's parts are NOT gate-passed for the 6.1
+  re-bundle: they enter v7 only through v7's own gate. New binding rules for v7-v10 in docs/V6_V10_PLAN.md 7.1 item 10 (see
+  "v7 gate and look requirements" below). src/ml/blend.js is now 1.2.1 (line fallback for debut / manual bouts, debut
+  detection from record.ufc, an ml2stack interval with its own kappa); the v4 engine does not load it.
 - ENGINE v6 VALIDATED ONCE AND REJECTED (Nov 7, look 07:02-07:06 UTC, decision 07:08 UTC; docs/CHANGELOG.md v6;
   version_history.json v6 `validation.package` / `decision`; versions/v6-rejected/). Pre-registered primary, open-regime
   winner log loss vs the v5.0.1 package (842 decisive 2024-25 fights with an opener): 0.58193 vs 0.58438, -0.00245
@@ -79,7 +86,8 @@ Findings from verified research that the next engine versions must use. Each lin
   stacks by explicit line regime inside FightEngine.predict (open-trained for any non-closing line), S2 method / round cells
   (pool w 0.35), JS tree evaluator (src/ml/ml2trees.js), predict harness (tools/predict_harness.js, predict_score.py); lab-3
   debut path and stat-line bands (live only). Train gate (forward-chained 2021-23) PASSED vs the v5.0.1 package on its own
-  input pipeline: open winner -0.0061 [-0.0108, -0.0013], no line -0.0061 [-0.0119, -0.0003], close -0.0033 [-0.0065,
+  input pipeline [v6 review: relabelled "failed as first run; passes only under a comparator chosen after the failure"]:
+  open winner -0.0061 [-0.0108, -0.0013], no line -0.0061 [-0.0119, -0.0003], close -0.0033 [-0.0065,
   -0.0000], 7-bin and method better in every regime; DISCLOSED: with shared (v6) inputs two winner checks fail marginally.
   Look (done, above): primary open-regime winner log loss vs the v5.0.1 package, branch 1; confirmation look. The page stays v4.
 - eradrift (lab 5, VERIFIED ~01:50 UTC Nov 7, research/model_eradrift.md): NOT adopted into production method/round
@@ -237,6 +245,24 @@ Findings from verified research that the next engine versions must use. Each lin
   stacks (model, model_open, no-line) and S2 / S2+ml2win method cells as a descriptive side line; calibration
   slopes; the close edge; base-rate table; and the list of known pre-seal 2026 exposures (V6_V10_PLAN 6.5.3).
 
+## v7 gate and look requirements (v6 review, Nov 7 ~08:00 UTC; docs/V6_V10_PLAN.md 7.1 item 10)
+- Commit the comparator definition (packages, input pipelines, stackers) in a protocol file BEFORE any gate run; run the
+  binding gate once: `node tools/predict_harness.js --split train --binding --protocol <file> ...` (the harness refuses an
+  uncommitted or mismatched protocol and an existing output).
+- Honest comparator: rebuild its per-year engine rows with the fold-honest learned-rate table and embedding recipe, refit
+  cmp_stack_<version>_fit<Y-1> on them, feed both packages the same honest inputs; record it as the one pre-registered
+  comparator.
+- One refit schedule for both packages in gate and look (both static through 2023, or both walk-forward with ML v2's rolling
+  rows); recorded as validation-informed.
+- MDE and power from the gate's paired SE scaled by sqrt(n): `python3 tools/predict_score.py power <gate score> --n-look N
+  --effect E`; state power below 0.5. Gate and look CIs: 20,000 resamples, Monte Carlo SE reported, marginal bounds decided
+  by the clustered normal bound (now the predict_score.py default).
+- Name every tolerated failing test in the prereg; commit the val_look_ledger.json row before the look (the harness checks).
+- Any version with durability: pass tools/live_parity.js; live level / terms / norms by the 7.1 item 10 (g) rule (through
+  2025-12-31, no 2026 fight).
+- Engine with predict(): refuse instead of falling back to summarize when FightBlend is missing; manualProfile keeps
+  n_fights 0; bundle blend.js >= 1.2.1 and data/derived/line_stack.json.
+
 ## Research tooling note
 - Agents launched before the network opened hit DNS failures in WebFetch and a shared web-search cap
   (about 200 calls per turn). With unrestricted network, research agents should fetch pages with curl
@@ -245,7 +271,23 @@ Findings from verified research that the next engine versions must use. Each lin
 
 ## Prediction status after the ML-core round (verified, Nov 6 ~11:00 UTC)
 
-**Current (Nov 7, 2:08 am ET; v6 measured):**
+**Current (Nov 7, 3:00 am ET; after the v6 review):**
+- **The current engine is still v4 (4.0.0)** in src/ and versions/v4/ (hashes = the v4 entry). The v6 review changed no
+  scored number and added no version: v6 stays rejected (open winner -0.00245 [-0.00588, +0.00099] vs the v5.0.1 package).
+- **What the review changed in how to read v6.** Its train gate did not honestly pass (the comparator definition was chosen
+  after two failing runs; the no-line check passed by bootstrap noise), and its look had power about 0.26 at the expected
+  -0.004, not the registered 0.85. So v6's look says little either way: all three regimes lean to v6 (winner -0.0023 to
+  -0.0032), none significantly, and the winner gain over the v5-lineage package is unproven on clean data.
+- **Best verified prediction pieces, unchanged:** the ML v2 stacks by line regime (page pass 3 and forward model v4.3 use
+  them; the forward ledger is their clean test) and v5's FightEngine.predict numbers from its look (with the close 0.5810).
+- **Package hygiene for the next version (src/ml/blend.js 1.2.1):** a bout with a debutant or a hand-entered fighter and a
+  line now gets the line-only stack (source 'line') instead of the bare simulator (p 0.744 vs 0.348 on the review's case,
+  line 0.718); the ml2stack interval is no longer degenerate and is calibrated on 2021-2023 (out-of-fold cover 79.7% at 80%).
+- **Known live risk, not on any production path:** an engine carrying durability gives about 29% more knockdowns live than in
+  its backtest (tools/live_parity.js on v6-rejected: KD per 100 head 0.745 -> 0.961), and v6's live level used 2026 fights.
+  Any such version must pass live_parity with levels set by the 7.1 item 10 (g) deployment rule.
+
+**Earlier (Nov 7, 2:08 am ET; v6 measured):**
 - **The current engine is still v4 (4.0.0)** in src/ and versions/v4/. v6 (the v5.0.1 simulator re-bundled + cycle 1: ML v2
   head stacks by line regime in FightEngine.predict, S2 cells, routing) was validated once (pre-registered, a confirmation look)
   and rejected by branch 1: open-regime winner log loss vs the v5.0.1 package -0.00245 [-0.00588, +0.00099] on 842 decisive
