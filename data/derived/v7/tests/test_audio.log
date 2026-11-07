@@ -1,0 +1,5 @@
+with WebAudio stub: ok - 1 context, 33 decodes, 35 starts, 19 panners, 2864 automation calls
+  sample: whooshKick@9.083, refStop@9.083, bellRing@9.433, chant@9.083, boo@9.333, roar@9.483, head1@15.833 pan 0, pop@15.833
+without WebAudio: ok - silent no-op
+PASS test_audio
+rc=0

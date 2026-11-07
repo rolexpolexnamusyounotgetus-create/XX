@@ -1,0 +1,4 @@
+ML2 page model: 81 terms, 1229 roster fighters; alexander-volkanovski vs justin-gaethje on 2026-12-12: P(A) = 0.7112, no-line stack 0.7587
+max |logit js - py| = 4.44e-16 over 40 vectors
+ok: 365 checks
+rc=0

@@ -1,0 +1,6 @@
+1. ML v2 fit-2019-2023 stacks: 40 vectors, max |p_js - p_py| 1.11e-16, max |p(a,b) + p(b,a) - 1| 2.22e-16
+2. ratings (Volkanovski vs Gaethje): whr_rounds 0.68418 vs 0.6842, ratings_stack 0.68375 vs 0.6838
+3. corner symmetry: 136 model evaluations on 16 bouts (15 models), max |p(a,b) + p(b,a) - 1| 2.22e-16
+4. debutant seeding: file shift 1560, features 1601.32 (shift 101.32), preufc 1565.7 (abdul-kerim-edilov), none 1500
+PASS
+rc=0

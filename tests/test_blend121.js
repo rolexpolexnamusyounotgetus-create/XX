@@ -27,7 +27,10 @@ const lg = (p, c) => { c = c || 1e-6; p = Math.min(Math.max(p, c), 1 - c); retur
 function hash32(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return h >>> 0; }
 const use = (fb) => { if (fb) globalThis.FightBlend = fb; else delete globalThis.FightBlend; };
 
-check("blend.js version 1.2.1 (frozen v6 copy 1.2.0)", NEW.VERSION === "1.2.1" && OLD.VERSION === "1.2.0");
+// engine v7: src/ml/blend.js is 1.3.0 (market props, off unless params.blend.props is on, which no v5 / v6 params do), so every
+// 1.2.1 check below must still hold with it
+const ver = (v) => String(v).split(".").map(Number), atLeast = (v, w) => { const a = ver(v), b = ver(w); for (let i = 0; i < 3; i++) { if (a[i] !== b[i]) return a[i] > b[i]; } return true; };
+check("blend.js version >= 1.2.1 (frozen v6 copy 1.2.0)", atLeast(NEW.VERSION, "1.2.1") && OLD.VERSION === "1.2.0", "src " + NEW.VERSION);
 
 // ---------------------------------------------------------------- 1. backtest identity (inputs as tools/predict_harness.js)
 {

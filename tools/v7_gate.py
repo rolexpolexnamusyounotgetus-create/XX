@@ -302,8 +302,11 @@ def paired(rows, names, years, kind):
         fin.append(1.0 if y["cls"] in ("KO", "SUB") else 0.0)
         close = None
         if kind.startswith("close"):
-            e0 = (r["pk"].get(names[-1]) or {}).get("close")
-            close = e0.get("line") if e0 else None
+            for pv in r["pk"].values():
+                e0 = (pv or {}).get("close")
+                if e0 and e0.get("line") is not None and not e0.get("lineMissing"):
+                    close = e0["line"]
+                    break
         for n in names:
             c, p = cp[n]
             lo = row_losses(c, r["rounds"], y, p)
@@ -511,7 +514,8 @@ def gate(path, out=None, tests=None):
     rep["decShift_forward_chained"] = {str(Y): fit_dec_shift(recs, v7, range(PROPS_FROM, Y), fits["w"][v7][str(Y)]["w"], fits["pi"][str(Y)]["pi"]) for Y in C2_YEARS}
     # who x how x when vs model S
     mr = {}
-    for nm, rws in (("C2_close_props", rows2), ("primary_close_props", rows3)):
+    # V7_GATE_SYNTHETIC=1: code check on randomized outcomes only (methodround.py scores against backtest_dev.json's real outcomes)
+    for nm, rws in (() if os.environ.get("V7_GATE_SYNTHETIC") else (("C2_close_props", rows2), ("primary_close_props", rows3))):
         for pk in ("v7", "v7np", "cmp4"):
             if rws and pk in rws[0][2]:
                 try:

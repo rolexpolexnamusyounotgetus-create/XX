@@ -1,0 +1,7 @@
+tree rows: max |js - py| = 1.39e-16 over 40 vectors
+matchup terms: max |js - py| = 0.00e+0
+design rows: max |js - py| = 0.00e+0, NaN mismatches 0 over 40 fights x 2 orientations
+corner swap: max |p(A,B) + p(B,A) - 1| = 2.22e-16 over 40 roster pairs
+Volkanovski vs Gaethje (Dec 12, 2026, 155 lb, 5 rounds): ML v2 logistic 0.7112, LightGBM 0.7157, XGBoost 0.7305, blend 0.7134
+ok: 45 checks
+rc=0
