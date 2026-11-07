@@ -453,3 +453,32 @@ it bit for bit (tests/test_v5_step4.js). Backtest tools get leak-free inputs fro
   `FightEngine.loadPreUFC(preufc.json)` (current non-UFC record + UFC count) for bouts dated on or after its ufcstats snapshot.
   Refused together with styles_sos `newcomer` (the older stub). The matchup carries `m.preufc = { src, mult, hazard }`.
 - New exports: `loadEmbed`, `embedBlend`, `oppadjSide`, `loadPreUFC`, `preufcMult`. Trace format and API otherwise unchanged.
+
+## Engine v5 merge step 5: the prediction package (`components.blend_anchor`, FightEngine.predict)
+
+`FightEngine.predict(profA, profB, opts)` (marked block at the end of src/engine3.js; src/ml/blend.js `FightBlend`) returns the
+final package. It never touches matchup / simulate / summarize / explain; with the flag off it returns
+`summarize(FightEngine.matchup(profA, profB, opts), sims, seed)`'s own numbers (tests/test_v5_step5.js, tests/test_blend_anchor.js).
+
+- **Winner (the ML v2 package).** A stacker in src/ml/moe.js's format over the experts engine (this simulator, both corner
+  orders), feat_lr (moe_page.json `feat`), elo, ml + elo_sig (ml.json page model), mkt_rating (market.json ratings) and market
+  (the line); any expert can be passed in `opts.experts`. The production stacker is data/derived/blindtest_stack.json, and
+  `opts.lineKind` picks its block explicitly: `'close'` = the close-trained `model` (line de-vigged by the power method),
+  `'open'` = the open-trained `model_open` (proportional de-vig), `'none'` = the shared no-line block (temperature 1.161 of its
+  own). A line without `lineKind` is refused, and so is `'open'` with a stacker that has no `model_open`. ML v2's page logistic
+  and page stacks (src/ml/ml2.js, ml2.json page_model) are reported as `ml2` (the lineKind-matched stack in `ml2.p`);
+  `opts.winner = 'ml2'` makes that stack the headline. Then `sigm(recalT logit p)` with recalT 1.
+- **Method x round.** The simulator's cells (Jeffreys-smoothed) rescaled to P(win) (draw share and within-winner mix kept),
+  pooled linearly with the method/round model rescaled the same way: `w rescale(sim) + (1 - w) rescale(S)`, w = 0.15; SM
+  (S + the line) only with a closing line.
+- **Anchor mode** (`opts.anchor`): skill offset s split +-s/2 on accuracy odds (x0.5), takedown success (x1) and knockdown power
+  (x1, mean-preserving), solved so the simulator's own P(A) matches the package; `anchor.adjA / adjB` reproduce it for a traced
+  fight. **Interval:** profile-noise bootstrap through the feature LR, inflated by kappa 1.65.
+- **Corner order.** Seeds and the interval's draws follow a canonical fighter order, and the B-A run swaps every side-specific
+  input (adjA/adjB, ml, dur, sos, embed etaA/etaB, oppadj, preufc), so predict(B, A) is the exact mirror of predict(A, B).
+- **Backtests** (`opts.backtest = true`): the loaded production stacker, the loaded S model and the live rosters are refused.
+  The caller passes a stacker fit on 2023 or earlier with its fit_through (`opts.stack`; data/derived/blindtest_stack_pre2024.json
+  from `tools/blindtest.py export --fit-through 2023-12-31`), walk-forward cells (`opts.mrCells`, or false) and walk-forward
+  experts; a train-window fight inside the stacker's fit needs `opts.inSample = true`; 2026 dates are refused.
+  tools/predictrec.js builds these inputs per backtest fight and corner order.
+- New exports: `predict`, `loadBlend({ stack, feat, mlPage, market, ml2, methodRound, data })`.

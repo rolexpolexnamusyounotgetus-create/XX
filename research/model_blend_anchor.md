@@ -1,5 +1,14 @@
 # blend_anchor: blend-anchored simulation, recalibration and uncertainty (engine component, roadmap v9)
 
+**v5 merge step 5 (Nov 6, 2026, about 7:30 pm ET; docs/CHANGELOG.md "v5 merge log").** Merged into engine v5 behind
+`components.blend_anchor`, with the winner blend upgraded from moe_page.json to the verified ML v2 package: the exported stack
+data/derived/blindtest_stack.json (close-trained `model`, open-trained `model_open`, chosen by an explicit `opts.lineKind`
+'close' | 'open' | 'none') with ML v2's page logistic and stacks (src/ml/ml2.js) next to it. Anchor mode, kappa 1.65 and
+recalT 1 are unchanged. Backtests must pass `opts.backtest` with a stacker fit on 2023 or earlier
+(data/derived/blindtest_stack_pre2024.json) and walk-forward method/round cells (tools/predictrec.js). The numbers below were
+measured on the v4 engine with the moe.json LOYO stackers; the simulator cells, mrWeight and slope0 are rebuilt on the final v5
+flags in the Calibrate stage.
+
 Status: built and ablated on train years only, Nov 6, 2026. Every number below is from 2019-01-01..2023-12-31
 backtest_dev fights. No 2024+ fight was read into any fit or score (validation is reserved for the single v5
 measurement), and no 2026 fight was touched.

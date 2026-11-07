@@ -488,3 +488,17 @@ node tests/test_blend_anchor.js
 
 Only fights dated 2019-01-01..2023-12-31 are read, fitted or scored. Method, numbers and caveats:
 `research/model_blend_anchor.md`. Runs: nice -n 5, at most 3 parts at once.
+
+v5 merge step 5:
+- tools/blend_anchor_bt.js passes the v5 components' walk-forward inputs (tools/durrec.js, sosrec.js, mlpathrec.js) in the
+  A-B order and asserts them applied on both corner orders. Rebuild the cells (plain -> targets -> pilot -> anchor -> report)
+  only after the Calibrate stage has fixed the final component flags.
+- `python3 tools/blindtest.py export --fit-through 2023-12-31` writes data/derived/blindtest_stack_pre2024.json: the production
+  stackers' configuration and expert map (`model` + `model_open`), fit on 2019-2023 out-of-sample expert rows only, with
+  meta.fit_info fit_through. It is the backtest / validation stacker for FightEngine.predict (`opts.backtest`). Re-export after
+  a new engine version's train run (BLINDTEST_MOE_ENGINE pins the engine expert).
+- tools/predictrec.js: per backtest fight and corner order, predict's leak-free inputs: the pre-2024 stacker, lineKind and
+  line (market.json p_power_close / p_novig_open), walk-forward experts (2019-2023: ml.json oof, blend_anchor_dev.json,
+  market.json; 2024-2025: the blind replay's blindtest.json rows), walk-forward method/round cells (methodround.json S / SM,
+  fit before the fight; mirrored with the corners) and ML v2 (ml2.json rows + forward_models.json ml2_static weights). Train
+  fights need `inSample: true` or per-year stackers; 2026 is refused.
