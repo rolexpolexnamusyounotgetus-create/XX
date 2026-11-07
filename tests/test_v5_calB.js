@@ -204,20 +204,22 @@ const OFF = { components: { calB: false, v501: false } };
 {
   let t = 0;
   const SET = JSON.parse(JSON.stringify(FP.calB.set));
-  t += runGroup("4a. calB on (defaults) = Calibrate A engine + the calB set as an override: random pairs, learned rates, roster", undefined, SET, casesA, { ml: true, roster: true });
-  t += runGroup("4c. calB on (defaults) = Calibrate A engine + the calB set as an override: backtest fights", undefined, SET, casesC, { ml: false, roster: false });
+  // v5.0.1: components.v501 (a later step) is pinned off; its own identity test is tests/test_v501.js
+  const V5OFF = { components: { v501: false } };
+  t += runGroup("4a. calB on (defaults, v501 off) = Calibrate A engine + the calB set as an override: random pairs, learned rates, roster", V5OFF, SET, casesA, { ml: true, roster: true });
+  t += runGroup("4c. calB on (defaults, v501 off) = Calibrate A engine + the calB set as an override: backtest fights", V5OFF, SET, casesC, { ml: false, roster: false });
   check("calB on: >= 300 matchups", t >= 300, `${t} matchups`);
 }
 runGroup("5. components: false on both = the plain v4 path (backtest fights)", false, false, casesC, { ml: false, roster: false });
 {
-  const S = FP.calB.set, p1 = E.resolveParams({}), p0 = E.resolveParams(OFF);
+  const S = FP.calB.set, p1 = E.resolveParams({ components: { v501: false } }), p0 = E.resolveParams(OFF);
   const sameDyn = Object.keys(S.dyn).every((k) => p1.dyn[k] === S.dyn[k] && p0.dyn[k] === FP.dyn[k]);
   check("resolveParams: calB on = the set, calB off = the usual fields", sameDyn && p1.judge.t108 === S.judge.t108 && p0.judge.t108 === FP.judge.t108,
     `kdLevel3 ${p1.dyn.kdLevel3} / ${p0.dyn.kdLevel3}, t108 ${p1.judge.t108} / ${p0.judge.t108}`);
-  const pe = E.resolveParams({ components: { v401: { emJudge: false } } });
+  const pe = E.resolveParams({ components: { v401: { emJudge: false }, v501: false } });
   check("resolveParams: emJudge off restores v4.0.0's t108 under calB", pe.judge.t108 === FP.v401.off.emJudge.judge.t108 && pe.dyn.kdLevel3 === S.dyn.kdLevel3,
     `t108 ${pe.judge.t108}`);
-  const po = E.resolveParams({ judge: { t108: 9.1 }, dyn: { convLevel: 1.2 } });
+  const po = E.resolveParams({ judge: { t108: 9.1 }, dyn: { convLevel: 1.2 }, components: { v501: false } });
   check("resolveParams: an explicit override wins over the calB set", po.judge.t108 === 9.1 && po.dyn.convLevel === 1.2 && po.dyn.kdLevel3 === S.dyn.kdLevel3);
   const pf = E.resolveParams({ components: false });
   check("resolveParams: components false leaves the set out", pf.dyn.kdLevel3 === FP.dyn.kdLevel3 && pf.judge.t108 === FP.v401.off.emJudge.judge.t108);
@@ -226,12 +228,14 @@ runGroup("5. components: false on both = the plain v4 path (backtest fights)", f
   E.loadMLRates(mlJson);
   let diff = 0, keysSame = true;
   for (const c of casesC.slice(0, 40)) {
-    const a = E.simulate(E.matchup(c.a, c.b, c.opts), E.makeRng(c.seed), true);
+    const a = E.simulate(E.matchup(c.a, c.b, withParams(c.opts, { components: { v501: false } })), E.makeRng(c.seed), true);
     const b = E.simulate(E.matchup(c.a, c.b, withParams(c.opts, OFF)), E.makeRng(c.seed), true);
     if (JSON.stringify(a) !== JSON.stringify(b)) diff++;
     // nDed is present only in a fight with a point deduction (as before Calibrate B), so it is left out of the key list
     const ka = Object.keys(a).filter((k) => k !== "nDed").join(","), kb = Object.keys(b).filter((k) => k !== "nDed").join(",");
-    const ra = a.rounds.map((r) => Object.keys(r).join(",")).join("|"), rb = b.rounds.map((r) => Object.keys(r).join(",")).join("|");
+    // a round's ded key appears only with a point deduction (decisions), as nDed does
+    const rk = (r) => Object.keys(r).filter((k) => k !== "ded").join(",");
+    const ra = a.rounds.map(rk).join("|"), rb = b.rounds.map(rk).join("|");
     if (ka !== kb || (a.rounds.length === b.rounds.length && ra !== rb)) keysSame = false;
   }
   E.loadMLRates(null);
