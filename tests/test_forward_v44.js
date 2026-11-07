@@ -159,18 +159,22 @@ else {
   for (const f of fs.readdirSync(LIVE)) fs.copyFileSync(path.join(LIVE, f), path.join(lv, f));
   const bi = P43.bouts.findIndex((b) => b.a.slug && b.b.slug && b.models.ml2_stack_noline != null && b.experts && b.experts.mkt_rating != null);
   const target = P43.bouts[bi].a.slug;
-  const mk = JSON.parse(fs.readFileSync(path.join(lv, "market_live.json"), "utf8"));
-  mk.ratings[target][0] += 0.8;                                // a live part: the fighter's market rating
-  fs.writeFileSync(path.join(lv, "market_live.json"), JSON.stringify(mk));
-  const ml = JSON.parse(fs.readFileSync(path.join(lv, "ml2_live.json"), "utf8"));
-  ml.page_model.roster[target].mr[0] += 0.8;                   // and its copy in the ML v2 roster
-  fs.writeFileSync(path.join(lv, "ml2_live.json"), JSON.stringify(ml));
-  const mm = JSON.parse(fs.readFileSync(path.join(lv, "manifest.json"), "utf8"));
-  mm.files.market.sha256 = shaFile(path.join(lv, "market_live.json"));
-  mm.files.ml2.sha256 = shaFile(path.join(lv, "ml2_live.json"));
-  fs.writeFileSync(path.join(lv, "manifest.json"), JSON.stringify(mm));
+  // edit through Python: JSON.stringify would rewrite floats such as 1.0 as 1, which the frozen-part guard rejects
+  cp.execFileSync("python3", ["-c", [
+    "import json, sys, hashlib",
+    "d, t = sys.argv[1], sys.argv[2]",
+    "sys.path.insert(0, 'tools')",
+    "import live_refresh as LR",
+    "mk = LR.jload(d + '/market_live.json'); mk['ratings'][t][0] += 0.8",
+    "open(d + '/market_live.json', 'w').write(LR.dumps_compact(mk))",
+    "ml = LR.jload(d + '/ml2_live.json'); ml['page_model']['roster'][t]['mr'][0] += 0.8",
+    "open(d + '/ml2_live.json', 'w').write(LR.dumps_compact(ml))",
+    "M = LR.jload(d + '/manifest.json')",
+    "M['files']['market']['sha256'] = LR.sha256_file(d + '/market_live.json')",
+    "M['files']['ml2']['sha256'] = LR.sha256_file(d + '/ml2_live.json')",
+    "open(d + '/manifest.json', 'w').write(json.dumps(M))"].join("\n"), lv, target], { cwd: ROOT });
   const Pm = dry(cF, "pm.json", ["--fwd", "4.4", "--live-dir", lv]);
-  ok(Pm.model.live_inputs.used === true, "4. a changed live part with a matching manifest is used");
+  ok(Pm.model.live_inputs.used === true, "4. a changed live part with a matching manifest is used (" + Pm.model.live_inputs.reason + ")");
   const base = dry(cF, "p44b.json", ["--fwd", "4.4", "--live-dir", LIVE]);
   Pm.bouts.forEach((b, i) => {
     const z = base.bouts[i];
@@ -182,8 +186,8 @@ else {
       if (!touches) ok(JSON.stringify(b) === JSON.stringify(z), "4. " + b.bout_id + " unchanged");
     }
   });
-  console.log("4. live inputs are read: %s's market rating moves only his bout (p_a_noline %.4f -> %.4f)", target,
-    base.bouts[bi].p_a_noline, Pm.bouts[bi].p_a_noline);
+  console.log("4. live inputs are read: %s's market rating moves only his bout (p_a_noline %s -> %s)", target,
+    base.bouts[bi].p_a_noline.toFixed(4), Pm.bouts[bi].p_a_noline.toFixed(4));
 
   // ---------------------------------------------------------------- 5. corner symmetry on live inputs
   const Q44 = dry(cR, "q44.json", ["--fwd", "4.4", "--live-dir", LIVE]);
