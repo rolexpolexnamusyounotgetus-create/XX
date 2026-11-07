@@ -91,5 +91,24 @@ rp = DM.rule_b_replay(C["rule"]["replay_2015_2023"]["checks"])
 check("7 replay 2015-2023: one switch event at 2015-09-30 (calib.json first_fire)", rp["switch_events"] == 1 and rp["fired_at"] == C["rule"]["replay_2015_2023"]["first_fire"],
       "%d quarters met in %d episodes" % (rp["n_quarters_condition_met"], rp["condition_episodes"]))
 
+# 8 tracked series (MoE no-line): from fwd-4.3 on it is models.moe_noline only; a fwd-4.3 / 4.4 / 4.5 bout whose moe_noline is
+#   null is left out of it (its p_a_noline is the ML v2 no-line stack), while a fwd-4.1 / 4.2 bout's p_a_noline is the MoE stack
+import tempfile
+with tempfile.TemporaryDirectory() as td:
+    vers = ["fwd-4.1", "fwd-4.2", "fwd-4.3", "fwd-4.4", "fwd-4.5"]
+    res = []
+    for i, v in enumerate(vers):
+        date = "2026-12-%02d" % (i + 1)
+        bid = "%s:a-%d__b-%d" % (date, i, i)
+        doc = {"event": "Test %d" % i, "date": date, "created_utc": date + "T00:00:00Z", "lock_utc": date + "T20:00:00Z",
+               "model": {"version": v + ": synthetic"},
+               "bouts": [{"bout_id": bid, "flags": [], "p_a_noline": 0.6, "models": {"moe_noline": None}}]}
+        json.dump(doc, open(os.path.join(td, "%s_test-%d.json" % (date, i)), "w"))
+        res.append({"bout_id": bid, "outcome": "win", "winner": "a", "verified": True})
+    json.dump({"results": res}, open(os.path.join(td, "results.json"), "w"))
+    trig, track, _ = DM.ledger_rows(td)
+    check("8 MoE tracked series: p_a_noline stands in only for fwd-4.1 / 4.2 (fwd-4.3, 4.4, 4.5 with a null moe_noline left out)",
+          len(trig) == 5 and [t["date"] for t in track] == ["2026-12-01", "2026-12-02"], "trigger %d, tracked %d" % (len(trig), len(track)))
+
 print("\n%d failures" % len(fails))
 sys.exit(1 if fails else 0)
