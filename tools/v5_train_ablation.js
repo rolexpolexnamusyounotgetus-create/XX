@@ -105,6 +105,7 @@ function armDefs(finalOver) {
     "-mlLevels": { components: { v401: { mlLevels: false } } },
     "-tdCap": { components: { v401: { tdCap: false } } },
     "-koTargets": { components: { v401: { koTargets: false } } },
+    "-calB": { components: { calB: false } },          // v5 Calibrate B: the joint level pass off (= the Calibrate A engine)
     v3p: v3Override(),
     v3pj: v3OverrideJudge5()
   };
@@ -180,7 +181,7 @@ process.argv.slice(2).forEach((a, i, arr) => { if (a.startsWith("--")) args[a.sl
 const SIMS = +(args.sims || 300), WORKERS = Math.max(1, Math.min(3, +(args.workers || 3))), SEED = +(args.seed || 1), BOOT = +(args.boot || 2000);
 const FINAL = args.final ? JSON.parse(args.final) : null;
 const ARMS = armDefs(FINAL);
-const ARMLIST = String(args.arms || Object.keys(ARMS).filter((a) => a !== "v3pj" && a !== "final").join(",")).split(",");
+const ARMLIST = String(args.arms || Object.keys(ARMS).filter((a) => a !== "v3pj" && a !== "final" && a !== "-calB").join(",")).split(",");
 const REF = String(args.ref || "all");     // the reference arm: paired differences are arm minus REF
 if (ARMLIST[0] !== REF) { console.error(`the first arm must be the reference '${REF}'`); process.exit(2); }
 for (const a of ARMLIST) if (!ARMS[a]) { console.error("unknown arm " + a); process.exit(2); }
