@@ -710,6 +710,69 @@
       lineStack: !!STATE.lineStack, props: !!STATE.props };
   }
 
+  // ------------------------------------------------------------------ 1.3.0 (engine v7): market props for how and when
+  /** Package cells [A KO r1..R, A SUB r1..R, B KO r1..R, B SUB r1..R, A DEC, B DEC, DRAW] -> MethodRound cells. */
+  function cellsToMR(c, R) {
+    return { A: { ko: c.slice(0, R), sub: c.slice(R, 2 * R), dec: c[4 * R] }, B: { ko: c.slice(2 * R, 3 * R), sub: c.slice(3 * R, 4 * R), dec: c[4 * R + 1] },
+      draw: c[4 * R + 2] };
+  }
+  /** PropsPool.compose's 23-cell layout (A KO r1..5, A SUB r1..5, B KO r1..5, B SUB r1..5, A DEC, B DEC, DRAW) -> package cells. */
+  function cellsFrom23(P, R) {
+    var out = new Array(4 * R + 3), r;
+    for (r = 0; r < R; r++) { out[r] = P[r]; out[R + r] = P[5 + r]; out[2 * R + r] = P[10 + r]; out[3 * R + r] = P[15 + r]; }
+    out[4 * R] = P[20]; out[4 * R + 1] = P[21]; out[4 * R + 2] = P[22];
+    return out;
+  }
+  /** A de-vigged props consensus with the corners swapped (m6, wr, mr, itd swap sides; ml -> 1 - ml; gd, er, ou unchanged). */
+  function mirrorProps(c, K) {
+    if (!c) return c;
+    var o = {}, k;
+    for (k in c) o[k] = c[k];
+    if (Array.isArray(c.m6)) o.m6 = c.m6.slice(3, 6).concat(c.m6.slice(0, 3));
+    if (Array.isArray(c.wr)) { var Kw = (c.wr.length - 2) / 2; o.wr = c.wr.slice(Kw, 2 * Kw).concat(c.wr.slice(0, Kw), [c.wr[2 * Kw + 1], c.wr[2 * Kw]]); }
+    if (Array.isArray(c.mr)) { var Km = (c.mr.length - 2) / 4; o.mr = c.mr.slice(2 * Km, 4 * Km).concat(c.mr.slice(0, 2 * Km), [c.mr[4 * Km + 1], c.mr[4 * Km]]); }
+    if (Array.isArray(c.itd)) o.itd = [c.itd[1], c.itd[0]];
+    if (isNum(c.ml)) o.ml = 1 - c.ml;
+    return o;
+  }
+  /** opts.props -> the A/B consensus: a consensus as given ({ m6, gd, er, ..., n_books }), or { books, swap } raw per-book
+      prices de-vigged by PropsPool (power within each family per book, mean over books, the outcome-blind outlier rule). */
+  function propsConsensus(PP, input, K, pc) {
+    if (!input) return null;
+    if (input.books) {
+      var fams = {}, model = STATE.props || {};
+      for (var bk in input.books) fams[bk] = PP.bookFamilies(input.books[bk], K, !!input.swap, pc.overMax || model.over_max || null);
+      return PP.consensus(fams, isNum(pc.outlierMaxDev) ? pc.outlierMaxDev : model.outlier_max_dev);
+    }
+    return input.consensus || input;
+  }
+  /** Method given the winner from the joint-linear pool of the cells' and the props' mixes (research/model_props.md, the
+      CV-chosen 'S2+P jlin / S2 shapes' form with the package cells as the model expert); round shapes from the cells; the
+      draw is drawC x P(decision); P(A) / (P(A) + P(B)) = p exactly. pc = { mode, w: [w_cells, w_props], decShift, drawC }.
+      Returns { cells, rec }; without a method family the cells come back unchanged (rec.applied false). */
+  function applyProps(cells, R, p, input, pc) {
+    var PP = propsLib();
+    if (!PP) throw new Error("FightBlend: params.blend.props is on but src/ml/propspool.js (PropsPool) is not loaded");
+    var cons = propsConsensus(PP, input, R, pc || {});
+    var nb = cons && cons.n_books ? cons.n_books.m6 || null : null;
+    if (!cons || !Array.isArray(cons.m6) || cons.m6.length !== 6 || !cons.m6.every(function (x) { return isNum(x) && x >= 0; })) {
+      return { cells: cells, rec: { applied: false, reason: "no method props (m6 family)", nBooks: nb } };
+    }
+    var w = pc && Array.isArray(pc.w) ? pc.w : null;
+    if (!w || w.length !== 2 || !(w[0] >= 0) || !(w[1] >= 0) || !(w[0] + w[1] > 0)) throw new Error("FightBlend: props weights must be [w_cells, w_props] (params.blend.props.w or opts.propsParams.w)");
+    var ws = [w[0] / (w[0] + w[1]), w[1] / (w[0] + w[1])], mode = pc.mode || "jlin";
+    if (mode !== "jlin" && mode !== "lin") throw new Error("FightBlend: props mode must be 'jlin' or 'lin', got " + mode);
+    var mdl = PP.fromCells(cellsToMR(cells, R)), pM = PP.propsCond(cons, R, "er").M;
+    var m6 = cons.m6, s6 = m6[0] + m6[1] + m6[2] + m6[3] + m6[4] + m6[5], Wp = (m6[0] + m6[1] + m6[2]) / s6;
+    var dS = isNum(pc.decShift) ? pc.decShift : 0, drawC = isNum(pc.drawC) ? pc.drawC : DEFAULTS.props.drawC;
+    var M = PP.poolMethod(mode, [mdl.M, pM], { w: ws, beta: [0, 0, dS] }, { Wsrc: [mdl.pOwn, Wp] });
+    var out = cellsFrom23(PP.compose(p, M, mdl.R, R, drawC), R);
+    var pDec = out[4 * R] + out[4 * R + 1] + out[4 * R + 2];
+    return { cells: out, rec: { applied: true, source: "pool (method props)", mode: mode, w: ws, decShift: dS, drawC: drawC, nBooks: nb,
+      pProps: Wp, pCells: mdl.pOwn, methodGivenWin: { A: M[0], B: M[1] }, propsMethodGivenWin: { A: pM[0], B: pM[1] },
+      cellsMethodGivenWin: { A: mdl.M[0], B: mdl.M[1] }, pDecision: pDec } };
+  }
+
   // ------------------------------------------------------------------ the package
   function resolveProf(FE, x) {
     if (typeof x === "string") { var p = FE.profile(x); if (!p) throw new Error("FightBlend: unknown fighter " + x); return p; }
@@ -1021,6 +1084,31 @@
         } catch (e) { deb = { applied: false, error: String((e && e.message) || e) }; }
       } else if (dA || dB) deb = { applied: false, error: "debut model not loaded (FightEngine.loadBlend({ debut: debut.json }))" };
     }
+    // engine v7 (1.3.0): market props for method given the winner (header item 7). Bouts on the debut path keep the debut
+    // method model; the props are reported there (and the debut-bout pool when params.blend.props.debutPool), never applied
+    var prRec = null, prOn = opts.propsOn !== undefined ? !!opts.propsOn : !!cfg.props.on;
+    if (opts.props && prOn) {
+      var ppar = own(cfg.props);
+      if (opts.propsParams) for (var pk2 in opts.propsParams) ppar[pk2] = opts.propsParams[pk2];
+      if (BT) {
+        var pft = ppar.fitThrough || null;
+        if (!pft) throw new Error("FightBlend.predict (backtest): props weights need a fitThrough (params.blend.props.fitThrough or opts.propsParams.fitThrough)");
+        if (!(pft < date) && !(opts.inSample === true && date < "2024-01-01")) throw new Error("FightBlend.predict (backtest): props weights fit through " + pft + ", not before " + date);
+      }
+      if (deb) {
+        prRec = { applied: false, reason: "debut bout: the debut method model is the method source (props reported only)" };
+        if (ppar.debutPool && STATE.props && deb.applied) {
+          try {
+            var PPd = propsLib(), dpool = PPd.create(STATE.props).debutMethod({ debut: { A: deb.methodGivenWin.A, B: deb.methodGivenWin.B }, pW: p, rounds: R,
+              props: propsConsensus(PPd, opts.props, R, ppar) });
+            prRec.debutPool = { A: dpool.A, B: dpool.B, source: dpool.source, note: "monitored candidate (research/model_props.md section 7): reported, not applied" };
+          } catch (e) { prRec.debutPool = { error: String((e && e.message) || e) }; }
+        }
+      } else {
+        var apR = applyProps(cells, R, p, opts.props, ppar);
+        cells = apR.cells; prRec = apR.rec; prRec.fitThrough = ppar.fitThrough || null;
+      }
+    } else if (opts.props) prRec = { applied: false, reason: "params.blend.props.on is false" };
     var mg = marginals(cells, R);
     // 5. stat lines
     var expMin = expectedMinutes(cells, cellMin, R);
@@ -1092,7 +1180,7 @@
       winner: source === "ml2" ? "ml2" : (source === "ml2stack" ? "ml2stack" : (source === "line" ? "line" : "stack")),
       // engine v6: the routing record (which line type, which trained weights) and the ML v2 head
       lineType: line.kind, routing: { lineType: line.kind, winner: source, weights: source === "ml2stack" ? (v6 && v6.stack) : (stk ? (line.kind === "open" ? "model_open" : "model") + ":" + (line.kind === "none" ? "absent" : "present") : null) },
-      v6: v6, debut: deb, lineFallback: lineFb, lineDropped: lineDropped || undefined,
+      v6: v6, debut: deb, props: prRec, lineFallback: lineFb, lineDropped: lineDropped || undefined,
       stack: stk ? { block: block, regime: r ? r.regime || null : null, fitThrough: stackFT, built: stk.built, from: (opts.stack || opts.moe) ? "opts" : "loaded" } : null,
       ml2: ml2 ? { pA: ml2.pA, pMR: ml2.pMR, stacks: ml2.stacks || null, stack: ml2.stack || null, p: isNum(ml2.p) ? ml2.p : null, note: ml2.note || null } : null,
       backtest: BT ? { date: date, stackFitThrough: stackFT, inSample: !!(stackFT && date && stackFT >= date), mrCells: opts.mrCells ? "passed" : "none",
@@ -1115,6 +1203,9 @@
     marginals: marginals, simCells: simCells, symSim: symSim, swapOpts: swapOpts, anchorOpts: anchorOpts, anchor: anchor,
     nnLogit: nnLogit, fitTemp: fitTemp, perturbS: perturbS, interval: interval, mlStatRates: mlStatRates,
     v6Stack: v6Stack, v6StackP: v6StackP, debutCells: debutCells, isDebutant: isDebutant, lineStackBlock: lineStackBlock,
-    expectedMinutes: expectedMinutes, logit: logit, sigm: sigm
+    expectedMinutes: expectedMinutes, logit: logit, sigm: sigm,
+    // 1.3.0 (engine v7)
+    applyProps: applyProps, mirrorProps: mirrorProps, propsConsensus: function (input, K, pc) { var PP = propsLib(); return PP ? propsConsensus(PP, input, K, pc || {}) : null; },
+    cellsToMR: cellsToMR, cellsFrom23: cellsFrom23
   };
 });

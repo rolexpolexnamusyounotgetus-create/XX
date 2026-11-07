@@ -138,6 +138,21 @@ module.exports = function predictrec(E, root, cfg) {
     out.mrVariant = "S2"; out.mrFitThrough = S2.fit_through; out.mrModel = "S2";
     return out;
   }
+  // ---------------------------------------------------------------- engine v7 (cfg.v7 = true): v6opts + market props
+  //   props  data/derived/props.json fights[id].props: the A/B-oriented de-vigged consensus (power de-vig per family per book,
+  //          mean over books; tools/props.py, the same code path as src/ml/propspool.js and `tools/props.py capture`), from
+  //          closing prices; mirrored on a swap (FightBlend.mirrorProps); absent (no key) when the bout has no props row
+  function v7opts(f, swap, out) {
+    v6opts(f, swap, out);
+    const P = J(cfg.propsFile || "data/derived/props.json");
+    const r = P.fights[f.id];
+    if (r && r.props) {
+      if (r.date && Math.abs(Date.parse(r.date) - Date.parse(f.date)) > 3 * 86400000) throw new Error("predictrec v7: props row date " + r.date + " vs fight " + f.date + " for " + f.id);
+      const FB = require(path.join(ROOT, cfg.blendPath || "src/ml/blend.js"));
+      out.props = swap ? FB.mirrorProps(r.props, f.rounds) : r.props;
+    }
+    return out;
+  }
   /** predict options for backtest fight f (backtest_dev.json entry), corners swapped when swap is true.
       o = { lineKind: 'close' | 'open' | 'none' (default 'none'), strictLine: throw when the fight has no such line (else
       lineKind falls back to 'none' and lineMissing is set) }. */
@@ -157,8 +172,9 @@ module.exports = function predictrec(E, root, cfg) {
     if (m2) out.ml2 = swap ? { pA: 1 - m2.pA, pMR: flip(m2.pMR) } : m2;
     const FM = J("data/derived/forward_models.json");
     if (FM && FM.ml2_static) out.ml2Stack = FM.ml2_static;
-    if (cfg.v6) v6opts(f, swap, out);
+    if (cfg.v7) v7opts(f, swap, out);
+    else if (cfg.v6) v6opts(f, swap, out);
     return out;
   }
-  return { opts, experts, line, mrCells, ml2, stackFor, mirror, STACK_PATH };
+  return { opts, experts, line, mrCells, ml2, stackFor, mirror, STACK_PATH, v7opts };
 };
