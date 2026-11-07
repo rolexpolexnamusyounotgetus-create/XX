@@ -1,12 +1,13 @@
 {
  "meta": {
-  "built": "2026-11-06T21:20:28+00:00",
+  "built": "2026-11-07T14:06:18+00:00",
   "tool": "tools/odds_upcoming.py timeline",
   "snapshots": [
    "data/predictions/odds_snapshot_20261106-0950.json",
    "data/predictions/odds_snapshot_20261106-1002.json",
    "data/predictions/odds_snapshot_20261106-1015.json",
-   "data/predictions/odds_snapshot_20261106-2118.json"
+   "data/predictions/odds_snapshot_20261106-2118.json",
+   "data/predictions/odds_snapshot_20261107-1404.json"
   ],
   "orientation": "a/b as in the first snapshot that listed the bout (cards_upcoming.json order); p_* = probability that A wins; captures taken with a/b swapped are flipped",
   "market_open": "fightodds.io per-book opening lines (sportsbooks only), Shin no-vig, logit-mean (latest read; market_open_first_read keeps the first)",
@@ -110,16 +111,43 @@
       "b_dec": 0.0691,
       "draw": 0.0093
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.8452,
+     "p_meandec_mult": 0.8304,
+     "p_sharp_shin": 0.8465,
+     "p_pinnacle_shin": 0.85404,
+     "p_exchange_mult": 0.8367,
+     "n_books": 19,
+     "bfo_p_a_novig": 0.8326,
+     "bfo_odds": [
+      -676,
+      471
+     ],
+     "p_distance": 0.2989,
+     "p_method": {
+      "a_ko": 0.1266,
+      "a_sub": 0.4835,
+      "a_dec": 0.2281,
+      "b_ko": 0.0422,
+      "b_sub": 0.0466,
+      "b_dec": 0.0642,
+      "draw": 0.0088
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-07T22:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.8024,
     "n_books": 16,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.8024,
@@ -142,13 +170,13 @@
       0.8101
      ],
      "last_pre_start": [
-      "2026-11-06T18:51:00Z",
-      -717,
-      540,
-      0.8607
+      "2026-11-07T09:50:54Z",
+      -661,
+      523,
+      0.854
      ],
-     "n_moves": 7,
-     "read_in": "20261106-2118",
+     "n_moves": 10,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -171,63 +199,63 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.8397,
-    "p_meandec_mult": 0.8257,
-    "p_sharp_shin": 0.8492,
-    "p_pinnacle_shin": 0.86068,
-    "p_exchange_mult": 0.8332,
+    "p_consensus": 0.8452,
+    "p_meandec_mult": 0.8304,
+    "p_sharp_shin": 0.8465,
+    "p_pinnacle_shin": 0.85404,
+    "p_exchange_mult": 0.8367,
     "n_books": 19,
-    "bfo_p_a_novig": 0.8245,
+    "bfo_p_a_novig": 0.8326,
     "bfo_odds": [
-     -625,
-     445
+     -676,
+     471
     ],
     "p_distance": 0.2989,
     "p_method": {
-     "a_ko": 0.1246,
-     "a_sub": 0.4805,
-     "a_dec": 0.2257,
-     "b_ko": 0.0436,
-     "b_sub": 0.0474,
-     "b_dec": 0.0691,
-     "draw": 0.0093
+     "a_ko": 0.1266,
+     "a_sub": 0.4835,
+     "a_dec": 0.2281,
+     "b_ko": 0.0422,
+     "b_sub": 0.0466,
+     "b_dec": 0.0642,
+     "draw": 0.0088
     },
-    "hours_before_start": 24.7
+    "hours_before_start": 7.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.8397,
-    "p_meandec_mult": 0.8257,
-    "p_sharp_shin": 0.8492,
-    "p_pinnacle_shin": 0.86068,
-    "p_exchange_mult": 0.8332,
+    "p_consensus": 0.8452,
+    "p_meandec_mult": 0.8304,
+    "p_sharp_shin": 0.8465,
+    "p_pinnacle_shin": 0.85404,
+    "p_exchange_mult": 0.8367,
     "n_books": 19,
-    "bfo_p_a_novig": 0.8245,
+    "bfo_p_a_novig": 0.8326,
     "bfo_odds": [
-     -625,
-     445
+     -676,
+     471
     ],
     "p_distance": 0.2989,
     "p_method": {
-     "a_ko": 0.1246,
-     "a_sub": 0.4805,
-     "a_dec": 0.2257,
-     "b_ko": 0.0436,
-     "b_sub": 0.0474,
-     "b_dec": 0.0691,
-     "draw": 0.0093
+     "a_ko": 0.1266,
+     "a_sub": 0.4835,
+     "a_dec": 0.2281,
+     "b_ko": 0.0422,
+     "b_sub": 0.0466,
+     "b_dec": 0.0642,
+     "draw": 0.0088
     }
    },
-   "move_open_to_last_pts": 0.0373,
-   "move_open_to_last_logit": 0.2546,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0428,
+   "move_open_to_last_logit": 0.2961,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:billy-elekana__lucas-fernando",
@@ -348,16 +376,43 @@
       "b_dec": 0.2863,
       "draw": 0.0089
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.2503,
+     "p_meandec_mult": 0.2604,
+     "p_sharp_shin": 0.2504,
+     "p_pinnacle_shin": 0.25367,
+     "p_exchange_mult": 0.2534,
+     "n_books": 21,
+     "bfo_p_a_novig": 0.2649,
+     "bfo_odds": [
+      260,
+      -336
+     ],
+     "p_distance": 0.4043,
+     "p_method": {
+      "a_ko": 0.0659,
+      "a_sub": 0.092,
+      "a_dec": 0.1052,
+      "b_ko": 0.3439,
+      "b_sub": 0.0941,
+      "b_dec": 0.2901,
+      "draw": 0.0088
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-08T01:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.2992,
     "n_books": 18,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.2992,
@@ -380,13 +435,13 @@
       0.3011
      ],
      "last_pre_start": [
-      "2026-11-06T20:20:50Z",
-      271,
-      -324,
-      0.2527
+      "2026-11-07T12:50:48Z",
+      273,
+      -318,
+      0.2537
      ],
-     "n_moves": 13,
-     "read_in": "20261106-2118",
+     "n_moves": 14,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -418,63 +473,63 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.2508,
-    "p_meandec_mult": 0.2617,
-    "p_sharp_shin": 0.2453,
-    "p_pinnacle_shin": 0.2527,
-    "p_exchange_mult": 0.258,
-    "n_books": 22,
-    "bfo_p_a_novig": 0.2745,
+    "p_consensus": 0.2503,
+    "p_meandec_mult": 0.2604,
+    "p_sharp_shin": 0.2504,
+    "p_pinnacle_shin": 0.25367,
+    "p_exchange_mult": 0.2534,
+    "n_books": 21,
+    "bfo_p_a_novig": 0.2649,
     "bfo_odds": [
-     246,
-     -323
+     260,
+     -336
     ],
     "p_distance": 0.4043,
     "p_method": {
-     "a_ko": 0.0701,
-     "a_sub": 0.089,
-     "a_dec": 0.1094,
-     "b_ko": 0.3414,
-     "b_sub": 0.0948,
-     "b_dec": 0.2863,
-     "draw": 0.0089
+     "a_ko": 0.0659,
+     "a_sub": 0.092,
+     "a_dec": 0.1052,
+     "b_ko": 0.3439,
+     "b_sub": 0.0941,
+     "b_dec": 0.2901,
+     "draw": 0.0088
     },
-    "hours_before_start": 27.7
+    "hours_before_start": 10.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.2508,
-    "p_meandec_mult": 0.2617,
-    "p_sharp_shin": 0.2453,
-    "p_pinnacle_shin": 0.2527,
-    "p_exchange_mult": 0.258,
-    "n_books": 22,
-    "bfo_p_a_novig": 0.2745,
+    "p_consensus": 0.2503,
+    "p_meandec_mult": 0.2604,
+    "p_sharp_shin": 0.2504,
+    "p_pinnacle_shin": 0.25367,
+    "p_exchange_mult": 0.2534,
+    "n_books": 21,
+    "bfo_p_a_novig": 0.2649,
     "bfo_odds": [
-     246,
-     -323
+     260,
+     -336
     ],
     "p_distance": 0.4043,
     "p_method": {
-     "a_ko": 0.0701,
-     "a_sub": 0.089,
-     "a_dec": 0.1094,
-     "b_ko": 0.3414,
-     "b_sub": 0.0948,
-     "b_dec": 0.2863,
-     "draw": 0.0089
+     "a_ko": 0.0659,
+     "a_sub": 0.092,
+     "a_dec": 0.1052,
+     "b_ko": 0.3439,
+     "b_sub": 0.0941,
+     "b_dec": 0.2901,
+     "draw": 0.0088
     }
    },
-   "move_open_to_last_pts": -0.0484,
-   "move_open_to_last_logit": -0.2432,
-   "n_captures": 4
+   "move_open_to_last_pts": -0.0489,
+   "move_open_to_last_logit": -0.2459,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:davey-grant__elijah-smith",
@@ -595,16 +650,43 @@
       "b_dec": 0.2725,
       "draw": 0.0087
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.2607,
+     "p_meandec_mult": 0.27,
+     "p_sharp_shin": 0.2549,
+     "p_pinnacle_shin": 0.25723,
+     "p_exchange_mult": 0.2603,
+     "n_books": 21,
+     "bfo_p_a_novig": 0.2773,
+     "bfo_odds": [
+      244,
+      -313
+     ],
+     "p_distance": 0.4094,
+     "p_method": {
+      "a_ko": 0.1083,
+      "a_sub": 0.0491,
+      "a_dec": 0.122,
+      "b_ko": 0.2941,
+      "b_sub": 0.1448,
+      "b_dec": 0.2727,
+      "draw": 0.0089
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-08T01:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.3208,
     "n_books": 18,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.3208,
@@ -627,13 +709,13 @@
       0.329
      ],
      "last_pre_start": [
-      "2026-11-06T18:20:43Z",
-      265,
-      -324,
-      0.2549
+      "2026-11-07T13:20:57Z",
+      268,
+      -312,
+      0.2572
      ],
-     "n_moves": 14,
-     "read_in": "20261106-2118",
+     "n_moves": 16,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -665,63 +747,63 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.2588,
-    "p_meandec_mult": 0.2692,
-    "p_sharp_shin": 0.2545,
-    "p_pinnacle_shin": 0.25491,
-    "p_exchange_mult": 0.2615,
-    "n_books": 22,
-    "bfo_p_a_novig": 0.2782,
+    "p_consensus": 0.2607,
+    "p_meandec_mult": 0.27,
+    "p_sharp_shin": 0.2549,
+    "p_pinnacle_shin": 0.25723,
+    "p_exchange_mult": 0.2603,
+    "n_books": 21,
+    "bfo_p_a_novig": 0.2773,
     "bfo_odds": [
-     242,
-     -314
+     244,
+     -313
     ],
     "p_distance": 0.4094,
     "p_method": {
-     "a_ko": 0.1084,
-     "a_sub": 0.0492,
-     "a_dec": 0.1222,
-     "b_ko": 0.2961,
-     "b_sub": 0.1429,
-     "b_dec": 0.2725,
-     "draw": 0.0087
+     "a_ko": 0.1083,
+     "a_sub": 0.0491,
+     "a_dec": 0.122,
+     "b_ko": 0.2941,
+     "b_sub": 0.1448,
+     "b_dec": 0.2727,
+     "draw": 0.0089
     },
-    "hours_before_start": 27.7
+    "hours_before_start": 10.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.2588,
-    "p_meandec_mult": 0.2692,
-    "p_sharp_shin": 0.2545,
-    "p_pinnacle_shin": 0.25491,
-    "p_exchange_mult": 0.2615,
-    "n_books": 22,
-    "bfo_p_a_novig": 0.2782,
+    "p_consensus": 0.2607,
+    "p_meandec_mult": 0.27,
+    "p_sharp_shin": 0.2549,
+    "p_pinnacle_shin": 0.25723,
+    "p_exchange_mult": 0.2603,
+    "n_books": 21,
+    "bfo_p_a_novig": 0.2773,
     "bfo_odds": [
-     242,
-     -314
+     244,
+     -313
     ],
     "p_distance": 0.4094,
     "p_method": {
-     "a_ko": 0.1084,
-     "a_sub": 0.0492,
-     "a_dec": 0.1222,
-     "b_ko": 0.2961,
-     "b_sub": 0.1429,
-     "b_dec": 0.2725,
-     "draw": 0.0087
+     "a_ko": 0.1083,
+     "a_sub": 0.0491,
+     "a_dec": 0.122,
+     "b_ko": 0.2941,
+     "b_sub": 0.1448,
+     "b_dec": 0.2727,
+     "draw": 0.0089
     }
    },
-   "move_open_to_last_pts": -0.062,
-   "move_open_to_last_logit": -0.3021,
-   "n_captures": 4
+   "move_open_to_last_pts": -0.0601,
+   "move_open_to_last_logit": -0.2922,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:gabriel-lourenco__thomas-petersen",
@@ -842,16 +924,43 @@
       "b_dec": 0.2394,
       "draw": 0.0091
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.3961,
+     "p_meandec_mult": 0.4004,
+     "p_sharp_shin": 0.3961,
+     "p_pinnacle_shin": 0.39892,
+     "p_exchange_mult": 0.3996,
+     "n_books": 20,
+     "bfo_p_a_novig": 0.3979,
+     "bfo_odds": [
+      139,
+      -173
+     ],
+     "p_distance": 0.3608,
+     "p_method": {
+      "a_ko": 0.2444,
+      "a_sub": 0.0322,
+      "a_dec": 0.1223,
+      "b_ko": 0.2336,
+      "b_sub": 0.1197,
+      "b_dec": 0.2387,
+      "draw": 0.009
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-07T22:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.3942,
     "n_books": 16,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.3942,
@@ -874,13 +983,13 @@
       0.3939
      ],
      "last_pre_start": [
-      "2026-11-06T20:50:56Z",
-      151,
-      -174,
-      0.3817
+      "2026-11-07T12:20:36Z",
+      142,
+      -160,
+      0.3989
      ],
-     "n_moves": 20,
-     "read_in": "20261106-2118",
+     "n_moves": 23,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -912,63 +1021,63 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.392,
-    "p_meandec_mult": 0.397,
-    "p_sharp_shin": 0.3876,
-    "p_pinnacle_shin": 0.38168,
-    "p_exchange_mult": 0.3811,
+    "p_consensus": 0.3961,
+    "p_meandec_mult": 0.4004,
+    "p_sharp_shin": 0.3961,
+    "p_pinnacle_shin": 0.39892,
+    "p_exchange_mult": 0.3996,
     "n_books": 20,
-    "bfo_p_a_novig": 0.3972,
+    "bfo_p_a_novig": 0.3979,
     "bfo_odds": [
      139,
-     -175
+     -173
     ],
-    "p_distance": 0.3639,
+    "p_distance": 0.3608,
     "p_method": {
-     "a_ko": 0.2455,
-     "a_sub": 0.0323,
-     "a_dec": 0.1228,
-     "b_ko": 0.2306,
-     "b_sub": 0.1202,
-     "b_dec": 0.2394,
-     "draw": 0.0091
+     "a_ko": 0.2444,
+     "a_sub": 0.0322,
+     "a_dec": 0.1223,
+     "b_ko": 0.2336,
+     "b_sub": 0.1197,
+     "b_dec": 0.2387,
+     "draw": 0.009
     },
-    "hours_before_start": 24.7
+    "hours_before_start": 7.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.392,
-    "p_meandec_mult": 0.397,
-    "p_sharp_shin": 0.3876,
-    "p_pinnacle_shin": 0.38168,
-    "p_exchange_mult": 0.3811,
+    "p_consensus": 0.3961,
+    "p_meandec_mult": 0.4004,
+    "p_sharp_shin": 0.3961,
+    "p_pinnacle_shin": 0.39892,
+    "p_exchange_mult": 0.3996,
     "n_books": 20,
-    "bfo_p_a_novig": 0.3972,
+    "bfo_p_a_novig": 0.3979,
     "bfo_odds": [
      139,
-     -175
+     -173
     ],
-    "p_distance": 0.3639,
+    "p_distance": 0.3608,
     "p_method": {
-     "a_ko": 0.2455,
-     "a_sub": 0.0323,
-     "a_dec": 0.1228,
-     "b_ko": 0.2306,
-     "b_sub": 0.1202,
-     "b_dec": 0.2394,
-     "draw": 0.0091
+     "a_ko": 0.2444,
+     "a_sub": 0.0322,
+     "a_dec": 0.1223,
+     "b_ko": 0.2336,
+     "b_sub": 0.1197,
+     "b_dec": 0.2387,
+     "draw": 0.009
     }
    },
-   "move_open_to_last_pts": -0.0022,
-   "move_open_to_last_logit": -0.0092,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0019,
+   "move_open_to_last_logit": 0.0079,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:jonny-parsons__jose-souza",
@@ -1089,16 +1198,43 @@
       "b_dec": 0.227,
       "draw": 0.0088
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.3215,
+     "p_meandec_mult": 0.3287,
+     "p_sharp_shin": 0.3145,
+     "p_pinnacle_shin": 0.32069,
+     "p_exchange_mult": 0.3151,
+     "n_books": 20,
+     "bfo_p_a_novig": 0.3269,
+     "bfo_odds": [
+      192,
+      -238
+     ],
+     "p_distance": 0.3797,
+     "p_method": {
+      "a_ko": 0.1539,
+      "a_sub": 0.0242,
+      "a_dec": 0.151,
+      "b_ko": 0.3547,
+      "b_sub": 0.0804,
+      "b_dec": 0.227,
+      "draw": 0.0088
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-07T22:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.3735,
     "n_books": 18,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.3735,
@@ -1121,13 +1257,13 @@
       0.3627
      ],
      "last_pre_start": [
-      "2026-11-06T20:50:56Z",
-      207,
-      -243,
-      0.3086
+      "2026-11-07T08:50:48Z",
+      198,
+      -227,
+      0.3207
      ],
-     "n_moves": 17,
-     "read_in": "20261106-2118",
+     "n_moves": 19,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -1159,20 +1295,20 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.3194,
-    "p_meandec_mult": 0.3272,
-    "p_sharp_shin": 0.3151,
-    "p_pinnacle_shin": 0.30864,
-    "p_exchange_mult": 0.3127,
+    "p_consensus": 0.3215,
+    "p_meandec_mult": 0.3287,
+    "p_sharp_shin": 0.3145,
+    "p_pinnacle_shin": 0.32069,
+    "p_exchange_mult": 0.3151,
     "n_books": 20,
-    "bfo_p_a_novig": 0.3289,
+    "bfo_p_a_novig": 0.3269,
     "bfo_odds": [
-     190,
-     -237
+     192,
+     -238
     ],
     "p_distance": 0.3797,
     "p_method": {
@@ -1184,23 +1320,23 @@
      "b_dec": 0.227,
      "draw": 0.0088
     },
-    "hours_before_start": 24.7
+    "hours_before_start": 7.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.3194,
-    "p_meandec_mult": 0.3272,
-    "p_sharp_shin": 0.3151,
-    "p_pinnacle_shin": 0.30864,
-    "p_exchange_mult": 0.3127,
+    "p_consensus": 0.3215,
+    "p_meandec_mult": 0.3287,
+    "p_sharp_shin": 0.3145,
+    "p_pinnacle_shin": 0.32069,
+    "p_exchange_mult": 0.3151,
     "n_books": 20,
-    "bfo_p_a_novig": 0.3289,
+    "bfo_p_a_novig": 0.3269,
     "bfo_odds": [
-     190,
-     -237
+     192,
+     -238
     ],
     "p_distance": 0.3797,
     "p_method": {
@@ -1213,9 +1349,9 @@
      "draw": 0.0088
     }
    },
-   "move_open_to_last_pts": -0.0541,
-   "move_open_to_last_logit": -0.2393,
-   "n_captures": 4
+   "move_open_to_last_pts": -0.052,
+   "move_open_to_last_logit": -0.2297,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:jose-delano__murtazali-magomedov",
@@ -1336,16 +1472,43 @@
       "b_dec": 0.1676,
       "draw": 0.0092
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.5221,
+     "p_meandec_mult": 0.521,
+     "p_sharp_shin": 0.5185,
+     "p_pinnacle_shin": 0.52114,
+     "p_exchange_mult": 0.5203,
+     "n_books": 22,
+     "bfo_p_a_novig": 0.5147,
+     "bfo_odds": [
+      -118,
+      -104
+     ],
+     "p_distance": 0.4181,
+     "p_method": {
+      "a_ko": 0.1575,
+      "a_sub": 0.1142,
+      "a_dec": 0.2377,
+      "b_ko": 0.1238,
+      "b_sub": 0.1922,
+      "b_dec": 0.1655,
+      "draw": 0.0092
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-07T22:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.5102,
     "n_books": 18,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.5102,
@@ -1368,13 +1531,13 @@
       0.5242
      ],
      "last_pre_start": [
-      "2026-11-06T18:20:43Z",
-      -117,
-      102,
-      0.5221
+      "2026-11-07T12:20:36Z",
+      -115,
+      103,
+      0.5211
      ],
-     "n_moves": 43,
-     "read_in": "20261106-2118",
+     "n_moves": 46,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -1406,63 +1569,63 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.5167,
-    "p_meandec_mult": 0.516,
-    "p_sharp_shin": 0.5157,
-    "p_pinnacle_shin": 0.52206,
-    "p_exchange_mult": 0.5164,
-    "n_books": 21,
-    "bfo_p_a_novig": 0.517,
+    "p_consensus": 0.5221,
+    "p_meandec_mult": 0.521,
+    "p_sharp_shin": 0.5185,
+    "p_pinnacle_shin": 0.52114,
+    "p_exchange_mult": 0.5203,
+    "n_books": 22,
+    "bfo_p_a_novig": 0.5147,
     "bfo_odds": [
-     -119,
-     -103
+     -118,
+     -104
     ],
     "p_distance": 0.4181,
     "p_method": {
-     "a_ko": 0.1561,
-     "a_sub": 0.1144,
-     "a_dec": 0.2362,
-     "b_ko": 0.1239,
-     "b_sub": 0.1926,
-     "b_dec": 0.1676,
+     "a_ko": 0.1575,
+     "a_sub": 0.1142,
+     "a_dec": 0.2377,
+     "b_ko": 0.1238,
+     "b_sub": 0.1922,
+     "b_dec": 0.1655,
      "draw": 0.0092
     },
-    "hours_before_start": 24.7
+    "hours_before_start": 7.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.5167,
-    "p_meandec_mult": 0.516,
-    "p_sharp_shin": 0.5157,
-    "p_pinnacle_shin": 0.52206,
-    "p_exchange_mult": 0.5164,
-    "n_books": 21,
-    "bfo_p_a_novig": 0.517,
+    "p_consensus": 0.5221,
+    "p_meandec_mult": 0.521,
+    "p_sharp_shin": 0.5185,
+    "p_pinnacle_shin": 0.52114,
+    "p_exchange_mult": 0.5203,
+    "n_books": 22,
+    "bfo_p_a_novig": 0.5147,
     "bfo_odds": [
-     -119,
-     -103
+     -118,
+     -104
     ],
     "p_distance": 0.4181,
     "p_method": {
-     "a_ko": 0.1561,
-     "a_sub": 0.1144,
-     "a_dec": 0.2362,
-     "b_ko": 0.1239,
-     "b_sub": 0.1926,
-     "b_dec": 0.1676,
+     "a_ko": 0.1575,
+     "a_sub": 0.1142,
+     "a_dec": 0.2377,
+     "b_ko": 0.1238,
+     "b_sub": 0.1922,
+     "b_dec": 0.1655,
      "draw": 0.0092
     }
    },
-   "move_open_to_last_pts": 0.0065,
-   "move_open_to_last_logit": 0.026,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0119,
+   "move_open_to_last_logit": 0.0477,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:karine-silva__gabriella-fernandes",
@@ -1583,16 +1746,43 @@
       "b_dec": 0.2089,
       "draw": 0.0091
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.6691,
+     "p_meandec_mult": 0.6624,
+     "p_sharp_shin": 0.673,
+     "p_pinnacle_shin": 0.67203,
+     "p_exchange_mult": 0.6726,
+     "n_books": 22,
+     "bfo_p_a_novig": 0.6594,
+     "bfo_odds": [
+      -225,
+      180
+     ],
+     "p_distance": 0.5702,
+     "p_method": {
+      "a_ko": 0.0829,
+      "a_sub": 0.2314,
+      "a_dec": 0.3449,
+      "b_ko": 0.062,
+      "b_sub": 0.0607,
+      "b_dec": 0.2089,
+      "draw": 0.0091
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-07T22:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.6094,
     "n_books": 18,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.6094,
@@ -1615,13 +1805,13 @@
       0.5958
      ],
      "last_pre_start": [
-      "2026-11-06T18:20:43Z",
-      -221,
-      189,
-      0.6712
+      "2026-11-07T12:20:36Z",
+      -219,
+      192,
+      0.672
      ],
-     "n_moves": 18,
-     "read_in": "20261106-2118",
+     "n_moves": 20,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -1653,20 +1843,20 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.672,
-    "p_meandec_mult": 0.6647,
-    "p_sharp_shin": 0.6742,
-    "p_pinnacle_shin": 0.67123,
-    "p_exchange_mult": 0.6706,
-    "n_books": 21,
-    "bfo_p_a_novig": 0.6591,
+    "p_consensus": 0.6691,
+    "p_meandec_mult": 0.6624,
+    "p_sharp_shin": 0.673,
+    "p_pinnacle_shin": 0.67203,
+    "p_exchange_mult": 0.6726,
+    "n_books": 22,
+    "bfo_p_a_novig": 0.6594,
     "bfo_odds": [
-     -226,
-     179
+     -225,
+     180
     ],
     "p_distance": 0.5702,
     "p_method": {
@@ -1678,23 +1868,23 @@
      "b_dec": 0.2089,
      "draw": 0.0091
     },
-    "hours_before_start": 24.7
+    "hours_before_start": 7.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.672,
-    "p_meandec_mult": 0.6647,
-    "p_sharp_shin": 0.6742,
-    "p_pinnacle_shin": 0.67123,
-    "p_exchange_mult": 0.6706,
-    "n_books": 21,
-    "bfo_p_a_novig": 0.6591,
+    "p_consensus": 0.6691,
+    "p_meandec_mult": 0.6624,
+    "p_sharp_shin": 0.673,
+    "p_pinnacle_shin": 0.67203,
+    "p_exchange_mult": 0.6726,
+    "n_books": 22,
+    "bfo_p_a_novig": 0.6594,
     "bfo_odds": [
-     -226,
-     179
+     -225,
+     180
     ],
     "p_distance": 0.5702,
     "p_method": {
@@ -1707,9 +1897,9 @@
      "draw": 0.0091
     }
    },
-   "move_open_to_last_pts": 0.0626,
-   "move_open_to_last_logit": 0.2725,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0597,
+   "move_open_to_last_logit": 0.2593,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:keiichiro-nakamura__ollie-schmid",
@@ -1830,16 +2020,43 @@
       "b_dec": 0.1153,
       "draw": 0.0087
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.7565,
+     "p_meandec_mult": 0.7457,
+     "p_sharp_shin": 0.7615,
+     "p_pinnacle_shin": 0.76628,
+     "p_exchange_mult": 0.7544,
+     "n_books": 21,
+     "bfo_p_a_novig": 0.7426,
+     "bfo_odds": [
+      -349,
+      271
+     ],
+     "p_distance": 0.2594,
+     "p_method": {
+      "a_ko": 0.5396,
+      "a_sub": 0.0608,
+      "a_dec": 0.1311,
+      "b_ko": 0.1153,
+      "b_sub": 0.0292,
+      "b_dec": 0.1153,
+      "draw": 0.0087
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-07T22:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.7562,
     "n_books": 18,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.7562,
@@ -1862,13 +2079,13 @@
       0.768
      ],
      "last_pre_start": [
-      "2026-11-06T18:50:58Z",
-      -364,
-      301,
-      0.7675
+      "2026-11-07T11:20:40Z",
+      -356,
+      303,
+      0.7663
      ],
-     "n_moves": 13,
-     "read_in": "20261106-2118",
+     "n_moves": 14,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -1900,20 +2117,20 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.7583,
-    "p_meandec_mult": 0.7471,
-    "p_sharp_shin": 0.7643,
-    "p_pinnacle_shin": 0.76755,
-    "p_exchange_mult": 0.7568,
+    "p_consensus": 0.7565,
+    "p_meandec_mult": 0.7457,
+    "p_sharp_shin": 0.7615,
+    "p_pinnacle_shin": 0.76628,
+    "p_exchange_mult": 0.7544,
     "n_books": 21,
-    "bfo_p_a_novig": 0.7411,
+    "bfo_p_a_novig": 0.7426,
     "bfo_odds": [
-     -350,
-     268
+     -349,
+     271
     ],
     "p_distance": 0.2594,
     "p_method": {
@@ -1925,23 +2142,23 @@
      "b_dec": 0.1153,
      "draw": 0.0087
     },
-    "hours_before_start": 24.7
+    "hours_before_start": 7.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.7583,
-    "p_meandec_mult": 0.7471,
-    "p_sharp_shin": 0.7643,
-    "p_pinnacle_shin": 0.76755,
-    "p_exchange_mult": 0.7568,
+    "p_consensus": 0.7565,
+    "p_meandec_mult": 0.7457,
+    "p_sharp_shin": 0.7615,
+    "p_pinnacle_shin": 0.76628,
+    "p_exchange_mult": 0.7544,
     "n_books": 21,
-    "bfo_p_a_novig": 0.7411,
+    "bfo_p_a_novig": 0.7426,
     "bfo_odds": [
-     -350,
-     268
+     -349,
+     271
     ],
     "p_distance": 0.2594,
     "p_method": {
@@ -1954,9 +2171,9 @@
      "draw": 0.0087
     }
    },
-   "move_open_to_last_pts": 0.0021,
-   "move_open_to_last_logit": 0.0114,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0003,
+   "move_open_to_last_logit": 0.0016,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:mantas-kondratavicius__andre-petroski",
@@ -2077,16 +2294,43 @@
       "b_dec": 0.0983,
       "draw": 0.0085
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.7337,
+     "p_meandec_mult": 0.7241,
+     "p_sharp_shin": 0.7344,
+     "p_pinnacle_shin": 0.74698,
+     "p_exchange_mult": 0.7283,
+     "n_books": 20,
+     "bfo_p_a_novig": 0.7245,
+     "bfo_odds": [
+      -317,
+      246
+     ],
+     "p_distance": 0.2205,
+     "p_method": {
+      "a_ko": 0.5703,
+      "a_sub": 0.0441,
+      "a_dec": 0.1056,
+      "b_ko": 0.0749,
+      "b_sub": 0.0983,
+      "b_dec": 0.0983,
+      "draw": 0.0085
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-07T22:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.7274,
     "n_books": 17,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.7274,
@@ -2109,13 +2353,13 @@
       0.7232
      ],
      "last_pre_start": [
-      "2026-11-06T18:20:43Z",
-      -325,
-      272,
-      0.7479
+      "2026-11-07T09:20:44Z",
+      -319,
+      274,
+      0.747
      ],
-     "n_moves": 11,
-     "read_in": "20261106-2118",
+     "n_moves": 12,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -2147,20 +2391,20 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.7333,
-    "p_meandec_mult": 0.7236,
-    "p_sharp_shin": 0.7367,
-    "p_pinnacle_shin": 0.74794,
-    "p_exchange_mult": 0.7258,
+    "p_consensus": 0.7337,
+    "p_meandec_mult": 0.7241,
+    "p_sharp_shin": 0.7344,
+    "p_pinnacle_shin": 0.74698,
+    "p_exchange_mult": 0.7283,
     "n_books": 20,
-    "bfo_p_a_novig": 0.7209,
+    "bfo_p_a_novig": 0.7245,
     "bfo_odds": [
-     -312,
-     241
+     -317,
+     246
     ],
     "p_distance": 0.2205,
     "p_method": {
@@ -2172,23 +2416,23 @@
      "b_dec": 0.0983,
      "draw": 0.0085
     },
-    "hours_before_start": 24.7
+    "hours_before_start": 7.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.7333,
-    "p_meandec_mult": 0.7236,
-    "p_sharp_shin": 0.7367,
-    "p_pinnacle_shin": 0.74794,
-    "p_exchange_mult": 0.7258,
+    "p_consensus": 0.7337,
+    "p_meandec_mult": 0.7241,
+    "p_sharp_shin": 0.7344,
+    "p_pinnacle_shin": 0.74698,
+    "p_exchange_mult": 0.7283,
     "n_books": 20,
-    "bfo_p_a_novig": 0.7209,
+    "bfo_p_a_novig": 0.7245,
     "bfo_odds": [
-     -312,
-     241
+     -317,
+     246
     ],
     "p_distance": 0.2205,
     "p_method": {
@@ -2201,9 +2445,9 @@
      "draw": 0.0085
     }
    },
-   "move_open_to_last_pts": 0.0059,
-   "move_open_to_last_logit": 0.03,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0063,
+   "move_open_to_last_logit": 0.032,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:mitch-raposo__marcos-degli",
@@ -2324,16 +2568,43 @@
       "b_dec": 0.299,
       "draw": 0.0089
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.3175,
+     "p_meandec_mult": 0.3255,
+     "p_sharp_shin": 0.3178,
+     "p_pinnacle_shin": 0.31763,
+     "p_exchange_mult": 0.314,
+     "n_books": 21,
+     "bfo_p_a_novig": 0.3292,
+     "bfo_odds": [
+      190,
+      -238
+     ],
+     "p_distance": 0.4892,
+     "p_method": {
+      "a_ko": 0.1131,
+      "a_sub": 0.057,
+      "a_dec": 0.157,
+      "b_ko": 0.2116,
+      "b_sub": 0.1399,
+      "b_dec": 0.3123,
+      "draw": 0.009
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-08T01:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.3138,
     "n_books": 18,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.3138,
@@ -2356,13 +2627,13 @@
       0.3151
      ],
      "last_pre_start": [
-      "2026-11-06T19:21:10Z",
-      204,
-      -239,
-      0.312
+      "2026-11-07T12:20:36Z",
+      201,
+      -230,
+      0.3176
      ],
-     "n_moves": 18,
-     "read_in": "20261106-2118",
+     "n_moves": 20,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -2394,63 +2665,63 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.3184,
-    "p_meandec_mult": 0.3267,
-    "p_sharp_shin": 0.3155,
-    "p_pinnacle_shin": 0.31197,
-    "p_exchange_mult": 0.3122,
+    "p_consensus": 0.3175,
+    "p_meandec_mult": 0.3255,
+    "p_sharp_shin": 0.3178,
+    "p_pinnacle_shin": 0.31763,
+    "p_exchange_mult": 0.314,
     "n_books": 21,
-    "bfo_p_a_novig": 0.3308,
+    "bfo_p_a_novig": 0.3292,
     "bfo_odds": [
-     188,
-     -237
+     190,
+     -238
     ],
-    "p_distance": 0.46,
+    "p_distance": 0.4892,
     "p_method": {
-     "a_ko": 0.1171,
-     "a_sub": 0.0587,
-     "a_dec": 0.1505,
-     "b_ko": 0.2224,
-     "b_sub": 0.1434,
-     "b_dec": 0.299,
-     "draw": 0.0089
+     "a_ko": 0.1131,
+     "a_sub": 0.057,
+     "a_dec": 0.157,
+     "b_ko": 0.2116,
+     "b_sub": 0.1399,
+     "b_dec": 0.3123,
+     "draw": 0.009
     },
-    "hours_before_start": 27.7
+    "hours_before_start": 10.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.3184,
-    "p_meandec_mult": 0.3267,
-    "p_sharp_shin": 0.3155,
-    "p_pinnacle_shin": 0.31197,
-    "p_exchange_mult": 0.3122,
+    "p_consensus": 0.3175,
+    "p_meandec_mult": 0.3255,
+    "p_sharp_shin": 0.3178,
+    "p_pinnacle_shin": 0.31763,
+    "p_exchange_mult": 0.314,
     "n_books": 21,
-    "bfo_p_a_novig": 0.3308,
+    "bfo_p_a_novig": 0.3292,
     "bfo_odds": [
-     188,
-     -237
+     190,
+     -238
     ],
-    "p_distance": 0.46,
+    "p_distance": 0.4892,
     "p_method": {
-     "a_ko": 0.1171,
-     "a_sub": 0.0587,
-     "a_dec": 0.1505,
-     "b_ko": 0.2224,
-     "b_sub": 0.1434,
-     "b_dec": 0.299,
-     "draw": 0.0089
+     "a_ko": 0.1131,
+     "a_sub": 0.057,
+     "a_dec": 0.157,
+     "b_ko": 0.2116,
+     "b_sub": 0.1399,
+     "b_dec": 0.3123,
+     "draw": 0.009
     }
    },
-   "move_open_to_last_pts": 0.0046,
-   "move_open_to_last_logit": 0.0213,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0037,
+   "move_open_to_last_logit": 0.0171,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:priscila-cachoeira__nina-milosevic",
@@ -2571,16 +2842,43 @@
       "b_dec": 0.1534,
       "draw": 0.0087
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.1823,
+     "p_meandec_mult": 0.1957,
+     "p_sharp_shin": 0.1757,
+     "p_pinnacle_shin": 0.18449,
+     "p_exchange_mult": 0.1823,
+     "n_books": 21,
+     "bfo_p_a_novig": 0.2035,
+     "bfo_odds": [
+      368,
+      -512
+     ],
+     "p_distance": 0.225,
+     "p_method": {
+      "a_ko": 0.1203,
+      "a_sub": 0.0241,
+      "a_dec": 0.0564,
+      "b_ko": 0.3169,
+      "b_sub": 0.3203,
+      "b_dec": 0.1534,
+      "draw": 0.0087
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-08T01:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.2057,
     "n_books": 18,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.2057,
@@ -2603,13 +2901,13 @@
       0.2097
      ],
      "last_pre_start": [
-      "2026-11-06T19:50:38Z",
-      400,
-      -502,
-      0.1831
+      "2026-11-07T12:20:36Z",
+      402,
+      -489,
+      0.1845
      ],
-     "n_moves": 4,
-     "read_in": "20261106-2118",
+     "n_moves": 5,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -2641,63 +2939,63 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.1861,
-    "p_meandec_mult": 0.1997,
-    "p_sharp_shin": 0.1784,
-    "p_pinnacle_shin": 0.18306,
-    "p_exchange_mult": 0.183,
+    "p_consensus": 0.1823,
+    "p_meandec_mult": 0.1957,
+    "p_sharp_shin": 0.1757,
+    "p_pinnacle_shin": 0.18449,
+    "p_exchange_mult": 0.1823,
     "n_books": 21,
-    "bfo_p_a_novig": 0.2083,
+    "bfo_p_a_novig": 0.2035,
     "bfo_odds": [
-     356,
-     -501
+     368,
+     -512
     ],
     "p_distance": 0.225,
     "p_method": {
-     "a_ko": 0.1202,
+     "a_ko": 0.1203,
      "a_sub": 0.0241,
-     "a_dec": 0.0598,
-     "b_ko": 0.317,
-     "b_sub": 0.317,
+     "a_dec": 0.0564,
+     "b_ko": 0.3169,
+     "b_sub": 0.3203,
      "b_dec": 0.1534,
      "draw": 0.0087
     },
-    "hours_before_start": 27.7
+    "hours_before_start": 10.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.1861,
-    "p_meandec_mult": 0.1997,
-    "p_sharp_shin": 0.1784,
-    "p_pinnacle_shin": 0.18306,
-    "p_exchange_mult": 0.183,
+    "p_consensus": 0.1823,
+    "p_meandec_mult": 0.1957,
+    "p_sharp_shin": 0.1757,
+    "p_pinnacle_shin": 0.18449,
+    "p_exchange_mult": 0.1823,
     "n_books": 21,
-    "bfo_p_a_novig": 0.2083,
+    "bfo_p_a_novig": 0.2035,
     "bfo_odds": [
-     356,
-     -501
+     368,
+     -512
     ],
     "p_distance": 0.225,
     "p_method": {
-     "a_ko": 0.1202,
+     "a_ko": 0.1203,
      "a_sub": 0.0241,
-     "a_dec": 0.0598,
-     "b_ko": 0.317,
-     "b_sub": 0.317,
+     "a_dec": 0.0564,
+     "b_ko": 0.3169,
+     "b_sub": 0.3203,
      "b_dec": 0.1534,
      "draw": 0.0087
     }
    },
-   "move_open_to_last_pts": -0.0196,
-   "move_open_to_last_logit": -0.1245,
-   "n_captures": 4
+   "move_open_to_last_pts": -0.0234,
+   "move_open_to_last_logit": -0.1498,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:seokhyeon-ko__wellington-turman",
@@ -2818,16 +3116,43 @@
       "b_dec": 0.0839,
       "draw": 0.0088
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.8534,
+     "p_meandec_mult": 0.8386,
+     "p_sharp_shin": 0.8533,
+     "p_pinnacle_shin": 0.84812,
+     "p_exchange_mult": 0.8405,
+     "n_books": 21,
+     "bfo_p_a_novig": 0.8465,
+     "bfo_odds": [
+      -762,
+      524
+     ],
+     "p_distance": 0.4892,
+     "p_method": {
+      "a_ko": 0.3448,
+      "a_sub": 0.109,
+      "a_dec": 0.3843,
+      "b_ko": 0.0311,
+      "b_sub": 0.0382,
+      "b_dec": 0.0839,
+      "draw": 0.0088
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-07T22:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.8344,
     "n_books": 18,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.8344,
@@ -2850,13 +3175,13 @@
       0.8474
      ],
      "last_pre_start": [
-      "2026-11-06T18:20:43Z",
-      -650,
-      498,
-      0.8497
+      "2026-11-07T08:50:47Z",
+      -628,
+      501,
+      0.8481
      ],
-     "n_moves": 14,
-     "read_in": "20261106-2118",
+     "n_moves": 15,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -2888,20 +3213,20 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.8528,
-    "p_meandec_mult": 0.8376,
-    "p_sharp_shin": 0.8531,
-    "p_pinnacle_shin": 0.84972,
-    "p_exchange_mult": 0.8423,
+    "p_consensus": 0.8534,
+    "p_meandec_mult": 0.8386,
+    "p_sharp_shin": 0.8533,
+    "p_pinnacle_shin": 0.84812,
+    "p_exchange_mult": 0.8405,
     "n_books": 21,
-    "bfo_p_a_novig": 0.8454,
+    "bfo_p_a_novig": 0.8465,
     "bfo_odds": [
-     -769,
-     518
+     -762,
+     524
     ],
     "p_distance": 0.4892,
     "p_method": {
@@ -2913,23 +3238,23 @@
      "b_dec": 0.0839,
      "draw": 0.0088
     },
-    "hours_before_start": 24.7
+    "hours_before_start": 7.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.8528,
-    "p_meandec_mult": 0.8376,
-    "p_sharp_shin": 0.8531,
-    "p_pinnacle_shin": 0.84972,
-    "p_exchange_mult": 0.8423,
+    "p_consensus": 0.8534,
+    "p_meandec_mult": 0.8386,
+    "p_sharp_shin": 0.8533,
+    "p_pinnacle_shin": 0.84812,
+    "p_exchange_mult": 0.8405,
     "n_books": 21,
-    "bfo_p_a_novig": 0.8454,
+    "bfo_p_a_novig": 0.8465,
     "bfo_odds": [
-     -769,
-     518
+     -762,
+     524
     ],
     "p_distance": 0.4892,
     "p_method": {
@@ -2942,9 +3267,9 @@
      "draw": 0.0088
     }
    },
-   "move_open_to_last_pts": 0.0184,
-   "move_open_to_last_logit": 0.1396,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.019,
+   "move_open_to_last_logit": 0.1444,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:tatiana-suarez__virna-jandiroba",
@@ -3065,16 +3390,43 @@
       "b_dec": 0.2321,
       "draw": 0.0086
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.6447,
+     "p_meandec_mult": 0.6389,
+     "p_sharp_shin": 0.6433,
+     "p_pinnacle_shin": 0.6371,
+     "p_exchange_mult": 0.6437,
+     "n_books": 21,
+     "bfo_p_a_novig": 0.641,
+     "bfo_odds": [
+      -205,
+      166
+     ],
+     "p_distance": 0.7153,
+     "p_method": {
+      "a_ko": 0.0641,
+      "a_sub": 0.1052,
+      "a_dec": 0.4738,
+      "b_ko": 0.0235,
+      "b_sub": 0.0927,
+      "b_dec": 0.2321,
+      "draw": 0.0086
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-08T01:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.6298,
     "n_books": 18,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.6298,
@@ -3097,13 +3449,13 @@
       0.6077
      ],
      "last_pre_start": [
-      "2026-11-06T14:20:48Z",
-      -204,
-      172,
-      0.6517
+      "2026-11-07T13:50:35Z",
+      -187,
+      165,
+      0.6371
      ],
-     "n_moves": 12,
-     "read_in": "20261106-2118",
+     "n_moves": 15,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -3135,20 +3487,20 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.6503,
-    "p_meandec_mult": 0.6434,
-    "p_sharp_shin": 0.651,
-    "p_pinnacle_shin": 0.6517,
-    "p_exchange_mult": 0.6497,
+    "p_consensus": 0.6447,
+    "p_meandec_mult": 0.6389,
+    "p_sharp_shin": 0.6433,
+    "p_pinnacle_shin": 0.6371,
+    "p_exchange_mult": 0.6437,
     "n_books": 21,
-    "bfo_p_a_novig": 0.6402,
+    "bfo_p_a_novig": 0.641,
     "bfo_odds": [
      -205,
-     165
+     166
     ],
     "p_distance": 0.7153,
     "p_method": {
@@ -3160,23 +3512,23 @@
      "b_dec": 0.2321,
      "draw": 0.0086
     },
-    "hours_before_start": 27.7
+    "hours_before_start": 10.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.6503,
-    "p_meandec_mult": 0.6434,
-    "p_sharp_shin": 0.651,
-    "p_pinnacle_shin": 0.6517,
-    "p_exchange_mult": 0.6497,
+    "p_consensus": 0.6447,
+    "p_meandec_mult": 0.6389,
+    "p_sharp_shin": 0.6433,
+    "p_pinnacle_shin": 0.6371,
+    "p_exchange_mult": 0.6437,
     "n_books": 21,
-    "bfo_p_a_novig": 0.6402,
+    "bfo_p_a_novig": 0.641,
     "bfo_odds": [
      -205,
-     165
+     166
     ],
     "p_distance": 0.7153,
     "p_method": {
@@ -3189,9 +3541,9 @@
      "draw": 0.0086
     }
    },
-   "move_open_to_last_pts": 0.0205,
-   "move_open_to_last_logit": 0.089,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0149,
+   "move_open_to_last_logit": 0.0645,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-07:waldo-cortes-acosta__johnny-walker",
@@ -3312,16 +3664,43 @@
       "b_dec": 0.0702,
       "draw": 0.0089
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.6735,
+     "p_meandec_mult": 0.6661,
+     "p_sharp_shin": 0.6769,
+     "p_pinnacle_shin": 0.67911,
+     "p_exchange_mult": 0.6701,
+     "n_books": 20,
+     "bfo_p_a_novig": 0.6638,
+     "bfo_odds": [
+      -231,
+      183
+     ],
+     "p_distance": 0.225,
+     "p_method": {
+      "a_ko": 0.4797,
+      "a_sub": 0.0386,
+      "a_dec": 0.141,
+      "b_ko": 0.2004,
+      "b_sub": 0.0605,
+      "b_dec": 0.0708,
+      "draw": 0.009
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-08T01:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.6423,
     "n_books": 17,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.6423,
@@ -3344,13 +3723,13 @@
       0.6487
      ],
      "last_pre_start": [
-      "2026-11-06T18:20:44Z",
-      -240,
-      201,
-      0.6868
+      "2026-11-07T10:20:49Z",
+      -229,
+      196,
+      0.6791
      ],
-     "n_moves": 15,
-     "read_in": "20261106-2118",
+     "n_moves": 18,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -3382,63 +3761,63 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.6752,
-    "p_meandec_mult": 0.6678,
-    "p_sharp_shin": 0.6801,
-    "p_pinnacle_shin": 0.68683,
-    "p_exchange_mult": 0.6687,
+    "p_consensus": 0.6735,
+    "p_meandec_mult": 0.6661,
+    "p_sharp_shin": 0.6769,
+    "p_pinnacle_shin": 0.67911,
+    "p_exchange_mult": 0.6701,
     "n_books": 20,
-    "bfo_p_a_novig": 0.6662,
+    "bfo_p_a_novig": 0.6638,
     "bfo_odds": [
-     -235,
-     185
+     -231,
+     183
     ],
     "p_distance": 0.225,
     "p_method": {
-     "a_ko": 0.482,
-     "a_sub": 0.0385,
-     "a_dec": 0.1425,
-     "b_ko": 0.1973,
+     "a_ko": 0.4797,
+     "a_sub": 0.0386,
+     "a_dec": 0.141,
+     "b_ko": 0.2004,
      "b_sub": 0.0605,
-     "b_dec": 0.0702,
-     "draw": 0.0089
+     "b_dec": 0.0708,
+     "draw": 0.009
     },
-    "hours_before_start": 27.7
+    "hours_before_start": 10.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.6752,
-    "p_meandec_mult": 0.6678,
-    "p_sharp_shin": 0.6801,
-    "p_pinnacle_shin": 0.68683,
-    "p_exchange_mult": 0.6687,
+    "p_consensus": 0.6735,
+    "p_meandec_mult": 0.6661,
+    "p_sharp_shin": 0.6769,
+    "p_pinnacle_shin": 0.67911,
+    "p_exchange_mult": 0.6701,
     "n_books": 20,
-    "bfo_p_a_novig": 0.6662,
+    "bfo_p_a_novig": 0.6638,
     "bfo_odds": [
-     -235,
-     185
+     -231,
+     183
     ],
     "p_distance": 0.225,
     "p_method": {
-     "a_ko": 0.482,
-     "a_sub": 0.0385,
-     "a_dec": 0.1425,
-     "b_ko": 0.1973,
+     "a_ko": 0.4797,
+     "a_sub": 0.0386,
+     "a_dec": 0.141,
+     "b_ko": 0.2004,
      "b_sub": 0.0605,
-     "b_dec": 0.0702,
-     "draw": 0.0089
+     "b_dec": 0.0708,
+     "draw": 0.009
     }
    },
-   "move_open_to_last_pts": 0.0329,
-   "move_open_to_last_logit": 0.1464,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0312,
+   "move_open_to_last_logit": 0.1387,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-14:bilal-hasan__luis-gurule",
@@ -3523,16 +3902,34 @@
       574
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.8755,
+     "p_meandec_mult": 0.8581,
+     "p_sharp_shin": 0.8824,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.8336,
+     "n_books": 17,
+     "bfo_p_a_novig": 0.8588,
+     "bfo_odds": [
+      -923,
+      574
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-15T02:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
-    "p_open": 0.8785,
-    "n_books": 13,
-    "snapshot": "20261106-2118"
+    "p_open": 0.8793,
+    "n_books": 14,
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.8785,
@@ -3558,35 +3955,35 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.8756,
-    "p_meandec_mult": 0.8573,
-    "p_sharp_shin": 0.8783,
+    "p_consensus": 0.8755,
+    "p_meandec_mult": 0.8581,
+    "p_sharp_shin": 0.8824,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.8326,
-    "n_books": 16,
+    "p_exchange_mult": 0.8336,
+    "n_books": 17,
     "bfo_p_a_novig": 0.8588,
     "bfo_odds": [
      -923,
      574
     ],
     "p_distance": null,
-    "hours_before_start": 196.7
+    "hours_before_start": 179.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.8756,
-    "p_meandec_mult": 0.8573,
-    "p_sharp_shin": 0.8783,
+    "p_consensus": 0.8755,
+    "p_meandec_mult": 0.8581,
+    "p_sharp_shin": 0.8824,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.8326,
-    "n_books": 16,
+    "p_exchange_mult": 0.8336,
+    "n_books": 17,
     "bfo_p_a_novig": 0.8588,
     "bfo_odds": [
      -923,
@@ -3594,9 +3991,9 @@
     ],
     "p_distance": null
    },
-   "move_open_to_last_pts": -0.0029,
-   "move_open_to_last_logit": -0.0269,
-   "n_captures": 4
+   "move_open_to_last_pts": -0.0038,
+   "move_open_to_last_logit": -0.0353,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-14:caio-borralho__yousri-belgaroui",
@@ -3681,16 +4078,34 @@
       127
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.5836,
+     "p_meandec_mult": 0.5801,
+     "p_sharp_shin": 0.5794,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.5779,
+     "n_books": 17,
+     "bfo_p_a_novig": 0.5807,
+     "bfo_odds": [
+      -157,
+      127
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-15T02:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
-    "p_open": 0.5612,
-    "n_books": 13,
-    "snapshot": "20261106-2118"
+    "p_open": 0.563,
+    "n_books": 14,
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.5612,
@@ -3716,35 +4131,35 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.5875,
-    "p_meandec_mult": 0.5832,
-    "p_sharp_shin": 0.5853,
+    "p_consensus": 0.5836,
+    "p_meandec_mult": 0.5801,
+    "p_sharp_shin": 0.5794,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.5825,
-    "n_books": 16,
+    "p_exchange_mult": 0.5779,
+    "n_books": 17,
     "bfo_p_a_novig": 0.5807,
     "bfo_odds": [
      -157,
      127
     ],
     "p_distance": null,
-    "hours_before_start": 196.7
+    "hours_before_start": 179.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.5875,
-    "p_meandec_mult": 0.5832,
-    "p_sharp_shin": 0.5853,
+    "p_consensus": 0.5836,
+    "p_meandec_mult": 0.5801,
+    "p_sharp_shin": 0.5794,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.5825,
-    "n_books": 16,
+    "p_exchange_mult": 0.5779,
+    "n_books": 17,
     "bfo_p_a_novig": 0.5807,
     "bfo_odds": [
      -157,
@@ -3752,9 +4167,9 @@
     ],
     "p_distance": null
    },
-   "move_open_to_last_pts": 0.0263,
-   "move_open_to_last_logit": 0.1076,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0206,
+   "move_open_to_last_logit": 0.0842,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-14:ciryl-gane__josh-hokit",
@@ -3875,16 +4290,43 @@
       "b_dec": 0.109,
       "draw": 0.0094
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.6751,
+     "p_meandec_mult": 0.6669,
+     "p_sharp_shin": 0.6707,
+     "p_pinnacle_shin": 0.67784,
+     "p_exchange_mult": 0.6527,
+     "n_books": 21,
+     "bfo_p_a_novig": 0.6736,
+     "bfo_odds": [
+      -243,
+      191
+     ],
+     "p_distance": 0.3425,
+     "p_method": {
+      "a_ko": 0.3736,
+      "a_sub": 0.0874,
+      "a_dec": 0.2221,
+      "b_ko": 0.1267,
+      "b_sub": 0.0728,
+      "b_dec": 0.1081,
+      "draw": 0.0093
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-15T02:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.6985,
     "n_books": 18,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.6985,
@@ -3900,13 +4342,13 @@
       0.6911
      ],
      "last_pre_start": [
-      "2026-11-06T07:50:47Z",
+      "2026-11-07T08:50:47Z",
       -230,
       193,
       0.6778
      ],
-     "n_moves": 21,
-     "read_in": "20261106-2118",
+     "n_moves": 23,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -3938,63 +4380,63 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.688,
-    "p_meandec_mult": 0.6793,
-    "p_sharp_shin": 0.6811,
+    "p_consensus": 0.6751,
+    "p_meandec_mult": 0.6669,
+    "p_sharp_shin": 0.6707,
     "p_pinnacle_shin": 0.67784,
-    "p_exchange_mult": 0.6586,
+    "p_exchange_mult": 0.6527,
     "n_books": 21,
-    "bfo_p_a_novig": 0.6861,
+    "bfo_p_a_novig": 0.6736,
     "bfo_odds": [
-     -259,
-     203
+     -243,
+     191
     ],
     "p_distance": 0.3425,
     "p_method": {
-     "a_ko": 0.3843,
-     "a_sub": 0.0795,
-     "a_dec": 0.2288,
-     "b_ko": 0.1194,
-     "b_sub": 0.0695,
-     "b_dec": 0.109,
-     "draw": 0.0094
+     "a_ko": 0.3736,
+     "a_sub": 0.0874,
+     "a_dec": 0.2221,
+     "b_ko": 0.1267,
+     "b_sub": 0.0728,
+     "b_dec": 0.1081,
+     "draw": 0.0093
     },
-    "hours_before_start": 196.7
+    "hours_before_start": 179.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.688,
-    "p_meandec_mult": 0.6793,
-    "p_sharp_shin": 0.6811,
+    "p_consensus": 0.6751,
+    "p_meandec_mult": 0.6669,
+    "p_sharp_shin": 0.6707,
     "p_pinnacle_shin": 0.67784,
-    "p_exchange_mult": 0.6586,
+    "p_exchange_mult": 0.6527,
     "n_books": 21,
-    "bfo_p_a_novig": 0.6861,
+    "bfo_p_a_novig": 0.6736,
     "bfo_odds": [
-     -259,
-     203
+     -243,
+     191
     ],
     "p_distance": 0.3425,
     "p_method": {
-     "a_ko": 0.3843,
-     "a_sub": 0.0795,
-     "a_dec": 0.2288,
-     "b_ko": 0.1194,
-     "b_sub": 0.0695,
-     "b_dec": 0.109,
-     "draw": 0.0094
+     "a_ko": 0.3736,
+     "a_sub": 0.0874,
+     "a_dec": 0.2221,
+     "b_ko": 0.1267,
+     "b_sub": 0.0728,
+     "b_dec": 0.1081,
+     "draw": 0.0093
     }
    },
-   "move_open_to_last_pts": -0.0105,
-   "move_open_to_last_logit": -0.0494,
-   "n_captures": 4
+   "move_open_to_last_pts": -0.0234,
+   "move_open_to_last_logit": -0.1088,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-14:donte-johnson__cesar-almeida",
@@ -4079,16 +4521,34 @@
       150
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.6125,
+     "p_meandec_mult": 0.6076,
+     "p_sharp_shin": 0.6126,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.6316,
+     "n_books": 11,
+     "bfo_p_a_novig": 0.6182,
+     "bfo_odds": [
+      -184,
+      150
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-15T00:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
-    "p_open": 0.5929,
-    "n_books": 8,
-    "snapshot": "20261106-2118"
+    "p_open": 0.5961,
+    "n_books": 9,
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.5929,
@@ -4114,35 +4574,35 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.617,
-    "p_meandec_mult": 0.6112,
-    "p_sharp_shin": 0.6156,
+    "p_consensus": 0.6125,
+    "p_meandec_mult": 0.6076,
+    "p_sharp_shin": 0.6126,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.6215,
-    "n_books": 10,
+    "p_exchange_mult": 0.6316,
+    "n_books": 11,
     "bfo_p_a_novig": 0.6182,
     "bfo_odds": [
      -184,
      150
     ],
     "p_distance": null,
-    "hours_before_start": 194.7
+    "hours_before_start": 177.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.617,
-    "p_meandec_mult": 0.6112,
-    "p_sharp_shin": 0.6156,
+    "p_consensus": 0.6125,
+    "p_meandec_mult": 0.6076,
+    "p_sharp_shin": 0.6126,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.6215,
-    "n_books": 10,
+    "p_exchange_mult": 0.6316,
+    "n_books": 11,
     "bfo_p_a_novig": 0.6182,
     "bfo_odds": [
      -184,
@@ -4150,9 +4610,9 @@
     ],
     "p_distance": null
    },
-   "move_open_to_last_pts": 0.0241,
-   "move_open_to_last_logit": 0.1009,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0164,
+   "move_open_to_last_logit": 0.0686,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-14:drew-dober__chris-duncan",
@@ -4237,16 +4697,34 @@
       -161
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.4021,
+     "p_meandec_mult": 0.4071,
+     "p_sharp_shin": 0.4029,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.4047,
+     "n_books": 9,
+     "bfo_p_a_novig": 0.4105,
+     "bfo_odds": [
+      133,
+      -161
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-15T00:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
-    "p_open": 0.419,
-    "n_books": 8,
-    "snapshot": "20261106-2118"
+    "p_open": 0.4159,
+    "n_books": 9,
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.419,
@@ -4272,35 +4750,35 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.4029,
-    "p_meandec_mult": 0.4085,
-    "p_sharp_shin": 0.408,
+    "p_consensus": 0.4021,
+    "p_meandec_mult": 0.4071,
+    "p_sharp_shin": 0.4029,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.4089,
-    "n_books": 8,
+    "p_exchange_mult": 0.4047,
+    "n_books": 9,
     "bfo_p_a_novig": 0.4105,
     "bfo_odds": [
      133,
      -161
     ],
     "p_distance": null,
-    "hours_before_start": 194.7
+    "hours_before_start": 177.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.4029,
-    "p_meandec_mult": 0.4085,
-    "p_sharp_shin": 0.408,
+    "p_consensus": 0.4021,
+    "p_meandec_mult": 0.4071,
+    "p_sharp_shin": 0.4029,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.4089,
-    "n_books": 8,
+    "p_exchange_mult": 0.4047,
+    "n_books": 9,
     "bfo_p_a_novig": 0.4105,
     "bfo_odds": [
      133,
@@ -4308,9 +4786,9 @@
     ],
     "p_distance": null
    },
-   "move_open_to_last_pts": -0.0161,
-   "move_open_to_last_logit": -0.0665,
-   "n_captures": 4
+   "move_open_to_last_pts": -0.0138,
+   "move_open_to_last_logit": -0.0571,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-14:evan-elder__samuel-sanches",
@@ -4395,16 +4873,34 @@
       -105
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.5133,
+     "p_meandec_mult": 0.5131,
+     "p_sharp_shin": 0.5122,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.5,
+     "n_books": 11,
+     "bfo_p_a_novig": 0.516,
+     "bfo_odds": [
+      -120,
+      -105
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-14T22:00:00Z",
    "start_src": "cards_upcoming.json start_utc.early_prelims",
    "market_open": {
-    "p_open": 0.5169,
-    "n_books": 8,
-    "snapshot": "20261106-2118"
+    "p_open": 0.5161,
+    "n_books": 9,
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.5169,
@@ -4430,35 +4926,35 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.5136,
-    "p_meandec_mult": 0.5134,
-    "p_sharp_shin": 0.5126,
+    "p_consensus": 0.5133,
+    "p_meandec_mult": 0.5131,
+    "p_sharp_shin": 0.5122,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.5189,
-    "n_books": 10,
+    "p_exchange_mult": 0.5,
+    "n_books": 11,
     "bfo_p_a_novig": 0.516,
     "bfo_odds": [
      -120,
      -105
     ],
     "p_distance": null,
-    "hours_before_start": 192.7
+    "hours_before_start": 175.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.5136,
-    "p_meandec_mult": 0.5134,
-    "p_sharp_shin": 0.5126,
+    "p_consensus": 0.5133,
+    "p_meandec_mult": 0.5131,
+    "p_sharp_shin": 0.5122,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.5189,
-    "n_books": 10,
+    "p_exchange_mult": 0.5,
+    "n_books": 11,
     "bfo_p_a_novig": 0.516,
     "bfo_odds": [
      -120,
@@ -4466,9 +4962,9 @@
     ],
     "p_distance": null
    },
-   "move_open_to_last_pts": -0.0033,
-   "move_open_to_last_logit": -0.0132,
-   "n_captures": 4
+   "move_open_to_last_pts": -0.0028,
+   "move_open_to_last_logit": -0.0112,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-14:jared-gordon__melquizael-costa",
@@ -4553,16 +5049,34 @@
       -412
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.2351,
+     "p_meandec_mult": 0.2465,
+     "p_sharp_shin": 0.2325,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.2097,
+     "n_books": 11,
+     "bfo_p_a_novig": 0.237,
+     "bfo_odds": [
+      300,
+      -412
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-14T22:00:00Z",
    "start_src": "cards_upcoming.json start_utc.early_prelims",
    "market_open": {
-    "p_open": 0.2329,
-    "n_books": 8,
-    "snapshot": "20261106-2118"
+    "p_open": 0.2342,
+    "n_books": 9,
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.2329,
@@ -4588,35 +5102,35 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.2342,
-    "p_meandec_mult": 0.2461,
-    "p_sharp_shin": 0.2277,
+    "p_consensus": 0.2351,
+    "p_meandec_mult": 0.2465,
+    "p_sharp_shin": 0.2325,
     "p_pinnacle_shin": null,
     "p_exchange_mult": 0.2097,
-    "n_books": 10,
+    "n_books": 11,
     "bfo_p_a_novig": 0.237,
     "bfo_odds": [
      300,
      -412
     ],
     "p_distance": null,
-    "hours_before_start": 192.7
+    "hours_before_start": 175.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.2342,
-    "p_meandec_mult": 0.2461,
-    "p_sharp_shin": 0.2277,
+    "p_consensus": 0.2351,
+    "p_meandec_mult": 0.2465,
+    "p_sharp_shin": 0.2325,
     "p_pinnacle_shin": null,
     "p_exchange_mult": 0.2097,
-    "n_books": 10,
+    "n_books": 11,
     "bfo_p_a_novig": 0.237,
     "bfo_odds": [
      300,
@@ -4624,9 +5138,9 @@
     ],
     "p_distance": null
    },
-   "move_open_to_last_pts": 0.0013,
-   "move_open_to_last_logit": 0.0073,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0009,
+   "move_open_to_last_logit": 0.005,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-14:jim-miller__terrance-mckinney",
@@ -4711,16 +5225,34 @@
       -222
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.3363,
+     "p_meandec_mult": 0.3443,
+     "p_sharp_shin": 0.3383,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.3419,
+     "n_books": 11,
+     "bfo_p_a_novig": 0.3481,
+     "bfo_odds": [
+      172,
+      -222
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-15T00:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
-    "p_open": 0.3399,
-    "n_books": 8,
-    "snapshot": "20261106-2118"
+    "p_open": 0.3382,
+    "n_books": 9,
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.3399,
@@ -4746,35 +5278,35 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.3371,
-    "p_meandec_mult": 0.3454,
-    "p_sharp_shin": 0.3431,
+    "p_consensus": 0.3363,
+    "p_meandec_mult": 0.3443,
+    "p_sharp_shin": 0.3383,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.3364,
-    "n_books": 10,
+    "p_exchange_mult": 0.3419,
+    "n_books": 11,
     "bfo_p_a_novig": 0.3481,
     "bfo_odds": [
      172,
      -222
     ],
     "p_distance": null,
-    "hours_before_start": 194.7
+    "hours_before_start": 177.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.3371,
-    "p_meandec_mult": 0.3454,
-    "p_sharp_shin": 0.3431,
+    "p_consensus": 0.3363,
+    "p_meandec_mult": 0.3443,
+    "p_sharp_shin": 0.3383,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.3364,
-    "n_books": 10,
+    "p_exchange_mult": 0.3419,
+    "n_books": 11,
     "bfo_p_a_novig": 0.3481,
     "bfo_odds": [
      172,
@@ -4782,9 +5314,9 @@
     ],
     "p_distance": null
    },
-   "move_open_to_last_pts": -0.0028,
-   "move_open_to_last_logit": -0.0125,
-   "n_captures": 4
+   "move_open_to_last_pts": -0.0019,
+   "move_open_to_last_logit": -0.0085,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-14:kayla-harrison__amanda-nunes",
@@ -4905,16 +5437,43 @@
       "b_dec": 0.1319,
       "draw": 0.0093
      }
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.6318,
+     "p_meandec_mult": 0.6255,
+     "p_sharp_shin": 0.6268,
+     "p_pinnacle_shin": 0.63334,
+     "p_exchange_mult": 0.6245,
+     "n_books": 21,
+     "bfo_p_a_novig": 0.6313,
+     "bfo_odds": [
+      -197,
+      158
+     ],
+     "p_distance": 0.3736,
+     "p_method": {
+      "a_ko": 0.0958,
+      "a_sub": 0.3071,
+      "a_dec": 0.2337,
+      "b_ko": 0.1988,
+      "b_sub": 0.0234,
+      "b_dec": 0.1319,
+      "draw": 0.0093
+     }
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-15T02:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.6436,
     "n_books": 18,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.6436,
@@ -4930,13 +5489,13 @@
       0.6582
      ],
      "last_pre_start": [
-      "2026-11-05T11:20:55Z",
-      -185,
-      157,
-      0.63
+      "2026-11-07T08:50:47Z",
+      -188,
+      159,
+      0.6333
      ],
-     "n_moves": 8,
-     "read_in": "20261106-2118",
+     "n_moves": 9,
+     "read_in": "20261107-1404",
      "format": "[t_utc, odds_a, odds_b, p_a_shin]"
     }
    },
@@ -4968,20 +5527,20 @@
     }
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.6281,
-    "p_meandec_mult": 0.6222,
-    "p_sharp_shin": 0.6249,
-    "p_pinnacle_shin": 0.63001,
-    "p_exchange_mult": 0.6185,
+    "p_consensus": 0.6318,
+    "p_meandec_mult": 0.6255,
+    "p_sharp_shin": 0.6268,
+    "p_pinnacle_shin": 0.63334,
+    "p_exchange_mult": 0.6245,
     "n_books": 21,
-    "bfo_p_a_novig": 0.6272,
+    "bfo_p_a_novig": 0.6313,
     "bfo_odds": [
-     -193,
-     156
+     -197,
+     158
     ],
     "p_distance": 0.3736,
     "p_method": {
@@ -4993,23 +5552,23 @@
      "b_dec": 0.1319,
      "draw": 0.0093
     },
-    "hours_before_start": 196.7
+    "hours_before_start": 179.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.6281,
-    "p_meandec_mult": 0.6222,
-    "p_sharp_shin": 0.6249,
-    "p_pinnacle_shin": 0.63001,
-    "p_exchange_mult": 0.6185,
+    "p_consensus": 0.6318,
+    "p_meandec_mult": 0.6255,
+    "p_sharp_shin": 0.6268,
+    "p_pinnacle_shin": 0.63334,
+    "p_exchange_mult": 0.6245,
     "n_books": 21,
-    "bfo_p_a_novig": 0.6272,
+    "bfo_p_a_novig": 0.6313,
     "bfo_odds": [
-     -193,
-     156
+     -197,
+     158
     ],
     "p_distance": 0.3736,
     "p_method": {
@@ -5022,9 +5581,9 @@
      "draw": 0.0093
     }
    },
-   "move_open_to_last_pts": -0.0155,
-   "move_open_to_last_logit": -0.0669,
-   "n_captures": 4
+   "move_open_to_last_pts": -0.0118,
+   "move_open_to_last_logit": -0.0511,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-14:macy-chiasson__bia-mesquita",
@@ -5109,16 +5668,34 @@
       -222
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.3415,
+     "p_meandec_mult": 0.3476,
+     "p_sharp_shin": 0.3376,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.3355,
+     "n_books": 9,
+     "bfo_p_a_novig": 0.3481,
+     "bfo_odds": [
+      172,
+      -222
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-14T22:00:00Z",
    "start_src": "cards_upcoming.json start_utc.early_prelims",
    "market_open": {
-    "p_open": 0.3429,
-    "n_books": 8,
-    "snapshot": "20261106-2118"
+    "p_open": 0.3418,
+    "n_books": 9,
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.3429,
@@ -5144,35 +5721,35 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.3426,
-    "p_meandec_mult": 0.3493,
-    "p_sharp_shin": 0.3422,
+    "p_consensus": 0.3415,
+    "p_meandec_mult": 0.3476,
+    "p_sharp_shin": 0.3376,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.3335,
-    "n_books": 8,
+    "p_exchange_mult": 0.3355,
+    "n_books": 9,
     "bfo_p_a_novig": 0.3481,
     "bfo_odds": [
      172,
      -222
     ],
     "p_distance": null,
-    "hours_before_start": 192.7
+    "hours_before_start": 175.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.3426,
-    "p_meandec_mult": 0.3493,
-    "p_sharp_shin": 0.3422,
+    "p_consensus": 0.3415,
+    "p_meandec_mult": 0.3476,
+    "p_sharp_shin": 0.3376,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.3335,
-    "n_books": 8,
+    "p_exchange_mult": 0.3355,
+    "n_books": 9,
     "bfo_p_a_novig": 0.3481,
     "bfo_odds": [
      172,
@@ -5182,7 +5759,7 @@
    },
    "move_open_to_last_pts": -0.0003,
    "move_open_to_last_logit": -0.0013,
-   "n_captures": 4
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-14:stephen-thompson__charles-radtke",
@@ -5267,16 +5844,34 @@
       104
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.5415,
+     "p_meandec_mult": 0.5389,
+     "p_sharp_shin": 0.5394,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.5229,
+     "n_books": 11,
+     "bfo_p_a_novig": 0.5347,
+     "bfo_odds": [
+      -129,
+      104
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-15T00:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
-    "p_open": 0.539,
-    "n_books": 9,
-    "snapshot": "20261106-2118"
+    "p_open": 0.5397,
+    "n_books": 10,
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.539,
@@ -5302,35 +5897,35 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.5538,
-    "p_meandec_mult": 0.5485,
-    "p_sharp_shin": 0.5463,
+    "p_consensus": 0.5415,
+    "p_meandec_mult": 0.5389,
+    "p_sharp_shin": 0.5394,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.5309,
-    "n_books": 10,
+    "p_exchange_mult": 0.5229,
+    "n_books": 11,
     "bfo_p_a_novig": 0.5347,
     "bfo_odds": [
      -129,
      104
     ],
     "p_distance": null,
-    "hours_before_start": 194.7
+    "hours_before_start": 177.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.5538,
-    "p_meandec_mult": 0.5485,
-    "p_sharp_shin": 0.5463,
+    "p_consensus": 0.5415,
+    "p_meandec_mult": 0.5389,
+    "p_sharp_shin": 0.5394,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.5309,
-    "n_books": 10,
+    "p_exchange_mult": 0.5229,
+    "n_books": 11,
     "bfo_p_a_novig": 0.5347,
     "bfo_odds": [
      -129,
@@ -5338,9 +5933,9 @@
     ],
     "p_distance": null
    },
-   "move_open_to_last_pts": 0.0148,
-   "move_open_to_last_logit": 0.0597,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0018,
+   "move_open_to_last_logit": 0.0072,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-14:uros-medic__kevin-holland",
@@ -5425,16 +6020,34 @@
       138
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.6114,
+     "p_meandec_mult": 0.6063,
+     "p_sharp_shin": 0.612,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.6272,
+     "n_books": 17,
+     "bfo_p_a_novig": 0.6015,
+     "bfo_odds": [
+      -173,
+      138
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-15T02:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
-    "p_open": 0.5942,
-    "n_books": 13,
-    "snapshot": "20261106-2118"
+    "p_open": 0.5952,
+    "n_books": 14,
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.5942,
@@ -5460,35 +6073,35 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.614,
-    "p_meandec_mult": 0.6081,
-    "p_sharp_shin": 0.6039,
+    "p_consensus": 0.6114,
+    "p_meandec_mult": 0.6063,
+    "p_sharp_shin": 0.612,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.6176,
-    "n_books": 16,
+    "p_exchange_mult": 0.6272,
+    "n_books": 17,
     "bfo_p_a_novig": 0.6015,
     "bfo_odds": [
      -173,
      138
     ],
     "p_distance": null,
-    "hours_before_start": 196.7
+    "hours_before_start": 179.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
-    "p_consensus": 0.614,
-    "p_meandec_mult": 0.6081,
-    "p_sharp_shin": 0.6039,
+    "p_consensus": 0.6114,
+    "p_meandec_mult": 0.6063,
+    "p_sharp_shin": 0.612,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.6176,
-    "n_books": 16,
+    "p_exchange_mult": 0.6272,
+    "n_books": 17,
     "bfo_p_a_novig": 0.6015,
     "bfo_odds": [
      -173,
@@ -5496,9 +6109,9 @@
     ],
     "p_distance": null
    },
-   "move_open_to_last_pts": 0.0198,
-   "move_open_to_last_logit": 0.0828,
-   "n_captures": 4
+   "move_open_to_last_pts": 0.0162,
+   "move_open_to_last_logit": 0.0677,
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-21:aleksandre-topuria__santiago-luna",
@@ -5512,7 +6125,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-21T18:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
@@ -5530,7 +6143,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-21T18:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
@@ -5548,7 +6161,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-21T15:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
@@ -5566,7 +6179,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-21T18:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
@@ -5584,7 +6197,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-11-21T15:00:00Z",
    "start_src": "event lock (cards_upcoming.json)",
@@ -5602,7 +6215,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-21T15:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
@@ -5620,7 +6233,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-21T18:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
@@ -5709,16 +6322,34 @@
       -138
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.4359,
+     "p_meandec_mult": 0.4401,
+     "p_sharp_shin": 0.4356,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": null,
+     "n_books": 6,
+     "bfo_p_a_novig": 0.4509,
+     "bfo_odds": [
+      110,
+      -138
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-21T18:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.4375,
     "n_books": 6,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.4375,
@@ -5744,8 +6375,8 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
     "p_consensus": 0.4359,
@@ -5760,11 +6391,11 @@
      -138
     ],
     "p_distance": null,
-    "hours_before_start": 356.7
+    "hours_before_start": 339.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
     "p_consensus": 0.4359,
@@ -5782,7 +6413,7 @@
    },
    "move_open_to_last_pts": -0.0016,
    "move_open_to_last_logit": -0.0065,
-   "n_captures": 4
+   "n_captures": 5
   },
   {
    "bout_id": "2026-11-21:kyoji-horiguchi__asu-almabayev",
@@ -5796,7 +6427,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-21T18:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
@@ -5814,7 +6445,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-11-21T15:00:00Z",
    "start_src": "event lock (cards_upcoming.json)",
@@ -5832,7 +6463,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-11-21T15:00:00Z",
    "start_src": "cards_upcoming.json start_utc.prelims",
@@ -5850,7 +6481,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
    "start_src": "event lock (estimate)",
@@ -5868,7 +6499,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
    "start_src": "event lock (estimate)",
@@ -5886,7 +6517,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
    "start_src": "event lock (estimate)",
@@ -5904,7 +6535,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
    "start_src": "event lock (estimate)",
@@ -5922,7 +6553,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
    "start_src": "event lock (estimate)",
@@ -5940,7 +6571,7 @@
    "rounds": 5,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
    "start_src": "event lock (estimate)",
@@ -5958,7 +6589,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
    "start_src": "event lock (estimate)",
@@ -5976,7 +6607,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
    "start_src": "event lock (estimate)",
@@ -5994,7 +6625,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
    "start_src": "event lock (estimate)",
@@ -6012,7 +6643,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
    "start_src": "event lock (estimate)",
@@ -6030,7 +6661,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-12T22:00:00Z",
    "start_src": "event lock (cards_upcoming.json)",
@@ -6048,7 +6679,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-12T22:00:00Z",
    "start_src": "event lock (cards_upcoming.json)",
@@ -6066,7 +6697,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-12-13T02:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
@@ -6155,16 +6786,34 @@
       123
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.5755,
+     "p_meandec_mult": 0.5717,
+     "p_sharp_shin": 0.5708,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": null,
+     "n_books": 13,
+     "bfo_p_a_novig": 0.5767,
+     "bfo_odds": [
+      -156,
+      123
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-12-13T02:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.5849,
     "n_books": 12,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.5849,
@@ -6190,8 +6839,8 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
     "p_consensus": 0.5755,
@@ -6206,11 +6855,11 @@
      123
     ],
     "p_distance": null,
-    "hours_before_start": 868.7
+    "hours_before_start": 851.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
     "p_consensus": 0.5755,
@@ -6228,7 +6877,7 @@
    },
    "move_open_to_last_pts": -0.0094,
    "move_open_to_last_logit": -0.0386,
-   "n_captures": 4
+   "n_captures": 5
   },
   {
    "bout_id": "2026-12-12:chase-hooper__chris-padilla",
@@ -6242,7 +6891,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-12T22:00:00Z",
    "start_src": "event lock (cards_upcoming.json)",
@@ -6260,7 +6909,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "rumoured",
    "start_utc": "2026-12-12T22:00:00Z",
    "start_src": "event lock (cards_upcoming.json)",
@@ -6278,7 +6927,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-12T22:00:00Z",
    "start_src": "event lock (cards_upcoming.json)",
@@ -6296,7 +6945,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-12-12T22:00:00Z",
    "start_src": "cards_upcoming.json start_utc.early_prelims",
@@ -6314,7 +6963,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-12T22:00:00Z",
    "start_src": "event lock (cards_upcoming.json)",
@@ -6332,7 +6981,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-12T22:00:00Z",
    "start_src": "event lock (cards_upcoming.json)",
@@ -6421,16 +7070,34 @@
       160
      ],
      "p_distance": null
+    },
+    {
+     "snapshot": "20261107-1404",
+     "t": "2026-11-07T14:04:12Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.6437,
+     "p_meandec_mult": 0.6377,
+     "p_sharp_shin": 0.6436,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": null,
+     "n_books": 14,
+     "bfo_p_a_novig": 0.6354,
+     "bfo_odds": [
+      -203,
+      160
+     ],
+     "p_distance": null
     }
    ],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "official",
    "start_utc": "2026-12-13T02:00:00Z",
    "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.6141,
     "n_books": 12,
-    "snapshot": "20261106-2118"
+    "snapshot": "20261107-1404"
    },
    "market_open_first_read": {
     "p_open": 0.6141,
@@ -6456,8 +7123,8 @@
     "p_distance": null
    },
    "last_pre_start": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
     "p_consensus": 0.6437,
@@ -6472,11 +7139,11 @@
      160
     ],
     "p_distance": null,
-    "hours_before_start": 868.7
+    "hours_before_start": 851.9
    },
    "last_pre_lock": {
-    "snapshot": "20261106-2118",
-    "t": "2026-11-06T21:18:20Z",
+    "snapshot": "20261107-1404",
+    "t": "2026-11-07T14:04:12Z",
     "phase": "pre_start",
     "pre_lock": true,
     "p_consensus": 0.6437,
@@ -6494,7 +7161,7 @@
    },
    "move_open_to_last_pts": 0.0296,
    "move_open_to_last_logit": 0.1269,
-   "n_captures": 4
+   "n_captures": 5
   },
   {
    "bout_id": "2026-12-12:yair-rodriguez__steve-garcia",
@@ -6508,7 +7175,7 @@
    "rounds": 3,
    "title": false,
    "captures": [],
-   "last_seen": "20261106-2118",
+   "last_seen": "20261107-1404",
    "status": "reported",
    "start_utc": "2026-12-12T22:00:00Z",
    "start_src": "event lock (cards_upcoming.json)",
