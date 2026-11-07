@@ -45,7 +45,7 @@
   else root.FightEngine = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (FP0, root, MLR0) {
   "use strict";
-  var VERSION = "6.0.0";   // v5.0.1: v5 (5.0.0, the v5 merge on v4.0.0 + Calibrate A's flags + Calibrate B's levels) + the v5 review's fixes (input guards, dates, rounds, judges, params loading, durability fallback level, dynamics noise and the knockdown level chosen on train); docs/CHANGELOG.md v5.0.1
+  var VERSION = "6.0.0";   // v6 (docs/V6_V10_PLAN.md cycle 1; docs/CHANGELOG.md v6): the v5.0.1 simulator re-bundled (V6_V10_PLAN 6.1) with the joint level pass rerun on fold-honest inputs (params v501.set.levels), m.embed.eta kept for the stat-line bands; the prediction package (src/ml/blend.js 1.2.0) takes ML v2 head stacks by line regime, S2 cells, the debut method path and distributional stat lines. Before, v5.0.1: v5 (5.0.0, the v5 merge on v4.0.0 + Calibrate A's flags + Calibrate B's levels) + the v5 review's fixes (input guards, dates, rounds, judges, params loading, durability fallback level, dynamics noise and the knockdown level chosen on train); docs/CHANGELOG.md v5.0.1
 
   // Sum keys (spec order; profiles may carry their own order in meta.keys / prof.keys)
   var KEYS = ["min", "n", "rds", "d_att", "d_lnd", "c_att", "c_lnd", "g_att", "g_lnd", "h_att", "h_lnd", "b_att", "b_lnd",

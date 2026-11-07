@@ -315,7 +315,10 @@
       sims: 1000,          // simulations per corner order in predict() (both orders are run and averaged; exact corner symmetry)
       symmetric: true,     // run A-B and B-A (common random numbers in the anchor search)
       smooth: 0.5,         // Jeffreys pseudo-count per method x round cell on the simulated counts (an unseen outcome is not p = 0)
-      mrWeight: 0.3,       // __MRWEIGHT__ weight of the rescaled simulator cells in the method x round pool; the rest is the method/round
+      mrWeight: 0.35,      // engine v6: refit for the S2 pool on the v6 engine (tools/predict_score.py, the w in 0..1 step 0.05 minimising the
+                           // no-line package's joint method x round log loss on 2019-2023: 0.35; forward-chained fits for 2021 / 2022 / 2023:
+                           // 0.45 / 0.35 / 0.35, used by the train gate; data/derived/v6/gate_train_score.json). Before (v5, S pool): 0.30.
+                           // __MRWEIGHT__ weight of the rescaled simulator cells in the method x round pool; the rest is the method/round
                            // model S/SM (tools/methodround_model.js) rescaled to the same P(win). Leave-one-year-out 2019-2023 optimum
                            // of the joint method x round log loss. v5 Calibrate B (rebuilt on the final v5 engine, research/v5_calB.md):
                            // 0.30, per-fold optima 0.30-0.40, joint 2.1368 (the v4-engine cells: 0.15, per fold 0.10-0.20, 2.1415)

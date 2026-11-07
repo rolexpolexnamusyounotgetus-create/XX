@@ -1,0 +1,19 @@
+PASS  fixtures engine3_pre_calB.js / params3_pre_calB.js are the Calibrate A commit's (2e24835) src files byte for byte  (byte for byte)
+PASS  the Calibrate A engine is step 5's (5251206) byte for byte  (engine code unchanged)
+PASS  fixture params3_pre_calA.js is step 5's src/params3.js (5251206)  (byte for byte)
+PASS  defaults: the components block set by Calibrate A  ({"v401":{"emJudge":true,"deductions":true,"mlLevels":false,"tdCap":true,"koTargets":true},"durability":true,"dynamics":true,"styles_sos":{"styles":false,"sos":true,"newcomer":false},"officials":false,"realism_sens":false,"embed":true,"oppadj":false,"preufc":true,"blend_anchor":true})
+PASS  params: only the components block and the version label changed  (5.0.0-dev.5-selfcal-pre2024 -> 5.0.0-dev.6-selfcal-pre2024)
+engine 5.0.0-dev (params 5.0.0-dev.6-selfcal-pre2024; step 5 params 5.0.0-dev.5-selfcal-pre2024); 150 random matchups per group
+step 5 components {"v401":{"emJudge":true,"deductions":true,"mlLevels":true,"tdCap":true,"koTargets":true},"durability":true,"dynamics":true,"styles_sos":{"styles":false,"sos":true,"newcomer":false},"officials":false,"realism_sens":false,"embed":true,"oppadj":false,"preufc":true,"blend_anchor":true}
+new components    {"v401":{"emJudge":true,"deductions":true,"mlLevels":false,"tdCap":true,"koTargets":true},"durability":true,"dynamics":true,"styles_sos":{"styles":false,"sos":true,"newcomer":false},"officials":false,"realism_sens":false,"embed":true,"oppadj":false,"preufc":true,"blend_anchor":true}
+PASS  2a. old defaults explicit = step-5 engine: random pairs, learned rates, durability roster, SOS + step-4 inputs: identical fights (JSON incl. trace), summaries and explain()  (150 matchups (150 learned rates, 0 durability records), 1500 fights, 15 summaries; 0 fight / 0 summary mismatches)
+PASS  2b. old defaults explicit = step-5 engine: random pairs, plain tables: identical fights (JSON incl. trace), summaries and explain()  (150 matchups (0 learned rates, 0 durability records), 1500 fights, 15 summaries; 0 fight / 0 summary mismatches)
+PASS  2c. old defaults explicit = step-5 engine: 2019-2023 backtest fights x 2 orders, every walk-forward input: identical fights (JSON incl. trace), summaries and explain()  (150 matchups (150 learned rates, 150 durability records), 1500 fights, 15 summaries; 0 fight / 0 summary mismatches)
+PASS  old defaults: identity covers >= 300 matchups incl. traced fights  (450 matchups)
+PASS  3a. new defaults = step-5 engine with the new components block: random pairs, learned rates, roster: identical fights (JSON incl. trace), summaries and explain()  (150 matchups (150 learned rates, 0 durability records), 1500 fights, 15 summaries; 0 fight / 0 summary mismatches)
+PASS  3c. new defaults = step-5 engine with the new components block: backtest fights: identical fights (JSON incl. trace), summaries and explain()  (150 matchups (150 learned rates, 150 durability records), 1500 fights, 15 summaries; 0 fight / 0 summary mismatches)
+PASS  new defaults: >= 300 matchups  (300 matchups)
+PASS  4. components: false on both = the plain v4 path of the step-5 engine (backtest fights): identical fights (JSON incl. trace), summaries and explain()  (150 matchups (150 learned rates, 150 durability records), 1500 fights, 15 summaries; 0 fight / 0 summary mismatches)
+PASS  default fights change iff the components block changed  (40 of 40 backtest fights differ; block changed: true)
+
+14 passed, 0 failed

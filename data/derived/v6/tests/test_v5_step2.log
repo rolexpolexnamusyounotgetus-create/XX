@@ -1,0 +1,6 @@
+PASS  fixture engine3_pre_durability.js is src/engine3.js of the step-1 commit 9656818  (byte for byte)
+PASS  reference engines load (step 1: no durability API; pre-dynamics: durability API)  (versions 5.0.0-dev / 5.0.0-dev)
+PASS  default params: durability and dynamics on, dyn.stkoHurtGate off  ({"v401":{"emJudge":true,"deductions":true,"mlLevels":false,"tdCap":true,"koTargets":true},"durability":true,"dynamics":true,"styles_sos":{"styles":false,"sos":true,"newcomer":false},"officials":false,"realism_sens":false,"embed":true,"oppadj":false,"preufc":true,"blend_anchor":true,"calB":true,"v501":{"durFallback":true,"dynNoise":true,"kdBase":true,"levels":true}})
+engine 6.0.0 (params 6.0.0-selfcal-pre2024); 150 random matchups per group
+PASS  durability + dynamics off = step-1 engine, a. random pairs, production learned rates, live durability roster: identical fights (JSON incl. trace), summaries and explain()  (150 matchups (150 with learned rates), 1500 fights, 15 summaries; 0 fight / 0 summary mismatches)
+PASS  durability + dynamics off = step-1 engine, b. random pairs, plain tables (ml: false), no roster: identical fights (JSON incl. trace), summaries and explain()  (150 matchups (0 with learned rates), 1500 fights, 15 summaries; 0 fight / 0 summary mismatches)
