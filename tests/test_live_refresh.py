@@ -132,6 +132,12 @@ def part2():
     ok((r["Cesar Almeida vs. Cezary Oleksiejczuk"] or "").startswith("finish vs decision"), "2. changed finish class is held out")
     ok((r["Jamey-Lyn Horth vs. Tereza Bleda"] or "").startswith("not listed"), "2. a bout missing on ESPN is held out")
     ok(sum(v is None for v in r.values()) == 8, "2. the other 8 bouts still pass")
+    t2 = copy.deepcopy(comps)
+    for c in t2:
+        if "kennedy nzechukwu" in c["names"]:                     # the draw (no winner on either source)
+            c["clock"] = "2:10"
+    ok((run(t2)["Kennedy Nzechukwu vs. Marcus Buchecha"] or "").startswith("finish vs decision"),
+       "2. a draw whose finish class differs is held out (the rule covers draws and no contests too)")
     sr = LR.greco_stat_rounds(raw, {"UFC Fight Night: Royval vs. Kape"})
     for k in sr:
         if k[1] == "Sean Sharaf vs. Steven Asplund":
@@ -159,6 +165,60 @@ def part3(tmp):
     ok(not any(r["BOUT"].strip() == "Brandon Royval vs. Manel Kape" for r in rows), "3. held-out bout dropped")
     ok(sum(r["EVENT"].strip() == "UFC Fight Night: Royval vs. Kape" for r in rows) == 11, "3. the rest of its card kept")
     print("3. filtered CSV copies: byte copies when nothing drops; late events and held-out bouts removed")
+    # pinned period (README v4.4 section 2): an upstream copy that rewrites one Oct 31 stats row and adds a later event
+    up = os.path.join(tmp, "upstream")
+    os.makedirs(up)
+    new_ev = "SYNTHETIC LATER EVENT (not a real card)"
+    for f in LR.GRECO_FILES:
+        h, rows = LR.read_csv_rows(os.path.join(raw, f))
+        add = []
+        if f == "ufc_event_details.csv":
+            r2 = list(rows[0])
+            r2[h.index("EVENT")], r2[h.index("DATE")] = new_ev, "November 07, 2026"
+            add = [r2]
+        elif f == "ufc_fight_results.csv":
+            r2 = list(rows[0])
+            r2[h.index("EVENT")] = new_ev
+            add = [r2]
+        if f == "ufc_fight_stats.csv":
+            rows[0] = list(rows[0])
+            rows[0][h.index("SIG.STR.")] = "999 of 999"            # an upstream rewrite of a pinned-period row
+        with open(os.path.join(up, f), "w", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(h)
+            w.writerows(add + rows)
+    mg = os.path.join(tmp, "merged")
+    mi = LR.merge_pinned(up, raw, mg)
+    st = list(csv.DictReader(open(os.path.join(mg, "ufc_fight_stats.csv"), newline="", encoding="utf-8")))
+    ok(not any(r["SIG.STR."] == "999 of 999" for r in st) and open(os.path.join(mg, "ufc_fight_stats.csv"), "rb").read()
+       == open(os.path.join(raw, "ufc_fight_stats.csv"), "rb").read(), "3. merge: a rewritten pinned-period row is the pinned row")
+    ok(mi["ufc_fight_stats.csv"] == {"later_event_rows": 0, "pinned_period_rows_only_upstream": 1, "pinned_period_rows_only_pinned": 1},
+       "3. merge: the rewrite is counted (%s)" % mi["ufc_fight_stats.csv"])
+    rs = LR.read_csv_rows(os.path.join(mg, "ufc_fight_results.csv"))[1]
+    ok(rs[0][0].strip() == new_ev and rs[1:] == LR.read_csv_rows(os.path.join(raw, "ufc_fight_results.csv"))[1]
+       and mi["ufc_fight_results.csv"]["later_event_rows"] == 1, "3. merge: later-event rows first, then the pinned rows")
+    ok(LR.event_dates(mg)[new_ev] == "2026-11-07", "3. merge: the later event keeps its date")
+    print("3. pinned period: rows of events up to %s come from the pinned CSVs; upstream rewrites are counted" % LR.PIN_SNAPSHOT)
+
+
+# ---------------------------------------------------------------- 3b. odds: pre-fight captures only
+def part3b(tmp):
+    T = {"bouts": [{"date": "2026-11-07", "A": "X One", "B": "Y Two", "A_slug": "x-one", "B_slug": "y-two",
+                    "start_utc": "2026-11-07T22:00:00Z", "bout_id": "b1",
+                    "captures": [{"t": "2026-11-06T10:00:00Z", "phase": "pre_start", "bfo_p_a_novig": 0.60},
+                                 {"t": "2026-11-07T21:00:00Z", "phase": "pre_start", "bfo_p_a_novig": 0.62},
+                                 {"t": "2026-11-07T22:30:00Z", "phase": "pre_start", "bfo_p_a_novig": 0.90},
+                                 {"t": "2026-11-08T09:00:00Z", "phase": "post_start", "bfo_p_a_novig": 0.99},
+                                 {"t": "2026-11-07T21:30:00Z", "phase": "pre_start", "bfo_p_a_novig": None}]},
+                   {"date": "2026-11-07", "A": "Z Three", "B": "W Four", "A_slug": "z-three", "B_slug": "w-four",
+                    "start_utc": "2026-11-07T22:00:00Z", "bout_id": "b2",
+                    "captures": [{"t": "2026-11-07T23:00:00Z", "phase": "pre_start", "bfo_p_a_novig": 0.5}]}]}
+    p = os.path.join(tmp, "timeline.json")
+    json.dump(T, open(p, "w"))
+    L = {x["bout_id"]: x for x in LR.odds_close_lines(p)}
+    ok(set(L) == {"b1"} and L["b1"]["p_a"] == 0.62 and L["b1"]["captured_utc"] == "2026-11-07T21:00:00Z",
+       "3b. odds: the last capture before the bout's start; captures at or after it (even marked pre_start) never used")
+    print("3b. odds: closing proxy = last capture before the start (post-start and late pre_start captures excluded)")
 
 
 # ---------------------------------------------------------------- 4. guards and check_live
@@ -303,6 +363,7 @@ def main():
     part1()
     part2()
     part3(tmp)
+    part3b(tmp)
     part4(tmp)
     part5()
     if not QUICK:

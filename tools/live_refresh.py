@@ -763,11 +763,21 @@ def odds_close_lines(timeline_path):
         return []
     T = jload(timeline_path)
     out = []
+
+    def utc(s):
+        try:
+            return dt.datetime.fromisoformat(str(s).replace("Z", "+00:00"))
+        except Exception:
+            return None
     for b in T.get("bouts", []):
-        caps = [c for c in b.get("captures", []) if c.get("phase") == "pre_start" and c.get("bfo_p_a_novig") is not None]
+        # phase was set against the start known at capture time; the bout's latest start_utc is checked as well, so a
+        # capture made after a start that moved earlier is never a "pre-fight" line
+        st = utc(b.get("start_utc"))
+        caps = [c for c in b.get("captures", []) if c.get("phase") == "pre_start" and c.get("bfo_p_a_novig") is not None
+                and utc(c.get("t")) is not None and (st is None or utc(c.get("t")) < st)]
         if not caps:
             continue
-        c = caps[-1]
+        c = max(caps, key=lambda x: utc(x.get("t")))
         out.append({"date": b["date"], "A": b.get("A"), "B": b.get("B"), "A_slug": b.get("A_slug"), "B_slug": b.get("B_slug"),
                     "p_a": c["bfo_p_a_novig"], "captured_utc": c.get("t"), "snapshot": c.get("snapshot"),
                     "start_utc": b.get("start_utc"), "bout_id": b.get("bout_id")})
