@@ -5,6 +5,116 @@ Each engine version records its held-out numbers here (docs/ROADMAP.md). From v4
 2026-01-01 is in the sealed vault (docs/BACKLOG.md "Hidden-data protocol"). Older entries that say "test" meant 2024-01-01 to the
 snapshot; that window is retired.
 
+## v6 review (2026-11-07): review issues reproduced and fixed; no new version, v6 stays rejected, v4 (4.0.0) stays
+
+**Outcome.** I reproduced every issue in the v6 review and fixed each one that was real. None of the fixes changes a scored
+backtest number of the v6 package: blend.js 1.2.1 against the frozen 1.2.0 is identical on 450 of 450 harness rows. So there
+is no 6.0.1 and no new look. The comparator and refit-schedule fixes belong to the v7 protocol, and re-deciding v6 on 2024-25
+would be selection. The v6 decision stands: rejected on its pre-registered primary, open winner -0.00245 [-0.00588, +0.00099].
+src/ still equals versions/v4 (sha256 6c661f68 / e16a6481 / b563032d). The review computed no 2024-25 number and read no 2026
+fight. Records: version_history.json v6 `review` and `prereg.train_gate.review_relabel` (new keys; the pre-registration text
+is unchanged); data/derived/v6/review/; docs/V6_V10_PLAN.md 7.1 item 10 (the rules for v7-v10).
+
+### Train gate: relabelled "failed as first run; passes only under a comparator chosen after the failure"
+
+The comparator definition was not fixed before the gate (data/derived/v6/review/gate_runs_provenance.json):
+
+| time (UTC) | run | inputs | result |
+|---|---|---|---|
+| 06:16-06:20 | dev runs on src (git only) | pooled learned-rate table fed to both | 06:20 scored PASS; not binding (v6 inputs not yet fold-honest) |
+| 06:23-06:31 | fold-honest refits | | |
+| 06:40 | gate_train_dev.json (src) | fold-honest inputs fed to BOTH | **FAIL**: no-line winner -0.00535 [-0.0113, +0.00058], close -0.00282 [-0.00614, +0.00055] |
+| 06:50 | gate_train_shared.json (frozen) | same | **FAIL**, same p for every fight |
+| 06:52 | the own-inputs harness option written (autosave 5121e16) | | |
+| 06:53 | gate_train.json (frozen) | each package on its own pipeline | PASS 9 of 9 |
+
+v6's p is identical in all three post-refit runs. Only the comparator moved, because its MoE stack carries the simulator as
+an expert (weight 0.18-0.55 in the no-line blocks). tools/predict_score.py listed the comparator rule among the rules "fixed
+before the gate (~06:25 UTC)", with the time "~07:00" and a reason that does not hold (the refits predate both failing
+runs). I corrected the docstring. The prereg disclosed the 06:50 run, but not the 06:40 run or that the option came after
+both failures.
+
+Even under the chosen comparator, the no-line check passed by bootstrap noise. At 2,000 resamples, the 97.5% bound across 50
+seeds ran from -0.00052 to +0.00024 (median -0.00015), and 24% of seeds fail. The clustered normal upper bound is -0.00016.
+
+Re-scored at 20,000 resamples with the new marginal rule (data/derived/v6/review/*_rescore_B20000.json):
+
+| gate run | open winner upper | no-line winner upper | close winner upper | verdict |
+|---|---|---|---|---|
+| own inputs (06:53) | -0.00126 | -0.00017 (MC SE 0.00006; normal -0.00016) | +0.00003 | PASS |
+| shared inputs (06:40 / 06:50) | -0.00036 | +0.00066 | +0.00054 (marginal; normal +0.00057 > +0.0005) | FAIL |
+
+Neither variant gives the v5.0.1 package a comparator fit only on earlier years:
+- Its learned-rate stack weights are pooled over 2019-2023.
+- Its embedding recipe is leave-one-year-out.
+- cmp_stack_v501_fit2020-2023 were fit on evalv v5.0.1 rows built from those inputs.
+
+Consequences:
+- The plan's "no look unless the gate passes" was not honestly met. The look ran anyway and rejected v6.
+- Cycle 1's parts are **not gate-passed** for the 6.1 re-bundle. They can enter v7 only through v7's own gate.
+
+### Pre-registration and look design (no re-decision)
+- **Power.** The registered power (about 0.85 at -0.004) was borrowed from a different comparison. From the gate's paired SE
+  for this exact contrast (normal SE 0.00253 on 1,222 fights, 0.00305 scaled to 842), the MDE was 0.0085 and the power at
+  -0.004 was **0.26** (`python3 tools/predict_score.py power`; data/derived/v6/review/power_open_v6.json). The realised look
+  SE (half-width 0.0034) gives about 0.6. The expected -0.004 came from a static-MoE comparator, not the per-card refits used.
+- **Refit schedules.** In the look, the comparator's ML and feature-LR experts were refit inside 2024 (425 of 433 rows) and
+  2025 (423 of 432), while v6's ML v2 head stayed at its static pre-2024 fit. In the gate, both were refit annually. Not
+  re-decided. v7 uses one schedule for both (7.1 item 10 c, recorded as validation-informed).
+- **Decision text.** It said every point estimate favours v6. It now says every winner log-loss point estimate does
+  (`decision.context`; the original is kept in `context_as_written`).
+- **Tolerated test.** test_engine3's "Women's Flyweight: base rates within tolerance" failed on the frozen v6 files. It was
+  tolerated by narrowing the voiding rule. From v7 on, every tolerated test is named in the prereg.
+- **Ledger row.** The v6 row first appears in autosave 633285e (07:04:42), together with the look output (07:03:51). The
+  harness now refuses `--split val` unless HEAD already has the row.
+- **Provenance.** gate_train_shared_score.json `meta.input` now names gate_train_shared.json (`input_as_written` kept;
+  re-scoring reproduces it exactly). gate_train_shared.log is annotated.
+- **mrCells label.** tools/predictrec.js labelled the 2025 static S / SM cells "fit through 2024-12-31", taking the date
+  from the refit. They now carry their true r.fit_through (2023-12-31). Train cells and labels are unchanged on 5,997 rows,
+  and the cells themselves never changed.
+
+### Package fixes: src/ml/blend.js 1.2.1 (not part of any kept version; the v4 engine does not load it)
+
+| issue | reproduced (frozen 1.2.0, v6 engine) | fix (1.2.1) |
+|---|---|---|
+| debut / manual bout drops the line | Dan Hooker vs a manual debutant, opener -300 / +240 (line 0.718): p 0.348, source `engine`, debut path off (manualProfile turns n_fights 0 into null) | line-only stack of that line kind (tools/line_stack.py -> data/derived/line_stack.json; fit 2019-2023, mirrored, no intercept: open slope 1.142, close 1.033): p 0.744, source `line`. isDebutant reads record.ufc / ufc_fights, so the debut path runs. Winner `stack` keeps 1.1.1 behaviour, flagged `lineDropped` |
+| interval degenerate / uncalibrated | no MoE stack loaded, Volkanovski vs Gaethje: sdLogit 1e-15; with it on, the v5 kappa 2.15 applied to a wider construction | the head stack takes the profile-noise shift without the MoE handle (sd 0.357). Own kappa from tools/v6_kappa.js on 2021-2023: no line 1.257, open 1.369, close = open (judgment). Raw cover of the close 69% / 65%; out of fold 79.7% / 79.7% at 80% and 94.0% / 93.5% at 95% |
+
+Backtest identity: every backtest row is `ml2stack` (v6) or `stack` (v5), so the fixes never reach them.
+- tools/predict_harness.js on the last 150 train fights in three regimes: 450 of 450 rows identical.
+- tests/test_blend121.js, which runs the frozen v6 engine with 1.2.1: 19 of 19 pass, with 24 / 24 identical rows under both
+  v6 and v5 settings.
+- test_v6 (16 / 16), test_blend_anchor (64 / 64) and test_v5_step5 (31 / 31) pass with 1.2.1 (data/derived/v6/review/tests/).
+
+### Live knockdown level: reproduced; no live path uses it
+tools/live_parity.js (new) runs versions/v6-rejected on the same train fights and fighter records in two arms:
+- Analytic: the live knockdown base is 1.313x the walk-forward base (geometric mean; 1.19-1.42 by year).
+- Simulated (120 fights x 200 sims): KD per 100 head 0.745 -> 0.961 (x1.29), finish rate 46.0% -> 50.4%.
+- Result: **FAIL** (data/derived/v6/review/live_parity_v6.json).
+
+The page and the forward ledger run v4 and the ML v2 stacks, so nothing live changed. v6-rejected's durability level
+(trailing 730 days at Oct 31, 2026) and terms_live (fit through 2026-10-31) used vault fights and are marked "not for live
+use". Any version that carries durability must pass live_parity, with its level, terms and norms set by the deployment rule
+fixed in 7.1 item 10 (g) before any number is computed. v4 passes trivially (no durability).
+
+### Page
+Page pass 3 (commit ca421cc, another agent, 07:47 UTC) already routes any typed line to the open-trained ML v2 stack (close
+only by an explicit toggle) and makes the method cells line-independent, through src/ml/pagepredict.js. The v6 package is
+rejected and stays off the page. The engine-side "refuse instead of falling back to summarize" and "keep n_fights 0" are v7
+engine requirements (7.1 item 10 h).
+
+### Tools and tests
+- tools/predict_score.py: corrected docstring; 20,000 resamples by default (vectorised, with the same draws as before for
+  the same B and seed); Monte Carlo SE and clustered normal bound for every check; the marginal rule; a `power` subcommand.
+  `--B 2000` reproduces the recorded v6 gate exactly.
+- tools/predict_harness.js: a binding run (`--split val` or `--binding`) needs `--protocol <committed file>`. It refuses an
+  untracked or modified protocol, a mismatched command line, an existing output (so a binding run happens once) and, for a
+  look, a ledger row missing from HEAD.
+- New: tools/line_stack.py, tools/v6_kappa.js, tools/live_parity.js, tests/test_blend121.js, tests/test_predict_score.py.
+- versions/v6-rejected/tools/ keeps the look-time harness, scorer, predictrec and wiring check (hashes = the prereg).
+- Tests on src (v4 plus the review changes): 26 of 26 pass. test_engine3 69 / 69; director 300 / NO_ML 100 / FUZZ 600; page
+  parity 11 / 11; every component test; test_blend121 19 / 19; test_predict_score 7 / 7.
+
 ## v6 (2026-11-07): ML v2 heads in predict(), validated once and REJECTED; v4 (4.0.0) stays
 
 **Status: rejected by the pre-registered decision rule (branch 1).** src/ holds v4 again (hashes = the v4 entry); the work is
@@ -78,14 +188,17 @@ learned on in-sample train rows (biased upward).
   the engine-level secondaries. Both comparisons give the same answer.
 
 ### Read this honestly
-- Every v6-minus-v5.0.1 point estimate in all three regimes favours v6 (winner -0.0023 to -0.0032, 7-bin -0.006 to -0.007),
-  and no CI excludes 0. The size matches the plan's expectation (-0.004 open, -0.005 no line, -0.002 close) and falls short
+- Every winner log-loss point estimate (v6 minus v5.0.1) in all three regimes favours v6 (-0.0023 to -0.0032), and so do
+  the 7-bin ones (-0.006 to -0.007); no CI excludes 0. [Corrected by the v6 review: this line first said "every point
+  estimate", which overstated the secondaries: close method +0.0006, accuracy -0.0023 (no line) and -0.0047 (close), the
+  no-line calibration slope 1.323 vs 1.281 and soft CE vs the close +0.00132 all lean to v5.0.1.] The size matches the plan's expectation (-0.004 open, -0.005 no line, -0.002 close) and falls short
   of the train gate (-0.0061 open). The gate's optimism was stated in advance: ML v2's blocks and settings were chosen by CV on
   years that include 2021-23. This was a confirmation look, so the result is mostly a wiring check, and the wiring held
   (routing, fits and S2 cells as registered; cells identical across line kinds).
 - The train-gate pass depended on how the comparator was defined, and that definition was fixed after a failing sensitivity
   run (disclosed in the prereg). The look used the pre-registered definition. With v6 rejected, this no longer changes
-  anything in src/.
+  anything in src/. [The v6 review relabels the gate "failed as first run; passes only under a comparator chosen after the
+  failure": two runs failed before the own-input option existed; see "v6 review" above.]
 - The engine-level simulator (the v5.0.1 simulator with the fold-honest inputs and refit levels) repeats the v5 lineage's
   pattern on 2024-25: winner a little better (n.s.), stat lines clearly better, KD level too high in 2024.
 - Under V6_V10_PLAN 6.1, a component that passed its train gate but sat in a failed version may be re-bundled into the next
@@ -145,6 +258,9 @@ simulator re-bundled once (6.1; docs/ROADMAP.md, written before vault audit 1) +
   blindtest.py export now allows a fit with no forward year: no temperature, recorded).
 
 #### Train gate (binding; forward-chained 2021-23, 1,222 decisive fights, 128 cards; v6 package minus v5.0.1 package)
+
+[v6 review: relabelled "failed as first run; passes only under a comparator chosen after the failure". The table below is
+the 06:53 own-input run; the 06:40 and 06:50 runs with shared inputs failed first. See "v6 review" above.]
 
 | regime | winner log loss | 7-bin | method | who x how x when |
 |---|---|---|---|---|

@@ -846,6 +846,43 @@ before the look it governs (an override after a look is read counts as selection
    a logged variance bump, not a level. This amendment was written after two looks showed the problem, so any
    version kept because of it is flagged "kept under the glove-window amendment" in its entry and in audit 2.
 
+10. **Amendment (Nov 7, ~08:30 UTC, after the v6 look, before any v7 work; the v6 review).** Binding for v7-v10 gates and
+    looks. Items (c) and (d) are VALIDATION-INFORMED (the review read the v6 look's design and realised SE), recorded as
+    such; none was chosen with a 2024-25 outcome of a v7 candidate, and none reacts to audit 1.
+    - (a) **Comparator committed first, gate run once.** The gate's comparator definition (packages, input pipelines,
+      stackers) is written into a protocol file and committed before any gate run; the binding gate runs once
+      (tools/predict_harness.js --binding --protocol). Development runs are labelled non-binding and never decide.
+      Reason: the v6 gate passed only under a comparator definition chosen after two failing runs (relabelled "failed as
+      first run; passes only under a comparator chosen after the failure", version_history.json v6). Consequence: cycle
+      1's parts are not gate-passed for the 6.1 re-bundle; they may enter v7 only through v7's own gate.
+    - (b) **An honest comparator.** The comparator package gets year-by-year inputs exactly like the candidate: its
+      per-year engine rows are rebuilt with the fold-honest learned-rate table and embedding recipe, its per-year stackers
+      (cmp_stack_<version>_fit<Y-1>) refit on those rows, and both packages are fed the same honest inputs. The v6 gate gave
+      the v5.0.1 package pooled weights, a leave-one-year-out recipe and stackers fit on rows built from them.
+    - (c) **One refit schedule.** Both packages use the same refit schedule in gate and look: either both static fits
+      through 2023, or both walk-forward (the candidate then uses ML v2's rolling rows). v6's look paired a static ML v2
+      head against comparator experts refit before each card inside 2024-25.
+    - (d) **Power from the gate.** The primary's MDE and power come from the train gate's paired SE for the same contrast,
+      scaled by sqrt(n_gate / n_look) (python3 tools/predict_score.py power); the expected effect comes from the comparator
+      actually used; power below 0.5 is stated in the pre-registration. v6's borrowed figure (power 0.85) was 0.26 by this
+      rule.
+    - (e) **Bootstrap precision.** Gate and look CIs use 20,000 event-cluster resamples (seed 7) with the Monte Carlo SE of
+      each bound reported; a bound within 2 Monte Carlo SE of its threshold is marginal and is decided by the clustered
+      normal bound (tools/predict_score.py).
+    - (f) **Tests and ledger.** A pre-registration lists by name every test it tolerates failing (no narrowed voiding
+      rule); the version's row in data/derived/val_look_ledger.json is committed before the look (the harness checks HEAD).
+    - (g) **Live parity and deployment levels.** A version that carries the durability component passes
+      tools/live_parity.js (live vs backtest knockdown base, KD per 100 head and finish rate within 10% on train pairs)
+      before it serves the page or the ledger. Its live level, terms and norms follow this deployment rule, fixed now
+      before any number is computed: level = the L730 tracker ending 2025-12-31; terms = the same Poisson fit with the
+      data cut at 2025-12-31 at parse; norms = the exposure-weighted means of the live chin and power factors over
+      2024-2025. It is deployment, never scored on 2024-25, and reads no 2026 fight (v6's level and terms_live did:
+      trailing 730 days at Oct 31, 2026 and a fit through 2026-10-31).
+    - (h) **The engine side of the prediction package.** An engine with predict() refuses, rather than silently returning
+      the one-order summarize, when blend_anchor is on but FightBlend is missing; manualProfile keeps n_fights 0; the
+      package bundles src/ml/blend.js 1.2.1 or later (line fallback, debut detection, the ml2stack interval with its own
+      kappa).
+
 ---
 
 ## 8. Considered, not in the five
