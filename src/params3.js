@@ -22,15 +22,16 @@
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "4.0.0-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01)
+    version: "9.0.0-selfcal-pre2024",   // v9 (docs/V6_V10_PLAN.md cycle 4): the v4 parameter set unchanged + the v9 blocks below (components, judgeWF, format). Earlier label 4.0.0-selfcal-pre2024   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01)
 
 
     // ---------------- v9 components (docs/V6_V10_PLAN.md cycle 4: walk-forward levels, drift and judging, joint level pass by
     // format; engine3.js header). Every flag off = engine 4.0.0 bit for bit (tests/test_v9.js).
     components: {
-      levels: false,    // walk-forward level anchoring of the learned targets (needs opts.level; tools/v9_levels.js)
-      judgeWF: false,   // walk-forward EM judging weights by year + tracked 10-8 threshold (needs opts.level.r108 for the threshold)
-      format: false     // joint level pass by format: 5-round knockdown factor, championship-round factor, doctor / corner scales
+      levels: false,    // walk-forward level anchoring of the learned targets (needs opts.level; tools/v9_levels.js). OFF in v9: the
+                        // 2019-2020 rolling-origin choice kept no tracker (each raised its stat's deviance; data/derived/v9/levels_select.json)
+      judgeWF: true,    // walk-forward EM judging weights by year + tracked 10-8 threshold (needs opts.level.r108 for the threshold)
+      format: true      // joint level pass by format: 5-round knockdown factor, championship-round factor, conversion, doctor / corner scale
     },
     // walk-forward judging (tools/v9_judge_wf.py -> data/derived/v9/judge_wf.json, recipe "win3" chosen on 2019-2020 decisions):
     // row Y = EM round-winner weights on judges' cards dated before Jan 1 of Y; later dates use the last row
@@ -46,11 +47,17 @@
         "2026": { head: 0.187162, body: 0.140182, leg: 0.097257, kd: 3.102658, td: 0.351663, ctrlMin: 0.423899, sub: 0.698115 }
       },
       // 10-8 threshold from the tracked card-implied 10-8 share (eradrift r108 Kalman): target = sRef x r108 / lRef,
-      // t108 = (alpha - ln target) / beta; sRef = v4's matched 3.5% share, lRef = the tracker's 2021-2023 mean (placeholder until fit)
-      r108: { sRef: 0.035, lRef: 0.045, alpha: 0, beta: 1 }
+      // t108 = (alpha - ln target) / beta; sRef = v4's matched 3.5% share (tools/v4_levels.js, 2021-2023), lRef = the tracker's
+      // 2021-01..2023-12 month mean (per 100 judged rounds); alpha / beta: ln(sim 10-8 share) = alpha - beta t108, least squares
+      // on a 7-10 grid of train simulations with the walk-forward weights on (data/derived/v9/t108_map.json; residuals <= 0.007)
+      r108: { sRef: 0.035, lRef: 5.263578, alpha: 0.59164, beta: 0.45779 }
     },
-    // joint level pass by format (placeholders until the train fit)
-    format: { kd5: 1, late5: 1, conv: 1, stop: 1 },
+    // joint level pass by format (tools/v9_format_fit.py, one damped fixed point on the 2019-2023 train fights, development seed
+    // 102, data/derived/v9/format_fit.json): kd5 <- 5-round KD per 100 head landed 0.641 (v4 0.473; gap z -3.05 > 2, so the
+    // plan's 5-round format KD factor is added), late5 <- share of 5-round fights finished in round 4 or 5 10.1% (v4 14.7%),
+    // conv <- KO/TKO share 31.7% (v4 32.7%), stop <- between-round stoppages per round-interval reached 0.37% (v4 1.11%; 11
+    // events in 2,983 intervals, one scale for both formats)
+    format: { kd5: 1.579, late5: 0.575, conv: 0.928, stop: 0.321 },
 
     // ---------------- learned stat-line rates (engine v4) ----------------
     mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base

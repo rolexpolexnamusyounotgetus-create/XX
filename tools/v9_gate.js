@@ -8,7 +8,8 @@
                     the reference engine of the level tracker
      levels  tools/v9_levels.js computeLevels(): per fight, factors from the cmp4 realised rates of fights dated strictly
                     before it (phi from data/derived/v9/levels_phi.json); r108 from the eradrift verified 10-8 tracker
-     pass 2  all    levels + judgeWF + format (the candidate); -levels / -judgeWF / -format: leave-one-out (descriptive)
+     pass 2  all    the candidate as selected: judgeWF + format (components.levels off: the 2019-2020 rolling-origin choice kept
+                    no tracker); -judgeWF / -format: leave-one-out; +levels: every tracker on as designed (both descriptive)
    (--arms picks a subset; --arm name='{json params override}' adds any arm, e.g. a format grid point.)
    Inputs (evalv's, leak-free): as-of priors mlcal_priors_asof.json[year]; fold-honest out-of-fold learned rates
    mlrates_oof_fh.json; per-year judging weights params.judgeWF.byYear (each fit on cards before Jan 1 of its year).
@@ -31,13 +32,15 @@ const ROOT = path.resolve(__dirname, "..");
 const TRAIN = ["2019-01-01", "2024-01-01"];
 const STATS = ["sig_lnd", "sig_att", "h_lnd", "b_lnd", "l_lnd", "kd", "td_lnd", "td_att", "ctrl", "sub_att"];
 const NS = STATS.length;
-const ALLON = { levels: true, judgeWF: true, format: true };
+// the candidate as selected: components.levels is off (the 2019-2020 rolling-origin choice kept no tracker,
+// data/derived/v9/levels_select.json); "+levels" (every tracker on, as designed before that choice) is descriptive only
+const CAND = { levels: false, judgeWF: true, format: true };
 const PRESET = {
   cmp4: { components: { levels: false, judgeWF: false, format: false } },
-  all: { components: Object.assign({}, ALLON) },
-  "-levels": { components: Object.assign({}, ALLON, { levels: false }) },
-  "-judgeWF": { components: Object.assign({}, ALLON, { judgeWF: false }) },
-  "-format": { components: Object.assign({}, ALLON, { format: false }) }
+  all: { components: Object.assign({}, CAND) },
+  "-judgeWF": { components: Object.assign({}, CAND, { judgeWF: false }) },
+  "-format": { components: Object.assign({}, CAND, { format: false }) },
+  "+levels": { components: Object.assign({}, CAND, { levels: true }) }
 };
 function hash32(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return h >>> 0; }
 function mix(a, b) { let h = (a ^ Math.imul(b + 0x6d2b79f5, 0x9e3779b1)) >>> 0; h = Math.imul(h ^ (h >>> 16), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); return (h ^ (h >>> 16)) >>> 0; }
