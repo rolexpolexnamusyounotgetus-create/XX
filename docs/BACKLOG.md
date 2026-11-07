@@ -141,6 +141,16 @@ Findings from verified research that the next engine versions must use. Each lin
   no-line +0.0013 n.s. Descriptive only: a per-card trailing temperature would have helped no-line -0.0047 on
   2024-25 (already-seen window: judge it only on the forward ledger / audit 2). Proposed v9 refinements to the
   pre-registered drift rule (one-sided test, longer ledger window, named column) AFTER audit 1 only.
+- ENGINE v5 MEASURED AND REJECTED (single validation look, decided 02:10 UTC Nov 7; data/derived/version_history.json):
+  winner log loss 0.6301 vs v4 0.6324, paired -0.0022 [-0.0099, +0.0053] (branch 1 fails). Branch 2: stat lines
+  clearly better (sig landed -0.71, attempts -1.23, TD -0.048, control -4.1 s, CIs exclude 0) BUT two base rates
+  drift out of tolerance: KD per 100 head 0.830 vs actual 0.684 (+21%, tolerance 12%) and KO share 31.8% vs 29.1%
+  (+2.7 pts, tolerance 2). The KO excess sits in the 2024 glove-trial window (actual KO 22.1% vs v5 31.9%); outside
+  it v5 is level. Rule applied as registered: src restored to v4; v5 frozen in versions/v5-rejected/. Package
+  (predict(), not part of the rule): close-kind 0.5810 vs close 0.5847, paired -0.0067 [-0.0096, -0.0036]; who x how
+  x when beats S in every regime. Path forward (V6_V10_PLAN 6.1 re-bundling): v6 may re-bundle v5's train-gated
+  components ONCE inside its own look; the KD/KO level question belongs to v9's era trackers (glove-trial breaks as
+  variance bumps, never a tilt fit on 2024-25).
 - OWNER REDIRECT (Nov 6 ~22:00 UTC): resources move from the 3D game to ML / stats / prediction. 3D pass 3 was
   stopped after its systemic round (beard/short-hair caps, skin, body definition, women's sports top shipped;
   likeness labs not run). Prediction lab round 3 launched (scratchpad/wf_predict_lab3.js, four workflows): crowd
