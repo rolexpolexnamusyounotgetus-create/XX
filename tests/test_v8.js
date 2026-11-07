@@ -86,7 +86,7 @@ function sims(Ex, m, seed, n, trace) { const rng = Ex.makeRng(seed), out = []; f
   const m0 = E.matchup(f.A, f.B, Object.assign(baseOpts(f, 0), { params: OFF }));
   const mz = E.matchup(f.A, f.B, Object.assign(baseOpts(f, 0), { params: { components: { tdIntent: true, ctrlSpread: true }, spread: { td: 0, ctrl: 0 } } }));
   ok("spread flags on with sd 0 = flag-off fights", sims(E, m0, 9, 200).join() === sims(E, mz, 9, 200).join() && mz.spread === undefined);
-  const mr = E.matchup(f.A, f.B, Object.assign(baseOpts(f, 0), { params: { components: { retarget: true, embed: true } } }));
+  const mr = E.matchup(f.A, f.B, Object.assign(baseOpts(f, 0), { params: { components: { retarget: true, embed: true, tdIntent: false, ctrlSpread: false } } }));
   ok("retarget / embed on without targets or etas = flag-off fights", sims(E, m0, 9, 200).join() === sims(E, mr, 9, 200).join() && mr.retarget.applied === false);
 }
 // ---------------------------------------------------------------- 3. spread draws: main stream untouched, mean 1
@@ -120,8 +120,16 @@ function sims(Ex, m, seed, n, trace) { const rng = Ex.makeRng(seed), out = []; f
   const mBA = E.matchup(f.B, f.A, v8Opts(f, 1, P));
   ok("retarget applied with targets (computed, then the mirror order replayed from the cache)", mAB.retarget.applied && !mAB.retarget.fromCache && mBA.retarget.fromCache, mAB.retarget.nPilot);
   const cA = mAB.retarget.cum, cB = mBA.retarget.cum;
-  const symm = JSON.stringify(cA[0]) === JSON.stringify(cB[1]) && JSON.stringify(cA[1]) === JSON.stringify(cB[0]);
-  ok("retarget is corner-symmetric: per-fighter cumulative multipliers identical in A-B and B-A", symm);
+  // takedown / control / takedown-odds multipliers come from the pooled pilot alone (identical); position attempts and strike
+  // accuracy also carry each order's static compensation, whose occupancy fit is mirror-equivalent up to rounding (1e-9)
+  const close = (a, b) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a));
+  let symm = true, worstS = 0;
+  for (const [x, y] of [[cA[0], cB[1]], [cA[1], cB[0]]]) {
+    if (x.td !== y.td || x.ct !== y.ct || x.tdAcc !== y.tdAcc) symm = false;
+    for (const k of ["d", "c", "g"]) { worstS = Math.max(worstS, Math.abs(x[k] - y[k])); if (!close(x[k], y[k])) symm = false; }
+    x.acc.forEach((v, i) => { worstS = Math.max(worstS, Math.abs(v - y.acc[i])); if (!close(v, y.acc[i])) symm = false; });
+  }
+  ok("retarget is corner-symmetric: per-fighter multipliers identical in A-B and B-A (pilot-driven exactly, static parts to 1e-9)", symm, worstS.toExponential(2));
   E.retargetCacheClear();
   const mBA2 = E.matchup(f.B, f.A, v8Opts(f, 1, P));
   ok("cache replay = full computation bit for bit (B-A computed fresh vs replayed)", tables(mBA2) === tables(mBA) && !mBA2.retarget.fromCache);
@@ -173,7 +181,7 @@ function sims(Ex, m, seed, n, trace) { const rng = Ex.makeRng(seed), out = []; f
 // ---------------------------------------------------------------- 6. targets file
 {
   const FOLDS = J("data/derived/v8/statlines_folds.json"), INP = J("data/derived/v8/statlines_inputs.json");
-  let worst = 0, n = 0, foldOk = true, no2026 = true;
+  let worst = 0, worstF = 0, n = 0, foldOk = true, no2026 = true;
   const fy = { 2020: "f2020", 2021: "f2021", 2022: "f2022", 2023: "f2023", 2024: "dev", 2025: "dev" };
   for (const [id, t] of Object.entries(TG)) {
     if (t.date >= "2026-01-01") no2026 = false;
@@ -185,9 +193,13 @@ function sims(Ex, m, seed, n, trace) { const rng = Ex.makeRng(seed), out = []; f
   for (const id of ids) {
     const v = INP.fights[id], SD = SD0.load(FOLDS, { which: v.fold, enable: true });
     const T = SD.engineTargets(SD.prepare({ mlA: v.mlA, mlB: v.mlB, etaA: v.etaA, etaB: v.etaB, hasEmb: v.hasEmb, winLogit: v.winLogit, oppA: v.oppA, oppB: v.oppB, rounds: v.rounds }), 5 * v.rounds);
-    for (const s of ["A", "B"]) for (const k in T[s]) { worst = Math.max(worst, Math.abs(T[s][k] - TG[id][s][k]) / Math.max(1e-6, T[s][k])); n++; }
+    for (const s of ["A", "B"]) for (const k in T[s]) { worst = Math.max(worst, Math.abs(T[s][k] - TG[id][s][k]) - 5.000001e-7); n++; }
+    const g = TG[id].fin.t;
+    const P2 = SD.prepare({ mlA: v.mlA, mlB: v.mlB, etaA: v.etaA, etaB: v.etaB, hasEmb: v.hasEmb, winLogit: v.winLogit, oppA: v.oppA, oppB: v.oppB, rounds: v.rounds });
+    for (const s of ["A", "B"]) for (const k in TG[id].fin[s]) g.forEach((t, j) => { const a = P2.dist(s, k, t).mean, b = TG[id].fin[s][k][j]; worstF = Math.max(worstF, Math.abs(a - b) / Math.max(1e-9, Math.abs(a))); });
   }
-  ok("statlines_targets.json = statdist engineTargets on the fold tables (" + n + " values, 6-decimal storage)", worst < 5e-5, worst.toExponential(2));
+  ok("statlines_targets.json = statdist engineTargets on the fold tables (" + n + " rates within the 6-decimal storage)", worst <= 0, worst.toExponential(2));
+  ok("finished-fight grid = statdist P.dist means at the grid lengths (6 significant digits)", worstF < 1e-5, worstF.toExponential(2));
   ok("target fold per year as registered (2019 none, 2020-23 f<year>, 2024-25 dev)", foldOk);
   ok("no 2026 fight in the v8 targets or inputs", no2026);
   ok("fold tables: dev refit = statlines.json models.dev and folds = statlines_oof.json (export checks)", FOLDS.meta.checks.dev_refit_vs_statlines_json_max_rel < 1e-4 && FOLDS.meta.checks.folds_vs_statlines_oof_max_rel < 2e-3, FOLDS.meta.checks);

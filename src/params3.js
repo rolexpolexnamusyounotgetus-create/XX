@@ -63,9 +63,13 @@
     // per corner order and iteration, iterations, damping and the shrink of the step toward 1 with few decision simulations
     // (s = damp x n / (n + kDec)), smoothing of the realised rates toward the target (kMin minutes, kAcc attempts), pilot seed
     retarget: { pilot: 200, iters: 2, damp: 0.9, kDec: 20, kMin: 5, kAcc: 5, seed: 20261107 },
-    // fight-level spread draws: lognormal sds (mean 1), fit to the 2019-2023 PIT coverage of takedown attempts / control
-    // (non-binding development runs before the gate protocol; tools/v8_gate.js --fit-spread, data/derived/v8/spread_fit.json)
-    spread: { td: 0, ctrl: 0 },
+    // fight-level spread draws: lognormal sds (mean 1), fit to the 2019-2023 PIT coverage (non-binding development runs before the
+    // gate protocol, embed + retarget on, 150 sims per order, seed 1; data/derived/v8/dev/spread_fit_td*.json, spread_fit_ctrl*.json):
+    // td = the smallest grid value whose train takedown-attempt PIT meets the plan's band (inside the 80% band >= 0.78, above P90
+    // <= 0.12): 1.1 (0.781 / 0.117; v4 0.68 / 0.16; the PIT-uniformity minimum is 1.25-1.3, whose extra spread costs Monte Carlo
+    // noise in the per-fight means); ctrl = the minimiser of the control PIT calibration error given td 1.1: 0 (the takedown-intent
+    // draw alone brings control to 0.799 / 0.101 / 0.100), so components.ctrlSpread is a no-op at this value
+    spread: { td: 1.1, ctrl: 0 },
 
     // ---------------- learned stat-line rates (engine v4) ----------------
     mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base
