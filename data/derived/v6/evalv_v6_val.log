@@ -1,0 +1,28 @@
+evalv v6 (engine 6.0.0, params 6.0.0-selfcal-pre2024) on val: 865 fights x 2 orders x 300 sims, 3 workers, ML on (out-of-fold)
+  400/865 fights, 6 s
+  800/865 fights, 10 s
+  engine / params (all workers): 6.0.0 | 6.0.0-selfcal-pre2024
+
+v6 val: 865 fights (853 decisive, 857 with an outcome), ML applied 100.0% of matchups
+  winLL        0.6259 [0.6104, 0.6406]
+  brier        0.2176 [0.2104, 0.2247]
+  acc          0.6506 [0.6164, 0.6835]
+  ece          0.0510 [0.0321, 0.0854]
+  calSlope     1.7358 [1.4239, 2.0810]
+  bin7         1.5575 [1.5197, 1.5985]
+  method       0.9404 [0.9116, 0.9714]
+  dev_sig_lnd  21.180 [19.644, 22.819]
+  dev_sig_att  42.394 [39.299, 45.755]
+  dev_td_lnd   1.763 [1.641, 1.903]
+  dev_ctrl     150.275 [141.263, 159.588]
+  dev_kd       0.650 [0.608, 0.698]
+  base rates (sim vs actual): finish 49.8 vs 46.0, KO 31.5 vs 29.1, SUB 18.3 vs 16.9, KD/100 head 0.834 vs 0.684, UD 77.8 vs 81.5, SD 21.0 vs 18.1, 10-8 4.46 vs 2.46
+  finish by round 3-rd sim 26.5/13.7/8.8 vs 23.7/13.7/7.8; 5-rd sim 19.4/15.6/9.5/7.7/4.5 vs 15.2/16.2/9.5/7.6/2.9
+  methodround: joint 2.0555 (S 2.0418, d +0.0137 [-0.0114, 0.0387]); method3 0.9404 (S 0.9360, d +0.0045 [-0.0104, 0.0201]); finish 0.6625 (S 0.6593, d +0.0032 [-0.0081, 0.0143]); bin7 1.5575 (S 1.5538, d +0.0037 [-0.0183, 0.0255]); method_round 1.4438 (S 1.4240, d +0.0198 [0.0008, 0.0368]); round_given_fin 1.0712 (S 1.0601, d +0.0111 [-0.0059, 0.0284]); ko_vs_sub 0.6046 (S 0.6017, d +0.0029 [-0.0151, 0.0232]); method_given_winner 0.9078 (S 0.9073, d +0.0005 [-0.0199, 0.0220]); winner 0.6259 (S 0.6213, d +0.0046 [-0.0040, 0.0132]); winner_brier 0.2176 (S 0.2154, d +0.0022 [-0.0019, 0.0063]); winner_acc 0.6512 (S 0.6753, d -0.0240 [-0.0511, 0.0029]); method3_brier 0.5629 (S 0.5610, d +0.0019 [-0.0078, 0.0124])
+  paired vs v4: winLL -0.0065 [-0.0148, 0.0016]; brier -0.0030 [-0.0069, 0.0009]; acc -0.0064 [-0.0300, 0.0180]; bin7 -0.0138 [-0.0365, 0.0056]; method +0.0005 [-0.0099, 0.0115]
+wrote data/derived/evalv/v6_val.json (14 s wall)
+market    n=845  engine weight 0.124  log loss with 0.5784  without 0.5788  diff -0.0005 [-0.0015, +0.0007]
+nomarket  n=845  engine weight 0.170  log loss with 0.5914  without 0.5930  diff -0.0016 [-0.0032, +0.0001]
+wrote /home/user/XX/data/derived/evalv/v6_blend.json
+
+updated data/derived/version_history.json: v6 val

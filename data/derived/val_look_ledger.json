@@ -10,25 +10,108 @@
   ]
  },
  "engine_versions": [
-  {"version": "v3", "looks": 1, "when": "2026-11-06", "note": "one validation look; the v3 calibration brief predates the vault split (may include one look at 2024-26)"},
-  {"version": "v4", "looks": 1, "when": "2026-11-06 15:27 UTC", "note": "kept; reproduced deterministically (no new information) on 2026-11-07 for per-fight base rates: data/derived/evalv/v4_repro_dev_val.json"},
-  {"version": "v4.0.1", "looks": 1, "when": "2026-11-06", "note": "rejected"},
-  {"version": "v5 (5.0.0)", "looks": 1, "when": "2026-11-07 01:52 UTC", "note": "rejected; reproduced deterministically 2026-11-07 for the descriptive 5.0.1 comparison"},
-  {"version": "v5.0.1", "looks": 1, "when": "2026-11-07 04:3x UTC", "note": "the second look for the v5 lineage (pre-registered as such); rejected"}
+  {
+   "version": "v3",
+   "looks": 1,
+   "when": "2026-11-06",
+   "note": "one validation look; the v3 calibration brief predates the vault split (may include one look at 2024-26)"
+  },
+  {
+   "version": "v4",
+   "looks": 1,
+   "when": "2026-11-06 15:27 UTC",
+   "note": "kept; reproduced deterministically (no new information) on 2026-11-07 for per-fight base rates: data/derived/evalv/v4_repro_dev_val.json"
+  },
+  {
+   "version": "v4.0.1",
+   "looks": 1,
+   "when": "2026-11-06",
+   "note": "rejected"
+  },
+  {
+   "version": "v5 (5.0.0)",
+   "looks": 1,
+   "when": "2026-11-07 01:52 UTC",
+   "note": "rejected; reproduced deterministically 2026-11-07 for the descriptive 5.0.1 comparison"
+  },
+  {
+   "version": "v5.0.1",
+   "looks": 1,
+   "when": "2026-11-07 04:3x UTC",
+   "note": "the second look for the v5 lineage (pre-registered as such); rejected"
+  },
+  {
+   "version": "v6 (6.0.0)",
+   "looks": 1,
+   "when": "2026-11-07 07:02 UTC (started)",
+   "note": "the single pre-registered v6 look (version_history.json v6 prereg, written 06:56 UTC): predict package v6 vs the v5.0.1 package (tools/predict_harness.js --split val + tools/predict_score.py look; primary open-regime winner log loss, branch 1) and the engine level vs v4 (tools/evalv.js --split val --compare v4, evalv_decide, blend test). Confirmation look: every ingredient was already scored on 2024-25 (third 2024-25 look touching the v5-lineage simulator). Run by the v6 look step."
+  }
  ],
  "components": [
-  {"component": "embed", "looks": 2, "note": "validation scored once per build: first build and after a bug fix (research/model_embed.md); merged into v5"},
-  {"component": "preufc", "looks": ">= 3", "note": "2024-25 test plus three evaluations pooled over 2024-2026 (vault exposure)"},
-  {"component": "dynamics", "looks": ">= 1", "note": "verification refit on 2024-2025; the vol recipe 0.30 was sized to 2024-25 before the correction to 0.50 on train"},
-  {"component": "durability", "looks": 2, "note": "held-out 2024+ through 2026-10 (vault exposure; withdrawn) and the 2024-25-only re-score of 2026-11-07 (tools/durability_heldout_dev.py)"},
-  {"component": "styles", "looks": 2, "note": "held-out 2024+ through 2026-10 (vault exposure; withdrawn) and the 2024-25 re-run of 2026-11-07"},
-  {"component": "officials", "looks": 1, "note": "decision-outcome gain significant only on 2024-25; shipped off"},
-  {"component": "oppadj", "looks": 1, "note": "per-fight deviance on 2024-25"},
-  {"component": "mlrates", "looks": ">= 1", "note": "12 of 18 stats vs engine v3 on 2024-25; winner gain on 2024-25"},
-  {"component": "ml / ml2 / market / ratings / blindtest", "looks": ">= 1 each", "note": "benchmarks scored on 2024-25 (market and ml first builds also scored 2026; fixed)"},
-  {"component": "eradrift", "looks": 1, "note": "pre-registered single look; glove-trial table is descriptive"},
-  {"component": "props, finishing, statlines, debut, calib, crowd, linemove, seqnet, bayes", "looks": "1 each", "note": "lab rounds 3-5: CV-gated on <= 2023, scored once on 2024-25"},
-  {"component": "mlcal", "looks": "see data/derived/mlcal_val_ledger.json", "note": "one-look validation ledger of the global-scale search"},
-  {"component": "v5.0.1 dynNoise / levels / kdBase / durFallback", "looks": 0, "note": "chosen on 2019-2023 only (tools/v501_dynfit.js, tools/v5_calB_levels.js, tools/v501_kdlevel_cv.js, tools/durlevel_fit.js); the motivation came from v5's look and its review"}
+  {
+   "component": "embed",
+   "looks": 2,
+   "note": "validation scored once per build: first build and after a bug fix (research/model_embed.md); merged into v5"
+  },
+  {
+   "component": "preufc",
+   "looks": ">= 3",
+   "note": "2024-25 test plus three evaluations pooled over 2024-2026 (vault exposure)"
+  },
+  {
+   "component": "dynamics",
+   "looks": ">= 1",
+   "note": "verification refit on 2024-2025; the vol recipe 0.30 was sized to 2024-25 before the correction to 0.50 on train"
+  },
+  {
+   "component": "durability",
+   "looks": 2,
+   "note": "held-out 2024+ through 2026-10 (vault exposure; withdrawn) and the 2024-25-only re-score of 2026-11-07 (tools/durability_heldout_dev.py)"
+  },
+  {
+   "component": "styles",
+   "looks": 2,
+   "note": "held-out 2024+ through 2026-10 (vault exposure; withdrawn) and the 2024-25 re-run of 2026-11-07"
+  },
+  {
+   "component": "officials",
+   "looks": 1,
+   "note": "decision-outcome gain significant only on 2024-25; shipped off"
+  },
+  {
+   "component": "oppadj",
+   "looks": 1,
+   "note": "per-fight deviance on 2024-25"
+  },
+  {
+   "component": "mlrates",
+   "looks": ">= 1",
+   "note": "12 of 18 stats vs engine v3 on 2024-25; winner gain on 2024-25"
+  },
+  {
+   "component": "ml / ml2 / market / ratings / blindtest",
+   "looks": ">= 1 each",
+   "note": "benchmarks scored on 2024-25 (market and ml first builds also scored 2026; fixed)"
+  },
+  {
+   "component": "eradrift",
+   "looks": 1,
+   "note": "pre-registered single look; glove-trial table is descriptive"
+  },
+  {
+   "component": "props, finishing, statlines, debut, calib, crowd, linemove, seqnet, bayes",
+   "looks": "1 each",
+   "note": "lab rounds 3-5: CV-gated on <= 2023, scored once on 2024-25"
+  },
+  {
+   "component": "mlcal",
+   "looks": "see data/derived/mlcal_val_ledger.json",
+   "note": "one-look validation ledger of the global-scale search"
+  },
+  {
+   "component": "v5.0.1 dynNoise / levels / kdBase / durFallback",
+   "looks": 0,
+   "note": "chosen on 2019-2023 only (tools/v501_dynfit.js, tools/v5_calB_levels.js, tools/v501_kdlevel_cv.js, tools/durlevel_fit.js); the motivation came from v5's look and its review"
+  }
  ]
 }

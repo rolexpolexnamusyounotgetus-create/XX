@@ -1,0 +1,6 @@
+predict_harness on val 2024-01-01..2026-01-01: 865 fights, kinds close/open/none, 300 sims per order; v6: engine 6.0.0 params 6.0.0-selfcal-pre2024 (v6); v501: engine 5.0.1 params 5.0.1-selfcal-pre2024 (v5)
+  200/865 fights, 16 s
+  400/865 fights, 28 s
+  600/865 fights, 41 s
+  800/865 fights, 53 s
+wrote data/derived/v6/look_val.json: 865 fights, 0 failed, 57 s

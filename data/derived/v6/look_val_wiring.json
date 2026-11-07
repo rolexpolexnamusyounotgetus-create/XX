@@ -1,0 +1,22 @@
+{
+ "tool": "tools/v6_look_wiring.py",
+ "input": "data/derived/v6/look_val.json",
+ "n_fights": 865,
+ "harness_errors": 0,
+ "v6_open_rows": 865,
+ "v6_open_rows_bad": 0,
+ "fields": {
+  "v501|close|stack|2023-12-16|SM|lineKind=close|lineMissing=False|w=0.3": 856,
+  "v501|close|stack|2023-12-16|SM|lineKind=none|lineMissing=True|w=0.3": 9,
+  "v501|none|stack|2023-12-16|S|lineKind=none|lineMissing=False|w=0.3": 865,
+  "v501|open|stack|2023-12-16|S|lineKind=none|lineMissing=True|w=0.3": 11,
+  "v501|open|stack|2023-12-16|S|lineKind=open|lineMissing=False|w=0.3": 854,
+  "v6|close|ml2stack|Y2024|S2|lineKind=close|lineMissing=False|w=0.35": 856,
+  "v6|close|ml2stack|Y2024|S2|lineKind=none|lineMissing=True|w=0.35": 9,
+  "v6|none|ml2stack|Y2024|S2|lineKind=none|lineMissing=False|w=0.35": 865,
+  "v6|open|ml2stack|Y2024|S2|lineKind=none|lineMissing=True|w=0.35": 11,
+  "v6|open|ml2stack|Y2024|S2|lineKind=open|lineMissing=False|w=0.35": 854
+ },
+ "abort": false,
+ "problems": []
+}
