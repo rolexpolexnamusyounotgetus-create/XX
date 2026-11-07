@@ -259,6 +259,40 @@
       tdLevel: 1.126                              // [dyncal v4.0.1] takedown-attempt level (keeps the realised takedown volume; E4 / E6 shift attempts between rounds)
     },
 
+    // ---------------- engine components (each one behind its own flag; false = the engine without it, bit-for-bit) ----------------
+    components: {
+      blend_anchor: true   // FightEngine.predict: blend P(win) + rescaled/pooled method x round + anchor + interval (src/ml/blend.js)
+    },
+    // blend_anchor settings (FightEngine.predict / src/ml/blend.js). Every fitted value was chosen on 2019-2023 backtest_dev
+    // fights only (tools/blend_anchor_eval.js; numbers in data/derived/blend_anchor.json and research/model_blend_anchor.md).
+    blend: {
+      sims: 1000,          // simulations per corner order in predict() (both orders are run and averaged; exact corner symmetry)
+      symmetric: true,     // run A-B and B-A (common random numbers in the anchor search)
+      smooth: 0.5,         // Jeffreys pseudo-count per method x round cell on the simulated counts (an unseen outcome is not p = 0)
+      mrWeight: 0.15,      // __MRWEIGHT__ weight of the rescaled simulator cells in the method x round pool; the rest is the method/round
+                           // model S/SM (tools/methodround_model.js) rescaled to the same P(win). Leave-one-year-out 2019-2023 optimum
+                           // of the joint method x round log loss (per-fold optima 0.10-0.20)
+      mrPool: "linear",    // linear pool (beat the log pool out of fold: 2.1415 vs 2.1420 joint log loss, data/derived/blend_anchor.json)
+      recalT: 1,           // temperature on top of the blend's logit. 1: the MoE production refit (moe_page.json) already applies the
+                           // scheme rolling-origin CV picks inside 2019-2023 (recency weights h = 1-1.5 y + a temperature fit on
+                           // forward out-of-fold logits; T through 2023 = 1.09 without a line, no temperature with one), so a second
+                           // temperature would double-count. Use it only with a blend that has no calibration of its own.
+      // anchor mode: offset s split +s/2 / -s/2 on the log-odds of A's / B's striking accuracy (x cAcc), takedown success (x cTd) and
+      // knockdown power (x cPow). Mix chosen on 2019-2023 among four (acc/td/pow = 1/1/0, 0.5/1/1, 0/1/2, 0.5/2/0.5) as the one that hits
+      // the blend without worsening the stat lines: 0.5/1/1 improves sig-landed, head-landed, control and sub-attempt deviance vs the plain
+      // simulator (KD deviance +2.5%); pure accuracy (1/1/0) worsened landed strikes ~2%. slope0: d logit P_sim / ds at s = 0 for that mix
+      // (pilot, 120 fights x 3 offsets x 400 sims: 0.86, se 0.014)
+      // (powNorm: the power multipliers are divided by cosh(cPow s/2) so the pair's total knockdown rate is kept; the plain split
+      // added 7% knockdowns on 2019-2023)
+      anchor: { cAcc: 0.5, cTd: 1, cPow: 1, powNorm: true, slope0: 0.86, priorWeight: 2, iters: 4, step: 0.05, tol: 0.01, sims: 300, maxAbs: 4 },
+      // interval for P(win): profile-noise bootstrap (fight-level gamma noise, relative variance cv^2 / decayed fights; cvOut 0.45
+      // from the between-fight log output sd in docs/BACKLOG.md "Variance"; grappling, subs, KD and accuracy cvs are judgment calls),
+      // then inflate = kappa: the bootstrap sd x 1.65 makes the 80% interval cover the closing line 80% of the time on 2019-2023
+      // (out of fold by year: 80.0% at 80%, 94.4% at 95%); the raw bootstrap covers it only 55% / 76%
+      boot: { B: 200, seed: 7, level: [0.8, 0.95], cvOut: 0.45, cvGrap: 1.0, cvSub: 1.5, cvKd: 1.0, cvAcc: 0.25, count: true,
+        eloRd: 0, eloRdScale: 0, mrSd: 0, engineMC: true, inflate: 1.65 }
+    },
+
     // ---------------- learned stat-line rates (engine v4) ----------------
     mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base
     mlMaxRatio: 4,    // cap on any single learned-vs-base multiplier (src/ml/mlrates.js applyToMatchup maxRatio; [v401 d] tdCap: on the cumulative takedown multipliers too)

@@ -249,6 +249,7 @@ and Sherdog fighter pages (sharing tools/preufc.py's cache and keeping the combi
   in `meta.eval`. Details, audit and caveats: `research/data_fightweek.md`.
 
 
+<<<<<<< ours
 ## blindtest.py: the standing blind test (event-by-event walk-forward replay of every model)
 
 ```
@@ -472,3 +473,20 @@ const m = E.matchup(A, B, opts); XR.assertApplied(m, f.id, params);
 - `node tools/v5_step4_check.js [--sims 300] [--configs ...]`: the engine-level train check (evalv's inputs, metrics and
   smoothing, common random numbers): base (step 3), embed, embed + preufc, embed + oppadj with SOS off; paired vs base and vs
   embed (data/derived/v5_step4_check.json). About two minutes at 300 sims per order with 3 workers.
+=======
+## blend_anchor_*: FightEngine.predict (engine component "blend_anchor") and its 2019-2023 ablation
+
+```
+python3 tools/blend_anchor_prep.py --cache out/moe_cache            # OOF feature-LR / Elo / RD for 2019-2023 -> data/derived/blend_anchor_dev.json
+BACKTEST_DEV=... node tools/blend_anchor_bt.js sim --stage plain --sims 200 --part i --parts 3   # simulator, both corner orders
+BACKTEST_DEV=... node tools/blend_anchor_bt.js merge --stage plain
+BACKTEST_DEV=... node tools/blend_anchor_eval.js targets            # out-of-fold blend P(A) -> anchor targets
+BACKTEST_DEV=... node tools/blend_anchor_bt.js pilot --n 120        # anchor slope prior (with --cAcc/--cTd/--cPow for a mix)
+BACKTEST_DEV=... node tools/blend_anchor_bt.js sim --stage anchor --sims 200 --part i --parts 3
+BACKTEST_DEV=... node tools/blend_anchor_eval.js report             # -> data/derived/blend_anchor.json, out/blend_anchor/report.md
+node tests/test_blend_anchor.js
+```
+
+Only fights dated 2019-01-01..2023-12-31 are read, fitted or scored. Method, numbers and caveats:
+`research/model_blend_anchor.md`. Runs: nice -n 5, at most 3 parts at once.
+>>>>>>> theirs

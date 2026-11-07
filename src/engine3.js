@@ -2180,6 +2180,7 @@
     // v5: the parameter set a matchup runs on (base params + components flags + opts.params overrides), and the v401 sub-flags
     resolveParams: function (over, base) { return resolveParams(base || getParams(), over); }, v401Flags: v401Flags
   };
+<<<<<<< ours
   // [styles_sos] begin: component hook (src/styles_sos.js: style rate modifiers, strength of schedule). It runs after
   // the matchup tables are final (base or learned rates) and only when params.components.styles_sos is truthy; with the
   // flag off the engine is the engine without these lines (tests/test_styles_sos.js strips them and compares).
@@ -2192,5 +2193,30 @@
   }
   api.matchup = matchupStylesSOS;
   // [styles_sos] end
+=======
+  /* blend_anchor:begin -- engine component "blend_anchor" (roadmap v9): FightEngine.predict, the final prediction package.
+     params.components.blend_anchor true: src/ml/blend.js (FightBlend) blends P(win) (src/ml/moe.js), rescales and pools the
+     method x round cells with tools/methodround_model.js, optionally anchors the simulator to the blend, adds ML stat lines
+     and a profile-noise interval. false (or FightBlend missing): the plain engine package, whose numbers are exactly
+     summarize(matchup(profA, profB, opts), sims, seed). Nothing outside this block changes matchup / simulate / summarize. */
+  function getBlend() {
+    if (root && root.FightBlend) return root.FightBlend;
+    if (typeof require === "function") { try { return require("./ml/blend.js"); } catch (e) { return null; } }
+    return null;
+  }
+  api.predict = function (profA, profB, opts) {
+    opts = opts || {};
+    var p = mergeParams(getParams(), opts.params), FB = getBlend();
+    var on = !!(p.components && p.components.blend_anchor);
+    if (on && FB) return FB.predict(api, profA, profB, opts, { meta: DB ? DB.meta : null, params: p });
+    var N = opts.sims || (p.blend && p.blend.sims) || 1000, seed = opts.seed == null ? 1 : opts.seed;
+    var s = summarize(matchup(profA, profB, opts), N, seed), dec = s.pA + s.pB;
+    return { component: "blend_anchor", on: false, source: "engine", p: dec > 0 ? s.pA / dec : 0.5, pA: s.pA, pB: s.pB, pD: s.pD,
+      bins7: s.bins, sim: s, reason: on ? "src/ml/blend.js not loaded" : "params.components.blend_anchor is false" };
+  };
+  /** Data for the blend: { moe (moe_page.json), methodRound (methodround.json or its js_model), data (blend_anchor.json) }. */
+  api.loadBlend = function (o) { var FB = getBlend(); if (!FB) throw new Error("FightEngine.loadBlend: src/ml/blend.js (FightBlend) is not loaded"); return FB.load(o); };
+  /* blend_anchor:end */
+>>>>>>> theirs
   return api;
 });
