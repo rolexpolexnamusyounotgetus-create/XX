@@ -1,4 +1,4 @@
-/* Fight engine global parameters (engine v4; the file name stays params3.js for every version).
+/* Fight engine global parameters (engine v4 -> v5 merge; the file name stays params3.js for every version).
    UMD: module.exports in Node, self.FightParams / window.FightParams in the browser.
    One plain object. Every entry carries a comment with its meaning and its source or default.
    Sources: data/derived/combine_fit.json (shrinkage, combination), data/derived/baserates.json and
@@ -18,15 +18,374 @@
      (data/derived/v4_levels.json). The self-calibrated league level ran ~10% low on knockdowns there.
    - [walkfwd] values left from v3 (tools/calibrate.js on 2019-2023 with walk-forward priors): form sds, caution5,
      r1Caution5, drainSchedExp, age / KO-loss / size coefficients, powExp, chinExp, ctrlScale.
+   v5 merge (docs/CHANGELOG.md "v5 merge log"): every component behind components.<name>; flag off = v4.0.0 for fixed seeds.
+   - step 1, components.v401: v4.0.1's train-only fixes (versions/v4.0.1-rejected/), one sub-flag each, default on until
+     the Calibrate stage's train leave-one-out decides. The usual fields carry the flag-on values ([v401 a] .. [v401 e]
+     tags); v401.off (just before div, below) holds v4.0.0's values, which a sub-flag that is off puts back. Tools that
+     rewrite these fields in place (tools/v4_levels.js --write, tools/judgecal.js --write, tests/test_engine3.js --fit
+     --write) write the flag-on values: run them with the sub-flag on, or drop the sub-flag first.
+   - step 2, components.durability (block durability) and components.dynamics (block dyn): both on. Each flag off
+     reproduces the engine before it (tests/test_v5_step2.js). Their knockdown levels (durability.kdCal, dyn.kdLevel3/5)
+     and the dynamics finish levels (convLevel, stkoScale, gnpScale) are still the separately verified values; one joint
+     level pass in the Calibrate stage sets them (first joint check: docs/CHANGELOG.md v5 merge log, step 2).
+   - step 3, components.styles_sos (sos on with sosSource "wf", styles and newcomer off; knobs stylesSOS), components.officials
+     (off; block officials, opt-in per call to show real officials) and components.realism_sens (off; block realism, factors fit
+     on v4.0.1). SOS acts only when a caller passes opts.sos (backtest harnesses: tools/sosrec.js / tools/evalv.js). Each flag
+     off reproduces the engine before it (tests/test_v5_step3.js).
+   - step 4, components.embed (on; block embed: the embedding blend of the learned targets), components.oppadj (off; block oppadj:
+     opponent adjustment of the learned targets, exclusive with styles_sos sos) and components.preufc (on; block preufc: pre-UFC
+     finish-odds priors for fighters with 0-3 UFC fights). Each acts only with its input (opts.embed / opts.oppadj / opts.preufc;
+     backtest harnesses: tools/mlpathrec.js) or a loaded roster (FightEngine.loadEmbed / loadPreUFC, live bouts only). Each flag
+     off reproduces the engine before it (tests/test_v5_step4.js).
+   - step 5, components.blend_anchor (on; block blend): FightEngine.predict, the prediction package (src/ml/blend.js): the ML v2
+     package's winner blend (data/derived/blindtest_stack.json, `model` / `model_open` by an explicit opts.lineKind; ML v2 via
+     src/ml/ml2.js), method x round rescaled and pooled with S (mrWeight 0.15; Calibrate B 0.3), anchor mode, interval (kappa 1.65; Calibrate B 2.15), recalT 1.
+     It never touches matchup / simulate / summarize / explain (tests/test_v5_step5.js, tests/test_blend_anchor.js).
+   - Calibrate A (research/v5_train_ablation.md; tools/v5_train_ablation.js, train 2019-2023 only): leave-one-out ablation of the
+     merged components by soft-label CE vs the closing line. Defaults: everything stays as merged except components.v401.mlLevels,
+     now OFF (neutral on train, levels overshoot TD / control with embed on). emJudge stays on as a protocol exception (its off state
+     is fit on cards through 2026-10). SOS kept over oppadj; v3 params + learned rates not better. tests/test_v5_calA.js.
+   - Calibrate B (research/v5_calB.md; train 2019-2023 only): (1) the ONE joint knockdown / finish / stoppage / judging level pass,
+     components.calB (block calB below; tools/v5_calB_levels.js): dyn.kdLevel3 / kdLevel5 / convLevel / stkoScale / gnpScale and
+     judge.t108 re-levelled to the 2019-2023 actuals; calB off reproduces the Calibrate A engine (tests/test_v5_calB.js). (2) The
+     mlcal global-scale re-tune (tools/mlcal_spec_engine5.json, --no-val): no candidate beat the current set on the confirmation
+     window, so nothing changed (data/derived/mlcal_candidates_v5.json). (3) blend_anchor rebuilt on the final engine: blend.mrWeight
+     0.3, blend.anchor.slope0 0.771, blend.boot.inflate 2.15 (data/derived/blend_anchor.json). Engine VERSION 5.0.0, frozen in
+     versions/v5/.
    Units inside the engine: seconds and per-second rates unless a comment says otherwise. */
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "4.0.0-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01)
+    version: "5.0.0-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics), 3 (styles_sos, officials, realism_sens), 4 (embed, oppadj, preufc) and 5 (blend_anchor); Calibrate A default flags (v401.mlLevels off); Calibrate B levels (components.calB) and blend_anchor refits; frozen in versions/v5/
+
+    // ---------------- engine v5 components (src/engine3.js resolveParams; each flag off reproduces v4.0.0) ----------------
+    components: {
+      // v5 merge step 1: v4.0.1's train-only fixes, one sub-flag each (true / false for all five): (a) emJudge pre-2024 EM
+      // judging weights + the noise / 10-8 refit on them; (b) deductions; (c) mlLevels learned-path levels + companions;
+      // (d) tdCap cumulative takedown cap; (e) koTargets KO/TKO composition from 2019-2023 fights. Values: v401 below.
+      // Calibrate A (research/v5_train_ablation.md: train 2019-2023 leave-one-out, 1,999 fights x 2 orders x 300 sims, common
+      // random numbers; delta = arm without the flag minus all on, soft-label CE vs the close, eps 0.0005):
+      //   (a) emJudge ON, a protocol exception: removing it is -0.0001 [-0.0002, -0.0000] (inside eps; 7-bin -0.0006 n.s.), but
+      //       its off state is v4's EM weights fit on cards through 2026-10 (validation years + vault), so off is not admissible;
+      //   (b) deductions ON: soft CE +0.0000 (neutral), 7-bin +0.0194 [+0.0067, +0.0345] and who x how x when +0.0193 without;
+      //   (c) mlLevels OFF: soft CE -0.0001 [-0.0005, +0.0004] (neutral), no secondary worse without it; with embed on its
+      //       levels overshoot (TD per 15 1.380 vs 1.306 actual, control 172 vs 163 s, SUB 18.1 vs 17.5%); off: 1.300 / 164 / 17.5;
+      //   (d) tdCap ON: soft CE +0.0000 (neutral), 7-bin +0.0002 [+0.0000, +0.0004], method and joint worse without (20 sides);
+      //   (e) koTargets ON: soft CE +0.0001 (neutral), method x round +0.0027 [+0.0001, +0.0051] without.
+      v401: { emJudge: true, deductions: true, mlLevels: false, tdCap: true, koTargets: true },
+      // v5 merge step 2: knockdown chin / power block of research/model_durability.md (engine3.js applyDurability;
+      // values: durability below). Calibrate A: ON, soft CE +0.0009 [+0.0004, +0.0015] without it (7-bin +0.0065, stat lines +0.42%).
+      durability: true,
+      // v5 merge step 2: fight dynamics, research/model_dynamics.md E1-E11 (block `dyn` below; dyn.stkoHurtGate stays off).
+      // Calibrate A: ON (structure: round-by-round finish timing); removal does not help (soft CE +0.0002 [-0.0005, +0.0009]).
+      dynamics: true,
+      // v5 merge step 3: src/styles_sos.js, applied after the matchup tables are final (knobs: stylesSOS below). styles: style
+      // rate modifiers (research/model_styles.md section 9); sos: walk-forward strength of schedule (tools/sos_wf.py,
+      // data/derived/sos_wf.json); newcomer: pre-UFC newcomer priors, not implemented, ignored. false switches all off.
+      // Verified defaults: sos on with sosSource "wf" (train soft CE vs the close -0.0010 [-0.0018, -0.0001], verifier -0.0012
+      // [-0.0019, -0.0005]; stat lines -0.48%); styles off (on the learned-rate path the blocks double-count what the
+      // stat-line model carries: soft CE +0.0011 / +0.0005, control deviance +1.00%; on base tables they add nothing on top of
+      // sos and lean worse on method); newcomer off. sos is a no-op until a caller passes opts.sos (backtest harnesses:
+      // sos_wf.fights[id], A/B swapped with the corners) or loads a roster table (StylesSOS.loadSOS, release builds only).
+      // Calibrate A: SOS kept over oppadj (exactly one): oppadj instead of SOS +0.0005 [-0.0001, +0.0012] soft CE (stat lines
+      // -0.32% [-0.71, +0.07]); neither: +0.0009 [+0.0004, +0.0015].
+      styles_sos: { styles: false, sos: true, newcomer: false },
+      // v5 merge step 3: named judges' tendencies + shared panel noise + 10-8 model, referee stoppage tendencies (block
+      // `officials` below; engine3.js officialsFor). OFF in the prediction path: no train metric improves, the league model is
+      // slightly worse on the decision outcome (+0.0092 [+0.0002, +0.0176]) and named-judge effects do not predict. Opt-in per
+      // call to show real officials: opts.params.components.officials = true with opts.judges / opts.referee.
+      officials: false,
+      // v5 merge step 3: realism_sens per-division / per-format correction factors (block `realism` below; engine3.js
+      // realismFactors). OFF: the factors were fit on v4.0.1 final and gave no out-of-fold gain there (temporal 2-fold: winner
+      // -0.0011 [-0.0033, +0.0012], 7-bin +0.0049 [-0.0020, +0.0123], method +0.0029 [-0.0015, +0.0074]); refit on v5 first.
+      // FightEngine.sensitivity / rateSd (tornado data, common random numbers) work with it off or on.
+      realism_sens: false,
+      // v5 merge step 4: embedding blend of the learned stat-line targets (block `embed` below; engine3.js embedTargets;
+      // research/model_embed.md, verified). ON: confirmed on train before leaving it on (tools/embed_blend_loyo.py, 2019-2023
+      // out-of-fold rows, each year scored by the recipe fit without it: mean relative deviance over 18 targets -0.72% [-0.97,
+      // -0.49] vs the recalibrated rates, -0.42% [-0.68, -0.16] vs the raw learned rates). A no-op until a caller passes
+      // opts.embed (backtests: tools/mlpathrec.js) or loads a roster (FightEngine.loadEmbed(embed_model.json), bouts dated on or
+      // after 2026-01-01 only). Engine-level train check (tools/v5_step4_check.js, 1,999 fights x 2 orders x 300 sims, common
+      // random numbers, vs embed off): winner log loss -0.0042 [-0.0074, -0.0011]; per-fight deviance sig landed -0.31 [-0.46,
+      // -0.16], sig attempts -0.72 [-1.05, -0.39], control -1.61 [-2.91, -0.35]; 7-bin, method, TD and KD n.s.
+      // Calibrate A: ON, soft CE +0.0038 [+0.0030, +0.0047] without it (who x how x when +0.0150, stat lines +0.48%).
+      embed: true,
+      // v5 merge step 4: opponent adjustment of the learned targets, research/model_oppadj.md ML-path recipe (block `oppadj`
+      // below; engine3.js oppadjTargets). OFF: it competes with styles_sos sos "wf" (both adjust for the schedule) and the
+      // engine refuses the two together; the Calibrate ablation picks one by train soft CE + stat lines. Arm: { oppadj: true,
+      // styles_sos: { sos: false } } with opts.oppadj (backtests: tools/mlpathrec.js, oppadj.json walk-forward snapshots).
+      // Calibrate A: OFF (SOS stays; see styles_sos above).
+      oppadj: false,
+      // v5 merge step 4: pre-UFC newcomer priors, research/model_preufc.md item 3 (block `preufc` below; engine3.js applyPreUFC):
+      // finish-odds multipliers from the regional record for fighters with 0-3 UFC fights. The verified recipe; styles_sos's
+      // newcomer sub-flag (the older stub) stays off and the engine refuses both. A no-op until a caller passes opts.preufc
+      // (backtests: tools/mlpathrec.js, preufc.json snapshots) or loads a roster (FightEngine.loadPreUFC(preufc.json)).
+      // ON: engine-level train check vs embed alone (tools/v5_step4_check.js, 300 sims per order, common random numbers): method
+      // -0.0060 [-0.0115, -0.0005], 7-bin -0.0084 [-0.0168, +0.0002], KD deviance -0.0078 [-0.0127, -0.0027], KO-win log loss
+      // per newcomer side -0.0092 [-0.0168, -0.0014]; winner and stat lines n.s. Caveat: the recipe's exponents were fit on
+      // 2015-2023 newcomer sides, so 2019-2023 is not out of sample for them; the research's held-out check is its 2024-25 look.
+      // Calibrate A: ON, soft CE +0.0004 [-0.0000, +0.0009] without it; winner +0.0034, 7-bin +0.0123, method +0.0061, method x
+      // round +0.0071 (all intervals exclude 0).
+      preufc: true,
+      // v5 merge step 5: FightEngine.predict, the final prediction package (src/ml/blend.js; block `blend` below; research/
+      // model_blend_anchor.md, verified). ON: blend P(win) (the ML v2 package: data/derived/blindtest_stack.json `model` /
+      // `model_open` by opts.lineKind, + src/ml/ml2.js) + rescaled / pooled method x round + anchor mode + interval (kappa 2.15 since Calibrate B).
+      // It never touches matchup / simulate / summarize / explain; off, predict returns summarize's own numbers.
+      blend_anchor: true,
+      // v5 Calibrate B (tools/v5_calB_levels.js; data/derived/v5_calB_levels.json; train 2019-2023 only): the ONE joint level pass
+      // of the knockdown / finish / stoppage / judging levels with the Calibrate A flags (block `calB` below; engine3.js
+      // resolveParams). ON: the levels match the 2019-2023 actuals; off reproduces the Calibrate A engine bit for bit
+      // (tests/test_v5_calB.js).
+      calB: true
+    },
+
+    // ---------------- styles_sos knobs (component "styles_sos"; src/styles_sos.js, docs/ENGINE_V3_SPEC.md) ----------------
+    stylesSOS: {
+      styleScale: 1,     // the styleMatchups knob of section 9 item 4: scales every style shift s, 0..1.5 (opts.styleMatchups overrides)
+      styleSet: "ab1",   // "ab1": coefficients refit with a = b = 1 (the engine's composition), terms with |z| < 2 dropped; "fit": free-exponent set
+      styleMinZ: 2,      // a = b = 1 terms with |tune z| below this are left out (section 9 item 2; verification log)
+      styleCenter: true, // terms enter minus their 2019-2023 mean (only open stance is not mean 0), keeping the calibrated league level
+      // section-9 blocks per path ("all" = dist_att, td_att, ctrl_per_td, gnp_att; [] = none). Learned rates (v4/v5 path): none,
+      // the stat-line model already carries these effects (2019-2023 rate check: slopes 0.1-0.3 on s, fixed shifts worsen
+      // deviance; engine ablation: soft CE vs the close +0.0011 [+0.0001, +0.0022]). Base tables: all four (section 9 as written).
+      styleBlocks: { ml: [], base: "all" },
+      sosScale: 1,       // scales every strength-of-schedule shift (coefficients and prior strengths: src/styles_sos.js SOS_COEF / SOS_K)
+      sosSource: "wf"    // "wf": this component's walk-forward schedule table (tools/sos_wf.py, opts.sos / prof.sos); "oppadj": the
+                         // verified factors of tools/oppadj.py (prof.oppadj or StylesSOS.loadOppadj; research/model_oppadj.md).
+                         // Never stack the two (verdict: oppadj gives better stat lines, -0.8 to -3.3%, at +0.0011 soft CE).
+    },
+
+    // ---------------- embedding blend (component "embed"; research/model_embed.md "Integration recipe", data/derived/embed_model.json) ----------------
+    // v5 merge step 4. Per learned target t of one side: link(rate) = b0 + b1 link(mlrates rate) + b2 eta[task] (log links for
+    // per-minute rates, ctrl in minutes per minute and kd_h; logit for accuracies). recipe = embed_model.json mlrates_blend.targets
+    // (fit on mlrates' 2019-2023 out-of-fold rows; b2 = 0 where time-ordered CV inside 2019-2023 rejected the term). tasks = the
+    // embedding model's task order (the index of each eta). Release refit (research/model_embed.md): refit the blend on 2019-2025
+    // out-of-fold rows and rerun tools/embed.py before a release; the backtest harness keeps these 2019-2023 values.
+    embed: {
+      tasks: ["d_att", "c_att", "g_att", "h_att", "b_att", "l_att", "ns_att", "d_acc", "c_acc", "g_acc", "h_acc", "b_acc", "l_acc", "kd", "td_att", "td_acc", "ctrl", "sub_att", "rev", "ko_fin", "sub_fin"],
+      recipe: {
+        d_att: { task: "d_att", link: "log", b: [-0.069982, 0.711099, 0.322209] },
+        c_att: { task: "c_att", link: "log", b: [-0.003585, 0.581088, 0.406225] },
+        g_att: { task: "g_att", link: "log", b: [-0.038304, 0.657976, 0.37345] },
+        h_att: { task: "h_att", link: "log", b: [-0.177151, 0.725199, 0.360312] },
+        b_att: { task: "b_att", link: "log", b: [-0.000881, 0.686235, 0.32603] },
+        l_att: { task: "l_att", link: "log", b: [0.01211, 0.796754, 0.202168] },
+        td_att: { task: "td_att", link: "log", b: [0.043751, 0.573656, 0.425045] },
+        sub_att: { task: "sub_att", link: "log", b: [0.352258, 0.851244, 0.229988] },
+        rev: { task: "rev", link: "log", b: [-0.490037, 0.88882, 0.0] },
+        ctrl: { task: "ctrl", link: "log", b: [0.064459, 0.557073, 0.455859] },
+        acc_h: { task: "h_acc", link: "logit", b: [0.011774, 0.521711, 0.515074] },
+        acc_b: { task: "b_acc", link: "logit", b: [0.07556, 0.554021, 0.388165] },
+        acc_l: { task: "l_acc", link: "logit", b: [-0.011057, 0.481682, 0.51298] },
+        acc_d: { task: "d_acc", link: "logit", b: [-0.011446, 0.434249, 0.503721] },
+        acc_c: { task: "c_acc", link: "logit", b: [0.19873, 0.255241, 0.563796] },
+        acc_g: { task: "g_acc", link: "logit", b: [0.014659, 0.946195, 0.0] },
+        td_acc: { task: "td_acc", link: "logit", b: [-0.056387, 0.889465, 0.0] },
+        kd_h: { task: "kd", link: "log", b: [-0.703483, 0.849507, 0.0] }
+      }
+    },
+
+    // ---------------- opponent adjustment of the learned targets (component "oppadj"; research/model_oppadj.md item 3) ----------------
+    // v5 merge step 4. target_X x (F_off,X F_def,Y)^beta (odds for accuracies and takedown success); beta = data/derived/oppadj.json
+    // results.recommendation ml_path_beta (stacked on mlrates' 2019-2023 out-of-fold rates, clipped to [0, 1]). Knockdowns (kd),
+    // body accuracy (accB) and submission attempts (sub) stay 0 (off: they do not improve per-fight deviance). Same values as
+    // src/styles_sos.js OA_ML_BETA (the sosSource "oppadj" approximation on the final tables, which this recipe replaces).
+    oppadj: {
+      beta: { dAtt: 0.932, cAtt: 0.988, gAtt: 0.17, accH: 0.548, accB: 0, accL: 0.262, kd: 0, tdAtt: 0.372, tdAcc: 0.119, ctrl: 0.621, sub: 0 }
+    },
+
+    // ---------------- pre-UFC newcomer priors (component "preufc"; research/model_preufc.md "Recommendation for the engine" 3) ----------------
+    // v5 merge step 4. For a side with at most maxUfc prior UFC fights: rates from the regional record entering the bout,
+    // (count + smooth) / (n + 2); per-fight finish-odds multipliers (rate / ref)^exp (power: own KO-win odds; sub: own
+    // submission-win odds; chin: own KO-loss odds), faded by exp(-n_UFC / tau). Recipe values (smooth, ref, exp, tau) from the
+    // per-side finish models fit on 2015-2023 newcomer sides with time-ordered CV (exact values from preufc.json; the report rounds
+    // them to 0.343 / 0.247 / 0.044 and 0.60 / 0.63 / 0.24; tau 8 = the top of its CV grid; the report
+    // suggests trying 16 or no fade in the engine refit). scale: the hazard exponent that makes one unit of log odds multiplier
+    // move the engine's simulated finish odds by one unit (tools/preufc_scale.js, league-average pairs on train priors).
+    preufc: {
+      maxUfc: 3,
+      tau: 8,
+      smooth: { ko: 0.3, sub: 0.2, kol: 0.2 },
+      ref: { ko: 0.3433, sub: 0.2466, kol: 0.0436 },   // data/derived/preufc.json eval.side_finish.mu_pre (pre_ko, pre_sub, pre_kol)
+      exp: { pow: 0.601, sub: 0.627, chin: 0.244 },    // eval.side_finish.{ko_win, sub_win, ko_loss} "ufc+pre" own coefficient at n = 0
+      scale: { pow: 1.007, sub: 1.314, chin: 0.991 }
+    },
+
+    // ---------------- fight dynamics (component "dynamics"; research/model_dynamics.md section 8, data/derived/dynamics.json) ----------------
+    // Recipe values were fit on 2019-2023 ufcstats round data (train) by tools/dynamics.py and re-checked against the same JSON;
+    // [dyncal v4.0.1] values are level factors re-fit by tools/dynamics_calibrate.js on 2019-2023 backtest fights (out-of-fold
+    // learned rates) on top of engine v4.0.1: 1,000 train fights, 16 sims per corner order, 5 damped iterations plus one final
+    // update step from the last iteration (train only; scratchpad dyn/cal10.log). Volume, accuracy and takedown attempts follow
+    // the flag-off engine; knockdowns per fight-minute the 2019-2023 actuals by format; conversion the data's 0.512 per knockdown;
+    // the KO/TKO share the flag-off engine.
+    dyn: {
+      // E1 pace curves. RM 2.1: output per minute of position rises more steeply than per round-minute because control time rises
+      // by round, so a position-based engine starts from the distance curve [1, 1.15, 1.26] / [1, 1.22, 1.23, 1.31, 1.37]. With the
+      // takedown round curve below, the engine's control share rises by round as in real fights, and the recipe curves realised
+      // [1, 1.072, 1.072] / [1, 1.103, 1.054, 1.056, 1.013] per round-minute on train matchups (survivor selection is stronger
+      // with persistent fight-night output: high-output fights end early). Inputs = recipe x target / realised (5 rounds damped):
+      pace3: [1, 1.16, 1.34],                 // E1: output multiplier by round, 3 rounds (train realised target [1, 1.083, 1.141] per round-minute)
+      pace5: [1, 1.28, 1.30, 1.42, 1.52],     // E1: same, 5 rounds (target [1, 1.176, 1.130, 1.187, 1.185])
+      outStam: 0.05,                          // E1/E3: output x (1 - outStam (1 - S)); own earlier output costs at most -4.5% per 100 attempts (was 0.12)
+      // E2 form and persistence. Recipe: pace 0.35, out 0.20, AR(1) 0.30 / 0.68 (corrected E2: pace ~0.40, out 0.18-0.20, phi ~0.6,
+      // acc ~0.30). The first builder's train check (tools/dynamics_check_train.py on 2019-2023 rounds; real own-round corr R1-R2
+      // 0.570, R1-R3 0.474, fighters 0.656) found the recipe realising 0.468 / 0.424 / 0.553 because the engine's other round noise
+      // attenuates persistence; pace 0.45 and AR 0.32 / 0.85 fit best of four. Realised on v4.0.1 train matchups (same estimators,
+      // run abl402; real / flag off / these values): own-round corr R1-R2 0.570 / 0.462 / 0.540, AR(1) 0.63 / 0.01 / 0.49, sd
+      // fighter-fight 0.44 / 0.51 / 0.56, fighters' corr 0.85 / 0.50 / 0.63. A sensitivity run with formOut 0.12, formPace 0.43
+      // (abl403) gave 0.514 / 0.47 / 0.53 / 0.67 and no better scores (stat-line deviance +0.44, n.s.; control deviance worse).
+      // The individual form sds (formOut, formAcc) also carry the matchup model's error,
+      // not only true fight-night form: on the v4.0.1 train ablation (abl401) the narrow alternative (formOut 0, formAcc 0.31, the
+      // real accuracy dispersion) scored worse than these values on method (+0.0055) and method x round (+0.0108 [+0.0001, +0.0214]).
+      formPace: 0.45,                         // E2: lognormal sd of the shared fight-level pace (RE with profiles: 0.37; real fighters' corr 0.84 needs more)
+      formOut: 0.21,                          // E2: lognormal sd of each man's fight-level output form (recipe 0.20; with the AR(1) the flag-off total 0.37)
+      arSd: 0.32,                             // E2: stationary sd of each man's AR(1) round output noise (RE: 0.31)
+      arPhi: 0.85,                            // E2: its round-to-round autocorrelation (RE: 0.68; engine round noise attenuates the realised value to ~0.5); valid range [0, 1), the engine clips to [0, 0.999]
+      roundPace: 0.10,                        // E2: lognormal sd of the shared round pace (engine already realises 0.41 vs 0.36 real)
+      formAcc: 0.43,                          // E2: logit sd of each man's fight-level accuracy form (recipe 0.28; RE with profiles 0.29; with the AR(1) the
+                                              // flag-off total 0.48; 0.31 matches the real accuracy dispersion but scores worse, see above)
+      accArSd: 0.28,                          // accuracy AR(1) round noise, stationary logit sd (RE with profiles 0.244; 0.24 realised 0.19 vs 0.24 real)
+      accArPhi: 0.73,                         // its autocorrelation (RE with profiles: 0.727); valid range [0, 1) as arPhi
+      accProfA: 0.61,                         // attenuation of the attacker's profile accuracy shift (RE profile coefficient 0.61; no effect when ML rates re-target accuracy)
+      accProfB: 0.50,                         // attenuation of the defender's allowed-accuracy shift (0.50)
+      vol: 0.50,                              // E7: lognormal sd of the shared per-fight knockdown volatility (was 0.6). Recipe 0.30 was sized to 2024-25 (engine
+                                              // frailty 1.7 vs 0.9 real); on 2019-2023 matchups real frailty is 1.49 (flag off 1.65, vol 0.30 1.09), so 0.50
+      // E4 knockdown momentum (corrected recipe, research/model_dynamics.md section 5 and its verification log): engine multipliers on
+      // the baseline rate must match the skip-round contrast (next round vs the round before the knockdown round; 2010-2023: scorer
+      // -5.9% SE 4.8%, dropped -2.6% SE 4.9%), not the dynamic-RE coefficients (-8.8% / +6%, relative to the knockdown round itself)
+      momScorerOut: 0.92,                     // E4: next-round output of a man who scored a knockdown (removes the engine's +6.5% over baseline)
+      momScorerAcc: 0.94,                     // E4: his accuracy odds (-0.058 logit)
+      momScorerTd: 0.88,                      // E4: his takedown attempts (-12%)
+      momDroppedOut: 0.95,                    // E4: next-round output of the man who was dropped (corrected: x0.95, not x1.05)
+      momDroppedTd: 1.12,                     // E4: his takedown attempts (+11-12%)
+      lostAcc: 1,                             // E5 knob, default off: accuracy odds x this after a round lost on the cards (published round scores: -0.079
+                                              // logit, SE 0.015, i.e. x0.92; may be form information the stats miss, not a choice, so off)
+      tdCtrlOpp: -0.104,                      // E6: takedown attempts x exp(tdCtrlOpp x minutes controlled by the opponent in earlier rounds) (z = 6.5)
+      tdTdl: -0.063,                          // E6: x exp(tdTdl x own takedowns landed in earlier rounds)
+      tdCtrlOwn: 0,                           // E6 optional: x exp(tdCtrlOwn x own minutes in control earlier) (data +0.048, may be style persistence; off)
+      distCtrlOpp: -0.013,                    // E6: distance output x exp(distCtrlOpp x minutes controlled by the opponent earlier)
+      // E6 companion: the carry-over coefficients are conditional effects inside a model with round cells; real takedown attempts
+      // RISE by round (targets_by_round.train, per 15 min: 3 rounds 3.58 / 3.75 / 4.30; 5 rounds 2.64 / 2.76 / 3.41 / 3.28 / 3.62,
+      // smoothed log-linear +8% per round) and so does control (18.4% -> 20.5% of round time). Without a round curve the carry-over
+      // made the engine's attempts FALL by round (abl401: 4.01 / 3.68 / 3.41) and worsened takedown-attempt deviance on train.
+      // Inputs = target shape / realised shape, two fixed-point steps on train matchups (flat curve realised 3 rounds [1, .919, .850],
+      // 5 rounds [1, .933, .891, .844, .801]; first step [1, 1.14, 1.41] / [1, 1.16, 1.31, 1.50, 1.72] realised [1, 1.02, 1.07] /
+      // [1, 1.04, 1.11, 1.14, 1.21]). The steep inputs say the carry-over bites harder in the engine than in the data (the
+      // controlled-minutes term was weaker, -0.040, on the 2024-25 refit); the marginal round shape is what is matched here.
+      tdRound3: [1, 1.17, 1.58],              // E6: takedown-attempt multiplier by round, 3 rounds (normalised over the first rounds; tdLevel sets the level)
+      tdRound5: [1, 1.20, 1.38, 1.65, 1.95],  // E6: same, 5 rounds
+      kdRound3: [1.50, 0.85, 0.56],           // E7: knockdown risk per landed standing strike by round, 3 rounds ([1, .57, .37] with frailty, train)
+      kdRound5: [1.445, 1.27, 0.737, 0.535, 0.535], // E7: 5 rounds = [1, .88, .51, .37, .37], the train-only (2019-2023) frailty fit with R4-5
+                                              // pooled (the recipe's [1, .65, .405, .29, .29] is a 2010-2023 fit, outside the tuning window; on the
+                                              // first builder's runs it and a geometric-mean compromise over-predicted 5-round round-1 KO/TKO)
+      kdLevel3: 0.655,                           // [dyncal v4.0.1] knockdown level in 3-round fights (replaces kdStamAtt, kdPaceExp, kdDmg, kdStamDef)
+      kdLevel5: 0.559,                           // [dyncal v4.0.1] knockdown level in 5-round fights (replaces caution5 / r1Caution5 on knockdowns)
+      convLevel: 1.045,                           // [dyncal v4.0.1] odds scale on the instant-KO and follow-up stoppage chances after a knockdown (per-KD conversion 0.512 train)
+      convRound: -0.155,                      // E8: conversion odds x exp(convRound (r - 1)) (SE 0.077); replaces kdInstantDmg, refDmg, instStam, finStamAtt
+      stkoBase: 0.9,                          // E9: standing TKO while hurt = stko x (stkoBase + D / 100) (was 0.3; data slope +0.0104 per head strike absorbed)
+      gnpDmg: 100,                            // E9: ground TKO x (1 + D / gnpDmg) (was 600)
+      noKdRound: -0.17,                       // E9: non-knockdown stoppage hazards x exp(noKdRound (r - 1)) (standing -0.18, ground -0.17)
+      stkoHurtGate: false,                    // E9 knob (verifier, default off): a standing TKO needs the hurt state, whose incidence follows kdRound, so the
+                                              // realised standing TKO per standing head absorbed decays as kdRound x exp(noKdRound r) ([1, .54, .37] in 3-round
+                                              // train fights vs E9 [1, .84, .70]; E9 round SE 0.24). true divides the stop chance per hurt strike by
+                                              // kdRound[r] / kdRound[0] (refit: stkoScale 0.700, gnpScale 0.459). Train ablation, gate on vs off: n.s. on every metric
+                                              // (7-bin +0.0041, method +0.0018); 3-round R3 KO hazard 0.087 vs 0.072 real (0.079 gate off), so not adopted
+      stkoScale: 0.733,                       // [dyncal v4.0.1] standing TKO scale; with gnpScale one joint factor (data ratio of the two hazards kept) so the
+                                              // KO/TKO share matches the flag-off engine (data: 0.00045 per landed standing head absorbed, no-KD rounds)
+      gnpScale: 0.481,                        // [dyncal v4.0.1] ground TKO scale (data: 0.0067 per ground sig strike absorbed, no-KD rounds)
+      kPace: 45,                              // E10: per-round pace ratio prior strength (train-best 45; was 15; verified: 30-45 supported, 45 vs 15 n.s. held out)
+      paceMutual: 0.4,                        // E10: pace partly mutual: x opponent's late-round ratio^paceMutual (0.39 train)
+      outLevel: 1.039,                           // [dyncal v4.0.1] output level (keeps the realised attempts per minute)
+      accLevel: 0.998,                            // [dyncal v4.0.1] accuracy odds level (keeps the realised accuracy)
+      tdLevel: 1.126                              // [dyncal v4.0.1] takedown-attempt level (keeps the realised takedown volume; E4 / E6 shift attempts between rounds)
+    },
+
+    // blend_anchor settings (v5 merge step 5; the flag is components.blend_anchor above) (FightEngine.predict / src/ml/blend.js). Every fitted value was chosen on 2019-2023 backtest_dev
+    // fights only (tools/blend_anchor_eval.js; numbers in data/derived/blend_anchor.json and research/model_blend_anchor.md).
+    blend: {
+      sims: 1000,          // simulations per corner order in predict() (both orders are run and averaged; exact corner symmetry)
+      symmetric: true,     // run A-B and B-A (common random numbers in the anchor search)
+      smooth: 0.5,         // Jeffreys pseudo-count per method x round cell on the simulated counts (an unseen outcome is not p = 0)
+      mrWeight: 0.3,       // __MRWEIGHT__ weight of the rescaled simulator cells in the method x round pool; the rest is the method/round
+                           // model S/SM (tools/methodround_model.js) rescaled to the same P(win). Leave-one-year-out 2019-2023 optimum
+                           // of the joint method x round log loss. v5 Calibrate B (rebuilt on the final v5 engine, research/v5_calB.md):
+                           // 0.30, per-fold optima 0.30-0.40, joint 2.1368 (the v4-engine cells: 0.15, per fold 0.10-0.20, 2.1415)
+      mrPool: "linear",    // linear pool (beat the log pool out of fold: 2.1415 vs 2.1420 joint log loss, data/derived/blend_anchor.json)
+      recalT: 1,           // temperature on top of the blend's logit. 1: the stack already applies the scheme rolling-origin CV picks
+                           // inside 2019-2023 (recency weights h = 1-1.5 y + a temperature fit on forward out-of-fold logits; T through
+                           // 2023 = 1.09 without a line, no temperature with one). v5 step 5: blindtest_stack.json's no-line block
+                           // carries its own temperature (1.161, refit 2019-2025; 1.043 in the pre-2024 backtest stacker) and its
+                           // close / open blocks none, so a second temperature would double-count. Use it only with a blend that has
+                           // no calibration of its own.
+      // anchor mode: offset s split +s/2 / -s/2 on the log-odds of A's / B's striking accuracy (x cAcc), takedown success (x cTd) and
+      // knockdown power (x cPow). Mix chosen on 2019-2023 among four (acc/td/pow = 1/1/0, 0.5/1/1, 0/1/2, 0.5/2/0.5) as the one that hits
+      // the blend without worsening the stat lines: 0.5/1/1 improves sig-landed, head-landed, control and sub-attempt deviance vs the plain
+      // simulator (KD deviance +2.5%); pure accuracy (1/1/0) worsened landed strikes ~2%. slope0: d logit P_sim / ds at s = 0 for that mix
+      // (pilot, 120 fights x 3 offsets x 400 sims: 0.86, se 0.014, on the v4 engine; v5 Calibrate B, the final v5 engine, tools/blend_anchor_bt.js
+      // pilot, 150 fights x 3 offsets x 400 sims: 0.771, se 0.014)
+      // (powNorm: the power multipliers are divided by cosh(cPow s/2) so the pair's total knockdown rate is kept; the plain split
+      // added 7% knockdowns on 2019-2023)
+      anchor: { cAcc: 0.5, cTd: 1, cPow: 1, powNorm: true, slope0: 0.771, priorWeight: 2, iters: 4, step: 0.05, tol: 0.01, sims: 300, maxAbs: 4 },
+      // interval for P(win): profile-noise bootstrap (fight-level gamma noise, relative variance cv^2 / decayed fights; cvOut 0.45
+      // from the between-fight log output sd in docs/BACKLOG.md "Variance"; grappling, subs, KD and accuracy cvs are judgment calls),
+      // then inflate = kappa: the bootstrap sd x 1.65 makes the 80% interval cover the closing line 80% of the time on 2019-2023
+      // (out of fold by year: 80.0% at 80%, 94.4% at 95%); the raw bootstrap covers it only 55% / 76%. v5 Calibrate B (final v5 engine):
+      // the bootstrap sd is smaller (median 0.229 vs 0.297 logit; raw cover 46% / 64%), so kappa 2.15 (out of fold 79.6% / 94.2%)
+      boot: { B: 200, seed: 7, level: [0.8, 0.95], cvOut: 0.45, cvGrap: 1.0, cvSub: 1.5, cvKd: 1.0, cvAcc: 0.25, count: true,
+        eloRd: 0, eloRdScale: 0, mrSd: 0, engineMC: true, inflate: 2.15 }
+    },
 
     // ---------------- learned stat-line rates (engine v4) ----------------
     mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base
-    mlMaxRatio: 4,    // cap on any single learned-vs-base multiplier (src/ml/mlrates.js applyToMatchup maxRatio)
+    mlMaxRatio: 4,    // cap on any single learned-vs-base multiplier (src/ml/mlrates.js applyToMatchup maxRatio; [v401 d] tdCap: on the cumulative takedown multipliers too)
+    mlTdLevel: 1.067,   // [v401 c: levels v4.0.1, tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on; off 1] factor on the learned takedown-attempt targets (v4.0.0 left takedowns landed 6% low on train)
+    mlCtrlLevel: 1.053,  // [v401 c: same; off 1] factor on the learned control targets (v4.0.0: control 5% low on train)
+    mlSubLevel: 1.083,   // [v401 c: same; off 1] factor on the learned submission-attempt targets (v4.0.0: attempts 6.5% low on train, which the submission conversion scale had absorbed)
+
+    // ---------------- durability: knockdown chin and power (engine v5; research/model_durability.md section 9) ----------------
+    // KD hazard per landed standing head strike by i on j = kdCal x base_ij x rel_ij (see engine3.js applyDurability).
+    // terms: live Poisson fit 2008-01-01..2026-10-31 (data/derived/durability.json engine.terms_live; log-rate coefficients
+    // vs the trailing league level, Lightweight / non-title / 3-round / age-30 reference). Backtests pass walk-forward
+    // records (durability.json backtest[fight_id]: chin_re, chin_cov, pow_re, pow_cov and the base L730 x context) per call.
+    durability: {
+      level: 0.010274,   // league KD per landed standing head strike, trailing 730 days at the Oct 31, 2026 snapshot (durability.json engine.level_now_trailing_730); labeled scenario: 0.011706 = trailing 365 days ("current season", 2025-26 surge)
+      terms: {
+        "const": 0.07774,                                  // vs the trailing level
+        "div_Flyweight": 0.15988, "div_Bantamweight": 0.11456, "div_Featherweight": 0.08257, "div_Welterweight": 0.08936,
+        "div_Middleweight": 0.18624, "div_Light Heavyweight": 0.33379, "div_Heavyweight": 0.14286, "div_Catch Weight": -0.09189,
+        "div_Women's Strawweight": -1.08298, "div_Women's Flyweight": -1.12069, "div_Women's Bantamweight": -1.06114,
+        "div_Women's Featherweight": -0.56292,             // division multipliers vs Lightweight (FLY 1.17 ... LHW 1.40; women 0.33-0.57)
+        five: -0.11143,      // five-round fight x0.895 (after fighter effects)
+        title: -0.09636,     // title fight x0.908
+        d_age_c: 0.06177,    // defender chin: +6.4%/yr at every age (no knee at 30: hinge below)
+        d_age_h30: -0.0016,  // change in the defender slope past 30
+        d_age_na: 0.79895,   // defender age unknown
+        d_okd_r: -0.14251,   // per KD absorbed in the last 365 days (tempers chin_re's reaction: diminishing evidence)
+        d_okd_o: -0.08,      // per older KD absorbed
+        d_kol_r: 0.18908,    // per KO/TKO loss (strikes or corner) in the last 365 days: x1.21
+        d_kol_o: 0.0749,     // per older KO/TKO loss: x1.08
+        a_age_c: -0.00445,   // attacker power, slope below 30 (flat)
+        a_age_h30: -0.03589  // attacker power past 30: -4.0%/yr (x0.72 from 30 to 38)
+      },
+      normChin: 0.9972,  // NORM = 2024+ exposure-weighted mean of the live C_d (durability.json engine.norm_chin); backtests on 2019-2023 use norm_chin_backtest_2019_2023 0.9882
+      normPow: 0.9752,   // same for P_a (engine.norm_pow); 2019-2023 backtests use 1.0183
+      alphaChin: 3,      // Gamma(3, 3) prior on the fighter chin multiplier, worth ~290 standing head strikes (tuned on 2019-2023)
+      alphaPow: 2.5,     // Gamma(2.5, 2.5) prior on the fighter power multiplier (~245 standing head strikes)
+      fallbackEB: true,  // profiles without a durability record: chin_re / pow_re from career sums (opponent effects taken as 1)
+      standShare: 0.9,   // standing share of landed head strikes for that fallback (research section 1: 90% since 2019)
+      engineWeight: 0.5, // [train 2019-2023] geometric weight on the engine's own KD structure (v3 ratios, or the v4 learned rates); 1 - w on durability. Static KD deviance on 2019-2023: w 0.5 beat durability alone by 20 [-42, +1] and v4 alone by 36 [-58, -15]
+      kdCal: 1.1639618,  // [train 2019-2023] extra conversion x kdScale from the data hazard to the engine's base hazard (its in-fight KD modifiers average below 1); level-matched to the FROZEN v4 engine's simulated knockdowns per fight on 2019-2023 (verifier, Nov 6: 1,999 fights x 300 sims, OOF rates; kdScale 1.391 -> kdCal x kdScale 1.619): 1.18780096 (the builder's value, matched to the in-flight v4 with kdScale 1.246) gave on 0.474 vs off 0.465 per fight there, 1.164 gives 0.467. Re-match after any kdScale / KD-modifier change: kdCal x KD_off / KD_on. kdCalRel (default 1) replaces it in relative mode
+      chinExp: 1,        // exponent on C_d (validation slope 0.98 +- 0.10; the first version's 1.15 is withdrawn)
+      powExp: 1,         // exponent on P_a (validation 0.80 +- 0.08 is worth only -2.3 +- 4 on 2024+, so 1)
+      sizeChin: 0,       // labeled knob, no size tax by default: chin x exp(sizeChin x lbs up / 10) for the man above his home division (data: x0.85-0.91 per class up, the wrong sign for a tax)
+      sizePow: 0,        // labeled knob: power x exp(-sizePow x lbs up / 10)
+      gnpCal: 1,         // scale on the GNP TKO hazard when the component is on (sqrt of the blended power x chin product, as v3)
+      stkoCal: 1,        // scale on the standing TKO hazard (same)
+      caution5: null,    // null keeps the engine's caution5 for 5-round fights; a number overrides it while the component is on
+      // first-version terms that failed the 2019-2023 one-SE rule (research/model_durability.md V4); labeled knobs, neutral:
+      // layoff24 (first version x0.64 at 730+ days), lastKO (x1.163 when the last fight was a KO loss), ufcYear (+0.021/yr in the UFC)
+      withdrawn: { layoff24: null, lastKO: null, ufcYear: 0, ufcYearRef: 2.6 }
+    },
 
     // ---------------- profile estimation (shrinkage toward the fight division's priors) ----------------
     kPM: 40,          // per-minute rate prior strength, fight-minutes of division-average fighting (combine_fit meta.shrink_k_default.pm)
@@ -107,8 +466,8 @@
     outMob: 0.15,            // output x (1 - outMob (1 - mobility)) (default)
 
     // ---------------- damage, knockdowns, finishes ----------------
-    kdScale: 1.391,          // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 1.246] global knockdown scale on p0 (division KD per landed standing head strike)
-    kdPos: [1.0, 2.561],     // [selfcal v4: train-only priors_dev.json] KD multiplier for distance, clinch head strikes; fit so clinch stoppages are 12.5% of strike KO/TKOs (baserates; knees and elbows)
+    kdScale: 1.383,          // [v401 c: levels v4.0.1, tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on; off = levels v4 1.391; v3 walkfwd 1.246; v401 e: x koComp.kdScale] global knockdown scale on p0 (division KD per landed standing head strike)
+    kdPos: [1.0, 2.561],     // [selfcal v4: train-only priors_dev.json; v401 e: [1] x koComp.kdClinch] KD multiplier for distance, clinch head strikes; fit so clinch stoppages are 12.5% of strike KO/TKOs (baserates all years; 2019-2023 fights: 7.1%, components.v401.koTargets)
     kdBodyRatio: 0.05,       // KD chance per landed standing body strike relative to head (baserates: body 5.5% of KO/TKOs)
     kdDmg: 800,              // accumulated head damage: KD x (1 + D / kdDmg) (literature 3.2: damage effect is weaker than fatigue and selection)
     kdHurt: 1.8,             // KD multiplier while hurt (default)
@@ -132,7 +491,7 @@
     powDmgExp: 0.5,          // damage per landed head strike = (power ratio)^powDmgExp (v2: sqrt)
     dmgHeal: 0.06,           // share of head damage that clears between rounds (default)
 
-    kdInstant: 0.3673,       // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 0.3175] P(knockdown is an immediate knockout), x damage, fatigue and division factors; scaled on odds with kdRefStop, stko and gnpTko (koAll 0.771) to the 2019-2023 KO share
+    kdInstant: 0.3623,       // [v401 c: levels v4.0.1; off = levels v4 0.3673; v3 walkfwd 0.3175; v401 e: odds x koComp.kdInstant] P(knockdown is an immediate knockout), x damage, fatigue and division factors; scaled on odds with kdRefStop, stko and gnpTko (koAll 0.771) to the 2019-2023 KO share
     kdInstantDmg: 600,       // instant-KO x (1 + D / kdInstantDmg) (default)
     finStamAtt: 1.0,         // attacker fatigue: GNP TKO, follow-up referee stop and submission conversion x max(0.05, 1 - finStamAtt (1 - S_att)) (finish hazards fall by round while output rises)
     instStam: 1.0,           // attacker fatigue: instant-KO odds x (1 - instStam (1 - S_att)) (default)
@@ -141,11 +500,11 @@
     kdRecoverStand: 0.45,    // share of recoveries that get back to the feet; the rest recover guard with the attacker on top (default)
     kdGnpRate: 1.1,          // ground strikes per second in the follow-up flurry (default)
     kdGnpAcc: 0.78,          // landing probability of follow-up ground strikes (default)
-    kdRefStop: 0.184,       // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 0.153] P(referee stops it) per landed follow-up head strike, x damage and fatigue factors
+    kdRefStop: 0.1807,       // [v401 c: levels v4.0.1; off = levels v4 0.184; v3 walkfwd 0.153; v401 e: odds x koComp.kdRefStop] P(referee stops it) per landed follow-up head strike, x damage and fatigue factors
     refDmg: 600,             // follow-up referee stop odds x (1 + D / refDmg) (default; small: finish hazard falls by round in the data)
     kdFinRef: 0.6,           // league P(same-round finish | KD) the follow-up was tuned for; division kd_fin rescales on odds (priors kd_fin, LW 0.60)
-    stko: 0.03644,           // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 0.03439] standing TKO hazard per landed standing head strike while hurt, x (stkoBase + D/100); fit so stoppages without a KD are ~7% of KO/TKOs (baserates 0.049 vs 0.509 per 100 standing head landed)
-    gnpTko: 0.03072,           // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 0.02467] GNP TKO hazard per landed top ground head strike (x sub-position, damage, fatigue); fit so ground stoppages are 28% of strike KO/TKOs (baserates)
+    stko: 0.03565,           // [v401 c: levels v4.0.1; off = levels v4 0.03644; v3 walkfwd 0.03439; v401 e: x koComp.stko] standing TKO hazard per landed standing head strike while hurt, x (stkoBase + D/100); fit so stoppages without a KD are ~7% of KO/TKOs (baserates 0.049 vs 0.509 per 100 standing head landed)
+    gnpTko: 0.03005,           // [v401 c: levels v4.0.1; off = levels v4 0.03072; v3 walkfwd 0.02467; v401 e: x koComp.gnpTko] GNP TKO hazard per landed top ground head strike (x sub-position, damage, fatigue); fit so ground stoppages are 28% of strike KO/TKOs (baserates)
     stkoBase: 0.3,           // standing TKO hazard while hurt = stko x (stkoBase + D / 100) (default)
     gnpDmg: 600,             // GNP TKO x (1 + D / gnpDmg) (default)
     gnpHurt: 2.0,            // GNP TKO multiplier while hurt (default)
@@ -178,7 +537,7 @@
     tdOddsScale: 0.9018,     // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.9103] takedown success odds scale
     sweepScale: 1.0,         // sweep / reversal rate scale (default; reversals come from each pair's data rates)
     subAttScale: 1.085,      // [selfcal v4: train-only priors_dev.json; v3 walkfwd 1.042] submission attempt rate scale
-    subConvScale: 1.847,     // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 1.619] submission conversion odds scale
+    subConvScale: 1.697,     // [v401 c: levels v4.0.1 (with mlSubLevel's 8% more attempts); off = levels v4 1.847; v3 walkfwd 1.619] submission conversion odds scale
     gilloScale: 1.0,         // standing guillotine attempts on stuffed shots scale
 
     // ---------------- fight-night form (sds; every multiplicative draw is a mean-1 lognormal) ----------------
@@ -197,29 +556,103 @@
     },
 
     // ---------------- judging ----------------
-    // v4: EM round-winner fit over all 7,550 ufcstats cards with only 10-9 rounds (docs/BACKLOG.md "Judging";
-    // research/data_baserates.md item 12), logit per landed differential. Noise, tastes and the 10-8 rule are fit to the
-    // 2019-2023 judges' rounds in data/derived/judgerounds_rows.json by tools/judgecal.js (train years only).
+    // [v401 a] emJudge (default): EM round-winner fit over the 5,519 ufcstats cards of 2015-01-01..2023-12-31 with only 10-9
+    // rounds (tools/judge_em_train.py -> data/derived/judge_em_train.json; same code as baserates.json
+    // round_model.em_all_cards), logit per landed differential, with the noise and the 10-8 KD term refit on these weights
+    // (tools/judgecal.js on the 2019-2023 judges' rounds in data/derived/judgerounds_rows.json, train years only) and t108
+    // re-levelled (tools/v4_levels.js). Off (v401.off.emJudge): v4.0.0's all-cards fit through 2026-10 (validation years and
+    // the vault) and the judgecal / levels values fit on it. [v401 b] deductions: judge.ded / ded2 (off: 0).
     judge: {
-      head: 0.179, body: 0.133, leg: 0.105,   // per landed sig strike differential to head / body / leg (EM fit)
-      kd: 2.42,                               // per knockdown (EM fit; 13.5 head strikes)
-      td: 0.286,                              // per takedown landed (EM fit)
-      ctrlMin: 0.46,                          // per minute of control (EM fit; ufcstats control includes clinch control)
-      sub: 0.85,                              // per submission attempt (EM fit)
+      head: 0.1742, body: 0.1271, leg: 0.1042,   // [v401 a: em pre-2024] per landed sig strike differential to head / body / leg (v4.0.0, all years: 0.179 / 0.133 / 0.105)
+      kd: 2.1635,                               // [v401 a: em pre-2024] per knockdown (12.4 head strikes; v4.0.0 2.42)
+      td: 0.2780,                               // [v401 a: em pre-2024] per takedown landed (v4.0.0 0.286)
+      ctrlMin: 0.4623,                          // [v401 a: em pre-2024] per minute of control (ufcstats control includes clinch control; v4.0.0 0.46)
+      sub: 0.8467,                              // [v401 a: em pre-2024] per submission attempt (v4.0.0 0.85)
       hurt: 0.8,                              // per hurt/wobble scored (engine-only event, not in ufcstats: about 1/3 of a knockdown; judgment call)
       power: 0.25,                            // default judges.power: extra credit for power-weighted head damage beyond the strike count (v2 judgePower 0.25)
-      sharedSd: 1.416,                        // [judgecal] sd of the noise shared by the three judges (logits; ML on 2019-2023 rounds 1.531, less the engine-only hurt / power terms' residual variance)
-      sharedFight: 0.3303,                    // [judgecal] share of the shared variance drawn once per fight (persists across rounds; data 0.283 of 1.531^2, LR 101): panel residuals correlate ~0.12 between rounds of a fight
-      indSd: 1.079,                           // [judgecal] sd of each judge's own noise (logits)
+      sharedSd: 1.357,                        // [judgecal; v401 a, v4.0.0 1.416] sd of the noise shared by the three judges (logits; ML on 2019-2023 rounds 1.489 with the pre-2024 weights (v4.0.0: 1.531), less the engine-only hurt / power terms' residual variance)
+      sharedFight: 0.3402,                    // [judgecal; v401 a, v4.0.0 0.3303] share of the shared variance drawn once per fight (persists across rounds; data 0.283 of 1.489^2, LR 101): panel residuals correlate ~0.12 between rounds of a fight
+      indSd: 1.053,                           // [judgecal; v401 a, v4.0.0 1.079] sd of each judge's own noise (logits)
       tasteSd: 0,                             // lognormal sd of each judge's fight-level taste for striking / grappling / damage; 0 in v4: a judge who dissents twice in a fight does so in either direction equally often (judgecal: no fight-level taste; v3 0.2 from literature 12.5)
-      t108: 8.555,                            // [judgecal 7.07 on real rounds; levels v4 8.555: simulated decision rounds give the 2021-2023 3.5% 10-8 share on train fights] a judge scores 10-8 when his |z| exceeds t108 - t108kd x min(2, winner's KD edge); 2021-2023 threshold (2019-2020: 6.29; 10-8 share 3.6% vs 5.9%)
-      t108kd: -1.087                          // [judgecal] threshold change per knockdown of edge; negative: z already carries 2.42 per KD, and judges give a 10-8 to 13% of KD-edge round winners, not the 23% that z alone implies
+      t108: 8.31,                            // [judgecal + levels v4.0.1; v401 a, v4.0.0 8.555] a judge scores 10-8 when his |z| exceeds t108 - t108kd x min(2, winner's KD edge); judgecal fits it on real rounds (2021-2023 threshold; 2019-2020 lower, 10-8 share 3.6% vs 5.9%), then tools/v4_levels.js re-levels it so simulated decision rounds give the 2021-2023 3.6% share on train fights (the engine's rounds, with hurts, are more lopsided)
+      t108kd: -0.8585,                        // [judgecal; v401 a, v4.0.0 -1.087] threshold change per knockdown of edge; negative: z already carries the KD weight, and judges give a 10-8 to 13% of KD-edge round winners, not the 23% that z alone implies
+      ded: 0.00515,                           // [judgecal; v401 b, off 0] point deduction (foul) per fighter per round, on all three cards; 2019-2023 decision rounds (v4.0.0 had none, so its draws and majority decisions came from 10-8s alone)
+      ded2: 0.075                             // [judgecal; v401 b] share of deductions that cost 2 points
+    },
+
+    // ---------------- officials (components.officials; tools/officials_engine.py, data/derived/officials_engine.json) ----------------
+    // v5 merge step 3: code only, OFF in the prediction path (components.officials false; the prediction path keeps the judge
+    // block above). Opt-in for showing real officials: opts.params = { components: { officials: true } } with opts.judges =
+    // [names or keys] / opts.referee = name (FightEngine.loadOfficials(officials_engine.json) for the named tables).
+    // League judging model used when no table is loaded: the production table (fit on judges' rounds 2019-01-01..2023-12-31,
+    // 3,911 clean rounds / 11,696 judge-rounds, MMA Decisions via tools/judgerounds.py). Backtests must pass the year's
+    // walk-forward table (opts.officials or FightEngine.loadOfficials + the fight date), never these values.
+    officials: {
+      beta: { head: 0.30773, body: 0.23381, leg: 0.19532, kd: 4.11805, td: 0.45459, ctrlMin: 0.96699, sub: 1.4084, rev: 0.52713 }, // logit per landed differential (head-strike units: body 0.76, leg 0.63, KD 13.4, TD 1.5, control 3.1/min, sub 4.6)
+      sigmaU: 2.52843,        // sd of the round noise shared by the panel (logits; own noise is Logistic(0, 1), sd 1.81): near-even rounds unanimous 59% (model 61%) vs 26% for independent judges
+      sharedFight: 0.3,       // share of the shared variance drawn once per fight (profile likelihood +35.6 log-lik units over 0 on 2019-2023; 0.35-0.40 in earlier windows; judgecal 0.33)
+      ten8: { c0: -10.3952, thV: 0.64685, thK: 0.54528, thG: 1.05379, sigmaE: 2.0906 },   // 10-8 for the round winner: sigmoid(c0 + c_j + thV V_W + thK K_W + thG G_W + eps); c0 = the 2023 year effect (held-out choice: last window year beat 2-year and window means)
+      p1010: 0.00034,         // P(a judge scores 10-10) (2019-2023 judge-rounds)
+      tau: { n: 0.075, v: 0.075, k: 0.125, g: 0.1, c: 0.2 },               // population sds of judge effects (sharpness, volume, knockdown, grappling, 10-8): 0.5 x the pre-2019 EB sds, multiplier and 10-8 sd chosen by held-out 2019-2023 panel likelihood
+      refTau: { kdf: 0, stko: 0.3, gnp: 0 },                               // population sds of referee effects (log multipliers); held-out 2019-2023 deviance chose 0 for KD follow-up stoppage and ground-and-pound, 0.3 for standing TKO
+      hurtHS: null,           // engine-only hurts in head-strike units (null: judge.hurt / judge.head, the v4 ratio)
+      engAdj: { aH: 0.01897, aP: -0.0931, vHH: 0.42062, vHP: 0.58684, vPP: 30.37291 },   // engine-only terms' slopes on the count index and residual covariance (tools/officials_engcal.js --write; null = raw terms)
+      // v5: named-judge effects OFF (docs/BACKLOG.md OFFICIALS: they make decision-winner log loss worse in all three windows;
+      // component ablation jd - lg: winner -0.0001 [-0.0003, +0.0002], decision outcome +0.0006 [-0.0039, +0.0047]): every judge
+      // scores as the league judge; names are still drawn / recorded in fight.officials
+      perJudge: false,        // true: per-judge tendencies from the table (n, v, k, g, c); false: every judge is the league judge
+      referee: true           // false: referee multipliers 1 (only standing-TKO multipliers vary, 0.84-1.27; not centred, pool mean 1.01-1.05)
     },
 
     // ---------------- between rounds ----------------
     doc: 0.06,               // doctor stoppage hazard between rounds: doc * (D/100)^2, capped (sweep: ~0.7 per 100 league-average 3-round fights; baserates doctor 0.76 per 100 all, 1.5 LW, 1.55 in 5-rounders)
     docCap: 0.2,             // cap per interval
     corner: 0.03,            // corner stoppage hazard: corner per KD absorbed beyond the first, plus corner * (D/120)^3 (sweep: ~0.1 per 100 3-round fights; baserates corner 0.13 all, 0.35 LW, 0.52 in 5-rounders)
+
+    // ---------------- v5 merge step 1: components.v401 values (src/engine3.js resolveParams) ----------------
+    // off: v4.0.0's values, put back (before opts.params overrides) for each sub-flag that is off. Never tuned: they are
+    // the reference that makes each flag-off path reproduce v4.0.0 (tests/test_v401.js). One line per sub-flag on purpose:
+    // the in-place rewriters (tools/v4_levels.js, tools/judgecal.js, tests/test_engine3.js --write) match a field name at
+    // the start of a line, so they only ever touch the usual (flag-on) fields above.
+    // koComp: (e) factors from re-aiming the self-calibration's KO/TKO composition at 2019-2023 fights (tools/ko_composition.py
+    // -> data/derived/ko_composition_pre2024.json: ground 28.6%, clinch 7.1%, standing without a KD 7.2%, vs v4's all-years
+    // 28 / 12.5 / 7; the clinch share is the big move: ufcstats labelled ~24% of strike KO/TKOs "In Clinch" in 2015-2018
+    // and ~7% from 2019 on). tools/v401_kocomp.js fits kdScale, kdPos[1], gnpTko, stko and kdInstant / kdRefStop (odds)
+    // twice on league-average Lightweight pairs (train-only priors, learned rates off, common random numbers), once to v4's
+    // targets and once to the 2019-2023 ones, holding knockdowns per head strike and KD-to-finish at the engine's own level;
+    // factor = second / first. Applied after the opts.params overrides, so the usual fields stay the pre-(e) levels.
+    v401: {
+      off: {
+        emJudge: { judge: { head: 0.179, body: 0.133, leg: 0.105, kd: 2.42, td: 0.286, ctrlMin: 0.46, sub: 0.85, sharedSd: 1.416, sharedFight: 0.3303, indSd: 1.079, t108: 8.555, t108kd: -1.087 } },
+        deductions: { judge: { ded: 0, ded2: 0 } },
+        mlLevels: { mlTdLevel: 1, mlCtrlLevel: 1, mlSubLevel: 1, kdScale: 1.391, kdInstant: 0.3673, kdRefStop: 0.184, stko: 0.03644, gnpTko: 0.03072, subConvScale: 1.847 }
+      },
+      koTargets: { ground: 0.2859, clinch: 0.0711, standNoKd: 0.0725 },   // (e) the self-calibration's composition targets (tests/test_engine3.js --fit uses them while the sub-flag is on; v4: 0.28 / 0.125 / 0.07)
+      koComp: { kdScale: 1.11, kdClinch: 0.4999, gnpTko: 1.023, stko: 1.051, kdInstant: 0.9877, kdRefStop: 0.9877 }   // (e) tools/v401_kocomp.js --n 30000 --iters 12 (data/derived/v401_kocomp.json): clinch share 12.7% -> 6.9% on league-average LW pairs, KD per head strike held, KO share +0.4 pt
+    },
+
+    // ---------------- v5 Calibrate B: the joint level pass (components.calB; src/engine3.js resolveParams) ----------------
+    // tools/v5_calB_levels.js fit (data/derived/v5_calB_levels.json): all 1,999 2019-2023 backtest_dev fights, both corner orders,
+    // a seed per simulated fight, evalv's leak-free inputs (as-of priors, out-of-fold learned rates, durability records + train NORM,
+    // SOS pairs, embed / preufc snapshots), the Calibrate A flags; 6 damped fixed-point iterations at 60 sims per order, final check
+    // at 200 (20 traced). One lever per target; durability.kdCal is held (1.1639618), so knockdowns have one free scale per format:
+    //   dyn.kdLevel3 / kdLevel5: geometric mean of the factors matching KD per 15 minutes and KD per 100 head landed of the format
+    //     (3 rounds 0.611 / 0.814 actual; 5 rounds 0.500 / 0.641); before 0.595 / 0.791 and 0.504 / 0.621, after 0.613 / 0.815 and
+    //     0.509 / 0.627; KD per 100 head landed overall 0.759 -> 0.780 (actual 0.782 [0.721, 0.843]);
+    //   dyn.convLevel: same-round strike finish per knockdown 0.505 -> 0.511 (dynamics.json kd_conversion rate_train 0.512);
+    //   dyn.stkoScale / gnpScale: one joint factor (their ratio kept) holding the KO/TKO share at the actual 31.7% (after 31.8%);
+    //   judge.t108: card-implied 10-8 share of decision judge-rounds (judges' 10-8s + 3 x deduction points) 4.47% -> 4.75%, aimed at
+    //     the 2021-2023 decisions' 4.71% (v4's judging-regime choice; 2019-2023 5.29%, 2019-2020 6.2%). Majority decisions (0.96% vs
+    //     2.04%) and draws (0.62% vs 1.01%) stay low: in the 2019-2023 cards MDs do not track 10-8s (2022: 4.0% 10-8, 3.6% MD;
+    //     2020: 5.8%, 0.0%), and a threshold that gives 6.6% 10-8s still leaves 1.3% MD / 0.8% draws. Structural, not a level.
+    // Not fixed by levels (round shape; for v6): 3-round finish by round 24.4 / 16.7 / 7.5% actual vs 25.9 / 13.5 / 8.8% (round 2
+    // below the actuals' interval [15.0, 18.4] for KO and SUB alike); 5-round R4 8.0% vs 5.3%.
+    calB: {
+      set: {
+        dyn: { kdLevel3: 0.6772, kdLevel5: 0.5656, convLevel: 1.0966, stkoScale: 0.6587, gnpScale: 0.4322 },   // before: 0.655 / 0.559 / 1.045 / 0.733 / 0.481
+        judge: { t108: 8.176 }                                                                                 // before: 8.31
+      }
+    },
 
     // ---------------- division self-calibration factors ([selfcal v4]: train-only priors_dev.json; neutral = 1) ----------------
     // att: strike-attempt scale; kd: knockdown scale; ko: scales kdInstant and kdRefStop odds and the stko / gnpTko hazards;
@@ -237,6 +670,41 @@
       "Women's Flyweight": { att: 0.956, kd: 0.949, ko: 0.806, sub: 1.045, ctrl: 1.066, td: 0.976 },
       "Women's Bantamweight": { att: 0.97, kd: 0.934, ko: 0.564, sub: 0.84, ctrl: 1.053, td: 0.975 },
       "Women's Featherweight": { att: 0.976, kd: 0.853, ko: 0.709, sub: 1.169, ctrl: 1.048, td: 0.986 }
+    },
+
+    // ---------------- realism_sens: walk-forward realism corrections and sensitivity sds (tools/realism.js) ----------------
+    // v5 merge step 3: the factor layer stays OFF (components.realism_sens false): these div / fmt factors were fit on v4.0.1 final
+    // (main 1f30636), not on the v5 engine, and gave no out-of-fold gain there; refit before any use. disp / knobSd serve
+    // FightEngine.sensitivity / rateSd with the flag off or on.
+    realism: {
+      // div[division] / fmt[rounds]: multipliers on top of the [selfcal] div factors (same keys); missing = 1.
+      // [realism 2026-11-06 v4.0.1 final, verifier refit] fit by tools/realism.js fit (with the verifier's continuity-corrected EB
+      // targets) on the 1,972 scored 2019-2023 walk-forward backtest fights (frozen snapshots, walk-forward priors, out-of-fold
+      // learned rates; 100 sims per fight per corner order, 4 damped fixed-point steps, seed 6262) on top of main 1f30636
+      // ([selfcal v4] + [levels v4.0.1], incl. mlTdLevel / mlCtrlLevel / mlSubLevel). EB between-division sd of log(real/sim):
+      // ko 0.060, sub 0.000, kd 0.101, td 0.032, ctrl 0.018, att 0.000. Default OFF (components.realism_sens = false): on the v4.0.1
+      // engine these factors give no out-of-fold base-rate gain and lean worse on 7-bin / method log loss (realism_sens verifier
+      // report). Refit last, after any other component that moves KO / SUB / KD / TD levels, before turning the flag on.
+      div: {
+        "Flyweight": { ko: 1.012, sub: 1.05, kd: 0.997, td: 0.988, ctrl: 0.999, att: 1.002 },
+        "Bantamweight": { ko: 1.042, sub: 1.021, kd: 0.974, td: 1.012, ctrl: 0.997, att: 0.999 },
+        "Featherweight": { ko: 0.993, sub: 1.013, kd: 0.984, td: 0.951, ctrl: 0.99, att: 0.995 },
+        "Lightweight": { ko: 1.003, sub: 1.02, kd: 0.987, td: 0.994, ctrl: 0.996, att: 0.999 },
+        "Welterweight": { ko: 1.004, sub: 0.971, kd: 0.891, td: 0.992, ctrl: 1.006, att: 0.996 },
+        "Middleweight": { ko: 0.945, sub: 0.986, kd: 0.896, td: 0.997, ctrl: 0.981, att: 0.994 },
+        "Light Heavyweight": { ko: 0.948, sub: 0.997, kd: 0.958, td: 0.975, ctrl: 0.99, att: 0.997 },
+        "Heavyweight": { ko: 1.124, sub: 1.048, kd: 0.974, td: 1.001, ctrl: 1.019, att: 1.003 },
+        "Women's Strawweight": { ko: 1.013, sub: 1.001, kd: 1.062, td: 0.994, ctrl: 1, att: 1.002 },
+        "Women's Flyweight": { ko: 1.013, sub: 1.015, kd: 0.99, td: 1.033, ctrl: 0.984, att: 0.998 },
+        "Women's Bantamweight": { ko: 0.97, sub: 1.015, kd: 0.975, td: 1.011, ctrl: 1.052, att: 1.01 },
+        "Women's Featherweight": { ko: 0.991, sub: 1.004, kd: 0.973, td: 1, ctrl: 0.966, att: 1.003 }
+      },
+      fmt: { "5": { ko: 0.881, sub: 1.023, kd: 1.327 } },
+      // disp: per-fight over-dispersion phi (Pearson, quasi-Poisson / quasi-binomial) of each stat against the out-of-fold
+      // learned rates on 2019-2023 fights (tools/realism.js disp; 1,972 fights): scales the profile-rate sds in FightEngine.rateSd
+      disp: { att: 20.5, acc: 4.42, kd: 1.96, td_att: 2.75, td_acc: 1.36, sub_att: 2.26 },
+      // knobSd: 1-sd knob sizes for FightEngine.sensitivity (missing = the fight-night form sds in form)
+      knobSd: {}
     }
   };
   if (typeof module !== "undefined" && module.exports) module.exports = FightParams;
