@@ -25,6 +25,14 @@ accuracy 60.5% vs 57.1%.
   - src/ holds v4 again. The work is in versions/v4.0.1-rejected/.
   - Caveat: v4's EM judging weights saw cards through 2026-10. Fixing that is a v5 item (docs/BACKLOG.md
     "Engine v4 review follow-ups").
+- **v5, the merged roadmap engine, was rejected too** (one validation look, Nov 6 at 8:51 pm ET).
+  - Winner log loss 0.6301 vs v4's 0.6324, -0.0022 [-0.0099, +0.0053]: not significant.
+  - Stat lines are better on 4 of 5 stats.
+  - Knockdowns per 100 head strikes are +21% and the KO share +2.7 pts against actual. Both are out of tolerance, so the decision
+    rule rejects it.
+  - src/ holds v4 again. The work is in versions/v5-rejected/ (docs/CHANGELOG.md "v5 (2026-11-07)").
+  - Its prediction package (blend P(win) + method x round) scored 0.5810 with the closing line, beating the close by -0.0067
+    [-0.0096, -0.0036]. That is recorded for v6.
 
 Details: docs/CHANGELOG.md (v4), docs/BACKLOG.md ("Engine v4 status"), docs/ENGINE_V3_SPEC.md ("Engine v4"),
 data/derived/version_history.json.

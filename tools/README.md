@@ -542,3 +542,28 @@ v5 merge step 5:
   market.json; 2024-2025: the blind replay's blindtest.json rows), walk-forward method/round cells (methodround.json S / SM,
   fit before the fight; mirrored with the corners) and ML v2 (ml2.json rows + forward_models.json ml2_static weights). Train
   fights need `inSample: true` or per-year stackers; 2026 is refused.
+
+## predict_eval.js: score FightEngine.predict (the prediction package) of a frozen version
+
+```
+BLINDTEST_MOE_ENGINE=engine_v5 python3 tools/blindtest.py export --fit-through 2023-12-31 --stack-out data/derived/blindtest_stack_pre2024_v5.json
+nice -n 5 node tools/predict_eval.js --version v5 --split val --stack data/derived/blindtest_stack_pre2024_v5.json \
+     --kinds close,open,none --anchor --sims 1000 --workers 3        # part of a version's single validation look
+node tools/predict_eval.js --version v5 --split train --in-sample --limit 40 --sims 300 --out out/evalv/smoke.json   # plumbing, train only
+```
+
+- What it runs: predict's defaults on versions/<v>/, for each lineKind and optionally anchor mode.
+- Inputs: the same matchup inputs as tools/evalv.js (as-of priors, OOF learned rates, durability records, SOS pairs, step-4
+  inputs; asserted on both corner orders), plus tools/predictrec.js (the pre-2024 stacker, walk-forward experts, S / SM cells, ML
+  v2 rows).
+- opts.feat is moe_page.json's coef_valid feature LR. It feeds the interval's profile noise only; point estimates take feat_lr
+  from the blind replay.
+- What it scores:
+  - winner log loss, Brier, accuracy, ECE, slope;
+  - 7-bin and method;
+  - who x how x when via `methodround.py --score`;
+  - calibrated-interval coverage of the close.
+- Benchmarks: market close / open, ML logistic (walk-forward and static), ML v2, Elo, market rating, S / SM, and the simulator
+  alone. All are paired, with an event-cluster bootstrap (2,000).
+- Output: data/derived/evalv/<v>_<split>_package.json. The engine needs components.blend_anchor (v5+); v4 has no predict.
+- 2026 is refused. Run it on validation once per version and record it in version_history.json (v5: `validation.package`).
