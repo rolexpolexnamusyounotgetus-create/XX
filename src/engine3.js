@@ -40,7 +40,7 @@
   else root.FightEngine = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (FP0, root, MLR0) {
   "use strict";
-  var VERSION = "5.0.0-dev";   // v5 merge in progress (v4.0.0 base); the freeze sets 5.0.0
+  var VERSION = "5.0.0";   // v5: the v5 merge on v4.0.0 + Calibrate A's flags + Calibrate B's levels (components.calB); frozen in versions/v5/
 
   // Sum keys (spec order; profiles may carry their own order in meta.keys / prof.keys)
   var KEYS = ["min", "n", "rds", "d_att", "d_lnd", "c_att", "c_lnd", "g_att", "g_lnd", "h_att", "h_lnd", "b_att", "b_lnd",

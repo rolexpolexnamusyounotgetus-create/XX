@@ -39,17 +39,24 @@
      off reproduces the engine before it (tests/test_v5_step4.js).
    - step 5, components.blend_anchor (on; block blend): FightEngine.predict, the prediction package (src/ml/blend.js): the ML v2
      package's winner blend (data/derived/blindtest_stack.json, `model` / `model_open` by an explicit opts.lineKind; ML v2 via
-     src/ml/ml2.js), method x round rescaled and pooled with S (mrWeight 0.15), anchor mode, interval (kappa 1.65), recalT 1.
+     src/ml/ml2.js), method x round rescaled and pooled with S (mrWeight 0.15; Calibrate B 0.3), anchor mode, interval (kappa 1.65; Calibrate B 2.15), recalT 1.
      It never touches matchup / simulate / summarize / explain (tests/test_v5_step5.js, tests/test_blend_anchor.js).
    - Calibrate A (research/v5_train_ablation.md; tools/v5_train_ablation.js, train 2019-2023 only): leave-one-out ablation of the
      merged components by soft-label CE vs the closing line. Defaults: everything stays as merged except components.v401.mlLevels,
      now OFF (neutral on train, levels overshoot TD / control with embed on). emJudge stays on as a protocol exception (its off state
      is fit on cards through 2026-10). SOS kept over oppadj; v3 params + learned rates not better. tests/test_v5_calA.js.
+   - Calibrate B (research/v5_calB.md; train 2019-2023 only): (1) the ONE joint knockdown / finish / stoppage / judging level pass,
+     components.calB (block calB below; tools/v5_calB_levels.js): dyn.kdLevel3 / kdLevel5 / convLevel / stkoScale / gnpScale and
+     judge.t108 re-levelled to the 2019-2023 actuals; calB off reproduces the Calibrate A engine (tests/test_v5_calB.js). (2) The
+     mlcal global-scale re-tune (tools/mlcal_spec_engine5.json, --no-val): no candidate beat the current set on the confirmation
+     window, so nothing changed (data/derived/mlcal_candidates_v5.json). (3) blend_anchor rebuilt on the final engine: blend.mrWeight
+     0.3, blend.anchor.slope0 0.771, blend.boot.inflate 2.15 (data/derived/blend_anchor.json). Engine VERSION 5.0.0, frozen in
+     versions/v5/.
    Units inside the engine: seconds and per-second rates unless a comment says otherwise. */
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "5.0.0-dev.6-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics), 3 (styles_sos, officials, realism_sens), 4 (embed, oppadj, preufc) and 5 (blend_anchor); Calibrate A default flags (v401.mlLevels off)
+    version: "5.0.0-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics), 3 (styles_sos, officials, realism_sens), 4 (embed, oppadj, preufc) and 5 (blend_anchor); Calibrate A default flags (v401.mlLevels off); Calibrate B levels (components.calB) and blend_anchor refits; frozen in versions/v5/
 
     // ---------------- engine v5 components (src/engine3.js resolveParams; each flag off reproduces v4.0.0) ----------------
     components: {
@@ -122,7 +129,7 @@
       preufc: true,
       // v5 merge step 5: FightEngine.predict, the final prediction package (src/ml/blend.js; block `blend` below; research/
       // model_blend_anchor.md, verified). ON: blend P(win) (the ML v2 package: data/derived/blindtest_stack.json `model` /
-      // `model_open` by opts.lineKind, + src/ml/ml2.js) + rescaled / pooled method x round + anchor mode + interval (kappa 1.65).
+      // `model_open` by opts.lineKind, + src/ml/ml2.js) + rescaled / pooled method x round + anchor mode + interval (kappa 2.15 since Calibrate B).
       // It never touches matchup / simulate / summarize / explain; off, predict returns summarize's own numbers.
       blend_anchor: true,
       // v5 Calibrate B (tools/v5_calB_levels.js; data/derived/v5_calB_levels.json; train 2019-2023 only): the ONE joint level pass
@@ -299,9 +306,10 @@
       sims: 1000,          // simulations per corner order in predict() (both orders are run and averaged; exact corner symmetry)
       symmetric: true,     // run A-B and B-A (common random numbers in the anchor search)
       smooth: 0.5,         // Jeffreys pseudo-count per method x round cell on the simulated counts (an unseen outcome is not p = 0)
-      mrWeight: 0.15,      // __MRWEIGHT__ weight of the rescaled simulator cells in the method x round pool; the rest is the method/round
+      mrWeight: 0.3,       // __MRWEIGHT__ weight of the rescaled simulator cells in the method x round pool; the rest is the method/round
                            // model S/SM (tools/methodround_model.js) rescaled to the same P(win). Leave-one-year-out 2019-2023 optimum
-                           // of the joint method x round log loss (per-fold optima 0.10-0.20)
+                           // of the joint method x round log loss. v5 Calibrate B (rebuilt on the final v5 engine, research/v5_calB.md):
+                           // 0.30, per-fold optima 0.30-0.40, joint 2.1368 (the v4-engine cells: 0.15, per fold 0.10-0.20, 2.1415)
       mrPool: "linear",    // linear pool (beat the log pool out of fold: 2.1415 vs 2.1420 joint log loss, data/derived/blend_anchor.json)
       recalT: 1,           // temperature on top of the blend's logit. 1: the stack already applies the scheme rolling-origin CV picks
                            // inside 2019-2023 (recency weights h = 1-1.5 y + a temperature fit on forward out-of-fold logits; T through
@@ -313,16 +321,18 @@
       // knockdown power (x cPow). Mix chosen on 2019-2023 among four (acc/td/pow = 1/1/0, 0.5/1/1, 0/1/2, 0.5/2/0.5) as the one that hits
       // the blend without worsening the stat lines: 0.5/1/1 improves sig-landed, head-landed, control and sub-attempt deviance vs the plain
       // simulator (KD deviance +2.5%); pure accuracy (1/1/0) worsened landed strikes ~2%. slope0: d logit P_sim / ds at s = 0 for that mix
-      // (pilot, 120 fights x 3 offsets x 400 sims: 0.86, se 0.014)
+      // (pilot, 120 fights x 3 offsets x 400 sims: 0.86, se 0.014, on the v4 engine; v5 Calibrate B, the final v5 engine, tools/blend_anchor_bt.js
+      // pilot, 150 fights x 3 offsets x 400 sims: 0.771, se 0.014)
       // (powNorm: the power multipliers are divided by cosh(cPow s/2) so the pair's total knockdown rate is kept; the plain split
       // added 7% knockdowns on 2019-2023)
-      anchor: { cAcc: 0.5, cTd: 1, cPow: 1, powNorm: true, slope0: 0.86, priorWeight: 2, iters: 4, step: 0.05, tol: 0.01, sims: 300, maxAbs: 4 },
+      anchor: { cAcc: 0.5, cTd: 1, cPow: 1, powNorm: true, slope0: 0.771, priorWeight: 2, iters: 4, step: 0.05, tol: 0.01, sims: 300, maxAbs: 4 },
       // interval for P(win): profile-noise bootstrap (fight-level gamma noise, relative variance cv^2 / decayed fights; cvOut 0.45
       // from the between-fight log output sd in docs/BACKLOG.md "Variance"; grappling, subs, KD and accuracy cvs are judgment calls),
       // then inflate = kappa: the bootstrap sd x 1.65 makes the 80% interval cover the closing line 80% of the time on 2019-2023
-      // (out of fold by year: 80.0% at 80%, 94.4% at 95%); the raw bootstrap covers it only 55% / 76%
+      // (out of fold by year: 80.0% at 80%, 94.4% at 95%); the raw bootstrap covers it only 55% / 76%. v5 Calibrate B (final v5 engine):
+      // the bootstrap sd is smaller (median 0.229 vs 0.297 logit; raw cover 46% / 64%), so kappa 2.15 (out of fold 79.6% / 94.2%)
       boot: { B: 200, seed: 7, level: [0.8, 0.95], cvOut: 0.45, cvGrap: 1.0, cvSub: 1.5, cvKd: 1.0, cvAcc: 0.25, count: true,
-        eloRd: 0, eloRdScale: 0, mrSd: 0, engineMC: true, inflate: 1.65 }
+        eloRd: 0, eloRdScale: 0, mrSd: 0, engineMC: true, inflate: 2.15 }
     },
 
     // ---------------- learned stat-line rates (engine v4) ----------------
