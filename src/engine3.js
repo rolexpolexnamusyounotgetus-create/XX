@@ -197,10 +197,24 @@
   // [calB] / gnpScale, judge.t108); the usual fields keep the values before the pass, so calB off reproduces the engine before
   // [calB] Calibrate B exactly. The set goes in BEFORE the v401 put-backs and the opts.params overrides: a v401 sub-flag that is
   // [calB] off still restores v4.0.0's value of a field it owns (judge.t108 under emJudge), and an explicit override always wins.
+  // [v501] components.v501 (engine 5.0.1, the v5 review's behaviour fixes; docs/CHANGELOG.md v5.0.1): params.v501.set[sub] holds
+  // [v501] the new values of each sub-flag; the usual fields keep 5.0.0's values, so v501 off (or a sub-flag off) reproduces engine
+  // [v501] 5.0.0 for valid inputs bit for bit (tests/test_v501.js against versions/v5-rejected/). The sets go in after the calB set
+  // [v501] and BEFORE the v401 put-backs and the opts.params overrides, so an explicit override always wins. true / false switches
+  // [v501] every sub-flag; an object switches each (on unless it is false).
+  var V501_SUB = ["durFallback", "dynNoise", "kdBase", "levels"];
+  function v501Flags(p) {
+    var c = p && p.components ? p.components.v501 : null, o = {}, i;
+    for (i = 0; i < V501_SUB.length; i++) o[V501_SUB[i]] = c === true || (!!c && typeof c === "object" && c[V501_SUB[i]] !== false);
+    return o;
+  }
   function resolveParams(base, over) {
     var p = mergeParams(base, over), fl = v401Flags(p), OFF = base.v401 && base.v401.off, i;
     var CBS = compOn(p, "calB") && base.calB && base.calB.set ? base.calB.set : null, b0 = base;   // [calB]
     if (CBS) { b0 = mergeParams(base, CBS); p = mergeParams(b0, over); }                              // [calB]
+    var f5 = v501Flags(p), S5 = base.v501 && base.v501.set, set5 = false;                            // [v501]
+    if (S5) for (i = 0; i < V501_SUB.length; i++) if (f5[V501_SUB[i]] && S5[V501_SUB[i]]) { b0 = mergeParams(b0, S5[V501_SUB[i]]); set5 = true; }
+    if (set5) p = mergeParams(b0, over);                                                              // [v501]
     if (OFF) {
       var back = null;
       for (i = 0; i < V401_SUB.length; i++) {
@@ -2302,7 +2316,7 @@
     priorFor: priorFor, league: league, fighterRates: fighterRates, occupancy: occupancy, isDecision: isDecision,
     clip: clip, log5: log5, odds: odds, prob: prob, params: getParams,
     // v5: the parameter set a matchup runs on (base params + components flags + opts.params overrides), and the v401 sub-flags
-    resolveParams: function (over, base) { return resolveParams(base || getParams(), over); }, v401Flags: v401Flags
+    resolveParams: function (over, base) { return resolveParams(base || getParams(), over); }, v401Flags: v401Flags, v501Flags: v501Flags
   };
   // [styles_sos] begin: component hook (src/styles_sos.js: style rate modifiers, strength of schedule). It runs after
   // the matchup tables are final (base or learned rates) and only when params.components.styles_sos is truthy; with the

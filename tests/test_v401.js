@@ -154,7 +154,7 @@ check("identity covers >= 300 random matchups incl. traced fights", total >= 300
       const cases = s !== "tdCap" ? cs : cs.slice(0, 10).map((c) => {
         const pr = E.matchup(c.a, c.b, c.opts).mlPred;
         if (!pr) return c;
-        const A = Object.assign({}, pr.A, { td_att: pr.A.td_att * 40, td_acc: 0.97 }), B = Object.assign({}, pr.B, { td_att: pr.B.td_att / 40, td_acc: 0.01 });
+        const A = Object.assign({}, pr.A, { td_att: pr.A.td_att * 10, td_acc: 0.97 }), B = Object.assign({}, pr.B, { td_att: pr.B.td_att / 10, td_acc: 0.01 });   // v5.0.1: x10 (x40 drove the uncapped occupancy fit to NaN rates, which the engine now refuses)
         return Object.assign({}, c, { opts: Object.assign({}, c.opts, { ml: { pred: { A, B } } }) });
       });
       cases.forEach((c) => {
