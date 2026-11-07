@@ -1,0 +1,23 @@
+pool weight by year: {'2021': 0.45, '2022': 0.35, '2023': 0.35} | 2019-2023: {'w': 0.35, 'joint': 2.11313, 'n': 1972, 'years': [2019, 2020, 2021, 2022, 2023]}
+== open: n outcome 1235, decisive 1222, cards 128
+   v6     {'winLL': 0.62133, 'brier': 0.21618, 'acc': 0.6653, 'ece': 0.0174, 'slope': 1.049, 'bin7': 1.60653, 'method': 0.96238, 'joint': 2.14331}
+   v501   {'winLL': 0.62746, 'brier': 0.21884, 'acc': 0.6588, 'ece': 0.0158, 'slope': 1.003, 'bin7': 1.6198, 'method': 0.96921, 'joint': 2.15932}
+   v6 - v501: {'bin7': (-0.01327, [-0.02129, -0.00507]), 'method': (-0.00683, [-0.01192, -0.0017]), 'joint': (-0.01601, [-0.02496, -0.00689]), 'winLL': (-0.00613, [-0.01102, -0.00126]), 'brier': (-0.00266, [-0.0048, -0.00052]), 'acc': (0.00655, [-0.00748, 0.02036])}
+== none: n outcome 1235, decisive 1222, cards 128
+   v6     {'winLL': 0.62791, 'brier': 0.21919, 'acc': 0.6498, 'ece': 0.0112, 'slope': 1.068, 'bin7': 1.61304, 'method': 0.96332, 'joint': 2.14982}
+   v501   {'winLL': 0.634, 'brier': 0.22206, 'acc': 0.6424, 'ece': 0.0224, 'slope': 1.062, 'bin7': 1.62627, 'method': 0.96994, 'joint': 2.16579}
+   v6 - v501: {'bin7': (-0.01323, [-0.02166, -0.00455]), 'method': (-0.00663, [-0.01166, -0.0016]), 'joint': (-0.01597, [-0.02533, -0.00646]), 'winLL': (-0.00609, [-0.01193, -0.00017]), 'brier': (-0.00287, [-0.0055, -0.00019]), 'acc': (0.00736, [-0.00984, 0.02475])}
+== close: n outcome 1235, decisive 1222, cards 128
+   v6     {'winLL': 0.61502, 'brier': 0.21343, 'acc': 0.6694, 'ece': 0.0139, 'slope': 1.056, 'bin7': 1.60028, 'method': 0.96334, 'joint': 2.13707, 'softCE_vs_close': 0.62759}
+   v501   {'winLL': 0.61833, 'brier': 0.21483, 'acc': 0.6604, 'ece': 0.014, 'slope': 1.031, 'bin7': 1.60805, 'method': 0.96809, 'joint': 2.14757, 'softCE_vs_close': 0.62664}
+   v6 - v501: {'bin7': (-0.00777, [-0.0151, -0.00026]), 'method': (-0.00475, [-0.00993, 0.00041]), 'joint': (-0.01051, [-0.01901, -0.00204]), 'winLL': (-0.00331, [-0.0066, 3e-05]), 'brier': (-0.0014, [-0.00288, 0.00011]), 'acc': (0.009, [0.0, 0.01778]), 'soft': (0.00095, [0.00072, 0.00117])}
+  [PASS] open winner: CI upper < 0 and point <= -0.001  (boot upper -0.00126, MC SE 0.000058, normal upper -0.00117, threshold +0.0000)
+  [PASS] no-line winner: CI upper < 0 and point <= -0.001  (boot upper -0.00017, MC SE 0.000058, normal upper -0.00016, threshold +0.0000)
+  [PASS] close winner: CI upper <= +0.0005  (boot upper +0.00003, MC SE 0.000021, normal upper +0.00005, threshold +0.0005)
+  [PASS] 7-bin (open): CI upper < 0  (boot upper -0.00507, MC SE 0.000060, normal upper -0.00500, threshold +0.0000)
+  [PASS] method (open): CI upper <= +0.002  (boot upper -0.00170, MC SE 0.000042, normal upper -0.00166, threshold +0.0020)
+  [PASS] 7-bin (none): CI upper < 0  (boot upper -0.00455, MC SE 0.000086, normal upper -0.00460, threshold +0.0000)
+  [PASS] method (none): CI upper <= +0.002  (boot upper -0.00160, MC SE 0.000044, normal upper -0.00154, threshold +0.0020)
+  [PASS] 7-bin (close): CI upper < 0  (boot upper -0.00026, MC SE 0.000076, normal upper -0.00036, threshold +0.0000)
+  [PASS] method (close): CI upper <= +0.002  (boot upper +0.00041, MC SE 0.000034, normal upper +0.00046, threshold +0.0020)
+GATE: PASS

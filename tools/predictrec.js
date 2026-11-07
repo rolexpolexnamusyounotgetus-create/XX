@@ -94,7 +94,9 @@ module.exports = function predictrec(E, root, cfg) {
     const r = J("data/derived/methodround.json").fights[f.id];
     if (!r) return { cells: null };
     const R = r.rounds || f.rounds || 3, key = kind === "close" && Array.isArray(r.SM) ? "SM" : "S", c = r[key];
-    const ft = r[key + "_refit"] ? (+f.date.slice(0, 4) - 1) + "-12-31" : r.fit_through;
+    // the cells returned are the static r.S / r.SM, so their fit date is r.fit_through (v6 review: the guard used to read the
+    // date of r.S_refit / r.SM_refit, labelling 2025 static cells "fit through 2024-12-31"; harmless, the cells were older)
+    const ft = r.fit_through;
     if (!Array.isArray(c) || c.length !== 4 * R + 3) return { cells: null };
     if (!ft || ft >= f.date) throw new Error("predictrec: methodround.json " + key + " for " + f.id + " is fit through " + ft + ", not before " + f.date);
     return { cells: c, variant: key, fitThrough: ft, R };

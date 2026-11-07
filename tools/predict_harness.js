@@ -8,6 +8,10 @@
           --pkg v6=versions/v6:v6 --pkg v501=versions/v5.0.1-rejected:v5 --out data/derived/v6/gate_train.json
      node tools/predict_harness.js --split val --sims 300 --pkg v6=versions/v6:v6 --pkg v501=...:v5 --out ...   (the look)
 
+   From v7 on (v6 review): every --split val run and every binding gate run (--binding) needs --protocol <file>, a JSON file
+   committed before the run that fixes version, run, split, input_pipelines, packages and out (see checkProtocol below);
+   a look also needs its data/derived/val_look_ledger.json row committed in HEAD. Runs without it are labelled non-binding.
+
    --pkg name=engineDir:mode   mode v6: winner 'ml2stack' (per-year forward-chained ML v2 stacks, data/derived/v6_stacks.json),
                                S2 walk-forward cells (data/derived/mr_s2.json), the engine's own params.blend otherwise;
                                mode v5: the frozen engine's predict defaults (MoE expert stack by lineKind, S / SM cells).
@@ -173,6 +177,39 @@ if (SPLIT === "train" && d1 > "2024-01-01") { console.error("predict_harness: --
 let fights = fightsAll.filter((f) => f.date >= d0 && f.date < d1);
 if (args.limit) fights = fights.slice(-(+args.limit));
 const STACK_DIR = path.join(ROOT, "data/derived/v6");
+// ---------------------------------------------------------------- binding runs (v6 review)
+// The v6 gate's comparator definition was chosen after two failing runs, and the v6 ledger row could not be shown to precede
+// the look. From v7 on a BINDING run (every --split val run, and a gate run marked --binding) needs --protocol <file>: a JSON
+// document committed to git (tracked and identical to HEAD) that fixes, before the run, { version, run: 'gate' | 'look',
+// split, input_pipelines: 'own' | 'shared', packages: ["name=dir:mode", ...], out }. Refused when the file is untracked or
+// modified, when the command line differs from it, when the output already exists (a binding run happens once), or, for
+// --split val, when HEAD's data/derived/val_look_ledger.json has no row for the version (the row is committed first).
+function gitOut(a) { return require("child_process").execFileSync("git", ["-C", ROOT].concat(a), { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); }
+function checkProtocol() {
+  const binding = SPLIT === "val" || !!args.binding;
+  if (!binding) return { binding: false, note: "non-binding run (no --protocol): a development or sensitivity run, never a gate verdict" };
+  if (!args.protocol || args.protocol === true) { console.error("predict_harness: a binding run (--split val or --binding) needs --protocol <committed JSON>"); process.exit(2); }
+  const rel = path.relative(ROOT, path.resolve(ROOT, String(args.protocol)));
+  try { gitOut(["ls-files", "--error-unmatch", rel]); } catch (e) { console.error("predict_harness: protocol " + rel + " is not tracked by git; commit it before the run"); process.exit(2); }
+  try { gitOut(["diff", "--quiet", "HEAD", "--", rel]); } catch (e) { console.error("predict_harness: protocol " + rel + " differs from HEAD; commit it before the run"); process.exit(2); }
+  const P = readJSON(rel), want = { split: SPLIT, input_pipelines: args["shared-inputs"] ? "shared" : "own", packages: args.pkg.slice(), out: String(OUT) };
+  for (const k of Object.keys(want)) {
+    if (JSON.stringify(P[k]) !== JSON.stringify(want[k])) { console.error(`predict_harness: protocol ${rel} fixes ${k} = ${JSON.stringify(P[k])}, the command line gives ${JSON.stringify(want[k])}`); process.exit(2); }
+  }
+  if (!P.version || (P.run !== "gate" && P.run !== "look")) { console.error("predict_harness: protocol needs version and run ('gate' | 'look')"); process.exit(2); }
+  if (fs.existsSync(path.isAbsolute(OUT) ? OUT : path.join(ROOT, OUT))) { console.error("predict_harness: " + OUT + " exists; a binding run happens once"); process.exit(2); }
+  if (SPLIT === "val") {
+    let L = null;
+    try { L = JSON.parse(gitOut(["show", "HEAD:data/derived/val_look_ledger.json"])); } catch (e) { L = null; }
+    const rows = (L && L.engine_versions) || [], v = String(P.version);
+    if (!rows.some((r) => r.version === v || String(r.version).startsWith(v + " "))) {
+      console.error("predict_harness: HEAD's data/derived/val_look_ledger.json has no row for " + v + "; append and commit it before the look"); process.exit(2);
+    }
+  }
+  return { binding: true, protocol: rel, protocol_sha256: require("crypto").createHash("sha256").update(fs.readFileSync(path.join(ROOT, rel))).digest("hex"),
+    git_head: gitOut(["rev-parse", "HEAD"]).trim(), version: P.version, run: P.run };
+}
+const PROTOCOL = checkProtocol();
 const engs = PKGS.map((p) => { const E = require(path.join(p.dir, "engine3.js")); return `${p.name}: engine ${E.VERSION} params ${E.params().version} (${p.mode})`; });
 console.log(`predict_harness on ${SPLIT} ${d0}..${d1}: ${fights.length} fights, kinds ${KINDS.join("/")}, ${SIMS} sims per order; ${engs.join("; ")}`);
 
@@ -213,7 +250,7 @@ function runAll() {
   }
   recs.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.id < b.id ? -1 : 1)));
   const sha = (p) => require("crypto").createHash("sha256").update(fs.readFileSync(p)).digest("hex");
-  const meta = { tool: "tools/predict_harness.js", built: new Date().toISOString(), split: SPLIT, range: [d0, d1], sims_per_order: SIMS, kinds: KINDS,
+  const meta = { tool: "tools/predict_harness.js", built: new Date().toISOString(), split: SPLIT, range: [d0, d1], sims_per_order: SIMS, kinds: KINDS, protocol: PROTOCOL,
     packages: PKGS.map((p) => { const E = require(path.join(p.dir, "engine3.js")); return { name: p.name, mode: p.mode, dir: path.relative(ROOT, p.dir), engine_version: E.VERSION,
       params_version: E.params().version, engine_sha256: sha(path.join(p.dir, "engine3.js")), params_sha256: sha(path.join(p.dir, "params3.js")),
       blend_sha256: sha(path.join(p.dir, "ml", "blend.js")) }; }),
