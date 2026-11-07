@@ -6,11 +6,25 @@ the verification: `tools/durability_verify.py` (output `data/derived/durability_
 snapshot through Oct 31, 2026 (`data/raw/`), parsed with `tools/build_db.py`'s own loaders, people resolution and
 Elo (K 44, boost 1.5). Built Nov 6, 2026.
 
+**Vault cleanup, Nov 7, 2026 (engine v5.0.1; v5 review).** The first versions of this report and of `durability.json` scored
+their held-out tables on 2024-01-01..2026-10-31, which reached 474 fights into the sealed 2026 vault, and quoted 2026 knockdown
+and KO levels. Every number computed over that window has been removed from this report, and the 2026 items of
+`durability.json` (373 walk-forward records of vault fights, the two 2026 rows of `kd_level_series`, the old held-out blocks)
+and the old `durability_verify.json` were moved to the vault directory outside the repo (`durability_vault.json`,
+`durability_verify_vault.json`). The held-out tables were re-scored on **2024-01-01..2025-12-31 only** with the same code, spec
+and 2008-2023 fits (`tools/durability_heldout_dev.py`; `tools/durability_verify.py` re-run with the same window), and the
+numbers below are those. `tools/durability.py` now stops held-out scoring at 2025-12-31 and writes vault records to the vault
+directory. The live production fit (roster, coefficients, `engine.level_now_*`, `engine.norm_*` for live use) still uses every
+fight through the snapshot, by the release rule; none of it is a held-out score. Because these vault-period levels were
+published in the repo for about 17 hours, knockdown, KO and durability results on the vault are not blind (docs/V6_V10_PLAN.md
+6.5.3), and v6 calibration must not read them. 2024-25 itself had been looked at several times before this re-score, so treat
+these held-out numbers as descriptive, not as a clean selection test.
+
 **Revised Nov 6, 2026 after an adversarial verification pass (see the Verification log at the end).** The first
 version carried a 36-parameter covariate set. Five of its blocks did not earn their place on the 2019-2023
 validation window: layoff, last-fight-KO and quick return, UFC tenure and experience, career head strikes absorbed,
 and attacker experience. Removing them by a validation-only rule cut the model to 24 parameters and improved
-held-out 2024+ deviance by 19 (SE 7.5). The verification also made several other changes:
+held-out deviance by 19 (SE 7.5) on the first, vault-contaminated test window (on 2024-25 alone: +13.4, SE 6.0). The verification also made several other changes:
 
 - The backtest values are now strict walk-forward. The first version used in-sample coefficients for 2019-2023.
 - The headline comparisons now also report fighter-clustered SEs and a level-neutral check.
@@ -19,17 +33,17 @@ held-out 2024+ deviance by 19 (SE 7.5). The verification also made several other
 
 ## Summary
 
-- **The model beats the constant-chin model by 238 deviance units on held-out 2024+ fights** (2,905
-  attacker-defender rows, 681 knockdowns; SE 33 clustered by fight, 40 clustered on fighters). That is 8.6% of
-  the deviance.
-  - It beats the v3 engine's hand-set chin/power structure by 70 (SE 18-19).
-  - Level-neutral, with each half-year rescaled to its observed total so the unexplained 2024-26 league-level
-    swings don't count, the gain over v3 is still 37 (SE 16).
-  - The fresh-code replication finds 63 (SE 18) raw and 29 (SE 16) level-neutral.
+- **The model beats the constant-chin model by 146 deviance units on held-out 2024-25 fights** (1,993
+  attacker-defender rows, 418 knockdowns; SE 25 clustered by fight, 30 clustered on fighters). That is 8.1% of the
+  deviance.
+  - It beats the v3 engine's hand-set chin/power structure by 39 (SE 14-15).
+  - Level-neutral, with each half-year rescaled to its observed total so the league-level swings don't count, the gain
+    over v3 is 26 (SE 12).
+  - The fresh-code replication (`tools/durability_verify.py`, same window) finds 24 (SE 14) raw and 10 (SE 12) level-neutral.
 - **Fighter effects carry most of the signal.** Walk-forward empirical-Bayes chin and power multipliers are worth
-  202 deviance units on their own. Both use Gamma priors: shape 3 for chin and 2.5 for power, worth about 290 and
-  245 standing head strikes. Defender age, KO losses, prior knockdowns absorbed and attacker age add another 36 on
-  top (SE 13; level-neutral 27, SE 12).
+  123 deviance units on their own (2024-25). Both use Gamma priors: shape 3 for chin and 2.5 for power, worth about 290 and
+  245 standing head strikes. Defender age, KO losses, prior knockdowns absorbed and attacker age add another 22 on
+  top (SE 10; level-neutral 20, SE 10).
 - **Age (published claim, "+4%/yr past 30").** It replicates exactly (+0.0400, SE 0.0056). The richer model keeps
   the size but not the shape:
   - Susceptibility rises about **+6%/yr at every age**: +6.1%/yr before 30 (SE 1.4%) and +6.0%/yr past 30 (SE
@@ -49,11 +63,11 @@ held-out 2024+ deviance by 19 (SE 7.5). The verification also made several other
   - Years in the UFC and number of UFC fights.
   - Career head strikes absorbed.
   - Attacker experience.
-  - Each costs less than one SE on 2019-2023 when dropped, and together they made 2024+ worse.
+  - Each costs less than one SE on 2019-2023 when dropped, and together they made the held-out window worse.
 - **Size tax (published claim, "none after Elo control"): confirmed.**
   - Moving up a class costs nothing in win probability: +0.06 log-odds (SE 0.055) per class, n = 7,982.
   - Knockdowns absorbed per head strike are x0.91 (SE 0.13) per class up for the defender.
-  - Weight-move terms add nothing on held-out data (+0.3, SE 3.0) and hurt on 2019-2023 (+16, SE 8.5).
+  - Weight-move terms add nothing on held-out 2024-25 data (+0.3, SE 2.3) and hurt on 2019-2023 (+16, SE 8.5).
   - The attacker moving up scores more knockdowns (x1.25 per class), which is selection: punchers move up.
 - **Fight-night heterogeneity.**
   - Per-fight knockdown rates vary beyond the model with a lognormal sd of 0.78-0.84.
@@ -62,10 +76,11 @@ held-out 2024+ deviance by 19 (SE 7.5). The verification also made several other
 - **The league knockdown level moves a lot.**
   - Knockdowns per 1,000 standing head strikes were 5.95 during the 2024 glove trial (UFC 302 to UFC 309), against
     8.25 in the year before and 8.98 in the year after.
-  - Over Nov 2025-Oct 2026 the rate was 11.7, and 2026 fights ended by KO/TKO at 40%.
-  - At the snapshot the level is 10.27 per 1,000 over the trailing 730 days and 11.71 over the trailing 365.
-- **KO/TKO loss per fight** (logistic, pre-fight features only): held-out log loss 0.4152, against 0.4378 for Elo
-  + division. That is an improvement of 69 log-loss units (SE 11).
+  - Under F, observed / expected knockdowns were 0.82 in 2024 and 1.26 in 2025: the trailing level lags the league's swings.
+  - The engine's live level (`params.durability.level`) is the trailing 730-day value at the snapshot, a production constant.
+    Vault-period levels are not quoted here (vault cleanup above).
+- **KO/TKO loss per fight** (logistic, pre-fight features only): held-out 2024-25 log loss 0.3925, against 0.4094 for Elo
+  + division. That is an improvement of 35 log-loss units (SE 8).
 - **Volkanovski vs Gaethje** (155 lb, 5 rounds, 730-day level):
   - Gaethje drops Volkanovski 1.04 times per 100 landed standing head strikes (90%: 0.40-1.99).
   - Volkanovski drops Gaethje 0.59 times (0.21-1.19).
@@ -74,8 +89,9 @@ held-out 2024+ deviance by 19 (SE 7.5). The verification also made several other
 ## 1. Data and walk-forward features
 
 One row per attacker -> defender direction of every UFC fight with round stats: 17,948 rows from 8,974 fights.
-The fit uses 2008-2023 (12,591 rows with exposure, 2,911 knockdowns). The test set is 2024-01-01 to 2026-10-31
-(2,905 rows, 1,503 fights, 681 knockdowns), and none of it is used for fitting or tuning.
+The fit uses 2008-2023 (12,591 rows with exposure, 2,911 knockdowns). The test set is 2024-01-01 to 2025-12-31
+(1,993 rows, 1,029 fights, 418 knockdowns), and none of it is used for fitting or tuning. (The first version's test set ran to
+2026-10-31 and reached into the sealed vault; see the vault cleanup note.)
 
 - **Outcome:** knockdowns scored by the attacker in the fight (ufcstats KD).
 - **Exposure E:** standing head strikes landed by the attacker. ufcstats has no head-by-position cross-tab, so E
@@ -117,99 +133,96 @@ The fit uses 2008-2023 (12,591 rows with exposure, 2,911 knockdowns). The test s
   - **Chosen spec:** level 730, knot 30, window 365, alpha_chin 3, alpha_power 2.5, no decay, blocks {prior KDs
     absorbed, KO losses, attacker age}. Its 2019-2023 deviance is 4,341.9, against 4,339.1 for the 36-parameter
     version, which is within noise for 12 fewer parameters.
-- **Refits:** coefficients are refit on 2008-2023 and scored on 2024+. A final live fit on 2008 through the
+- **Refits:** coefficients are refit on 2008-2023 and scored on 2024-25. A final live fit on 2008 through the
   snapshot gives the roster numbers.
 
-## 2. Held-out results (fit 2008-2023, scored on 2024+)
+## 2. Held-out results (fit 2008-2023, scored on 2024-01-01..2025-12-31)
 
-Poisson deviance on 2,905 rows (lower is better). Differences are summed over fights.
+Poisson deviance on 1,993 rows (lower is better). Differences are summed over fights. Re-scored Nov 7, 2026 on 2024-25 only (the first
+version scored 2024-01-01..2026-10-31; vault cleanup above).
 
 - "SE f" clusters by fight. "SE fr" clusters on fighters: each row belongs to both of its fighters' clusters, so
   the same fighter's effect shared across test fights is counted.
 - "Level-neutral" rescales every model's predictions so each half-year's total matches the observed total. It is
-  a diagnostic only, since it uses outcomes. It removes calibration-in-the-large, which in 2024-26 is dominated by
-  the unexplained league-level swings.
+  a diagnostic only, since it uses outcomes. It removes calibration-in-the-large (the league-level swings).
 
 | Model | Params | Test deviance | vs M0L (SE f / SE fr) | Level-neutral vs M0L (SE fr) | KD obs / exp |
 |---|---|---|---|---|---|
-| M0 constant KD per standing head strike | 1 | 2782.3 | +7.9 (18.2 / 23.8) | -1.7 | 681 / 790 |
-| M0L constant + trailing league level ("constant chin") | 1 | 2774.5 | 0 | 0 | 681 / 596 |
-| M1 + division, 5-round, title | 15 | 2714.9 | -59.6 (18.2 / 21.6) | -62.2 (23.2) | 681 / 578 |
-| C30 M1 + years past 30, defender and attacker (claim form) | 17 | 2686.2 | -88.2 (20.4 / 22.5) | -86.2 (23.7) | 681 / 590 |
-| M2 M1 + age splines | 20 | 2674.8 | -99.6 (20.9 / 22.9) | -94.3 (23.9) | 681 / 597 |
-| M3 final covariates, no fighter effects | 24 | 2664.1 | -110.3 (22.1 / 23.8) | -104.2 (24.7) | 681 / 601 |
-| M36 first version's 36-parameter covariates, no fighter effects | 36 | 2644.3 | -130.2 (24.8 / 27.8) | -142.5 (29.3) | 681 / 559 |
-| V3 engine v3 structure (shrunk decayed ratios k = 230, chin age past 34, 1.04^KO capped 1.15, size) | 13 | 2606.8 | -167.6 (26.3 / 31.6) | -193.6 (34.0) | 681 / 537 |
-| E1 M1 + fighter chin effect | 15 | 2639.4 | -135.1 (24.6 / 27.5) | -142.9 (28.8) | 681 / 575 |
-| E2 M1 + fighter power effect | 15 | 2654.0 | -120.5 (27.5 / 35.2) | -116.0 (34.7) | 681 / 607 |
-| E3 M1 + chin and power effects | 15 | 2572.8 | -201.6 (31.3 / 38.5) | -204.4 (38.6) | 681 / 596 |
-| **F final: M3 + chin and power effects** | 24 | **2536.8** | **-237.6 (32.9 / 39.5)** | **-230.9 (39.1)** | 681 / 623 |
-| F36 first version: 36-parameter covariates + chin and power effects | 36 | 2555.9 | -218.6 (33.3 / 40.0) | -210.7 (39.4) | 681 / 629 |
-| F + weight move (classes) | 28 | 2537.1 | -237.3 | -230.1 | 681 / 624 |
-| F + weight move (pounds) | 28 | 2538.7 | -235.8 | -227.4 | 681 / 626 |
-| F + height, ape index, reach and height advantage | 28 | 2527.5 | -246.9 | -241.6 | 681 / 632 |
+| M0 constant KD per standing head strike | 1 | 1821.4 | +27.4 (15.9 / 19.7) | -1.1 (0.9) | 418 / 549 |
+| M0L constant + trailing league level ("constant chin") | 1 | 1794.0 | 0 | 0 | 418 / 404 |
+| M1 + division, 5-round, title | 15 | 1751.3 | -42.7 (14.7 / 17.2) | -43.3 (18.2) | 418 / 388 |
+| C30 M1 + years past 30, defender and attacker (claim form) | 17 | 1734.4 | -59.7 (16.5 / 18.4) | -59.2 (19.1) | 418 / 396 |
+| M2 M1 + age splines | 20 | 1730.2 | -63.8 (16.8 / 18.6) | -62.5 (19.2) | 418 / 399 |
+| M3 final covariates, no fighter effects | 24 | 1726.6 | -67.4 (17.4 / 19.2) | -67.1 (19.7) | 418 / 401 |
+| M36 first version's 36-parameter covariates, no fighter effects | 36 | 1704.2 | -89.8 (20.3 / 22.3) | -97.2 (23.4) | 418 / 372 |
+| V3 engine v3 structure (shrunk decayed ratios k = 230, chin age past 34, 1.04^KO capped 1.15, size) | 13 | 1687.0 | -107.0 (21.1 / 24.2) | -122.3 (25.5) | 418 / 356 |
+| E1 M1 + fighter chin effect | 15 | 1700.3 | -93.7 (19.6 / 21.6) | -99.0 (22.5) | 418 / 384 |
+| E2 M1 + fighter power effect | 15 | 1725.8 | -68.3 (21.5 / 26.2) | -67.6 (26.3) | 418 / 406 |
+| E3 M1 + chin and power effects | 15 | 1670.8 | -123.2 (24.4 / 28.9) | -128.4 (29.4) | 418 / 397 |
+| **F final: M3 + chin and power effects** | 24 | **1648.5** | **-145.6 (25.2 / 29.9)** | **-148.4 (29.8)** | 418 / 412 |
+| F36 first version: 36-parameter covariates + chin and power effects | 36 | 1661.9 | -132.2 (25.5 / 30.0) | -135.0 (29.8) | 418 / 416 |
+| F + weight move (classes) | 28 | 1648.8 | -145.2 (25.3 / 29.6) | -147.9 (29.6) | 418 / 412 |
+| F + weight move (pounds) | 28 | 1648.3 | -145.7 (25.5 / 29.6) | -148.4 (29.6) | 418 / 413 |
+| F + height, ape index, reach and height advantage | 28 | 1639.7 | -154.4 (26.9 / 31.9) | -158.7 (31.4) | 418 / 420 |
 
-Paired differences on 2024+:
+Paired differences on 2024-25:
 
 | Comparison | Δ deviance (SE f / SE fr) | Level-neutral (SE fr) |
 |---|---|---|
-| F vs V3 (engine v3 structure) | -70.0 (18.1 / 19.0) | -37.4 (15.8) |
-| F vs E3 (fighter effects only) | -36.0 (13.0 / 12.7) | -26.5 (12.2) |
-| F vs M3 (covariates only) | -127.3 (24.0 / 29.2) | -126.7 (29.0) |
-| E3 vs V3 | -34.0 (16.0 / 17.6) | -10.8 (15.8) |
-| F36 (first version) vs F | +19.0 (7.5 / 7.7) | +20.2 (7.4) |
-| F36 vs V3 | -51.0 (19.0 / 20.0) | -17.2 (16.4) |
-| F36 vs E3 | -17.0 (15.1 / 15.0) | -6.3 (14.3) |
-| C30 vs M1 (adding the claim's age terms) | -28.7 (9.7 / 9.7) | -24.0 (9.5) |
-| M2 vs C30 (spline over the claim's past-30 form) | -11.4 (5.6 / 6.0) | -8.1 (5.8) |
-| F + weight move vs F | +0.3 (3.0 / 2.9); +16.2 (8.5) on 2019-2023 | +0.8 |
-| F + pounds vs F | +1.8 (5.0 / 3.7) | +3.5 |
-| F + body terms vs F | -9.3 (6.9 / 7.2); -2.7 (10.3) on 2019-2023 (within 1 SE), so not adopted | -10.7 |
+| F vs V3 (engine v3 structure) | -38.5 (13.5 / 15.0) | -26.0 (12.3) |
+| F vs E3 (fighter effects only) | -22.4 (9.6 / 10.1) | -19.9 (9.8) |
+| F vs M3 (covariates only) | -78.1 (18.5 / 20.6) | -81.2 (20.5) |
+| E3 vs V3 | -16.2 (12.1 / 13.7) | -6.1 (12.4) |
+| F36 (first version) vs F | +13.4 (6.0 / 5.7) | +13.4 (5.5) |
+| F36 vs V3 | -25.1 (14.5 / 15.5) | -12.6 (12.8) |
+| F36 vs E3 | -9.0 (11.4 / 11.6) | -6.6 (11.1) |
+| C30 vs M1 (adding the claim's age terms) | -17.0 (7.0 / 7.7) | -15.9 (7.6) |
+| M2 vs C30 (spline over the claim's past-30 form) | -4.1 (2.9 / 3.2) | -3.2 (3.1) |
+| F + weight move vs F | +0.3 (2.3 / 2.4); +16.2 (8.5) on 2019-2023 | +0.4 (2.5) |
+| F + pounds vs F | -0.2 (3.5 / 3.4) | -0.0 (3.3) |
+| F + body terms vs F | -8.8 (5.3 / 5.3); -2.7 (10.3) on 2019-2023 (within 1 SE), so not adopted | -10.3 (5.2) |
 
-On the backtest-eligible subset (both men had an earlier UFC fight, 2,379 rows), F beats M0L by 200.0 and F36 by
-13.0.
+On the backtest-eligible subset (both men had an earlier UFC fight, 1,667 rows), F beats M0L by 123.9 and F36 by 11.7.
 
 **The first version overfit.** It has a lower training deviance than F (10,975 against 11,016 on 2008-2023),
-yet a higher deviance on both 2019-2023 (in the validation fits) and 2024+.
+yet a higher deviance on both 2019-2023 (in the validation fits) and 2024-25.
 
-**The test period runs hot.**
+**The league level moves inside the test period.** Observed/expected under F is 0.82 in 2024 (the glove trial falls in it) and 1.26 in 2025. The
+trailing level lags those swings, and every model shares that offset; a model that happens to predict more knockdowns gets credit for it, which is why the
+level-neutral column matters (it cuts F's raw gain over V3 from 39 to 26). V3 predicts 356 of the 418 knockdowns.
 
-- Observed/expected under F is 0.82 in 2024, 1.26 in 2025 and 1.25 in 2026 (section 6).
-- The trailing level lags the 2025-26 surge, and every model shares that offset.
-- A model that happens to predict more knockdowns gets credit for it. That is why the level-neutral column
-  matters: it cuts F's raw gain over V3 from 70 to 37. V3 predicts only 537 of the 681 knockdowns.
-
-**Calibration of F on 2024+ (O/E; overall 1.09 because of the level surge):**
+**Calibration of F on 2024-25 (O/E):**
 
 | Group | Rows | KD | M0L | M1 | V3 | F |
 |---|---|---|---|---|---|---|
-| Defender age < 27 | 326 | 55 | 0.82 | 0.89 | 1.05 | 1.15 |
-| 27-30 | 630 | 129 | 1.09 | 1.10 | 1.29 | 1.21 |
-| 30-33 | 831 | 183 | 1.05 | 1.09 | 1.22 | 1.02 |
-| 33-36 | 651 | 159 | 1.22 | 1.22 | 1.29 | 1.01 |
-| 36+ | 454 | 148 | 1.44 | 1.50 | 1.36 | 1.16 |
-| Attacker age < 27 | 333 | 97 | 1.28 | 1.41 | 1.48 | 1.22 |
-| 36+ | 442 | 80 | 0.93 | 0.96 | 1.19 | 1.08 |
-| Defender moved down a class | 100 | 25 | 1.58 | 1.85 | 1.79 | 1.58 |
-| Defender at home | 2,361 | 560 | 1.13 | 1.16 | 1.26 | 1.07 |
-| Defender moved up a class | 140 | 20 | 0.72 | 0.74 | 0.72 | 0.70 |
-| Defender UFC debut | 304 | 76 | 1.37 | 1.38 | 1.49 | 1.34 |
-| Attacker UFC debut | 313 | 97 | 1.72 | 1.71 | 1.80 | 1.59 |
-| Defender prior KO losses 0 | 1,632 | 320 | 0.95 | 1.01 | 1.21 | 1.08 |
-| 1 | 695 | 181 | 1.28 | 1.31 | 1.36 | 1.15 |
-| 2+ | 578 | 180 | 1.54 | 1.46 | 1.29 | 1.07 |
-| Chin effect tercile: low (good chin) | 968 | 197 | 0.82 | 0.82 | 1.04 | 0.92 |
-| high (weak chin) | 1,133 | 305 | 1.49 | 1.54 | 1.38 | 1.18 |
-| Power effect tercile: low | 968 | 195 | 0.90 | 0.93 | 1.26 | 1.24 |
-| high | 969 | 281 | 1.48 | 1.51 | 1.29 | 1.01 |
+| Defender age < 27 | 218 | 30 | 0.68 | 0.77 | 0.88 | 0.96 |
+| 27-30 | 433 | 78 | 0.99 | 1.01 | 1.20 | 1.13 |
+| 30-33 | 571 | 109 | 0.90 | 0.95 | 1.06 | 0.90 |
+| 33-36 | 458 | 114 | 1.25 | 1.27 | 1.36 | 1.07 |
+| 36+ | 311 | 87 | 1.25 | 1.30 | 1.23 | 1.03 |
+| Attacker age < 27 | 225 | 60 | 1.23 | 1.41 | 1.52 | 1.23 |
+| 36+ | 303 | 52 | 0.87 | 0.88 | 1.09 | 1.00 |
+| Defender moved down a class | 67 | 17 | 1.55 | 1.91 | 1.85 | 1.59 |
+| Defender at home | 1,646 | 348 | 1.02 | 1.06 | 1.17 | 1.00 |
+| Defender moved up a class | 96 | 12 | 0.67 | 0.72 | 0.69 | 0.66 |
+| Defender UFC debut | 184 | 41 | 1.22 | 1.18 | 1.27 | 1.14 |
+| Attacker UFC debut | 188 | 52 | 1.63 | 1.57 | 1.68 | 1.46 |
+| Defender prior KO losses 0 | 1,118 | 194 | 0.84 | 0.91 | 1.09 | 0.97 |
+| 1 | 485 | 116 | 1.21 | 1.24 | 1.28 | 1.08 |
+| 2+ | 390 | 108 | 1.38 | 1.34 | 1.22 | 1.03 |
+| Chin effect tercile: low (good chin) | 664 | 121 | 0.72 | 0.73 | 0.94 | 0.82 |
+| high (weak chin) | 757 | 189 | 1.38 | 1.43 | 1.29 | 1.11 |
+| Power effect tercile: low | 664 | 121 | 0.85 | 0.89 | 1.20 | 1.19 |
+| high | 665 | 169 | 1.27 | 1.31 | 1.13 | 0.90 |
+| Year 2024 | 1,001 | 186 | 0.84 | 0.88 | 0.93 | 0.82 |
+| 2025 | 992 | 232 | 1.27 | 1.31 | 1.48 | 1.26 |
 
 What the table shows:
 
-- The age gradient that the constant model leaves (0.82 -> 1.44 across defender age bands) is mostly gone under
-  F. Fighter effects alone (E3) leave it in place (0.77 -> 1.30 level-neutral). Defender age is what removes it.
-- The KO-loss gradient (0.95 -> 1.54) is also gone.
-- Debutants on both sides are under-predicted. The debut and experience terms did not help on 2019-2023, so this
-  is a test-period observation; pre-UFC priors (`data/derived/preufc.json`) are the natural fix.
+- The age gradient that the constant model leaves (0.68 -> 1.25 across defender age bands) is mostly gone under F.
+- The KO-loss gradient (0.84 -> 1.38) is also gone (0.97 -> 1.03 under F).
+- Debutants are under-predicted, attackers most (O/E 1.46). The debut and experience terms did not help on 2019-2023, so this is a test-period observation;
+  pre-UFC priors (`data/derived/preufc.json`) are the natural fix.
 - Defenders who moved up get knocked down less than predicted, and defenders who moved down more (small counts).
 
 **Fighter-effect calibration slopes** come from free coefficients on log u and log v in place of the fixed 1:
@@ -218,18 +231,17 @@ What the table shows:
 |---|---|---|
 | Training, 2008-2023 | 0.88 (0.06) | 0.88 (0.05) |
 | Validation, 2019-2023 (fit 2008-2018) | 0.98 (0.10) | 0.80 (0.08) |
-| Test, 2024+ | 1.32 (0.13) | 0.83 (0.11) |
+| Test, 2024-25 | 1.40 (0.16) | 0.74 (0.14) |
 
 - **Chin.** Calibrated on validation, so no exponent is recommended. Applying the validation slope 0.98 changes
-  2024+ deviance by +0.8. The 2024+ slope of 1.32 is flagged as an open item (Verification log) and not fitted,
+  2024-25 deviance by +0.7. The 2024-25 slope of 1.40 is flagged as an open item (Verification log) and not fitted,
   because it comes from the test period.
-- **Power.** Effects are a little over-dispersed in every window. Applying the validation power exponent 0.80
-  changes 2024+ deviance by only -2.3 (SE 4-5), so the exponent stays at 1.
+- **Power.** Effects are a little over-dispersed in every window, so the exponent stays at 1.
 
 ## 3. Coefficients
 
 These are log-rate coefficients on knockdowns per landed standing head strike. "Pre-2024" is the fit used for
-held-out scoring; "live" is the fit on 2008 through Oct 31, 2026, used for the roster and the engine. SE (cl) is
+held-out scoring; "live" is the production fit on 2008 through Oct 31, 2026, used for the roster and the engine (not a held-out score). SE (cl) is
 clustered by defender.
 
 | Term | Pre-2024 coef (SE, SE cl) | Live coef (SE cl) | Live multiplier |
@@ -304,13 +316,13 @@ not carry them.
 | Reach advantage (attacker - defender) | +0.047 (0.011) | +4.8% per inch |
 | Height advantage | -0.034 (0.015) | -3.4% per inch |
 
-Tall-for-division fighters get dropped more. The block helps on 2024+ (-9.3, SE 6.9), but only -2.7 (SE 10.3) on
+Tall-for-division fighters get dropped more. The block helps on 2024-25 (-8.8, SE 5.3), but only -2.7 (SE 10.3) on
 2019-2023, which is within one SE. It is left for v7 (style and physical matchups) to recheck.
 
 ## 4. KO/TKO loss per fight
 
-Logistic regression. One row per defender of each fight with stats; 2008-2023 fit (13,216 rows), 2024+ test
-(3,034 rows). The outcome is a KO/TKO loss (strikes or corner, doctor stoppages excluded). Features are pre-fight
+Logistic regression. One row per defender of each fight with stats; 2008-2023 fit (13,216 rows), 2024-25 test
+(2,074 rows). The outcome is a KO/TKO loss (strikes or corner, doctor stoppages excluded). Features are pre-fight
 only.
 
 - Expected exposure is the log ratio of the geometric mean of the attacker's standing head landed per minute and
@@ -324,17 +336,17 @@ only.
 
 | Model | Test log loss | vs K0 (SE) | vs K2 (SE) |
 |---|---|---|---|
-| K0 constant (test KO rate 16.4%) | 0.44676 | 0 | +27.2 (7.3) |
-| K1 division + scheduled length | 0.44004 | -20.4 (6.7) | +6.8 (2.7) |
-| K2 K1 + Elo difference | 0.43779 | -27.2 (7.3) | 0 |
-| K3 K2 + trailing KD level | 0.43734 | -28.6 (7.4) | -1.4 (0.9) |
-| K4 composite: log predicted KD rate (section 3 model) + exposure + scheduled length + Elo | 0.42075 | -78.9 (10.3) | -51.7 (9.6) |
-| **K5 direct: K3 + exposure + age, KD history, KO losses, log u, log v** | **0.41515** | **-95.9 (12.5)** | **-68.7 (10.9)** |
-| K6 K5 + weight move | 0.41517 | -95.8 (12.6) | -68.6 (10.9) |
-| K7 K4 + KO-loss, KD and move terms | 0.42103 | -78.1 (11.5) | -50.9 (10.8) |
+| K0 constant (test KO rate 14.8%) | 0.41947 | 0 | +20.8 (5.8) |
+| K1 division + scheduled length | 0.41190 | -15.7 (5.3) | +5.1 (2.2) |
+| K2 K1 + Elo difference | 0.40943 | -20.8 (5.8) | 0 |
+| K3 K2 + trailing KD level | 0.40938 | -20.9 (5.9) | -0.1 (0.7) |
+| K4 composite: log predicted KD rate (section 3 model) + exposure + scheduled length + Elo | 0.39708 | -46.4 (8.2) | -25.6 (7.5) |
+| **K5 direct: K3 + exposure + age, KD history, KO losses, log u, log v** | **0.39251** | **-55.9 (9.7)** | **-35.1 (8.3)** |
+| K6 K5 + weight move | 0.39219 | -56.6 (9.8) | -35.8 (8.4) |
+| K7 K4 + KO-loss, KD and move terms | 0.39787 | -44.8 (8.9) | -24.0 (8.2) |
 
 Totals are summed log-loss differences over test rows, clustered by fight. With the first version's covariate
-set, K5 scored 0.41598.
+set, K5 scored 0.41598 on the first (2024-2026) window; that number is withdrawn with the window.
 
 K5 coefficients (pre-2024 fit; logit, SE):
 
@@ -407,8 +419,6 @@ Knockdowns per 1,000 landed standing head strikes:
 | 2024H2 | 6.19 |
 | 2025H1 | 8.39 |
 | 2025H2 | 10.90 |
-| 2026H1 | 10.44 |
-| 2026H2 (to Oct 31) | 13.19 |
 
 Around the UFC's 2024 glove trial (new gloves from UFC 302, June 1, 2024, until the old ones returned at UFC 309,
 Nov 16, 2024, per press reports):
@@ -418,27 +428,26 @@ Nov 16, 2024, per press reports):
 | 12 months before | 524 | 8.25 (7.18-9.44) | 31.3% |
 | Glove trial | 249 | 5.95 (4.72-7.41) | 21.4% |
 | 12 months after | 528 | 8.98 (7.86-10.22) | 31.8% |
-| Nov 2025-Oct 2026 | 552 | 11.71 (10.42-13.11) | 39.4% |
 
 Fight counts are bouts with exposure.
 
-Our 2026 count is 191 KO/TKO of 480 bouts, or 193 with doctor stoppages, which matches AgentMMA's 193 of 480
-through Oct 31. No source I found names a 2026 rule or equipment change, so the 2026 surge is unexplained.
+(The first version also quoted vault-period levels and KO counts; they were removed in the vault cleanup.)
 
 The trailing 730-day level won the 2019-2023 tuning narrowly (4,339.1 against 4,342.6 for 365 days and 4,345.3 for
-180). At the snapshot it is 0.01027, and the trailing 365-day level is 0.01171. Under F, 2025-26 still runs about
-25% above prediction.
+180). The engine v5.0.1 forward-chained check inside 2019-2023 (`tools/v501_kdlevel_cv.js`, data/derived/v501_kdlevel_cv.json)
+compared it with the engine's priors-based level, 4- and 5-year windows and a halfway shrink toward the level since 2008, and
+kept it (lowest RMSE of the yearly level, 0.141). Under F, 2025 runs about 26% above prediction.
 
 Recommendation:
 
-- Keep 730 days as the default and expose the 365-day level as a labeled "current season" scenario.
+- Keep 730 days as the default (confirmed by the 2019-2023 forward-chained check above).
 - Whichever is used, put the level in the engine's `kdScale`; do not let it leak into the fighter multipliers.
 
 ## 7. Published claims, checked (docs/BACKLOG.md)
 
 **1. "KD susceptibility +4.0% per year past 30 (SE 0.6%); knockdown power -3.6% per year past 30; p0 = 0.00844."**
 
-- **Replicated.** The same specification on 2010-2026 (Poisson, offset log head strikes absorbed, defender and
+- **Replicated.** The same specification on 2010-2026 (a pooled descriptive fit that includes vault-period rows; not a held-out score) (Poisson, offset log head strikes absorbed, defender and
   attacker years past 30) gives +0.0400 (SE 0.0056), -0.0370 (SE 0.0069) and baseline 0.00851. With standing head
   strikes it gives +0.0419 / -0.0412, and on 2008-2023 +0.0411 / -0.0335.
 - **Richer model, chin.** The size holds past 30 (+6.0%/yr, SE 0.9%, pre-2024; +6.2% live) but the shape is
@@ -476,7 +485,7 @@ absorbed per head strike unchanged (ratio 1.02)."**
   | Attacker moved down, per class | x0.92 (SE 0.10) | x0.92 (SE 0.09) |
 
   In pounds (pre-2024): defender -0.2%/lb (SE 0.6%), attacker +1.25%/lb (SE 0.5%).
-- **Held-out:** move terms add +0.3 deviance (SE 3.0) on 2024+ and +16 (SE 8.5) on 2019-2023 in the KD model, and
+- **Held-out:** move terms add +0.3 deviance (SE 2.3) on 2024-25 and +16 (SE 8.5) on 2019-2023 in the KD model, and
   +0.1 log loss in the KO model. They are dropped.
 - **The pattern is selection, not physics.** Fighters move up when they are dominant punchers and move down after
   being hurt. A mechanistic size tax is not supported by the KD data. Keep the size knob, but default it to 0 and
@@ -513,7 +522,7 @@ covariate terms are exactly 0 (`engine.ref_lin` = 0). Chin multipliers above 1 m
 |---|---|---|
 | Age; UFC fights; years in UFC | 38.1; 19; 9.9 | 38.0; 16; 9.3 |
 | KD absorbed vs expected | 4 vs 5.97 | 4 vs 9.06 |
-| KD absorbed in the last year | 0 | 1 (Topuria, Jun 2026, body shots per reports) |
+| KD absorbed in the last year | 0 | 1 |
 | KO/TKO losses (last year / older) | 0 / 2 | 0 / 3 |
 | Chin effect u (90% interval) | 0.78 (0.37-1.32) | 0.58 (0.27-0.98) |
 | Chin covariates (age, KD history, KO losses) | x1.37 | x1.38 |
@@ -580,7 +589,7 @@ p_ad = kd0_div * kdScale * ctx * C_d * P_a / NORM
 
 ctx  = exp(-0.111 * five_round  - 0.096 * title)                  (live fit)
 C_d  = exp(f_d) * u_d               chin  (exponent 1: validation slope 0.98 +- 0.10)
-P_a  = exp(g_a) * v_a               power (exponent 1: validated 0.80 +- 0.08 is worth only -2.3 +- 4 on 2024+)
+P_a  = exp(g_a) * v_a               power (exponent 1: validated 0.80 +- 0.08; its gain on the first test window was negligible)
 
 f_d =  0.0618 * (age - 30) - 0.0016 * max(0, age - 30) + 0.799 * [age unknown]
      - 0.1425 * KDabs_365d - 0.0800 * KDabs_older
@@ -604,7 +613,7 @@ v_a = (2.5 + KD scored)   / (2.5 + expected KD scored)
   - The backtest values are strict walk-forward: an entry in year Y <= 2023 uses coefficients fit on 2008..Y-1
     only (`fit_through` says which), and 2024+ entries use the 2008-2023 fit.
 - **NORM.**
-  - For live use, NORM = norm_chin x norm_pow = 0.9972 x 0.9752. These are the 2024+ exposure-weighted means of
+  - For live use, NORM = norm_chin x norm_pow = 0.9972 x 0.9752 (production constants of the live fit, which uses every fight through the snapshot). These are the 2024+ exposure-weighted means of
     C_d and P_a (`engine.norm_chin`, `engine.norm_pow`).
   - For the 2019-2023 tuning backtest, use 0.9882 x 1.0183 (`engine.norm_chin_backtest_2019_2023`,
     `engine.norm_pow_backtest_2019_2023`, from the strict refits), so no 2024+ data enters the tuning-period
@@ -641,13 +650,13 @@ give the targets.
 ## 10. Caveats
 
 - **Exposure is estimated.** ufcstats gives no head-by-position split, so standing head strikes are the midpoint
-  of bounds. Knockdowns from body shots (rare; Topuria's on Gaethje is one) are charged to head-strike exposure.
+  of bounds. Knockdowns from body shots (rare) are charged to head-strike exposure.
 - **The per-strike hazard conditions on realized exposure.** A knockdown can end a fight and cut exposure. The
   Poisson-process likelihood stays valid under that kind of stopping, but the per-fight KO model (section 4) is
   the pre-fight check.
-- **The test period runs about 9% hot** (2025-26 knockdown surge, cause unknown). All models share the level
-  offset. A model that predicts more knockdowns overall gains from it, which is why section 2 also reports the
-  level-neutral comparison. Absolute predictions for late 2026 depend on which level window you believe.
+- **The league level swings inside the test period** (2024 low during the glove trial, 2025 high). All models share the
+  level offset. A model that predicts more knockdowns overall gains from it, which is why section 2 also reports the
+  level-neutral comparison.
 - **Selection is everywhere.** It shows in who moves up, who returns fast after a KO, who keeps getting fights
   after absorbing damage, and who fights for titles. The coefficients are predictive associations, validated out
   of sample, not causal effects. The within-fighter estimates are upper bounds.
@@ -655,20 +664,19 @@ give the targets.
   intervals on u and v span about a factor of 3-4. Volkanovski's and Gaethje's intervals both include 1, except
   Gaethje's chin effect u (0.27-0.98).
 - **Pre-UFC careers are invisible.** Debutants start at the prior, and the data shows they are under-predicted on
-  both sides in 2024+.
+  both sides in 2024-25.
 - **Volkanovski's last two fights** (Jan 31 and Oct 24, 2026) and Gaethje's 2026 fights are in the snapshot. The
   roster numbers include them.
 
 Sources:
 
 - Data: `data/raw/*.csv` (ufcstats.com via Greco1899/scrape_ufc_stats).
-- Glove dates and the 2026 KO count are from press summaries returned by a web search on Nov 6, 2026. The pages
+- Glove dates are from press summaries returned by a web search on Nov 6, 2026. The pages
   themselves could not be opened from this environment (their hosts are not on the allowed network list). Our
   own dated data confirms the knockdown dip inside that window.
   - [SI: UFC knockouts down 30% since major glove redesign](https://www.si.com/fannation/mma/news/ufc-knockouts-down-30-percent-since-major-glove-redesign)
   - [ESPN: how fighter frustrations brought back old UFC gloves](https://www.espn.com.au/mma/story/_/id/42533757/how-fighter-frustrations-brought-back-old-ufc-gloves)
   - [AgentMMA: did the UFC's new gloves reduce knockouts](https://agentmma.com/mma-lab/ufc-new-gloves-knockout-rate)
-  - [AgentMMA: UFC knockouts 2026](https://agentmma.com/mma-lab/ufc-knockouts-2026)
 
 ## Verification log
 
@@ -687,31 +695,27 @@ independently:
 - Recomputes every feature, the trailing level and the walk-forward Gamma effects.
 - Fits the Poisson models with statsmodels.
 
-Held-out 2024+ deviance differences (SE clustered by fight / on fighters):
+Held-out deviance differences (SE clustered by fight / on fighters). The table first printed here was computed on 2024-01-01..2026-10-31 and is
+withdrawn with that window; below are the fresh-code numbers re-run on 2024-01-01..2025-12-31 (`durability_verify.json`), next to the tool's:
 
-| Comparison | First version (`durability.py`) | Fresh code | Level-neutral, fresh code |
+| Comparison | `durability.py` (2024-25) | Fresh code (2024-25) | Level-neutral, fresh code |
 |---|---|---|---|
-| Analyst's model vs constant chin (M0L) | -219.8 (32.3) | -214.5 (32.4 / 39.0) | -205.4 (38.4) |
-| Analyst's model vs V3 | -52.2 (18.5) | -46.0 (18.7 / 19.3) | -10.7 (15.5) |
-| Analyst's model vs fighter effects only (E3) | -17.2 (15.1) | -10.4 (15.2 / 15.2) | +2.3 (14.2) |
-| Analyst's model vs covariates only (M3) | -89.6 (22.2) | -86.1 (22.4 / 29.3) | -68.2 (26.3) |
-| **Revised model vs constant chin** | | -231.7 (33.1 / 39.9) | -223.5 (39.4) |
-| **Revised model vs V3** | | -63.2 (18.3 / 19.4) | -28.8 (16.2) |
-| **Revised model vs E3** | | -27.7 (13.4 / 13.5) | -15.8 (12.9) |
-| **Revised model vs analyst's model** | | -17.2 (7.6 / 7.6) | -18.1 (7.4) |
+| Revised model vs constant chin | -145.6 (25.2 / 29.9) | -130.0 (24.9 / 29.4) | -132.3 (29.3) |
+| Revised model vs V3 | -38.5 (13.5 / 15.0) | -23.6 (14.3 / 15.0) | -10.5 (12.2) |
+| Revised model vs E3 | -22.4 (9.6 / 10.1) | -5.9 (11.4 / 11.7) | -2.7 (11.1) |
+| Revised model vs covariates only (M3) | -78.1 (18.5 / 20.6) | -40.8 (17.3 / 20.8) | -36.8 (19.3) |
+| Fighter effects only (E3) vs V3 | -16.2 (12.1 / 13.7) | -17.7 (11.6 / 12.8) | -7.8 (11.5) |
 
-**Verdict on the headline.** The gain over a constant-chin model is real and replicates within about 5 units in
-independent code. Two of the first version's secondary claims did not hold up:
+**Verdict on the headline.** The gain over a constant-chin model is real and replicates in independent code (on 2024-25 the
+fresh code finds 130 against the tool's 146; the two implementations differ in people resolution and dedup). Two of the first version's secondary claims did not hold up:
 
-- **"Beats v3 by 52 (SE 19)."** Most of this was calibration-in-the-large in a hot test period. V3 predicts 537
-  knockdowns and the analyst's model 629, against 681 observed. Level-neutral, it was 17 (SE 16) in the tool and
-  11 (SE 16) in fresh code: not significant.
-- **"Age, damage and layoff add 17 on top of fighter effects (SE 15)."** Level-neutral this is 6 (SE 14) in the
-  tool and -2 (SE 14) in fresh code. The first version's covariate block added nothing out of sample on top of the
-  fighter effects.
+- **"Beats v3 by 52 (SE 19)."** Most of this was calibration-in-the-large in a hot test period (first window; figures withdrawn).
+  On 2024-25 the revised model's level-neutral gain over V3 is 26 (SE 12) in the tool and 10 (SE 12) in fresh code.
+- **"Age, damage and layoff add 17 on top of fighter effects (SE 15)."** The first version's covariate block added nothing out
+  of sample on top of the fighter effects (first window; figures withdrawn).
 
-After the fixes, both comparisons are positive in level-neutral terms. They are about 2.4 and 2.2 SEs in the
-tool, and 1.8 and 1.2 SEs in fresh code.
+After the fixes, on 2024-25: F vs E3 level-neutral 20 (SE 10) in the tool and 3 (SE 11) in fresh code, so the
+covariates' gain on top of the fighter effects is the weakest part of the evidence.
 
 ### V2. Look-ahead leakage
 
@@ -752,16 +756,15 @@ All of these checks passed:
   KO losses as documented. NCs and draws have no KO loser. Judges' cards (loser-first) are not used here.
 - **Knockdown totals.** The table holds 3,886 knockdowns against 3,899 in the raw round rows. The 13 missing are in
   bouts with ambiguous (event, bout) keys. No ambiguous-person rows reach the fit.
-- **Spot check.** Raw data shows Topuria vs Gaethje (Jun 14, 2026) as "L/W", a Gaethje win by corner stoppage
-  after round 4 despite a Topuria knockdown. This was confirmed against the sources in `research/gaethje.md`. So
-  Gaethje's 3 KO losses and 4 knockdowns absorbed are right.
+- **Spot check.** A Gaethje bout's result and knockdowns were confirmed against the sources in `research/gaethje.md` (the
+  bout is in the vault period, so its details were removed in the vault cleanup).
 
 ### V4. Overfitting: which blocks survive
 
 Cost of dropping each block from the first version's model. The validation column is the decision window; the test
 column is shown for information only and was not used to choose.
 
-| Block (params) | 2019-2023 (fit 2008-2018) | 2024+ (fit 2008-2023) | Decision (one-SE, validation only) |
+| Block (params) | 2019-2023 (fit 2008-2018) | first test window 2024-2026 (withdrawn; was information only) | Decision (one-SE, validation only) |
 |---|---|---|---|
 | Defender age spline (3) | +19.7 (9.6) | +24.8 (8.4) | keep |
 | Prior KDs absorbed (2) | +20.5 (8.3) | (in "damage" below) | keep |
@@ -782,12 +785,12 @@ The decay half-lives use the same one-SE preference for the simpler option. The 
 8-year power half-life on a 1.7-unit gain. Alpha_power moved from 3.0 to 2.5 (a 0.4-unit gain), which is harmless.
 
 **Result.** The first version had the lower training deviance (10,975 against 11,016), but the revised model wins
-on 2024+ by 19.0 (SE 7.5); see V1 for the full comparison.
+on 2024-25 by 13.4 (SE 6.0).
 
 ### V5. Uncertainty
 
 - **Fight clustering understates the SEs of model comparisons** that involve fighter effects, by up to 25%. The
-  same fighter's effect is shared across his test fights: for F vs M0L the SE is 32.9 clustered by fight and 39.5
+  same fighter's effect is shared across his test fights: for F vs M0L on 2024-25 the SE is 25.2 clustered by fight and 29.9
   clustered on fighters. Both are now reported (`se_fighter`). The function treats each directed row as a member
   of both fighters' clusters, counting rows that share both fighters once.
 - **Level-neutral comparisons** (half-year rescaling) are now in `ladder_test` and `pairwise_test` as a diagnostic.
@@ -797,7 +800,7 @@ on 2024+ by 19.0 (SE 7.5); see V1 for the full comparison.
 
 ### V6. Claims corrected
 
-- **Chin exponent 1.15, "2024+ gain 5.3 (SE 2.8)".** This was not produced by the code. Recomputed for the first
+- **Chin exponent 1.15, "2024+ gain 5.3 (SE 2.8)" (first test window).** This was not produced by the code. Recomputed for the first
   version's model it is -7.2 (SE 3.0) in fresh code, with validation slope 1.16. With the revised covariates the
   validation slope is 0.98 (SE 0.10), so the exponent is withdrawn and the engine uses 1.0. The tool now computes
   this (`verification.chin_exponent`).
@@ -812,19 +815,17 @@ on 2024+ by 19.0 (SE 7.5); see V1 for the full comparison.
   not to adopt it stands.
 - **Section 6 level-window deviances** were misquoted as 4,343.1 / 4,346.3 / 4,349.2. The grid gives 4,339.1 /
   4,342.6 / 4,345.3.
-- **"Nov 2025-Oct 2026: 11.87 per 1,000, 520 fights, 40.0% KO."** The data gives 11.71 (10.42-13.11), 552 bouts
-  with exposure and 39.4%, which is consistent with the 365-day level 0.011706.
-- **The glove-trial rates** (5.95, 8.25, 8.98) and the 2026 KO count (191 + 2 doctor of 480) replicate exactly.
+- **A vault-period level and KO share** were quoted and corrected here; both were removed in the vault cleanup.
+- **The glove-trial rates** (5.95, 8.25, 8.98) replicate exactly.
 
 ### V7. Open items (not fitted, because they would need the test period)
 
-- **Chin on 2024+.** The chin calibration slope on 2024+ is 1.32 (SE 0.13), against 0.98 on 2019-2023. The test
-  period's weak chins were dropped even more than the model says, possibly a level x chin interaction in a hot
-  league. Recheck in v9 with 2026 as validation once 2027 data exist.
-- **Debutants** are under-predicted on both sides (O/E 1.34 and 1.59 against 1.07 at home). Pre-UFC priors
+- **Chin on 2024-25.** The chin calibration slope on 2024-25 is 1.40 (SE 0.16), against 0.98 on 2019-2023. The test
+  period's weak chins were dropped even more than the model says. Recheck on the forward ledger; not fitted.
+- **Debutants** are under-predicted (2024-25 O/E 1.14 and 1.46 against 1.00 at home). Pre-UFC priors
   (`data/derived/preufc.json`) should be tested as the u/v prior mean.
-- **The level surge** (2025H2-2026: 10.4-13.2 per 1,000) is unexplained. A faster level window (365 days) won
-  nothing on 2019-2023 but would have tracked 2025-26 better.
+- **The level swings** (2024 low, 2025H2 high) are only partly explained (the 2024 glove trial). Longer or faster windows did
+  not beat 730 days on 2019-2023 (section 6); never tune the window on 2024-25.
 
 ### Files changed
 
@@ -840,5 +841,5 @@ on 2024+ by 19.0 (SE 7.5); see V1 for the full comparison.
   - `DEFAULT_SPEC` set to the tuned spec.
 - `tools/durability_verify.py` (new): independent re-implementation; output in
   `data/derived/durability_verify.json`.
-- `data/derived/durability.json`: regenerated (built 2026-11-06T10:57Z, spec in `meta.spec`).
+- `data/derived/durability.json`: regenerated (built 2026-11-06T10:57Z, spec in `meta.spec`); held-out blocks re-scored on 2024-25 and vault items moved out on Nov 7 (vault cleanup).
 - `research/model_durability.md`: this report, revised in place, plus this log.
