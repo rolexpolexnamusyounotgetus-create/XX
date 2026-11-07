@@ -64,6 +64,17 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- eradrift (lab 5, VERIFIED ~01:50 UTC Nov 7, research/model_eradrift.md): NOT adopted into production method/round
+  (level-adjusting S2 + ML v2 winner fails the forward-chained 2021-23 gate; M2's 2024-25 -0.0055 7-bin is descriptive).
+  OFFER to v9 engine calibration (train-only test): stat-level league trackers (sig landed/attempted, TD attempts,
+  control, 10-8 share) beat the lagged 5-year window in nested CV; 10-8 share also confirmed on 2024-25. KO/KD
+  "confirmed" gains came from the division layer, not league tracking. GLOVE TRIAL (descriptive, sourced dates):
+  new gloves Jun 1 - Nov 15, 2024: decision share 59.4%, KO share 23.1%, KD per 100 head 0.54 (vs 51.4% / 32.7% /
+  0.68 before; old gloves from Feb 15, 2025: 49.0% / 32.8% / 0.87) - about half of the 2024-25 decision miss. Rule for
+  v9: dated, pre-announced breaks are variance bumps logged in the ledger, never a lasting tilt; level alarms on the
+  forward ledger's trailing 200 bouts (decision/KO/R1 shares; realised/predicted sig landed, control, TD, KD), same
+  two-quarter clock as rule 6.5.1(b); alarms open a review, never auto-apply. One KD scale only.
+- LAB 5 SCORECARD: era drift not adopted for production; feeds v9 as engine-level trackers + monitor design.
 - props (lab 4, VERIFIED ~00:50 UTC Nov 7, research/model_props.md): ADOPT PropsPool as the props path in predict()
   (v7), scoped as hygiene: vs S2 cells the pool gains 7-bin -0.0172 [-0.0283, -0.0056] on 2024-25 (CV -0.0175), but
   vs the current 40/60 props blend it is a tie (CV -0.0004, under the 0.0005 rule): one de-vig from raw book prices
