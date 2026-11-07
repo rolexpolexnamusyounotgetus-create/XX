@@ -603,8 +603,13 @@ table.data td.muted { color: var(--muted); }
 .sc-call span { font-size: 13.5px; line-height: 1.45; color: var(--bar-ink); opacity: .92; }
 table.data small.ci { display: block; color: var(--muted); font-size: 11px; font-weight: 500; }
 .sc-ver { display: grid; gap: 8px; }
-.sc-ver table.data td:last-child { white-space: normal; text-align: left; min-width: 220px; }
-.sc-ver table.data th:last-child { text-align: left; }
+.sc-ver table.data td:nth-child(2), .sc-ver table.data td:nth-child(3), .sc-ver table.data th:nth-child(2), .sc-ver table.data th:nth-child(3) { white-space: normal; text-align: left; }
+.sc-ver table.data td:first-child { min-width: 170px; }
+.sc-ver table.data td:nth-child(2) { min-width: 104px; }
+.sc-ver table.data td:nth-child(3) { min-width: 260px; }
+.sc-ver table.data th:nth-child(n+4) { white-space: normal; min-width: 78px; }
+.sc-lesson { margin: 2px 0 0; font-size: 14px; line-height: 1.45; color: var(--ink); }
+.sc-props table.data td:nth-child(2), .sc-props table.data th:nth-child(2) { white-space: normal; text-align: left; }
 .fw-led { margin-bottom: 8px; }
 .fw-strip .nl { position: absolute; top: 4px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--surface); border: 2px solid var(--ink-2); box-sizing: border-box; }
 .fw-key i.nl { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink-2); box-sizing: border-box; }
@@ -1049,7 +1054,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
       <p>Every fighter in the UFC stats snapshot (through Oct 31, 2026) gets a profile built from round-by-round numbers, weighted toward recent fights with a two-year half-life and pulled toward the division average in proportion to how little data there is. A fighter with 20 UFC minutes reads close to average; one with 300 reads close to their own record.</p>
       <p>Each simulated fight runs as competing clocks, re-drawn after every event. At distance both fighters throw strikes at rates set by one's attempts and the other's attempts allowed, and each strike lands or misses on a combination of the attacker's accuracy and the defender's defense, by target. Clinch entries, takedowns, ground passes, sweeps, stand-ups and submission attempts each have their own clocks, fitted so the pair's expected clinch and control time matches their records.</p>
       <p>Clean head shots can knock a fighter down, with a chance built from the puncher's knockdown rate, how easily the other fighter is dropped, age past 34, prior KO losses and moving up in weight. After a knockdown the attacker may follow up on the ground; the referee can stop it or the downed fighter can recover. Leg kicks slow a fighter, body shots drain the tank, and fatigue cuts output, accuracy and power. Three judges score each round with weights fit to real UFC scorecards, each with a personal taste and their own noise. Fight-night form varies every fight.</p>
-      <p>The global settings are tuned on UFC fights from 2019 to 2023 and checked on 2024-25 fights the tuning never saw. This is simulator v4: versions 5, 5.0.1 and 6 were each scored once and rejected because they did not clearly beat it (the scorecard above has the numbers). The simulator explains how and when a fight ends; the win chances at the top come from the stats model and the market, which were better at picking winners.</p>
+      <p>The global settings are tuned on UFC fights from 2019 to 2023 and checked on 2024-25 fights the tuning never saw. This is simulator v4. Versions 5 through 10 tried to improve on it: v5, v5.0.1 and v6 were rejected on their single look at 2024-25, v7, v8 and v9 failed their gate on the tuning years, and v10 was kept and then reversed on review (the scorecard above lists each). The gains left after v4 were smaller than one test window can detect. The simulator explains how and when a fight ends; the win chances at the top come from the stats model and the market, which were better at picking winners.</p>
     </div>
   </section>
 

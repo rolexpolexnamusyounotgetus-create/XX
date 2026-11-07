@@ -262,13 +262,40 @@ for (const s of Object.keys(B.sd.opp.roster)) { const row = B.sd.opp.roster[s], 
   check(text(N.vault_2026_readout.source).indexOf(N.vault_2026_readout.quote) >= 0 && N.vault_2026_readout.text === "level with the market", "2026 readout quoted");
   check(text(N.valid_2021_2023_line_vs_close.source).indexOf(N.valid_2021_2023_line_vs_close.quote) >= 0, "2021-23 quote");
   const VH = rd("data/derived/version_history.json");
+  const nums = (s) => (String(s).replace(/−/g, "-").match(/[+-]?\d+\.\d+/g) || []);
   for (const v of VH.versions) {
-    const nt = N.engine_versions[v.version]; if (!nt || v.version === "v3") continue;
-    const basis = (v.decision && v.decision.basis) || "";
+    const nt = N.engine_versions[v.version];
+    check(!!nt && !!nt.reason && !!nt.outcome && !!nt.what, "engine " + v.version + " has a plain note (what, outcome, one-line reason) on the page");
+    if (!nt || v.version === "v3") continue;
+    const basis = (v.decision && v.decision.basis) || "", entry = JSON.stringify(v);
     check(basis.indexOf(nt.quote) >= 0 && (!nt.quote2 || basis.indexOf(nt.quote2) >= 0), "engine " + v.version + " reason quotes its decision basis");
+    check(!nt.quote_entry || entry.indexOf(nt.quote_entry) >= 0, "engine " + v.version + " extra quote is in its history entry");
     check((nt.verdict === "kept") === (v.decision && v.decision.kept === true), "engine " + v.version + " verdict matches the history");
+    // every number in the one-line reason is in the decision basis, digit for digit (minus signs normalised)
+    const miss = nums(nt.reason).filter((x) => basis.indexOf(x) < 0);
+    check(!miss.length, "engine " + v.version + ": every number in the reason is exact to its decision basis", miss);
+    // the outcome label follows the record: kept / rejected on its single look / failed its train gate / kept, then reversed on review
+    const want = v.decision.kept === true ? "kept" : (v.status === "gate_failed" ? "failed its train gate" :
+      (v.decision_superseded && v.decision_superseded.kept === true ? "kept, then reversed on review" : "rejected on its single look"));
+    check(nt.outcome === want, "engine " + v.version + " outcome label follows the record", [nt.outcome, want]);
   }
   check(text("data/derived/version_history.json").indexOf(N.engine_versions.v3.quote) >= 0, "v3 reason quoted");
+  check(text(N.versions_lesson.source).indexOf(N.versions_lesson.quote) >= 0 && /smaller than one test window can detect/.test(N.versions_lesson.text), "the lesson is quoted from its source");
+  // simulator-alone 2026 numbers from audit 2 (v10, and v8 whose engine rows are v10's)
+  const E26 = N.engine_2026;
+  check(text(E26.source).indexOf(E26.quote) >= 0 && text(E26.source).indexOf(E26.quote2) >= 0, "2026 engine numbers quoted from audit 2");
+  check(E26.quote.indexOf(E26.values.v4.toFixed(4)) >= 0 && E26.quote.indexOf(E26.values.v10.toFixed(4)) >= 0 && E26.values.v8 === E26.values.v10, "2026 engine numbers match their quote (v8 = v10)");
+  // the props pool on both windows: quoted, and equal to the audits' recorded results
+  const PPq = Object.fromEntries(N.props_pool.map((x) => [x.key, x]));
+  for (const x of N.props_pool) {
+    check(text(x.source).indexOf(x.quote) >= 0, "props pool quote in " + x.source + ": " + x.quote);
+    check(x.quote.indexOf(fmt(x.diff) + " [" + fmt(x.ci[0]) + ", " + fmt(x.ci[1]) + "]") >= 0 && x.ci[1] < 0, "props pool numbers match their quote and the interval excludes 0: " + x.key);
+  }
+  const A1 = VH.vault_audits.find((a) => a.audit === 1), A2 = VH.vault_audits.find((a) => a.audit === 2);
+  const same = (o, x) => !!o && o.diff === x.diff && o.ci[0] === x.ci[0] && o.ci[1] === x.ci[1];
+  check(same(A1.side_line.props_pool_minus_S2_same_winner.bin7, PPq.vault_audit1), "props pool, audit 1 = version_history audit 1 side line");
+  check(same(A2.results.side_lines_vs_cmp4.props_effect_in_v10_open.bin7, PPq.vault_audit2), "props pool, audit 2 = version_history audit 2 results");
+  check(text(N.vault_2026_audit2_readout.source).indexOf(N.vault_2026_audit2_readout.quote) >= 0, "audit 2 readout quoted (level with the opener)");
   const V = B.sc.valid, ML2R = ML2J.results.valid_2024_2025.static;
   check(V.ml2_lr.ll === 0.58865 && V.close.ll === 0.58537 && ML2R.ml2_lr.log_loss === V.ml2_lr.ll, "2024-25: ML v2 logistic 0.5887 vs close 0.5854");
   check(V.paired.line_stack_minus_close.diff === -0.00873 && V.paired.line_stack_minus_close_2021_2023.diff === -0.0015, "2024-25 with-line stack -0.0087; 2021-23 -0.0015");
@@ -279,6 +306,19 @@ for (const s of Object.keys(B.sd.opp.roster)) { const row = B.sd.opp.roster[s], 
   check(VA.bench.stack_noline.log_loss === 0.6602 && VA.bench.stack_noline.slope < 0.6, "2026: old production no-line stack 0.6602, over-confident");
   const ce = VA.close_edge["ml2_stack_close_static-close"];
   check(ce.ci[0] < 0 && ce.ci[1] > 0 && /level with the market/.test(VA.close_edge.readout), "2026 close edge interval includes 0: level with the market");
+  check(text("research/vault_audit_v5.md").indexOf(fmt(ce.diff) + " [" + fmt(ce.ci[0]) + ", " + fmt(ce.ci[1]) + "]") >= 0, "2026 close edge exact to audit 1's report");
+  // audit 2 (final): every number the page quotes from its results block, as printed in research/vault_audit_v10.md
+  const V2 = B.sc.vault2, R10 = text("research/vault_audit_v10.md"), pc = (x) => (x > 0 ? "+" : (x < 0 ? "-" : "")) + Math.abs(100 * x).toFixed(2) + "%";
+  check(V2 && V2.case === "if_v4_stays", "audit 2 block on the page, case if_v4_stays");
+  const lv = { forward_open: "0.6150", opener: "0.6199", cmp4_open: "0.6213", close: "0.6003" };
+  for (const k of Object.keys(lv)) check(V2[k].toFixed(4) === lv[k] && R10.indexOf(lv[k]) >= 0, "audit 2 " + k + " " + lv[k] + " exact to the report", V2[k]);
+  for (const k of ["forward_minus_opener", "cmp4_minus_opener", "v10_minus_cmp4_open", "props_effect_bin7"]) {
+    const o = V2[k], s = fmt(o.diff) + " [" + fmt(o.ci[0]) + ", " + fmt(o.ci[1]) + "]";
+    check(R10.indexOf(s) >= 0, "audit 2 " + k + " " + s + " exact to the report");
+  }
+  check(V2.forward_minus_opener.ci[0] < 0 && V2.forward_minus_opener.ci[1] > 0 && V2.cmp4_minus_opener.ci[0] < 0 && V2.cmp4_minus_opener.ci[1] > 0, "audit 2: both packages level with the opener (intervals include 0)");
+  const st = V2.statlines_total, ss = pc(st.diff) + " [" + pc(st.ci[0]) + ", " + pc(st.ci[1]) + "]";
+  check(R10.indexOf(ss) >= 0, "audit 2 v10 stat-line total " + ss + " exact to the report");
 }
 
 // ---------------------------------------------------------------- 7. committed forward ledger

@@ -62,7 +62,19 @@
    tools/live_refresh.py check_live): fighters.json, ml.json, market.json, methodround.json, ml2.json and ratings.json are
    read from <dir>/<name>_live.json instead of data/derived (meta.live_dir and meta.live_files say so). Without the option
    nothing changes: the --fwd 4.1 / 4.2 / 4.3 outputs are byte-identical to the tool before v4.4 existed
-   (tests/test_forward_v44.js). */
+   (tests/test_forward_v44.js).
+
+   --fwd 4.5 (forward model v4.5, README "Forward model v4.5"): exactly --fwd 4.4's computation, with meta.fwd "4.5". The props
+   pool runs afterwards, in a separate mode the ledger calls with fwd-4.4's cells and p_a:
+
+     node tools/forward_ledger.js --props-pool <jobs.json>   -> JSON on stdout (unrounded)
+
+   jobs.json = { params: "production", bouts: [{ bout_id, kind: "pool" | "debut", pA, rounds, props: <A/B consensus>,
+   cells: [a KO r1..R, a SUB r1..R, b KO r1..R, b SUB r1..R, a DEC, b DEC, draw] (kind pool), debut: { A, B } and pW
+   (kind debut) }]. It loads only src/ml/propspool.js and data/derived/props.json (the two files the README pins by sha256)
+   and runs PropsPool predict() (kind pool: the joint-linear pool, round shapes from the cells, decision tilt beta; refused
+   unless beta is all zero) or debutMethod() (kind debut). The --fwd 4.1 to 4.4 outputs are byte-identical to the tool
+   before v4.5 existed (tests/test_forward_v45.js). */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -70,6 +82,50 @@ const crypto = require("crypto");
 const ROOT = path.join(__dirname, "..");
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
+
+// ---- forward model v4.5: the props-pool mode (README "Forward model v4.5" items 2 and 4); nothing below it runs in this mode
+function propsPoolMode(jobsPath) {
+  const PP = require(path.join(ROOT, "src/ml/propspool.js"));
+  const ppFile = path.join(ROOT, "src/ml/propspool.js"), pjFile = path.join(ROOT, "data/derived/props.json");
+  const full = (p) => crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex");
+  const PJ = JSON.parse(fs.readFileSync(pjFile, "utf8"));
+  const jobs = JSON.parse(fs.readFileSync(jobsPath, "utf8"));
+  const which = jobs.params || "production";
+  if (which !== "production") throw new Error("--props-pool: fwd-4.5 pre-registers params 'production', got " + which);
+  const par = PJ.model.params_production, dpar = (PJ.model.debut || {}).params_production;
+  const zero = (v) => Array.isArray(v) && v.every((x) => x === 0);
+  if (!zero(par.m.beta)) throw new Error("--props-pool: props.json params_production.m.beta is not all zero (decision tilt must be 0)");
+  if (dpar && !zero(dpar.beta)) throw new Error("--props-pool: props.json debut params_production.beta is not all zero");
+  const pool = PP.create(PJ.model);
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  const out = { meta: { propspool_sha256: full(ppFile), props_json_sha256: full(pjFile), params: which, spec: PJ.model.spec,
+    w: par.m.w, beta: par.m.beta, draw_c: PJ.model.draw_c, debut_mode: (PJ.model.debut || {}).mode || null,
+    debut_alpha: dpar ? dpar.alpha : null, debut_beta: dpar ? dpar.beta : null, propspool_version: PP.version }, bouts: [] };
+  for (const j of jobs.bouts) {
+    const R = j.rounds === 5 ? 5 : 3;
+    if (j.kind === "pool") {
+      const c = j.cells;
+      if (!Array.isArray(c) || c.length !== 4 * R + 3) throw new Error("--props-pool: " + j.bout_id + ": cells must have 4R+3 entries");
+      const model = { A: { ko: c.slice(0, R), sub: c.slice(R, 2 * R), dec: c[4 * R] },
+        B: { ko: c.slice(2 * R, 3 * R), sub: c.slice(3 * R, 4 * R), dec: c[4 * R + 1] }, draw: c[4 * R + 2] };
+      const r = pool.predict({ pA: j.pA, rounds: R, model, props: j.props, params: which });
+      const own = PP.fromCells(model), pc = PP.propsCond(j.props, R, PJ.model.spec.rep_r);
+      const m6 = j.props.m6, Wp = sum(m6.slice(0, 3)) / sum(m6);
+      const cells = r.cells, pa = sum(cells.slice(0, 5)) + sum(cells.slice(5, 10)) + cells[20];
+      const pb = sum(cells.slice(10, 15)) + sum(cells.slice(15, 20)) + cells[21];
+      const pdec = (M, pAx) => pAx * M[0][2] + (1 - pAx) * M[1][2];
+      out.bouts.push({ bout_id: j.bout_id, kind: "pool", source: r.source, cells23: cells, p_method: r.p_method,
+        p_distance: r.p_distance, fin_round: r.fin_round, M_pool: r.M, M_cells: own.M, M_props: pc.M, p_own_cells: own.pOwn,
+        p_props: Wp, p_dec_given_not_draw: { cells: pdec(own.M, j.pA), props: pdec(pc.M, Wp), pool: pdec(r.M, j.pA) },
+        check: { sum: sum(cells), p_a_not_draw: pa / (pa + pb), min: Math.min(...cells), finite: cells.every((x) => isFinite(x)) } });
+    } else if (j.kind === "debut") {
+      const r = pool.debutMethod({ debut: j.debut, pW: j.pW, props: j.props, rounds: R, params: which });
+      out.bouts.push({ bout_id: j.bout_id, kind: "debut", source: r.source, A: r.A, B: r.B });
+    } else throw new Error("--props-pool: unknown kind " + j.kind);
+  }
+  process.stdout.write(JSON.stringify(out));
+}
+if (args[0] === "--props-pool") { propsPoolMode(path.resolve(args[1])); return; }
 const engineDir = path.resolve(ROOT, opt("--engine-dir", "src"));
 const E = require(path.join(engineDir, "engine3.js"));
 const MLRates = require(path.join(engineDir, "ml", "mlrates.js"));
@@ -136,9 +192,9 @@ const DEBUT_ELO = 1500;                                // tools/build_db.py star
 // a bout with a debutant gets a separate r.debut_path block (winner by regime + method); the pre-registered models
 // block, p_a and every other field are unchanged (tests/test_debut.js checks this).
 const FWD = opt("--fwd", "4.1");                          // forward model version of the output (README)
-if (FWD !== "4.1" && FWD !== "4.2" && FWD !== "4.3" && FWD !== "4.4") throw new Error("--fwd must be 4.1, 4.2, 4.3 or 4.4, got " + FWD);
-const FWD42 = FWD === "4.2" || FWD === "4.3" || FWD === "4.4";   // the fwd-4.2 additions (fwd-4.3 and 4.4 keep every one)
-const FWD43 = FWD === "4.3" || FWD === "4.4";             // fwd-4.3: models.moe_noline (fwd-4.4: the same computation)
+if (FWD !== "4.1" && FWD !== "4.2" && FWD !== "4.3" && FWD !== "4.4" && FWD !== "4.5") throw new Error("--fwd must be 4.1, 4.2, 4.3, 4.4 or 4.5, got " + FWD);
+const FWD42 = FWD === "4.2" || FWD === "4.3" || FWD === "4.4" || FWD === "4.5";   // the fwd-4.2 additions (fwd-4.3 to 4.5 keep every one)
+const FWD43 = FWD === "4.3" || FWD === "4.4" || FWD === "4.5";   // fwd-4.3: models.moe_noline (fwd-4.4, 4.5: the same computation)
 const DEBUT_MODEL_PATH = opt("--debut-model", FWD42 ? path.join("data", "derived", "debut.json") : null);
 const DMJ = DEBUT_MODEL_PATH ? JSON.parse(fs.readFileSync(path.resolve(ROOT, DEBUT_MODEL_PATH), "utf8")) : null;
 const DebutJS = DMJ ? require(path.join(ROOT, "src/ml/debut.js")) : null;

@@ -1774,7 +1774,7 @@
     var box = $("btBody"); box.textContent = "";
     if (!SCJ) { box.appendChild(el("p", "small", "The scorecard is not in this build.")); return; }
     var V = SCJ.valid || {}, P = V.paired || {}, VA = SCJ.vault, N = SCJ.notes || {};
-    box.appendChild(el("p", "lede", "Every number here is out of sample: each fight is predicted from what was known before it, by weights that never saw it. Picks right is the share of fights where the favorite won. Log loss also rewards confidence when it is right and punishes it when it is wrong; lower is better, a coin flip scores 0.693, and a few thousandths is a real difference at this level."));
+    box.appendChild(el("p", "lede", "Every number here is out of sample: each fight is predicted from what was known before it, by weights that never saw it. Picks right is the share of fights where the favorite won. Log loss also rewards confidence when it is right and punishes it when it is wrong; lower is better, a coin flip scores 0.693, and the gaps between good models are often a few thousandths."));
     // the 2026 readout first, in plain words
     var V2 = SCJ.vault2 || null, ce = VA && VA.close_edge && VA.close_edge["ml2_stack_close_static-close"], oe = VA && VA.open_regime && VA.open_regime["ml2_stack_open_static-open"];
     var fo = (V2 && V2.forward_minus_opener) || oe, has0 = function (o) { return !o || !o.ci || (o.ci[0] < 0 && o.ci[1] > 0); };
@@ -1837,6 +1837,26 @@
         (pr.engine_v4_minus_close ? ", the simulator by " + sgn(pr.engine_v4_minus_close.diff) + " " + ci2(pr.engine_v4_minus_close.ci) : "") + "."));
       ul2.appendChild(el("li", null, "Fights in 2026 ended early more often than any model expected, the simulator included. 369 fights give wide intervals: about ±0.05 on a log loss, ±0.01 to ±0.03 on a difference."));
       c2.appendChild(ul2);
+    }
+    // the final audit (after v10): the pre-registered headline with a pre-fight line, the v10 side line
+    if (V2 && V2.forward_open != null) {
+      c2.appendChild(el("h3", "mini", "Second and final audit, after v10"));
+      var ul3 = el("ul", "caveats");
+      ul3.appendChild(el("li", null, "The same " + (VA ? nf.format(VA.n_decisive || 0) + " " : "") + "decisive fights, with every model fit only on fights before 2026. It chose nothing."));
+      ul3.appendChild(el("li", null, "With a pre-fight line, the page's pick scored " + fx(V2.forward_open, 4) + ", the opening line " + fx(V2.opener, 4) + " and the older package built on simulator v4 " + fx(V2.cmp4_open, 4) +
+        ". Against the opener: the page's pick " + dCell(V2.forward_minus_opener) + ", the v4 package " + dCell(V2.cmp4_minus_opener) + ". Level with the market; the closing line (" + fx(V2.close, 4) + ") stayed ahead of both."));
+      if (V2.v10_minus_cmp4_open) ul3.appendChild(el("li", null, "v10's package, scored on the side: " + dCell(V2.v10_minus_cmp4_open) + " against v4's package with a pre-fight line, the same small gain as on 2024-25 and still inside the noise."));
+      ul3.appendChild(el("li", null, "It re-scored fights the first audit had already shown, so it is not an independent test, and 369 fights leave about ±0.02 on a difference against the market."));
+      c2.appendChild(ul3);
+    }
+    // how it ends: the props pool, the one late addition that held up on both windows (page_scorecard.json, quoted)
+    var PPL = N.props_pool || [];
+    if (PPL.length) {
+      c2.appendChild(el("h3", "mini", "How it ends: the one late addition that held up"));
+      c2.appendChild(el("p", "small", "The props pool blends the finish model's chances with the betting market's prices on how a fight ends. On the who-wins-and-how score (seven outcomes: either fighter by KO, submission or decision, or a draw; lower is better) it scored clearly better in both test windows."));
+      var pw = el("div", "sc-props"); c2.appendChild(pw);
+      pw.appendChild(scTable(["Window", "Compared with", "Difference, 95% interval"], PPL.map(function (x) { return { cells: [x.label, x.against, sgn(x.diff) + " " + ci2(x.ci)] }; }), "The props pool on the who-wins-and-how score"));
+      c2.appendChild(el("p", "small", "Both 2026 rows use the same fights, so the second does not confirm the first independently. This page does not use the props pool: a matchup you build here comes with no prices on how the fight ends, so the how-it-ends read is the finish model alone, scaled to the headline odds."));
     }
     box.appendChild(versionTable());
     var cvt = el("div"); cvt.id = "btCaveats"; box.appendChild(cvt); renderCaveats();

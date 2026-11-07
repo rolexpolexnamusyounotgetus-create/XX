@@ -81,6 +81,18 @@ Forward model v4.4 (data/predictions/README.md, "Forward model v4.4 (Nov 7, 2026
     fighters, market, ratings, ml, ml2, methodround) when tools/live_refresh.py check_live passes at prediction time,
     else every one falls back to fwd-4.3's pinned file (model.live_inputs.fallback, flag live_inputs_fallback on every
     bout). The manifest's path and sha256 and each live file's sha256 go into model.live_inputs.
+
+Forward model v4.5 (data/predictions/README.md, "Forward model v4.5 (Nov 7, 2026)", pre-registered before this code)
+  - Supersedes fwd-4.4 for events dated 2026-11-14 or later (--fwd auto); fwd-4.1 to 4.4 paths unchanged and still write
+    tool 1.1 to 1.4 (tests/test_forward_v45.js, golden fixtures).
+  - fwd-4.4 exactly (winner, live inputs and fallback, flags, debut handling, stat lines), except: a bout without a debutant
+    whose props snapshot (the newest data/predictions/props_snapshot_*.json from tools/props.py capture taken before the
+    lock) has method props takes p_method / p_distance / p_finish_round from PropsPool (src/ml/propspool.js on
+    data/derived/props.json, production weights, round shapes from the cells, decision tilt 0; tools/forward_ledger.js
+    --props-pool) fed p_a and fwd-4.4's cells, which stay the scored secondary p_method_secondary.fwd44_cells; a debut bout
+    with method props records the debut-bout pool as the monitored secondary p_method_secondary.debut_props_pool. Every
+    bout carries a props_pool record. propspool.js and props.json are pinned by full sha256 (FWD45_PINNED_FULL).
+  - score: also scores each method secondary against its primary (scores.json "method_secondary").
 """
 import argparse
 import csv
@@ -110,6 +122,7 @@ TOOL = "tools/forward_ledger.py 1.1"     # the fwd-4.1 path writes this exact st
 TOOL_42 = "tools/forward_ledger.py 1.2"  # tool version of fwd-4.2 files
 TOOL_43 = "tools/forward_ledger.py 1.3"  # tool version of fwd-4.3 files
 TOOL_44 = "tools/forward_ledger.py 1.4"  # tool version of fwd-4.4 files
+TOOL_45 = "tools/forward_ledger.py 1.5"  # tool version of fwd-4.5 files
 # Forward model v4.1 (pre-registered in data/predictions/README.md): p_a = the first of these models-block entries that
 # exists for the bout, when a line was captured before the lock; the ML v2 open stack (weights fit 2019-2023 on opening
 # lines) is the primary, the rest are fallbacks for a fighter missing from the ML v2 roster.
@@ -143,7 +156,7 @@ LEDGER_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})_([a-z0-9-]+?)(?:_v(\d+))?\.json$")
 # ---- forward model v4.2 (data/predictions/README.md "Forward model v4.2 (Nov 6-7, 2026)")
 # (first event date, version) as the README assigns them, later rows win; before the first: 4.1. fwd-4.3 (pre-registered
 # Nov 7, 2026) supersedes fwd-4.2 from the same date, before any fwd-4.2 file was written.
-FWD_EFFECTIVE = (("2026-11-14", "4.2"), ("2026-11-14", "4.3"), ("2026-11-14", "4.4"))
+FWD_EFFECTIVE = (("2026-11-14", "4.2"), ("2026-11-14", "4.3"), ("2026-11-14", "4.4"), ("2026-11-14", "4.5"))
 MODEL_VERSION_42 = "fwd-4.2"
 FWD42_ENGINE_DIR = "versions/v4"          # frozen engine 4.0.0 / params 4.0.0-selfcal-pre2024 (= Vegas 124's engine)
 # the README table "Files and hashes fwd-4.2 reads" (sha256, first 16 hex); a different hash refuses a fwd-4.2 file

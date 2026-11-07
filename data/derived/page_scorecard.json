@@ -64,7 +64,7 @@
       "reason": "With a pre-fight line its pick scored −0.00245 [−0.00588, +0.00099] against v5.0.1's: an interval that crosses zero.",
       "source": "data/derived/version_history.json versions[v6].decision.basis", "quote": "paired -0.00245 [-0.00588, +0.00099]"},
     "v7": {"verdict": "gate_failed", "outcome": "failed its train gate", "what": "simulator v4 with the ML v2 pick and the props pool",
-      "reason": "One check failed, by a hair: with a closing line its pick could not be shown no worse than v4's package (+0.00060 against a limit of +0.0005). No 2024-25 look.",
+      "reason": "One check failed, by a hair: with a closing line its pick had to be shown no worse than v4's package, and the bound came out at +0.00060 against a limit of +0.0005. No 2024-25 look.",
       "source": "data/derived/version_history.json versions[v7].decision.basis", "quote": "+0.00060 > +0.0005", "quote2": "Every other check passes"},
     "v8": {"verdict": "gate_failed", "outcome": "failed its train gate", "what": "simulator v4 with stat lines pulled toward the stat-line model",
       "reason": "None of its stat-line parts met its keep rule on the 2020-2023 tuning fights. No 2024-25 look.",

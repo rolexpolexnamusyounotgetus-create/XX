@@ -1,7 +1,7 @@
 {
  "note": "Golden outputs of the fwd-4.4 path, captured from the tools as they were before fwd-4.5 was implemented (README 'Forward model v4.5'; tests/test_forward_v45.js part 1 compares the current tools with them byte for byte). js_*: tools/forward_ledger.js stdout on tests/fixtures/forward_v41_golden.json's input with js_args (pinned inputs). py_*: tools/forward_ledger.py predict --dry-run documents (py_common + py_runs[k]) on forward_v42_golden.json's cards and odds snapshot, JSON.stringify'd after removing the volatile fields. py_fwd44 / py_fwd44_noline read data/derived/live (their identity check needs live_sha256_16 unchanged); py_fwd44_fallback reads a missing live folder (fwd-4.3's pinned inputs). fwd-4.1 to fwd-4.3 identity stays with tests/fixtures/forward_v43_golden.json.",
- "generated_from_commit": "01bc97d8ab8377121796ae01334e237195fa521d",
- "generated_utc": "2026-11-07T13:23:28Z",
+ "generated_from_commit": "ab10e1896b4c2ccef6ea8c49aae3cf3db399b5eb",
+ "generated_utc": "2026-11-07T13:23:34Z",
  "code_sha256_16_at_capture": {
   "tools/forward_ledger.py": "f8aec0838cc8d8df",
   "tools/forward_ledger.js": "39e0ae0596d54455",
