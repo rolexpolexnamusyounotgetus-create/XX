@@ -41,22 +41,36 @@
      package's winner blend (data/derived/blindtest_stack.json, `model` / `model_open` by an explicit opts.lineKind; ML v2 via
      src/ml/ml2.js), method x round rescaled and pooled with S (mrWeight 0.15), anchor mode, interval (kappa 1.65), recalT 1.
      It never touches matchup / simulate / summarize / explain (tests/test_v5_step5.js, tests/test_blend_anchor.js).
+   - Calibrate A (research/v5_train_ablation.md; tools/v5_train_ablation.js, train 2019-2023 only): leave-one-out ablation of the
+     merged components by soft-label CE vs the closing line. Defaults: everything stays as merged except components.v401.mlLevels,
+     now OFF (neutral on train, levels overshoot TD / control with embed on). emJudge stays on as a protocol exception (its off state
+     is fit on cards through 2026-10). SOS kept over oppadj; v3 params + learned rates not better. tests/test_v5_calA.js.
    Units inside the engine: seconds and per-second rates unless a comment says otherwise. */
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "5.0.0-dev.5-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics), 3 (styles_sos, officials, realism_sens), 4 (embed, oppadj, preufc) and 5 (blend_anchor)
+    version: "5.0.0-dev.6-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics), 3 (styles_sos, officials, realism_sens), 4 (embed, oppadj, preufc) and 5 (blend_anchor); Calibrate A default flags (v401.mlLevels off)
 
     // ---------------- engine v5 components (src/engine3.js resolveParams; each flag off reproduces v4.0.0) ----------------
     components: {
       // v5 merge step 1: v4.0.1's train-only fixes, one sub-flag each (true / false for all five): (a) emJudge pre-2024 EM
       // judging weights + the noise / 10-8 refit on them; (b) deductions; (c) mlLevels learned-path levels + companions;
       // (d) tdCap cumulative takedown cap; (e) koTargets KO/TKO composition from 2019-2023 fights. Values: v401 below.
-      v401: { emJudge: true, deductions: true, mlLevels: true, tdCap: true, koTargets: true },
+      // Calibrate A (research/v5_train_ablation.md: train 2019-2023 leave-one-out, 1,999 fights x 2 orders x 300 sims, common
+      // random numbers; delta = arm without the flag minus all on, soft-label CE vs the close, eps 0.0005):
+      //   (a) emJudge ON, a protocol exception: removing it is -0.0001 [-0.0002, -0.0000] (inside eps; 7-bin -0.0006 n.s.), but
+      //       its off state is v4's EM weights fit on cards through 2026-10 (validation years + vault), so off is not admissible;
+      //   (b) deductions ON: soft CE +0.0000 (neutral), 7-bin +0.0194 [+0.0067, +0.0345] and who x how x when +0.0193 without;
+      //   (c) mlLevels OFF: soft CE -0.0001 [-0.0005, +0.0004] (neutral), no secondary worse without it; with embed on its
+      //       levels overshoot (TD per 15 1.380 vs 1.306 actual, control 172 vs 163 s, SUB 18.1 vs 17.5%); off: 1.300 / 164 / 17.5;
+      //   (d) tdCap ON: soft CE +0.0000 (neutral), 7-bin +0.0002 [+0.0000, +0.0004], method and joint worse without (20 sides);
+      //   (e) koTargets ON: soft CE +0.0001 (neutral), method x round +0.0027 [+0.0001, +0.0051] without.
+      v401: { emJudge: true, deductions: true, mlLevels: false, tdCap: true, koTargets: true },
       // v5 merge step 2: knockdown chin / power block of research/model_durability.md (engine3.js applyDurability;
-      // values: durability below)
+      // values: durability below). Calibrate A: ON, soft CE +0.0009 [+0.0004, +0.0015] without it (7-bin +0.0065, stat lines +0.42%).
       durability: true,
-      // v5 merge step 2: fight dynamics, research/model_dynamics.md E1-E11 (block `dyn` below; dyn.stkoHurtGate stays off)
+      // v5 merge step 2: fight dynamics, research/model_dynamics.md E1-E11 (block `dyn` below; dyn.stkoHurtGate stays off).
+      // Calibrate A: ON (structure: round-by-round finish timing); removal does not help (soft CE +0.0002 [-0.0005, +0.0009]).
       dynamics: true,
       // v5 merge step 3: src/styles_sos.js, applied after the matchup tables are final (knobs: stylesSOS below). styles: style
       // rate modifiers (research/model_styles.md section 9); sos: walk-forward strength of schedule (tools/sos_wf.py,
@@ -66,6 +80,8 @@
       // stat-line model carries: soft CE +0.0011 / +0.0005, control deviance +1.00%; on base tables they add nothing on top of
       // sos and lean worse on method); newcomer off. sos is a no-op until a caller passes opts.sos (backtest harnesses:
       // sos_wf.fights[id], A/B swapped with the corners) or loads a roster table (StylesSOS.loadSOS, release builds only).
+      // Calibrate A: SOS kept over oppadj (exactly one): oppadj instead of SOS +0.0005 [-0.0001, +0.0012] soft CE (stat lines
+      // -0.32% [-0.71, +0.07]); neither: +0.0009 [+0.0004, +0.0015].
       styles_sos: { styles: false, sos: true, newcomer: false },
       // v5 merge step 3: named judges' tendencies + shared panel noise + 10-8 model, referee stoppage tendencies (block
       // `officials` below; engine3.js officialsFor). OFF in the prediction path: no train metric improves, the league model is
@@ -85,11 +101,13 @@
       // after 2026-01-01 only). Engine-level train check (tools/v5_step4_check.js, 1,999 fights x 2 orders x 300 sims, common
       // random numbers, vs embed off): winner log loss -0.0042 [-0.0074, -0.0011]; per-fight deviance sig landed -0.31 [-0.46,
       // -0.16], sig attempts -0.72 [-1.05, -0.39], control -1.61 [-2.91, -0.35]; 7-bin, method, TD and KD n.s.
+      // Calibrate A: ON, soft CE +0.0038 [+0.0030, +0.0047] without it (who x how x when +0.0150, stat lines +0.48%).
       embed: true,
       // v5 merge step 4: opponent adjustment of the learned targets, research/model_oppadj.md ML-path recipe (block `oppadj`
       // below; engine3.js oppadjTargets). OFF: it competes with styles_sos sos "wf" (both adjust for the schedule) and the
       // engine refuses the two together; the Calibrate ablation picks one by train soft CE + stat lines. Arm: { oppadj: true,
       // styles_sos: { sos: false } } with opts.oppadj (backtests: tools/mlpathrec.js, oppadj.json walk-forward snapshots).
+      // Calibrate A: OFF (SOS stays; see styles_sos above).
       oppadj: false,
       // v5 merge step 4: pre-UFC newcomer priors, research/model_preufc.md item 3 (block `preufc` below; engine3.js applyPreUFC):
       // finish-odds multipliers from the regional record for fighters with 0-3 UFC fights. The verified recipe; styles_sos's
@@ -99,6 +117,8 @@
       // -0.0060 [-0.0115, -0.0005], 7-bin -0.0084 [-0.0168, +0.0002], KD deviance -0.0078 [-0.0127, -0.0027], KO-win log loss
       // per newcomer side -0.0092 [-0.0168, -0.0014]; winner and stat lines n.s. Caveat: the recipe's exponents were fit on
       // 2015-2023 newcomer sides, so 2019-2023 is not out of sample for them; the research's held-out check is its 2024-25 look.
+      // Calibrate A: ON, soft CE +0.0004 [-0.0000, +0.0009] without it; winner +0.0034, 7-bin +0.0123, method +0.0061, method x
+      // round +0.0071 (all intervals exclude 0).
       preufc: true,
       // v5 merge step 5: FightEngine.predict, the final prediction package (src/ml/blend.js; block `blend` below; research/
       // model_blend_anchor.md, verified). ON: blend P(win) (the ML v2 package: data/derived/blindtest_stack.json `model` /

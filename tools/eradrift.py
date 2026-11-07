@@ -1429,6 +1429,213 @@ def stage_stat(args):
 STAGES["stat"] = stage_stat
 
 
+# ====================================================================== stage: prereg / holdout
+PREREG = "prereg.json"
+LOCK = "holdout.lock"
+M_DESC = {   # method candidates scored descriptively on 2024-25 (fixed here, before the look)
+    "M1_cv_final": "the CV-final configuration (chosen on 2016-2023; fin / ko 'none' by the 0.0005 rule, r1 Kalman)",
+    "M2_fast_dec": "decision-vs-finish EW tracker that the nested gate picked in 2022 and 2023 "
+                   "(fin: ew h=0.25 y, n0=200, rho=0, + division n0s=200), alone",
+    "M3_both": "M1 + M2",
+}
+
+
+def tracker_pred(L, T, key, entry, prior, k_nb, out_state=False):
+    d = target_data(L, T, key)
+    brk_all = [BREAK_DAYS[b["key"]] for b in BREAKS if key in b["targets"]]
+    fam = entry["fam"]
+    dcfg = tuple(entry["dcfg"]) if entry.get("dcfg") else None
+    v = entry.get("brk")
+    if v is None:
+        return d, run_tracker(fam, entry["cfg"], d, d["kind"], prior, k_nb, dcfg, out_state=out_state)
+    return d, run_tracker(fam, entry["cfg"], d, d["kind"], prior, k_nb, dcfg, brk=brk_all,
+                          vb=v if fam == "kal" else 0.0, phi=v if fam == "ew" else 0.0, out_state=out_state)
+
+
+def parse_mcfg(nm):
+    """'fin:ew(h=0.25,n0=200,rho=0.0,n0s=200)+division' -> (split, cfg, scope)."""
+    split, rest = nm.split(":", 1)
+    scope = None
+    if rest.endswith("+division") or rest.endswith("+format"):
+        rest, scope = rest.rsplit("+", 1)
+    if rest == "none":
+        return split, {"fam": "none"}, None
+    fam, args = rest.split("(", 1)
+    cfg = {"fam": fam}
+    for kv in args.rstrip(")").split(","):
+        k, v = kv.split("=")
+        cfg[k] = float(v)
+    return split, cfg, scope
+
+
+def stage_prereg(args):
+    """Freeze every choice made by CV before the single 2024-25 look (commit this file before running holdout)."""
+    tr = jload_c("trackers.json")
+    me = jload_c("method.json")
+    stt = jload_c("stat.json")
+    pre = {"written": dt.datetime.utcnow().isoformat() + "Z",
+           "window": ["2024-01-01", "2025-12-31"],
+           "league": {k: {"chosen": v["best"], "ref_win5": v["refs"]["win5"], "ref_static": v["refs"]["static"],
+                          "brk_variant": v["fam_best"].get("kal+brk") if "kal" in v["best"] else v["fam_best"].get("ew+brk")}
+                      for k, v in tr["targets"].items()},
+           "league_primary": "per target: mean per-observation loss (Bernoulli NLL for shares, NB NLL for rates) of "
+                             "the chosen tracker minus the win5+div reference on 2024-25, card-cluster bootstrap CI; "
+                             "expected: stat-level targets (slpm, sapm, tdpm, ctrlpm, subpm, kd100, r108) < 0, outcome-"
+                             "mix targets ~0. A target whose CI excludes 0 on the wrong side is 'contradicted' and its "
+                             "deployment falls back to the win5+div reference.",
+           "league_secondary": "base-rate table for 2024 and 2025 (mean one-step-ahead prediction vs realised); "
+                               "the +brk variants (glove / ABC 2024-25 breaks as variance interventions) vs the chosen "
+                               "config, descriptive only",
+           "method": {"gate": {"bin7": me["gate"]["paired"]["bin7"], "joint": me["gate"]["paired"]["joint"],
+                               "pass_bin7": me["gate"]["pass_bin7"], "pass_joint": me["gate"]["pass_joint"]},
+                      "production": "unchanged (static S2 + ML v2 winner): the nested forward-chained gate 2021-2023 "
+                                    "failed on both 7-bin and joint",
+                      "final": {k: v["pick"] for k, v in me["final"].items()},
+                      "descriptive": {"M1_cv_final": {k: v["pick"] for k, v in me["final"].items()},
+                                      "M2_fast_dec": {"fin": "fin:ew(h=0.25,n0=200.0,rho=0.0,n0s=200.0)+division",
+                                                      "ko": "ko:none", "r1": "r1:none"},
+                                      "M3_both": {"fin": "fin:ew(h=0.25,n0=200.0,rho=0.0,n0s=200.0)+division",
+                                                  "ko": "ko:none", "r1": me["final"]["r1"]["pick"]}},
+                      "desc_text": M_DESC,
+                      "metrics": "7-bin, method3, finish (decision vs finish), joint, round given finish; decision-"
+                                 "share calibration-in-the-large for 2024 and 2025 (mean predicted vs realised)",
+                      "expectation": "M1 joint within +-0.002 (CV -0.0008, gate years +0.0005); M2 finish loss lower "
+                                     "only if the 2024-25 decision drift persists within the window (the tracker "
+                                     "lags by ~3 months); none of them changes production"},
+           "stat": {"adopted": {k: v["best"] for k, v in stt["stats"].items() if v["adopt"]},
+                    "rule": "statlines' rule on CV 2021-2023: pooled gain > 0.001 nats per fight-side and better in "
+                            ">= 2 of 3 years",
+                    "fragile": [k for k, v in stt["stats"].items() if v["adopt"] and v["nested_ci"][0] >= 0],
+                    "primary": "per adopted stat: NLL per fight-side (adjusted - static) on the 2024-25 'valid' rows, "
+                               "date-cluster bootstrap CI. Confirmed if the point is < 0; contradicted (adjustment "
+                               "withdrawn) if the CI lies entirely above 0",
+                    "secondary": "sig-landed deviance (unchanged by construction: sig_lnd is not adjusted), the "
+                                 "non-adopted stats' best trackers (descriptive), level ratios realised / predicted "
+                                 "by year"},
+           }
+    jdump(pre, PREREG)
+    log("prereg: written %s" % cpath(PREREG))
+    print(json.dumps({"league": {k: v["chosen"] for k, v in pre["league"].items()}, "method": pre["method"]["final"],
+                      "stat_adopted": pre["stat"]["adopted"], "fragile": pre["stat"]["fragile"]}, indent=1))
+
+
+STAGES["prereg"] = stage_prereg
+
+
+def stage_holdout(args):
+    """2024-01-01..2025-12-31 scored ONCE with the frozen choices of prereg.json."""
+    if os.path.exists(cpath(LOCK)) and not args.force:
+        raise SystemExit("holdout already run (%s); refusing a second look" % cpath(LOCK))
+    pre = jload_c(PREREG)
+    tr = jload_c("trackers.json")
+    out = {"prereg_sha256": hashlib.sha256(open(cpath(PREREG), "rb").read()).hexdigest(), "league": {}, "method": {},
+           "stat": {}}
+    # ---- league trackers
+    L = load("league.pkl")
+    T = target_frames(L)
+    for key, spec in pre["league"].items():
+        tt = tr["targets"][key]
+        prior, k_nb = tt["prior"], tt["k_nb"]
+        P = {}
+        for role in ("chosen", "ref_win5", "ref_static", "brk_variant"):
+            nm = spec[role]
+            if nm is None:
+                continue
+            d, P[role] = tracker_pred(L, T, key, tt["res"][nm], prior, k_nb)
+        ho = d["year"] >= 2024
+        nl = {r: score_obs(d["kind"], d["y"], d["E"], p, k_nb)[0] for r, p in P.items()}
+        row = {"n": int(ho.sum()), "loss": {r: float(v[ho].mean()) for r, v in nl.items()},
+               "vs_win5": boot_diff((nl["chosen"] - nl["ref_win5"])[ho], d["event"][ho]),
+               "vs_static": boot_diff((nl["chosen"] - nl["ref_static"])[ho], d["event"][ho])}
+        if "brk_variant" in nl and spec["brk_variant"] != spec["chosen"]:
+            row["brk_vs_chosen"] = boot_diff((nl["brk_variant"] - nl["chosen"])[ho], d["event"][ho])
+        lv = {}
+        for Y in (2024, 2025):
+            m = d["year"] == Y
+            act = d["y"][m].sum() / d["E"][m].sum()
+            lv[Y] = {"actual": float(act)}
+            for r, p in P.items():
+                lv[Y][r] = float((p[m] * d["E"][m]).sum() / d["E"][m].sum())
+        row["levels"] = lv
+        row["verdict"] = ("contradicted" if row["vs_win5"][1] > 0 else
+                          ("confirmed" if row["vs_win5"][2] < 0 else "n.s."))
+        out["league"][key] = row
+        log("holdout league %-9s chosen - win5 %+.5f [%+.5f, %+.5f] (%s) | 2024 act %.4f pred %.4f win5 %.4f | 2025 act %.4f pred %.4f win5 %.4f" % (
+            key, row["vs_win5"][0], row["vs_win5"][1], row["vs_win5"][2], row["verdict"],
+            lv[2024]["actual"], lv[2024]["chosen"], lv[2024]["ref_win5"], lv[2025]["actual"], lv[2025]["chosen"],
+            lv[2025]["ref_win5"]))
+    # ---- method candidates (descriptive; production unchanged)
+    S = method_setup()
+    yr = S["year"]
+    ho = yr >= 2024
+    zero = np.zeros(len(yr))
+    L0, J0 = losses_for(S, {"fin": zero, "ko": zero, "r1": zero})
+    Js = {"static": J0}
+    for cand, spec in pre["method"]["descriptive"].items():
+        offs = {}
+        for split in ("fin", "ko", "r1"):
+            sp, cfg, scope = parse_mcfg(spec[split])
+            offs[split] = run_split(S, sp, cfg, scope)
+        Lc, Jc = losses_for(S, offs)
+        Js[cand] = Jc
+        out["method"][cand] = {"paired": paired(S, Lc, L0, ho),
+                               "loss": {k: float(np.nanmean(Lc[k][ho])) for k in M_METRICS},
+                               "offsets_end": {k: float(offs[k][ho][-1]) for k in offs}}
+        pp = out["method"][cand]["paired"]
+        log("holdout method %-12s bin7 %+.5f %s joint %+.5f %s finish %+.5f %s" % (
+            cand, pp["bin7"]["diff"], pp["bin7"]["ci95"], pp["joint"]["diff"], pp["joint"]["ci95"],
+            pp["finish"]["diff"], pp["finish"]["ci95"]))
+    out["method"]["static_loss"] = {k: float(np.nanmean(L0[k][ho])) for k in M_METRICS}
+    dc = dec_calibration(S, Js, years=(2024,))
+    for Y in (2024, 2025):
+        m = (S["y"] >= 0) & (yr == Y)
+        y = S["y"]
+        isdec = ((y == I_XDEC) | (y == I_YDEC) | (y == I_DRAW)).astype(float)
+        row = {"n": int(m.sum()), "actual_dec": float(isdec[m].mean())}
+        for k, J in Js.items():
+            row["pred_dec_" + k] = float((J[m, I_XDEC] + J[m, I_YDEC] + J[m, I_DRAW]).mean())
+        dc[Y] = row
+    out["method"]["dec_cal"] = dc
+    log("holdout method decision share: %s" % {Y: {k: round(v, 4) for k, v in r.items() if k != "n"} for Y, r in dc.items() if Y in (2024, 2025)})
+    # ---- statlines
+    St = stat_setup()
+    syr = St["year"]
+    sho = syr >= 2024
+    stt = jload_c("stat.json")
+    for st in ST_STATS:
+        D = St[st]
+        nm = stt["stats"][st]["best"]
+        cfg = {"fam": "none"} if nm == "none" else parse_mcfg("x:" + nm)[1]
+        o = st_track(St, st, cfg)
+        ll0 = st_loglik(D["kind"], D["y"], D["par"], St["t"], 0.0)
+        ll1 = st_loglik(D["kind"], D["y"], D["par"], St["t"], o)
+        dv0 = st_dev(D["kind"], D["y"], D["par"], St["t"], 0.0)
+        dv1 = st_dev(D["kind"], D["y"], D["par"], St["t"], o)
+        lv = {}
+        for Y in (2024, 2025):
+            m = syr == Y
+            lv[Y] = [float(D["y"][m].sum() / st_mean(D["kind"], D["par"][m], St["t"][m], 0.0).sum()),
+                     float(D["y"][m].sum() / st_mean(D["kind"], D["par"][m], St["t"][m], o[m]).sum())]
+        r = {"cfg": nm, "adopted": st in pre["stat"]["adopted"], "n": int(sho.sum()),
+             "nll_diff": boot_diff(-(ll1 - ll0)[sho], St["card"][sho]),
+             "dev_diff": boot_diff((dv1 - dv0)[sho], St["card"][sho]), "dev_static": float(dv0[sho].mean()),
+             "nll_static": float(-ll0[sho].mean()), "level_ratio": lv, "offset_end": float(o[sho][-1])}
+        if r["adopted"]:
+            r["verdict"] = ("contradicted" if r["nll_diff"][1] > 0 else ("confirmed" if r["nll_diff"][0] < 0 else
+                                                                            "not confirmed"))
+        out["stat"][st] = r
+        log("holdout stat %-7s %s %-30s nll %+.5f [%+.5f, %+.5f] dev %+.4f | act/pred 2024 %.3f 2025 %.3f %s" % (
+            st, "ADOPT" if r["adopted"] else "     ", nm, r["nll_diff"][0], r["nll_diff"][1], r["nll_diff"][2],
+            r["dev_diff"][0], lv[2024][0], lv[2025][0], r.get("verdict", "")))
+    jdump(out, "holdout.json")
+    with open(cpath(LOCK), "w") as fh:
+        fh.write(dt.datetime.utcnow().isoformat() + "Z\n")
+    log("holdout: written %s and the lock" % cpath("holdout.json"))
+
+
+STAGES["holdout"] = stage_holdout
+
+
 # ====================================================================== main
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

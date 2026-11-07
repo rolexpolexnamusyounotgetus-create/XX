@@ -2,7 +2,7 @@
  "v401": {
   "emJudge": true,
   "deductions": true,
-  "mlLevels": true,
+  "mlLevels": false,
   "tdCap": true,
   "koTargets": true
  },

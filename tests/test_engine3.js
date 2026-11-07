@@ -469,9 +469,10 @@ console.log("\n=== Engine v5 step 1 (components.v401): point deductions, the cum
   const rs0 = mX0.ml.ratios;
   check("tdCap off: v4.0.0's per-step cap (the cumulative multiplier can pass mlMaxRatio)", [rs0[0].tdAtt, rs0[1].tdAtt, rs0[0].tdOdds, rs0[1].tdOdds].some((v) => v > RM * 1.01 || v < 1 / RM / 1.01),
     `TD attempts x${f2(rs0[0].tdAtt)} / x${f2(rs0[1].tdAtt, 3)}, TD odds x${f2(rs0[0].tdOdds)} / x${f2(rs0[1].tdOdds, 3)}`);
-  const mL = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ ml: { pred: { A: pr.A, B: pr.B } }, params: { mlTdLevel: 1.5 } }, VG_OPTS));
-  const mL0 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ ml: { pred: { A: pr.A, B: pr.B } }, params: { mlTdLevel: 1 } }, VG_OPTS));
-  check("mlTdLevel scales the learned takedown targets", mL.ml.ratios[0].tdAtt > mL0.ml.ratios[0].tdAtt * 1.2, `x${f2(mL0.ml.ratios[0].tdAtt)} -> x${f2(mL.ml.ratios[0].tdAtt)}`);
+  // mlLevels is OFF by default since v5 Calibrate A (research/v5_train_ablation.md), so the flag-on check switches it on explicitly
+  const mL = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ ml: { pred: { A: pr.A, B: pr.B } }, params: { mlTdLevel: 1.5, components: { v401: { mlLevels: true } } } }, VG_OPTS));
+  const mL0 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ ml: { pred: { A: pr.A, B: pr.B } }, params: { mlTdLevel: 1, components: { v401: { mlLevels: true } } } }, VG_OPTS));
+  check("mlTdLevel scales the learned takedown targets (mlLevels on)", mL.ml.ratios[0].tdAtt > mL0.ml.ratios[0].tdAtt * 1.2, `x${f2(mL0.ml.ratios[0].tdAtt)} -> x${f2(mL.ml.ratios[0].tdAtt)}`);
   const mLoff = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ ml: { pred: { A: pr.A, B: pr.B } }, params: { mlTdLevel: 1.5, components: { v401: { mlLevels: false } } } }, VG_OPTS));
   const mL1 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ ml: { pred: { A: pr.A, B: pr.B } }, params: { mlTdLevel: 1, components: { v401: { mlLevels: false } } } }, VG_OPTS));
   check("mlLevels off: the learned-path levels are not applied", mLoff.ml.ratios[0].tdAtt === mL1.ml.ratios[0].tdAtt, `x${f2(mLoff.ml.ratios[0].tdAtt)}`);
