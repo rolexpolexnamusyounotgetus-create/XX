@@ -901,6 +901,16 @@
         m.accO[(i * 4 + pc) * 3 + t] *= Math.exp(sh);
       }
     }
+    rtFinite(m);
+  }
+  // a retargeted table that is not finite and non-negative would stall the simulation loop: refuse instead
+  function rtFinite(m) {
+    var ks = ["dRate", "cRate", "gRate", "gBot", "gPos", "tdD", "tdCC", "tdCU", "tdO", "tdOC", "ctrlT", "occ", "up", "upPos", "swPos", "accO"];
+    for (var a = 0; a < ks.length; a++) {
+      var v = m[ks[a]];
+      for (var b = 0; b < v.length; b++) if (!(v[b] >= 0) || !isFinite(v[b])) throw new Error("FightEngine retarget: " + ks[a] + "[" + b + "] = " + v[b] + " (" + m.A.name + " vs " + m.B.name + ")");
+    }
+    if (!(m.clE >= 0) || !(m.pCtl >= 0 && m.pCtl <= 1)) throw new Error("FightEngine retarget: clinch entry / controller share not finite");
   }
   function rtCum() { return [{ td: 1, ct: 1, tdAcc: 0, d: 1, c: 1, g: 1, acc: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { td: 1, ct: 1, tdAcc: 0, d: 1, c: 1, g: 1, acc: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }]; }
   function retarget(m, pa, pb, opts) {
