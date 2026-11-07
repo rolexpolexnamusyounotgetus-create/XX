@@ -96,6 +96,18 @@ Findings from verified research that the next engine versions must use. Each lin
   co-primary total stat deviance vs v4 -1.13% [-1.76%, -0.51%]: PASS. The look (not yet run): primary open winner vs cmp4 (branch 1),
   branch 2 = total stat deviance vs v4 + glove-excluded paired base-rate test; power ~0.50; confirmation look. Audit 2 pre-registered
   (vault_audits[audit 2]). src/ holds v10 until the look; control MAE +1.6 s on train is a known risk (v8's finding).
+- CORRECTION (~12:55 UTC Nov 7): ENGINE v10 NOT KEPT. The 12:30 UTC "v10 KEPT" entry below is superseded. The
+  adversarial review (version_history.json v10 "review"; decision_superseded keeps the earlier record) found, and
+  Claude accepts: (1) the branch-2 keep rested on a second decisive metric (stat-line deviance), which V6_V10_PLAN 7.1
+  item 4 forbids ("branch 2 is decided on the pre-registered primary only"); on the primary, branch 1 failed:
+  -0.00326 [-0.00653, +0.00004]; (2) the consolidated-bundle re-scope came from Claude's workflow script, not from
+  Kira, while 7.1 fixed v10 as a capability look - a protocol deviation recorded with a ratification path for Kira;
+  (3) the bundle gate had dropped checks and could not fail (relabelled, not evidence); (4) decisive in practice: the
+  stat-line components (retarget, tdIntent, ctrlSpread, embed) do not run on the live path (page, live predict,
+  forward ledger; tools/live_component_check.js fails 6 of 6), so the claimed gain would not have reached a single
+  live forecast. src is v4 (4.0.0); versions/v10-rejected/. Claude's recommendation: do not ratify after the look
+  (that would be choosing the rule after seeing the result); keep v4, score the v10 package as an audit-2 side line
+  (expect ~-0.003) and on the forward ledger. Audit 2 runs under its pre-registered "if_v4_stays" case.
 - ENGINE v10 KEPT (~12:30 UTC Nov 7; branch 2 of the pre-registered rule; versions/v10): the consolidated bundle (v4
   simulator + ML v2 head stacks by line regime + S2 cells + props pool + v8 stat-line bundle + debut path + explainer).
   Train gate PASSED (open winner -0.00528 [-0.00964, -0.00097]; stat lines -1.13% [-1.76, -0.51]). Single 2024-25 look:
