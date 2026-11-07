@@ -1,9 +1,9 @@
-09:51:28 ok: rotowire parser + pick sides (strike marks dropped from the text)
-09:51:28 ok: moneymma parser
-09:51:28 ok: contest lock parser, per-card lock check, freeze categories in crowd_probs
-09:51:28 ok: forward capture orients panel counts to the ledger's a / b and uses its bout_id
-09:51:28 ok: name matching (aliases accepted, a different opponent rejected)
-09:51:28 ok: crowd_probs symmetric; same-day panels excluded
-09:51:28 ok: tapology refused before any request
-09:51:28 ok: no fight dated 2026+ in the parse or in crowd.json (480 dropped at parse)
+09:54:32 ok: rotowire parser + pick sides (strike marks dropped from the text)
+09:54:32 ok: moneymma parser
+09:54:32 ok: contest lock parser, per-card lock check, freeze categories in crowd_probs
+09:54:32 ok: forward capture orients panel counts to the ledger's a / b and uses its bout_id
+09:54:32 ok: name matching (aliases accepted, a different opponent rejected)
+09:54:32 ok: crowd_probs symmetric; same-day panels excluded
+09:54:32 ok: tapology refused before any request
+09:54:32 ok: no fight dated 2026+ in the parse or in crowd.json (480 dropped at parse)
 test_crowd: ok (847 fights, 471 RotoWire and 583 Money MMA inputs)

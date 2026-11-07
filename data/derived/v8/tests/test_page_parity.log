@@ -1,9 +1,9 @@
 PASS  the bundle defines FightEngine, FightParams and MLRates  (src/params3.js + src/ml/mlrates.js + src/styles_sos.js + src/engine3.js)
 PASS  same engine and params versions  (8.0.0 / 8.0.0-selfcal-pre2024)
-PASS  alexander-volkanovski vs justin-gaethje: page bundle = Node (summarize, 3000 sims)  (pA 0.681 / 0.681)
-PASS  tom-aspinall vs ciryl-gane: page bundle = Node (summarize, 3000 sims)  (pA 0.461 / 0.461)
-PASS  zhang-weili vs tatiana-suarez: page bundle = Node (summarize, 3000 sims)  (pA 0.411 / 0.411)
-PASS  islam-makhachev vs belal-muhammad: page bundle = Node (summarize, 3000 sims)  (pA 0.593 / 0.593)
+PASS  alexander-volkanovski vs justin-gaethje: page bundle = Node (summarize, 3000 sims)  (pA 0.686 / 0.686)
+PASS  tom-aspinall vs ciryl-gane: page bundle = Node (summarize, 3000 sims)  (pA 0.448 / 0.448)
+PASS  zhang-weili vs tatiana-suarez: page bundle = Node (summarize, 3000 sims)  (pA 0.358 / 0.358)
+PASS  islam-makhachev vs belal-muhammad: page bundle = Node (summarize, 3000 sims)  (pA 0.627 / 0.627)
 FAIL  component embed is on: its module FightEmbed is in the ENGINE bundle
 FAIL  component embed is on: src/app.js loads its data (loadEmbed)
 PASS  component blend_anchor: off in the page's params (nothing to ship)

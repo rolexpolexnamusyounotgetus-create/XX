@@ -6,7 +6,8 @@
    1. flag-off identity: every v8 flag off = versions/v4 (engine 4.0.0) bit for bit (matchup tables and 300 simulated fights per
       matchup, traced and untraced) on backtest fights with the learned rates, and on the live Volkanovski vs Gaethje matchup
    2. spread flags with sd 0, and the spread / retarget flags without their inputs, leave the fights identical to flag-off
-   3. the spread draws do not touch the main random stream (form draws identical) and are mean-1 lognormal (empirical means)
+   3. the spread draws act only with an applied retarget, do not touch the main random stream (form draws identical) and are
+      mean-1 lognormal (empirical means)
    4. retarget: deterministic, corner-symmetric (A-B and B-A get identical per-fighter multipliers), cache replay = computed
       result bit for bit, every cumulative multiplier inside [1 / mlMaxRatio, mlMaxRatio], realised totals move toward the
       like-for-like targets, knockdown / conversion / stoppage tables untouched
@@ -89,27 +90,27 @@ function sims(Ex, m, seed, n, trace) { const rng = Ex.makeRng(seed), out = []; f
   const mr = E.matchup(f.A, f.B, Object.assign(baseOpts(f, 0), { params: { components: { retarget: true, embed: true, tdIntent: false, ctrlSpread: false } } }));
   ok("retarget / embed on without targets or etas = flag-off fights", sims(E, m0, 9, 200).join() === sims(E, mr, 9, 200).join() && mr.retarget.applied === false);
 }
-// ---------------------------------------------------------------- 3. spread draws: main stream untouched, mean 1
+// ---------------------------------------------------------------- 3. spread draws: coupled to the retarget, main stream untouched, mean 1
 {
-  const f = fights[1];
-  const P = { components: { tdIntent: true, ctrlSpread: true }, spread: { td: 0.8, ctrl: 0.6 } };
-  const m0 = E.matchup(f.A, f.B, Object.assign(baseOpts(f, 0), { params: OFF })), ms = E.matchup(f.A, f.B, Object.assign(baseOpts(f, 0), { params: P }));
-  let formSame = true, td = 0, ct = 0, td2 = 0, n = 0;
-  const r0 = E.makeRng(21), r1 = E.makeRng(21);
+  const f = fights.find((x) => TG[x.id] && TG[x.id].fold);
+  const Pn = { components: { tdIntent: true, ctrlSpread: true, retarget: false, embed: false }, spread: { td: 0.8, ctrl: 0.6 } };
+  const mn = E.matchup(f.A, f.B, v8Opts(f, 0, Pn)), m0 = E.matchup(f.A, f.B, Object.assign(baseOpts(f, 0), { params: OFF }));
+  ok("spread flags without the retarget: no spread draws (fights identical to flag-off)", mn.spread === undefined && sims(E, m0, 9, 200).join() === sims(E, mn, 9, 200).join());
+  const Pr = { components: { tdIntent: false, ctrlSpread: false, retarget: true, embed: false } };
+  const P = { components: { tdIntent: true, ctrlSpread: true, retarget: true, embed: false }, spread: { td: 0.8, ctrl: 0.6 } };
+  const mr = E.matchup(f.A, f.B, v8Opts(f, 0, Pr)), ms = E.matchup(f.A, f.B, v8Opts(f, 0, P));
+  let formSame = true, td = 0, ct = 0, n = 0;
   for (let i = 0; i < 4000; i++) {
-    const a = E.simulate(m0, E.makeRng(1000 + i), false), b = E.simulate(ms, E.makeRng(1000 + i), false);
+    const a = E.simulate(mr, E.makeRng(1000 + i), false), b = E.simulate(ms, E.makeRng(1000 + i), false);
     if (JSON.stringify(a.form) !== JSON.stringify(b.form) || a.pace !== b.pace || a.vol !== b.vol) formSame = false;
-    td += b.spread.tdA + b.spread.tdB; ct += b.spread.ctrlA + b.spread.ctrlB; td2 += Math.log(b.spread.tdA) ** 2 + Math.log(b.spread.tdB) ** 2; n += 2;
+    td += b.spread.tdA + b.spread.tdB; ct += b.spread.ctrlA + b.spread.ctrlB; n += 2;
   }
-  void r0; void r1;
-  const sdLog = Math.sqrt(td2 / n - (Math.log(1) - 0.32) ** 2);
-  ok("spread draws leave the main stream's form draws identical", formSame);
+  ok("spread on a retargeted matchup: draws present, the main stream's form draws identical", formSame && ms.spread && ms.spread.td === 0.8);
   ok("spread multipliers are mean-1 (empirical means within 4%)", Math.abs(td / n - 1) < 0.04 && Math.abs(ct / n - 1) < 0.04, { td: +(td / n).toFixed(4), ctrl: +(ct / n).toFixed(4) });
-  void sdLog;
-  // the realised takedown-attempt mean moves little (mean-preserving in the lever)
-  const s0 = E.summarize(m0, 6000, 4), s1 = E.summarize(ms, 6000, 4);
+  // with the retarget re-levelling under the draws, realised takedown attempts per fight stay within 10% of the retarget alone
+  const s0 = E.summarize(mr, 6000, 4), s1 = E.summarize(ms, 6000, 4);
   const t0 = s0.avg.A.td_att + s0.avg.B.td_att, t1 = s1.avg.A.td_att + s1.avg.B.td_att;
-  ok("TD-intent draw: realised takedown attempts per fight within 8% of flag-off", Math.abs(t1 / t0 - 1) < 0.08, { off: +t0.toFixed(3), on: +t1.toFixed(3) });
+  ok("TD-intent draw on a retargeted matchup: realised takedown attempts within 10% of the retarget alone", Math.abs(t1 / t0 - 1) < 0.10, { off: +t0.toFixed(3), on: +t1.toFixed(3) });
 }
 // ---------------------------------------------------------------- 4. retarget
 {

@@ -32,7 +32,12 @@
    "detail": null
   },
   {
-   "name": "spread draws leave the main stream's form draws identical",
+   "name": "spread flags without the retarget: no spread draws (fights identical to flag-off)",
+   "pass": true,
+   "detail": null
+  },
+  {
+   "name": "spread on a retargeted matchup: draws present, the main stream's form draws identical",
    "pass": true,
    "detail": null
   },
@@ -45,11 +50,11 @@
    }
   },
   {
-   "name": "TD-intent draw: realised takedown attempts per fight within 8% of flag-off",
+   "name": "TD-intent draw on a retargeted matchup: realised takedown attempts within 10% of the retarget alone",
    "pass": true,
    "detail": {
-    "off": 4.887,
-    "on": 4.669
+    "off": 3.962,
+    "on": 3.721
    }
   },
   {

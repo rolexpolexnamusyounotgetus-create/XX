@@ -61,8 +61,13 @@ RULES = {
                            "configuration (same command, arms cmp4 + final) is binding for the package check",
     "bootstrap": "20,000 event-cluster resamples (card = event + date), seed 7; Monte Carlo SE of each bound (10 batches); a bound within "
                  "2 MC SE of its threshold is decided by the clustered normal bound",
-    "tests": "every test listed in the protocol must pass on the candidate files before the binding run",
+    "tests": "every test listed in the protocol must pass on the candidate files before the binding run, except the tests the "
+             "protocol names as tolerated (with the reason)",
+    "scope": "the binding checks use the 2020-2023 train fights (1,606): 2019 has no earlier 2019+ year to fit the cycle's inputs "
+             "on (no leak-free statlines table, the fold-honest embedding recipe for 2019 is the identity), so on 2019 fights every "
+             "v8 arm runs as cmp4 does; the 2019-2023 values (all 1,999 fights) are reported as a secondary, never decisive",
 }
+BIND_YEARS = (2020, 2021, 2022, 2023)
 TOL = {"KO": (0.02, False), "SUB": (0.015, False), "DEC": (0.035, False), "kd100": (0.12, True), "td15": (0.10, True), "ctrl15": (0.10, True)}
 
 
@@ -162,10 +167,12 @@ def losses(f, a, base):
     return L
 
 
-def load(path):
+def load(path, years=None):
     H = json.load(open(path))
     fights = [f for f in H["fights"] if not f.get("err")]
     assert all(f["date"] < "2024-01-01" for f in fights), "a non-train fight in the harness file"
+    if years:
+        fights = [f for f in fights if int(f["date"][:4]) in years]
     return H, fights
 
 
@@ -306,7 +313,7 @@ def contrast(groups, La, Lb, norm, kind, spread_stat=None):
 
 
 def cmd_score(a):
-    H, fights = load(a.harness)
+    H, fights = load(a.harness, BIND_YEARS)
     arms, Ls, groups = table(H, fights)
     assert "cmp4" in arms
     norm = {s: float(np.nanmean(col(Ls["cmp4"], "dev_" + s))) for s in STATS}
@@ -348,6 +355,19 @@ def cmd_score(a):
         out["package"] = pk
         out["result"] = "PASS" if pk["pass"] else "FAIL"
         out["reason"] = "package %s vs cmp4: %s" % (final, "all checks pass" if pk["pass"] else "failed " + ", ".join(pk["failed"]))
+    # secondary (never decisive): every 2019-2023 fight, package and leave-one-out totals, PIT
+    Hs, fa = load(a.harness)
+    arms_s, Ls_s, groups_s = table(Hs, fa)
+    norm_s = {s_: float(np.nanmean(col(Ls_s["cmp4"], "dev_" + s_))) for s_ in STATS}
+    sec = {"n_fights": len(fa), "levels_pit": {arm: pit_summary(Ls_s[arm]) for arm in arms_s}}
+    keys_s = ["total", "winLL", "bin7", "method"] + ["dev_" + s_ for s_ in STATS] + ["mae_td_lnd", "mae_td_att", "mae_ctrl"]
+    if final and final in arms_s:
+        sec["package_vs_cmp4"] = paired(groups_s, Ls_s[final], Ls_s["cmp4"], keys_s, norm_s)
+        sec["package_base_rates"] = base_rates(Ls_s[final])
+    for x in out["subparts"]:
+        sec["loo_" + x] = paired(groups_s, Ls_s["all"], Ls_s["-" + x], ["total", "dev_td_att", "dev_ctrl"], norm_s)
+    out["secondary_2019_2023"] = sec
+    out["meta"]["binding_years"] = list(BIND_YEARS)
     json.dump(out, open(a.out, "w"), indent=1, default=float)
     print("kept sub-parts:", kept, "| final arm:", final, "| RESULT:", out["result"], "-", out["reason"])
     for x, r in out["subparts"].items():

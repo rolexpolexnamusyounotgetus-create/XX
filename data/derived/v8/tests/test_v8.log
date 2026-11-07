@@ -3,9 +3,10 @@ PASS flag-off identity vs versions/v4 on the live Volkanovski vs Gaethje matchup
 PASS live matchup with default flags and no targets: retarget not applied, embed source null  ({"applied":false,"reason":"no targets"})
 PASS spread flags on with sd 0 = flag-off fights
 PASS retarget / embed on without targets or etas = flag-off fights
-PASS spread draws leave the main stream's form draws identical
+PASS spread flags without the retarget: no spread draws (fights identical to flag-off)
+PASS spread on a retargeted matchup: draws present, the main stream's form draws identical
 PASS spread multipliers are mean-1 (empirical means within 4%)  ({"td":0.9956,"ctrl":1.0027})
-PASS TD-intent draw: realised takedown attempts per fight within 8% of flag-off  ({"off":4.887,"on":4.669})
+PASS TD-intent draw on a retargeted matchup: realised takedown attempts within 10% of the retarget alone  ({"off":3.962,"on":3.721})
 PASS retarget applied with targets (computed, then the mirror order replayed from the cache)  ([400,400])
 PASS retarget is corner-symmetric: per-fighter multipliers identical in A-B and B-A (pilot-driven exactly, static parts to 1e-9)  (1.17e-15)
 PASS cache replay = full computation bit for bit (B-A computed fresh vs replayed)
@@ -24,4 +25,4 @@ PASS fold tables: dev refit = statlines.json models.dev and folds = statlines_oo
 PASS statlines_folds.json dev = statlines.json dev (identical tables)
 PASS director builds scripts from 20 traced v8 fights (all components on, spread on), event times valid
 
-test_v8: 25/25 checks pass (engine 8.0.0, params 8.0.0-selfcal-pre2024, src)
+test_v8: 26/26 checks pass (engine 8.0.0, params 8.0.0-selfcal-pre2024, src)

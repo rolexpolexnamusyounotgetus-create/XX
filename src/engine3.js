@@ -30,7 +30,8 @@
    - components.tdIntent / components.ctrlSpread: fight-level, mean-preserving lognormal draws per fighter on the takedown
      attempt rate (sd params.spread.td) and on the length of his top stints (the bottom man's stand-up and sweep hazards
      divided by a mean-1 lognormal, sd params.spread.ctrl), drawn from an auxiliary generator seeded by the fight's own
-     form draws, so the main random stream is unchanged; sds fit to the 2019-2023 PIT coverage (tools/v8_gate.js).
+     form draws, so the main random stream is unchanged; sds fit to the 2019-2023 PIT coverage (tools/v8_gate.js). They act
+     only on a matchup the retarget was applied to (the retarget's pilot re-levels the means under the draws).
 
    UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM; all randomness comes from makeRng(seed). */
 (function (root, factory) {
@@ -638,9 +639,7 @@
     var m = matchupML(pa, pb, opts);
     // v8: fight-level spread draws (components.tdIntent / ctrlSpread) and the realised-rate retarget (components.retarget);
     // with every v8 flag off nothing below touches m (v4.0.0 bit for bit)
-    var sp = spreadOf(m.p);
-    if (sp) m.spread = sp;
-    if (!opts._noRetarget && compOn(m.p, "retarget")) retarget(m, pa, pb, opts);
+    if (!opts._noRetarget && compOn(m.p, "retarget")) retarget(m, pa, pb, opts);   // sets m.spread too (spread draws need the re-levelling)
     return m;
   }
 
@@ -997,6 +996,10 @@
   function retarget(m, pa, pb, opts) {
     var tg = rtTargets(m, opts);
     if (!tg) { m.retarget = { applied: false, reason: "no targets" }; return m; }
+    // the spread draws act only on a retargeted matchup: alone, the takedown-intent draw lowers the realised takedown attempts
+    // (ground time eats standing time, ~15% at sd 1.1 on train development runs) and leaves the upper tail too light
+    var sp = spreadOf(m.p);
+    if (sp) m.spread = sp;
     var p = m.p, r0 = p.retarget || {};
     var rc = { pilot: r0.pilot || 200, iters: r0.iters || 2, damp: r0.damp != null ? +r0.damp : 0.9, kDec: r0.kDec != null ? +r0.kDec : 20,
       kMin: r0.kMin != null ? +r0.kMin : 5, kAcc: r0.kAcc != null ? +r0.kAcc : 5, seed: r0.seed != null ? r0.seed >>> 0 : 20261107 };
@@ -1016,6 +1019,7 @@
     }
     var m2 = matchup(pb, pa, swapOpts(opts, m));
     m2.retarget = { applied: true, cum: rtCum(), mirror: true };
+    if (sp) m2.spread = sp;
     var M0 = canonAB ? m : m2, M1 = canonAB ? m2 : m;      // M0: the canonical first fighter X is side A
     var tX = canonAB ? tg.A : tg.B, tY = canonAB ? tg.B : tg.A, steps = [], nD = [];
     var seed0 = rc.seed, seed1 = (rc.seed ^ 0x9e3779b9) >>> 0;

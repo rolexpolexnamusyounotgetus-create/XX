@@ -30,8 +30,8 @@
     components: {
       embed: true,       // embedding blend of the learned stat-line targets (block embed; needs opts.embed or a loaded roster)
       retarget: true,    // realised-rate retarget toward the statlines layer (block retarget; needs opts.statTargets or opts.statdist)
-      tdIntent: true,    // fight-level mean-1 lognormal takedown intent per fighter (spread.td)
-      ctrlSpread: true   // fight-level mean-1 lognormal top-stint length per fighter (spread.ctrl)
+      tdIntent: true,    // fight-level mean-1 lognormal takedown intent per fighter (spread.td); acts only on a retargeted matchup
+      ctrlSpread: true   // fight-level mean-1 lognormal top-stint length per fighter (spread.ctrl); acts only on a retargeted matchup
     },
     // embedding blend recipe (= data/derived/embed_model.json mlrates_blend.targets, fit on mlrates' 2019-2023 out-of-fold rows;
     // the v6 engine's block): link(rate) = b[0] + b[1] link(mlrates rate) + b[2] eta[task]. Backtests pass fold-honest

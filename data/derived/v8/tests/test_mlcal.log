@@ -14,7 +14,7 @@ PASS  tuning and confirmation windows are disjoint
 PASS  train split stays in 2019-2023
 PASS  val split is 2024-01-01..2025-12-31
 PASS  7-bin smoothing prior is corner-symmetric and sums to 1
-PASS  same candidate, same seeds: identical objective (common random numbers)  (1.418349)
+PASS  same candidate, same seeds: identical objective (common random numbers)  (1.860941)
 PASS  different candidate: different objective
 PASS  rungs accumulate sims (8 + 8 = 16 per fight)
 PASS  seed offsets give fresh draws
@@ -26,7 +26,7 @@ PASS  fixed value becomes the dimension's current value
 PASS  overrides are reported against the pristine params file
 PASS  fixed from candidates.json#rank reproduces that candidate's overrides
 PASS  elo hook is antisymmetric in the corners
-PASS  hook with zero weights reproduces the engine without the hook  (2.153471)
+PASS  hook with zero weights reproduces the engine without the hook  (1.850094)
 PASS  hook weights reach the engine
 PASS  eval --split val without --unledgered-val is refused (validation goes through the ledger)
 PASS  baseline warning fires for all-years [selfcal] values and not for the pre-2024 rebuild
