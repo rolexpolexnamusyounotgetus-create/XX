@@ -1,7 +1,7 @@
 {
  "meta": {
   "tool": "tools/predict_score.py gate",
-  "input": "data/derived/v6/gate_train.json",
+  "input": "data/derived/v6/gate_train_shared.json",
   "harness": {
    "tool": "tools/predict_harness.js",
    "built": "2026-11-07T06:50:25.596Z",
@@ -57,7 +57,9 @@
    "failed": 0,
    "wall_s": 111
   },
-  "rules": "BEFORE the full gate run was scored (written with the harness, Nov 7 2026 ~06:25 UTC):\n- Scored years: 2021, 2022, 2023 (forward-chained: every weight that scores year Y is fit on 2019..Y-1).\n- Pool weight w (v6 package only; the v5 package keeps its frozen 0.30): for scoring year Y, the w in {0, 0.05, ..., 1}\n  minimising the joint method x round log loss (who x how x when) of the no-line package cells on 2019..Y-1 (all\n  fights with an outcome); the same w is used in all three regimes. The look uses w fit on 2019-2023.\n- Regimes: 'close' and 'open' are scored on fights that HAVE that line (no fallback rows); 'none' on all fights.\n- Winner metrics on decisive fights (clip 1e-4); 7-bin, method (KO / SUB / DEC, a draw counts as DEC) and joint on fights\n  with an outcome (cells normalised, clip 1e-6), as tools/predict_eval.js.\n- Paired differences v6 - v5 with 2,000 event-cluster bootstrap resamples (cluster = card: event + date), seed 7.\n- GATE (V6_V10_PLAN section 3, \"Train-only acceptance test\"), all must hold:\n    open and no-line winner log loss: CI upper < 0 and point <= -0.001;\n    close winner: CI upper <= +0.0005;\n    7-bin: CI upper < 0 in EACH of the three regimes; method: CI upper <= +0.002 in each regime;\n    (checked elsewhere, reported here when the files exist) corner swap < 1e-12, JS / Python S2 cells <= 1e-9 on 40 pairs,\n    flag-off identity.\n- Soft cross-entropy against the closing line is reported as a screen only (never decisive)."
+  "rules": "BEFORE the full gate run was scored (written with the harness, Nov 7 2026 ~06:25 UTC):\n- Scored years: 2021, 2022, 2023 (forward-chained: every weight that scores year Y is fit on 2019..Y-1).\n- Pool weight w (v6 package only; the v5 package keeps its frozen 0.30): for scoring year Y, the w in {0, 0.05, ..., 1}\n  minimising the joint method x round log loss (who x how x when) of the no-line package cells on 2019..Y-1 (all\n  fights with an outcome); the same w is used in all three regimes. The look uses w fit on 2019-2023.\n- Regimes: 'close' and 'open' are scored on fights that HAVE that line (no fallback rows); 'none' on all fights.\n- Winner metrics on decisive fights (clip 1e-4); 7-bin, method (KO / SUB / DEC, a draw counts as DEC) and joint on fights\n  with an outcome (cells normalised, clip 1e-6), as tools/predict_eval.js.\n- Paired differences v6 - v5 with 2,000 event-cluster bootstrap resamples (cluster = card: event + date), seed 7.\n- GATE (V6_V10_PLAN section 3, \"Train-only acceptance test\"), all must hold:\n    open and no-line winner log loss: CI upper < 0 and point <= -0.001;\n    close winner: CI upper <= +0.0005;\n    7-bin: CI upper < 0 in EACH of the three regimes; method: CI upper <= +0.002 in each regime;\n    (checked elsewhere, reported here when the files exist) corner swap < 1e-12, JS / Python S2 cells <= 1e-9 on 40 pairs,\n    flag-off identity.\n- Soft cross-entropy against the closing line is reported as a screen only (never decisive).",
+  "input_as_written": "data/derived/v6/gate_train.json",
+  "provenance_note": "v6 review, 2026-11-07 ~08:10 UTC: this score was computed at 06:50 UTC from the shared-input harness run, which was first written as data/derived/v6/gate_train.json and then renamed gate_train_shared.json (autosave 5121e16, 06:52); gate_train.json now holds the own-input run of 06:53. Re-scoring gate_train_shared.json at B 2,000 reproduces this file's numbers exactly; see data/derived/v6/review/gate_runs_provenance.json."
  },
  "pool_weight": {
   "by_year": {

@@ -1,0 +1,46 @@
+{
+ "meta": {
+  "tool": "tools/live_parity.js",
+  "built": "2026-11-07T07:55:36.312Z",
+  "engine_dir": "versions/v6-rejected",
+  "engine": "6.0.0",
+  "params": "6.0.0-selfcal-pre2024",
+  "tolerance": "ratios within [0.90, 1.10]"
+ },
+ "analytic": {
+  "fights": 1999,
+  "base_ratio_geomean": 1.3134,
+  "by_year": {
+   "2019": 1.2287,
+   "2020": 1.3675,
+   "2021": 1.4181,
+   "2022": 1.37,
+   "2023": 1.1939
+  },
+  "live": {
+   "level": 0.010274,
+   "terms_const": 0.07774,
+   "normChin": 0.9972,
+   "normPow": 0.9752
+  },
+  "backtest": {
+   "normChin": 0.9882,
+   "normPow": 1.0183
+  }
+ },
+ "simulated": {
+  "fights": 120,
+  "sims": 200,
+  "kdPer100Head": {
+   "backtest": 0.745,
+   "live": 0.9613
+  },
+  "finish": {
+   "backtest": 0.4604,
+   "live": 0.5036
+  },
+  "kd_ratio": 1.2903,
+  "finish_ratio": 1.0938
+ },
+ "pass": false
+}
