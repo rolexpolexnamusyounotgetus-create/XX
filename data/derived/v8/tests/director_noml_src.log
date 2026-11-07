@@ -1,0 +1,102 @@
+director v3: 100 fights, 314 rounds (17 with a scouting file); engine 8.0.0, learned stat-line rates off, fights with a point deduction 0
+  methods {"KO":12,"TKO":10,"SD":13,"UD":42,"SUB":17,"GNP":3,"DOC":3}
+  beats/round 72.1, strikes/round 62.6, misses shown 7827 of 13339 (59%), landed 11818; max strikes by one fighter in 10 s 14
+  play-by-play lines/round 11.9, notes 857; texted beats by kind {"note":857,"clinch":199,"strike":1087,"pounce":20,"recover":12,"td":246,"up":103,"pass":299,"esc":162,"tdx":241,"break":33,"reset":16,"sweep":25,"subx":49,"sub":17}
+  key beats without text {}; silent position changes on strikes 0
+  warp range 0.6-3, quiet stretches 60% of fight time
+  moves used {"upper":944,"jab":4770,"hook":2161,"knee":569,"calf":1133,"cross":3378,"kneehead":214,"bodystraight":627,"bodyhook":710,"overhand":1019,"bodykick":855,"headkick":472,"upelbow":149,"gnpelbow":281,"inside":836,"gnp":752,"short":362,"shortbody":174,"elbow":239}
+
+==== sample 1: Volkanovski vs Gaethje, 5 rounds at lightweight (seed 4242)
+Alexander Volkanovski def. Justin Gaethje by unanimous decision (50-44, 50-44, 50-43).
+  R1 5:00  Alexander Volkanovski vs Justin Gaethje, a five-round title fight at lightweight. UFC records: Volkanovski 16-3, Gaethje 11-5. Volkanovski in the blue corner, Gaethje in the red.
+  R1 4:28  They clinch up along the cage.
+  R1 4:10  Back to the center.
+  R1 2:27  Gaethje turns Volkanovski, and now he's the one pressing.
+  R1 2:21  Gaethje stumbles back off a right hand from Volkanovski.
+  R1 1:50  Gaethje sprawls on the double-leg.
+  R1 1:30  Volkanovski 20, Gaethje 16 in significant strikes landed this round.
+  R1 1:10  Big right high kick lands for Volkanovski. Gaethje is shaken.
+  R1 0:42  Volkanovski has the edge so far this round, 26 landed to 18.
+  R1 0:14  That's 5 kicks to the legs for Volkanovski.
+  R1 0:00  End of round 1. Significant strikes landed: Volkanovski 31, Gaethje 20. All three judges score it for Volkanovski.
+  R2 5:00  Round 2. Volkanovski took round 1 on all three cards. Volkanovski leads 31-20 in significant strikes landed.
+  R2 4:58  A head kick from Volkanovski lands clean!
+  R2 3:55  10 leg kicks landed now for Volkanovski.
+  R2 3:46  Gaethje lands an inside low kick and two jabs.
+  R2 3:30  Leg kick number 5 for Gaethje.
+  R2 3:26  Gaethje reads the level change and sprawls. Volkanovski is 0 for 3 on takedowns.
+  R2 3:10  Into the clinch. Volkanovski has the better position.
+  R2 3:05  Gaethje frames off and gets out.
+  R2 2:55  Volkanovski misses and eats a counter right hand to the body.
+  R2 2:48  Volkanovski slips and comes back with a jab.
+  R2 2:05  Both fighters letting their hands go.
+  R2 1:22  Gaethje grabs a collar tie.
+  R2 1:16  Gaethje is slowing down.
+  R2 0:38  Plenty of traffic at range.
+  R2 0:00  End of round 2. Significant strikes landed: Volkanovski 54, Gaethje 34. All three judges score it for Volkanovski.
+  R3 5:00  Round 3. Volkanovski took round 2 on all three cards. Volkanovski leads 85-54 in significant strikes landed.
+  R3 4:29  Volkanovski has landed 20 leg kicks.
+  R3 4:12  Gaethje is absorbing a lot of damage.
+  R3 3:49  Volkanovski lands a right high kick!
+  R3 3:36  Gaethje is feeling those leg kicks.
+  R3 3:18  Gaethje makes Volkanovski miss with the overhand right.
+  R3 3:11  Gaethje counters with a right uppercut.
+  R3 2:27  Volkanovski is outlanding Gaethje 34 to 4 in this round.
+  R3 1:44  Volkanovski makes Gaethje pay with a right hand.
+  R3 1:04  10 leg kicks landed now for Gaethje.
+  R3 0:47  Volkanovski has landed 10 to the body.
+  R3 0:24  Volkanovski is outlanding Gaethje 62 to 13 in this round.
+  R3 0:00  End of round 3. Significant strikes landed: Volkanovski 65, Gaethje 14. All three judges score it for Volkanovski.
+  R4 5:00  Round 4, into the championship rounds. Volkanovski took round 3 on all three cards. Volkanovski leads 150-68 in significant strikes landed.
+  R4 4:21  Nothing between them in landed strikes this round.
+  R4 3:43  Volkanovski puts together a calf kick and three jabs.
+  R4 3:26  A high kick from Volkanovski buckles Gaethje's knees.
+  R4 2:34  Volkanovski strings together a right uppercut, an inside low kick and an overhand. All of it lands.
+  R4 2:17  Volkanovski counters with a right straight.
+  R4 1:51  Busy exchanges in the center.
+  R4 1:25  That's 40 kicks to the legs for Volkanovski.
+  R4 1:20  Gaethje denies Volkanovski again: 0 for 5 on takedowns.
+  R4 0:45  Gaethje misses and eats a counter low kick to the inside of the leg.
+  R4 0:00  End of round 4. Significant strikes landed: Volkanovski 49, Gaethje 10. All three judges score it for Volkanovski (one at 10-8).
+  R5 5:00  Final round. Volkanovski took round 4, with a 10-8 on one card. Volkanovski leads 199-78 in significant strikes landed.
+  R5 4:42  Volkanovski 7, Gaethje 2 in significant strikes landed this round.
+  R5 4:24  Crisp work from Volkanovski: a jab, a left hook, an inside low kick and a right hand.
+  R5 3:57  Volkanovski has the edge so far this round, 14 landed to 3.
+  R5 3:31  Gaethje's lead leg is compromised.
+  R5 2:59  Volkanovski wobbles Gaethje with a left jab!
+  R5 2:54  That stiff jab from Volkanovski floors Gaethje! Volkanovski lets him back to his feet. Gaethje had been knocked down four times before in the UFC.
+  R5 2:16  Volkanovski is marked up.
+  R5 1:20  Volkanovski wraps Gaethje up after the exchange.
+  R5 1:04  Gaethje spins Volkanovski onto the cage.
+  R5 0:40  Leg kick number 15 for Gaethje.
+  R5 0:22  Volkanovski leans away from Gaethje's right high kick.
+  R5 0:00  End of round 5. Significant strikes landed: Volkanovski 65, Gaethje 20. All three judges score it for Volkanovski (three at 10-8).
+  R5 0:00  We go to the scorecards. 50-44, 50-44, 50-43, for the winner by unanimous decision, Alexander Volkanovski!
+
+==== sample 2: #13 jose-aldo vs mario-bautista (Bantamweight, 5 rd, seed 100095)
+Mario Bautista def. Jose Aldo by submission (kimura), at 0:46 of round 2.
+  R1 5:00  Jose Aldo vs Mario Bautista, a five-round title fight at bantamweight. UFC records: Aldo 14-9, Bautista 12-3. Aldo in the blue corner, Bautista in the red.
+  R1 4:48  They clinch up along the cage.
+  R1 4:14  Aldo keeps his feet on the single-leg.
+  R1 4:08  Aldo puts together a jab, a right hand and a left hook.
+  R1 3:22  Both fighters letting their hands go.
+  R1 2:36  Aldo hits a body-lock takedown from the clinch. Bautista is on his back.
+  R1 2:18  Good get-up from Bautista.
+  R1 1:57  Aldo counters with a hook.
+  R1 1:46  Aldo strings together an overhand, a jab, a head kick and a right uppercut. All of it lands.
+  R1 1:42  Aldo has landed 10 to the body.
+  R1 1:37  Bautista ties Aldo up against the fence.
+  R1 1:02  Aldo reverses the position on the fence.
+  R1 0:43  Aldo is slowing down.
+  R1 0:24  Busy exchanges in the center.
+  R1 0:06  Aldo has landed 5 leg kicks.
+  R1 0:00  End of round 1. Significant strikes landed: Aldo 69, Bautista 20. All three judges score it for Aldo (one at 10-8).
+  R2 5:00  Round 2. Aldo took round 1, with a 10-8 on one card. Aldo leads 69-20 in significant strikes landed.
+  R2 4:47  20 body shots landed for Aldo.
+  R2 4:28  Crisp work from Aldo: a left hook, a right uppercut and a left hook.
+  R2 4:15  Bautista finds the mark with a head kick.
+  R2 4:15  Aldo changes levels and finishes a single-leg, landing in Bautista's guard.
+  R2 4:14  Bautista catches a kimura off his back. Aldo taps!
+  R2 4:14  Mario Bautista wins by submission at 0:46 of round 2. Aldo had never been submitted in the UFC.
+
+OK: every beat valid for the show, states and stats match the engine, no repeated lines.

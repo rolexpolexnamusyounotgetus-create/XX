@@ -1,0 +1,3 @@
+gru {'max|z+z_swapped|': 0.0, 'max|pA+pA_swapped-1|': 5.960464477539063e-08, 'max|methodA-methodB_swapped|': 0.0, 'max|statA-statB_swapped|': 0.0, 'max|z(A,A)|': 0.0, 'n_params': 76511}
+tfm {'max|z+z_swapped|': 0.0, 'max|pA+pA_swapped-1|': 5.960464477539063e-08, 'max|methodA-methodB_swapped|': 0.0, 'max|statA-statB_swapped|': 0.0, 'max|z(A,A)|': 0.0, 'n_params': 122591}
+seqnet symmetry test: OK

@@ -28,7 +28,7 @@
   },
   {
    "name": "retarget / embed on without targets or etas = flag-off fights",
-   "pass": false,
+   "pass": true,
    "detail": null
   },
   {
@@ -61,9 +61,9 @@
    ]
   },
   {
-   "name": "retarget is corner-symmetric: per-fighter cumulative multipliers identical in A-B and B-A",
-   "pass": false,
-   "detail": null
+   "name": "retarget is corner-symmetric: per-fighter multipliers identical in A-B and B-A (pilot-driven exactly, static parts to 1e-9)",
+   "pass": true,
+   "detail": "1.17e-15"
   },
   {
    "name": "cache replay = full computation bit for bit (B-A computed fresh vs replayed)",
@@ -106,9 +106,14 @@
    "detail": null
   },
   {
-   "name": "statlines_targets.json = statdist engineTargets on the fold tables (1880 values, 6-decimal storage)",
-   "pass": false,
-   "detail": "3.76e-4"
+   "name": "statlines_targets.json = statdist engineTargets on the fold tables (1880 rates within the 6-decimal storage)",
+   "pass": true,
+   "detail": "0.00e+0"
+  },
+  {
+   "name": "finished-fight grid = statdist P.dist means at the grid lengths (6 significant digits)",
+   "pass": true,
+   "detail": "4.88e-6"
   },
   {
    "name": "target fold per year as registered (2019 none, 2020-23 f<year>, 2024-25 dev)",
@@ -140,5 +145,5 @@
    "detail": null
   }
  ],
- "pass": false
+ "pass": true
 }
