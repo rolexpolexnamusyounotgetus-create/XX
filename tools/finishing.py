@@ -314,8 +314,9 @@ def stage_feats(args):
             sn = snaps.get((fid, slug)) or snaps.get((fid, people[inv[pid]].get("slug")))
             if sn:
                 pre[i, s] = [sn[c] for c in ("n", "ko_w", "sub_w", "dec_w", "ko_l", "sub_l", "dec_l")]
+    slugs = [people[inv[p]].get("slug") or inv[p] for p in range(len(pid_of))]
     feats = {"E": E, "order": order, "start": start, "PA": PA, "PB": PB, "seq": seq, "pre": pre,
-             "n_persons": len(pid_of)}
+             "n_persons": len(pid_of), "slugs": slugs, "names": [people[inv[p]]["name"] for p in range(len(pid_of))]}
     save(feats, "feats.pkl")
     log("feats: %d events, %d persons, %d sequence bouts; pre-UFC counts for %.1f%% of 2016+ row sides (%.0f s)" % (
         len(E), len(pid_of), len(seq), 100 * np.mean(~np.isnan(pre[(T["year"] >= 2016).to_numpy(), :, 0])),
@@ -405,7 +406,7 @@ def pre_shift(feats, base, rate, v, a=4.0):
     return np.where(np.isnan(kk), 0.0, sh), mu
 
 
-def eb_block(feats, base, v, use_pre=True, fixed=None):
+def eb_block(feats, base, v, use_pre=True, fixed=None, roster=False):
     """Logit-normal random-effects EB per finishing indicator. For fighter i and indicator q:
     logit P(y_ij = 1) = logit p0_j + u_i, u_i ~ N(lam * pre_shift_i, sigma^2), with p0 the baseline logit
     (division x era x age x format, fit on events before v). sigma and lam are fit by marginal likelihood (24-node
@@ -480,6 +481,17 @@ def eb_block(feats, base, v, use_pre=True, fixed=None):
             um[:, s] = (w * G[None, :]).sum(1)
             us[:, s] = np.sqrt(np.maximum((w * G[None, :] ** 2).sum(1) - um[:, s] ** 2, 0.0))
         U[rate], SD[rate] = um, us
+        if roster:          # every person after all his events (deployment); prior shift from his latest snapshot
+            last = np.zeros(npers)
+            for i in np.argsort(dates, kind="stable"):
+                for s_, P in ((0, PA), (1, PB)):
+                    if sh2[i, s_] != 0.0:
+                        last[P[i][0]] = sh2[i, s_]
+            S = cs[start[1:]] - cs[start[:-1]]
+            lp = S - 0.5 * ((G[None, :] - lam * last[:, None]) / sigma) ** 2
+            w = np.exp(lp - lp.max(1, keepdims=True))
+            w /= w.sum(1, keepdims=True)
+            meta.setdefault("roster", {})[rate] = (w * G[None, :]).sum(1)
     return U, SD, meta
 
 
@@ -1685,6 +1697,139 @@ def stage_holdout(args):
 
 
 STAGES["holdout"] = stage_holdout
+
+
+# ====================================================================== stage: export
+EB_EXPORT = ["kow", "subw", "dec", "kol", "subl", "r1w", "r1l", "latew", "latel"]
+
+
+def r5_(x, k=5):
+    return None if x is None or (isinstance(x, float) and not np.isfinite(x)) else round(float(x), k)
+
+
+def lr_block(model_sc, lr, cols):
+    return {"cols": list(cols), "mean": [r5_(v, 8) for v in model_sc.mean_], "scale": [r5_(v, 8) for v in model_sc.scale_],
+            "coef": [[r5_(v, 8) for v in row] for row in lr.coef_], "intercept": [r5_(v, 8) for v in lr.intercept_]}
+
+
+def method_cols(pc, base):
+    spec = pc["method"]["spec"]
+    return [c for s in spec.get("fin", []) for c in FIN_SETS[s]] + (list(base["cols_s2"]) if spec.get("s2") else [])
+
+
+def round_cols(pc, base):
+    spec = pc["round"]["spec"]
+    cols = [c for s in spec.get("fin", []) for c in ROUND_SETS[s]]
+    if spec.get("haz"):
+        cols += [c for c in MR.HAZ_COLS if c not in FIGHT_COLS]
+    return cols
+
+
+def stage_export(args):
+    """data/derived/finishing.json: protocol, every stage's results, per-fight cells for the blind-test plugin
+    (2019-2023 nested out-of-fold, 2024-2025 the single look), and the deployment model (refit on every fight before
+    2026-01-01 by the frozen procedure) with the end-of-2025 EB roster and JS test vectors."""
+    t0 = time.time()
+    base, feats = load("base.pkl"), load("feats.pkl")
+    pc = production_cfgs()
+    T = base["T"]
+    yr = T["year"].to_numpy()
+    res = {k: json.load(open(cpath(k + ".json"))) for k in ("tune", "cvfixed", "nested", "gate", "stage2", "swap",
+                                                             "holdout")}
+    nz = load("nested_oof.pkl")
+    hp = load("holdout_pred.pkl")
+    # per-fight cells: nested OOF 2019-2023, holdout 2024-2025
+    P6 = np.where(np.isnan(nz["P6"]), hp["P6"], nz["P6"])
+    H = np.where(yr[:, None] >= 2024, hp["H"], nz["H"])
+    fights = {}
+    for i in np.flatnonzero(yr >= 2019):
+        if str(T["date"].iat[i]) >= VAULT_S or np.isnan(P6[i]).any():
+            continue
+        J = MR.joint_from_c6(P6[i:i + 1], H[i:i + 1], base["draw_c"])[0]
+        Ji = MR.joint_from_c6(base["P6_S2w"][i:i + 1], base["H"][i:i + 1], base["draw_c"])[0]
+        R = 5 if T["rounds"].iat[i] == 5 else 3
+
+        def compact(c):
+            return [round(float(x), 5) for x in list(c[0:R]) + list(c[5:5 + R]) + list(c[10:10 + R]) +
+                    list(c[15:15 + R]) + list(c[20:23])]
+
+        def b7(c):
+            return [round(float(x), 5) for x in (c[0:5].sum(), c[5:10].sum(), c[20], c[22], c[21], c[15:20].sum(),
+                                                 c[10:15].sum())]
+        fights[T["id"].iat[i]] = {"date": str(T["date"].iat[i]), "set": "holdout" if yr[i] >= 2024 else "nested_oof",
+                                  "rounds": R, "p_a": round(float(base["pwin"][i]), 5), "cells": compact(J),
+                                  "bins7": b7(J), "s2ml2win_cells": compact(Ji), "s2ml2win_bins7": b7(Ji)}
+    # deployment refit: every fight before 2026-01-01 (EB, filter, method and round models)
+    filt, _ = run_filter(feats, base, pc["filter"]["sigma0"], pc["filter"]["tau"])
+    card = cardio_block(feats, base)
+    fd = FoldData(base, feats, 2026, filt, card, use_pre=pc["use_pre"])
+    _, _, meta_r = eb_block(feats, base, 2026, use_pre=pc["use_pre"], roster=True)
+    mc = pc["method"]
+    qA, qB, mm = cm_fold(fd, base, mc["spec"], mc["C"], mc["start"], None, mc["hl"])
+    Hd, rm = cr_fold(fd, base, pc["round"]["spec"], pc["round"]["C"], pc["round"].get("start", 2008),
+                     pc["round"].get("slope", True))
+    mcols, rcols = method_cols(pc, base), round_cols(pc, base)
+    js = {"what": "finishing model (monitored candidate; not adopted by the stack gate): P(cell) = pA x P(method | "
+                  "winner) x P(round | winner, method); method = multinomial logit over [KO, SUB, DEC] on the winner-"
+                  "oriented design; round = continuation-ratio logit over rounds on the finisher-oriented design",
+          "fit_through": "2025-12-31", "draw_c": base["draw_c"], "classes": ["KO", "SUB", "DEC"],
+          "method": lr_block(mm.sc, mm.lr, mcols),
+          "round": dict(lr_block(rm.sc, rm.lr, rcols), slope=bool(rm.slope),
+                        dummies="12 free columns after the covariates (and their (j-1)/2 slopes when slope): index "
+                                "(j-1)*2+m for 3-round bouts, 4+(j-1)*2+m for 5-round bouts; j = round 1..R-1, "
+                                "m = 0 KO / 1 SUB; P(round R) = the remainder"),
+          "cells": "R5 layout: A KO r1..5, A SUB r1..5, B KO r1..5, B SUB r1..5, A DEC, B DEC, draw",
+          "fin_features": {"zW": "logit(P(W wins)) from the ML v2 winner (A side: logit pA, B side: -logit pA)",
+                           "azW": "|zW|", "w_<rate>": "the winner's EB posterior mean (log-odds shift) for the rate",
+                           "l_<rate>": "the loser's EB posterior mean for the rate"},
+          "eb": {"rates": {r: {"indicator": EB_RATES[r][0], "exposure": EB_RATES[r][1]} for r in EB_EXPORT},
+                 "sigma": {r: fd.meta["sigma"][r] for r in EB_EXPORT}, "lam_pre": {r: fd.meta["lam"][r] for r in EB_EXPORT},
+                 "fit_through": "2025-12-31"}}
+    act = set()
+    E = feats["E"]
+    for pid, d in zip(E["pid"], E["year"]):
+        if d >= 2019:
+            act.add(pid)
+    roster = {}
+    nev = np.diff(feats["start"])
+    for pid in sorted(act):
+        roster[feats["slugs"][pid]] = {"name": feats["names"][pid], "n_ufc": int(nev[pid]),
+                                       **{r: round(float(meta_r["roster"][r][pid]), 4) for r in EB_EXPORT}}
+    js["roster"] = roster
+    # JS test vectors: 2024-2025 rows with the deployment model's predictions from their full designs
+    rng = np.random.default_rng(7)
+    pick = np.sort(rng.choice(np.flatnonzero((yr >= 2024) & (base["y"] >= 0)), 30, replace=False))
+    XA_m = design(fd, 0, mc["spec"])
+    XB_m = design(fd, 1, mc["spec"])
+    XA_r, XB_r = round_design(fd, 0, pc["round"]["spec"]), round_design(fd, 1, pc["round"]["spec"])
+    P6d = p6_from_cond(qA, qB, base["pwin"])
+    Jd = MR.joint_from_c6(P6d, Hd, base["draw_c"])
+    tv = []
+    for i in pick:
+        tv.append({"id": T["id"].iat[i], "rounds": int(5 if T["rounds"].iat[i] == 5 else 3),
+                   "pA": float(base["pwin"][i]), "xA": [float(v) for v in XA_m[i]], "xB": [float(v) for v in XB_m[i]],
+                   "rA": [float(v) for v in XA_r[i]], "rB": [float(v) for v in XB_r[i]],
+                   "cells": [float(v) for v in Jd[i]], "qA": [float(v) for v in qA[i]], "qB": [float(v) for v in qB[i]]})
+    # roster feature builder check: Volkanovski vs Gaethje EB block from the roster
+    js["test_vectors"] = tv
+    meta = {"tool": "tools/finishing.py", "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "protocol": "2026+ dropped at parse (tools/ml2.py wrapper); every choice by forward-chained CV < 2024 "
+                        "(tune folds 2016-2019, nested selection 2017-2023, stack gate 2021-2023, 0.0005 rule); "
+                        "2024-01-01..2025-12-31 scored once (holdout marker); corner-swap test passed",
+            "decision": "NOT ADOPTED (stack gate failed); monitored candidate",
+            "production": {k: v for k, v in pc.items() if k not in ("method", "round")},
+            "cells": "per fight: R-round layout A KO r1..R, A SUB r1..R, B KO r1..R, B SUB r1..R, A DEC, B DEC, draw; "
+                     "bins7 [A KO, A SUB, A DEC, draw, B DEC, B SUB, B KO]; p_a = the ML v2 winner it conditions on"}
+    out = {"meta": meta, "tune": res["tune"], "cv_fixed": res["cvfixed"], "nested": res["nested"], "gate": res["gate"],
+           "stage2": res["stage2"], "swap": res["swap"], "holdout": res["holdout"], "fights": fights, "js_model": js}
+    with open(OUT_JSON + ".tmp", "w") as fh:
+        json.dump(out, fh, separators=(",", ":"), default=float, allow_nan=False)
+    os.replace(OUT_JSON + ".tmp", OUT_JSON)
+    log("export: %s (%d fights, roster %d, %.1f MB, %.0f s)" % (OUT_JSON, len(fights), len(roster),
+                                                               os.path.getsize(OUT_JSON) / 1e6, time.time() - t0))
+
+
+STAGES["export"] = stage_export
 
 
 def main():

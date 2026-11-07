@@ -439,3 +439,36 @@ take each fight's one-step walk-forward pair from data/derived/sos_wf.json and t
 Tools that still build backtest matchups without SOS inputs run SOS neutral (= step 2's engine): calibrate.js,
 statlines_engine.js, oppadj_engine.js, mlrates_engine.js, mlcal_verify.js, dynamics_bt.js, dynamics_calibrate.js, mlcal.js,
 moe_engine_bt.js, v4_levels.js. Pass the pairs through this module before using them to score or fit v5.
+
+## mlpathrec.js: leak-free inputs for the step-4 components (embed, oppadj, preufc; v5 merge step 4)
+
+```
+const XR = require("./mlpathrec.js")(E, ROOT);
+XR.apply(opts, f, swap, params);   // opts.embed / opts.oppadj / opts.preufc for each step-4 component on under params
+const m = E.matchup(A, B, opts); XR.assertApplied(m, f.id, params);
+```
+
+- embed: task predictors from data/derived/embed.json snapshots[id] (walk-forward vectors) with the matrices of the snapshot's
+  quarterly refit; division = the fight's own if the embedding model knows it (Catch Weight included), else the prior division;
+  coefficients: data/derived/embed_blend_loyo.json `coef_loyo[year]` before 2024-01-01, embed_model.json's exported recipe for
+  2024-2025.
+- oppadj: data/derived/oppadj.json snapshots[id]. preufc: data/derived/preufc.json fighters[slug].snapshots row of the bout,
+  for sides with at most `params.preufc.maxUfc` prior UFC fights (the row's UFC count must equal backtest_dev's `n`).
+- A/B follow the corner order; 2026 is refused; a missing snapshot throws. Wired into evalv.js (which prefers a frozen copy's
+  own mlpathrec.js + ml/embed.js when versions/<v>/ holds them), dynamics_bt.js, dynamics_calibrate.js, mlcal.js,
+  moe_engine_bt.js, officials_engcal.js, realism.js, v4_levels.js and v5_step4_check.js. Still without them (they would run
+  embed / preufc neutral): calibrate.js, statlines_engine.js, oppadj_engine.js, mlrates_engine.js, mlcal_verify.js.
+- `node tools/mlpathrec.js --dump-embed-train <out.json>` writes the 2019-2023 etas (used by embed_blend_loyo.py).
+
+## embed_blend_loyo.py, preufc_scale.js, v5_step4_check.js (v5 merge step 4, train only)
+
+- `python3 tools/embed_blend_loyo.py`: rebuilds the blend's inputs on 2019-2023 (mlrates_oof.json, the etas above, the 18
+  targets' counts from tools/mlrates.py's dataset cache), checks that the full refit reproduces the exported recipe (max |b
+  difference| 0.0003), fits `coef_loyo[year]` and scores each year with the recipe that did not see it
+  (data/derived/embed_blend_loyo.json). About a second with the cache.
+- `node tools/preufc_scale.js [sims] [--write]`: the hazard exponents `params.preufc.scale` from league-average pairs on the
+  train priors (no outcome is fit): gamma = d log(simulated finish odds) / d log(hazard multiplier), scale = 1 / gamma
+  (data/derived/preufc_scale.json).
+- `node tools/v5_step4_check.js [--sims 300] [--configs ...]`: the engine-level train check (evalv's inputs, metrics and
+  smoothing, common random numbers): base (step 3), embed, embed + preufc, embed + oppadj with SOS off; paired vs base and vs
+  embed (data/derived/v5_step4_check.json). About two minutes at 300 sims per order with 3 workers.

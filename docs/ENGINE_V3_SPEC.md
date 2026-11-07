@@ -423,3 +423,33 @@ fit only on the five years before Y, table 2024 = 2019-2023 is the production ta
   (with the `components.v401` judging fixes). Opt-in per call to show real officials: `opts.params = { components: {
   officials: true } }` with `opts.judges` / `opts.referee`. Named-judge effects are off (`params.officials.perJudge:
   false`, docs/BACKLOG.md OFFICIALS): every judge scores as the league judge, and the names are still drawn and recorded.
+
+## Engine v5 merge step 4: the learned stat-line path and newcomer priors (`components.embed`, `.oppadj`, `.preufc`)
+
+All three act only with their inputs, so the page path without rosters is unchanged; each flag off reproduces the engine before
+it bit for bit (tests/test_v5_step4.js). Backtest tools get leak-free inputs from tools/mlpathrec.js.
+
+- **embed** (on; `embedTargets`, research/model_embed.md "Integration recipe"). Before the adapter (src/ml/mlrates.js
+  `applyToMatchup`) re-targets the tables, each learned target t of side X (attacking Y) becomes
+  `link(rate_t) = b0 + b1 link(mlrates rate_t) + b2 eta[task(t)]` (log links for per-minute rates, ctrl on minutes per minute
+  and kd_h, capped at 0.5; logit for accuracies). `eta` = the embedding model's task predictors for X against Y
+  (`params.embed.tasks` order); `params.embed.recipe` = embed_model.json `mlrates_blend.targets` (fit on mlrates' 2019-2023
+  out-of-fold rows; b2 = 0 for rev, acc_g, td_acc, kd_h). The arithmetic equals src/ml/embed.js `blendMLRates`.
+  Inputs: `opts.embed = { etaA, etaB, recipe? }` (corner order of the call), else the roster registered with
+  `FightEngine.loadEmbed(embed_model.json)` by slug (zero vector = division average) for bouts dated on or after its as-of date
+  (2026-01-01). The matchup carries `m.embed = { src, recipe, raw: {A, B} }` and `m.mlPred` holds the blended targets.
+- **oppadj** (off; `oppadjTargets`, research/model_oppadj.md item 3). After the blend: counts d_att, c_att, g_att, td_att, ctrl
+  x `(F_off,X F_def,Y)^beta`, h/b/l attempts scaled with the total attempt change, accuracies acc_h, acc_l and td_acc on odds;
+  `params.oppadj.beta` = oppadj.json `ml_path_beta` (kd, body accuracy, submissions 0). Factors: `opts.oppadj = { A, B }`, else
+  `prof.oppadj`. matchupBase refuses `components.oppadj` together with `components.styles_sos` sos (any source): never stack the
+  two schedule adjustments. topSkill / escWeak are not applied (untested combination in the reference).
+- **preufc** (on; `applyPreUFC`, research/model_preufc.md item 3), after durability. For a side with at most `maxUfc` (3) prior
+  UFC fights, from his non-UFC pro record entering the bout: KO rate (ko_w + 0.3) / (n + 2), sub rate (sub_w + 0.2) / (n + 2),
+  KO-loss rate (ko_l + 0.2) / (n + 2); odds multipliers M_pow = (KO rate / 0.3433)^0.601, M_sub = (sub rate / 0.2466)^0.627,
+  M_chin = (KO-loss rate / 0.0436)^0.244, each faded by exp(-n_UFC / 8). Hazards: X's kd, gnp and stko x M_pow,X^s_pow x
+  M_chin,Y^s_chin; X's submission attempt tables (subTPos, subBPos, gillo) x M_sub,X^s_sub. `params.preufc.scale` (pow 1.007,
+  sub 1.314, chin 0.991; tools/preufc_scale.js on league-average pairs) makes the simulated per-fight finish odds move by M.
+  Inputs: `opts.preufc = { A, B }` with `{ n, ko_w, sub_w, ko_l, n_ufc }` (null = none), else `prof.preufc`, else the roster of
+  `FightEngine.loadPreUFC(preufc.json)` (current non-UFC record + UFC count) for bouts dated on or after its ufcstats snapshot.
+  Refused together with styles_sos `newcomer` (the older stub). The matchup carries `m.preufc = { src, mult, hazard }`.
+- New exports: `loadEmbed`, `embedBlend`, `oppadjSide`, `loadPreUFC`, `preufcMult`. Trace format and API otherwise unchanged.
