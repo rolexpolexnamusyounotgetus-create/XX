@@ -739,7 +739,9 @@
   //      (target / realised)^s x (static change the grappling step caused)^-1, strike accuracy odds x exp(s x shift) with the
   //      shift from a two-margin (target x position) logit fit of the realised vs the target accuracies on the static cells;
   //      realised totals are smoothed toward the target with kMin minutes and kAcc attempts, so a sparse stat is barely corrected;
-  //   3. params.retarget.iters iterations; every cumulative multiplier is capped at [1 / mlMaxRatio, mlMaxRatio] and every
+  //   3. params.retarget.iters iterations (from the second on, each rate lever's step is divided by the elasticity the previous
+  //      step showed, clipped to [0.3, 1.5]: takedown attempts respond less than one for one because ground time eats standing
+  //      time); every cumulative multiplier is capped at [1 / mlMaxRatio, mlMaxRatio] and every
   //      accuracy shift at +-log(mlMaxRatio). Knockdown, conversion and stoppage levers are not touched.
   // Corner symmetry: the pilot runs both orders and the canonical order of the pair (by a content signature) fixes which order
   // gets which seed, so A-B and B-A get identical per-fighter corrections; the steps are cached per matchup and replayed.
@@ -829,11 +831,23 @@
   }
   // one fighter's step from pooled realised totals c and like-for-like targets ct (RT_ST order) over n simulations and
   // mins simulated minutes; tg = his full-length target rates (the smoothing scale)
-  function rtStep(c, ct, n, mins, tg, rc) {
-    var s = rc.damp * n / (n + rc.kDec), kMin = rc.kMin, kAcc = rc.kAcc, i;
-    function ratio(k) { var r = tg[RT_ST[k]] * kMin, a = ct[k] + r, b = c[k] + r; return a > 0 && b > 0 ? Math.pow(a / b, s) : 1; }
+  // prev: this fighter's step of the previous iteration (or null): the observed response of the realised gap to the applied
+  // multiplier (elasticity, clipped to [0.3, 1.5]) scales the next step of each rate lever (a damped secant step)
+  var RT_LEV = { td: RT_TD, ct: RT_CT, d: 0, c: 1, g: 2 };
+  function rtStep(c, ct, n, mins, tg, rc, prev) {
+    var s = rc.damp * n / (n + rc.kDec), kMin = rc.kMin, kAcc = rc.kAcc, i, lv;
+    var gap = {}, el = {};
+    for (lv in RT_LEV) {
+      var k0 = RT_LEV[lv], r0 = tg[RT_ST[k0]] * kMin, a0 = ct[k0] + r0, b0 = c[k0] + r0;
+      gap[lv] = a0 > 0 && b0 > 0 ? Math.log(a0 / b0) : 0;
+      el[lv] = 1;
+      if (prev && Math.abs(prev.lg[lv]) > 0.01) el[lv] = clip((prev.gap[lv] - gap[lv]) / prev.lg[lv], 0.3, 1.5);
+    }
+    function ratio(k) { for (var q in RT_LEV) if (RT_LEV[q] === k) return Math.exp(s * gap[q] / el[q]); return 1; }
     function accT(l, a, k1, k2) { return clip(a > 1e-6 ? l / a : tg[RT_ST[k1]] / Math.max(tg[RT_ST[k2]], 1e-9), 0.02, 0.98); }
-    var st = { s: s, n: n, td: ratio(RT_TD), ct: ratio(RT_CT), att: [ratio(0), ratio(1), ratio(2)], realPos: [], tgtT: [], realT: [], tgtQ: [], realQ: [] };
+    var st = { s: s, n: n, td: ratio(RT_TD), ct: ratio(RT_CT), att: [ratio(0), ratio(1), ratio(2)], realPos: [], tgtT: [], realT: [], tgtQ: [], realQ: [],
+      gap: gap, el: el, lg: null };
+    st.lg = { td: Math.log(st.td), ct: Math.log(st.ct), d: Math.log(st.att[0]), c: Math.log(st.att[1]), g: Math.log(st.att[2]) };
     var tdA = accT(ct[RT_TDL], ct[RT_TD], RT_TDL, RT_TD), tdR = clip((c[RT_TDL] + kAcc * tdA) / (c[RT_TD] + kAcc), 0.02, 0.98);
     st.tdAcc = s * (logit(tdA) - logit(tdR));
     for (i = 0; i < 3; i++) {
@@ -1003,7 +1017,8 @@
         cX[k] = s0.real[k] + s1.real[NRT + k]; cY[k] = s0.real[NRT + k] + s1.real[k];
         tXs[k] = s0.tgt[k] + s1.tgt[NRT + k]; tYs[k] = s0.tgt[NRT + k] + s1.tgt[k];
       }
-      var n = s0.n + s1.n, mn = s0.mins + s1.mins, stX = rtStep(cX, tXs, n, mn, tX, rc), stY = rtStep(cY, tYs, n, mn, tY, rc);
+      var n = s0.n + s1.n, mn = s0.mins + s1.mins, pv = steps.length ? steps[steps.length - 1] : null;
+      var stX = rtStep(cX, tXs, n, mn, tX, rc, pv && pv.X), stY = rtStep(cY, tYs, n, mn, tY, rc, pv && pv.Y);
       rtApply(M0, [stX, stY]); rtApply(M1, [stY, stX]);
       steps.push({ X: stX, Y: stY }); nD.push(n);
     }
