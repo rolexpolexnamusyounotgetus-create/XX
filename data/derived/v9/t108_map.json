@@ -1,0 +1,19 @@
+{
+ "meta": {
+  "tool": "tools/v9_gate.js t108 grid (out/v9/t108grid.json) + least squares",
+  "window": "train 2019-2023",
+  "seed": 103,
+  "sims": 300,
+  "definition": "sim 10-8 share = sum of judge 10-8 rounds in decisions / (3 x decision rounds) (tools/evalv.js), walk-forward judging weights on"
+ },
+ "grid": {
+  "7.0": 0.0737489845909284,
+  "8.0": 0.0461344453432545,
+  "9.0": 0.02915967710118956,
+  "10.0": 0.018683017195138076
+ },
+ "alpha": 0.59164,
+ "beta": 0.45779,
+ "lRef": 5.263578,
+ "sRef": 0.035
+}
