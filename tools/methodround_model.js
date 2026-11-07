@@ -249,7 +249,8 @@
       return Q;
     }
 
-    function predict(profA, profB, opts) {
+    // v6: the feature rows of both directions (DA: X = A, DB: X = B), shared by predict and the S2 variant (createS2)
+    function features(profA, profB, opts) {
       opts = opts || {};
       var LBS = model.lbs, R = opts.rounds === 5 ? 5 : 3;
       var div = opts.division || profA.division;
@@ -273,6 +274,12 @@
       var useM = opts.pMarketA != null && isFinite(opts.pMarketA);
       var mk = useM ? logit(opts.pMarketA, 1e-3) : (profA.elo - profB.elo) / 400 * Math.LN10;
       var DA = direction(FA, FB, P, opts, common, mk), DB = direction(FB, FA, P, opts, common, -mk);
+      return { DA: DA, DB: DB, R: R, useM: useM };
+    }
+
+    function predict(profA, profB, opts) {
+      opts = opts || {};
+      var fz = features(profA, profB, opts), DA = fz.DA, DB = fz.DB, R = fz.R, useM = fz.useM;
       var variant = useM ? "SM" : "S", part = model.c6[variant];
       var pa = c6probs(part, DA), pb = c6probs(part, DB), P6 = new Array(6), i;
       for (i = 0; i < 6; i++) P6[i] = 0.5 * (pa[i] + pb[5 - i]);
@@ -313,8 +320,122 @@
                           B: { ko: bKO / pB, sub: bSUB / pB, dec: Bs.dec / pB } }
       };
     }
-    return { predict: predict, model: model };
+    return { predict: predict, features: features, model: model };
   }
 
-  return { create: create, version: 1 };
+  // ------------------------------------------------------------------ v6: variant S2 (engine v6, FightEngine.predict)
+  // S2 = methodround's 6-class who-and-how model with ML v2's columns (research/model_ml2.md section 7; tools/v6_prep.py
+  // s2 writes data/derived/mr_s2.json js_model, full-precision coefficients, fit 2012..2025, hazard 2008..2025) and
+  // methodround's competing-risks hazard for the round shapes. New side-oriented columns (X = the side the row is for):
+  //   n_z / n_az     logit of ML v2's logistic P(X wins) and its absolute value
+  //   n_zw / n_azw   logit of the round-level WHR P(X wins) and its absolute value
+  //   n_zm / n_azm   logit of the market-rating P(X wins) and its absolute value
+  //   x_ / y_ pre_ko, pre_sub, pre_fin, pre_kol, pre_subl, pre_finl: pre-UFC rates of X / Y minus their 2010-2023 means,
+  //                  times pre_ok x exp(-n_prior / tau) (0 without a pre-UFC record)
+  //   x_ / y_ missed weight-miss flags (0 before the weigh-in)
+  // fromFeatures(DA, DB, R) evaluates full feature rows (Python parity: js_model.vectors); predict(profA, profB, opts)
+  // builds S's rows with the S model (methodround.json js_model) and adds the new columns from opts.s2 =
+  //   { z, zw, zm (logits, A's view), pre: { A: {pre_ko, ..., pre_finl, ok, n}, B: {...} }, missed: { A, B } }.
+  // Cells are returned in FightBlend's layout [A KO r1..R, A SUB r1..R, B KO r1..R, B SUB r1..R, A DEC, B DEC, DRAW].
+  function vecOf(D, part) {
+    var x = new Array(part.cols.length);
+    for (var i = 0; i < part.cols.length; i++) {
+      var v = D[part.cols[i]];
+      if (v === undefined || v === null || isNaN(v)) throw new Error("methodround S2: feature " + part.cols[i] + " is " + v);
+      x[i] = (v - part.mean[i]) / part.scale[i];
+    }
+    return x;
+  }
+  function linOf(x, coef, b) { var s = b || 0; for (var i = 0; i < x.length; i++) s += coef[i] * x[i]; return s; }
+  function createS2(s2, sModel) {
+    var base = sModel ? create(sModel) : null;
+    var NC = 23, R5 = 5, IXKO = 0, IXSUB = 5, IYKO = 10, IYSUB = 15, IXDEC = 20, IYDEC = 21, IDRAW = 22;
+    function c6(D) {
+      var x = vecOf(D, s2.c6), z = new Array(6);
+      for (var c = 0; c < 6; c++) z[c] = linOf(x, s2.c6.coef[c], s2.c6.intercept[c]);
+      return softmax(z);
+    }
+    function hazardJoint(D, R) {
+      var hz = s2.hazard, x = vecOf(D, hz), P = new Array(NC).fill(0), S = 1;
+      for (var r = 1; r <= R; r++) {
+        var dummies = new Array(8).fill(0);
+        dummies[R === 3 ? r - 1 : 3 + r - 1] = 1;
+        var full = x.concat(dummies), z = new Array(5);
+        for (var c = 0; c < 5; c++) z[c] = linOf(full, hz.coef[c], 0);
+        var h = softmax(z);
+        P[IXKO + r - 1] = S * h[1]; P[IXSUB + r - 1] = S * h[2];
+        P[IYKO + r - 1] = S * h[3]; P[IYSUB + r - 1] = S * h[4];
+        S *= h[0];
+      }
+      P[IXDEC] = S * 0.5; P[IYDEC] = S * 0.5; P[IDRAW] = 0;
+      return P;
+    }
+    function mirror(P) {
+      var Q = P.slice();
+      for (var r = 0; r < R5; r++) {
+        Q[IXKO + r] = P[IYKO + r]; Q[IYKO + r] = P[IXKO + r];
+        Q[IXSUB + r] = P[IYSUB + r]; Q[IYSUB + r] = P[IXSUB + r];
+      }
+      Q[IXDEC] = P[IYDEC]; Q[IYDEC] = P[IXDEC];
+      return Q;
+    }
+    function fromFeatures(DA, DB, R) {
+      R = R === 5 ? 5 : 3;
+      var pa = c6(DA), pb = c6(DB), P6 = new Array(6), i;
+      for (i = 0; i < 6; i++) P6[i] = 0.5 * (pa[i] + pb[5 - i]);
+      var HA = hazardJoint(DA, R), HB = mirror(hazardJoint(DB, R)), H = new Array(NC);
+      for (i = 0; i < NC; i++) H[i] = 0.5 * (HA[i] + HB[i]);
+      function shape(b0) {
+        var s = 0, out = [], r;
+        for (r = 0; r < R; r++) s += H[b0 + r];
+        for (r = 0; r < R; r++) out.push(H[b0 + r] / Math.max(s, 1e-12));
+        return out;
+      }
+      var dc = s2.draw_c, J = new Array(NC).fill(0), sk = shape(IXKO), ss = shape(IXSUB), tk = shape(IYKO), ts = shape(IYSUB);
+      for (i = 0; i < R; i++) { J[IXKO + i] = sk[i] * P6[0]; J[IXSUB + i] = ss[i] * P6[1]; J[IYKO + i] = tk[i] * P6[5]; J[IYSUB + i] = ts[i] * P6[4]; }
+      J[IXDEC] = P6[2] * (1 - dc); J[IYDEC] = P6[3] * (1 - dc); J[IDRAW] = (P6[2] + P6[3]) * dc;
+      var cells = J.slice(IXKO, IXKO + R).concat(J.slice(IXSUB, IXSUB + R), J.slice(IYKO, IYKO + R), J.slice(IYSUB, IYSUB + R),
+        [J[IXDEC], J[IYDEC], J[IDRAW]]);
+      var bins7 = [0, 0, J[IXDEC], J[IDRAW], J[IYDEC], 0, 0];
+      for (i = 0; i < R; i++) { bins7[0] += J[IXKO + i]; bins7[1] += J[IXSUB + i]; bins7[5] += J[IYSUB + i]; bins7[6] += J[IYKO + i]; }
+      return { variant: "S2", rounds: R, joint23: J, cells: cells, bins7: bins7, p6: P6 };
+    }
+    function newCols(inp) {
+      inp = inp || {};
+      var z = +inp.z || 0, zw = +inp.zw || 0, zm = +inp.zm || 0, pre = inp.pre || {}, mi = inp.missed || {};
+      var A = {}, B = {}, keys = ["pre_ko", "pre_sub", "pre_kol", "pre_subl", "pre_fin", "pre_finl"];
+      function side(s, tag) {
+        var o = {}, rec = pre[tag] || null, ok = rec && rec.ok ? 1 : 0, n = rec && isFinite(rec.n) ? rec.n : 0;
+        var fade = ok * (s2.pre_tau ? Math.exp(-n / s2.pre_tau) : 1);
+        for (var i = 0; i < keys.length; i++) {
+          var v = rec ? rec[keys[i]] : null, mu = s2.pre_mu[keys[i]][tag + "_"];
+          o[keys[i]] = (v === null || v === undefined || isNaN(v)) ? 0 : (v - mu) * fade;
+        }
+        o.missed = mi[tag] ? 1 : 0;
+        return o;
+      }
+      A = side(A, "A"); B = side(B, "B");
+      var X = { n_z: z, n_az: Math.abs(z), n_zw: zw, n_azw: Math.abs(zw), n_zm: zm, n_azm: Math.abs(zm) };
+      var Y = { n_z: -z, n_az: Math.abs(z), n_zw: -zw, n_azw: Math.abs(zw), n_zm: -zm, n_azm: Math.abs(zm) };
+      ["pre_ko", "pre_sub", "pre_fin", "pre_kol", "pre_subl", "pre_finl"].forEach(function (k) {
+        X["x_" + k] = A[k]; X["y_" + k] = B[k]; Y["x_" + k] = B[k]; Y["y_" + k] = A[k];
+      });
+      X.x_missed = A.missed; X.y_missed = B.missed; Y.x_missed = B.missed; Y.y_missed = A.missed;
+      return { DA: X, DB: Y };
+    }
+    function predict(profA, profB, opts) {
+      if (!base) throw new Error("methodround S2: predict needs the S model (methodround.json js_model) for the stat columns");
+      opts = opts || {};
+      var o2 = {}, k;
+      for (k in opts) o2[k] = opts[k];
+      delete o2.pMarketA;   // S2 has no market column (the winner comes from the package)
+      var fz = base.features(profA, profB, o2), nc = newCols(opts.s2);
+      for (k in nc.DA) fz.DA[k] = nc.DA[k];
+      for (k in nc.DB) fz.DB[k] = nc.DB[k];
+      return fromFeatures(fz.DA, fz.DB, fz.R);
+    }
+    return { fromFeatures: fromFeatures, newCols: newCols, predict: predict, model: s2 };
+  }
+
+  return { create: create, createS2: createS2, version: 2 };
 }));

@@ -93,6 +93,29 @@ def stage_stacks(args):
                     "protocol": "2026+ dropped at parse; nothing from 2024-2025 enters a weight that scores 2024-2025"},
            "stacks": {}, "cv": {}, "per_fight": {}}
     ids = D["fid"].tolist()
+    # full-precision stack inputs per dev fight (all 2,864, draws included; A's view): ML v2 blend / logistic (annual
+    # OOF 2019-2023, static fit < 2024 for 2024-2025), market rating, opener, power de-vigged close (market.json)
+    bt = json.load(open(os.path.join(DER, "backtest_dev.json")))
+    dev = {f["id"]: f for f in bt["fights"] if f["date"] < "2026-01-01"}
+    mk = json.load(open(os.path.join(DER, "market.json")))["fights"]
+    tid = T["fid"].tolist()
+    tyr = T["year"].to_numpy()
+    inp = {}
+    fin = lambda v: v is not None and np.isfinite(v)
+    for i, fid in enumerate(tid):
+        if fid not in dev:
+            continue
+        sch = "oof" if tyr[i] <= 2023 else "static"
+        r = {"ml2": float(F["preds"]["blend|" + sch][i]), "ml2lr": float(F["preds"]["lr|" + sch][i])}
+        m = mk.get(fid) or {}
+        for k, c in (("mkt_rating", "p_market_rating"), ("open", "p_novig_open"), ("market", "p_power_close")):
+            v = m.get(c)
+            r[k] = float(v) if fin(v) else None
+        r = {k: (None if v is None or not np.isfinite(v) else round(v, 10)) for k, v in r.items()}
+        r["year"] = int(tyr[i])
+        inp[fid] = r
+    assert len(inp) == len(dev), (len(inp), len(dev))
+    out["inputs"] = inp
     for head, hcol in HEADS.items():
         for reg, (cols0, h, rk) in REGIMES.items():
             cols = [hcol if c == "ML2" else c for c in cols0]

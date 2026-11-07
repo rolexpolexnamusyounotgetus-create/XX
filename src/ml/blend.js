@@ -47,8 +47,10 @@
   else root.FightBlend = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (root) {
   "use strict";
-  var VERSION = "1.1.1";   // 1.1.1 (v5.0.1): invalid market lines are refused, never treated as no line; 1.1.0 (v5 merge step 5): ML v2 package winner blend, opts.lineKind, backtest guard, v5 corner swaps
-  var STATE = { stack: null, feat: null, ml2: null, mlPage: null, mktRatings: null, mr: null, mrModel: null, data: null };
+  var VERSION = "1.2.0";   // 1.2.0 (engine v6): ML v2 winner heads by line regime (winner 'ml2stack', data/derived/v6_stacks.json), S2 method/round cells (tools/methodround_model.js createS2), debut method path, distributional stat lines; every v6 path is off unless params.blend switches it on, so 1.1.1 behaviour is unchanged for v5 params
+  var VERSION_PREV = "1.1.1";   // 1.1.1 (v5.0.1): invalid market lines are refused, never treated as no line; 1.1.0 (v5 merge step 5): ML v2 package winner blend, opts.lineKind, backtest guard, v5 corner swaps
+  var STATE = { stack: null, feat: null, ml2: null, mlPage: null, mktRatings: null, mr: null, mrModel: null, data: null,
+    winnerStacks: null, mrS2: null, debut: null, statDist: null, ml2Trees: null, preufc: null };
 
   function clip(x, lo, hi) { return x < lo ? lo : (x > hi ? hi : x); }
   function logit(p) { p = clip(p, 1e-6, 1 - 1e-6); return Math.log(p / (1 - p)); }
@@ -71,6 +73,21 @@
     if (typeof require === "function") { try { return require("./ml2.js"); } catch (e) { return null; } }
     return null;
   }
+  function debutLib() {
+    if (root && root.DebutModel) return root.DebutModel;
+    if (typeof require === "function") { try { return require("./debut.js"); } catch (e) { return null; } }
+    return null;
+  }
+  function statLib() {
+    if (root && root.StatDist) return root.StatDist;
+    if (typeof require === "function") { try { return require("./statdist.js"); } catch (e) { return null; } }
+    return null;
+  }
+  function treesLib() {
+    if (root && root.ML2Trees) return root.ML2Trees;
+    if (typeof require === "function") { try { return require("./ml2trees.js"); } catch (e) { return null; } }
+    return null;
+  }
   function mlPageLib() {
     if (root && root.MLPage) return root.MLPage;
     if (typeof require === "function") { try { return require("./mlpage.js"); } catch (e) { return null; } }
@@ -87,7 +104,13 @@
     recalT: 1,             // temperature on the blended logit (1 = none)
     anchor: { cAcc: 0.5, cTd: 1, cPow: 1, powNorm: true, slope0: 0.86, priorWeight: 2, iters: 4, step: 0.05, tol: 0.01, sims: 300, maxAbs: 4 },
     boot: { B: 200, seed: 7, level: [0.8, 0.95], cvOut: 0.45, cvGrap: 1.0, cvSub: 1.5, cvKd: 1.0, cvAcc: 0.25,
-      count: true, eloRd: 0, eloRdScale: 0, mrSd: 0, engineMC: true, inflate: 1.65 }
+      count: true, eloRd: 0, eloRdScale: 0, mrSd: 0, engineMC: true, inflate: 1.65 },
+    // engine v6 (cycle 1, docs/V6_V10_PLAN.md section 3); the defaults reproduce 1.1.1 (engine v5 params carry none of these)
+    winner: "stack",       // 'stack' = the MoE expert stack (v5); 'ml2' = ML v2 page stack (v5 option); 'ml2stack' = v6 ML v2 heads
+    ml2Head: "lr",         // ML v2 head inside the v6 stacks: 'blend' (LR + LightGBM + XGBoost, the CV choice) or 'lr'
+    mrModel: "S",          // method/round model pooled with the simulator: 'S' (S / SM, v5) or 'S2' (v6: S2 cells, no SM)
+    debut: false,          // v6: bouts with a UFC debutant take method given the winner from the debut model (src/ml/debut.js)
+    statDist: false        // v6: distributional stat lines (src/ml/statdist.js, P10 / P50 / P90) next to the means
   };
   function cfgOf(p, opts) {
     var b = (p && p.blend) || {}, o = (opts && opts.blend) || {}, out = {}, k;
@@ -642,8 +665,16 @@
       STATE.mr = jm && MR ? (jm.predict ? jm : MR.create(jm)) : null;
     }
     if (o.data !== undefined) STATE.data = o.data;
+    // engine v6
+    if (o.winnerStacks !== undefined) STATE.winnerStacks = o.winnerStacks || null;
+    if (o.mrS2 !== undefined) STATE.mrS2 = o.mrS2 ? (o.mrS2.js_model || o.mrS2) : null;
+    if (o.debut !== undefined) { var DL = debutLib(); STATE.debut = o.debut && DL ? { M: DL.load(o.debut.model || o.debut), lib: DL } : null; }
+    if (o.statDist !== undefined) { var SL = statLib(); STATE.statDist = o.statDist && SL ? SL.load(o.statDist, { which: "prod" }) : null; }
+    if (o.ml2Trees !== undefined) { var TL = treesLib(); STATE.ml2Trees = o.ml2Trees && TL ? TL.load(o.ml2Trees) : null; }
+    if (o.preufc !== undefined) STATE.preufc = o.preufc || null;
     return { stack: !!STATE.stack, stackOpen: !!(STATE.stack && STATE.stack.open), feat: !!STATE.feat, mlPage: !!STATE.mlPage,
-      market: !!STATE.mktRatings, ml2: !!STATE.ml2, methodRound: !!STATE.mr, data: !!STATE.data };
+      market: !!STATE.mktRatings, ml2: !!STATE.ml2, methodRound: !!STATE.mr, data: !!STATE.data,
+      winnerStacks: !!STATE.winnerStacks, mrS2: !!STATE.mrS2, debut: !!STATE.debut, statDist: !!STATE.statDist, ml2Trees: !!STATE.ml2Trees };
   }
 
   // ------------------------------------------------------------------ the package
