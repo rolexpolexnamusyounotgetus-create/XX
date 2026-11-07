@@ -118,6 +118,10 @@ ib = np.array([i for i, f in enumerate(TF["fid"]) if f in pos])
 dX = np.nanmax(np.abs(X[cols].to_numpy(float)[ia] - XF[cols].to_numpy(float)[ib]))
 checks["pre2026_design_max_abs_diff_vs_frozen_table"] = float(dX)
 checks["pre2026_rows_matched"] = [len(common), len(TF)]
+dcol = np.nanmax(np.abs(X[cols].to_numpy(float)[ia] - XF[cols].to_numpy(float)[ib]), axis=0)
+nrow = (np.abs(X[cols].to_numpy(float)[ia] - XF[cols].to_numpy(float)[ib]) > 1e-9).sum(axis=0)
+checks["pre2026_design_cols_differing"] = {c: [float(v), int(r)] for c, v, r in zip(cols, dcol, nrow) if v > 1e-9}
+pickle.dump({"T": T, "fid": T["fid"].tolist()}, open(os.path.join(CACHE, "table_vault.pkl"), "wb"))
 print("pre-2026 design rows vs frozen table: max |diff| %.3g over %d / %d rows" % (dX, len(common), len(TF)), flush=True)
 
 # ---------------------------------------------------------------- 2. ML v2 logistic, frozen coefficients
