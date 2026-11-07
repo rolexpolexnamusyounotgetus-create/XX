@@ -288,7 +288,7 @@ check took 3 to 20 seconds.
    |---|---|---|---|---|
    | UFC 334, Nov 14 | Vegas 124 (Nov 7) | Sun Nov 8, ~6:00 pm UTC | Sat Nov 14, 10:00 pm UTC | ~6 days |
    | Qatar, Nov 21 | + UFC 334 | Sun Nov 15, ~6:00 pm UTC | Sat Nov 21, 3:00 pm UTC | ~5.9 days |
-   | UFC Fight Night 295, Dec 5 | + Qatar (and any Nov 28 card; none listed as of Nov 6) | Sun Nov 22, ~6:00 pm UTC | no start_utc yet: the tool falls back to 12:00 am UTC Dec 5 | ~11 days |
+   | UFC Fight Night 295, Dec 5 | + Qatar (and any Nov 28 card; none listed as of Nov 6) | Sun Nov 22, ~6:00 pm UTC | no start_utc yet: the tool falls back to 12:00 am UTC Dec 5 | ~12 days |
    | UFC 335, Dec 12 | + Dec 5 | Sun Dec 6, ~6:00 pm UTC | Sat Dec 12, 10:00 pm UTC | ~6 days |
 
    - If the Greco1899 refresh slips, use the previous cutoff; the manifest's as_of says which. Do not fill the gap with
