@@ -51,12 +51,17 @@
      mlcal global-scale re-tune (tools/mlcal_spec_engine5.json, --no-val): no candidate beat the current set on the confirmation
      window, so nothing changed (data/derived/mlcal_candidates_v5.json). (3) blend_anchor rebuilt on the final engine: blend.mrWeight
      0.3, blend.anchor.slope0 0.771, blend.boot.inflate 2.15 (data/derived/blend_anchor.json). Engine VERSION 5.0.0, frozen in
-     versions/v5/.
+     versions/v5/ (validated once Nov 6 and rejected; versions/v5-rejected/).
+   - v5.0.1 (the v5 review's fixes; docs/CHANGELOG.md v5.0.1, research/v501_fixes.md; TRAIN 2019-2023 only): components.v501 with one
+     set per behaviour fix in block v501 (durFallback: the computed chin / power fallback re-levelled; dynNoise: within-fight noise
+     refit to the real fights' dispersion; levels: outLevel and the joint knockdown / finish / judging level pass redone on top of it;
+     kdBase: the forward-chained 2019-2023 check of the knockdown base kept the trailing 730-day level, so it has no set). v501 off =
+     engine 5.0.0 for valid inputs (tests/test_v501.js). Engine VERSION 5.0.1, frozen in versions/v5.0.1/.
    Units inside the engine: seconds and per-second rates unless a comment says otherwise. */
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "5.0.0-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics), 3 (styles_sos, officials, realism_sens), 4 (embed, oppadj, preufc) and 5 (blend_anchor); Calibrate A default flags (v401.mlLevels off); Calibrate B levels (components.calB) and blend_anchor refits; frozen in versions/v5/
+    version: "5.0.1-selfcal-pre2024",   // v5.0.1: + components.v501 (block v501). Parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics), 3 (styles_sos, officials, realism_sens), 4 (embed, oppadj, preufc) and 5 (blend_anchor); Calibrate A default flags (v401.mlLevels off); Calibrate B levels (components.calB) and blend_anchor refits; frozen in versions/v5/
 
     // ---------------- engine v5 components (src/engine3.js resolveParams; each flag off reproduces v4.0.0) ----------------
     components: {
@@ -673,7 +678,7 @@
         // (decayed sums, backtest snapshots) fit on the 2019-2023 backtest sides. Backtest harnesses refuse this path.
         durFallback: { durability: { normComputedChin: 1.1786, normComputedPow: 1.0125, normComputedChinS: 0.9566, normComputedPowS: 1.0043 } },
         // within-fight output noise refit to the real fights' dispersion (v5 review: 5.0.0's per-fighter noise was too large and too little
-        // of it shared, which flattened win probabilities; tools/v501_dynfit.js on 2019-2023 train fights, research/v501_dynamics_noise.md).
+        // of it shared, which flattened win probabilities; tools/v501_dynfit.js on 2019-2023 train fights, research/v501_fixes.md).
         // 5.0.0: formOut 0.21, arSd 0.32, arPhi 0.85, formPace 0.45, roundPace 0.10, formAcc 0.43
         dynNoise: { dyn: { formOut: 0.15, arSd: 0.24, arPhi: 0.6, formPace: 0.42, roundPace: 0.15, formAcc: 0.40 } },
         // the ONE joint level pass redone on top of dynNoise (tools/v5_calB_levels.js fit, TRAIN 2019-2023; data/derived/v501_levels.json),
