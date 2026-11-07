@@ -671,7 +671,11 @@
         // the computed chin / power fallback re-levelled to the record path (tools/durlevel_fit.js, data/derived/durlevel_fit.json):
         // C path (career sums, production profiles) fit on the live roster as a production constant like normChin / normPow; S path
         // (decayed sums, backtest snapshots) fit on the 2019-2023 backtest sides. Backtest harnesses refuse this path.
-        durFallback: { durability: { normComputedChin: 1.1786, normComputedPow: 1.0125, normComputedChinS: 0.9566, normComputedPowS: 1.0043 } }
+        durFallback: { durability: { normComputedChin: 1.1786, normComputedPow: 1.0125, normComputedChinS: 0.9566, normComputedPowS: 1.0043 } },
+        // within-fight output noise refit to the real fights' dispersion (v5 review: 5.0.0's per-fighter noise was too large and too little
+        // of it shared, which flattened win probabilities; tools/v501_dynfit.js on 2019-2023 train fights, research/v501_dynamics_noise.md).
+        // 5.0.0: formOut 0.21, arSd 0.32, arPhi 0.85, formPace 0.45, roundPace 0.10, formAcc 0.43
+        dynNoise: { dyn: { formOut: 0.15, arSd: 0.24, arPhi: 0.6, formPace: 0.42, roundPace: 0.15, formAcc: 0.40 } }
       }
     },
 

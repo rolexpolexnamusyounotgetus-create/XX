@@ -31,6 +31,7 @@ FIT = ("2008-01-01", "2023-12-31")
 VFIT = ("2008-01-01", "2018-12-31")
 VAL = ("2019-01-01", "2023-12-31")
 TEST = "2024-01-01"
+TEST_UNTIL = "2025-12-31"   # v5.0.1 vault cleanup: the held-out window ends before the sealed 2026 vault (it ran to 2026-10-31)
 ALPHA_C = ALPHA_P = 3.0
 LEVEL_DAYS = 730
 WIN = 365
@@ -317,7 +318,7 @@ def v3_off(X, fm):
 def main():
     X = add(build())
     win = lambda lo, hi=None: (X.use & (X.date >= lo) & ((X.date <= hi) if hi else True)).to_numpy()
-    fm, tm = win(*FIT), win(TEST)
+    fm, tm = win(*FIT), win(TEST, TEST_UNTIL)
     divs = [c for c in X.columns if c.startswith("div_")]
     ctx = divs + ["five", "title"]
     print("rows %d, fit rows %d (KD %d), test rows %d (KD %d), test fights %d" % (

@@ -70,6 +70,8 @@ FIT_FROM = "2008-01-01"
 TUNE_FIT = ("2008-01-01", "2018-12-31")
 TUNE_EVAL = ("2019-01-01", "2023-12-31")
 TEST_FROM = "2024-01-01"
+TEST_UNTIL = "2025-12-31"     # v5.0.1 vault cleanup: held-out scoring stops before the sealed 2026 vault (it used to run to the snapshot)
+VAULT_FROM = "2026-01-01"
 ELO_K, ELO_BOOST = 44, 1.5      # data/derived/elo_report.json (tuned 2019-2023)
 HL_RATE = 730.0                 # half-life for the decayed exposure rates (same as build_db S sums)
 
@@ -740,10 +742,10 @@ def logloss(y, p):
 
 # ------------------------------------------------------------------ analyses
 def ladder(X, spec):
-    """Fit every model on 2008-2023 and score Poisson deviance on 2024+ (never used for fitting or tuning)."""
+    """Fit every model on 2008-2023 and score Poisson deviance on 2024-01-01..2025-12-31 (never used for fitting or tuning)."""
     bl = blocks(spec, X)
     fm = window(X, FIT_FROM, "2023-12-31")
-    tm = window(X, TEST_FROM)
+    tm = window(X, TEST_FROM, TEST_UNTIL)
     elig = (X.d_n_prior > 0).to_numpy() & (X.a_n_prior > 0).to_numpy()
     v3o = v3_offset(X, fm)
     claim = ["d_age_h30", "a_age_h30"]
@@ -1013,7 +1015,7 @@ def ko_model(X, r_final, spec, fm_dates=(FIT_FROM, "2023-12-31")):
     """KO/TKO loss per fight (logistic; pre-fight features only). Rows: each defender of each fight with stats."""
     base = (X.has_stats == 1) & (X.amb == 0)
     fm = (base & (X.date >= fm_dates[0]) & (X.date <= fm_dates[1])).to_numpy()
-    tm = (base & (X.date >= TEST_FROM)).to_numpy()
+    tm = (base & (X.date >= TEST_FROM) & (X.date <= TEST_UNTIL)).to_numpy()
     y = X.ko_loss.to_numpy(float)
     bl = blocks(spec, X)
     lexp, Lsh = exposure_rate(X, (X.use & (X.date >= fm_dates[0]) & (X.date <= fm_dates[1])).to_numpy())
@@ -1325,7 +1327,7 @@ def kd_level_series(X):
     s = X[X.use].copy()
     s["half"] = s.year.astype(str) + np.where(pd.to_datetime(s.date).dt.month <= 6, "H1", "H2")
     g = s.groupby("half").agg(kd=("y", "sum"), E=("E", "sum"), fights=("fid", "nunique"))
-    g = g[g.index >= "2016"]
+    g = g[(g.index >= "2016") & (g.index < VAULT_FROM[:4])]   # v5.0.1: no vault-period rows
     return [{"period": k, "fights": int(r.fights), "kd": int(r.kd), "kd_per_1000_standing_head": round(1000 * r.kd / r.E, 2)}
             for k, r in g.iterrows()]
 
@@ -1380,7 +1382,7 @@ def main():
 
     print("held-out ladder (fit 2008-2023, score 2024+) ...")
     res, ladder_rows, info = ladder(X, spec)
-    tm = window(X, TEST_FROM)
+    tm = window(X, TEST_FROM, TEST_UNTIL)
     fm = window(X, FIT_FROM, "2023-12-31")
     for r in ladder_rows:
         print("  %-58s dev %.1f  vs M0L %+.1f (se %.1f)  KD obs %d exp %.1f" % (
@@ -1507,12 +1509,20 @@ def main():
     norm_chin_exp = float(np.sum(Ew[rec] * np.exp(lin_d[rec]) * wl["chin"][rec] ** bc) / Ew[rec].sum())
     series = kd_level_series(X)
 
+    # v5.0.1 vault cleanup: the walk-forward records of sealed-vault fights (2026+) go to the vault directory, never the repo
+    dev_ids = {f["id"] for f in json.load(open(os.path.join(ROOT, "data", "derived", "backtest_dev.json")))["fights"]}
+    bt_vault = {k: v for k, v in bt_mult.items() if k not in dev_ids}
+    bt_mult = {k: v for k, v in bt_mult.items() if k in dev_ids}
+    vdir = os.environ.get("VAULT_DIR", "/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault")
+    os.makedirs(vdir, exist_ok=True)
+    with open(os.path.join(vdir, "durability_vault_backtest.json"), "w") as fh:
+        json.dump({"meta": {"tool": "tools/durability.py", "note": "walk-forward records of vault fights (vault auditor only)"}, "backtest": bt_vault}, fh, separators=(",", ":"))
     names_live = ["const"] + r_live["cols"]
     out = {
         "meta": {
             "tool": "tools/durability.py", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
             "snapshot": snap_date.isoformat(), "spec": spec, "fit_from": FIT_FROM, "tune_fit": TUNE_FIT,
-            "tune_eval": TUNE_EVAL, "test_from": TEST_FROM, "info": info,
+            "tune_eval": TUNE_EVAL, "test_from": TEST_FROM, "test_window": [TEST_FROM, TEST_UNTIL], "info": info,
             "model": "KD_ad ~ Poisson(E_ad p_ad); log p_ad = log L730(t) + const + division + 5-round + title + f(defender) "
                      "[+ g(attacker) if attacker blocks survive tuning] + log u_d + log v_a; covariate blocks in spec.blocks; "
                      "E = standing head strikes landed by a (midpoint of the ufcstats "
