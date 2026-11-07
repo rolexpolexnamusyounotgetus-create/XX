@@ -7,3 +7,5 @@ predict_harness on train 2019-01-01..2024-01-01: 1999 fights, kinds close/open/n
   1200/1999 fights, 96 s
   1400/1999 fights, 113 s
   1600/1999 fights, 130 s
+  1800/1999 fights, 147 s
+wrote data/derived/v10/gate_train.json: 1999 fights, 0 failed, 164 s

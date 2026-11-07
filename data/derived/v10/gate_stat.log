@@ -1,0 +1,5 @@
+v10_stat_gate: 1999 train fights x 2 orders x 300 sims, arms cmp4, all, -embed, -retarget, -tdIntent, 3 workers, seed 10, BINDING
+  200/1999 fights, 14 s
+  400/1999 fights, 25 s
+  600/1999 fights, 45 s
+  800/1999 fights, 65 s
