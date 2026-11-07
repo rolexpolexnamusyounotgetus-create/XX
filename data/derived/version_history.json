@@ -4791,11 +4791,483 @@
     },
     "file": "data/derived/evalv/v5.0.1_train.json"
    },
-   "validation": null,
-   "blend": null,
+   "validation": {
+    "n_fights": 865,
+    "n_decisive": 853,
+    "sims_per_order": 300,
+    "metrics": {
+     "winLL": {
+      "est": 0.6267,
+      "lo": 0.6116,
+      "hi": 0.6415
+     },
+     "brier": {
+      "est": 0.218,
+      "lo": 0.2107,
+      "hi": 0.2251
+     },
+     "acc": {
+      "est": 0.6659,
+      "lo": 0.6333,
+      "hi": 0.6969
+     },
+     "bin7": {
+      "est": 1.5653,
+      "lo": 1.524,
+      "hi": 1.6133
+     },
+     "method": {
+      "est": 0.94,
+      "lo": 0.9108,
+      "hi": 0.971
+     },
+     "dev_sig_lnd": {
+      "est": 21.0664,
+      "lo": 19.5581,
+      "hi": 22.7309
+     },
+     "dev_sig_att": {
+      "est": 42.0185,
+      "lo": 38.911,
+      "hi": 45.4368
+     },
+     "dev_td_lnd": {
+      "est": 1.763,
+      "lo": 1.6406,
+      "hi": 1.9005
+     },
+     "dev_ctrl": {
+      "est": 149.7845,
+      "lo": 140.7311,
+      "hi": 158.9619
+     },
+     "dev_kd": {
+      "est": 0.6533,
+      "lo": 0.6119,
+      "hi": 0.7013
+     },
+     "mae_sig_lnd": {
+      "est": 24.3447,
+      "lo": 23.257,
+      "hi": 25.4708
+     },
+     "mae_sig_att": {
+      "est": 50.1877,
+      "lo": 47.9542,
+      "hi": 52.5851
+     },
+     "mae_td_lnd": {
+      "est": 1.0514,
+      "lo": 0.9978,
+      "hi": 1.1071
+     },
+     "mae_ctrl": {
+      "est": 110.2172,
+      "lo": 105.2747,
+      "hi": 115.3452
+     },
+     "mae_kd": {
+      "est": 0.3241,
+      "lo": 0.3097,
+      "hi": 0.3393
+     },
+     "devpm_sig_lnd": {
+      "est": 10.9822,
+      "lo": 9.9953,
+      "hi": 12.0336
+     },
+     "devpm_sig_att": {
+      "est": 19.1636,
+      "lo": 17.4579,
+      "hi": 21.0609
+     },
+     "devpm_td_lnd": {
+      "est": 1.4685,
+      "lo": 1.3729,
+      "hi": 1.5752
+     },
+     "devpm_ctrl": {
+      "est": 110.0499,
+      "lo": 103.3046,
+      "hi": 116.8432
+     },
+     "devpm_kd": {
+      "est": 0.8655,
+      "lo": 0.8049,
+      "hi": 0.9322
+     },
+     "ece": {
+      "est": 0.0654,
+      "lo": 0.0389,
+      "hi": 0.0958
+     },
+     "calSlope": {
+      "est": 1.715,
+      "lo": 1.4189,
+      "hi": 2.0389
+     }
+    },
+    "baseRates": {
+     "n": 857,
+     "finish": {
+      "sim": 0.4979,
+      "actual": 0.4597,
+      "diff": 0.0381
+     },
+     "KO": {
+      "sim": 0.3171,
+      "actual": 0.2905,
+      "diff": 0.0266
+     },
+     "SUB": {
+      "sim": 0.1808,
+      "actual": 0.1692,
+      "diff": 0.0116
+     },
+     "DEC": {
+      "sim": 0.5021,
+      "actual": 0.5403,
+      "diff": -0.0381
+     },
+     "finByRound3": {
+      "n": 752,
+      "sim": [
+       0.2649,
+       0.1363,
+       0.0873
+      ],
+      "actual": [
+       0.2367,
+       0.137,
+       0.0785
+      ]
+     },
+     "finByRound5": {
+      "n": 105,
+      "sim": [
+       0.1962,
+       0.1534,
+       0.0924,
+       0.0767,
+       0.046
+      ],
+      "actual": [
+       0.1524,
+       0.1619,
+       0.0952,
+       0.0762,
+       0.0286
+      ]
+     },
+     "kdPer100Head": {
+      "sim": 0.8272,
+      "actual": 0.6844,
+      "diff": 0.1428
+     },
+     "decision": {
+      "sim": {
+       "UD": 0.7794,
+       "SD": 0.2093,
+       "MD": 0.0113
+      },
+      "actual": {
+       "UD": 0.8148,
+       "SD": 0.1808,
+       "MD": 0.0044
+      },
+      "nActual": 459
+     },
+     "r108": {
+      "sim": 0.0432,
+      "actual": 0.0246,
+      "diff": 0.0186
+     },
+     "sigLndPer15": {
+      "sim": 61.8009,
+      "actual": 58.1061,
+      "diff": 3.6948
+     },
+     "tdPer15": {
+      "sim": 1.3923,
+      "actual": 1.4128,
+      "diff": -0.0206
+     },
+     "ctrlPer15": {
+      "sim": 174.4016,
+      "actual": 168.3007,
+      "diff": 6.1008
+     }
+    },
+    "methodround": {
+     "joint": {
+      "submitted": 2.059,
+      "model_S": 2.0418,
+      "diff": 0.0172,
+      "ci95": [
+       -0.0096,
+       0.0444
+      ]
+     },
+     "method3": {
+      "submitted": 0.94,
+      "model_S": 0.936,
+      "diff": 0.004,
+      "ci95": [
+       -0.0102,
+       0.0184
+      ]
+     },
+     "finish": {
+      "submitted": 0.6607,
+      "model_S": 0.6593,
+      "diff": 0.0013,
+      "ci95": [
+       -0.0093,
+       0.0117
+      ]
+     },
+     "bin7": {
+      "submitted": 1.5653,
+      "model_S": 1.5538,
+      "diff": 0.0115,
+      "ci95": [
+       -0.0105,
+       0.0357
+      ]
+     },
+     "method_round": {
+      "submitted": 1.4372,
+      "model_S": 1.424,
+      "diff": 0.0133,
+      "ci95": [
+       -0.0046,
+       0.0297
+      ]
+     },
+     "round_given_fin": {
+      "submitted": 1.0637,
+      "model_S": 1.0601,
+      "diff": 0.0036,
+      "ci95": [
+       -0.0134,
+       0.0202
+      ]
+     },
+     "ko_vs_sub": {
+      "submitted": 0.6075,
+      "model_S": 0.6017,
+      "diff": 0.0058,
+      "ci95": [
+       -0.0119,
+       0.0248
+      ]
+     },
+     "method_given_winner": {
+      "submitted": 0.909,
+      "model_S": 0.9073,
+      "diff": 0.0017,
+      "ci95": [
+       -0.0172,
+       0.0213
+      ]
+     },
+     "winner": {
+      "submitted": 0.6267,
+      "model_S": 0.6213,
+      "diff": 0.0054,
+      "ci95": [
+       -0.0029,
+       0.014
+      ]
+     },
+     "winner_brier": {
+      "submitted": 0.218,
+      "model_S": 0.2154,
+      "diff": 0.0025,
+      "ci95": [
+       -0.0014,
+       0.0066
+      ]
+     },
+     "winner_acc": {
+      "submitted": 0.6659,
+      "model_S": 0.6753,
+      "diff": -0.0094,
+      "ci95": [
+       -0.0335,
+       0.0153
+      ]
+     },
+     "method3_brier": {
+      "submitted": 0.562,
+      "model_S": 0.561,
+      "diff": 0.001,
+      "ci95": [
+       -0.0083,
+       0.0104
+      ]
+     }
+    },
+    "compare": {
+     "against": "v4",
+     "paired": {
+      "winLL": {
+       "diff": -0.0057,
+       "lo": -0.0141,
+       "hi": 0.0023,
+       "n": 853
+      },
+      "brier": {
+       "diff": -0.0026,
+       "lo": -0.0065,
+       "hi": 0.0012,
+       "n": 853
+      },
+      "acc": {
+       "diff": 0.0088,
+       "lo": -0.0142,
+       "hi": 0.03,
+       "n": 853
+      },
+      "bin7": {
+       "diff": -0.006,
+       "lo": -0.0318,
+       "hi": 0.0178,
+       "n": 857
+      },
+      "method": {
+       "diff": 0,
+       "lo": -0.0096,
+       "hi": 0.0102,
+       "n": 857
+      },
+      "dev_sig_lnd": {
+       "diff": -0.7993,
+       "lo": -1.2154,
+       "hi": -0.3941,
+       "n": 865
+      },
+      "dev_sig_att": {
+       "diff": -1.4031,
+       "lo": -2.2942,
+       "hi": -0.5447,
+       "n": 865
+      },
+      "dev_td_lnd": {
+       "diff": -0.0428,
+       "lo": -0.0658,
+       "hi": -0.0201,
+       "n": 865
+      },
+      "dev_ctrl": {
+       "diff": -4.3378,
+       "lo": -7.5864,
+       "hi": -1.4718,
+       "n": 865
+      },
+      "dev_kd": {
+       "diff": 0.0016,
+       "lo": -0.0133,
+       "hi": 0.0169,
+       "n": 865
+      },
+      "mae_sig_lnd": {
+       "diff": -0.6646,
+       "lo": -0.9774,
+       "hi": -0.334,
+       "n": 865
+      },
+      "mae_sig_att": {
+       "diff": -0.8157,
+       "lo": -1.484,
+       "hi": -0.1279,
+       "n": 865
+      },
+      "mae_td_lnd": {
+       "diff": -0.0058,
+       "lo": -0.0136,
+       "hi": 0.0018,
+       "n": 865
+      },
+      "mae_ctrl": {
+       "diff": -0.8714,
+       "lo": -1.9336,
+       "hi": 0.2931,
+       "n": 865
+      },
+      "mae_kd": {
+       "diff": 0.0035,
+       "lo": -0.0003,
+       "hi": 0.0072,
+       "n": 865
+      },
+      "devpm_sig_lnd": {
+       "diff": 0,
+       "lo": 0,
+       "hi": 0,
+       "n": 0
+      },
+      "devpm_sig_att": {
+       "diff": 0,
+       "lo": 0,
+       "hi": 0,
+       "n": 0
+      },
+      "devpm_td_lnd": {
+       "diff": 0,
+       "lo": 0,
+       "hi": 0,
+       "n": 0
+      },
+      "devpm_ctrl": {
+       "diff": 0,
+       "lo": 0,
+       "hi": 0,
+       "n": 0
+      },
+      "devpm_kd": {
+       "diff": 0,
+       "lo": 0,
+       "hi": 0,
+       "n": 0
+      }
+     }
+    },
+    "file": "data/derived/evalv/v5.0.1_val.json"
+   },
+   "blend": {
+    "market": {
+     "engine_weight": 0.10463121883191039,
+     "logloss_with": 0.5786676413081177,
+     "logloss_without": 0.5788257212949961,
+     "diff": {
+      "est": -0.00015807998687836282,
+      "lo": -0.001087629709028394,
+      "hi": 0.0007527039333018291,
+      "p_gt0": 0.377
+     },
+     "n": 845
+    },
+    "nomarket": {
+     "engine_weight": 0.18221883229480898,
+     "logloss_with": 0.5915780274909317,
+     "logloss_without": 0.5930336691698366,
+     "diff": {
+      "est": -0.0014556416789049686,
+      "lo": -0.0031307124494984483,
+      "hi": 0.00034246544314288894,
+      "p_gt0": 0.055
+     },
+     "n": 845
+    },
+    "dry": false
+   },
    "notes": [
-    "2026-11-07T04:32 train: train: engine 5.0.1 frozen in versions/v5.0.1 (the v5 review's fixes: input guards, components.v501 durFallback / dynNoise / levels; kdBase kept L730 by the pre-registered forward-chained 2019-2023 check); train only, validation is the single look"
-   ]
+    "2026-11-07T04:32 train: train: engine 5.0.1 frozen in versions/v5.0.1 (the v5 review's fixes: input guards, components.v501 durFallback / dynNoise / levels; kdBase kept L730 by the pre-registered forward-chained 2019-2023 check); train only, validation is the single look",
+    "2026-11-07T04:33 prereg (written before the validation run): v5.0.1's single validation look is the SECOND look at 2024-2025 for the v5 lineage. The KD level and dynamics issues were diagnosed from v5's look and its review, so every 5.0.1-vs-v4 and 5.0.1-vs-5.0.0 validation delta is an upper bound and 2024-25 is not a clean test for this version; the forward ledger and (with its KD/KO exposure noted) the vault are the clean arbiters. Command: node tools/evalv.js --version v5.0.1 --split val --sims 300 --workers 3 --compare v4. DECISION (tools/evalv_decide.js, new = v5.0.1_val.json, old = the deterministic --dev reproduction of v4's look data/derived/evalv/v4_repro_dev_val.json, whose per-fight pA equal the stored look on all 865 fights): keep v5.0.1 if (1) validation winner log loss paired 95% CI vs v4 excludes 0 on the good side; or (2) the winner CI includes 0 AND at least one of the registered secondary family {7-bin, method, stat-line deviance of sig landed, sig attempts, TD landed, control, KD} is better after a Holm adjustment at family-wise 0.05 AND no gated base rate (KO share, SUB share, R1 / R3 share of 3-round finishes, SD+MD share of decisions, KD per 100 head, sig landed / TD / control per 15) drifts out of tolerance by the paired test: D_b = |new - actual| - |old - actual| with an event-cluster CI above 0 AND |new - actual| > max(mlcal tolerance, 1.96 x the event-cluster SE of the actual). This replaces v5's point-tolerance gate and unadjusted secondaries, as the v5 review asked; v5's registered rule is computed and reported next to it, and a disagreement is reported, not used. The same paired test without the dated 2024 glove-trial window is information only. Also reported (not rule inputs): per-minute deviances, the base-rate table by window, the blend test, methodround paired vs v4 and descriptive 5.0.1 vs 5.0.0 (v5's look reproduced deterministically). The prediction package (FightEngine.predict) is not re-scored on validation.",
+    "2026-11-07T04:33 val: val: v5.0.1's single validation look (pre-registered in the previous note), paired vs v4"
+   ],
+   "validated_at": "2026-11-07T04:33:41.338Z"
   }
  ]
 }
