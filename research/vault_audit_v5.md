@@ -57,7 +57,7 @@ corner orders (300 sims per order), and calibration slopes are mirrored with no 
 | model | frozen object | fit | 2026 inputs (all pre-fight) | reproduction check (on data the model already saw) |
 |---|---|---|---|---|
 | engines v4 / v5 / v5.0.1 | versions/v4, v5-rejected, v5.0.1-rejected (hashes = version_history.json) | as frozen | tools/evalv.js itself, 17 literal input substitutions (tools/vault_audit1/evalv_vault.js): vault backtest, priors_asof["2026"] (fights 2021-2025), learned rates from the production mlrates.json (fit 2010-2025), v5: durability_vault.json records (fit through 2023) + train NORM, SOS pairs walked through 2026-10 with the 2019-2023 coefficients, embeddings from the 2026-01-01 export (embed_model.json; 39 of 746 sides had no export and get embed.js's zero vector), preufc pre-bout records | mlrates pipeline reproduces every stored 2024-25 dev rate exactly (max abs log ratio 0); SOS pairs before 2026 equal sos_wf.json (0 of 2,864 differ) |
-| close / open | market_vault.json | — | power de-vig of the mean US-sportsbook close (5-6 books on BFO event pages; exchanges excluded, so no post-result price); multiplicative no-vig opener; 373 / 373 present, nothing fetched | — |
+| close / open | market_vault.json | — | power de-vig of the mean US-sportsbook close (BFO event pages: 5 books on 344 fights, 6 on 22, 4 on 4, 3 on 1; one fight from BFO's mean of 2 stored books, one (Pitbull vs Choi) from BFO's closing-range midpoint; market.py's consensus rule dropped one stale or in-play quote; exchanges excluded, so no post-result price); multiplicative no-vig opener (BFO's opening line; see the opener caveat below); 373 / 373 present, nothing fetched | — |
 | Elo | build_db Elo (K 44, boost 1.5) | tuned 2019-2023 | backtest_vault pre-fight Elo | — |
 | ML v1 logistic | ml_vault.json `lr_refit` (January refit through 2025; `lr` = fit 2010-2023 reported too) | as frozen | tools/ml.py's own vault export | — |
 | ML v2 logistic | ml2.json page_model coefficients (fit 2010-2025); static = fit.pkl's static LR coefficients (fit 2010-2023) | as frozen | tools/ml2.py's own table builders with the parse cutoff moved to 2026-11-01; rating features from the frozen build's code and parameters (commit b9ac8d7) | refit of the production spec on pre-2026 rows equals page_model to 8.9e-16; static equals ml2.json 2024-25 ml2_lr to 5e-5 (4-dp rounding); rating features equal the frozen ratings_all.pkl exactly |
@@ -187,9 +187,12 @@ slope has point < 1.15 and a 95% CI that includes 1):
 
 **Rule state: NOT TRIGGERED. Production no-line settings stay h 1.5 with their temperature. Rule (b) (forward
 ledger, trailing 200 bouts, two consecutive quarters) remains the only live trigger.** The column was named in
-<vault>/audit1/PRECOMMIT_drift_column.txt (sha256 4f0c119b4f32c91c, written 4:57:38 am UTC, before any vault-derived
-file existed: the first, the learned stat-line rates, was written at 5:00:51 am, and the first winner probability
-at about 5:04 am). The readings agree, so the choice of column does not change the state.
+PRECOMMIT_drift_column.txt (sha256 4f0c119b4f32c91c), written at 4:57:38 am UTC into the scratchpad's audit1/ folder
+(file time 04:57:38; the text carries the same stamp). An identical copy (same sha256) was placed in <vault>/audit1/ at
+5:26:47 am, so that copy's file time is not the evidence. Both times come from file timestamps only: the note was never
+committed to git. 4:57:38 is before any vault-derived file existed. The first, the learned stat-line rates, was written
+at 5:00:51 am, and the first winner probabilities (evalv v4) at 5:05:33 am, by the surviving files. The readings agree,
+so the choice of column does not change the state.
 
 **Close edge**: absent (+0.0069 [-0.0013, +0.0158]; the 2024-25 claim was -0.0060 to -0.0096). Pre-registered
 consequence (plan 4.2): the ledger and page copy say "level with the market"; cycle 1 keeps its plan.
@@ -359,3 +362,92 @@ f6709d52292ccc83. Output: score_vault.json 934a98c558210aa5.
   features up to 0.33 logit apart); a throwaway git worktree was used and removed.
 - **Not run:** a card-by-card walk-forward inside 2026 (no per-card refit is part of any frozen model); stat-line
   distribution coverage (statlines layer; not in the audit-1 scope).
+- **Openers (added by the recomputation).** Seven vault openers are isolated: BFO's opening line sits on the other
+  side of 50% from every later sparkline point, which agree with the close. Two of them are clear reversals: Demopoulos
+  vs Jauregui (open -850 / +596, then about +530 / -800 from the next point on) and Baraniewski vs Tafa (open +220, then
+  -250 or shorter). The frozen open definition (market.py p_novig_open) is what audit 1 scores, so no number above
+  changes. For description only, without those 7 fights (n 362): open 0.6100 vs close 0.6029; open minus close +0.0071
+  [-0.0141, +0.0270]; production stack + open minus open +0.0063 [-0.0116, +0.0242]; ML v2 open stack (2019-2023) minus
+  open +0.0010 [-0.0120, +0.0148]. The open-regime reading "level with the market" holds either way. The forward
+  ledger's open regime feeds the line captured at prediction time, not BFO's opener field.
+
+## Recomputation log
+
+Sat Nov 7, 2026, 5:36 to 6:05 am UTC. An independent recomputation of this report's headline rows, under the same
+opening: the vault was already open for audit 1, so this is not a second opening. Nothing was tuned, and no model,
+variant or fit was added. Code: tools/vault_audit1/recompute_audit1.py. It shares no scoring code with score_vault.py
+or models_vault.js. The engines were rerun with the frozen tools into <vault>/audit1/recompute/vroot/, and the output
+is <vault>/audit1/recompute/recompute_audit1.json. Everything ran at nice 5 on 3 or fewer workers.
+
+**What was rebuilt, and from what.**
+- **Close:** from market_vault's per-book American prices. The rebuild re-implements market.py's consensus rule
+  (sportsbooks only; drop a book with overround outside 0.98-1.25 or a no-vig p more than 0.15 from the median), takes
+  the mean decimal price per side, then applies the power de-vig. **Close (multiplicative) and open:** from the stored
+  American pairs.
+- **Elo:** from backtest_vault's pre-fight Elo.
+- **ML v2 logistic:** all 81 antisymmetric terms evaluated from the raw A_ / B_ side columns of the vault feature table,
+  using ml2.json's term definitions and src/ml/ml2.js semantics. Production uses the page_model coefficients; static uses
+  fit.pkl lr|static.
+- **Stacks:** the nine ML v2 stacks, the production stacks (close, open, no line) and the MoE page no-line stack, each
+  with its own linear-pattern and temperature evaluation.
+- **feat_lr expert:** re-implemented in Python from moe_page.json `feat`.
+- **Engines:** inputs rebuilt (learned rates and SOS pairs come out identical), then evalv rerun for v4, v5 and v5.0.1
+  (seed 1, 300 sims per order).
+- **Scoring:** a separate bootstrap (seed 4242, 2,000 card resamples, percentile CIs) and a separate slope solver.
+
+**Result: no headline number changes.**
+
+| quantity | reproduced |
+|---|---|
+| rebuilt inputs vs the audit's per-fight values | close, close (multiplicative) and open within 5e-5 (4-dp storage); Elo, ML v1, elo_sig, market rating and engine v4 identical; ML v2 production and static within 5e-7 (6-dp storage); feat_lr and the production / MoE no-line stacks within 3e-16; with-line stacks within 5.4e-5 |
+| engines | per-fight pA and cells identical to the audit's (max difference 0); engine and params sha256 equal version_history.json |
+| winner rows (log loss, Brier, accuracy, slope) of close, close (multiplicative), open, Elo, ML v1, ML v2 production / static, the nine ML v2 stacks, the three production stacks, MoE no-line, engines v4 / v5 / v5.0.1 | every point equal at the printed precision (largest gaps: log loss 3.5e-6, slope 3e-5). CI endpoints differ only by bootstrap-draw noise: at most 0.004 on log loss, 0.0025 on paired differences, 0.042 on slopes (Elo's very wide slope interval) |
+| 19 paired differences, including v5 / v5.0.1 minus v4 (+0.0004 / -0.0027), the close edge (+0.0069 [-0.0015, +0.0155] here) and the ML v2 stacks against the line | every point equal at 4 dp; no CI changed side of 0 |
+| 7-bin, v4 / v5 / v5.0.1 | 1.6292 / 1.6013 / 1.6035, recomputed from evalv's b7 (the audit used the cells); v5 minus v4 -0.02785 here vs -0.027852 from the cells (a rounding edge: the report's -0.0279 is right) |
+| drift rule 6.5.1(a) | primary 0.561 [0.386, 0.773] here vs [0.380, 0.774]. None of the 2,000 resamples reaches 1 (the highest is 0.975), so **NOT TRIGGERED** is confirmed. The secondaries keep their states: ML v2 production no-line 0.684 [0.465, 0.939], MoE 0.547 [0.373, 0.757], and the reference ML v2 2019-2023 no-line 0.804 [0.536, 1.114] |
+
+**Checks.**
+- **Joins.** 373 unique ids. Every one is in market_vault, ml_vault and ratings_vault with the same A / B slugs. Every
+  model scores all 369 decisive fights; the 3 draws and the no-contest are excluded from winner metrics, and 7-bin uses
+  the 372 fights with an outcome. Every fight has both men with at least one prior UFC bout (minimum n 1). No vault
+  fight is unscored or unexplained.
+- **Corner symmetry.**
+  - The market de-vigs, Elo and feat_lr are antisymmetric by construction.
+  - ML v2: swapping the corners gives a logit sum of 4e-16, and the term set has no intercept.
+  - Stacks: swapping every expert gives p + p_swap - 1 within 4e-16.
+  - Engines: tools/evalv.js simulates both corner orders with common random numbers, maps each simulated corner back,
+    and pools the two orders.
+- **No refit on 2026.**
+  - ML v2 page_model's n_train 7,093 equals the decisive 2010-2025 rows of the feature table exactly; with 2026 it would
+    be 7,568.
+  - The production stack's n_train 2,809 equals the decisive dev fights from 2019-01-01 to 2025-12-13 (the dev file
+    ends there).
+  - Other fits: mlrates train_years 2010-2025; forward_models fit 2023 and earlier; moe_page `coef` fit 2010-2025;
+    ml_vault's lr_refit refit on fights before 2026.
+  - Every frozen model file was last committed on Nov 6, before the audit, and matches the section 8 hashes; so do the
+    vault input files.
+  - The ML v2 rating features equal the frozen ratings_all.pkl (max difference 2e-16).
+- **Closing lines are pre-fight.**
+  - All 1,874 stored per-book quotes equal data/raw/odds/bfo_event_lines.csv in the A / B orientation (0 mismatches).
+  - No exchange price is in any close. The raw pages hold 87 Kalshi / Polymarket quotes at 2,000 or beyond in American
+    odds, the post-result kind, and all are excluded.
+  - Every kept sportsbook quote lies inside BFO's fighter-page closing range.
+  - BFO's last sparkline point agrees with the book mean: median gap 0.0018 in implied probability, maximum 0.043.
+  - The consensus rule dropped one quote as stale or in-play: FanDuel +270 / -380 on Dom Mar Fan vs Kody Steele, where
+    the other four books were +125 to +130.
+  - One fight (Pitbull vs Choi) has no event-page rows and uses BFO's closing-range midpoint, as market.py does.
+  - The close's 0.6003 is in the normal range for closing lines.
+  - No close was missing, so nothing was fetched from BFO historical pages.
+
+**Corrections made in place (text only; no number changed).**
+1. Section 0, close / open row: "5-6 books" was wrong. The row now gives the actual per-fight book counts, the two
+   fights without a full book set, and the one dropped quote.
+2. Section 3, precommit sentence: the 04:57:38 file is the scratchpad's audit1/PRECOMMIT_drift_column.txt. The
+   <vault>/audit1/ copy is identical but was copied at 5:26:47 am. The evidence is file timestamps, not git. The first
+   winner probabilities were written at 5:05:33 am, not "about 5:04 am". The ordering claim holds.
+3. Deviations and caveats: added the opener note (7 isolated BFO openers, descriptive sensitivity, no number replaced).
+
+**Noted, not changed.** evalv's output metadata still says "ml: out-of-fold rates (data/derived/mlrates_oof.json)".
+That label was not substituted; the rates actually used are mlrates_vault.json, from the production mlrates.json fit
+2010-2025, as rebuilding them confirmed. No number in data/derived/version_history.json changes, so its vault_audits
+entry stays as written.
