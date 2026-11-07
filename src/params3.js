@@ -675,7 +675,10 @@
         // within-fight output noise refit to the real fights' dispersion (v5 review: 5.0.0's per-fighter noise was too large and too little
         // of it shared, which flattened win probabilities; tools/v501_dynfit.js on 2019-2023 train fights, research/v501_dynamics_noise.md).
         // 5.0.0: formOut 0.21, arSd 0.32, arPhi 0.85, formPace 0.45, roundPace 0.10, formAcc 0.43
-        dynNoise: { dyn: { formOut: 0.15, arSd: 0.24, arPhi: 0.6, formPace: 0.42, roundPace: 0.15, formAcc: 0.40 } }
+        dynNoise: { dyn: { formOut: 0.15, arSd: 0.24, arPhi: 0.6, formPace: 0.42, roundPace: 0.15, formAcc: 0.40 } },
+        // the ONE joint level pass redone on top of dynNoise (tools/v5_calB_levels.js fit, TRAIN 2019-2023; data/derived/v501_levels.json),
+        // with dyn.outLevel re-matched first so the realised sig landed per minute stays at 5.0.0's (less noise raised it 1.9%)
+        levels: { dyn: { outLevel: 1.0201 } }
       }
     },
 
