@@ -710,7 +710,6 @@ def cond_from_joint(J):
 
 
 def round_shapes_from_H(H):
-    import numpy as np
     _, R = cond_from_joint(H)
     return R
 
@@ -1104,7 +1103,6 @@ def loyo_folds(A, years=PROP_YEARS):
 def score_table(A, mask, joints, ref, B=2000, seed=11):
     """Mean losses with event-cluster CIs on `mask`, paired differences against `ref`."""
     import methodround as MR
-    import numpy as np
     L = {k: losses(P[mask], A["y"][mask]) for k, P in joints.items()}
     bt, st = MR.cluster_bootstrap(L, A["event"][mask], B=B, seed=seed)
     out = {"n": int(mask.sum()), "means": bt, "paired_vs_" + ref: {}}
