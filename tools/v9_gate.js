@@ -97,7 +97,7 @@ if (!isMainThread) {
             if (C.levels && !(m.level && m.level.applied)) throw new Error("levels not applied for " + f.id);
             if (!C.levels && m.level) throw new Error("levels ran with the flag off for " + f.id);
             if (C.judgeWF && !(m.judgeWF && m.judgeWF.src === "byYear")) throw new Error("judgeWF weights not applied for " + f.id);
-            if (C.judgeWF && lvl && lvl.r108 != null && !(m.judgeWF.t108 > 0)) throw new Error("judgeWF 10-8 threshold not applied for " + f.id);
+            if (C.judgeWF && lvl && lvl.r108 != null && P.judgeWF && P.judgeWF.r108 && !(m.judgeWF.t108 > 0)) throw new Error("judgeWF 10-8 threshold not applied for " + f.id);
             if (!C.judgeWF && m.judgeWF) throw new Error("judgeWF ran with the flag off for " + f.id);
             if (C.format && !m.format) throw new Error("format not applied for " + f.id);
             if (o === 0) used = { level: m.level ? m.level.g : null, t108: m.judgeWF ? m.judgeWF.t108 : null, jwYear: m.judgeWF ? m.judgeWF.year : null, format: m.format || null };
