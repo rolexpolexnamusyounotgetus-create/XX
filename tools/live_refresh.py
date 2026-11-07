@@ -288,7 +288,6 @@ def greco_stat_rounds(raw_dir, events):
 def espn_board(date_iso, cache_dir):
     """ESPN scoreboard competitions for an event date (the date and the next UTC day): list of dicts, or None when
     neither page could be read."""
-    F = fl()
     comps, read = [], 0
     for d in sorted({date_iso, (dt.date.fromisoformat(date_iso) + dt.timedelta(days=1)).isoformat()}):
         p = os.path.join(cache_dir, "espn_%s.json" % d)
@@ -298,17 +297,25 @@ def espn_board(date_iso, cache_dir):
             read += 1
         except Exception:
             continue
-        for ev in j.get("events", []):
-            for c in ev.get("competitions", []):
-                cs = c.get("competitors") or []
-                st = (c.get("status") or {})
-                if len(cs) != 2:
-                    continue
-                comps.append({"event": ev.get("name"), "names": [F.norm_name(x["athlete"]["displayName"]) for x in cs],
-                              "winner": [bool(x.get("winner")) for x in cs], "completed": bool((st.get("type") or {}).get("completed")),
-                              "period": st.get("period"), "clock": st.get("displayClock"),
-                              "rounds": ((c.get("format") or {}).get("regulation") or {}).get("periods"), "page": d})
+        comps += parse_espn(j, d)
     return comps if read else None
+
+
+def parse_espn(j, page):
+    """Competitions of one ESPN scoreboard JSON page (untrusted data: read as JSON only)."""
+    F = fl()
+    out = []
+    for ev in j.get("events", []):
+        for c in ev.get("competitions", []):
+            cs = c.get("competitors") or []
+            st = (c.get("status") or {})
+            if len(cs) != 2:
+                continue
+            out.append({"event": ev.get("name"), "names": [F.norm_name(x["athlete"]["displayName"]) for x in cs],
+                        "winner": [bool(x.get("winner")) for x in cs], "completed": bool((st.get("type") or {}).get("completed")),
+                        "period": st.get("period"), "clock": st.get("displayClock"),
+                        "rounds": ((c.get("format") or {}).get("regulation") or {}).get("periods"), "page": page})
+    return out
 
 
 def _tokens(n):
@@ -363,12 +370,13 @@ def two_source(bout, comps, stat_rounds):
     return None
 
 
-def verify_new(raw_dir, until, cache_dir, offline_espn=None):
-    """Two-source check of every bout after the pinned snapshot -> (as_of, kept bouts, held-out bouts, events log)."""
-    bouts = greco_new_bouts(raw_dir, PIN_SNAPSHOT, until)
+def verify_new(raw_dir, until, cache_dir, offline_espn=None, after=PIN_SNAPSHOT):
+    """Two-source check of every bout dated in (after, until] -> (as_of, kept bouts, held-out bouts, events log).
+    offline_espn: {event date: parsed competitions} instead of fetching (tests)."""
+    bouts = greco_new_bouts(raw_dir, after, until)
     events = sorted({(b["date"], b["event"]) for b in bouts})
     stat_rounds = greco_stat_rounds(raw_dir, {e for _, e in events})
-    as_of, kept, held, log = PIN_SNAPSHOT, [], [], []
+    as_of, kept, held, log = after, [], [], []
     stop = False
     for d, ev in events:
         evb = [b for b in bouts if b["event"] == ev]
@@ -747,8 +755,9 @@ def find_close(bout, lines, names):
     return None, None
 
 
-def market_continue(pinned, new_bouts, as_of, lines, names_by_fid):
-    """market.json ratings continued from the stored state (README v4.4 section 1; audit section 4.1)."""
+def market_continue(pinned, new_bouts, as_of, close_for):
+    """market.json ratings continued from the stored state (README v4.4 section 1; audit section 4.1). close_for(bout)
+    -> (p_A or None, source record or None): the pre-fight closing line oriented to the bout's A."""
     P = pinned["eval"]["market_rating"]["params"]
     sig_m, tau, v0, mu0, kappa = P["sig_m"], P["tau_per_year"], P["v0"], P.get("mu0", 0.0), P["kappa_result"]
     snap = dt.date.fromisoformat(pinned["eval"]["market_rating"]["live_snapshot_stream_to"])
@@ -776,7 +785,7 @@ def market_continue(pinned, new_bouts, as_of, lines, names_by_fid):
             virtual.pop(k, None)
             touched.add(k)
         i, j = e["A"], e["B"]
-        p, L = find_close(e, lines, names_by_fid.get(e["fid"], ["", ""]))
+        p, L = close_for(e)
         y = {"A": 1.0, "B": 0.0, "D": 0.5}.get(e["winner"])
         m = mu[i] - mu[j]
         s2 = var[i] + var[j]
@@ -802,7 +811,7 @@ def market_continue(pinned, new_bouts, as_of, lines, names_by_fid):
         n[j] += 1
         log.append({"fid": e["fid"], "date": e["date"], "A": i, "B": j, "winner": e["winner"],
                     "close_p_a": None if p is None else round(p, 4),
-                    "close_source": None if L is None else "odds timeline last pre-start capture %s (%s)" % (L["snapshot"], L["captured_utc"]),
+                    "close_source": None if L is None else "odds timeline last pre-start capture %s (%s)" % (L.get("snapshot"), L.get("captured_utc")),
                     "update": "line + result" if p is not None else "result only (no pre-fight capture)"})
     out = {}
     end = dt.date.fromisoformat(as_of)
@@ -853,7 +862,7 @@ def build_set(raw_dir, until, work, offline_espn=None, timeline=None):
     names = {}
     for b in kept:
         names[b["url"].rstrip("/").split("/")[-1]] = b["names"]
-    mk, minfo = market_continue(pm, side["new_bouts"], as_of, lines, names)
+    mk, minfo = market_continue(pm, side["new_bouts"], as_of, lambda e: find_close(e, lines, names.get(e["fid"], ["", ""])))
     pm2 = json.loads(json.dumps(pm))
     pm2["ratings"] = mk
     guarded_write(os.path.join(work, "out", "market_live.json"), dumps_compact(pm2))

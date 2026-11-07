@@ -174,7 +174,7 @@ def ledger_rows(pred_dir):
                 y = 1.0 if r.get("winner") == "a" else 0.0
                 trig.append({"date": doc["date"], "p": b["p_a_noline"], "y": y})
                 moe = (b.get("models") or {}).get("moe_noline")
-                moe_p = (moe.get("p_a") if isinstance(moe, dict) else moe) if moe is not None else (b["p_a_noline"] if not ver.startswith("fwd-4.3") else None)
+                moe_p = (moe.get("p_a") if isinstance(moe, dict) else moe) if moe is not None else (b["p_a_noline"] if not ver.startswith(("fwd-4.3", "fwd-4.4")) else None)
                 if moe_p is not None:
                     track.append({"date": doc["date"], "p": moe_p, "y": y})
             pm, pd_, pfr = b.get("p_method"), b.get("p_distance"), b.get("p_finish_round")

@@ -21,7 +21,9 @@
    mixed over the length grid. A debutant is a training debut side: no UFC sums, n 0, Elo 1500, no KO losses, no home
    division, unknown layoff; date of birth, height, reach and stance from his entry (ufcstats tott, else Sherdog).
    p<q> = smallest integer y with mixture CDF(y) >= q; blend_mean = StatDist base rate (the mlrates + embedding blend)
-   x the grid's expected minutes. No corner input: swapping a and b (and the two sides' S cells) swaps the lines. */
+   x the grid's expected minutes. No corner input: swapping a and b (and the two sides' S cells) swaps the lines.
+   --live-dir <dir> (forward model v4.4): fighters.json is read from <dir>/fighters_live.json (tools/live_refresh.py);
+   meta.live_dir says so. Without it the output is byte-identical to the tool before v4.4 (tests/test_forward_v44.js). */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -41,7 +43,9 @@ const r5 = (x) => (x == null || !isFinite(x)) ? null : Math.round(x * 1e5) / 1e5
 
 const STAT_KEYS = ["sig_lnd", "sig_att", "td_lnd", "td_att", "ctrl", "kd", "sub_att"];
 const input = JSON.parse(fs.readFileSync(args[0], "utf8"));
-const FJ = rd("data/derived/fighters.json");
+const LIVE_DIR = opt("--live-dir", null);                 // fwd-4.4: live roster (tools/live_refresh.py)
+const FJ_PATH = LIVE_DIR ? path.join(path.relative(ROOT, path.resolve(ROOT, LIVE_DIR)), "fighters_live.json") : "data/derived/fighters.json";
+const FJ = rd(FJ_PATH);
 const MLM = MLRates.load(rd("data/derived/mlrates.json"));
 const EMB = FE.load(rd("data/derived/embed_model.json"));
 const OA = rd("data/derived/oppadj.json").roster || {};
@@ -80,9 +84,10 @@ const out = { meta: {
   mlrates_sha256_16: sha(path.join(ROOT, "data/derived/mlrates.json")),
   embed_model_sha256_16: sha(path.join(ROOT, "data/derived/embed_model.json")),
   oppadj_sha256_16: sha(path.join(ROOT, "data/derived/oppadj.json")),
-  fighters_sha256_16: sha(path.join(ROOT, "data/derived/fighters.json")),
+  fighters_sha256_16: sha(path.join(ROOT, FJ_PATH)),
   statlines_built: (rd("data/derived/statlines.json").meta || {}).built || null,
   debutant_files: DEBUT_FILES.map((f) => "data/predictions/" + f) }, bouts: [] };
+if (LIVE_DIR) out.meta.live_dir = path.relative(ROOT, path.resolve(ROOT, LIVE_DIR));
 
 for (const b of input.bouts) {
   const R = b.rounds === 5 ? 5 : 3;

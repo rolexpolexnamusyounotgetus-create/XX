@@ -73,6 +73,14 @@ Forward model v4.3 (data/predictions/README.md, "Forward model v4.3 (Nov 7, 2026
     secondary models.moe_noline and is p_a_noline's fallback (flag noline_fallback); p_a_noline_source records which.
     A bout without a line therefore gets p_a = the ML v2 no-line stack. Debut bouts: unchanged (p_a_noline = seeded Elo).
   - Pinned inputs: FWD43_PINNED (fwd-4.2's table with src/ml/ml2.js and tools/methodround_model.js re-pinned).
+
+Forward model v4.4 (data/predictions/README.md, "Forward model v4.4 (Nov 7, 2026)", pre-registered before this code)
+  - Supersedes fwd-4.3 for events dated 2026-11-14 or later (--fwd auto); fwd-4.1 / 4.2 / 4.3 paths unchanged and still
+    write tool 1.1 / 1.2 / 1.3 (tests/test_forward_v44.js, golden fixtures).
+  - fwd-4.3's models, rules and columns exactly; the roster-level inputs come from data/derived/live/ (tools/live_refresh.py:
+    fighters, market, ratings, ml, ml2, methodround) when tools/live_refresh.py check_live passes at prediction time,
+    else every one falls back to fwd-4.3's pinned file (model.live_inputs.fallback, flag live_inputs_fallback on every
+    bout). The manifest's path and sha256 and each live file's sha256 go into model.live_inputs.
 """
 import argparse
 import csv
@@ -101,6 +109,7 @@ DEBUT_ELO = 1500.0                        # tools/build_db.py start rating
 TOOL = "tools/forward_ledger.py 1.1"     # the fwd-4.1 path writes this exact string (byte-identical files)
 TOOL_42 = "tools/forward_ledger.py 1.2"  # tool version of fwd-4.2 files
 TOOL_43 = "tools/forward_ledger.py 1.3"  # tool version of fwd-4.3 files
+TOOL_44 = "tools/forward_ledger.py 1.4"  # tool version of fwd-4.4 files
 # Forward model v4.1 (pre-registered in data/predictions/README.md): p_a = the first of these models-block entries that
 # exists for the bout, when a line was captured before the lock; the ML v2 open stack (weights fit 2019-2023 on opening
 # lines) is the primary, the rest are fallbacks for a fighter missing from the ML v2 roster.
@@ -134,7 +143,7 @@ LEDGER_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})_([a-z0-9-]+?)(?:_v(\d+))?\.json$")
 # ---- forward model v4.2 (data/predictions/README.md "Forward model v4.2 (Nov 6-7, 2026)")
 # (first event date, version) as the README assigns them, later rows win; before the first: 4.1. fwd-4.3 (pre-registered
 # Nov 7, 2026) supersedes fwd-4.2 from the same date, before any fwd-4.2 file was written.
-FWD_EFFECTIVE = (("2026-11-14", "4.2"), ("2026-11-14", "4.3"))
+FWD_EFFECTIVE = (("2026-11-14", "4.2"), ("2026-11-14", "4.3"), ("2026-11-14", "4.4"))
 MODEL_VERSION_42 = "fwd-4.2"
 FWD42_ENGINE_DIR = "versions/v4"          # frozen engine 4.0.0 / params 4.0.0-selfcal-pre2024 (= Vegas 124's engine)
 # the README table "Files and hashes fwd-4.2 reads" (sha256, first 16 hex); a different hash refuses a fwd-4.2 file
@@ -175,6 +184,30 @@ MODEL_DEFS_43 = dict(
     moe_noline="scored secondary (fwd-4.3): the MoE stack without a line (= stack_noline), fwd-4.1 / fwd-4.2's p_a_noline "
                "on bouts without a debutant, and p_a_noline's fallback; the series drift rule 6.5.1(b) tracks beside "
                "p_a_noline")
+
+
+# ---- forward model v4.4 (data/predictions/README.md "Forward model v4.4 (Nov 7, 2026)"): fwd-4.3 on live inputs
+MODEL_VERSION_44 = "fwd-4.4"
+FWD44_CODE = FWD42_CODE + ("tools/live_refresh.py",)
+
+
+def live_inputs_44(lock, live_dir=None):
+    """README v4.4 section 4: the live set when tools/live_refresh.py check_live passes, else the fallback record.
+    live_dir: data/derived/live unless a dry run's --live-dir says otherwise (tests)."""
+    import sys
+    if HERE not in sys.path:
+        sys.path.insert(0, HERE)
+    import live_refresh as LR
+    d = os.path.abspath(live_dir) if live_dir else LR.LIVE_DIR
+    ok, why, info = LR.check_live(d, lock)
+    rec = {"used": bool(ok), "fallback": not ok, "reason": why, "dir": os.path.relpath(d, ROOT),
+           "readme_section": "data/predictions/README.md, Forward model v4.4 (Nov 7, 2026), sections 1-4",
+           "live_set": {k: {"file": "data/derived/live/" + v["file"], "replaces": v["pinned"],
+                            "live_paths": [".".join(x) for x in v["paths"]]} for k, v in LR.LIVE.items()},
+           "not_live": {k: {"file": v, "why": "no roster builder in tools/live_refresh.py 1.0: read at its fwd-4.3 pin"}
+                        for k, v in LR.NOT_LIVE.items()}}
+    rec.update(info)
+    return rec
 
 
 def fwd_for_date(date):
@@ -389,11 +422,12 @@ def cmd_predict(args):
         raise SystemExit("refused: data/predictions/README.md assigns fwd-%s to events dated %s (asked for fwd-%s); a "
                          "ledger file is written under the pre-registered version only (--dry-run may compare)"
                          % (assigned, ev["date"], fwd))
-    v42 = fwd in ("4.2", "4.3")          # the fwd-4.2 path (fwd-4.3 keeps all of it and changes p_a_noline)
+    v42 = fwd in ("4.2", "4.3", "4.4")   # the fwd-4.2 path (fwd-4.3 keeps all of it and changes p_a_noline)
+    v43 = fwd in ("4.3", "4.4")          # the fwd-4.3 rules (fwd-4.4 = fwd-4.3 on live inputs)
     engine_dir = args.engine_dir or (FWD42_ENGINE_DIR if v42 else "src")
     mism = []
     if v42:
-        mism = pinned_mismatches(FWD43_PINNED if fwd == "4.3" else FWD42_PINNED)
+        mism = pinned_mismatches(FWD43_PINNED if v43 else FWD42_PINNED)
         if os.path.normpath(engine_dir) != os.path.normpath(FWD42_ENGINE_DIR):
             mism.append({"file": "--engine-dir", "pinned": FWD42_ENGINE_DIR, "found": engine_dir})
         if mism and not args.dry_run:
@@ -419,7 +453,14 @@ def cmd_predict(args):
         supersedes = os.path.basename(last)
     snapt = latest_snapshot(PRED_DIR if args.odds_dir is None else args.odds_dir, lock, args.odds)
     snap = snapt[2] if snapt else None
-    fj = jload(os.path.join(DERIVED, "fighters.json"))
+    if args.live_dir and not args.dry_run:
+        raise SystemExit("refused: --live-dir is for dry runs; a fwd-4.4 ledger file reads data/derived/live (README v4.4)")
+    live = live_inputs_44(lock, args.live_dir) if fwd == "4.4" else None   # README v4.4: live inputs, else fwd-4.3's pins
+    if live is not None:
+        print("fwd-4.4 inputs: %s" % ("live, as of %s (manifest sha256 %s)" % (live["as_of"], live["manifest_sha256"][:16])
+                                      if live["used"] else "FALLBACK to fwd-4.3's pinned inputs: %s" % live["reason"]))
+    live_dir = live["dir"] if (live and live["used"]) else None
+    fj = jload(os.path.join(ROOT, live_dir, "fighters_live.json") if live_dir else os.path.join(DERIVED, "fighters.json"))
     roster = fj["fighters"]
     bouts_in, rows = [], []
     for b in sorted(ev["bouts"], key=lambda x: x.get("order", 99)):
@@ -454,6 +495,8 @@ def cmd_predict(args):
             cmd += ["--moe", os.path.relpath(stack_file, ROOT)]
         if v42:
             cmd += ["--fwd", fwd]
+        if live_dir:
+            cmd += ["--live-dir", live_dir]
         res = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT, check=True)
     finally:
         os.unlink(tmp)
@@ -488,6 +531,8 @@ def cmd_predict(args):
                 flags.append("weight_change_" + side)
         if b.get("prior_ufc_meetings"):
             flags.append("rematch")
+        if live is not None and not live["used"]:
+            flags.append("live_inputs_fallback")
         debut = r["debut_a"] or r["debut_b"]
         hl, hn = r.get("head_line"), r.get("head_noline")
         p_primary, src_primary = None, None
@@ -501,7 +546,7 @@ def cmd_predict(args):
         else:
             p_noline = r["stack_noline"]["p"] if r.get("stack_noline") else None
             src_no = "moe_stack"
-            if fwd == "4.3":
+            if v43:
                 # README "Forward model v4.3": the ML v2 no-line stack (weights fit 2019-2023); the MoE stack is its
                 # fallback when a fighter is missing from the ML v2 roster
                 if models.get(NOLINE_PRIMARY) is not None:
@@ -599,7 +644,7 @@ def cmd_predict(args):
             else:
                 cells = cells_from_profile(pm, ko_prof, sub_prof)
             extra["_cells"] = cells
-            if fwd == "4.3":
+            if v43:
                 extra["p_a_noline_source"] = src_no
         out_bouts.append({
             "bout_id": bid, "order": b.get("order"), "segment": b.get("segment"),
@@ -618,7 +663,7 @@ def cmd_predict(args):
         if extra is not None:
             out_bouts[-1].update(extra)
     if v42:
-        sl = run_statlines(ev["date"], bouts_in, out_bouts, engine_dir)
+        sl = run_statlines(ev["date"], bouts_in, out_bouts, engine_dir, live_dir)
         for ob in out_bouts:
             ob.pop("_cells", None)
             ob["statlines"] = sl["bouts"][ob["bout_id"]]
@@ -663,13 +708,17 @@ def cmd_predict(args):
         "bouts": out_bouts}
     if v42:
         apply_model_42(doc, jm, sl["meta"], args, mism)
-    if fwd == "4.3":
+    if v43:
         apply_model_43(doc, jm, sl["meta"], args, mism)
+    if fwd == "4.4":
+        apply_model_44(doc, jm, sl["meta"], args, mism, live)
     print_table(doc)
     if v42:
         print_table_42(doc)
-    if fwd == "4.3":
+    if v43:
         print_table_43(doc)
+    if fwd == "4.4":
+        print_table_44(doc)
     if args.dry_run:
         if args.dry_out:
             with open(args.dry_out, "w") as fh:
@@ -686,7 +735,7 @@ def cmd_predict(args):
     print("wrote %s (read-only; commit and push it before %s)" % (os.path.relpath(target, ROOT), iso(lock)))
 
 
-def run_statlines(date, bouts_in, out_bouts, engine_dir):
+def run_statlines(date, bouts_in, out_bouts, engine_dir, live_dir=None):
     """tools/forward_statlines.js on every bout's primary method cells by round (fwd-4.2 stat-line block)."""
     jb = []
     for bi, ob in zip(bouts_in, out_bouts):
@@ -696,8 +745,9 @@ def run_statlines(date, bouts_in, out_bouts, engine_dir):
         json.dump({"date": date, "bouts": jb}, fh)
         tmp = fh.name
     try:
-        res = subprocess.run(["node", os.path.join(HERE, "forward_statlines.js"), tmp, "--engine-dir", engine_dir],
-                             capture_output=True, text=True, cwd=ROOT, check=True)
+        res = subprocess.run(["node", os.path.join(HERE, "forward_statlines.js"), tmp, "--engine-dir", engine_dir]
+                             + (["--live-dir", live_dir] if live_dir else []), capture_output=True, text=True, cwd=ROOT,
+                             check=True)
     finally:
         os.unlink(tmp)
     J = json.loads(res.stdout)
@@ -780,6 +830,38 @@ def apply_model_43(doc, jm, slm, args, mism):
                                            "vault (plan 6.5.2); its clean test is this ledger"}
     M["fwd"] = "4.3"
     M["tool"] = TOOL_43
+
+
+def apply_model_44(doc, jm, slm, args, mism, live):
+    """The model block of a fwd-4.4 file (README "Forward model v4.4"): fwd-4.3's block (already applied) on live inputs,
+    with the live-input record (manifest path and sha256, as_of, live file hashes, fallback and its reason)."""
+    M = doc["model"]
+    tag = ("live roster inputs as of %s (data/derived/live, manifest sha256 %s)" % (live["as_of"], live["manifest_sha256"][:16])
+           if live["used"] else "fallback: fwd-4.3 pinned inputs (%s)" % live["reason"])
+    M["version"] = MODEL_VERSION_44 + M["version"][len(MODEL_VERSION_43):] + "; " + tag
+    M["p_a"] = M["p_a"].replace("forward model v4.3 (data/predictions/README.md)",
+                                "forward model v4.4 (data/predictions/README.md; fwd-4.3's rules on live inputs)", 1)
+    M["inputs"] = ("README v4.4: fighters, market, ratings, ml, ml2 and methodround from data/derived/live/ (tools/live_refresh.py, "
+                   "frozen parameters, results through as_of); every other input at its fwd-4.3 pin" if live["used"] else
+                   "README v4.4 fallback: every input at its fwd-4.3 pin (the live set failed check_live: %s)" % live["reason"])
+    M["live_inputs"] = live
+    M["preregistration"] = {"readme_section": "data/predictions/README.md, Forward model v4.4 (Nov 7, 2026)",
+                            "models_and_rules": "fwd-4.3's (README Forward model v4.3), unchanged",
+                            "pinned_inputs": FWD43_PINNED, "pinned_inputs_ok": not mism, "pinned_mismatches": mism or None,
+                            "pinned_note": "fighters, market, ratings, ml, ml2 and methodround are read from data/derived/live "
+                                           "when model.live_inputs.used; their pinned copies above must still match for the "
+                                           "fallback",
+                            "audit1_flag": M["preregistration"].get("audit1_flag")}
+    M["code_sha256_16"] = {p: sha16(os.path.join(ROOT, p)) for p in FWD44_CODE}
+    M["fwd"] = "4.4"
+    M["tool"] = TOOL_44
+
+
+def print_table_44(doc):
+    L = doc["model"]["live_inputs"]
+    print("\nfwd-4.4 inputs: %s" % ("live as of %s, manifest %s sha256 %s, Greco1899 %s" % (
+        L["as_of"], L["manifest"], L["manifest_sha256"][:16], (L.get("greco_commit") or "local")[:12]) if L["used"]
+        else "FALLBACK (fwd-4.3 pinned inputs): %s" % L["reason"]))
 
 
 def print_table_43(doc):
@@ -1509,11 +1591,13 @@ def main():
     p.add_argument("--odds-dir", default=None)
     p.add_argument("--sims", type=int, default=2000, help="engine sims per corner order (default 2000)")
     p.add_argument("--engine-dir", default=None,
-                   help="engine folder (default: src for fwd-4.1; fwd-4.2 and fwd-4.3 are pinned to versions/v4)")
-    p.add_argument("--fwd", choices=["auto", "4.1", "4.2", "4.3"], default="auto",
+                   help="engine folder (default: src for fwd-4.1; fwd-4.2 to fwd-4.4 are pinned to versions/v4)")
+    p.add_argument("--fwd", choices=["auto", "4.1", "4.2", "4.3", "4.4"], default="auto",
                    help="forward model version; auto = the one data/predictions/README.md assigns to the event date "
-                        "(fwd-4.3 from 2026-11-14, fwd-4.1 before); writing under another version is refused")
+                        "(fwd-4.4 from 2026-11-14, fwd-4.1 before); writing under another version is refused")
     p.add_argument("--headline", choices=["line", "noline"], default="line")
+    p.add_argument("--live-dir", default=None, help="fwd-4.4 dry runs only: read the live inputs from this folder instead "
+                                                    "of data/derived/live (tests)")
     p.add_argument("--stack", choices=["auto", "blindtest", "page"], default="auto",
                    help="MoE weights: blindtest = data/derived/blindtest_stack.json (refit with the current engine, blind-"
                         "tested by tools/blindtest.py), page = moe_page.json; auto = blindtest when the file exists")
