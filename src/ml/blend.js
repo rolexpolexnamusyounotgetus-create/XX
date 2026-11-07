@@ -846,7 +846,9 @@
       if (BT && !opts.winnerStacks) throw new Error("FightBlend.predict (backtest): winner 'ml2stack' needs opts.winnerStacks (data/derived/v6_stacks.json) and opts.winnerFit (the forward-chained fit year)");
       if (BT && !opts.winnerFit) throw new Error("FightBlend.predict (backtest): winner 'ml2stack' needs opts.winnerFit (weights fit on 2019..winnerFit-1)");
       st6 = v6Stack(wdoc, line.kind, head, BT ? opts.winnerFit : null);
-      if (BT && st6 && !(st6.fitThrough < date)) throw new Error("FightBlend.predict (backtest): v6 stack " + st6.key + " is fit through " + st6.fitThrough + ", not before " + date);
+      // a train-window fight inside the stack's fit is allowed only as an explicit in-sample row (opts.inSample, date < 2024:
+      // tools/predictrec.js flags 2019-2020 fights, used only to fit the pool weight, never scored); validation never
+      if (BT && st6 && !(st6.fitThrough < date) && !(opts.inSample === true && date < "2024-01-01")) throw new Error("FightBlend.predict (backtest): v6 stack " + st6.key + " is fit through " + st6.fitThrough + ", not before " + date);
     }
     // The stack throws when no trained pattern fits the available experts (every stored pattern carries feat_lr, so a
     // manual profile without decayed sums S has none): fall back to the simulator alone and say why (verifier fix)
