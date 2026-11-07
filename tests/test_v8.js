@@ -118,7 +118,7 @@ function sims(Ex, m, seed, n, trace) { const rng = Ex.makeRng(seed), out = []; f
   const P = { components: { embed: true, retarget: true, tdIntent: false, ctrlSpread: false } };
   const mAB = E.matchup(f.A, f.B, v8Opts(f, 0, P));
   const mBA = E.matchup(f.B, f.A, v8Opts(f, 1, P));
-  ok("retarget applied with targets (computed, then the mirror order replayed from the cache)", mAB.retarget.applied && !mAB.retarget.fromCache && mBA.retarget.fromCache, mAB.retarget.nDec);
+  ok("retarget applied with targets (computed, then the mirror order replayed from the cache)", mAB.retarget.applied && !mAB.retarget.fromCache && mBA.retarget.fromCache, mAB.retarget.nPilot);
   const cA = mAB.retarget.cum, cB = mBA.retarget.cum;
   const symm = JSON.stringify(cA[0]) === JSON.stringify(cB[1]) && JSON.stringify(cA[1]) === JSON.stringify(cB[0]);
   ok("retarget is corner-symmetric: per-fighter cumulative multipliers identical in A-B and B-A", symm);

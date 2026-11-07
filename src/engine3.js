@@ -726,19 +726,19 @@
   // ------------------------------------------------------------------ v8 components.retarget: realised-rate retarget
   // The simulator's realised lines lose information against its static inputs (pace, stamina, damage, hurt and form act on
   // top of the rate tables): train 2019-23, ML static rates beat the realised lines on sig attempts / landed / control
-  // (V6_V10_PLAN cycle 3 evidence). This pass makes the realised per-minute rates of the simulations that went the distance
-  // match the statlines layer's per-minute means at full length (research/model_statlines.md: the like-for-like subset), by
-  // a pilot -> correct loop:
+  // (V6_V10_PLAN cycle 3 evidence). This pass makes the realised totals of the simulator match the statlines layer's
+  // conditional means (research/model_statlines.md), like for like: every pilot simulation is compared with the statlines
+  // mean at its OWN length and finished status (a decision: the full-length mean; a stoppage at minute t: the finished-fight
+  // mean at t, interpolated log-log on the targets' grid), summed over the pilot. A pilot -> correct loop:
   //   1. pilot: params.retarget.pilot simulations of this matchup in EACH corner order (fixed seeds: common random numbers,
-  //      deterministic), pooled per fighter over the decision simulations;
-  //   2. per fighter, with shrink s = damp x n / (n + kDec) (n = pooled decision simulations): takedown attempt rate x
+  //      deterministic), pooled per fighter;
+  //   2. per fighter, with shrink s = damp x n / (n + kDec) (n = pooled pilot simulations): takedown attempt rate x
   //      (target / realised)^s, control target x (target / realised)^s (then the position occupancy is refit as in matchup()),
-  //      takedown accuracy odds x exp(s x (logit target - logit realised)) (takedowns landed / attempted; with the stand-up
-  //      hazard at its floor, about 18% of train sides, control can only follow the takedowns landed),
-  //      attempts by position (distance, clinch, ground) x (target / realised)^s x (static change the grappling step caused)^-1,
-  //      strike accuracy odds x exp(s x shift) with the shift from a two-margin (target x position) logit fit of the realised vs the
-  //      target accuracies on the static cells; realised rates are smoothed toward the target with kMin minutes and kAcc
-  //      attempts, so a sparse stat is barely corrected;
+  //      takedown accuracy odds x exp(s x (logit target - logit realised)) (with the stand-up hazard at its floor, about 18% of
+  //      train sides, control can only follow the takedowns landed), attempts by position (distance, clinch, ground) x
+  //      (target / realised)^s x (static change the grappling step caused)^-1, strike accuracy odds x exp(s x shift) with the
+  //      shift from a two-margin (target x position) logit fit of the realised vs the target accuracies on the static cells;
+  //      realised totals are smoothed toward the target with kMin minutes and kAcc attempts, so a sparse stat is barely corrected;
   //   3. params.retarget.iters iterations; every cumulative multiplier is capped at [1 / mlMaxRatio, mlMaxRatio] and every
   //      accuracy shift at +-log(mlMaxRatio). Knockdown, conversion and stoppage levers are not touched.
   // Corner symmetry: the pilot runs both orders and the canonical order of the pair (by a content signature) fixes which order
@@ -746,18 +746,40 @@
   var RT_ST = ["d_att", "c_att", "g_att", "d_lnd", "c_lnd", "g_lnd", "h_att", "b_att", "l_att", "h_lnd", "b_lnd", "l_lnd", "td_att", "ctrl", "td_lnd"];
   var NRT = RT_ST.length, RT_POSA = [0, 1, 2], RT_POSL = [3, 4, 5], RT_TGTA = [6, 7, 8], RT_TGTL = [9, 10, 11], RT_TD = 12, RT_CT = 13, RT_TDL = 14;
   var RTC = new Map(), RTC_MAX = 128;
+  var RT_GRID = { 3: [0.5, 1, 2, 3.5, 5, 7, 9, 11, 13, 14.9], 5: [0.5, 1, 2, 3.5, 5, 7.5, 10, 13, 16, 19, 22, 24.9] };
+  // targets {A, B: per-minute rates at full length, fin: {t: grid (minutes), A, B: {stat: expected totals of a fight stopped at t}}}
   function rtTargets(m, opts) {
-    var t = opts.statTargets || null;
+    var t = opts.statTargets || null, i, k, s2;
     if (!t && opts.statdist && opts.statdist.SD && opts.statdist.input) {
-      var SD = opts.statdist.SD;
-      t = SD.engineTargets(SD.prepare(opts.statdist.input), 5 * m.rounds);
+      var SD = opts.statdist.SD, P = SD.prepare(opts.statdist.input), T = SD.engineTargets(P, 5 * m.rounds);
+      if (T) {
+        var g = RT_GRID[m.rounds === 5 ? 5 : 3];
+        T.fin = { t: g, A: {}, B: {} };
+        for (i = 0; i < NRT; i++) { k = RT_ST[i]; T.fin.A[k] = g.map(function (x) { return P.dist("A", k, x).mean; }); T.fin.B[k] = g.map(function (x) { return P.dist("B", k, x).mean; }); }
+      }
+      t = T;
     }
     if (!t || !t.A || !t.B) return null;
-    for (var i = 0; i < NRT; i++) {
-      var k = RT_ST[i];
+    if (!t.fin || !t.fin.t || !t.fin.A || !t.fin.B) throw new Error("FightEngine retarget: targets need the finished-fight grid (fin)");
+    for (i = 0; i < NRT; i++) {
+      k = RT_ST[i];
       if (!finNum(t.A[k]) || !finNum(t.B[k]) || t.A[k] < 0 || t.B[k] < 0) throw new Error("FightEngine retarget: target " + k + " missing or invalid");
+      for (s2 = 0; s2 < 2; s2++) {
+        var arr = t.fin[s2 ? "B" : "A"][k];
+        if (!arr || arr.length !== t.fin.t.length) throw new Error("FightEngine retarget: finished grid of " + k + " missing");
+        for (var j = 0; j < arr.length; j++) if (!finNum(arr[j]) || arr[j] < 0) throw new Error("FightEngine retarget: finished grid of " + k + " invalid");
+      }
     }
     return t;
+  }
+  // expected total of stat index k for one side at a stoppage at minute x (log-log interpolation on the grid)
+  function rtFinMean(grid, arr, x) {
+    var n = grid.length;
+    if (x <= grid[0]) return arr[0] * x / grid[0];
+    if (x >= grid[n - 1]) return arr[n - 1] * x / grid[n - 1];
+    var j = 1; while (grid[j] < x) j++;
+    var a = Math.max(arr[j - 1], 1e-9), b = Math.max(arr[j], 1e-9), w = Math.log(x / grid[j - 1]) / Math.log(grid[j] / grid[j - 1]);
+    return Math.exp(Math.log(a) + w * (Math.log(b) - Math.log(a)));
   }
   function rtSig(prof, adj, mlSide, eta, tg) {
     var s = sums(prof), v = [];
@@ -775,7 +797,10 @@
       if (o.ml.model) q.ml.model = o.ml.model;
     }
     if (o.embed && o.embed.etaA && o.embed.etaB) q.embed = { etaA: o.embed.etaB, etaB: o.embed.etaA, recipe: o.embed.recipe || null };
-    if (o.statTargets) q.statTargets = { A: o.statTargets.B, B: o.statTargets.A };
+    if (o.statTargets) {
+      q.statTargets = { A: o.statTargets.B, B: o.statTargets.A };
+      if (o.statTargets.fin) q.statTargets.fin = { t: o.statTargets.fin.t, A: o.statTargets.fin.B, B: o.statTargets.fin.A };
+    }
     if (o.statdist && o.statdist.input) {
       var I = o.statdist.input, J2 = {};
       for (k in I) J2[k] = I[k];
@@ -786,33 +811,37 @@
     q._noRetarget = true;
     return q;
   }
-  function rtPilot(m, N, seed) {
-    var rng = makeRng(seed), sum = new Float64Array(2 * NRT), n = 0;
+  // pilot: realised totals and like-for-like statlines targets (each simulation at its own length and finished status)
+  function rtPilot(m, N, seed, tg) {
+    var rng = makeRng(seed), real = new Float64Array(2 * NRT), tgt = new Float64Array(2 * NRT), mins = 0, R = m.rounds, k;
+    var fin = tg.fin, full = [tg.A, tg.B], fa = [fin.A, fin.B];
     for (var s = 0; s < N; s++) {
-      var f = simulate(m, rng, false);
-      if (!isDecision(f)) continue;
-      n++;
-      var TA = f.totals.A, TB = f.totals.B;
-      for (var k = 0; k < NRT; k++) { sum[k] += TA[RT_ST[k]]; sum[NRT + k] += TB[RT_ST[k]]; }
+      var f = simulate(m, rng, false), dec = isDecision(f);
+      var mn = dec ? 5 * R : (f.round - 1) * 5 + f.t / 60;
+      mins += mn;
+      var TT = [f.totals.A, f.totals.B];
+      for (var sd = 0; sd < 2; sd++) for (k = 0; k < NRT; k++) {
+        real[sd * NRT + k] += TT[sd][RT_ST[k]];
+        tgt[sd * NRT + k] += dec ? full[sd][RT_ST[k]] * 5 * R : rtFinMean(fin.t, fa[sd][RT_ST[k]], mn);
+      }
     }
-    return { n: n, sum: sum };
+    return { n: N, real: real, tgt: tgt, mins: mins };
   }
-  // one fighter's step from pooled decision-simulation counts c (RT_ST order), n simulations of 5R minutes, target rates tg
-  function rtStep(c, n, R, tg, rc) {
-    var mins = n * 5 * R, s = rc.damp * n / (n + rc.kDec), kMin = rc.kMin, kAcc = rc.kAcc, i;
-    function rate(k) { var t = tg[RT_ST[k]]; return (c[k] + t * kMin) / (mins + kMin); }
-    function ratio(k) { var t = tg[RT_ST[k]], r = rate(k); return t > 0 && r > 0 ? Math.pow(t / r, s) : 1; }
+  // one fighter's step from pooled realised totals c and like-for-like targets ct (RT_ST order) over n simulations and
+  // mins simulated minutes; tg = his full-length target rates (the smoothing scale)
+  function rtStep(c, ct, n, mins, tg, rc) {
+    var s = rc.damp * n / (n + rc.kDec), kMin = rc.kMin, kAcc = rc.kAcc, i;
+    function ratio(k) { var r = tg[RT_ST[k]] * kMin, a = ct[k] + r, b = c[k] + r; return a > 0 && b > 0 ? Math.pow(a / b, s) : 1; }
+    function accT(l, a, k1, k2) { return clip(a > 1e-6 ? l / a : tg[RT_ST[k1]] / Math.max(tg[RT_ST[k2]], 1e-9), 0.02, 0.98); }
     var st = { s: s, n: n, td: ratio(RT_TD), ct: ratio(RT_CT), att: [ratio(0), ratio(1), ratio(2)], realPos: [], tgtT: [], realT: [], tgtQ: [], realQ: [] };
-    // takedown accuracy odds (the takedown counterpart of the strike accuracy odds): realised share smoothed toward the target
-    var tdA = clip(tg.td_lnd / Math.max(tg.td_att, 1e-9), 0.02, 0.98), tdR = clip((c[RT_TDL] + kAcc * tdA) / (c[RT_TD] + kAcc), 0.02, 0.98);
+    var tdA = accT(ct[RT_TDL], ct[RT_TD], RT_TDL, RT_TD), tdR = clip((c[RT_TDL] + kAcc * tdA) / (c[RT_TD] + kAcc), 0.02, 0.98);
     st.tdAcc = s * (logit(tdA) - logit(tdR));
     for (i = 0; i < 3; i++) {
-      var ta = tg[RT_ST[RT_TGTA[i]]], tl = tg[RT_ST[RT_TGTL[i]]], pa = tg[RT_ST[RT_POSA[i]]], pl = tg[RT_ST[RT_POSL[i]]];
-      var aT = clip(tl / Math.max(ta, 1e-9), 0.02, 0.98), aQ = clip(pl / Math.max(pa, 1e-9), 0.02, 0.98);
+      var aT = accT(ct[RT_TGTL[i]], ct[RT_TGTA[i]], RT_TGTL[i], RT_TGTA[i]), aQ = accT(ct[RT_POSL[i]], ct[RT_POSA[i]], RT_POSL[i], RT_POSA[i]);
       st.tgtT.push(aT); st.tgtQ.push(aQ);
       st.realT.push(clip((c[RT_TGTL[i]] + kAcc * aT) / (c[RT_TGTA[i]] + kAcc), 0.02, 0.98));
       st.realQ.push(clip((c[RT_POSL[i]] + kAcc * aQ) / (c[RT_POSA[i]] + kAcc), 0.02, 0.98));
-      st.realPos.push(rate(RT_POSA[i]));
+      st.realPos.push((c[RT_POSA[i]] + tg[RT_ST[RT_POSA[i]]] * kMin) / (mins + kMin));
     }
     return st;
   }
@@ -953,28 +982,34 @@
     var ctx = JSON.stringify([m.division, m.rounds, m.title, m.date, m.P, m.p, opts.judges || null, opts.prior_division || null,
       opts.ml === false, m.mlApplied]);
     var key = ctx + "|" + (canonAB ? sigA + "|" + sigB : sigB + "|" + sigA);
-    m.retarget = { applied: true, cum: rtCum(), iters: rc.iters, pilot: rc.pilot, fromCache: false, steps: null, nDec: [] };
+    m.retarget = { applied: true, cum: rtCum(), iters: rc.iters, pilot: rc.pilot, fromCache: false, steps: null, nPilot: [] };
     var hit = RTC.get(key);
     if (hit) {
       for (var h = 0; h < hit.steps.length; h++) rtApply(m, canonAB ? [hit.steps[h].X, hit.steps[h].Y] : [hit.steps[h].Y, hit.steps[h].X]);
-      m.retarget.fromCache = true; m.retarget.steps = hit.steps.length; m.retarget.nDec = hit.nDec.slice();
+      m.retarget.fromCache = true; m.retarget.steps = hit.steps.length; m.retarget.nPilot = hit.nPilot.slice();
       return m;
     }
     var m2 = matchup(pb, pa, swapOpts(opts, m));
     m2.retarget = { applied: true, cum: rtCum(), mirror: true };
     var M0 = canonAB ? m : m2, M1 = canonAB ? m2 : m;      // M0: the canonical first fighter X is side A
-    var tX = canonAB ? tg.A : tg.B, tY = canonAB ? tg.B : tg.A, R = m.rounds, steps = [], nD = [];
+    var tX = canonAB ? tg.A : tg.B, tY = canonAB ? tg.B : tg.A, steps = [], nD = [];
     var seed0 = rc.seed, seed1 = (rc.seed ^ 0x9e3779b9) >>> 0;
+    var tg0 = { A: tX, B: tY, fin: canonAB ? tg.fin : { t: tg.fin.t, A: tg.fin.B, B: tg.fin.A } };   // targets in M0's corner order
+    var tg1 = { A: tY, B: tX, fin: { t: tg0.fin.t, A: tg0.fin.B, B: tg0.fin.A } };
     for (var it = 0; it < rc.iters; it++) {
-      var s0 = rtPilot(M0, rc.pilot, seed0), s1 = rtPilot(M1, rc.pilot, seed1), cX = new Float64Array(NRT), cY = new Float64Array(NRT);
-      for (var k = 0; k < NRT; k++) { cX[k] = s0.sum[k] + s1.sum[NRT + k]; cY[k] = s0.sum[NRT + k] + s1.sum[k]; }
-      var n = s0.n + s1.n, stX = rtStep(cX, n, R, tX, rc), stY = rtStep(cY, n, R, tY, rc);
+      var s0 = rtPilot(M0, rc.pilot, seed0, tg0), s1 = rtPilot(M1, rc.pilot, seed1, tg1);
+      var cX = new Float64Array(NRT), cY = new Float64Array(NRT), tXs = new Float64Array(NRT), tYs = new Float64Array(NRT);
+      for (var k = 0; k < NRT; k++) {
+        cX[k] = s0.real[k] + s1.real[NRT + k]; cY[k] = s0.real[NRT + k] + s1.real[k];
+        tXs[k] = s0.tgt[k] + s1.tgt[NRT + k]; tYs[k] = s0.tgt[NRT + k] + s1.tgt[k];
+      }
+      var n = s0.n + s1.n, mn = s0.mins + s1.mins, stX = rtStep(cX, tXs, n, mn, tX, rc), stY = rtStep(cY, tYs, n, mn, tY, rc);
       rtApply(M0, [stX, stY]); rtApply(M1, [stY, stX]);
       steps.push({ X: stX, Y: stY }); nD.push(n);
     }
     if (RTC.size >= RTC_MAX) RTC.delete(RTC.keys().next().value);
-    RTC.set(key, { steps: steps, nDec: nD });
-    m.retarget.steps = steps.length; m.retarget.nDec = nD;
+    RTC.set(key, { steps: steps, nPilot: nD });
+    m.retarget.steps = steps.length; m.retarget.nPilot = nD;
     return m;
   }
   function retargetCacheClear() { RTC.clear(); }
