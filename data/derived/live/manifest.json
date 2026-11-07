@@ -1,0 +1,548 @@
+{
+ "tool": "tools/live_refresh.py 1.0",
+ "readme_section": "data/predictions/README.md 'Forward model v4.4 (Nov 7, 2026)'",
+ "as_of": "2026-10-31",
+ "until": "2026-11-07",
+ "built_utc": "2026-11-07T11:47:13Z",
+ "code_commit": "45539643e9dfbd1c294f684d4e0ef4fa44baa959",
+ "uncommitted_code": false,
+ "code_sha256": {
+  "tools/live_refresh.py": "1c72aa06dc782ea4812ecfbd050e3672ddbf73c150844bcbef9cb04804166e40",
+  "tools/build_db.py": "6ca8d038b3d59d349b9cdc6606ffdc9ef218b88ed418e7e911988751cb80638b",
+  "tools/ml.py": "5a68db870dd8b5f474b9c402f61e6dbc578fd7030c9cd4d6b9af5ae9e45517f0",
+  "tools/ratings.py": "7d4b24e5747303fb3f435f3452410fb269d9cd69db4c44639d343b748e44dea1",
+  "tools/preufc.py": "0229e35eab4fc75a134eb93a4ff63509986dfede8568e81d18f27690a37ba158",
+  "tools/methodround.py": "233d2ea0afe5b45e37579a014f8fcf003cff2c98c7d75c062f93f2321bfa8847"
+ },
+ "pinned_snapshot": "2026-10-31",
+ "sources": {
+  "results": {
+   "kind": "Greco1899/scrape_ufc_stats (ufcstats)",
+   "repo": "https://github.com/Greco1899/scrape_ufc_stats.git",
+   "commit": "3d4886d222e72be2c5336b49b98b721f5103d949",
+   "url_pattern": "https://raw.githubusercontent.com/Greco1899/scrape_ufc_stats/3d4886d222e72be2c5336b49b98b721f5103d949/<file>",
+   "user_agent": "FightLabSim/1.0",
+   "sha256": {
+    "ufc_event_details.csv": "34b43588d55c757a75262a2a04b6578d522a47ad0f98a89a313b4b13fb283f26",
+    "ufc_fight_details.csv": "b3abd2d38a0c4ec163e1fb7d35c2104ee4bd259b489ccee8b68b1984bc156766",
+    "ufc_fight_results.csv": "c1c3ee8004a205ef3bb71bbe74e60d589569df136235a01ac803b156f75af9ff",
+    "ufc_fight_stats.csv": "873527e4231fc9c7198e6332703d40c170678d75fecc99db47f0d8e2bb11d87f",
+    "ufc_fighter_details.csv": "a1f6e4326217fab9734ac42f1958cd07b0b2b98f3caa5da08497ec7648eb6f70",
+    "ufc_fighter_tott.csv": "3296e67941f984cd5484488226e5a5d94de3249c63fe289fbc66d98546311ea1"
+   },
+   "saved_to": "out/live_refresh/greco_3d4886d222e7"
+  },
+  "second_source": {
+   "kind": "ESPN public scoreboard JSON",
+   "url_pattern": "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=<YYYYMMDD>",
+   "pages": []
+  },
+  "odds": {
+   "kind": "tools/odds_upcoming.py timeline (pre-fight captures only)",
+   "file": "data/derived/odds_upcoming.json",
+   "sha256": "83af9de73d1cd218b1ae7302bba0717e981225af13e525a830c9ed4d2c33a063"
+  }
+ },
+ "files": {
+  "fighters": {
+   "file": "data/derived/live/fighters_live.json",
+   "sha256": "df4d868a2195fb4a6d6b8cc48a4ed95a0bf48f4d5c1b7a25879cd1b9c7e193c8",
+   "replaces": "data/derived/fighters.json",
+   "replaces_sha256_16": "df4d868a2195fb4a",
+   "live_paths": [
+    "fighters",
+    "priors",
+    "meta.snapshot",
+    "meta.n_fights",
+    "meta.n_stat_fights"
+   ],
+   "frozen_part_sha256": "b6d067006dc2d4645d64d079cc7795002f05e65e95438bf9ae208623da854f9c",
+   "status": "ok"
+  },
+  "market": {
+   "file": "data/derived/live/market_live.json",
+   "sha256": "8edb0a6cc9c3ca4ff55eaa8ea4077dd45248772345d52b93233f159256ad7e60",
+   "replaces": "data/derived/market.json",
+   "replaces_sha256_16": "8edb0a6cc9c3ca4f",
+   "live_paths": [
+    "ratings"
+   ],
+   "frozen_part_sha256": "56f8f33f9e858fabf13b807b602b90d4b38bfc74cfd6efaeb1f108a935c8d814",
+   "status": "ok"
+  },
+  "ratings": {
+   "file": "data/derived/live/ratings_live.json",
+   "sha256": "5fc4f8a3be14051f1c0d6d217677a4029735b022844f3d4fd02fcda2825bf973",
+   "replaces": "data/derived/ratings.json",
+   "replaces_sha256_16": "5fc4f8a3be14051f",
+   "live_paths": [
+    "roster"
+   ],
+   "frozen_part_sha256": "6c383d12620798d9520a651bc825ae3b5edba1cf924db69c5ba70cf5bd9c5924",
+   "status": "ok"
+  },
+  "ml": {
+   "file": "data/derived/live/ml_live.json",
+   "sha256": "444b7b1e62086cc19dee21badb39b7aca39f1d82a3f80e43ca63f4e9107a18f3",
+   "replaces": "data/derived/ml.json",
+   "replaces_sha256_16": "444b7b1e62086cc1",
+   "live_paths": [
+    "roster",
+    "page_model.snapshot"
+   ],
+   "frozen_part_sha256": "c71c9270a63d974cc39ed05ccfd27c70e1808c1c9d6492dcb96ae1a2b42995e8",
+   "status": "ok"
+  },
+  "ml2": {
+   "file": "data/derived/live/ml2_live.json",
+   "sha256": "0837826dbc05cd1fa5c6706a0720e636196850e2c741b6a67feff2ad32c6bec4",
+   "replaces": "data/derived/ml2.json",
+   "replaces_sha256_16": "0837826dbc05cd1f",
+   "live_paths": [
+    "page_model.roster",
+    "page_model.snapshot"
+   ],
+   "frozen_part_sha256": "7171afd392ee47a6c5fac909d204e2786a2f1363509460faca970f7f1c7e9632",
+   "status": "ok"
+  },
+  "methodround": {
+   "file": "data/derived/live/methodround_live.json",
+   "sha256": "b26b7e373367f346d2b1698f6824023b857c4db364af2ab00ea1c4c708e40f10",
+   "replaces": "data/derived/methodround.json",
+   "replaces_sha256_16": "b26b7e373367f346",
+   "live_paths": [
+    "js_model.extras",
+    "js_model.priors"
+   ],
+   "frozen_part_sha256": "4b16792a8d88ece8e188df68301b0b18f55433c0fc2cdb9427b40ee5d2f0337e",
+   "status": "ok"
+  }
+ },
+ "not_live": {
+  "oppadj": {
+   "file": "data/derived/oppadj.json",
+   "sha256_16": "c27c8c6de3733c59",
+   "why": "pre-registered live, but tools/live_refresh.py 1.0 has no roster builder for it; fwd-4.4 reads it at its fwd-4.3 pin (zero-diff rule)"
+  }
+ },
+ "frozen_files_sha256_16": {
+  "data/derived/moe_page.json": "34a33d1837e9b912",
+  "data/derived/mlrates.json": "6dec930e670f7c70",
+  "data/derived/forward_models.json": "20269ec7642c1db8",
+  "data/derived/preufc.json": "30111c93e864dfe0",
+  "data/derived/blindtest_stack.json": "ded17ce026bbff29",
+  "data/derived/debut.json": "f6709d52292ccc83",
+  "data/derived/statlines.json": "30c3a959a1a3ac2a",
+  "data/derived/embed_model.json": "061d9fba48cc6633",
+  "data/derived/oppadj.json": "c27c8c6de3733c59",
+  "versions/v4/engine3.js": "6c661f68a4c41c1d",
+  "versions/v4/params3.js": "e16a6481319f9b15",
+  "versions/v4/ml/mlrates.js": "b563032dd9468f7b",
+  "src/ml/moe.js": "ad1097b488bbb3ac",
+  "src/ml/mlpage.js": "d4c72febf5c57666",
+  "src/ml/ml2.js": "0b62c4462dd7a915",
+  "src/ml/debut.js": "e5bbc188f4cf42c9",
+  "src/ml/statdist.js": "c7facbbc4b406be1",
+  "src/ml/embed.js": "e3fa72fd6c0b140b",
+  "tools/methodround_model.js": "fea58a2f9beff3ca"
+ },
+ "frozen_files_ok": true,
+ "frozen_parameters": {
+  "elo": {
+   "K": 44,
+   "boost": 1.5,
+   "boost_fights": 5
+  },
+  "fighters": {
+   "half_life_days": 730.0,
+   "roster_since": "2021-01-01",
+   "priors_from": "2018-01-01"
+  },
+  "market": {
+   "sig_m": 0.5,
+   "tau_per_year": 0.5,
+   "v0": 1.5,
+   "mu0": 0.0,
+   "kappa_result": 1.5
+  },
+  "ml_margin_elo": {
+   "elo_sig": {
+    "K": 160,
+    "w_share": 0.8
+   },
+   "elo_judge": {
+    "K": 160,
+    "w_share": 0.9
+   }
+  },
+  "ratings": "data/derived/ratings.json systems.*.params and systems.dims.dim_params",
+  "ml2_rating_code": "tools/ratings.py with OPPUFC_CLEAN = False (the code of the pinned ml2.json roster)",
+  "ratings_round_model": {
+   "coef": {
+    "head_l": 0.17717457711629309,
+    "body_l": 0.1523291221462517,
+    "leg_l": 0.1090218028693992,
+    "kd": 1.4434466033732076,
+    "td_l": 0.31204778154883034,
+    "ctrl_min": 0.4480643652715927,
+    "sub": 0.5958788645655368
+   },
+   "n_cards": 5609
+  }
+ },
+ "guards": {
+  "fighters": true,
+  "market": true,
+  "ratings": true,
+  "ml": true,
+  "ml2": true,
+  "methodround": true,
+  "ratings_round_model": true,
+  "ratings_ref_day": true,
+  "ml2_ratings_ref_day": true
+ },
+ "zero_diff": {
+  "ok": true,
+  "raw": "data/raw (sha256 = the pinned Oct 31 CSVs)",
+  "files": {
+   "fighters": {
+    "identical_bytes": true,
+    "sha256_16": "df4d868a2195fb4a",
+    "pinned_sha256_16": "df4d868a2195fb4a"
+   },
+   "market": {
+    "identical_bytes": true,
+    "sha256_16": "8edb0a6cc9c3ca4f",
+    "pinned_sha256_16": "8edb0a6cc9c3ca4f"
+   },
+   "ratings": {
+    "identical_bytes": true,
+    "sha256_16": "5fc4f8a3be14051f",
+    "pinned_sha256_16": "5fc4f8a3be14051f"
+   },
+   "ml": {
+    "identical_bytes": true,
+    "sha256_16": "444b7b1e62086cc1",
+    "pinned_sha256_16": "444b7b1e62086cc1"
+   },
+   "ml2": {
+    "identical_bytes": true,
+    "sha256_16": "0837826dbc05cd1f",
+    "pinned_sha256_16": "0837826dbc05cd1f"
+   },
+   "methodround": {
+    "identical_bytes": true,
+    "sha256_16": "b26b7e373367f346",
+    "pinned_sha256_16": "b26b7e373367f346"
+   }
+  }
+ },
+ "results": {
+  "events_after_pin": [],
+  "bouts_added": [],
+  "bouts_held_out": [],
+  "rows_dropped_from_csv_copies": {
+   "ufc_event_details.csv": 0,
+   "ufc_fight_details.csv": 0,
+   "ufc_fight_results.csv": 0,
+   "ufc_fight_stats.csv": 0
+  }
+ },
+ "market_update": {
+  "params": {
+   "sig_m": 0.5,
+   "tau_per_year": 0.5,
+   "v0": 1.5,
+   "mu0": 0.0,
+   "kappa_result": 1.5
+  },
+  "stored_snapshot": "2026-10-31",
+  "drifted_to": "2026-10-31",
+  "updates": [],
+  "restarted": [],
+  "not_in_stream": []
+ },
+ "fighters_logs": {
+  "duplicate_fight_rows_dropped": 25,
+  "excluded_fights": [
+   {
+    "event": "UFC - Road to UFC 4.6",
+    "bout": "Shi Ming vs. Bruna Brasil",
+    "why": "event date missing from ufc_event_details.csv"
+   },
+   {
+    "event": "UFC - Road to UFC 4.6",
+    "bout": "Nyamjargal Tumendemberel vs. Terrance Saeteurn",
+    "why": "event date missing from ufc_event_details.csv"
+   }
+  ],
+  "aliases": {
+   "Bibulatov Magomed": {
+    "to": "Magomed Bibulatov",
+    "how": "tott name"
+   },
+   "Kai Kamaka": {
+    "to": "Kai Kamaka III",
+    "how": "tott name"
+   },
+   "Nick Galanti": {
+    "to": "Nicholas Galanti",
+    "how": "manual"
+   },
+   "Patricio Freire": {
+    "to": "Patricio Pitbull",
+    "how": "tott name"
+   },
+   "Rafael Cerquiera": {
+    "to": "Rafael Cerqueira",
+    "how": "manual"
+   }
+  },
+  "ambiguous_names": [
+   {
+    "name": "Anthony Figueroa",
+    "people": [
+     {
+      "id": "35e3a24591f4e2cd",
+      "nick": null,
+      "lbs": 155,
+      "dob": null,
+      "bouts": 0
+     },
+     {
+      "id": "daff32bc96d1eabf",
+      "nick": null,
+      "lbs": 135,
+      "dob": null,
+      "bouts": 0
+     }
+    ],
+    "unresolved_bouts": 0,
+    "how": "no UFC bouts under this name in the snapshot"
+   },
+   {
+    "name": "Anthony Romero",
+    "people": [
+     {
+      "id": "6f81399074fcdbba",
+      "nick": "The Genius",
+      "lbs": 155,
+      "dob": "1997-02-25",
+      "bouts": 0
+     },
+     {
+      "id": "4419acb81e6f0ea4",
+      "nick": "The Bully",
+      "lbs": 145,
+      "dob": null,
+      "bouts": 1
+     }
+    ],
+    "unresolved_bouts": 0,
+    "how": "per bout: nearest tott weight to the division limit (margin >= 10 lb), else the same person as the name's nearest confidently resolved bout within 4 years"
+   },
+   {
+    "name": "Bruno Silva",
+    "people": [
+     {
+      "id": "294aa73dbf37d281",
+      "nick": "Bulldog",
+      "lbs": 125,
+      "dob": "1990-03-16",
+      "bouts": 12
+     },
+     {
+      "id": "12ebd7d157e91701",
+      "nick": "Blindado",
+      "lbs": 185,
+      "dob": "1989-07-13",
+      "bouts": 11
+     }
+    ],
+    "unresolved_bouts": 0,
+    "how": "per bout: nearest tott weight to the division limit (margin >= 10 lb), else the same person as the name's nearest confidently resolved bout within 4 years"
+   },
+   {
+    "name": "Jean Silva",
+    "people": [
+     {
+      "id": "9211aae062b799d6",
+      "nick": "White Bear",
+      "lbs": 160,
+      "dob": "1977-10-08",
+      "bouts": 0
+     },
+     {
+      "id": "52ef95b5860fb28c",
+      "nick": "Lord",
+      "lbs": 145,
+      "dob": "1996-12-27",
+      "bouts": 8
+     }
+    ],
+    "unresolved_bouts": 0,
+    "how": "per bout: nearest tott weight to the division limit (margin >= 10 lb), else the same person as the name's nearest confidently resolved bout within 4 years"
+   },
+   {
+    "name": "Joey Gomez",
+    "people": [
+     {
+      "id": "0778f94eb5d588a5",
+      "nick": "KO King",
+      "lbs": 135,
+      "dob": "1986-07-21",
+      "bouts": 2
+     },
+     {
+      "id": "3a28e1e641366308",
+      "nick": null,
+      "lbs": 155,
+      "dob": "1989-08-29",
+      "bouts": 0
+     }
+    ],
+    "unresolved_bouts": 0,
+    "how": "per bout: nearest tott weight to the division limit (margin >= 10 lb), else the same person as the name's nearest confidently resolved bout within 4 years"
+   },
+   {
+    "name": "Michael McDonald",
+    "people": [
+     {
+      "id": "d52ef694108f8235",
+      "nick": "The Black Sniper",
+      "lbs": 205,
+      "dob": "1965-02-06",
+      "bouts": 0
+     },
+     {
+      "id": "d0314416a7f26527",
+      "nick": "Mayday",
+      "lbs": 135,
+      "dob": "1991-01-15",
+      "bouts": 9
+     }
+    ],
+    "unresolved_bouts": 0,
+    "how": "per bout: nearest tott weight to the division limit (margin >= 10 lb), else the same person as the name's nearest confidently resolved bout within 4 years"
+   },
+   {
+    "name": "Mike Davis",
+    "people": [
+     {
+      "id": "c8661e204c66f325",
+      "nick": null,
+      "lbs": null,
+      "dob": null,
+      "bouts": 0
+     },
+     {
+      "id": "fb3e61720be4690c",
+      "nick": "Beast Boy",
+      "lbs": 155,
+      "dob": "1992-10-07",
+      "bouts": 8
+     }
+    ],
+    "unresolved_bouts": 0,
+    "how": "per bout: nearest tott weight to the division limit (margin >= 10 lb), else the same person as the name's nearest confidently resolved bout within 4 years",
+    "assumption": "c8661e204c66f325 have no tott weight (no height, weight or date of birth on ufcstats) and are assumed not to be the bout fighter"
+   },
+   {
+    "name": "Tony Johnson",
+    "people": [
+     {
+      "id": "3641a0d117e9bc6c",
+      "nick": null,
+      "lbs": 205,
+      "dob": "1983-05-02",
+      "bouts": 0
+     },
+     {
+      "id": "a45bab49951a45cd",
+      "nick": null,
+      "lbs": 265,
+      "dob": null,
+      "bouts": 0
+     }
+    ],
+    "unresolved_bouts": 0,
+    "how": "no UFC bouts under this name in the snapshot"
+   },
+   {
+    "name": "Victor Valenzuela",
+    "people": [
+     {
+      "id": "de277a4abcfeea46",
+      "nick": "Joe Boxer",
+      "lbs": 155,
+      "dob": null,
+      "bouts": 0
+     },
+     {
+      "id": "078695e385ec2f57",
+      "nick": "Psicosis",
+      "lbs": 170,
+      "dob": "1994-02-09",
+      "bouts": 1
+     }
+    ],
+    "unresolved_bouts": 0,
+    "how": "per bout: nearest tott weight to the division limit (margin >= 10 lb), else the same person as the name's nearest confidently resolved bout within 4 years"
+   }
+  ],
+  "unmatched_names": [],
+  "tott_distrusted": [
+   {
+    "name": "Tyrell Fortune",
+    "tott_name": "Regina Malpica",
+    "tott_lbs": 125,
+    "home": "Heavyweight",
+    "why": "own tott row carries another name and its weight does not fit the home division"
+   },
+   {
+    "name": "Jose Montanha",
+    "tott_name": "Henrique Da Silva Lopes",
+    "tott_lbs": 240,
+    "home": "Heavyweight",
+    "why": "crossed tott rows: own row names Henrique Da Silva Lopes; the row named Jose Montanha is under id 4e30f2761b6bd3b5"
+   }
+  ],
+  "tott_unverified": [
+   {
+    "name": "Tina Black",
+    "tott_name": "Valesca Machado",
+    "tott_lbs": 115,
+    "home": "Women's Strawweight"
+   }
+  ]
+ },
+ "changes_vs_pinned": {
+  "fighters": {
+   "added": [],
+   "changed": []
+  },
+  "ratings": {
+   "added": [],
+   "n_changed": 0
+  },
+  "ml": {
+   "added": [],
+   "n_changed": 0
+  },
+  "ml2": {
+   "added": [],
+   "n_changed": 0
+  },
+  "market": {
+   "added": [],
+   "n_changed": 0
+  },
+  "methodround": {
+   "added": [],
+   "n_changed": 0
+  }
+ },
+ "seconds": 50.0,
+ "work_dir": "out/live_refresh/build_20261107-114623",
+ "ok": true
+}
