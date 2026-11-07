@@ -489,6 +489,30 @@ The leave-one-out train ablation that set v5's default component flags (research
 - `python3 tools/v5_train_ablation_report.py --tag main [--json verdicts.json]`: the markdown tables and each arm's verdict under
   the pre-registered rule in research/v5_train_ablation.md.
 
+- v5 Calibrate B added the arm `-calB` (components.calB off = the Calibrate A engine; only with --arms), e.g.
+  `--arms all,-calB --tag calB` (data/derived/v5_train_ablation_calB.json, _mr_calB.json).
+
+## v5_calB_levels.js (v5 Calibrate B, train only): the joint knockdown / finish / stoppage / judging level pass
+
+- `nice -n 5 node tools/v5_calB_levels.js fit [--iters 6] [--sims 60] [--final-sims 200] [--trace 20] [--out ...]`: every
+  2019-2023 backtest_dev fight in both corner orders, one seed per simulated fight, evalv's leak-free inputs (asserted). Damped
+  fixed point, one lever per target: dyn.kdLevel3 / kdLevel5 (KD per 15 minutes and per 100 head landed of the format, geometric
+  mean), dyn.convLevel (strike finish per KD, 0.512), dyn.stkoScale / gnpScale jointly (KO/TKO share), judge.t108 (card-implied
+  10-8 share of 2021-2023 decisions). Then a final run with traced sims for the by-round checks (KD per 100 standing head by
+  round, finish share by round, decision split, draws, non-KD stoppage composition) against the actuals' event-cluster intervals.
+  Writes data/derived/v5_calB_levels.json. About 2 minutes with 3 workers.
+- `node tools/v5_calB_levels.js run [--params '<json override>'] [--sims 60] [--trace 0]`: the same statistics for one
+  configuration.
+
+## mlcal "inject": "overrides" (engine v5+) and tools/mlcal_spec_engine5.json
+
+With `"inject": "opts"` mlcal passes the full params tree as opts.params, and an explicit override wins over everything the
+engine resolves from its components flags: on v5 the "current" set would silently undo v401.mlLevels off (its fields put back to
+v4.0.0's) and the calB set. `"inject": "overrides"` makes the baseline the engine's effective default set (flags resolved by
+FightEngine.resolveParams, koComp held out because it multiplies after the overrides) and passes only the leaves a candidate
+changes, so trial 0 is the shipped engine. tools/mlcal_spec_engine5.json uses it (Calibrate B step 2: strikeScale, accScale,
+tdScale, tdOddsScale, ctrlScale, subAttScale, subConvScale, mlWeight; `--no-val`; data/derived/mlcal_candidates_v5.json).
+
 ## blend_anchor_*: FightEngine.predict (engine component "blend_anchor") and its 2019-2023 ablation
 
 ```

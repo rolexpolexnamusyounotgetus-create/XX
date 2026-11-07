@@ -482,3 +482,21 @@ final package. It never touches matchup / simulate / summarize / explain; with t
   experts; a train-window fight inside the stacker's fit needs `opts.inSample = true`; 2026 dates are refused.
   tools/predictrec.js builds these inputs per backtest fight and corner order.
 - New exports: `predict`, `loadBlend({ stack, feat, mlPage, market, ml2, methodRound, data })`.
+
+## Engine v5 Calibrate B: the joint level pass (`components.calB`) and the 5.0.0 freeze
+
+- `params.calB.set` holds the levels of the ONE joint knockdown / finish / stoppage / judging pass (tools/v5_calB_levels.js,
+  train 2019-2023 only; research/v5_calB.md): `dyn.kdLevel3` 0.6772, `dyn.kdLevel5` 0.5656, `dyn.convLevel` 1.0966,
+  `dyn.stkoScale` 0.6587, `dyn.gnpScale` 0.4322, `judge.t108` 8.176. The usual fields keep the values before the pass.
+- resolveParams puts the set in when `components.calB` is on (default), BEFORE the v401 put-backs and the opts.params
+  overrides: a v401 sub-flag that is off still restores v4.0.0's value of a field it owns (emJudge off -> t108 8.555), and an
+  explicit override always wins. `components.calB: false` reproduces the Calibrate A engine bit for bit (tests/test_v5_calB.js);
+  `components: false` leaves the set out.
+- Targets: KD per 15 minutes and per 100 head landed by format (one knockdown scale per format; durability.kdCal held), same-round
+  strike finish per knockdown 0.512, the KO/TKO share, and the card-implied 10-8 share of 2021-2023 decisions. Checks: KD per
+  100 standing head by round, finish share by round (3 and 5 rounds), KO / SUB / DEC, decision split, draws.
+- The prediction package was rebuilt on this engine: `blend.mrWeight` 0.3, `blend.anchor.slope0` 0.771, `blend.boot.inflate`
+  2.15 (tools/blend_anchor_bt.js + blend_anchor_eval.js, 2019-2023 only).
+- Engine VERSION 5.0.0, params "5.0.0-selfcal-pre2024", frozen in versions/v5/ (engine3.js, params3.js, styles_sos.js,
+  mlpathrec.js, ml/mlrates.js, ml/embed.js, ml/blend.js, ml/moe.js, ml/ml2.js, ml/mlpage.js). The API and trace format are
+  unchanged.
