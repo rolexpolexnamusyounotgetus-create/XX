@@ -1263,7 +1263,7 @@ file or the vault.
 
   - Elder vs Sanches (the debut bout) has no method props, so no debut secondary is recorded.
 - **Tests.**
-  - `node tests/test_forward_v45.js` (about 30 s; 239 checks):
+  - `node tests/test_forward_v45.js` (about 30 s; 234 checks):
     - fwd-4.4 (JS, both headlines; ledger documents on the live set, both headlines, and in fallback) byte-identical to
       tests/fixtures/forward_v44_golden.json, and fwd-4.3 / 4.2 / 4.1 to tests/fixtures/forward_v43_golden.json;
     - JS `--fwd 4.5` = `--fwd 4.4` apart from `meta.fwd`;
@@ -1281,7 +1281,7 @@ file or the vault.
   - tests/test_forward_v44.js, tests/test_forward_v43.js and tests/test_forward_v42.js now expect fwd-4.5 where `--fwd auto` and
     the refusal messages name the version for events from 2026-11-14. test_forward_v44.js reads its code hashes from the fwd-4.4
     section through the later sections, as the other two already did.
-  - Results: test_forward_v45.js 239/239, test_forward_v44.js 42/42, test_forward_v43.js 434/434, test_forward_v42.js 453/453,
+  - Results: test_forward_v45.js 234/234, test_forward_v44.js 42/42, test_forward_v43.js 434/434, test_forward_v42.js 453/453,
     test_forward_models.js PASS, test_forward_score42.py 271/271, test_propspool.js 732/732, test_drift_monitor.py and
     test_props_capture.py 0 failures.
 - **Runbook per card** (fwd-4.4's, plus one step). Before the lock, next to the odds snapshot: `python3 tools/props.py capture`,
