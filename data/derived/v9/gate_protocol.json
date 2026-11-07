@@ -1,0 +1,199 @@
+{
+ "version": "v9",
+ "run": "gate",
+ "split": "train",
+ "written_at": "2026-11-07T10:48:07+00:00",
+ "status": "committed BEFORE the binding gate run (V6_V10_PLAN 7.1 item 10 a); the binding run happens once (tools/v9_gate.js --binding --protocol refuses an uncommitted or different protocol, a different command line, a changed input file and an existing output)",
+ "previous_kept_version": "v4 (4.0.0; src = versions/v4 6c661f68 / e16a6481 / b563032d before this cycle). v5, v5.0.1, v6 rejected; v7, v8 gate failed.",
+ "branches": {
+  "4.1": "v5 rejected -> v9 = the v4 simulator + cycle 4. Cycle 4 keeps the format items. The 'dynamics level pass' does not apply: dynamics is a v5-lineage component, the v5 lineage used its 6.1 re-bundle in v6, and v4 has no dynamics. Durability's five/title terms do not exist in v4, so 'remove durability's five/title terms' is moot.",
+  "4.2": "vault audit 1 was inconclusive by plan 4.2 (production no-line slope 0.56, CI excludes 1 from below; rule 6.5.1 (a) not triggered): no production change; rule (b) keeps running on the forward ledger. Nothing in v9 is chosen because of an audit-1 number: the level-alarm design (research/model_eradrift.md 7.5, verified ~01:50 UTC) and the decision-share channel (research/model_props.md, verified ~00:50 UTC) predate audit 1, and rule (b) is implemented exactly as pre-registered (a re-specification after audit 1 would be 'not clean on the vault', 6.5.2, and is not made). The method-level 2026 readout of audit 1 moved no priority here: method-head offsets are excluded on their train gate (eradrift verifier), not on audit 1."
+ },
+ "candidate": {
+  "engine_dir": "src",
+  "engine_version": "9.0.0",
+  "params_version": "9.0.0-selfcal-pre2024",
+  "what": "the v4 simulator (4.0.0 bit for bit with every v9 flag off, tests/test_v9.js) + docs/V6_V10_PLAN.md cycle 4 behind flags: components.judgeWF (walk-forward EM judging weights by year, recipe win3 chosen on 2019-2020 decisions, + the 10-8 threshold following the eradrift verified 10-8 tracker), components.format (joint level pass by format: 5-round KD factor kd5, rounds 4-5 factor late5, conversion conv, doctor / corner scale stop; fit once on 2019-2023), components.levels (walk-forward level anchoring; built and tested, OFF: the 2019-2020 rolling-origin choice kept no tracker); the drift monitor tools/drift_monitor.py (rule 6.5.1 (b) + level alarms incl. decision share), which changes no simulation",
+  "params_blocks": {
+   "components": {
+    "levels": false,
+    "judgeWF": true,
+    "format": true
+   },
+   "format": {
+    "kd5": 1.579,
+    "late5": 0.575,
+    "conv": 0.928,
+    "stop": 0.321
+   },
+   "judgeWF.r108": {
+    "sRef": 0.035,
+    "lRef": 5.263578,
+    "alpha": 0.59164,
+    "beta": 0.45779
+   },
+   "judgeWF.byYear": "data/derived/v9/judge_wf.json byYear (2019..2026 rows, each fit on cards before Jan 1 of its year)"
+  },
+  "hygiene": "components.judgeWF also removes a known contamination: v4's EM judging weights were fit on cards 2015-01-01..2026-10-31 (validation years and the vault); every v9 row is fit on cards strictly before its year. Plan 7.1 item 3 (hygiene branch) would apply at a look."
+ },
+ "excluded_parts_and_why": {
+  "per-card stack refits (work item 4)": "v4 has no predict() package or weight provider; research/model_calib.md (verified) found no per-card / recency / temperature scheme beating the incumbents by more than 0.0005 on the forward-chained 2021-23 gate. Not built; gate check G3 not applicable.",
+  "method-head offsets (work item 3)": "the eradrift verifier did not adopt method-level offsets (nested forward-chained 2021-23 gate: 7-bin -0.00007 [-0.00167, +0.00144], joint +0.00050); v4 has no method head. Not built; gate check G4 not applicable.",
+  "league-level outcome-mix trackers (decision / finish / KO / SUB shares)": "eradrift: no tracker beats the 5-year window on the outcome mix (nested CV -0.0005 to +0.010, n.s. or worse); KO / KD 'confirmations' were division-layer effects (verifier). Not used as engine levels; decision / KO / round-1 shares enter only the drift monitor's alarm channel.",
+  "sub-attempt tracker": "eradrift verifier: n.s. with a shared division layer (-0.0024 [-0.0052, +0.0006]); not adopted",
+  "break bumps": "eradrift verifier: mixed 2024-25 evidence, to be pre-registered as a hypothesis with a forward test, not applied by default; the trackers run without break bumps and the monitor only logs breaks",
+  "within-round hazard ramp; 3-round R2/R3 shares (work item 7, flagged)": "evidence is the realism builder's unverified report on an in-flight engine (plan section 8, expected round-given-finish gain ~-0.004, n.s.); not built in v9 (off by definition)",
+  "format-specific simulator-vs-S2 round-cell pool (work item 7)": "needs predict() and the v5 engine beating S2 on round given a finish; v4 has neither. Not built.",
+  "re-specification of rule 6.5.1": "not done: after audit 1 it would be 'not clean on the vault' (6.5.2); research/model_calib.md section 4 keeps the list of properties a later pre-registered version should fix"
+ },
+ "levels_design_note": "Engine v4's simulated league level with learned rates does not come from the 5-year as-of priors: the adapter sets each target to eL(P) x ML / base(P) and both eL and base scale with P, so the window cancels; the level comes from the learned model (window offset + year trend + fighter histories). A literal re-level of P to the eradrift trackers would add the trackers' lead over the window on top of the learned year trend: on 2019-2020 (post-hoc scaling of the comparator's means, development) it raised every stat's deviance (attempts factor 1.115, sig attempts deviance 50.41 -> 52.24). So the engine-level analogue was built: trailing trackers of log(actual / comparator-engine expectation) over fights strictly before the bout, eradrift's verified tracker settings, league-pooled (tools/v9_levels.js). Its pre-declared 2019-2020 keep rule (data/derived/v9/levels_select.json) dropped all five trackers (each raised its stat's deviance: sig attempts +0.175, sig landed +0.072, TD attempts +0.0027, control +0.196, KD +0.0025 per fighter-fight), so components.levels is OFF in the candidate.",
+ "hashes": {
+  "engine": "47bfaa176d9fcdd2411d3922ce1bdf24c422ce1281d4fb06b44de1606eacfea6",
+  "params": "c52dcedc4146e5bc103495c54fc79dcbdd7b724047ec3531d1e1aa306be2ac79",
+  "mlrates": "b563032dd9468f7b90869f12476add41626639cb69063f61b9abbd3ead32c4c1",
+  "levels_js": "2a97f64c962730c86fe7d4c9585988542e5f84e04f51816ea8de8bbdc65f7865",
+  "phi": "babbc8502400bf99c40128bcacacb4dd879e0d55978d869e25b69ba60e3c6eaf",
+  "eradrift": "159a2cb367bda5760e8c9ae9f710c8f9c216a58126230700e23064cd4d77db84",
+  "judge_wf": "050593350a188d1711c830b156cc8fdc4256499ed8d66e50675393545429750f",
+  "oof_fh": "3dbe07798d7d4d5d47b5310bd014d53cba4dff275d92e15a00d81fdd02d80642",
+  "priors": "126d7b26f3f54ce337d1f17e7645a9bf148e3c11fed453cfbb40ae7d7236dda6",
+  "backtest": "21d1a1865770c6c6c4571d9c72b1ca9de2d3de6830262b14dc06a688f838459e",
+  "harness": "863818321153b634b6f28cc92c71da65f6b9824d684ca79b16193d71007334f2"
+ },
+ "hashes_recorded": {
+  "scorer": "2f93627f32b773b0e3f38d2fa58dfb91e65e404fab6dd7d12a29f4b670a0f455",
+  "v8_gate_helpers": "265bb52048cf3d6c736dd8d0160b362c43425113eb060fb62d1db64d7c8a3a80",
+  "predict_score_helpers": "f72bc230ed46c26d4f282f16b0c04bb5816b29862d2dcd41befe03bed331282a",
+  "drift_monitor": "b7ba0740fb0c2b53bee5a9fc98694c2371c6110c2e74bfb913ec9da62170aaac",
+  "calib_py": "3dccc7fa6085e9a0dc0e85070c396c49e3dcec1d62059cfc80a669503c72e266",
+  "calib_json": "c1187ea1550e0ef24c0b6079eb513ddd6f35ba1e470c0ff984b0b17fdc74780b",
+  "test_v9": "2d3c221847043d1aad1fe60cda96b474a24ae34b0f593348d9d479307fdaa4f3",
+  "test_drift_monitor": "4f50758ba77676907451120618af075a71c086d0827192bcb95f6c169ce2cfa6",
+  "judge_wf_tool": "3e6ccaaf8197c5c58a2367e32b5f4b5eb34f0aaba5d933b98041534f4aca5fc5",
+  "format_fit_tool": "7cd379fcae9dabb0b1943507432482b870d694dfbf96a6f965580b555eb57e36",
+  "format_fit": "5ebadcfbcf879e6cdefe9fdcf654d5c898616757efa0bddb84a4544b9f31b2df",
+  "t108_map": "9acedce3550a12f37bc424277638fffa6d8ae835b82194b58944736bce02a599",
+  "levels_select": "7ddee4de0307c37792c8126fd43e45abdbe37cce98a1df2b535b334f1fc39796",
+  "evalv": "568682718bf9fef1e3c4ac06b1033e725eb1369ede9976c4602155035a8c541b"
+ },
+ "files": {
+  "engine": "src/engine3.js",
+  "params": "src/params3.js",
+  "mlrates": "src/ml/mlrates.js",
+  "levels_js": "tools/v9_levels.js",
+  "phi": "data/derived/v9/levels_phi.json",
+  "eradrift": "data/derived/eradrift.json",
+  "judge_wf": "data/derived/v9/judge_wf.json",
+  "oof_fh": "data/derived/mlrates_oof_fh.json",
+  "priors": "data/derived/mlcal_priors_asof.json",
+  "backtest": "data/derived/backtest_dev.json",
+  "harness": "tools/v9_gate.js"
+ },
+ "files_recorded": {
+  "scorer": "tools/v9_gate.py",
+  "v8_gate_helpers": "tools/v8_gate.py",
+  "predict_score_helpers": "tools/predict_score.py",
+  "drift_monitor": "tools/drift_monitor.py",
+  "calib_py": "tools/calib.py",
+  "calib_json": "data/derived/calib.json",
+  "test_v9": "tests/test_v9.js",
+  "test_drift_monitor": "tests/test_drift_monitor.py",
+  "judge_wf_tool": "tools/v9_judge_wf.py",
+  "format_fit_tool": "tools/v9_format_fit.py",
+  "format_fit": "data/derived/v9/format_fit.json",
+  "t108_map": "data/derived/v9/t108_map.json",
+  "levels_select": "data/derived/v9/levels_select.json",
+  "evalv": "tools/evalv.js"
+ },
+ "commands": {
+  "tests": "data/derived/v9/tests/_jobs.txt (36 jobs, run on the candidate files before this commit; status in _status.txt)",
+  "harness": "nice -n 5 node tools/v9_gate.js --out data/derived/v9/gate_train.json --sims 300 --workers 3 --seed 9 --binding --protocol data/derived/v9/gate_protocol.json",
+  "replay": "nice -n 5 python3 tools/drift_monitor.py replay --gate data/derived/v9/gate_train.json --arm all --out data/derived/v9/drift_replay.json",
+  "score": "nice -n 5 python3 tools/v9_gate.py score data/derived/v9/gate_train.json --replay data/derived/v9/drift_replay.json --out data/derived/v9/gate_train_score.json"
+ },
+ "arms": {
+  "cmp4": "every v9 flag off (= engine 4.0.0)",
+  "all": "the candidate: judgeWF + format (levels off)",
+  "-judgeWF": "format only (descriptive)",
+  "-format": "judgeWF only (descriptive)",
+  "+levels": "every tracker on as designed before the 2019-2020 choice + judgeWF + format (descriptive only; cannot re-enter v9)"
+ },
+ "comparator": {
+  "name": "cmp4: the latest kept version v4 (4.0.0) on the same honest inputs (the one pre-registered comparator; 7.1 item 10 b)",
+  "definition": "the candidate engine with params.components all false, which tests/test_v9.js checks 1a-1d prove bit-identical to versions/v4 (matchup tables, 300 seeded simulations, a traced fight; learned rates on and off; 5-round fights); the same fights, corner orders and per-simulation seeds as every v9 arm (common random numbers)",
+  "inputs": "both get the same honest inputs: as-of priors mlcal_priors_asof.json[year]; fold-honest out-of-fold learned rates mlrates_oof_fh.json (year y's stack weights fit on earlier years; what tools/evalv.js gives engines of major >= 6); the v9 arms additionally read params.judgeWF.byYear (each row fit on judges' cards before Jan 1 of its year) and the eradrift 10-8 tracker at the fight's month (fit on fights before that month)",
+  "refit_schedule": "walk-forward for the cycle's own inputs (judging rows per year, 10-8 tracker per month, level trackers per card); the learned-rate tables and as-of priors as v4 (annual folds / 5-year windows to Jan 1). The same schedule would hold in a look (2024 and 2025 rows of judge_wf.json; the tracker through each month)."
+ },
+ "rules": {
+  "file": "tools/v9_gate.py",
+  "sha256": "2f93627f32b773b0e3f38d2fa58dfb91e65e404fab6dd7d12a29f4b670a0f455",
+  "RULES": {
+   "comparator": "cmp4 = every v9 flag off (= engine 4.0.0 bit for bit, tests/test_v9.js) on the same honest inputs, same fights, common random numbers",
+   "candidate": "arm 'all' = the v9 candidate as selected: components.judgeWF + components.format on, components.levels off (the 2019-2020 rolling-origin choice kept no level tracker, data/derived/v9/levels_select.json)",
+   "scope": "rolling origin: choices made on 2019-2020 (judging recipe, tracker keep/drop, dispersion), the binding checks G1, G2 and G7 on the 2021-2023 train fights; G6 on the 2019-2023 five-round fights and between-round intervals (the plan's '2019-23 rate'); levels always from earlier fights",
+   "checks": {
+    "G1": "year-level base-rate error falls (CI < 0 on 2021-23) for each of sig landed per 15, accuracy (sig landed / sig attempted), KD per 100 head landed, TD (landed) per 15, control per 15 and finish rate: statistic = mean over 2021, 2022, 2023 of |sim_year - actual_year| (evalv.js pooled ratios within each year), candidate minus cmp4; CI from 20,000 event-cluster resamples stratified by year (cards resampled within their year); pass iff the CI upper bound < 0 for ALL six (a marginal bound is decided by the normal bound mean + 1.96 x bootstrap sd)",
+    "G2a": "sig-landed deviance on 2021-23 improves: per-fight Poisson deviance of sig landed (mean of the two fighters), paired, CI upper < 0",
+    "G2b": "total stat deviance not worse: the mean relative 10-stat deviance (tools/v8_gate.py 'total': per fight the mean over the 10 stats of the deviance divided by cmp4's mean of that stat) paired difference CI upper <= +0.005 (+0.5% of level, the plan's 6.3 / 7.1 item 4 stat-line 'not worse' tolerance)",
+    "G3": "per-card stacks vs annual-static stacks: NOT APPLICABLE. v9's base (v4, the latest kept version) has no predict() package and no stack weight provider, and the verified calibration study (research/model_calib.md) found no per-card / recency scheme that beats the incumbents on the forward-chained 2021-23 gate; the component is not built",
+    "G4": "method-head offsets vs static intercepts: NOT APPLICABLE. The eradrift verifier did not adopt method-level offsets (nested forward-chained 2021-23 gate: 7-bin -0.00007 [-0.00167, +0.00144]), and v4 has no method head; the component is not built",
+    "G5": "replayed over 2015-23, the drift rule fires at most once: rule 6.5.1 (b) as pre-registered (a one-way switch) on the stored 2015-2023 quarterly replay checks (data/derived/calib.json rule.replay_2015_2023), switch events <= 1; the trigger-condition count and episodes are reported (research/model_calib.md: the criterion is vacuous for a one-way rule)",
+    "G6a": "5-round R4 KO-type hazard covers the real value: 95% event-cluster CI of (sim - actual) hazard of a KO/TKO (doctor / corner included) in round 4 among 5-round fights that reached round 4, 2019-2023, contains 0",
+    "G6b": "5-round R5 SUB hazard covers the real value: the same for a submission in round 5 among fights that reached round 5",
+    "G6c": "doctor / corner <= 1.5 x the 2019-23 rate: simulated between-round stoppages per round-interval reached (both formats) <= 1.5 x the actual 2019-2023 rate (point estimates; actual = method DOC, or KO/TKO at 5:00 of a round before the last)",
+    "G7": "winner log loss, 7-bin and method on 2021-23: paired CI upper <= +0.002 each"
+   },
+   "pass": "the gate passes iff every applicable check (G1, G2a, G2b, G5, G6a, G6b, G6c, G7 x 3) passes; G3 and G4 are recorded as not applicable",
+   "bootstrap": "20,000 event-cluster resamples (card = event + date), seed 7; Monte Carlo SE of each bound (10 batches); a bound within 2 MC SE of its threshold is decided by the clustered normal bound (G1: mean + 1.96 x bootstrap sd)",
+   "descriptive_only": "leave-one-out arms -judgeWF / -format and the +levels arm (every tracker on, as designed before the 2019-2020 choice) are scored the same way and reported; they cannot change the decision or re-enter v9"
+  },
+  "interpretations_set_before_the_binding_run": [
+   "'year-level base-rate error' = mean over the three years 2021, 2022, 2023 of |simulated - actual| of the year's pooled rate (tools/evalv.js definitions; accuracy = sig landed / sig attempted; TD per 15 = TD landed); 'falls (CI < 0)' = the paired candidate-minus-cmp4 difference's 95% upper bound < 0, for each of the six base rates the plan lists (all six must pass; none is relaxed because no adopted component targets it: the finish rate and KD per 100 head are expected to be hard, see expected_outcome)",
+   "'sig-landed deviance' = per-fight Poisson deviance of sig strikes landed (mean of the two fighters, simulated mean vs real total); 'total stat deviance not worse' = the 10-stat mean relative deviance with the plan's stat-line 'not worse' tolerance (CI upper <= +0.5% of level, 6.3 / 7.1 item 4)",
+   "'the drift rule fires' = switch events of rule 6.5.1 (b) as pre-registered (a one-way switch), on the stored 2015-2023 replay checks; this makes G5 pass by construction (research/model_calib.md says so); the number of quarters at which the trigger condition held and the number of separate episodes are reported next to it",
+   "'5-round R4 KO-type and R5 SUB hazard CIs cover the real values' = the event-cluster 95% CI of (simulated - actual) hazard contains 0, on the 2019-2023 five-round fights (the format pass was fit on these fights, so this check is in-sample; disclosed)",
+   "'doctor/corner <= 1.5x the 2019-23 rate' = simulated between-round stoppages per round-interval reached <= 1.5 x the actual 2019-2023 rate (point estimates, both formats pooled; actual = DOC, or KO/TKO at 5:00 of a round before the last)",
+   "G3 and G4 are not applicable (components not built, see excluded_parts_and_why); the gate passes iff every applicable check passes",
+   "binding scope 2021-2023 for G1, G2, G7 (the plan's confirmation years: choices were made on 2019-2020); 2019-2020 fights are simulated (the level trackers' history) and reported only through G6 and the descriptive arms"
+  ]
+ },
+ "tests": {
+  "status_file": "data/derived/v9/tests/_status.txt",
+  "failing": [
+   "test_engine3_src"
+  ],
+  "tolerated": {
+   "test_engine3_src": "1 of 69 checks fails: 'Women's Strawweight: base rates within tolerance' - league-average vs league-average pairs on the base tables (no learned rates), SUB share 21.9% vs 18.7% (+3.2 pts against +-3; v4 21.3%, +2.6). The format pass's conversion factor (conv 0.928, fit on the real 2019-2023 fights with the learned rates on, where the pooled KO share moves 32.7% -> 31.8% vs 31.7% actual and the SUB share is unchanged at 16.7% vs 17.5%) moves a few strawweight KOs into later submissions; the league-average self-test is not the scored object, and every other division passes"
+  },
+  "test_v9": {
+   "checks": 32,
+   "pass": true
+  },
+  "test_drift_monitor": {
+   "checks": 9,
+   "pass": true
+  }
+ },
+ "fitted_on_train_before_the_protocol": {
+  "judgeWF.byYear": "tools/v9_judge_wf.py: recipe win3 (EM on the three years before Y) chosen among exp / win2 / win3 / shr2 / shr3 by pooled 2019-2020 decision-winner log loss (0.34619 vs exp 0.35232; rule fixed in the tool's docstring before it ran); the tool also printed the 2021-2023 decision log losses of every recipe (information, not used: win2 0.37467, win3 0.37813, shr2 0.37815, shr3 0.38058, exp 0.38494)",
+  "judgeWF.r108": "alpha / beta: least squares of ln(simulated 10-8 share) on t108 in {7, 8, 9, 10} on all 2019-2023 train fights with the walk-forward weights on (out/v9/t108grid.json, seed 103; residuals <= 0.007); lRef = mean of the eradrift r108 tracker over months 2021-01..2023-12; sRef = v4's matched 3.5% (tools/v4_levels.js)",
+  "format": "tools/v9_format_fit.py: one damped fixed point (6 iterations, seed 102, 2019-2023 train fights) of stop, kd5, late5, conv to the between-round stoppage rate (0.37%), 5-round KD per 100 head (0.641), share of 5-round fights finished in R4-R5 (10.1%), KO share (31.7%); the kd5 condition (5-round KD gap z -3.05, |z| > 2) was checked on the comparator first",
+  "levels_phi": "tools/v9_levels.js phi on the comparator's 2019-2020 development run (out/v9/dev_cmp4_1920.json, seed 101): Pearson dispersion att 23.2, acc 3.20, td 3.10, ctrl 159, kd 1.20",
+  "levels_select": "tools/v9_levels.js select (rule in the tool header, fixed before it ran): keep a tracker iff its walk-forward factor lowers its stat's summed per-fighter Poisson deviance on 2019-2020; none kept"
+ },
+ "development_runs_disclosed": [
+  "data/derived/evalv/v4_repro_dev_train.json (an existing v4 train run): its per-year 2019-2023 base rates were read before the design (sim vs actual sig landed per 15, TD, control, KD per 100 head, finish rate, 10-8): they showed v4's year-level errors are small for sig landed and noise-dominated for KD and finish rate",
+  "a data-level table of actual vs learned-rate vs 5-year-window vs eradrift-tracker levels by year 2019-2023 (sig landed / attempted per fighter-minute, TD attempts, control) from mlrates_oof_fh.json, the as-of priors and eradrift.json: it showed the window ~10% under the actual level and the learned rates +2-4% over the backtest sample, which led to the residual (engine-level) tracker design",
+  "out/v9/dev_cmp4_1920.json (comparator, 2019-2020, 300 sims, seed 101): dispersion, the tracker choice, the tracker trace and the 2019 / 2020 residual ratios (att 0.982 / 0.944, acc 0.985 / 1.044, td 0.984 / 1.121, ctrl 0.998 / 1.120, kd 0.963 / 0.915) were seen; the literal tracker/window re-level was checked post hoc on it (every stat worse)",
+  "out/v9/dev_cmp4_train.json (comparator, 2019-2023, 300 sims, seed 101): v4's between-round stoppage rate (3-round 0.83% vs 0.26%, 5-round 2.13% vs 0.79% per interval), 5-round KD per 100 head (0.474 vs 0.641) and late-finish share (14.7% vs 10.1%) were seen; they set the format pass's targets",
+  "out/v9/fmtfit_base.json, fmtfit_it0..5.json (format-only arm, 2019-2023, 300 sims, seed 102): the format fit; their KO / SUB / DEC shares were seen (KO 32.7 -> 31.8 vs 31.7, SUB 16.7 / 16.7 vs 17.5, DEC 50.6 -> 51.5 vs 50.8)",
+  "out/v9/t108grid.json (judgeWF arms with fixed t108 7-10, 2019-2023, 300 sims, seed 103): the 10-8 mapping",
+  "out/v9/smoke.json + smoke_score.json (every 20th train fight = 100 fights, the five preset arms, 30 sims, seed 5): scorer smoke test; its printout (G1 per-rate differences and the fail list on 100 fights) was seen. It is Monte Carlo and sampling noise at that size and changed nothing",
+  "out/v9/v9dev_dev_train.json (tools/evalv.js --dev on the candidate, 20 sims): evalv wiring smoke test; its summary lines were seen"
+ ],
+ "expected_outcome": "written before the binding run: the gate is expected to FAIL. G2a (sig-landed deviance must improve with CI < 0 on 2021-2023) has no mechanism left: the level trackers were dropped by the 2019-2020 rule, and judgeWF / format do not move sig strikes beyond 5-round fight lengths. G1 needs all six year-level errors to fall; nothing adopted targets the year-to-year finish rate or KD (both noise-dominated at the year level in v4's train run), and sig landed / accuracy are untouched by the candidate. G7 (+0.002 bound on 7-bin / method) is the bound the v8 lesson called near-unpassable for an arm that moves outcome cells; it is kept as the plan writes it for cycle 4. G6 and G5 are expected to pass (G6 is in-sample for the format fit; G5 passes by construction).",
+ "if_the_gate_passes": "set nothing new (VERSION 9.0.0 already); freeze src to versions/v9/; write the pre-registration into a new version_history.json v9 entry with validation empty: scored object summarize() (v4 has no predict()); primary branch 2, sig-landed deviance (7.1 item 1) vs v4 on 2024-2025; secondaries; the train-gate result; expected effect and MDE from the gate's paired SE scaled by sqrt(n_gate / n_look) (7.1 item 10 d); failure criteria; confirmation-look flag (judging weights and the eradrift trackers were scored on 2024-25 in research: partly a confirmation look)",
+ "if_the_gate_fails": "status gate_failed in version_history.json v9, no pre-registration, no 2024-25 number; src restored to v4; the candidate frozen as versions/v9-gate-failed (versions/v9 a compatibility symlink); the drift monitor (tools/drift_monitor.py) and the walk-forward judging table stay as tooling (no production path changes)",
+ "honesty_note": "the binding run re-measures on train fights the development runs used (fresh seed 9, 300 sims), so it guards against Monte Carlo luck and wiring errors more than it tests the design choices made on those fights. Nothing dated 2024 or later was simulated or scored by any v9 run; 2026 was never read (tools/v9_judge_wf.py cuts the raw fight table at 2026-01-01 right after loading).",
+ "expected_from_the_plan": "V6_V10_PLAN cycle 4: sig-landed deviance -0.2 to -0.4 at the look if the +9% drift survives (MDE ~0.24); base rates sig landed per 15 within +-4%, KD per 100 head within +-5%, finish rate within +-1.5 points; no-line winner -0.001 to -0.003 (below the MDE). Its main value is insurance, which a look cannot measure."
+}
