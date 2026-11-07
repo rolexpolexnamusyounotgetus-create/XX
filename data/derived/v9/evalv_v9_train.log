@@ -1,0 +1,5 @@
+evalv v9 (engine 9.0.0, params 9.0.0-selfcal-pre2024) on train: 1999 fights x 2 orders x 300 sims, 3 workers, ML on (out-of-fold)
+  400/1999 fights, 6 s
+  800/1999 fights, 10 s
+  1200/1999 fights, 14 s
+  1600/1999 fights, 18 s

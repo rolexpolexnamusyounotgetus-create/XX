@@ -1,0 +1,2722 @@
+{
+ "meta": {
+  "tool": "tools/v9_gate.py score",
+  "harness": "data/derived/v9/gate_train.json",
+  "replay": "data/derived/v9/drift_replay.json",
+  "harness_meta": {
+   "tool": "tools/v9_gate.js",
+   "built": "2026-11-07T10:50:13.472Z",
+   "cmdline": "--out data/derived/v9/gate_train.json --sims 300 --workers 3 --seed 9 --binding --protocol data/derived/v9/gate_protocol.json",
+   "binding": true,
+   "protocol": "data/derived/v9/gate_protocol.json",
+   "git_head": "f97d110274a494c560cf5ec681a82a087534ec8a",
+   "engine_dir": "src",
+   "engine_params": [
+    "9.0.0 | 9.0.0-selfcal-pre2024"
+   ],
+   "sims_per_order": 300,
+   "seed": 9,
+   "arms": [
+    "cmp4",
+    "all",
+    "-judgeWF",
+    "-format",
+    "+levels"
+   ],
+   "arm_params": {
+    "cmp4": {
+     "components": {
+      "levels": false,
+      "judgeWF": false,
+      "format": false
+     }
+    },
+    "all": {
+     "components": {
+      "levels": false,
+      "judgeWF": true,
+      "format": true
+     }
+    },
+    "-judgeWF": {
+     "components": {
+      "levels": false,
+      "judgeWF": false,
+      "format": true
+     }
+    },
+    "-format": {
+     "components": {
+      "levels": false,
+      "judgeWF": true,
+      "format": false
+     }
+    },
+    "+levels": {
+     "components": {
+      "levels": true,
+      "judgeWF": true,
+      "format": true
+     }
+    }
+   },
+   "stats": [
+    "sig_lnd",
+    "sig_att",
+    "h_lnd",
+    "b_lnd",
+    "l_lnd",
+    "kd",
+    "td_lnd",
+    "td_att",
+    "ctrl",
+    "sub_att"
+   ],
+   "phi": {
+    "att": 23.231809501045284,
+    "acc": 3.1957767379862365,
+    "td": 3.1014448269059325,
+    "ctrl": 159.09078140153463,
+    "kd": 1.1977757815860495
+   },
+   "level_cfg": {
+    "att": {
+     "kind": "kal",
+     "q": 0.002,
+     "se": 0.1
+    },
+    "acc": {
+     "kind": "kal",
+     "q": 0.002,
+     "se": 0
+    },
+    "ctrl": {
+     "kind": "kal",
+     "q": 0.002,
+     "se": 0.1
+    },
+    "td": {
+     "kind": "ew",
+     "h": 0.5,
+     "n0": 100
+    },
+    "kd": {
+     "kind": "trail",
+     "days": 730,
+     "n0": 20
+    },
+    "p0sd": 0.05,
+    "clip": [
+     0.8,
+     1.25
+    ],
+    "phi": {
+     "att": 23.231809501045284,
+     "acc": 3.1957767379862365,
+     "td": 3.1014448269059325,
+     "ctrl": 159.09078140153463,
+     "kd": 1.1977757815860495
+    }
+   },
+   "r108_ref": 5.263577777777777,
+   "n_fights": 1999,
+   "failed_fights": 0,
+   "wall_s": 108.994,
+   "hashes": {
+    "engine": "47bfaa176d9fcdd2411d3922ce1bdf24c422ce1281d4fb06b44de1606eacfea6",
+    "params": "c52dcedc4146e5bc103495c54fc79dcbdd7b724047ec3531d1e1aa306be2ac79",
+    "mlrates": "b563032dd9468f7b90869f12476add41626639cb69063f61b9abbd3ead32c4c1",
+    "levels_js": "2a97f64c962730c86fe7d4c9585988542e5f84e04f51816ea8de8bbdc65f7865",
+    "phi": "babbc8502400bf99c40128bcacacb4dd879e0d55978d869e25b69ba60e3c6eaf",
+    "eradrift": "159a2cb367bda5760e8c9ae9f710c8f9c216a58126230700e23064cd4d77db84",
+    "judge_wf": "050593350a188d1711c830b156cc8fdc4256499ed8d66e50675393545429750f",
+    "oof_fh": "3dbe07798d7d4d5d47b5310bd014d53cba4dff275d92e15a00d81fdd02d80642",
+    "priors": "126d7b26f3f54ce337d1f17e7645a9bf148e3c11fed453cfbb40ae7d7236dda6",
+    "backtest": "21d1a1865770c6c6c4571d9c72b1ca9de2d3de6830262b14dc06a688f838459e",
+    "harness": "863818321153b634b6f28cc92c71da65f6b9824d684ca79b16193d71007334f2"
+   },
+   "window": "TRAIN 2019-01-01..2023-12-31 (backtest_dev.json); nothing dated 2024 or later"
+  },
+  "boot": {
+   "B": 20000,
+   "seed": 7
+  },
+  "binding_years": [
+   2021,
+   2022,
+   2023
+  ],
+  "g6_years": [
+   2019,
+   2020,
+   2021,
+   2022,
+   2023
+  ],
+  "failed_fights": 0
+ },
+ "rules": {
+  "comparator": "cmp4 = every v9 flag off (= engine 4.0.0 bit for bit, tests/test_v9.js) on the same honest inputs, same fights, common random numbers",
+  "candidate": "arm 'all' = the v9 candidate as selected: components.judgeWF + components.format on, components.levels off (the 2019-2020 rolling-origin choice kept no level tracker, data/derived/v9/levels_select.json)",
+  "scope": "rolling origin: choices made on 2019-2020 (judging recipe, tracker keep/drop, dispersion), the binding checks G1, G2 and G7 on the 2021-2023 train fights; G6 on the 2019-2023 five-round fights and between-round intervals (the plan's '2019-23 rate'); levels always from earlier fights",
+  "checks": {
+   "G1": "year-level base-rate error falls (CI < 0 on 2021-23) for each of sig landed per 15, accuracy (sig landed / sig attempted), KD per 100 head landed, TD (landed) per 15, control per 15 and finish rate: statistic = mean over 2021, 2022, 2023 of |sim_year - actual_year| (evalv.js pooled ratios within each year), candidate minus cmp4; CI from 20,000 event-cluster resamples stratified by year (cards resampled within their year); pass iff the CI upper bound < 0 for ALL six (a marginal bound is decided by the normal bound mean + 1.96 x bootstrap sd)",
+   "G2a": "sig-landed deviance on 2021-23 improves: per-fight Poisson deviance of sig landed (mean of the two fighters), paired, CI upper < 0",
+   "G2b": "total stat deviance not worse: the mean relative 10-stat deviance (tools/v8_gate.py 'total': per fight the mean over the 10 stats of the deviance divided by cmp4's mean of that stat) paired difference CI upper <= +0.005 (+0.5% of level, the plan's 6.3 / 7.1 item 4 stat-line 'not worse' tolerance)",
+   "G3": "per-card stacks vs annual-static stacks: NOT APPLICABLE. v9's base (v4, the latest kept version) has no predict() package and no stack weight provider, and the verified calibration study (research/model_calib.md) found no per-card / recency scheme that beats the incumbents on the forward-chained 2021-23 gate; the component is not built",
+   "G4": "method-head offsets vs static intercepts: NOT APPLICABLE. The eradrift verifier did not adopt method-level offsets (nested forward-chained 2021-23 gate: 7-bin -0.00007 [-0.00167, +0.00144]), and v4 has no method head; the component is not built",
+   "G5": "replayed over 2015-23, the drift rule fires at most once: rule 6.5.1 (b) as pre-registered (a one-way switch) on the stored 2015-2023 quarterly replay checks (data/derived/calib.json rule.replay_2015_2023), switch events <= 1; the trigger-condition count and episodes are reported (research/model_calib.md: the criterion is vacuous for a one-way rule)",
+   "G6a": "5-round R4 KO-type hazard covers the real value: 95% event-cluster CI of (sim - actual) hazard of a KO/TKO (doctor / corner included) in round 4 among 5-round fights that reached round 4, 2019-2023, contains 0",
+   "G6b": "5-round R5 SUB hazard covers the real value: the same for a submission in round 5 among fights that reached round 5",
+   "G6c": "doctor / corner <= 1.5 x the 2019-23 rate: simulated between-round stoppages per round-interval reached (both formats) <= 1.5 x the actual 2019-2023 rate (point estimates; actual = method DOC, or KO/TKO at 5:00 of a round before the last)",
+   "G7": "winner log loss, 7-bin and method on 2021-23: paired CI upper <= +0.002 each"
+  },
+  "pass": "the gate passes iff every applicable check (G1, G2a, G2b, G5, G6a, G6b, G6c, G7 x 3) passes; G3 and G4 are recorded as not applicable",
+  "bootstrap": "20,000 event-cluster resamples (card = event + date), seed 7; Monte Carlo SE of each bound (10 batches); a bound within 2 MC SE of its threshold is decided by the clustered normal bound (G1: mean + 1.96 x bootstrap sd)",
+  "descriptive_only": "leave-one-out arms -judgeWF / -format and the +levels arm (every tracker on, as designed before the 2019-2020 choice) are scored the same way and reported; they cannot change the decision or re-enter v9"
+ },
+ "candidate": {
+  "checks": {
+   "G1 year-level sigLnd15 error falls: CI upper < 0": {
+    "pass": false,
+    "boot_upper": 0.091659,
+    "mcse_upper": 0.000524,
+    "normal_upper": 0.129212,
+    "threshold": 0.0,
+    "marginal": false,
+    "decided_by": "bootstrap"
+   },
+   "G1 year-level acc error falls: CI upper < 0": {
+    "pass": false,
+    "boot_upper": 0.000303,
+    "mcse_upper": 1e-06,
+    "normal_upper": 0.00041,
+    "threshold": 0.0,
+    "marginal": false,
+    "decided_by": "bootstrap"
+   },
+   "G1 year-level kd100 error falls: CI upper < 0": {
+    "pass": false,
+    "boot_upper": 0.015952,
+    "mcse_upper": 6.2e-05,
+    "normal_upper": 0.021362,
+    "threshold": 0.0,
+    "marginal": false,
+    "decided_by": "bootstrap"
+   },
+   "G1 year-level td15 error falls: CI upper < 0": {
+    "pass": false,
+    "boot_upper": 0.0002,
+    "mcse_upper": 1.1e-05,
+    "normal_upper": 1.2e-05,
+    "threshold": 0.0,
+    "marginal": false,
+    "decided_by": "bootstrap"
+   },
+   "G1 year-level ctrl15 error falls: CI upper < 0": {
+    "pass": true,
+    "boot_upper": -0.109439,
+    "mcse_upper": 0.003186,
+    "normal_upper": -0.025199,
+    "threshold": 0.0,
+    "marginal": false,
+    "decided_by": "bootstrap"
+   },
+   "G1 year-level finish error falls: CI upper < 0": {
+    "pass": false,
+    "boot_upper": 0.009605,
+    "mcse_upper": 7e-06,
+    "normal_upper": 0.010107,
+    "threshold": 0.0,
+    "marginal": false,
+    "decided_by": "bootstrap"
+   },
+   "G2a sig-landed deviance improves: CI upper < 0": {
+    "pass": false,
+    "boot_upper": 0.091513,
+    "mcse_upper": 0.00141,
+    "normal_upper": 0.09128,
+    "threshold": 0.0,
+    "marginal": false,
+    "decided_by": "bootstrap"
+   },
+   "G2b total stat deviance not worse: CI upper <= +0.005 (0.5% of level)": {
+    "pass": true,
+    "boot_upper": 0.00207,
+    "mcse_upper": 2.5e-05,
+    "normal_upper": 0.0021,
+    "threshold": 0.005,
+    "marginal": false,
+    "decided_by": "bootstrap"
+   },
+   "G6a 5-round R4 KO-type hazard: CI of sim - actual covers 0": {
+    "pass": true,
+    "sim": 0.07525,
+    "actual": 0.05797,
+    "events": 8,
+    "reached": 138,
+    "diff": 0.01728,
+    "ci": [
+     -0.02435,
+     0.05348
+    ],
+    "ci_mcse": [
+     0.000476,
+     0.000214
+    ]
+   },
+   "G6b 5-round R5 SUB hazard: CI of sim - actual covers 0": {
+    "pass": true,
+    "sim": 0.02286,
+    "actual": 0.008,
+    "events": 1,
+    "reached": 125,
+    "diff": 0.01486,
+    "ci": [
+     -0.00275,
+     0.02415
+    ],
+    "ci_mcse": [
+     0.000274,
+     1.4e-05
+    ]
+   },
+   "G6c doctor / corner <= 1.5 x the 2019-23 rate": {
+    "pass": true,
+    "sim_rate": 0.003767,
+    "actual_rate": 0.003688,
+    "actual_events": 11,
+    "actual_intervals": 2983,
+    "ratio": 1.0215
+   },
+   "G7 winLL: CI upper <= +0.002": {
+    "pass": true,
+    "boot_upper": 0.001414,
+    "mcse_upper": 9e-06,
+    "normal_upper": 0.00141,
+    "threshold": 0.002,
+    "marginal": false,
+    "decided_by": "bootstrap"
+   },
+   "G7 bin7: CI upper <= +0.002": {
+    "pass": false,
+    "boot_upper": 0.00888,
+    "mcse_upper": 0.00014,
+    "normal_upper": 0.00959,
+    "threshold": 0.002,
+    "marginal": false,
+    "decided_by": "bootstrap"
+   },
+   "G7 method: CI upper <= +0.002": {
+    "pass": false,
+    "boot_upper": 0.003069,
+    "mcse_upper": 1.7e-05,
+    "normal_upper": 0.00309,
+    "threshold": 0.002,
+    "marginal": false,
+    "decided_by": "bootstrap"
+   },
+   "G5 drift rule replay 2015-2023: switch events <= 1": {
+    "pass": true,
+    "switch_events": 1,
+    "fired_at": "2015-09-30",
+    "n_checks": 36,
+    "n_quarters_condition_met": 28,
+    "condition_episodes": 3,
+    "quarters_condition_met": [
+     "2015-09-30",
+     "2015-12-31",
+     "2016-03-31",
+     "2016-06-30",
+     "2016-09-30",
+     "2016-12-31",
+     "2017-03-31",
+     "2018-06-30",
+     "2018-09-30",
+     "2018-12-31",
+     "2019-03-31",
+     "2019-06-30",
+     "2020-03-31",
+     "2020-06-30",
+     "2020-09-30",
+     "2020-12-31",
+     "2021-03-31",
+     "2021-06-30",
+     "2021-09-30",
+     "2021-12-31",
+     "2022-03-31",
+     "2022-06-30",
+     "2022-09-30",
+     "2022-12-31",
+     "2023-03-31",
+     "2023-06-30",
+     "2023-09-30",
+     "2023-12-31"
+    ]
+   },
+   "G3 per-card stacks vs annual-static": {
+    "pass": null,
+    "applicable": false,
+    "why": "per-card stacks vs annual-static stacks: NOT APPLICABLE. v9's base (v4, the latest kept version) has no predict() package and no stack weight provider, and the verified calibration study (research/model_calib.md) found no per-card / recency scheme that beats the incumbents on the forward-chained 2021-23 gate; the component is not built"
+   },
+   "G4 method-head offsets vs static intercepts": {
+    "pass": null,
+    "applicable": false,
+    "why": "method-head offsets vs static intercepts: NOT APPLICABLE. The eradrift verifier did not adopt method-level offsets (nested forward-chained 2021-23 gate: 7-bin -0.00007 [-0.00167, +0.00144]), and v4 has no method head; the component is not built"
+   }
+  },
+  "paired_2021_2023": {
+   "total": {
+    "diff": -0.000374,
+    "ci": [
+     -0.002811,
+     0.00207
+    ],
+    "ci_mcse": [
+     2.3e-05,
+     2.5e-05
+    ],
+    "normal": {
+     "se": 0.001261,
+     "ci": [
+      -0.00285,
+      0.0021
+     ]
+    },
+    "n": 1254
+   },
+   "winLL": {
+    "diff": 0.000339,
+    "ci": [
+     -0.000739,
+     0.001414
+    ],
+    "ci_mcse": [
+     1.2e-05,
+     9e-06
+    ],
+    "normal": {
+     "se": 0.000547,
+     "ci": [
+      -0.00073,
+      0.00141
+     ]
+    },
+    "n": 1222
+   },
+   "bin7": {
+    "diff": -0.003867,
+    "ci": [
+     -0.018437,
+     0.00888
+    ],
+    "ci_mcse": [
+     0.000186,
+     0.00014
+    ],
+    "normal": {
+     "se": 0.006868,
+     "ci": [
+      -0.01733,
+      0.00959
+     ]
+    },
+    "n": 1235
+   },
+   "method": {
+    "diff": 0.000812,
+    "ci": [
+     -0.00143,
+     0.003069
+    ],
+    "ci_mcse": [
+     2.1e-05,
+     1.7e-05
+    ],
+    "normal": {
+     "se": 0.001162,
+     "ci": [
+      -0.00146,
+      0.00309
+     ]
+    },
+    "n": 1235
+   },
+   "dev_sig_lnd": {
+    "diff": -0.024619,
+    "ci": [
+     -0.1372,
+     0.091513
+    ],
+    "ci_mcse": [
+     0.001125,
+     0.00141
+    ],
+    "normal": {
+     "se": 0.059134,
+     "ci": [
+      -0.14052,
+      0.09128
+     ]
+    },
+    "n": 1254
+   },
+   "dev_sig_att": {
+    "diff": -0.034936,
+    "ci": [
+     -0.25867,
+     0.196172
+    ],
+    "ci_mcse": [
+     0.003262,
+     0.002511
+    ],
+    "normal": {
+     "se": 0.116686,
+     "ci": [
+      -0.26364,
+      0.19376
+     ]
+    },
+    "n": 1254
+   },
+   "dev_h_lnd": {
+    "diff": -0.011755,
+    "ci": [
+     -0.085426,
+     0.065538
+    ],
+    "ci_mcse": [
+     0.000692,
+     0.000695
+    ],
+    "normal": {
+     "se": 0.038845,
+     "ci": [
+      -0.08789,
+      0.06438
+     ]
+    },
+    "n": 1254
+   },
+   "dev_b_lnd": {
+    "diff": 0.003154,
+    "ci": [
+     -0.027607,
+     0.0355
+    ],
+    "ci_mcse": [
+     0.000321,
+     0.000213
+    ],
+    "normal": {
+     "se": 0.01624,
+     "ci": [
+      -0.02867,
+      0.03498
+     ]
+    },
+    "n": 1254
+   },
+   "dev_l_lnd": {
+    "diff": -0.013618,
+    "ci": [
+     -0.037851,
+     0.011236
+    ],
+    "ci_mcse": [
+     0.000224,
+     0.00019
+    ],
+    "normal": {
+     "se": 0.012659,
+     "ci": [
+      -0.03843,
+      0.01119
+     ]
+    },
+    "n": 1254
+   },
+   "dev_kd": {
+    "diff": -0.000932,
+    "ci": [
+     -0.005953,
+     0.003573
+    ],
+    "ci_mcse": [
+     3.8e-05,
+     5.3e-05
+    ],
+    "normal": {
+     "se": 0.002417,
+     "ci": [
+      -0.00567,
+      0.00381
+     ]
+    },
+    "n": 1254
+   },
+   "dev_td_lnd": {
+    "diff": 0.000312,
+    "ci": [
+     -0.003084,
+     0.003902
+    ],
+    "ci_mcse": [
+     3.2e-05,
+     3.3e-05
+    ],
+    "normal": {
+     "se": 0.001783,
+     "ci": [
+      -0.00318,
+      0.00381
+     ]
+    },
+    "n": 1254
+   },
+   "dev_td_att": {
+    "diff": 0.003291,
+    "ci": [
+     -0.005761,
+     0.013044
+    ],
+    "ci_mcse": [
+     5.5e-05,
+     9.7e-05
+    ],
+    "normal": {
+     "se": 0.004839,
+     "ci": [
+      -0.00619,
+      0.01278
+     ]
+    },
+    "n": 1254
+   },
+   "dev_ctrl": {
+    "diff": -0.057347,
+    "ci": [
+     -0.394347,
+     0.303679
+    ],
+    "ci_mcse": [
+     0.00304,
+     0.004078
+    ],
+    "normal": {
+     "se": 0.178854,
+     "ci": [
+      -0.40789,
+      0.2932
+     ]
+    },
+    "n": 1254
+   },
+   "dev_sub_att": {
+    "diff": 0.000643,
+    "ci": [
+     -0.000633,
+     0.002055
+    ],
+    "ci_mcse": [
+     1.1e-05,
+     1.5e-05
+    ],
+    "normal": {
+     "se": 0.000686,
+     "ci": [
+      -0.0007,
+      0.00199
+     ]
+    },
+    "n": 1254
+   },
+   "mae_sig_lnd": {
+    "diff": -0.010756,
+    "ci": [
+     -0.091881,
+     0.072541
+    ],
+    "ci_mcse": [
+     0.000584,
+     0.001206
+    ],
+    "normal": {
+     "se": 0.042282,
+     "ci": [
+      -0.09363,
+      0.07211
+     ]
+    },
+    "n": 1254
+   },
+   "mae_sig_att": {
+    "diff": 0.016653,
+    "ci": [
+     -0.152668,
+     0.186835
+    ],
+    "ci_mcse": [
+     0.001774,
+     0.001597
+    ],
+    "normal": {
+     "se": 0.086904,
+     "ci": [
+      -0.15368,
+      0.18698
+     ]
+    },
+    "n": 1254
+   },
+   "mae_h_lnd": {
+    "diff": -0.011152,
+    "ci": [
+     -0.058293,
+     0.036466
+    ],
+    "ci_mcse": [
+     0.000348,
+     0.000667
+    ],
+    "normal": {
+     "se": 0.024295,
+     "ci": [
+      -0.05877,
+      0.03647
+     ]
+    },
+    "n": 1254
+   },
+   "mae_b_lnd": {
+    "diff": 0.001546,
+    "ci": [
+     -0.015444,
+     0.019015
+    ],
+    "ci_mcse": [
+     0.000173,
+     0.000151
+    ],
+    "normal": {
+     "se": 0.008875,
+     "ci": [
+      -0.01585,
+      0.01894
+     ]
+    },
+    "n": 1254
+   },
+   "mae_l_lnd": {
+    "diff": -0.005383,
+    "ci": [
+     -0.021676,
+     0.011194
+    ],
+    "ci_mcse": [
+     0.000147,
+     0.000156
+    ],
+    "normal": {
+     "se": 0.008494,
+     "ci": [
+      -0.02203,
+      0.01126
+     ]
+    },
+    "n": 1254
+   },
+   "mae_kd": {
+    "diff": 0.005712,
+    "ci": [
+     0.00478,
+     0.006675
+    ],
+    "ci_mcse": [
+     1e-05,
+     1e-05
+    ],
+    "normal": {
+     "se": 0.000484,
+     "ci": [
+      0.00476,
+      0.00666
+     ]
+    },
+    "n": 1254
+   },
+   "mae_td_lnd": {
+    "diff": -0.000451,
+    "ci": [
+     -0.001718,
+     0.000829
+    ],
+    "ci_mcse": [
+     1.4e-05,
+     1.1e-05
+    ],
+    "normal": {
+     "se": 0.000649,
+     "ci": [
+      -0.00172,
+      0.00082
+     ]
+    },
+    "n": 1254
+   },
+   "mae_td_att": {
+    "diff": -0.000283,
+    "ci": [
+     -0.003872,
+     0.003361
+    ],
+    "ci_mcse": [
+     3.7e-05,
+     4.2e-05
+    ],
+    "normal": {
+     "se": 0.001861,
+     "ci": [
+      -0.00393,
+      0.00336
+     ]
+    },
+    "n": 1254
+   },
+   "mae_ctrl": {
+    "diff": 0.058783,
+    "ci": [
+     -0.072028,
+     0.189164
+    ],
+    "ci_mcse": [
+     0.001208,
+     0.00137
+    ],
+    "normal": {
+     "se": 0.067055,
+     "ci": [
+      -0.07264,
+      0.19021
+     ]
+    },
+    "n": 1254
+   },
+   "mae_sub_att": {
+    "diff": 0.001035,
+    "ci": [
+     0.000739,
+     0.001331
+    ],
+    "ci_mcse": [
+     2e-06,
+     2e-06
+    ],
+    "normal": {
+     "se": 0.000151,
+     "ci": [
+      0.00074,
+      0.00133
+     ]
+    },
+    "n": 1254
+   }
+  },
+  "year_level": {
+   "sigLnd15": {
+    "diff": 0.061605,
+    "err_cand": 1.643926,
+    "err_cmp": 1.582321,
+    "ci": [
+     -0.038667,
+     0.091659
+    ],
+    "ci_mcse": [
+     0.00084,
+     0.000524
+    ],
+    "normal": {
+     "se": 0.034494,
+     "ci": [
+      -0.006002,
+      0.129212
+     ],
+     "note": "mean + 1.96 x bootstrap sd"
+    }
+   },
+   "acc": {
+    "diff": 0.000216,
+    "err_cand": 0.009203,
+    "err_cmp": 0.008987,
+    "ci": [
+     -4.9e-05,
+     0.000303
+    ],
+    "ci_mcse": [
+     2e-06,
+     1e-06
+    ],
+    "normal": {
+     "se": 9.9e-05,
+     "ci": [
+      2.2e-05,
+      0.00041
+     ],
+     "note": "mean + 1.96 x bootstrap sd"
+    }
+   },
+   "kd100": {
+    "diff": -4.6e-05,
+    "err_cand": 0.10147,
+    "err_cmp": 0.101515,
+    "ci": [
+     -0.011956,
+     0.015952
+    ],
+    "ci_mcse": [
+     5.6e-05,
+     6.2e-05
+    ],
+    "normal": {
+     "se": 0.010922,
+     "ci": [
+      -0.021453,
+      0.021362
+     ],
+     "note": "mean + 1.96 x bootstrap sd"
+    }
+   },
+   "td15": {
+    "diff": -0.001218,
+    "err_cand": 0.122227,
+    "err_cmp": 0.123445,
+    "ci": [
+     -0.002291,
+     0.0002
+    ],
+    "ci_mcse": [
+     1.6e-05,
+     1.1e-05
+    ],
+    "normal": {
+     "se": 0.000628,
+     "ci": [
+      -0.002448,
+      1.2e-05
+     ],
+     "note": "mean + 1.96 x bootstrap sd"
+    }
+   },
+   "ctrl15": {
+    "diff": -0.462122,
+    "err_cand": 9.322359,
+    "err_cmp": 9.784481,
+    "ci": [
+     -0.756402,
+     -0.109439
+    ],
+    "ci_mcse": [
+     0.000653,
+     0.003186
+    ],
+    "normal": {
+     "se": 0.222924,
+     "ci": [
+      -0.899045,
+      -0.025199
+     ],
+     "note": "mean + 1.96 x bootstrap sd"
+    }
+   },
+   "finish": {
+    "diff": 0.003141,
+    "err_cand": 0.031138,
+    "err_cmp": 0.027996,
+    "ci": [
+     -0.003162,
+     0.009605
+    ],
+    "ci_mcse": [
+     1.4e-05,
+     7e-06
+    ],
+    "normal": {
+     "se": 0.003554,
+     "ci": [
+      -0.003824,
+      0.010107
+     ],
+     "note": "mean + 1.96 x bootstrap sd"
+    }
+   }
+  },
+  "year_table": {
+   "2021": {
+    "a": {
+     "sigLnd15": {
+      "sim": 62.60373,
+      "act": 61.22986,
+      "abs_err": 1.37387
+     },
+     "acc": {
+      "sim": 0.47354,
+      "act": 0.46991,
+      "abs_err": 0.00363
+     },
+     "kd100": {
+      "sim": 0.83738,
+      "act": 0.65967,
+      "abs_err": 0.17771
+     },
+     "td15": {
+      "sim": 1.22965,
+      "act": 1.33936,
+      "abs_err": 0.1097
+     },
+     "ctrl15": {
+      "sim": 152.64383,
+      "act": 169.86378,
+      "abs_err": 17.21995
+     },
+     "finish": {
+      "sim": 0.48834,
+      "act": 0.47733,
+      "abs_err": 0.01101
+     }
+    },
+    "b": {
+     "sigLnd15": {
+      "sim": 62.53676,
+      "act": 61.22986,
+      "abs_err": 1.3069
+     },
+     "acc": {
+      "sim": 0.47328,
+      "act": 0.46991,
+      "abs_err": 0.00337
+     },
+     "kd100": {
+      "sim": 0.79972,
+      "act": 0.65967,
+      "abs_err": 0.14004
+     },
+     "td15": {
+      "sim": 1.22901,
+      "act": 1.33936,
+      "abs_err": 0.11035
+     },
+     "ctrl15": {
+      "sim": 151.97341,
+      "act": 169.86378,
+      "abs_err": 17.89037
+     },
+     "finish": {
+      "sim": 0.49742,
+      "act": 0.47733,
+      "abs_err": 0.02009
+     }
+    }
+   },
+   "2022": {
+    "a": {
+     "sigLnd15": {
+      "sim": 65.37899,
+      "act": 62.93308,
+      "abs_err": 2.44591
+     },
+     "acc": {
+      "sim": 0.4859,
+      "act": 0.47372,
+      "abs_err": 0.01218
+     },
+     "kd100": {
+      "sim": 0.74824,
+      "act": 0.86108,
+      "abs_err": 0.11284
+     },
+     "td15": {
+      "sim": 1.28873,
+      "act": 1.46875,
+      "abs_err": 0.18002
+     },
+     "ctrl15": {
+      "sim": 156.60785,
+      "act": 167.0559,
+      "abs_err": 10.44805
+     },
+     "finish": {
+      "sim": 0.47627,
+      "act": 0.53444,
+      "abs_err": 0.05817
+     }
+    },
+    "b": {
+     "sigLnd15": {
+      "sim": 65.33711,
+      "act": 62.93308,
+      "abs_err": 2.40403
+     },
+     "acc": {
+      "sim": 0.48583,
+      "act": 0.47372,
+      "abs_err": 0.01211
+     },
+     "kd100": {
+      "sim": 0.71618,
+      "act": 0.86108,
+      "abs_err": 0.1449
+     },
+     "td15": {
+      "sim": 1.28674,
+      "act": 1.46875,
+      "abs_err": 0.18202
+     },
+     "ctrl15": {
+      "sim": 155.88951,
+      "act": 167.0559,
+      "abs_err": 11.16639
+     },
+     "finish": {
+      "sim": 0.48564,
+      "act": 0.53444,
+      "abs_err": 0.0488
+     }
+    }
+   },
+   "2023": {
+    "a": {
+     "sigLnd15": {
+      "sim": 64.52093,
+      "act": 63.40893,
+      "abs_err": 1.11199
+     },
+     "acc": {
+      "sim": 0.49185,
+      "act": 0.48006,
+      "abs_err": 0.0118
+     },
+     "kd100": {
+      "sim": 0.7849,
+      "act": 0.77104,
+      "abs_err": 0.01385
+     },
+     "td15": {
+      "sim": 1.35956,
+      "act": 1.2826,
+      "abs_err": 0.07696
+     },
+     "ctrl15": {
+      "sim": 166.62281,
+      "act": 166.32373,
+      "abs_err": 0.29908
+     },
+     "finish": {
+      "sim": 0.48716,
+      "act": 0.51139,
+      "abs_err": 0.02423
+     }
+    },
+    "b": {
+     "sigLnd15": {
+      "sim": 64.44497,
+      "act": 63.40893,
+      "abs_err": 1.03604
+     },
+     "acc": {
+      "sim": 0.49154,
+      "act": 0.48006,
+      "abs_err": 0.01148
+     },
+     "kd100": {
+      "sim": 0.75144,
+      "act": 0.77104,
+      "abs_err": 0.0196
+     },
+     "td15": {
+      "sim": 1.36058,
+      "act": 1.2826,
+      "abs_err": 0.07798
+     },
+     "ctrl15": {
+      "sim": 166.02705,
+      "act": 166.32373,
+      "abs_err": 0.29668
+     },
+     "finish": {
+      "sim": 0.4963,
+      "act": 0.51139,
+      "abs_err": 0.0151
+     }
+    }
+   }
+  },
+  "g6_candidate": {
+   "R4_KO": {
+    "sim": 0.07525,
+    "actual": 0.05797,
+    "events": 8,
+    "reached": 138,
+    "diff": 0.01728,
+    "ci": [
+     -0.02435,
+     0.05348
+    ],
+    "ci_mcse": [
+     0.000476,
+     0.000214
+    ],
+    "pass": true
+   },
+   "R5_SUB": {
+    "sim": 0.02286,
+    "actual": 0.008,
+    "events": 1,
+    "reached": 125,
+    "diff": 0.01486,
+    "ci": [
+     -0.00275,
+     0.02415
+    ],
+    "ci_mcse": [
+     0.000274,
+     1.4e-05
+    ],
+    "pass": true
+   },
+   "stoppage": {
+    "sim_rate": 0.003767,
+    "actual_rate": 0.003688,
+    "actual_events": 11,
+    "actual_intervals": 2983,
+    "ratio": 1.0215,
+    "pass": true
+   }
+  },
+  "g6_comparator": {
+   "R4_KO": {
+    "sim": 0.11884,
+    "actual": 0.05797,
+    "events": 8,
+    "reached": 138,
+    "diff": 0.06087,
+    "ci": [
+     0.01906,
+     0.09748
+    ],
+    "ci_mcse": [
+     0.000495,
+     0.000283
+    ],
+    "pass": false
+   },
+   "R5_SUB": {
+    "sim": 0.02954,
+    "actual": 0.008,
+    "events": 1,
+    "reached": 125,
+    "diff": 0.02154,
+    "ci": [
+     0.00391,
+     0.03105
+    ],
+    "ci_mcse": [
+     0.000279,
+     2.3e-05
+    ],
+    "pass": false
+   },
+   "stoppage": {
+    "sim_rate": 0.01123,
+    "actual_rate": 0.003688,
+    "actual_events": 11,
+    "actual_intervals": 2983,
+    "ratio": 3.0454,
+    "pass": false
+   }
+  },
+  "rates_2021_2023": {
+   "cand": {
+    "KO": [
+     0.314,
+     0.32227
+    ],
+    "SUB": [
+     0.16985,
+     0.18543
+    ],
+    "DEC": [
+     0.51615,
+     0.49231
+    ],
+    "decision_split_sim": {
+     "UD": 0.7937,
+     "SD": 0.2016,
+     "MD": 0.0047
+    },
+    "decision_split_act": {
+     "UD": 0.7681,
+     "SD": 0.2034,
+     "MD": 0.0286
+    },
+    "r108": [
+     0.03584,
+     0.04711
+    ],
+    "finByRound3": {
+     "sim": [
+      0.2479,
+      0.1394,
+      0.0929
+     ],
+     "act": [
+      0.2428,
+      0.1874,
+      0.0776
+     ]
+    },
+    "finByRound5": {
+     "sim": [
+      0.1714,
+      0.1376,
+      0.0981,
+      0.0584,
+      0.0447
+     ],
+     "act": [
+      0.1579,
+      0.1579,
+      0.0987,
+      0.0592,
+      0.0329
+     ]
+    },
+    "note": "[sim, actual]; r108 = 10-8 judge-rounds per decision judge-round (evalv.js; actual card-implied)"
+   },
+   "cmp": {
+    "KO": [
+     0.32263,
+     0.32227
+    ],
+    "SUB": [
+     0.17042,
+     0.18543
+    ],
+    "DEC": [
+     0.50696,
+     0.49231
+    ],
+    "decision_split_sim": {
+     "UD": 0.7966,
+     "SD": 0.1988,
+     "MD": 0.0046
+    },
+    "decision_split_act": {
+     "UD": 0.7681,
+     "SD": 0.2034,
+     "MD": 0.0286
+    },
+    "r108": [
+     0.0357,
+     0.04711
+    ],
+    "finByRound3": {
+     "sim": [
+      0.2529,
+      0.1452,
+      0.0915
+     ],
+     "act": [
+      0.2428,
+      0.1874,
+      0.0776
+     ]
+    },
+    "finByRound5": {
+     "sim": [
+      0.1412,
+      0.1262,
+      0.1021,
+      0.0943,
+      0.054
+     ],
+     "act": [
+      0.1579,
+      0.1579,
+      0.0987,
+      0.0592,
+      0.0329
+     ]
+    },
+    "note": "[sim, actual]; r108 = 10-8 judge-rounds per decision judge-round (evalv.js; actual card-implied)"
+   }
+  },
+  "n_bind": 1254,
+  "n_g6_fights": 1999,
+  "norm_dev_cmp4": {
+   "sig_lnd": 23.90794177280373,
+   "sig_att": 48.671596144175155,
+   "h_lnd": 17.96070861499925,
+   "b_lnd": 7.58073990543281,
+   "l_lnd": 6.877683873605314,
+   "kd": 0.7191888326442829,
+   "td_lnd": 1.7916629401894588,
+   "td_att": 3.30241496790689,
+   "ctrl": 160.19949389177307,
+   "sub_att": 0.9100681030383945
+  }
+ },
+ "result": "FAIL",
+ "failed": [
+  "G1 year-level sigLnd15 error falls: CI upper < 0",
+  "G1 year-level acc error falls: CI upper < 0",
+  "G1 year-level kd100 error falls: CI upper < 0",
+  "G1 year-level td15 error falls: CI upper < 0",
+  "G1 year-level finish error falls: CI upper < 0",
+  "G2a sig-landed deviance improves: CI upper < 0",
+  "G7 bin7: CI upper <= +0.002",
+  "G7 method: CI upper <= +0.002"
+ ],
+ "descriptive": {
+  "-judgeWF": {
+   "failed_checks_if_it_were_the_candidate": [
+    "G1 year-level sigLnd15 error falls: CI upper < 0",
+    "G1 year-level acc error falls: CI upper < 0",
+    "G1 year-level kd100 error falls: CI upper < 0",
+    "G1 year-level td15 error falls: CI upper < 0",
+    "G1 year-level finish error falls: CI upper < 0",
+    "G2a sig-landed deviance improves: CI upper < 0",
+    "G7 bin7: CI upper <= +0.002",
+    "G7 method: CI upper <= +0.002"
+   ],
+   "paired_2021_2023": {
+    "total": {
+     "diff": -0.000374,
+     "ci": [
+      -0.002811,
+      0.00207
+     ],
+     "ci_mcse": [
+      2.3e-05,
+      2.5e-05
+     ],
+     "normal": {
+      "se": 0.001261,
+      "ci": [
+       -0.00285,
+       0.0021
+      ]
+     },
+     "n": 1254
+    },
+    "winLL": {
+     "diff": 0.00031,
+     "ci": [
+      -0.000494,
+      0.001108
+     ],
+     "ci_mcse": [
+      6e-06,
+      7e-06
+     ],
+     "normal": {
+      "se": 0.000408,
+      "ci": [
+       -0.00049,
+       0.00111
+      ]
+     },
+     "n": 1222
+    },
+    "bin7": {
+     "diff": -0.002342,
+     "ci": [
+      -0.012496,
+      0.004046
+     ],
+     "ci_mcse": [
+      0.000108,
+      3.4e-05
+     ],
+     "normal": {
+      "se": 0.004386,
+      "ci": [
+       -0.01094,
+       0.00625
+      ]
+     },
+     "n": 1235
+    },
+    "method": {
+     "diff": 0.000812,
+     "ci": [
+      -0.00143,
+      0.003069
+     ],
+     "ci_mcse": [
+      2.1e-05,
+      1.7e-05
+     ],
+     "normal": {
+      "se": 0.001162,
+      "ci": [
+       -0.00146,
+       0.00309
+      ]
+     },
+     "n": 1235
+    },
+    "dev_sig_lnd": {
+     "diff": -0.024619,
+     "ci": [
+      -0.1372,
+      0.091513
+     ],
+     "ci_mcse": [
+      0.001125,
+      0.00141
+     ],
+     "normal": {
+      "se": 0.059134,
+      "ci": [
+       -0.14052,
+       0.09128
+      ]
+     },
+     "n": 1254
+    },
+    "dev_sig_att": {
+     "diff": -0.034936,
+     "ci": [
+      -0.25867,
+      0.196172
+     ],
+     "ci_mcse": [
+      0.003262,
+      0.002511
+     ],
+     "normal": {
+      "se": 0.116686,
+      "ci": [
+       -0.26364,
+       0.19376
+      ]
+     },
+     "n": 1254
+    },
+    "dev_ctrl": {
+     "diff": -0.057347,
+     "ci": [
+      -0.394347,
+      0.303679
+     ],
+     "ci_mcse": [
+      0.00304,
+      0.004078
+     ],
+     "normal": {
+      "se": 0.178854,
+      "ci": [
+       -0.40789,
+       0.2932
+      ]
+     },
+     "n": 1254
+    },
+    "dev_td_att": {
+     "diff": 0.003291,
+     "ci": [
+      -0.005761,
+      0.013044
+     ],
+     "ci_mcse": [
+      5.5e-05,
+      9.7e-05
+     ],
+     "normal": {
+      "se": 0.004839,
+      "ci": [
+       -0.00619,
+       0.01278
+      ]
+     },
+     "n": 1254
+    },
+    "dev_kd": {
+     "diff": -0.000932,
+     "ci": [
+      -0.005953,
+      0.003573
+     ],
+     "ci_mcse": [
+      3.8e-05,
+      5.3e-05
+     ],
+     "normal": {
+      "se": 0.002417,
+      "ci": [
+       -0.00567,
+       0.00381
+      ]
+     },
+     "n": 1254
+    }
+   },
+   "year_level": {
+    "sigLnd15": {
+     "diff": 0.061605,
+     "err_cand": 1.643926,
+     "err_cmp": 1.582321,
+     "ci": [
+      -0.038667,
+      0.091659
+     ],
+     "ci_mcse": [
+      0.00084,
+      0.000524
+     ],
+     "normal": {
+      "se": 0.034494,
+      "ci": [
+       -0.006002,
+       0.129212
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "acc": {
+     "diff": 0.000216,
+     "err_cand": 0.009203,
+     "err_cmp": 0.008987,
+     "ci": [
+      -4.9e-05,
+      0.000303
+     ],
+     "ci_mcse": [
+      2e-06,
+      1e-06
+     ],
+     "normal": {
+      "se": 9.9e-05,
+      "ci": [
+       2.2e-05,
+       0.00041
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "kd100": {
+     "diff": -4.6e-05,
+     "err_cand": 0.10147,
+     "err_cmp": 0.101515,
+     "ci": [
+      -0.011956,
+      0.015952
+     ],
+     "ci_mcse": [
+      5.6e-05,
+      6.2e-05
+     ],
+     "normal": {
+      "se": 0.010922,
+      "ci": [
+       -0.021453,
+       0.021362
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "td15": {
+     "diff": -0.001218,
+     "err_cand": 0.122227,
+     "err_cmp": 0.123445,
+     "ci": [
+      -0.002291,
+      0.0002
+     ],
+     "ci_mcse": [
+      1.6e-05,
+      1.1e-05
+     ],
+     "normal": {
+      "se": 0.000628,
+      "ci": [
+       -0.002448,
+       1.2e-05
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "ctrl15": {
+     "diff": -0.462122,
+     "err_cand": 9.322359,
+     "err_cmp": 9.784481,
+     "ci": [
+      -0.756402,
+      -0.109439
+     ],
+     "ci_mcse": [
+      0.000653,
+      0.003186
+     ],
+     "normal": {
+      "se": 0.222924,
+      "ci": [
+       -0.899045,
+       -0.025199
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "finish": {
+     "diff": 0.003141,
+     "err_cand": 0.031138,
+     "err_cmp": 0.027996,
+     "ci": [
+      -0.003162,
+      0.009605
+     ],
+     "ci_mcse": [
+      1.4e-05,
+      7e-06
+     ],
+     "normal": {
+      "se": 0.003554,
+      "ci": [
+       -0.003824,
+       0.010107
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    }
+   },
+   "g6": {
+    "R4_KO": {
+     "sim": 0.07525,
+     "actual": 0.05797,
+     "events": 8,
+     "reached": 138,
+     "diff": 0.01728,
+     "ci": [
+      -0.02435,
+      0.05348
+     ],
+     "ci_mcse": [
+      0.000476,
+      0.000214
+     ],
+     "pass": true
+    },
+    "R5_SUB": {
+     "sim": 0.02286,
+     "actual": 0.008,
+     "events": 1,
+     "reached": 125,
+     "diff": 0.01486,
+     "ci": [
+      -0.00275,
+      0.02415
+     ],
+     "ci_mcse": [
+      0.000274,
+      1.4e-05
+     ],
+     "pass": true
+    },
+    "stoppage": {
+     "sim_rate": 0.003767,
+     "actual_rate": 0.003688,
+     "actual_events": 11,
+     "actual_intervals": 2983,
+     "ratio": 1.0215,
+     "pass": true
+    }
+   },
+   "all_minus_this_arm": {
+    "total": {
+     "diff": 0.0,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ]
+     },
+     "n": 1254
+    },
+    "winLL": {
+     "diff": 2.9e-05,
+     "ci": [
+      -0.000594,
+      0.000652
+     ],
+     "ci_mcse": [
+      6e-06,
+      4e-06
+     ],
+     "normal": {
+      "se": 0.000316,
+      "ci": [
+       -0.00059,
+       0.00065
+      ]
+     },
+     "n": 1222
+    },
+    "bin7": {
+     "diff": -0.001525,
+     "ci": [
+      -0.012609,
+      0.00936
+     ],
+     "ci_mcse": [
+      0.000121,
+      0.000117
+     ],
+     "normal": {
+      "se": 0.005316,
+      "ci": [
+       -0.01194,
+       0.00889
+      ]
+     },
+     "n": 1235
+    },
+    "method": {
+     "diff": 0.0,
+     "ci": [
+      -0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       -0.0,
+       0.0
+      ]
+     },
+     "n": 1235
+    },
+    "dev_sig_lnd": {
+     "diff": 0.0,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ]
+     },
+     "n": 1254
+    },
+    "dev_ctrl": {
+     "diff": 0.0,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ]
+     },
+     "n": 1254
+    },
+    "dev_kd": {
+     "diff": 0.0,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ]
+     },
+     "n": 1254
+    }
+   }
+  },
+  "-format": {
+   "failed_checks_if_it_were_the_candidate": [
+    "G1 year-level sigLnd15 error falls: CI upper < 0",
+    "G1 year-level acc error falls: CI upper < 0",
+    "G1 year-level kd100 error falls: CI upper < 0",
+    "G1 year-level td15 error falls: CI upper < 0",
+    "G1 year-level ctrl15 error falls: CI upper < 0",
+    "G1 year-level finish error falls: CI upper < 0",
+    "G2a sig-landed deviance improves: CI upper < 0",
+    "G6a 5-round R4 KO-type hazard: CI of sim - actual covers 0",
+    "G6b 5-round R5 SUB hazard: CI of sim - actual covers 0",
+    "G6c doctor / corner <= 1.5 x the 2019-23 rate",
+    "G7 bin7: CI upper <= +0.002"
+   ],
+   "paired_2021_2023": {
+    "total": {
+     "diff": 0.0,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ]
+     },
+     "n": 1254
+    },
+    "winLL": {
+     "diff": 6.6e-05,
+     "ci": [
+      -0.000544,
+      0.000679
+     ],
+     "ci_mcse": [
+      6e-06,
+      5e-06
+     ],
+     "normal": {
+      "se": 0.000309,
+      "ci": [
+       -0.00054,
+       0.00067
+      ]
+     },
+     "n": 1222
+    },
+    "bin7": {
+     "diff": -0.001753,
+     "ci": [
+      -0.012826,
+      0.009092
+     ],
+     "ci_mcse": [
+      0.000139,
+      0.000123
+     ],
+     "normal": {
+      "se": 0.005333,
+      "ci": [
+       -0.01221,
+       0.0087
+      ]
+     },
+     "n": 1235
+    },
+    "method": {
+     "diff": -0.0,
+     "ci": [
+      -0.0,
+      -0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       -0.0,
+       -0.0
+      ]
+     },
+     "n": 1235
+    },
+    "dev_sig_lnd": {
+     "diff": 0.0,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ]
+     },
+     "n": 1254
+    },
+    "dev_sig_att": {
+     "diff": 0.0,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ]
+     },
+     "n": 1254
+    },
+    "dev_ctrl": {
+     "diff": 0.0,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ]
+     },
+     "n": 1254
+    },
+    "dev_td_att": {
+     "diff": 0.0,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ]
+     },
+     "n": 1254
+    },
+    "dev_kd": {
+     "diff": 0.0,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ]
+     },
+     "n": 1254
+    }
+   },
+   "year_level": {
+    "sigLnd15": {
+     "diff": 0.0,
+     "err_cand": 1.582321,
+     "err_cmp": 1.582321,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "acc": {
+     "diff": 0.0,
+     "err_cand": 0.008987,
+     "err_cmp": 0.008987,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "kd100": {
+     "diff": 0.0,
+     "err_cand": 0.101515,
+     "err_cmp": 0.101515,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "td15": {
+     "diff": 0.0,
+     "err_cand": 0.123445,
+     "err_cmp": 0.123445,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "ctrl15": {
+     "diff": 0.0,
+     "err_cand": 9.784481,
+     "err_cmp": 9.784481,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "finish": {
+     "diff": 0.0,
+     "err_cand": 0.027996,
+     "err_cmp": 0.027996,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "ci_mcse": [
+      0.0,
+      0.0
+     ],
+     "normal": {
+      "se": 0.0,
+      "ci": [
+       0.0,
+       0.0
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    }
+   },
+   "g6": {
+    "R4_KO": {
+     "sim": 0.11884,
+     "actual": 0.05797,
+     "events": 8,
+     "reached": 138,
+     "diff": 0.06087,
+     "ci": [
+      0.01906,
+      0.09748
+     ],
+     "ci_mcse": [
+      0.000495,
+      0.000283
+     ],
+     "pass": false
+    },
+    "R5_SUB": {
+     "sim": 0.02954,
+     "actual": 0.008,
+     "events": 1,
+     "reached": 125,
+     "diff": 0.02154,
+     "ci": [
+      0.00391,
+      0.03105
+     ],
+     "ci_mcse": [
+      0.000279,
+      2.3e-05
+     ],
+     "pass": false
+    },
+    "stoppage": {
+     "sim_rate": 0.01123,
+     "actual_rate": 0.003688,
+     "actual_events": 11,
+     "actual_intervals": 2983,
+     "ratio": 3.0454,
+     "pass": false
+    }
+   },
+   "all_minus_this_arm": {
+    "total": {
+     "diff": -0.000374,
+     "ci": [
+      -0.002811,
+      0.00207
+     ],
+     "ci_mcse": [
+      2.3e-05,
+      2.5e-05
+     ],
+     "normal": {
+      "se": 0.001261,
+      "ci": [
+       -0.00285,
+       0.0021
+      ]
+     },
+     "n": 1254
+    },
+    "winLL": {
+     "diff": 0.000273,
+     "ci": [
+      -0.000528,
+      0.00107
+     ],
+     "ci_mcse": [
+      6e-06,
+      9e-06
+     ],
+     "normal": {
+      "se": 0.000405,
+      "ci": [
+       -0.00052,
+       0.00107
+      ]
+     },
+     "n": 1222
+    },
+    "bin7": {
+     "diff": -0.002114,
+     "ci": [
+      -0.012196,
+      0.00416
+     ],
+     "ci_mcse": [
+      0.000121,
+      3.3e-05
+     ],
+     "normal": {
+      "se": 0.004362,
+      "ci": [
+       -0.01066,
+       0.00644
+      ]
+     },
+     "n": 1235
+    },
+    "method": {
+     "diff": 0.000812,
+     "ci": [
+      -0.00143,
+      0.003069
+     ],
+     "ci_mcse": [
+      2.1e-05,
+      1.7e-05
+     ],
+     "normal": {
+      "se": 0.001162,
+      "ci": [
+       -0.00146,
+       0.00309
+      ]
+     },
+     "n": 1235
+    },
+    "dev_sig_lnd": {
+     "diff": -0.024619,
+     "ci": [
+      -0.1372,
+      0.091513
+     ],
+     "ci_mcse": [
+      0.001125,
+      0.00141
+     ],
+     "normal": {
+      "se": 0.059134,
+      "ci": [
+       -0.14052,
+       0.09128
+      ]
+     },
+     "n": 1254
+    },
+    "dev_ctrl": {
+     "diff": -0.057347,
+     "ci": [
+      -0.394347,
+      0.303679
+     ],
+     "ci_mcse": [
+      0.00304,
+      0.004078
+     ],
+     "normal": {
+      "se": 0.178854,
+      "ci": [
+       -0.40789,
+       0.2932
+      ]
+     },
+     "n": 1254
+    },
+    "dev_kd": {
+     "diff": -0.000932,
+     "ci": [
+      -0.005953,
+      0.003573
+     ],
+     "ci_mcse": [
+      3.8e-05,
+      5.3e-05
+     ],
+     "normal": {
+      "se": 0.002417,
+      "ci": [
+       -0.00567,
+       0.00381
+      ]
+     },
+     "n": 1254
+    }
+   }
+  },
+  "+levels": {
+   "failed_checks_if_it_were_the_candidate": [
+    "G1 year-level sigLnd15 error falls: CI upper < 0",
+    "G1 year-level acc error falls: CI upper < 0",
+    "G1 year-level kd100 error falls: CI upper < 0",
+    "G1 year-level td15 error falls: CI upper < 0",
+    "G1 year-level ctrl15 error falls: CI upper < 0",
+    "G1 year-level finish error falls: CI upper < 0",
+    "G2a sig-landed deviance improves: CI upper < 0",
+    "G7 winLL: CI upper <= +0.002",
+    "G7 bin7: CI upper <= +0.002",
+    "G7 method: CI upper <= +0.002"
+   ],
+   "paired_2021_2023": {
+    "total": {
+     "diff": -0.000469,
+     "ci": [
+      -0.004593,
+      0.003622
+     ],
+     "ci_mcse": [
+      3.5e-05,
+      4.3e-05
+     ],
+     "normal": {
+      "se": 0.002107,
+      "ci": [
+       -0.0046,
+       0.00366
+      ]
+     },
+     "n": 1254
+    },
+    "winLL": {
+     "diff": -0.000168,
+     "ci": [
+      -0.002611,
+      0.00227
+     ],
+     "ci_mcse": [
+      3e-05,
+      3e-05
+     ],
+     "normal": {
+      "se": 0.001237,
+      "ci": [
+       -0.00259,
+       0.00226
+      ]
+     },
+     "n": 1222
+    },
+    "bin7": {
+     "diff": 0.014534,
+     "ci": [
+      -0.005778,
+      0.035241
+     ],
+     "ci_mcse": [
+      0.000173,
+      0.000304
+     ],
+     "normal": {
+      "se": 0.010535,
+      "ci": [
+       -0.00611,
+       0.03518
+      ]
+     },
+     "n": 1235
+    },
+    "method": {
+     "diff": 0.005471,
+     "ci": [
+      -0.00061,
+      0.011725
+     ],
+     "ci_mcse": [
+      3.4e-05,
+      5.7e-05
+     ],
+     "normal": {
+      "se": 0.003162,
+      "ci": [
+       -0.00073,
+       0.01167
+      ]
+     },
+     "n": 1235
+    },
+    "dev_sig_lnd": {
+     "diff": -0.022357,
+     "ci": [
+      -0.225946,
+      0.184964
+     ],
+     "ci_mcse": [
+      0.001825,
+      0.001918
+     ],
+     "normal": {
+      "se": 0.106172,
+      "ci": [
+       -0.23045,
+       0.18574
+      ]
+     },
+     "n": 1254
+    },
+    "dev_sig_att": {
+     "diff": 0.049941,
+     "ci": [
+      -0.310185,
+      0.410496
+     ],
+     "ci_mcse": [
+      0.002408,
+      0.004325
+     ],
+     "normal": {
+      "se": 0.185392,
+      "ci": [
+       -0.31342,
+       0.4133
+      ]
+     },
+     "n": 1254
+    },
+    "dev_ctrl": {
+     "diff": -0.397375,
+     "ci": [
+      -1.747898,
+      0.968799
+     ],
+     "ci_mcse": [
+      0.01195,
+      0.012541
+     ],
+     "normal": {
+      "se": 0.700809,
+      "ci": [
+       -1.77093,
+       0.97618
+      ]
+     },
+     "n": 1254
+    },
+    "dev_td_att": {
+     "diff": -0.004315,
+     "ci": [
+      -0.036824,
+      0.027861
+     ],
+     "ci_mcse": [
+      0.000471,
+      0.000332
+     ],
+     "normal": {
+      "se": 0.016641,
+      "ci": [
+       -0.03693,
+       0.0283
+      ]
+     },
+     "n": 1254
+    },
+    "dev_kd": {
+     "diff": -0.000792,
+     "ci": [
+      -0.005858,
+      0.004358
+     ],
+     "ci_mcse": [
+      4.6e-05,
+      2.8e-05
+     ],
+     "normal": {
+      "se": 0.002629,
+      "ci": [
+       -0.00594,
+       0.00436
+      ]
+     },
+     "n": 1254
+    }
+   },
+   "year_level": {
+    "sigLnd15": {
+     "diff": -0.43729,
+     "err_cand": 1.145031,
+     "err_cmp": 1.582321,
+     "ci": [
+      -2.505768,
+      2.192848
+     ],
+     "ci_mcse": [
+      0.013296,
+      0.020453
+     ],
+     "normal": {
+      "se": 1.196029,
+      "ci": [
+       -2.781463,
+       1.906884
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "acc": {
+     "diff": -0.003751,
+     "err_cand": 0.005237,
+     "err_cmp": 0.008987,
+     "ci": [
+      -0.008208,
+      0.004897
+     ],
+     "ci_mcse": [
+      1.3e-05,
+      5e-05
+     ],
+     "normal": {
+      "se": 0.003937,
+      "ci": [
+       -0.011468,
+       0.003967
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "kd100": {
+     "diff": -0.006021,
+     "err_cand": 0.095494,
+     "err_cmp": 0.101515,
+     "ci": [
+      -0.038401,
+      0.025973
+     ],
+     "ci_mcse": [
+      8e-05,
+      0.001059
+     ],
+     "normal": {
+      "se": 0.019559,
+      "ci": [
+       -0.044356,
+       0.032314
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "td15": {
+     "diff": -0.057902,
+     "err_cand": 0.065543,
+     "err_cmp": 0.123445,
+     "ci": [
+      -0.082408,
+      0.017488
+     ],
+     "ci_mcse": [
+      0.000829,
+      0.000223
+     ],
+     "normal": {
+      "se": 0.027435,
+      "ci": [
+       -0.111674,
+       -0.00413
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "ctrl15": {
+     "diff": -6.256991,
+     "err_cand": 3.52749,
+     "err_cmp": 9.784481,
+     "ci": [
+      -9.428133,
+      1.32506
+     ],
+     "ci_mcse": [
+      0.007738,
+      0.042513
+     ],
+     "normal": {
+      "se": 2.847271,
+      "ci": [
+       -11.837539,
+       -0.676443
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    },
+    "finish": {
+     "diff": 0.013787,
+     "err_cand": 0.041784,
+     "err_cmp": 0.027996,
+     "ci": [
+      -0.006642,
+      0.028379
+     ],
+     "ci_mcse": [
+      0.000106,
+      2.3e-05
+     ],
+     "normal": {
+      "se": 0.010836,
+      "ci": [
+       -0.007451,
+       0.035026
+      ],
+      "note": "mean + 1.96 x bootstrap sd"
+     }
+    }
+   },
+   "g6": {
+    "R4_KO": {
+     "sim": 0.07062,
+     "actual": 0.05797,
+     "events": 8,
+     "reached": 138,
+     "diff": 0.01264,
+     "ci": [
+      -0.02863,
+      0.04868
+     ],
+     "ci_mcse": [
+      0.000511,
+      0.000208
+     ],
+     "pass": true
+    },
+    "R5_SUB": {
+     "sim": 0.02257,
+     "actual": 0.008,
+     "events": 1,
+     "reached": 125,
+     "diff": 0.01457,
+     "ci": [
+      -0.00305,
+      0.02378
+     ],
+     "ci_mcse": [
+      0.000229,
+      1.3e-05
+     ],
+     "pass": true
+    },
+    "stoppage": {
+     "sim_rate": 0.003491,
+     "actual_rate": 0.003688,
+     "actual_events": 11,
+     "actual_intervals": 2983,
+     "ratio": 0.9467,
+     "pass": true
+    }
+   }
+  }
+ }
+}

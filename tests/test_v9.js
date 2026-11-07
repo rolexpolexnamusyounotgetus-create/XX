@@ -10,12 +10,14 @@
    6  tools/v9_levels.js: a fight's factors use only fights dated strictly before it (perturbing later or same-day fights changes
       nothing), the first card gets 1, r108At is the month-start step function of eradrift.json
    7  params blocks match their fit files (judge_wf.json, format_fit.json, t108_map.json, levels_select.json -> levels off)
-     node tests/test_v9.js [--json <out>] */
+     node tests/test_v9.js [--json <out>]      (V9_DIR=<dir> picks the engine directory; default src/ while it is 9.0.0, else versions/v9) */
 "use strict";
 const fs = require("fs");
 const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
-const E9 = require(path.join(ROOT, "src/engine3.js"));
+// the v9 engine: V9_DIR, else src/ while it holds 9.0.0, else the frozen candidate versions/v9 (src restored to v4 after the gate)
+const V9_DIR = process.env.V9_DIR || (require(path.join(ROOT, "src/engine3.js")).VERSION === "9.0.0" ? "src" : "versions/v9");
+const E9 = require(path.join(ROOT, V9_DIR, "engine3.js"));
 const E4 = require(path.join(ROOT, "versions/v4/engine3.js"));
 const LV = require(path.join(ROOT, "tools/v9_levels.js"));
 const readJSON = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), "utf8"));
@@ -173,7 +175,7 @@ function sims(E, m, seed, n) {
 }
 
 const nf = results.filter((r) => !r.ok).length;
-console.log(`\n${results.length - nf}/${results.length} checks pass`);
+console.log(`\n${results.length - nf}/${results.length} checks pass (engine ${V9_DIR})`);
 const ji = process.argv.indexOf("--json");
 if (ji > 0) fs.writeFileSync(path.resolve(ROOT, process.argv[ji + 1]), JSON.stringify({ tool: "tests/test_v9.js", built: new Date().toISOString(), pass: nf === 0, checks: results }, null, 1));
 process.exit(nf ? 1 : 0);

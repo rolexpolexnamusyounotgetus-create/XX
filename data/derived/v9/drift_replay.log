@@ -1,0 +1,3 @@
+rule (b) replay 2015-2023: switch events 1 (fired 2015-09-30); condition met at 28 of 36 quarter ends in 3 episodes
+level alarms (descriptive, data/derived/v9/gate_train.json / all): {'decision': '2022-12-31', 'ko': None, 'r1_finish': None, 'sig_lnd': '2022-12-31', 'ctrl': '2021-06-30', 'td_att': '2021-09-30', 'kd': '2020-06-30'}
+wrote data/derived/v9/drift_replay.json
