@@ -4,9 +4,20 @@
    (src/params3.js; the flag off gives the plain engine package, whose numbers are FightEngine.summarize's).
 
    The package (research and numbers: the blend_anchor component report; data/derived/blend_anchor.json):
-     1. P(win): the verified stacked blend (src/ml/moe.js + data/derived/moe_page.json) over the experts the call can
-        supply (engine = this simulator, feat_lr, elo computed here; ml, elo_sig, mkt_rating and the market line passed
-        in opts.experts / opts.line), then an optional temperature (params.blend.recalT; logit x T).
+     1. P(win): the verified ML v2 package (v5 merge step 5; research/model_blindtest.md, research/model_ml2.md):
+        the exported production stack data/derived/blindtest_stack.json in src/ml/moe.js's format, chosen by an EXPLICIT
+        opts.lineKind: 'close' = the close-trained `model` (a fight-day line near the close, power de-vig), 'open' = the
+        open-trained `model_open` (an opener or any earlier line, proportional de-vig; a close-trained stack fed an
+        opener costs +0.0102 [+0.0057, +0.0145] on 2024-25), 'none' = the shared no-line block. A line without
+        lineKind is refused. Experts: engine (this simulator, both corner orders), feat_lr (moe_page.json `feat`), elo,
+        ml + elo_sig (the ML page model, ml.json), mkt_rating (market.json ratings), market (the line); any of them can
+        be passed in opts.experts instead. ML v2's page logistic (src/ml/ml2.js, ml2.json page_model) and its page
+        stacks are computed next to it (`ml2`); opts.winner = 'ml2' makes the lineKind-matched ML v2 page stack the
+        headline instead. Then an optional temperature (params.blend.recalT; logit x T; 1 = none).
+        BACKTESTS (opts.backtest = true): the loaded production stack (fit through 2025), the S model (fit through
+        2026-10) and every live roster (ML page, ML v2, market ratings) are refused: pass a stacker fit on 2023 or
+        earlier (opts.stack, with its fit_through; tools/blindtest.py export --fit-through 2023-12-31), walk-forward
+        method/round cells (opts.mrCells) and walk-forward experts (opts.experts; tools/predictrec.js builds all three).
      2. Method x round: the simulator's cells (both corner orders) rescaled to that P(win) with MoE.winnerFactors
         (draw share and the within-winner method/round mix kept), pooled with the method/round model S/SM
         (tools/methodround_model.js, data/derived/methodround.json), also rescaled:
@@ -36,8 +47,8 @@
   else root.FightBlend = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (root) {
   "use strict";
-  var VERSION = "1.0.0";
-  var STATE = { moe: null, mr: null, mrModel: null, data: null };
+  var VERSION = "1.1.0";   // 1.1.0 (v5 merge step 5): ML v2 package winner blend, opts.lineKind, backtest guard, v5 corner swaps
+  var STATE = { stack: null, feat: null, ml2: null, mlPage: null, mktRatings: null, mr: null, mrModel: null, data: null };
 
   function clip(x, lo, hi) { return x < lo ? lo : (x > hi ? hi : x); }
   function logit(p) { p = clip(p, 1e-6, 1 - 1e-6); return Math.log(p / (1 - p)); }
@@ -53,6 +64,16 @@
   function mrLib() {
     if (root && root.MethodRound) return root.MethodRound;
     if (typeof require === "function") { try { return require("../../tools/methodround_model.js"); } catch (e) { return null; } }
+    return null;
+  }
+  function ml2Lib() {
+    if (root && root.ML2) return root.ML2;
+    if (typeof require === "function") { try { return require("./ml2.js"); } catch (e) { return null; } }
+    return null;
+  }
+  function mlPageLib() {
+    if (root && root.MLPage) return root.MLPage;
+    if (typeof require === "function") { try { return require("./mlpage.js"); } catch (e) { return null; } }
     return null;
   }
 
@@ -173,12 +194,23 @@
     if (x.A && x.B) { var z = own(x); z.A = x.B; z.B = x.A; return z; }
     return x;
   }
-  /** Options for the B-A corner order: side-specific entries swapped. */
+  function swapAB(x) {
+    if (!x || typeof x !== "object" || Array.isArray(x)) return x;
+    var y = own(x);
+    if ("A" in x || "B" in x) { y.A = x.B; y.B = x.A; }
+    if ("etaA" in x || "etaB" in x) { y.etaA = x.etaB; y.etaB = x.etaA; }
+    return y;
+  }
+  /** Options for the B-A corner order: side-specific entries swapped. v5 merge step 5: also the v5 components' per-call
+      inputs, so the mirrored run sees each fighter's own record: opts.dur (durability walk-forward records { A, B, base }),
+      opts.sos (styles_sos { A, B }), opts.embed ({ etaA, etaB, recipe }), opts.oppadj ({ A, B }) and opts.preufc ({ A, B })
+      (tools/durrec.js, sosrec.js and mlpathrec.js swap the same entries with the corners). */
   function swapOpts(o) {
     var s = own(o);
     s.adjA = o.adjB; s.adjB = o.adjA;
     if (o.ml && typeof o.ml === "object") s.ml = swapML(o.ml);
     if (o.preufcA != null || o.preufcB != null) { s.preufcA = o.preufcB; s.preufcB = o.preufcA; }
+    ["dur", "sos", "embed", "oppadj", "preufc"].forEach(function (k) { if (o[k] && typeof o[k] === "object") s[k] = swapAB(o[k]); });
     return s;
   }
   /** Anchor offset s (log-odds) applied through the matchup knobs: A's striking accuracy odds x e^(cAcc s/2), B's
