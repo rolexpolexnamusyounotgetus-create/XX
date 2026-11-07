@@ -731,7 +731,7 @@
   // mean at its OWN length and finished status (a decision: the full-length mean; a stoppage at minute t: the finished-fight
   // mean at t, interpolated log-log on the targets' grid), summed over the pilot. A pilot -> correct loop:
   //   1. pilot: params.retarget.pilot simulations of this matchup in EACH corner order (fixed seeds: common random numbers,
-  //      deterministic), pooled per fighter;
+  //      deterministic; the spread draws stratified, rtStrata), pooled per fighter;
   //   2. per fighter, with shrink s = damp x n / (n + kDec) (n = pooled pilot simulations): takedown attempt rate x
   //      (target / realised)^s, control target x (target / realised)^s (then the position occupancy is refit as in matchup()),
   //      takedown accuracy odds x exp(s x (logit target - logit realised)) (with the stand-up hazard at its floor, about 18% of
@@ -739,9 +739,7 @@
   //      (target / realised)^s x (static change the grappling step caused)^-1, strike accuracy odds x exp(s x shift) with the
   //      shift from a two-margin (target x position) logit fit of the realised vs the target accuracies on the static cells;
   //      realised totals are smoothed toward the target with kMin minutes and kAcc attempts, so a sparse stat is barely corrected;
-  //   3. params.retarget.iters iterations (from the second on, each rate lever's step is divided by the elasticity the previous
-  //      step showed, clipped to [0.3, 1.5]: takedown attempts respond less than one for one because ground time eats standing
-  //      time); every cumulative multiplier is capped at [1 / mlMaxRatio, mlMaxRatio] and every
+  //   3. params.retarget.iters iterations; every cumulative multiplier is capped at [1 / mlMaxRatio, mlMaxRatio] and every
   //      accuracy shift at +-log(mlMaxRatio). Knockdown, conversion and stoppage levers are not touched.
   // Corner symmetry: the pilot runs both orders and the canonical order of the pair (by a content signature) fixes which order
   // gets which seed, so A-B and B-A get identical per-fighter corrections; the steps are cached per matchup and replayed.
@@ -814,8 +812,32 @@
     return q;
   }
   // pilot: realised totals and like-for-like statlines targets (each simulation at its own length and finished status)
+  // inverse standard normal CDF (Acklam; relative error < 1.2e-9), for the stratified pilot draws
+  function qnorm(p) {
+    var a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239];
+    var b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
+    var c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+    var d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416], q, r;
+    if (p < 0.02425) { q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+    if (p > 1 - 0.02425) { q = Math.sqrt(-2 * Math.log(1 - p)); return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+    q = p - 0.5; r = q * q;
+    return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+  }
+  // pilot-only variance reduction for the spread draws: each fighter's takedown-intent and top-stint z-scores take the N
+  // stratum midpoints (i + 0.5) / N of the standard normal in a seeded random order (the same distribution as the fight's own
+  // draws, far less pilot noise from the heavy right tail); evaluation simulations never see this
+  function rtStrata(N, seed) {
+    var rng = makeRng((seed ^ 0x51ed270b) >>> 0), z = [], k, i;
+    for (k = 0; k < 4; k++) {
+      var v = []; for (i = 0; i < N; i++) v.push(qnorm((i + 0.5) / N));
+      for (i = N - 1; i > 0; i--) { var j = Math.floor(rng.u() * (i + 1)), t0 = v[i]; v[i] = v[j]; v[j] = t0; }
+      z.push(v);
+    }
+    return { z: z, i: 0 };
+  }
   function rtPilot(m, N, seed, tg) {
     var rng = makeRng(seed), real = new Float64Array(2 * NRT), tgt = new Float64Array(2 * NRT), mins = 0, R = m.rounds, k;
+    if (m.spread) m._strata = rtStrata(N, seed);
     var fin = tg.fin, full = [tg.A, tg.B], fa = [fin.A, fin.B];
     for (var s = 0; s < N; s++) {
       var f = simulate(m, rng, false), dec = isDecision(f);
@@ -827,27 +849,16 @@
         tgt[sd * NRT + k] += dec ? full[sd][RT_ST[k]] * 5 * R : rtFinMean(fin.t, fa[sd][RT_ST[k]], mn);
       }
     }
+    m._strata = null;
     return { n: N, real: real, tgt: tgt, mins: mins };
   }
   // one fighter's step from pooled realised totals c and like-for-like targets ct (RT_ST order) over n simulations and
   // mins simulated minutes; tg = his full-length target rates (the smoothing scale)
-  // prev: this fighter's step of the previous iteration (or null): the observed response of the realised gap to the applied
-  // multiplier (elasticity, clipped to [0.3, 1.5]) scales the next step of each rate lever (a damped secant step)
-  var RT_LEV = { td: RT_TD, ct: RT_CT, d: 0, c: 1, g: 2 };
-  function rtStep(c, ct, n, mins, tg, rc, prev) {
-    var s = rc.damp * n / (n + rc.kDec), kMin = rc.kMin, kAcc = rc.kAcc, i, lv;
-    var gap = {}, el = {};
-    for (lv in RT_LEV) {
-      var k0 = RT_LEV[lv], r0 = tg[RT_ST[k0]] * kMin, a0 = ct[k0] + r0, b0 = c[k0] + r0;
-      gap[lv] = a0 > 0 && b0 > 0 ? Math.log(a0 / b0) : 0;
-      el[lv] = 1;
-      if (prev && Math.abs(prev.lg[lv]) > 0.01) el[lv] = clip((prev.gap[lv] - gap[lv]) / prev.lg[lv], 0.3, 1.5);
-    }
-    function ratio(k) { for (var q in RT_LEV) if (RT_LEV[q] === k) return Math.exp(s * gap[q] / el[q]); return 1; }
+  function rtStep(c, ct, n, mins, tg, rc) {
+    var s = rc.damp * n / (n + rc.kDec), kMin = rc.kMin, kAcc = rc.kAcc, i;
+    function ratio(k) { var r = tg[RT_ST[k]] * kMin, a = ct[k] + r, b = c[k] + r; return a > 0 && b > 0 ? Math.pow(a / b, s) : 1; }
     function accT(l, a, k1, k2) { return clip(a > 1e-6 ? l / a : tg[RT_ST[k1]] / Math.max(tg[RT_ST[k2]], 1e-9), 0.02, 0.98); }
-    var st = { s: s, n: n, td: ratio(RT_TD), ct: ratio(RT_CT), att: [ratio(0), ratio(1), ratio(2)], realPos: [], tgtT: [], realT: [], tgtQ: [], realQ: [],
-      gap: gap, el: el, lg: null };
-    st.lg = { td: Math.log(st.td), ct: Math.log(st.ct), d: Math.log(st.att[0]), c: Math.log(st.att[1]), g: Math.log(st.att[2]) };
+    var st = { s: s, n: n, td: ratio(RT_TD), ct: ratio(RT_CT), att: [ratio(0), ratio(1), ratio(2)], realPos: [], tgtT: [], realT: [], tgtQ: [], realQ: [] };
     var tdA = accT(ct[RT_TDL], ct[RT_TD], RT_TDL, RT_TD), tdR = clip((c[RT_TDL] + kAcc * tdA) / (c[RT_TD] + kAcc), 0.02, 0.98);
     st.tdAcc = s * (logit(tdA) - logit(tdR));
     for (i = 0; i < 3; i++) {
@@ -1017,8 +1028,7 @@
         cX[k] = s0.real[k] + s1.real[NRT + k]; cY[k] = s0.real[NRT + k] + s1.real[k];
         tXs[k] = s0.tgt[k] + s1.tgt[NRT + k]; tYs[k] = s0.tgt[NRT + k] + s1.tgt[k];
       }
-      var n = s0.n + s1.n, mn = s0.mins + s1.mins, pv = steps.length ? steps[steps.length - 1] : null;
-      var stX = rtStep(cX, tXs, n, mn, tX, rc, pv && pv.X), stY = rtStep(cY, tYs, n, mn, tY, rc, pv && pv.Y);
+      var n = s0.n + s1.n, mn = s0.mins + s1.mins, stX = rtStep(cX, tXs, n, mn, tX, rc), stY = rtStep(cY, tYs, n, mn, tY, rc);
       rtApply(M0, [stX, stY]); rtApply(M1, [stY, stX]);
       steps.push({ X: stX, Y: stY }); nD.push(n);
     }
@@ -1151,6 +1161,11 @@
       // generator seeded by this fight's own form draws (the main stream is untouched; off: none of this runs)
       var spr = m.spread, ar = makeRng(auxSeed(sharedPace, vol, fOut[0], fOut[1], fAcc[0]));
       var tdM = [lnorm(ar, spr.td), lnorm(ar, spr.td)], ctM = [lnorm(ar, spr.ctrl), lnorm(ar, spr.ctrl)];
+      if (m._strata) {   // retarget pilot only: stratified z-scores (engine3.js rtStrata)
+        var zs = m._strata.z, zi = m._strata.i++;
+        tdM = [Math.exp(spr.td * zs[0][zi] - 0.5 * spr.td * spr.td), Math.exp(spr.td * zs[1][zi] - 0.5 * spr.td * spr.td)];
+        ctM = [Math.exp(spr.ctrl * zs[2][zi] - 0.5 * spr.ctrl * spr.ctrl), Math.exp(spr.ctrl * zs[3][zi] - 0.5 * spr.ctrl * spr.ctrl)];
+      }
       tdD = [m.tdD[0] * tdM[0], m.tdD[1] * tdM[1]]; tdCC = [m.tdCC[0] * tdM[0], m.tdCC[1] * tdM[1]]; tdCU = [m.tdCU[0] * tdM[0], m.tdCU[1] * tdM[1]];
       upPos = new Float64Array(m.upPos); swPos = new Float64Array(m.swPos);
       for (k = 0; k < 5; k++) { upPos[k] /= ctM[0]; swPos[k] /= ctM[0]; upPos[5 + k] /= ctM[1]; swPos[5 + k] /= ctM[1]; }   // index top * 5 + pos
