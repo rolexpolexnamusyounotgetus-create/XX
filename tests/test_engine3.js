@@ -17,13 +17,16 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 const ROOT = path.join(__dirname, "..");
-const ENGINE_SRC = path.join(ROOT, "src/engine3.js"), PARAMS_SRC = path.join(ROOT, "src/params3.js");
+// ENGINE_DIR=versions/v7 runs the same checks on a frozen copy (engine v7 = the v4 simulator + predict; EXPECT_VERSION its VERSION)
+const ENG_DIR = process.env.ENGINE_DIR ? path.resolve(ROOT, process.env.ENGINE_DIR) : path.join(ROOT, "src");
+const EXPECT_VERSION = process.env.EXPECT_VERSION || "4.0.0";
+const ENGINE_SRC = path.join(ENG_DIR, "engine3.js"), PARAMS_SRC = path.join(ENG_DIR, "params3.js");
 const E = require(ENGINE_SRC);
 const BASE = require(PARAMS_SRC);
 const dbJson = fs.readFileSync(path.join(ROOT, "data/derived/fighters.json"), "utf8");
 const DB = E.loadDB(dbJson);
 // learned stat-line model (engine v4): loaded only inside withML(), so every other check runs on the base tables
-const ML_SRC = path.join(ROOT, "src/ml/mlrates.js");
+const ML_SRC = path.join(ENG_DIR, "ml/mlrates.js");
 const MLR = require(ML_SRC);
 const mlJson = JSON.parse(fs.readFileSync(path.join(ROOT, "data/derived/mlrates.json"), "utf8"));
 const ML_MODEL = MLR.load(mlJson);
@@ -251,7 +254,7 @@ const strip = (f) => JSON.stringify({ w: f.winner, m: f.method, d: f.detail, r: 
 
 console.log("\n=== API and determinism ===");
 check("API surface", ["loadDB", "profile", "matchup", "matchupBase", "simulate", "bucket", "makeRng", "summarize", "explain", "manualProfile",
-  "loadMLRates", "mlModel", "judgeRound"].every((k) => typeof E[k] === "function") && E.VERSION === "4.0.0", "VERSION " + E.VERSION);
+  "loadMLRates", "mlModel", "judgeRound"].every((k) => typeof E[k] === "function") && E.VERSION === EXPECT_VERSION, "VERSION " + E.VERSION);
 check("no learned model loaded by default: matchup = base tables", !E.mlModel() && mVG.mlApplied === false);
 check("engine source has no Math.random", !/Math\.random/.test(fs.readFileSync(ENGINE_SRC, "utf8")));
 {

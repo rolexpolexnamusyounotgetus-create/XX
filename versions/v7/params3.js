@@ -42,9 +42,10 @@
       ml2Head: "blend",    // ML v2 LR + LightGBM + XGBoost (the CV choice; JS tree evaluator src/ml/ml2trees.js on the page / ledger)
       mrModel: "S2",
       mrPool: "linear",
-      mrWeight: 0.15 /*PROVISIONAL*/,   // weight of the rescaled v4-simulator cells in the S2 pool: the w in 0..1 step 0.05 minimising the no-line package's joint
+      mrWeight: 0.15,   // weight of the rescaled v4-simulator cells in the S2 pool: the w in 0..1 step 0.05 minimising the no-line package's joint
                            // method x round log loss on 2019-2023 (tools/v7_gate.py fits, the rule of tools/predict_score.py; the train gate uses the
-                           // forward-chained fits for 2021 / 2022 / 2023 instead). v6 (v5.0.1 simulator): 0.35; the v4-engine cells with S: 0.15
+                           // forward-chained fits for 2021 / 2022 / 2023 instead: 0.20 / 0.20 / 0.20; data/derived/v7/dev_fits.json, a non-binding
+                           // fits-only run of the v7 package, reproduced by the binding gate). v6 (v5.0.1 simulator): 0.35; v4-engine cells with S: 0.15
       debut: true,         // bouts with a UFC debutant: method given the winner from the debut method model (lab 3, research/model_debut.md)
       statDist: true,      // P10 / P50 / P90 stat lines (lab 3, research/model_statlines.md); page / ledger only, never a backtest score
       recalT: 1,           // no temperature on top of the stacks (the no-line stack carries its recency weighting)
@@ -61,9 +62,10 @@
       props: {
         on: true,
         mode: "jlin",        // the CV-chosen form (log-linear 0.0017 worse in forward-chained CV 2022-23)
-        w: [0.46, 0.54] /*PROVISIONAL*/,   // fit on 2021-2023 close-regime fights with method props: the w_cells in 0..1 step 0.01 minimising method
+        w: [0.47, 0.53],   // fit on 2021-2023 close-regime fights with method props: the w_cells in 0..1 step 0.01 minimising method
                              // given the winner log loss of the pooled cells (tools/v7_gate.py fits, cells with the 2019-2023 mrWeight); the
-                             // train gate uses the forward-chained fits (2021 -> 2022, 2021-22 -> 2023)
+                             // train gate uses the forward-chained fits (2021 -> 2022: 0.48; 2021-22 -> 2023: 0.44; data/derived/v7/dev_fits.json).
+                             // research/model_props.md (S2 cells as the model expert): 0.46 / 0.54
         fitThrough: "2023-12-31",   // the weights' last training date (the backtest guard refuses them for fights on or before it)
         decShift: 0,         // labeled knob: logit shift on DEC within method given the winner. 0: the forward-chained CV rejected a decision
                              // tilt (+0.0018, research/model_props.md table 4); the market over-prices finishes, calibrate to outcomes only

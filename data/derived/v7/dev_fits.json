@@ -1,0 +1,91 @@
+{
+ "meta": {
+  "tool": "tools/v7_gate.py fits",
+  "input": "data/derived/v7/dev_fits_harness.json",
+  "note": "fits only: no metric, no comparator",
+  "harness_protocol": {
+   "binding": false,
+   "note": "non-binding run (no --protocol): a development or sensitivity run, never a gate verdict"
+  }
+ },
+ "fits": {
+  "w": {
+   "v7": {
+    "2021": {
+     "w": 0.2,
+     "joint": 2.05914,
+     "n": 737,
+     "years": [
+      2019,
+      2020
+     ]
+    },
+    "2022": {
+     "w": 0.2,
+     "joint": 2.08072,
+     "n": 1156,
+     "years": [
+      2019,
+      2020,
+      2021
+     ]
+    },
+    "2023": {
+     "w": 0.2,
+     "joint": 2.10558,
+     "n": 1577,
+     "years": [
+      2019,
+      2020,
+      2021,
+      2022
+     ]
+    },
+    "fit_2019_2023": {
+     "w": 0.15,
+     "joint": 2.11714,
+     "n": 1972,
+     "years": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+     ]
+    }
+   }
+  },
+  "pi": {
+   "2022": {
+    "pi": 0.48,
+    "mgw": 0.90857,
+    "n": 413,
+    "years": [
+     2021
+    ],
+    "w_cells_pool": 0.2
+   },
+   "2023": {
+    "pi": 0.44,
+    "mgw": 0.91891,
+    "n": 824,
+    "years": [
+     2021,
+     2022
+    ],
+    "w_cells_pool": 0.2
+   },
+   "fit_2021_2023": {
+    "pi": 0.47,
+    "mgw": 0.9259,
+    "n": 1203,
+    "years": [
+     2021,
+     2022,
+     2023
+    ],
+    "w_cells_pool": 0.15
+   }
+  }
+ }
+}

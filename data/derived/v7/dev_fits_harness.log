@@ -1,1 +1,15 @@
 predict_harness on train 2019-01-01..2024-01-01: 1999 fights, kinds close/open/none, 300 sims per order; v7: engine 7.0.0 params 7.0.0-selfcal-pre2024 (v7)
+  200/1999 fights, 7 s
+  400/1999 fights, 13 s
+  600/1999 fights, 19 s
+  800/1999 fights, 25 s
+  1000/1999 fights, 32 s
+  1200/1999 fights, 37 s
+  1400/1999 fights, 43 s
+  1600/1999 fights, 49 s
+  1800/1999 fights, 55 s
+wrote data/derived/v7/dev_fits_harness.json: 1999 fights, 0 failed, 61 s
+
+real	1m1.434s
+user	3m5.496s
+sys	0m2.287s
