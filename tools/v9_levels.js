@@ -40,7 +40,13 @@
    API (require): { computeLevels(fights, refById, cfg) -> { byId: {id: {att, acc, td, ctrl, kd}}, trace }, r108At(date),
      r108Ref(), DEFAULT_CFG, residualUnits(f, ref) }.
    CLI: node tools/v9_levels.js phi <reference run json> [--years 2019,2020]   (prints / writes the dispersion estimates)
-        node tools/v9_levels.js build <reference run json> --out <levels json>   (per-fight factors for the run's fights) */
+        node tools/v9_levels.js build <reference run json> --out <levels json>   (per-fight factors for the run's fights)
+        node tools/v9_levels.js select <reference run json> --phi <phi json> --years 2019,2020 [--out <json>]
+          The 2019-2020 rolling-origin choice (V6_V10_PLAN cycle 4: "window and half-life chosen on 2019-20"), rule fixed
+          before it was run: each tracker k is kept iff scaling the reference engine's per-fight means of its own stat by
+          the tracker's walk-forward factor lowers the summed per-fighter Poisson deviance of that stat on the 2019-2020
+          fights (att -> sig attempts, acc -> sig landed, td -> TD attempts, ctrl -> control, kd -> knockdowns); a dropped
+          tracker's factor is fixed at 1 (params-free: the harness passes it as missing). */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -216,6 +222,30 @@ if (require.main === module) {
     const d = dispersion(fights, ref, years);
     console.log(JSON.stringify(d, null, 1));
     if (opt.out) fs.writeFileSync(path.resolve(ROOT, opt.out), JSON.stringify({ meta: { tool: "tools/v9_levels.js phi", source: file, arm, years, built: new Date().toISOString() }, phi: d.phi, detail: d.detail }, null, 1));
+  } else if (cmd === "select") {
+    const phi = opt.phi ? readJSON(opt.phi).phi : null;
+    const years = opt.years ? opt.years.split(",").map(Number) : [2019, 2020];
+    const L = computeLevels(fights, ref, { phi });
+    const statOf = { att: "sig_att", acc: "sig_lnd", td: "td_att", ctrl: "ctrl", kd: "kd" };
+    const dev = (y, mu) => (mu <= 0 ? 0 : 2 * ((y > 0 ? y * Math.log(y / mu) : 0) - (y - mu)));
+    const res = {};
+    for (const k of KEYS) {
+      let d0 = 0, d1 = 0, n = 0;
+      for (const f of fights) {
+        if (!years.includes(+f.date.slice(0, 4)) || !f.actual || !f.actual.A) continue;
+        const r = ref.get(f.id), g = L.byId[f.id][k], ix = STATS.indexOf(statOf[k]);
+        for (let sd = 0; sd < 2; sd++) {
+          const y = f.actual[sd ? "B" : "A"][statOf[k]], mu = r.st[sd * STATS.length + ix];
+          if (y == null) continue;
+          d0 += dev(y, mu); d1 += dev(y, mu * g); n++;
+        }
+      }
+      res[k] = { stat: statOf[k], n, dev_off: d0 / n, dev_on: d1 / n, diff: (d1 - d0) / n, keep: d1 < d0 };
+    }
+    console.log(JSON.stringify(res, null, 1));
+    if (opt.out) fs.writeFileSync(path.resolve(ROOT, opt.out), JSON.stringify({ meta: { tool: "tools/v9_levels.js select", source: file, arm, years, built: new Date().toISOString(),
+      rule: "keep tracker k iff the walk-forward factor lowers the summed per-fighter Poisson deviance of its stat on the selection years" }, select: res,
+      keep: KEYS.filter((k) => res[k].keep) }, null, 1));
   } else if (cmd === "build") {
     const phi = opt.phi ? readJSON(opt.phi).phi : null;
     const L = computeLevels(fights, ref, { phi });
