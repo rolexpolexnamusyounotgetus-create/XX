@@ -1072,12 +1072,16 @@
     var chinRe = rf("chin_re"), powRe = rf("pow_re"), comp = { chin: false, pow: false };
     if ((chinRe == null || powRe == null) && dp.fallbackEB) {
       // walk-forward empirical Bayes from career sums (C, else the decayed S): opponent effects taken as 1 and 90% of
-      // head strikes standing (research/model_durability.md section 1). v5.0.1: re-levelled by normComputedChin / Pow (the
-      // record path's mean over the computed path's, fit on 2019-2023 backtest sides, tools/durlevel_fit.js): the raw
-      // formula ran about 18% below the record path the knockdown levels were matched on (v5 review).
-      var C = prof.C ? (Array.isArray(prof.C) ? (function () { var o = {}, ks = prof.keys || (DB && DB.meta && DB.meta.keys) || KEYS; for (var q = 0; q < ks.length; q++) o[ks[q]] = +prof.C[q] || 0; return o; })() : prof.C) : sums(prof);
+      // head strikes standing (research/model_durability.md section 1). v5.0.1 (v5 review): re-levelled to the record path the
+      // knockdown levels were matched on (tools/durlevel_fit.js, data/derived/durlevel_fit.json). With career sums C (production
+      // profiles) the raw formula ran about 19% low on chin x power (today's covariates times a whole career's exposure):
+      // normComputedChin / Pow, fit on the live roster. With decayed sums S (backtest snapshots): normComputedChinS / PowS, fit
+      // on the 2019-2023 backtest sides. Backtest harnesses never use this path (they refuse anything but full records).
+      var useC = !!prof.C;
+      var C = useC ? (Array.isArray(prof.C) ? (function () { var o = {}, ks = prof.keys || (DB && DB.meta && DB.meta.keys) || KEYS; for (var q = 0; q < ks.length; q++) o[ks[q]] = +prof.C[q] || 0; return o; })() : prof.C) : sums(prof);
       var sh = dp.standShare != null ? dp.standShare : 0.9;
-      var ncC = posNum(dp.normComputedChin) ? +dp.normComputedChin : 1, ncP = posNum(dp.normComputedPow) ? +dp.normComputedPow : 1;
+      var kC = useC ? "normComputedChin" : "normComputedChinS", kP = useC ? "normComputedPow" : "normComputedPowS";
+      var ncC = posNum(dp[kC]) ? +dp[kC] : 1, ncP = posNum(dp[kP]) ? +dp[kP] : 1;
       if (chinRe == null) { chinRe = ncC * ((dp.alphaChin || 3) + (+C.okd || 0)) / ((dp.alphaChin || 3) + lvlDiv * chinCov * sh * (+C.oh_lnd || 0)); comp.chin = true; }
       if (powRe == null) { powRe = ncP * ((dp.alphaPow || 2.5) + (+C.kd || 0)) / ((dp.alphaPow || 2.5) + lvlDiv * powCov * sh * (+C.h_lnd || 0)); comp.pow = true; }
     }
