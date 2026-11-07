@@ -32,8 +32,12 @@ SCRIPTS = {
     "/*__DIRECTOR__*/": ["src/director3.js"],
     "/*__SHOW__*/": ["src/show3d.js"],
     "/*__APP__*/": ["src/app.js"],
-    # verified browser models: the stacked blend, ML stat-line rates, the ML page winner model, method x round
-    "/*__ML__*/": ["src/ml/moe.js", "src/ml/mlpage.js", "tools/methodround_model.js"],
+    # verified browser models (page pass 3, Nov 7, 2026): the ML v2 winner model and its three stacks (src/ml/ml2.js with
+    # forward_models.json's fit-2019-2023 weights), the page recipe (src/ml/pagepredict.js), method x round S / S2
+    # (tools/methodround_model.js), the distributional stat lines (statdist + the embedding it reads), the debut method
+    # model, and moe.js for its de-vig helpers only (its stack no longer decides anything on the page)
+    "/*__ML__*/": ["src/ml/moe.js", "src/ml/ml2.js", "src/ml/pagepredict.js", "tools/methodround_model.js",
+                   "src/ml/statdist.js", "src/ml/embed.js", "src/ml/debut.js"],
     # broadcast sound (FightAudio); optional until the 3D workstream lands it
     "/*__AUDIO__*/": ["src/audio.js"],
 }
@@ -53,7 +57,7 @@ MAX_BYTES = 15 * 1024 * 1024
 # pieces another workstream may not have written yet: missing ones build as empty with a warning
 OPTIONAL = {"src/avatar3d.js": "", "src/director3.js": "", "data/derived/calibration.json": "null", "data/scenarios.json": "{}",
             "src/audio.js": "", "src/ml/moe.js": "", "src/ml/mlrates.js": "", "src/ml/mlpage.js": "",
-            "tools/methodround_model.js": ""}
+            "tools/methodround_model.js": "", "src/ml/statdist.js": "", "src/ml/embed.js": "", "src/ml/debut.js": ""}
 
 # the fighter roster: gzip + base64 (about a quarter of the plain JSON); the page inflates it before anything else runs.
 # The plain placeholder still works for older page sources.
@@ -123,13 +127,6 @@ def load_json(rel):
         return None
 
 
-def moe_block():
-    d = load_json("data/derived/moe_page.json")
-    if d is None:
-        print("warning: data/derived/moe_page.json is missing; the page falls back to the simulator", file=sys.stderr)
-    return d
-
-
 def mlrates_block():
     return load_json("data/derived/mlrates.json")
 
@@ -143,100 +140,12 @@ def methodround_block():
     return jm
 
 
-def mlpage_block():
-    d = load_json("data/derived/ml.json")
-    if not d or "page_model" not in d or "roster" not in d:
-        return None
-    pm = d["page_model"]
-    terms = pm["winner"]["terms"]
-    keys = set()
-    for t in terms:
-        for k in ("key", "u", "v"):
-            if t.get(k):
-                keys.add(t[k])
-    keys |= {"southpaw", "orthodox", "switch", "elo", "elo_sig", "years_ufc", "_dob", "_last_fight", "_prev_lbs",
-             "_lbs_fought", "mr_mu", "mr_sd"}
-    keys = sorted(keys)
-    roster = {}
-    for slug, v in d["roster"].items():
-        roster[slug] = [v.get(k) for k in keys]
-    return {"snapshot": pm.get("snapshot"), "winner": {"terms": terms, "platt_slope": pm["winner"].get("platt_slope", 1)},
-            "stack": pm.get("stack"), "test_vectors": pm.get("test_vectors"), "keys": keys, "roster": roster}
-
-
-def market_block():
-    d = load_json("data/derived/market.json")
-    if not d or "ratings" not in d:
-        return None
-    return {"built": (d.get("meta") or {}).get("built"),
-            "ratings": {s: [r[0], r[1]] for s, r in d["ratings"].items() if isinstance(r, list) and len(r) >= 2}}
-
-
 def g(o, *path):
     for p in path:
         if not isinstance(o, dict) or p not in o:
             return None
         o = o[p]
     return o
-
-
-def bench_block():
-    """Verified research numbers for the backtest panel, read from the model reports (never typed in)."""
-    out = {}
-    moe = load_json("data/derived/moe.json")
-    if moe and "report" in moe:
-        r = moe["report"]
-        page = ["market", "mkt_rating", "ml", "feat_lr", "engine", "elo_sig", "elo"]
-        out["singles"] = {k: {"ll": g(v, "valid", "log_loss"), "n": g(v, "valid", "n"), "acc": g(v, "valid", "accuracy")}
-                          for k, v in r.get("singles", {}).items() if k in page}
-        a = r.get("audit", {})
-        out["line"] = {"moe": g(a, "line_present_same_fights", "moe_static"), "market": g(a, "line_present_same_fights", "market"),
-                       "diff": g(a, "line_present_same_fights", "moe_static_minus_market"),
-                       "n": g(a, "line_present_same_fights", "n"),
-                       "cv_2021_2023": g(a, "line_present_cv_2021_2023", "moe_minus_market"),
-                       "pooled_2021_2025": g(a, "line_present_pooled_2021_2025", "moe_minus_market"),
-                       "pooled_n": g(a, "line_present_pooled_2021_2025", "n")}
-        nm = g(r, "sets", "page", "regimes", "nomarket")
-        if nm:
-            pats = g(nm, "methods", nm.get("chosen"), "patterns") or {}
-            full = pats.get("mkt_rating+engine+ml+feat_lr+elo_sig+elo")
-            if full:
-                out["noline"] = {"ll": g(full, "static", "log_loss"), "n": g(full, "static", "n"), "ci": full.get("ci_static"),
-                                 "vs_best": full.get("vs_best_single_static")}
-                acc = g(full, "static", "accuracy")
-                if acc is not None:
-                    out["noline"]["acc"] = acc
-        out["noline_cv"] = g(a, "no_line_cv_2021_2023")
-        out["calibration"] = {k: v for k, v in (r.get("calibration_valid") or {}).items() if k in ("moe_market", "moe_nomarket", "market")}
-        out["by_year"] = r.get("by_year")
-    # which simulator version produced the engine numbers the backtest quotes (the blend's engine expert, the calibration run)
-    out["engine_version"] = g(load_json("data/derived/moe_engine_bt.json"), "meta", "engine_version")
-    out["calib_version"] = g(load_json("data/derived/calibration.json"), "version")
-    ml = load_json("data/derived/ml.json")
-    t = g(ml, "results", "eval", "test_2024_plus")
-    mk = load_json("data/derived/market.json")
-    e = g(mk, "eval")
-    rows = []
-    def row(label, o, key):
-        if o and o.get("log_loss") is not None:
-            rows.append({"label": label, "key": key, "ll": o["log_loss"], "acc": o.get("accuracy"), "n": o.get("n")})
-    row("Market closing line, bookmaker's cut removed", g(e, "devig", "test", "power"), "close")
-    row("Market, opening line", g(e, "headline", "test", "open"), "open")
-    row("ML model (logistic)", g(t, "lr"), "ml")
-    row("Market rating (from past closing lines)", g(e, "market_rating", "test", "market_rating"), "mkt_rating")
-    row("Strike-share Elo", g(t, "elo_sig"), "elo_sig")
-    row("Elo", g(t, "elo"), "elo")
-    out["since2024"] = rows
-    pt = g(mk, "meta", "periods", "test")
-    out["since_periods"] = {"market": "..".join(pt) if isinstance(pt, list) else pt, "ml": g(ml, "meta", "eval_sets", "test")}
-    me = load_json("data/derived/mlrates_eval.json")
-    if me:
-        out["sim"] = {"val_plain": g(me, "sim_val", "plain"), "val_ml": g(me, "sim_val", "ml"),
-                      "pooled": g(me, "sim_pooled_2019_2025"), "nsim": g(me, "sim_val", "nsim"), "n": g(me, "sim_val", "n_decisive")}
-        for k in ("val_plain", "val_ml"):
-            if out["sim"][k]:
-                out["sim"][k] = {kk: out["sim"][k].get(kk) for kk in ("winner_log_loss", "brier", "accuracy", "outcome7_log_loss")}
-    return out
 
 
 def versions_block():

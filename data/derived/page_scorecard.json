@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "purpose": "Page-facing numbers for the honest scorecard panel that live only in the verified markdown reports (every other scorecard number is read by build.py from data/derived/ml2.json, forward_models.json and version_history.json). Each entry carries its source file and the exact line it was copied from; tests/test_page_models.js checks every quote is still in its source.",
+    "built": "2026-11-07T07:45:00Z",
+    "rule": "copied, never recomputed; nothing here was fit or scored by the page builder"
+  },
+  "vault_2026_paired": [
+    {"key": "prod_noline_minus_ml2_lr", "label": "Old no-line blend (production MoE stack) minus the ML v2 logistic alone", "diff": 0.0315, "ci": [0.0039, 0.0603],
+     "source": "research/vault_audit_v5.md", "quote": "| production no-line stack - ML v2 logistic | +0.0315 [+0.0039, +0.0603] |"},
+    {"key": "ml2_noline_minus_prod_noline", "label": "ML v2 no-line stack (2019-2023 weights) minus the old no-line blend", "diff": -0.0246, "ci": [-0.0467, -0.0032],
+     "source": "research/vault_audit_v5.md", "quote": "| ML v2 no-line (2019-2023) - production no-line stack | -0.0246 [-0.0467, -0.0032] |"},
+    {"key": "ml2_open_minus_prod_open", "label": "ML v2 open stack minus the old blend with an opener", "diff": -0.0051, "ci": [-0.0146, 0.0040],
+     "source": "research/vault_audit_v5.md", "quote": "| ML v2 open stack (2019-2023) - production stack + open | -0.0051 [-0.0146, +0.0040] |"},
+    {"key": "ml2_lr_minus_close", "label": "ML v2 logistic alone minus the closing line", "diff": 0.0284, "ci": [0.0049, 0.0537],
+     "source": "research/vault_audit_v5.md", "quote": "| ML v2 logistic - close | +0.0284 [+0.0049, +0.0537] |"},
+    {"key": "engine_v4_minus_close", "label": "Simulator v4 alone minus the closing line", "diff": 0.0426, "ci": [0.0022, 0.0816],
+     "source": "research/vault_audit_v5.md", "quote": "| engine v4 - close | +0.0426 [+0.0022, +0.0816] |"},
+    {"key": "open_minus_close", "label": "Opening line minus the closing line", "diff": 0.0196, "ci": [-0.0014, 0.0415],
+     "source": "research/vault_audit_v5.md", "quote": "| open - close | +0.0196 [-0.0014, +0.0415] |"}
+  ],
+  "vault_2026_readout": {
+    "text": "level with the market",
+    "source": "research/vault_audit_v5.md", "quote": "**The close edge is absent: level with the market.**"
+  },
+  "valid_2021_2023_line_vs_close": {
+    "diff": -0.0015, "ci": [-0.0061, 0.0030],
+    "source": "research/model_ml2.md", "quote": "On 2021-2023 alone, the with-line ML v2 stack is -0.0015 [-0.0061, +0.0030] against the close"
+  },
+  "engine_versions": {
+    "v3": {"verdict": "replaced", "reason": "The first calibrated simulator; v4 beat it on 2024-25.",
+      "source": "data/derived/version_history.json versions[v4].decision.basis", "quote": "validation winner log loss 0.6324 vs 0.6424"},
+    "v4": {"verdict": "kept", "reason": "Beat v3 on 2024-25 winner log loss, -0.0100 [-0.0170, -0.0030], and on every stat line.",
+      "source": "data/derived/version_history.json versions[v4].decision.basis", "quote": "paired -0.0100 [-0.0170, -0.0030]"},
+    "v4.0.1": {"verdict": "rejected", "reason": "No gain beyond noise: -0.0034 [-0.0073, +0.0008].",
+      "source": "data/derived/version_history.json versions[v4.0.1].decision.basis", "quote": "paired -0.0034 [-0.0073, +0.0008]"},
+    "v5": {"verdict": "rejected", "reason": "Winner gain within noise (-0.0022 [-0.0099, +0.0053]); knockdowns ran too high on 2024-25 (0.830 per 100 head strikes landed vs 0.684 actual).",
+      "source": "data/derived/version_history.json versions[v5].decision.basis", "quote": "paired -0.0022 [-0.0099, +0.0053]", "quote2": "KD per 100 head landed 0.830 vs actual 0.684"},
+    "v5.0.1": {"verdict": "rejected", "reason": "Winner gain within noise (-0.0057 [-0.0141, +0.0023]); knockdowns still too high (0.827 vs 0.684 actual).",
+      "source": "data/derived/version_history.json versions[v5.0.1].decision.basis", "quote": "paired -0.0057 [-0.0141, +0.0023]", "quote2": "0.827 vs actual 0.684"},
+    "v6": {"verdict": "rejected", "reason": "Its single pre-registered look missed: with an opener, -0.00245 [-0.00588, +0.00099], an interval that crosses zero.",
+      "source": "data/derived/version_history.json versions[v6].decision.basis", "quote": "paired -0.00245 [-0.00588, +0.00099]"}
+  }
+}

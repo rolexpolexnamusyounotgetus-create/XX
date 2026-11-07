@@ -117,7 +117,8 @@ stack with the market line captured at prediction time as one of its experts (it
 `p_a_noline` is the same stack without the line, and both are scored. From Nov 6, 2026 the tool writes model version
 `fwd-4.1` instead (section "Forward model v4.1" below: the primary `p_a` and every scored secondary model). For events
 dated 2026-11-14 or later it writes `fwd-4.2` (section "Forward model v4.2" below: the debut method model and the
-stat-line block; `--fwd` picks the version by event date).
+stat-line block; `--fwd` picks the version by event date). From Nov 7, 2026 those events get `fwd-4.3` instead
+(section "Forward model v4.3" below: `p_a_noline` becomes the ML v2 no-line stack).
 `python3 tools/forward_ledger.py score`
 fetches results for finished ledger events (ufcstats through the Greco1899 CSVs and ESPN's scoreboard as the
 second source), appends them to `results.json` and regenerates `scores.json` / `scores.md`. The backtest-side
