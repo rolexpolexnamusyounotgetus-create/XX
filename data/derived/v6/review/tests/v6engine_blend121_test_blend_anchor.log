@@ -1,0 +1,67 @@
+PASS  engine carries one marked blend_anchor block
+PASS  outside the block the engine never mentions the component
+PASS  stripped engine has no predict
+PASS  test matchups found in fighters.json  (3 matchups)
+PASS  matchup identical (alexander-volkanovski vs justin-gaethje, flag off)
+PASS  summarize identical, 400 fights (alexander-volkanovski vs justin-gaethje, flag off)
+PASS  traced simulate identical (alexander-volkanovski vs justin-gaethje, flag off)
+PASS  explain identical (alexander-volkanovski vs justin-gaethje, flag off)
+PASS  matchup identical (alexander-volkanovski vs justin-gaethje, flag on)
+PASS  summarize identical, 400 fights (alexander-volkanovski vs justin-gaethje, flag on)
+PASS  traced simulate identical (alexander-volkanovski vs justin-gaethje, flag on)
+PASS  explain identical (alexander-volkanovski vs justin-gaethje, flag on)
+PASS  predict with the flag off = summarize (alexander-volkanovski vs justin-gaethje)  (p 0.6856)
+PASS  matchup identical (islam-makhachev vs charles-oliveira, flag off)
+PASS  summarize identical, 400 fights (islam-makhachev vs charles-oliveira, flag off)
+PASS  traced simulate identical (islam-makhachev vs charles-oliveira, flag off)
+PASS  explain identical (islam-makhachev vs charles-oliveira, flag off)
+PASS  matchup identical (islam-makhachev vs charles-oliveira, flag on)
+PASS  summarize identical, 400 fights (islam-makhachev vs charles-oliveira, flag on)
+PASS  traced simulate identical (islam-makhachev vs charles-oliveira, flag on)
+PASS  explain identical (islam-makhachev vs charles-oliveira, flag on)
+PASS  predict with the flag off = summarize (islam-makhachev vs charles-oliveira)  (p 0.6488)
+PASS  matchup identical (belal-muhammad vs geoff-neal, flag off)
+PASS  summarize identical, 400 fights (belal-muhammad vs geoff-neal, flag off)
+PASS  traced simulate identical (belal-muhammad vs geoff-neal, flag off)
+PASS  explain identical (belal-muhammad vs geoff-neal, flag off)
+PASS  matchup identical (belal-muhammad vs geoff-neal, flag on)
+PASS  summarize identical, 400 fights (belal-muhammad vs geoff-neal, flag on)
+PASS  traced simulate identical (belal-muhammad vs geoff-neal, flag on)
+PASS  explain identical (belal-muhammad vs geoff-neal, flag on)
+PASS  predict with the flag off = summarize (belal-muhammad vs geoff-neal)  (p 0.5017)
+PASS  simCells plays the same fights as summarize (7 bins equal)
+PASS  cells sum to 1
+PASS  cells by round match summarize finA
+PASS  mirror is an involution
+PASS  rescale hits P(win) exactly  (0.700000)
+PASS  rescale keeps the draw share
+PASS  rescale keeps the method mix within each winner
+PASS  pool of two rescaled vectors keeps P(win)
+PASS  log pool is normalised
+PASS  anchor offset 0 leaves the options untouched
+PASS  anchor offset multiplies accuracy and takedown odds symmetrically
+PASS  power split is mean-preserving (total KD rate kept, ratio e^(cPow s))
+PASS  swapOpts swaps the side-specific options
+PASS  nnLogit recovers weights (0.6, 0.3, 0)  (0.645, 0.233, 0.025)
+PASS  nnLogit is corner-symmetric (mirrored data, same weights)
+PASS  fitTemp undoes a doubled logit  (0.490)
+PASS  profile noise keeps exposures and win/loss counts
+PASS  profile noise keeps landed <= attempted
+PASS  profile noise is unbiased (mean within 3%)  (0.001 0.001 0.006 0.007 0.018)
+PASS  predict (flag on) returns the blend package  (p 0.7596 (engine 0.6717, 463 ms for two calls))
+PASS  predict is exactly corner-symmetric  (0.9999999999999999)
+PASS  package cells agree with P(win) and sum to 1
+PASS  method/round pooled with the S model  (w 0.35)
+PASS  ML stat lines present next to the simulator's
+PASS  interval is ordered and contains the point  ({"0.8":[0.6186135787423621,0.870230171766013],"0.95":[0.5502609636327704,0.9066765643048361]})
+PASS  a market line (lineKind 'close') switches the blend to the line regime  (p with line 0.4486)
+PASS  an opener (lineKind 'open') uses the open-trained block  (p with opener 0.5055)
+PASS  anchor moves the simulator toward the blend  (sim 0.672 -> anchored 0.747 (target 0.760, s 0.564, 1 evals))
+PASS  anchored package keeps the blend's P(win)
+PASS  recalT stretches the blended logit
+PASS  interval is exactly corner-symmetric (raw and calibrated)  ([0.6186135787423621,0.870230171766013] vs mirrored [0.6186135787423621,0.870230171766013])
+PASS  predict with a manual profile falls back to the simulator instead of throwing  (p 0.5533, MoE: no linear weights for expert pattern engine; winner 'ml2stack': no v6 stack for lineKind none / head blend, kept engine)
+PASS  blend.js uses no Math.random
+
+64 passed, 0 failed
+rc=0

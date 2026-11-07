@@ -1,0 +1,17 @@
+PASS  apply reproduces Python on 72 vectors  (max |diff| 5.55e-17)
+PASS  apply on the swapped corner reproduces Python  (max |diff| 5.55e-17)
+PASS  corner swap gives 1 - p for every kind  (max |p + p_swapped - 1| 2.22e-16)
+PASS  fit reproduces Python MAP estimates on 9 problems  (max |diff| 2.22e-16)
+PASS  fitFromHistory reproduces Python on 4 configs  (max |diff| 2.22e-16)
+PASS  slope and Wald SE reproduce Python  (max |diff| 2.22e-16)
+PASS  trailing-200 monitor reproduces Python (ready flag, slope, CI, includes-1)
+PASS  ruleB reproduces Python drift_rule_b on 3 synthetic ledgers  (2101-12-31 / 7 checks; no fire / 7 checks; 2102-03-31 / 7 checks)
+PASS  quarter ends  (["2026-12-31","2027-03-31","2027-06-30"])
+PASS  ruleB with no scored bouts keeps the default setting
+PASS  ruleB is corner-symmetric (mirrored slope)
+PASS  production specs (noline, open, line, ml2lr) are applied exactly  (noline: none, open: none, line: none, ml2lr: none)
+PASS  segment flags  ([{"women":0,"heavy":0,"newcomer":0,"debut":0,"five":1,"bigfav":0},{"women":1,"heavy":0,"newcomer":0,"debut":1,"five":0,"bigfav":1},{"women":0,"heavy":1,"newcomer":1,"debut":0,"five":0,"bigfav":1}])
+PASS  segment flags are corner-symmetric
+
+14 passed, 0 failed
+rc=0

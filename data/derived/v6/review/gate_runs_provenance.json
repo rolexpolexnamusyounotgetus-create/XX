@@ -1,0 +1,195 @@
+{
+ "meta": {
+  "what": "every v6 train-gate harness run, in time order, with its inputs and result (v6 review, 2026-11-07 ~08:15 UTC). Sources: git autosaves (commit, time), file mtimes, harness meta, tools/predict_score.py gate (B 2,000 as recorded; B 20,000 re-score data/derived/v6/review/*_rescore_B20000.json)",
+  "finding": "v6's winner p is identical in every run (its head stack does not use the simulator); only the comparator (the v5.0.1 package, whose MoE stack carries the simulator as an expert with weight 0.18-0.55) moved with its inputs. The option that gives each package its own inputs was written at 06:52, after the two failing post-refit runs; the passing definition was therefore chosen after seeing the failures."
+ },
+ "runs": [
+  {
+   "time_utc": "06:16-06:20",
+   "file": "data/derived/v6/gate_train_dev.json (overwritten; versions in git 5738fe4, c5078a6, 9ca75a2)",
+   "engine": "src (engine 3b1b48)",
+   "inputs": "pooled learned-rate table data/derived/mlrates_oof.json and the leave-one-year-out embedding recipe, fed to both packages (before the fold-honest refits)",
+   "scored": "the 06:20 run (git 9ca75a2 gate_train_dev_score.json): PASS 9 of 9",
+   "binding": false,
+   "note": "not binding: v6's inputs were not yet fold-honest. Its comparator p equals the 06:53 own-input run exactly (the v5.0.1 package's own pipeline is this one), and v6's p is identical, so its winner checks equal the 06:53 run's"
+  },
+  {
+   "time_utc": "06:23-06:31",
+   "event": "fold-honest refits: data/derived/v6/foldhonest.log (06:23), data/derived/embed_blend_fh.json (06:31)"
+  },
+  {
+   "time_utc": "06:40",
+   "file": "data/derived/v6/gate_train_dev.json",
+   "engine": "src (engine 3b1b48)",
+   "inputs": "fold-honest table data/derived/mlrates_oof_fh.json + fold-honest embedding recipe, fed to BOTH packages",
+   "scored": "FAIL: no-line and close winner checks (data/derived/v6/gate_train_dev_score.json)",
+   "binding": "first run on the final inputs",
+   "winner_B20000": {
+    "open": {
+     "diff": -0.00534,
+     "ci_B20000": [
+      -0.01038,
+      -0.00036
+     ],
+     "ci_mcse": [
+      5.7e-05,
+      3.6e-05
+     ],
+     "normal_ci": [
+      -0.01043,
+      -0.00026
+     ]
+    },
+    "none": {
+     "diff": -0.00535,
+     "ci_B20000": [
+      -0.01127,
+      0.00066
+     ],
+     "ci_mcse": [
+      6.6e-05,
+      6.1e-05
+     ],
+     "normal_ci": [
+      -0.01137,
+      0.00067
+     ]
+    },
+    "close": {
+     "diff": -0.00282,
+     "ci_B20000": [
+      -0.00616,
+      0.00054
+     ],
+     "ci_mcse": [
+      4.2e-05,
+      2.2e-05
+     ],
+     "normal_ci": [
+      -0.0062,
+      0.00057
+     ]
+    }
+   },
+   "gate_B20000_v6review_rule": "FAIL"
+  },
+  {
+   "time_utc": "06:50",
+   "file": "data/derived/v6/gate_train_shared.json (first written as gate_train.json)",
+   "engine": "versions/v6 frozen (437e0d)",
+   "inputs": "same as 06:40 (shared)",
+   "scored": "FAIL: no-line and close winner checks; p identical to 06:40 for every fight and package",
+   "binding": "first run on the frozen files",
+   "winner_B20000": {
+    "open": {
+     "diff": -0.00534,
+     "ci_B20000": [
+      -0.01038,
+      -0.00036
+     ],
+     "ci_mcse": [
+      5.7e-05,
+      3.6e-05
+     ],
+     "normal_ci": [
+      -0.01043,
+      -0.00026
+     ]
+    },
+    "none": {
+     "diff": -0.00535,
+     "ci_B20000": [
+      -0.01127,
+      0.00066
+     ],
+     "ci_mcse": [
+      6.6e-05,
+      6.1e-05
+     ],
+     "normal_ci": [
+      -0.01137,
+      0.00067
+     ]
+    },
+    "close": {
+     "diff": -0.00282,
+     "ci_B20000": [
+      -0.00616,
+      0.00054
+     ],
+     "ci_mcse": [
+      4.2e-05,
+      2.2e-05
+     ],
+     "normal_ci": [
+      -0.0062,
+      0.00057
+     ]
+    }
+   },
+   "gate_B20000_v6review_rule": "FAIL"
+  },
+  {
+   "time_utc": "06:52",
+   "event": "the predict_harness option that runs each package on its own input pipeline written (autosave 5121e16)"
+  },
+  {
+   "time_utc": "06:53",
+   "file": "data/derived/v6/gate_train.json",
+   "engine": "versions/v6 frozen (437e0d)",
+   "inputs": "each package on its own frozen pipeline (v6 fold-honest; v5.0.1 pooled table + leave-one-year-out recipe)",
+   "scored": "PASS 9 of 9 (data/derived/v6/gate_train_score.json); the no-line check's B 2,000 upper bound -0.00034 sits within 2 Monte Carlo SE of 0 (24% of seeds fail at B 2,000); clustered normal upper -0.00016",
+   "binding": "the run the pre-registration cites",
+   "winner_B20000": {
+    "open": {
+     "diff": -0.00613,
+     "ci_B20000": [
+      -0.01102,
+      -0.00126
+     ],
+     "ci_mcse": [
+      4.7e-05,
+      5.8e-05
+     ],
+     "normal_ci": [
+      -0.01109,
+      -0.00117
+     ]
+    },
+    "none": {
+     "diff": -0.00609,
+     "ci_B20000": [
+      -0.01193,
+      -0.00017
+     ],
+     "ci_mcse": [
+      7.2e-05,
+      5.8e-05
+     ],
+     "normal_ci": [
+      -0.01203,
+      -0.00016
+     ]
+    },
+    "close": {
+     "diff": -0.00331,
+     "ci_B20000": [
+      -0.0066,
+      3e-05
+     ],
+     "ci_mcse": [
+      3.7e-05,
+      2.1e-05
+     ],
+     "normal_ci": [
+      -0.00667,
+      5e-05
+     ]
+    }
+   },
+   "gate_B20000_v6review_rule": "PASS (no-line upper -0.00017, MC SE 0.00006; normal -0.00016)"
+  }
+ ],
+ "label": "FAILED as first run; passes only under a comparator chosen after the failure",
+ "comparator_honesty": "neither definition gives the v5.0.1 package a comparator fit only on earlier years: its learned-rate stack weights are pooled over 2019-2023, its embedding recipe is leave-one-year-out (2022-23 enter the 2021 recipe), and the per-year MoE stackers data/derived/v6/cmp_stack_v501_fit20{20..23}.json were fit on evalv v5.0.1 engine rows built with those inputs (04:33 UTC). The v7 gate must rebuild them (docs/BACKLOG.md 'v7 gate and look requirements')."
+}
