@@ -1,3 +1,10 @@
 v8_gate: 1999 train fights x 2 orders x 150 sims, arms td1.0, td1.2, td1.3, td1.5, 3 workers, seed 1
   200/1999 fights, 7 s
   400/1999 fights, 13 s
+  600/1999 fights, 29 s
+  800/1999 fights, 45 s
+  1000/1999 fights, 59 s
+  1200/1999 fights, 76 s
+  1400/1999 fights, 92 s
+  1600/1999 fights, 108 s
+  1800/1999 fights, 124 s
