@@ -1,0 +1,23 @@
+PASS  loads production model  (switch over market, mkt_rating, engine, ml, feat_lr, elo_sig, elo (market present: linear, absent: linear))
+PASS  reproduces Python production predictions on 120 vectors  (max |diff| 2.78e-16)
+PASS  reproduces Python validated-model predictions on 120 vectors  (max |diff| 2.22e-16)
+PASS  corner swap gives 1 - p  (max |p(A,B) + p(B,A) - 1| 2.22e-16)
+PASS  moe_page.json (page copy) reproduces the production predictions  (max |diff| 2.78e-16, 19 kB)
+PASS  alternative model 'linear_validated' evaluates  (p = 0.7018)
+PASS  alternative model 'gated_validated' evaluates  (p = 0.7118)
+PASS  every trained availability pattern evaluates  (32 of 127 subsets evaluate)
+PASS  all experts at 50% -> 50%  (0.5)
+PASS  weights sum to 1  (0.9999999999999999)
+PASS  contributions sum to the logit  (0.746949 vs 0.746949)
+PASS  featLR reproduces Python on 40 validation fights  (max |diff| 1.11e-16)
+PASS  featLR corner swap gives 1 - p  (1.11e-16)
+PASS  live profiles: Volkanovski vs Gaethje evaluates  (featLR 0.673, market rating 0.635; MoE (engine 0.60, no line) 0.788 [mkt_rating 0.51, engine 0.06, feat_lr 0.44, elo 0.00]; with line +160/-180 0.468 [market 0.63, mkt_rating 0.13, engine 0.00, feat_lr 0.24, elo 0.00])
+PASS  untrained pattern falls back and reports ignored experts  (ignored: ml)
+PASS  ratingProb symmetric
+PASS  eloProb symmetric
+PASS  devig -150/+130 near 58%  (power 0.5840, mult 0.5798)
+PASS  devig symmetric
+PASS  UMD: defines self.MoE without module
+PASS  worker-global copy gives the same p
+
+21 passed, 0 failed

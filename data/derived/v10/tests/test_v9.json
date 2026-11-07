@@ -1,0 +1,167 @@
+{
+ "tool": "tests/test_v9.js",
+ "built": "2026-11-07T11:16:05.907Z",
+ "pass": true,
+ "checks": [
+  {
+   "name": "1a flag-off matchup tables = v4 (96 matchups, 22 five-round)",
+   "ok": true,
+   "detail": "96/96"
+  },
+  {
+   "name": "1b flag-off simulations = v4 (300 / 40 seeded sims per matchup)",
+   "ok": true,
+   "detail": "96/96"
+  },
+  {
+   "name": "1c flag-off with the learned rates off = v4",
+   "ok": true,
+   "detail": "48/48"
+  },
+  {
+   "name": "1d flag-off traced fight = v4 (the 3D show's trace)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "1e VERSION 9.0.0, params 9.0.0 label, v4 frozen 4.0.0",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "2 candidate corner symmetry: matchup(A,B) mirrors matchup(B,A) (12 fights, every v9 component on)",
+   "ok": true,
+   "detail": "12/12"
+  },
+  {
+   "name": "3a judgeWF uses the fight year's row (2021 -> fit on cards before 2021-01-01)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "3b a date after the table uses the last row (2026)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "3c a date before the table keeps the v4 weights",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "3d r108 = lRef gives t108 = (alpha - ln sRef) / beta",
+   "ok": true,
+   "detail": "8.6154"
+  },
+  {
+   "name": "3e a lower tracked 10-8 level raises the threshold",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "3f params.judgeWF.byYear = judge_wf.json byYear",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "3g judgeWF leaves the rate tables (and the learned-rate league expectation) unchanged",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "3h judgeWF does not leak into the parameter defaults",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "4a applyLevel scales both corners",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "4b factors clipped to [0.7, 1.4], accuracies capped at 0.98",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "4c the caller's object is untouched",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "4d m.level only when components.levels is on (candidate default: off)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "4e levels on raises the learned attempt targets",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "5a kd5 on 5-round knockdown hazards only",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "5b late5 on rounds 4-5 of 5-round fights only",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "5c conv on the conversion odds, every format",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "5d stop on the doctor / corner hazards, both formats",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "5e with the learned rates on, the 5-round KD factor survives the re-target",
+   "ok": true,
+   "detail": "1.579000"
+  },
+  {
+   "name": "6a factors use only fights dated strictly before (same-day and later perturbations change nothing)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "6b ... and they do move the factors of later cards",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "6c the first card gets 1",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "6d r108At = eradrift r108 month-start level",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "7a params.format = format_fit.json final (3 dp)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "7b params.judgeWF.r108 = t108_map.json",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "7c components.levels off because the 2019-2020 choice kept no tracker",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "7d candidate defaults: judgeWF and format on",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}
