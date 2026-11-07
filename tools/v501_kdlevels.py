@@ -29,10 +29,8 @@ def main():
     lv = {}
     for w in WINDOWS:
         lv["L%d" % w] = D.trailing_level(X, w)
-    d0 = int(X.day.min())
     import datetime as dt
     start = dt.date(2008, 1, 1).toordinal()
-    lv["Llong"] = D.trailing_level(X, 0)   # placeholder, replaced below
     # since-2008 level: cumulative KD / exposure over [2008-01-01, t)
     s = X[X.has_stats == 1].groupby("day").agg(kd=("y", "sum"), E=("E", "sum")).sort_index()
     days = s.index.to_numpy()
