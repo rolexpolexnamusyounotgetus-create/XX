@@ -583,8 +583,10 @@ console.log("\n=== Per-pair position calibration (simulated vs data-implied expe
   }
   check("simulated control per 15 within 25% of each pair's data-implied target", worstC < 0.25, `worst ${pct(worstC)}%`);
   check("simulated clinch landed per 15 within 25% of each pair's expectation", worstK < 0.25, `worst ${pct(worstK)}%`);
-  // knockdown follow-up flurries add ground strikes on top of the base expectation, so heavy-knockdown pairs run high
-  check("simulated ground landed per 15 within 40% of each pair's base expectation (KD follow-ups add on top)", worstG < 0.40, `worst ${pct(worstG)}%`);
+  // knockdown follow-up flurries add ground strikes on top of the base expectation, so heavy-knockdown pairs run high.
+  // v5 Calibrate B (components.calB) raised the knockdown level (+3%, to the 2019-2023 actuals) and the KD conversion (+5%):
+  // Volkanovski vs Gaethje, the heaviest-knockdown pair here (KD per 15 0.67 -> 0.70), goes from +37% to +42% over base, so 50%
+  check("simulated ground landed per 15 within 50% of each pair's base expectation (KD follow-ups add on top)", worstG < 0.50, `worst ${pct(worstG)}%`);
 }
 
 console.log("\n=== manualProfile ===");

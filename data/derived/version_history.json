@@ -620,9 +620,9 @@
      "logloss_with": 0.5788248485320001,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -8.727629959482959e-07,
-      "lo": -1.5272600814283089e-06,
-      "hi": -2.5655151717160004e-07,
+      "est": -8.727629959482959e-7,
+      "lo": -0.0000015272600814283089,
+      "hi": -2.5655151717160004e-7,
       "p_gt0": 0.002
      },
      "n": 845
@@ -632,9 +632,9 @@
      "logloss_with": 0.5930335681784208,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -1.0099141584613298e-07,
-      "lo": -1.8138076015023744e-07,
-      "hi": -1.882505288986469e-08,
+      "est": -1.0099141584613298e-7,
+      "lo": -1.8138076015023744e-7,
+      "hi": -1.882505288986469e-8,
       "p_gt0": 0.0105
      },
      "n": 845
@@ -1454,9 +1454,9 @@
      "logloss_with": 0.5930319721344538,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -1.6970353827425062e-06,
-      "lo": -2.435549185916011e-06,
-      "hi": -9.44685467941618e-07,
+      "est": -0.0000016970353827425062,
+      "lo": -0.000002435549185916011,
+      "hi": -9.44685467941618e-7,
       "p_gt0": 0
      },
      "n": 845
@@ -2295,9 +2295,9 @@
      "logloss_with": 0.5788099923758476,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -1.57289191484635e-05,
-      "lo": -3.115957049440681e-05,
-      "hi": -2.182334234371639e-07,
+      "est": -0.0000157289191484635,
+      "lo": -0.00003115957049440681,
+      "hi": -2.182334234371639e-7,
       "p_gt0": 0.0235
      },
      "n": 845
@@ -2312,9 +2312,9 @@
       "hi": 0,
       "p_gt0": null,
       "raw": {
-       "est": -2.947697791072808e-07,
-       "lo": -4.819442412118878e-07,
-       "hi": -1.0681580458083556e-07,
+       "est": -2.947697791072808e-7,
+       "lo": -4.819442412118878e-7,
+       "hi": -1.0681580458083556e-7,
        "p_gt0": 0.002
       },
       "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
@@ -2339,6 +2339,409 @@
     "action": "2026-11-06T19:15: src/engine3.js, src/params3.js, src/ml/mlrates.js restored from versions/v4/ (hashes match the v4 entry); tests/test_engine3.js, data/derived/judgecal.json and data/derived/v4_levels.json restored to the v4 final commit 122c31a; the v4.0.1 work is kept in versions/v4.0.1-rejected/ (engine, params, adapter, its test file, its judgecal/v4_levels outputs, run logs); versions/v4.0.1 is a compatibility symlink to it. Current engine: v4 (4.0.0).",
     "note": "train (tuning data, not a selection criterion): winner +0.0011 [-0.0017, +0.0038], 7-bin -0.0172 [-0.0330, -0.0034] (draws and majority decisions restored), ECE 0.010 vs 0.019; the review fixes it carried are hygiene (train-only EM judging weights, cumulative takedown cap) and level matching; they should be folded into v5 and measured with v5's one look"
    }
+  },
+  {
+   "version": "v5",
+   "date": "2026-11-07",
+   "engine_version": "5.0.0",
+   "params_version": "5.0.0-selfcal-pre2024",
+   "engine_sha256": "951a7e63ce432ae32047c9197963637f8255f530e2b478e10038e6693494ff11",
+   "params_sha256": "bebc8d052fdbe78988318bcfae4c6f55e9076c2f3a988fe1d56afc7c3180868a",
+   "mlrates_js_sha256": "40d870061947f26ad67cf45c1cd5bab75cf7e919599896825be14b384da9bac4",
+   "train": {
+    "n_fights": 1999,
+    "n_decisive": 1952,
+    "sims_per_order": 300,
+    "metrics": {
+     "winLL": {
+      "est": 0.6565,
+      "lo": 0.6472,
+      "hi": 0.6666
+     },
+     "brier": {
+      "est": 0.2324,
+      "lo": 0.2279,
+      "hi": 0.2371
+     },
+     "acc": {
+      "est": 0.6035,
+      "lo": 0.5804,
+      "hi": 0.6249
+     },
+     "bin7": {
+      "est": 1.6345,
+      "lo": 1.6022,
+      "hi": 1.6671
+     },
+     "method": {
+      "est": 0.9578,
+      "lo": 0.9341,
+      "hi": 0.9832
+     },
+     "dev_sig_lnd": {
+      "est": 23.4545,
+      "lo": 22.2856,
+      "hi": 24.6326
+     },
+     "dev_sig_att": {
+      "est": 48.7508,
+      "lo": 46.4256,
+      "hi": 51.0531
+     },
+     "dev_td_lnd": {
+      "est": 1.7179,
+      "lo": 1.6422,
+      "hi": 1.7974
+     },
+     "dev_ctrl": {
+      "est": 153.5523,
+      "lo": 146.9082,
+      "hi": 159.8524
+     },
+     "dev_kd": {
+      "est": 0.6996,
+      "lo": 0.6675,
+      "hi": 0.7343
+     },
+     "mae_sig_lnd": {
+      "est": 25.8796,
+      "lo": 25.0566,
+      "hi": 26.6855
+     },
+     "mae_sig_att": {
+      "est": 54.9859,
+      "lo": 53.2932,
+      "hi": 56.6843
+     },
+     "mae_td_lnd": {
+      "est": 1.0002,
+      "lo": 0.9678,
+      "hi": 1.0327
+     },
+     "mae_ctrl": {
+      "est": 109.174,
+      "lo": 105.8209,
+      "hi": 112.3908
+     },
+     "mae_kd": {
+      "est": 0.335,
+      "lo": 0.3242,
+      "hi": 0.3459
+     },
+     "ece": {
+      "est": 0.0109,
+      "lo": 0.0084,
+      "hi": 0.0374
+     },
+     "calSlope": {
+      "est": 1.1819,
+      "lo": 1.0061,
+      "hi": 1.4011
+     }
+    },
+    "baseRates": {
+     "n": 1972,
+     "finish": {
+      "sim": 0.4933,
+      "actual": 0.4924,
+      "diff": 0.0009
+     },
+     "KO": {
+      "sim": 0.3174,
+      "actual": 0.3174,
+      "diff": -0.0001
+     },
+     "SUB": {
+      "sim": 0.1759,
+      "actual": 0.1749,
+      "diff": 0.001
+     },
+     "DEC": {
+      "sim": 0.5067,
+      "actual": 0.5076,
+      "diff": -0.0009
+     },
+     "finByRound3": {
+      "n": 1729,
+      "sim": [
+       0.2587,
+       0.1357,
+       0.0877
+      ],
+      "actual": [
+       0.2441,
+       0.1671,
+       0.0752
+      ]
+     },
+     "finByRound5": {
+      "n": 243,
+      "sim": [
+       0.1975,
+       0.1555,
+       0.093,
+       0.079,
+       0.0474
+      ],
+      "actual": [
+       0.1728,
+       0.1646,
+       0.0947,
+       0.0535,
+       0.0494
+      ]
+     },
+     "kdPer100Head": {
+      "sim": 0.7776,
+      "actual": 0.7816,
+      "diff": -0.004
+     },
+     "decision": {
+      "sim": {
+       "UD": 0.79,
+       "SD": 0.2007,
+       "MD": 0.0093
+      },
+      "actual": {
+       "UD": 0.7859,
+       "SD": 0.1937,
+       "MD": 0.0204
+      },
+      "nActual": 981
+     },
+     "r108": {
+      "sim": 0.0475,
+      "actual": 0.0529,
+      "diff": -0.0054
+     },
+     "sigLndPer15": {
+      "sim": 61.3681,
+      "actual": 61.1447,
+      "diff": 0.2235
+     },
+     "tdPer15": {
+      "sim": 1.2988,
+      "actual": 1.306,
+      "diff": -0.0071
+     },
+     "ctrlPer15": {
+      "sim": 163.7382,
+      "actual": 163.027,
+      "diff": 0.7112
+     }
+    },
+    "methodround": {
+     "joint": {
+      "submitted": 2.1759,
+      "model_S": 2.1523,
+      "diff": 0.0236,
+      "ci95": [
+       0.006,
+       0.0425
+      ]
+     },
+     "method3": {
+      "submitted": 0.9578,
+      "model_S": 0.9569,
+      "diff": 0.001,
+      "ci95": [
+       -0.0083,
+       0.011
+      ]
+     },
+     "finish": {
+      "submitted": 0.663,
+      "model_S": 0.6607,
+      "diff": 0.0023,
+      "ci95": [
+       -0.0035,
+       0.0083
+      ]
+     },
+     "bin7": {
+      "submitted": 1.6345,
+      "model_S": 1.6281,
+      "diff": 0.0064,
+      "ci95": [
+       -0.0072,
+       0.021
+      ]
+     },
+     "method_round": {
+      "submitted": 1.4906,
+      "model_S": 1.4811,
+      "diff": 0.0096,
+      "ci95": [
+       -0.0018,
+       0.021
+      ]
+     },
+     "round_given_fin": {
+      "submitted": 1.0819,
+      "model_S": 1.062,
+      "diff": 0.02,
+      "ci95": [
+       0.009,
+       0.031
+      ]
+     },
+     "ko_vs_sub": {
+      "submitted": 0.5988,
+      "model_S": 0.6016,
+      "diff": -0.0028,
+      "ci95": [
+       -0.0179,
+       0.0125
+      ]
+     },
+     "method_given_winner": {
+      "submitted": 0.9353,
+      "model_S": 0.9342,
+      "diff": 0.0011,
+      "ci95": [
+       -0.0115,
+       0.0146
+      ]
+     },
+     "winner": {
+      "submitted": 0.6565,
+      "model_S": 0.6518,
+      "diff": 0.0047,
+      "ci95": [
+       -0.0015,
+       0.011
+      ]
+     },
+     "winner_brier": {
+      "submitted": 0.2324,
+      "model_S": 0.2301,
+      "diff": 0.0023,
+      "ci95": [
+       -0.0007,
+       0.0053
+      ]
+     },
+     "winner_acc": {
+      "submitted": 0.6035,
+      "model_S": 0.6204,
+      "diff": -0.0169,
+      "ci95": [
+       -0.0372,
+       0.0039
+      ]
+     },
+     "method3_brier": {
+      "submitted": 0.5751,
+      "model_S": 0.5751,
+      "diff": 0,
+      "ci95": [
+       -0.0054,
+       0.006
+      ]
+     }
+    },
+    "compare": {
+     "against": "v4",
+     "paired": {
+      "winLL": {
+       "diff": -0.007,
+       "lo": -0.0119,
+       "hi": -0.002,
+       "n": 1952
+      },
+      "brier": {
+       "diff": -0.0031,
+       "lo": -0.0057,
+       "hi": -0.0007,
+       "n": 1952
+      },
+      "acc": {
+       "diff": -0.0018,
+       "lo": -0.02,
+       "hi": 0.0143,
+       "n": 1952
+      },
+      "bin7": {
+       "diff": -0.0365,
+       "lo": -0.054,
+       "hi": -0.0198,
+       "n": 1972
+      },
+      "method": {
+       "diff": -0.0093,
+       "lo": -0.0175,
+       "hi": -0.0013,
+       "n": 1972
+      },
+      "dev_sig_lnd": {
+       "diff": -0.2269,
+       "lo": -0.5137,
+       "hi": 0.0669,
+       "n": 1999
+      },
+      "dev_sig_att": {
+       "diff": -0.5676,
+       "lo": -1.1733,
+       "hi": 0.0363,
+       "n": 1999
+      },
+      "dev_td_lnd": {
+       "diff": -0.0222,
+       "lo": -0.0373,
+       "hi": -0.0069,
+       "n": 1999
+      },
+      "dev_ctrl": {
+       "diff": -2.9172,
+       "lo": -4.6281,
+       "hi": -1.2841,
+       "n": 1999
+      },
+      "dev_kd": {
+       "diff": -0.0149,
+       "lo": -0.0239,
+       "hi": -0.006,
+       "n": 1999
+      },
+      "mae_sig_lnd": {
+       "diff": -0.1494,
+       "lo": -0.3503,
+       "hi": 0.0508,
+       "n": 1999
+      },
+      "mae_sig_att": {
+       "diff": -0.2747,
+       "lo": -0.7463,
+       "hi": 0.1694,
+       "n": 1999
+      },
+      "mae_td_lnd": {
+       "diff": 0.0042,
+       "lo": -0.0017,
+       "hi": 0.0097,
+       "n": 1999
+      },
+      "mae_ctrl": {
+       "diff": 0.799,
+       "lo": 0.1344,
+       "hi": 1.4825,
+       "n": 1999
+      },
+      "mae_kd": {
+       "diff": -0.0092,
+       "lo": -0.0116,
+       "hi": -0.0068,
+       "n": 1999
+      }
+     }
+    },
+    "file": "data/derived/evalv/v5_train.json"
+   },
+   "validation": null,
+   "blend": null,
+   "notes": [
+    "2026-11-07T01:38 train: Calibrate B freeze (engine 5.0.0, params 5.0.0-selfcal-pre2024): train only; validation is the Measure stage's single look"
+   ]
   }
  ]
 }
