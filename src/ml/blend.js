@@ -1251,6 +1251,8 @@
         if (source === "ml2stack" && !featShift) iv.degenerate = "no profile-noise shift (feature LR or decayed sums missing): sd 0";
       }
     }
+    var mrOut = { weight: w, pool: cfg.mrPool || "linear", variant: mrVariant, model: mrModel, s2Inputs: s2in ? { src: s2in.src } : null, simRescaled: simR, mrRescaled: mrR };
+    if (mrMissing) mrOut.mrLib = { missing: true, note: mrMissing };   // 1.4.1: only when the pool was requested and not computed
     return {
       component: "blend_anchor", version: VERSION, on: true, source: source, blendError: blendError,
       p: p, pRaw: pRaw, recalT: T, pA: mg.pA, pB: mg.pB, pD: mg.pD,
@@ -1266,7 +1268,7 @@
       backtest: BT ? { date: date, stackFitThrough: stackFT, inSample: !!(stackFT && date && stackFT >= date), mrCells: opts.mrCells ? "passed" : "none",
         mrFitThrough: opts.mrFitThrough || null } : null,
       cells: cells, R: R, marginals: mg, bins7: mg.bins7,
-      methodRound: { weight: w, pool: cfg.mrPool || "linear", variant: mrVariant, model: mrModel, s2Inputs: s2in ? { src: s2in.src } : null, simRescaled: simR, mrRescaled: mrR, mrLib: mrMissing ? { missing: true, note: mrMissing } : undefined },
+      methodRound: mrOut,
       sim: { p: sim.p, pA: sim.pA, pB: sim.pB, pD: sim.pD, cells: sim.cells, n: N, runs: sim.runs, avgMin: sim.avgMin, rates: sim.rates },
       // anchor.adjA / adjB: the knobs that reproduce the anchored matchup (e.g. FightEngine.matchup(a, b, {..., adjA, adjB})
       // for the 3D show's traced fight)
