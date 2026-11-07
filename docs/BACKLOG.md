@@ -64,6 +64,15 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- ENGINE v10 BUILT, GATE PASSED, PRE-REGISTERED (Nov 7, ~11:45 UTC; docs/CHANGELOG.md v10; version_history.json v10 `status:
+  preregistered`, `train_gate`, `prereg`; versions/v10/; look protocol data/derived/v10/look_protocol.json): v10 = the v4 simulator +
+  v8's stat-line bundle as shipped + v7's predict package (ML v2 head stacks, S2, props pool; FightBlend 1.4.0) + cycle 5 (newcomer
+  path: debut winner from the line-only stack else seeded Elo, debut method model; explainer: FightEngine.showFight draws the shown
+  fight from predict()'s cells). ONE bundle-level gate (protocol 0358a0c committed first; design chosen after v7 / v8 TRAIN results,
+  disclosed): primary open winner vs cmp4 -0.00528 [-0.00964, -0.00097] (v7's number reproduced, as stated before the run);
+  co-primary total stat deviance vs v4 -1.13% [-1.76%, -0.51%]: PASS. The look (not yet run): primary open winner vs cmp4 (branch 1),
+  branch 2 = total stat deviance vs v4 + glove-excluded paired base-rate test; power ~0.50; confirmation look. Audit 2 pre-registered
+  (vault_audits[audit 2]). src/ holds v10 until the look; control MAE +1.6 s on train is a known risk (v8's finding).
 - ENGINE v9 GATE FAILED (Nov 7, ~10:55 UTC; docs/CHANGELOG.md v9; version_history.json v9 `status: gate_failed`, `train_gate`,
   `drift_monitor`; versions/v9-gate-failed/): v9 = the v4 simulator + cycle 4 behind flags: walk-forward EM judging by year (rows
   fit on cards before each year; recipe win3 chosen on 2019-20) with the 10-8 threshold following the eradrift 10-8 tracker
@@ -340,7 +349,13 @@ Findings from verified research that the next engine versions must use. Each lin
 
 ## Prediction status after the ML-core round (verified, Nov 6 ~11:00 UTC)
 
-**Current (Nov 7, 5:55 am ET; after v9's train gate):**
+**Current (Nov 7, 6:45 am ET; after v10's train gate):**
+- **The latest kept engine is still v4 (4.0.0)** (versions/v4). v10 (the consolidated bundle) passed its one bundle-level train gate
+  and is pre-registered for its single 2024-25 look; src/ holds v10 until the look decides (on a reject src/ returns to versions/v4).
+  The gate was a pre-stated consistency check (its primary reproduces v7's train number); the look is a confirmation look with power
+  about 0.5; vault audit 2 and the forward ledger are the real tests.
+
+**Earlier (Nov 7, 5:55 am ET; after v9's train gate):**
 - **The current engine is still v4 (4.0.0)** in src/ and versions/v4/ (hashes = the v4 entry). v7, v8 and v9 were built on v4 and
   failed their binding train gates (no look); v6 was looked at once and rejected. Cycle 4 (v9) leaves two pieces of tooling with
   no production change: the forward-ledger drift monitor (rule 6.5.1 (b) as pre-registered + level alarms incl. the decision share)

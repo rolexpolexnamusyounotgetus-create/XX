@@ -5,6 +5,71 @@ Each engine version records its held-out numbers here (docs/ROADMAP.md). From v4
 2026-01-01 is in the sealed vault (docs/BACKLOG.md "Hidden-data protocol"). Older entries that say "test" meant 2024-01-01 to the
 snapshot; that window is retired.
 
+## v10 (2026-11-07): consolidated bundle + newcomer path + explainer built and frozen; ONE bundle-level binding train gate PASSED; single 2024-25 look pre-registered (not yet run); audit 2 pre-registered
+
+**Outcome.** v10 = the v4 simulator + v8's stat-line bundle exactly as v8 shipped it + v7's prediction package + cycle 5's
+capability parts (docs/V6_V10_PLAN.md cycle 5; owner's cycle instruction: a consolidated bundle judged by one bundle-level gate,
+because the per-part gates of v7 and v8 rejected bundles whose parts helped jointly). One gate protocol was committed first
+(data/derived/v10/gate_protocol.json, 0358a0c at 11:19:34 UTC), the two binding harnesses ran once (11:19-11:25 UTC), and the gate
+PASSED. Frozen in versions/v10/ (engine e5c05d2f, params 8c20073f). Pre-registered in data/derived/version_history.json v10
+(status `preregistered`, validation null); the look protocol is data/derived/v10/look_protocol.json. Nothing dated 2024 or later
+was simulated or scored (one input-availability check of 2024-25 predict options ran without simulation or outcomes); 2026 was
+never read. src/ holds v10 until the look decides; on a reject it returns to versions/v4.
+
+**Disclosed design choice.** The bundle and its gate were chosen AFTER v7's and v8's binding TRAIN results (v7: 32 of 33 checks,
+failing only the close-regime winner bound; v8 every-flag-on vs v4: engine winner -0.0080 [-0.0125, -0.0036], total stat deviance
+-0.80% [-1.35%, -0.24%]); no validation or vault number informed it. The primary is the same contrast v7's C1 open check measured
+(same fights, comparator files, winner rows, bootstrap), so its result was stated before the run and reproduced exactly: the gate
+is a consistency and wiring check of the consolidated bundle, not independent evidence. Judging on the open regime only (v7's
+failing close check becomes descriptive) and dropping the 7-bin / method bounds that decided v8 and v9 were decided with those
+train results in view; both labels travel to the look and audit 2. Plan deviations: v10 was planned as capability-only (identical
+scored numbers to v9); plan 6.1's per-part re-bundling is replaced by a bundle-level gate for cycle 1-3 parts; no v9 part is in
+v10 (none passed its own gate); cycle 5's anchor regression, band calibration, realism report and page slots are not built.
+
+**What was built (engine 10.0.0, params 10.0.0-selfcal-pre2024, FightBlend 1.4.0).**
+- Simulator: v8's code (components.embed, .retarget, .tdIntent, .ctrlSpread at sd 0); tests/test_v10.js: every v8 flag off = v4
+  bit for bit; defaults = versions/v8-gate-failed bit for bit; inputs (fold-honest embedding etas, leak-free statlines targets)
+  asserted applied.
+- predict(): v7's block (ML v2 head stacks by explicit line regime, S2 cells pooled at w 0.2, the props pool [0.47, 0.53]); FightBlend
+  1.4.0 swaps statTargets / statdist with the corners in the B-A run (exact corner symmetry with every flag on: 1.7e-16) and equals
+  1.3.0 bit for bit with the v8 flags off and the newcomer path off (36 / 36 rows).
+- Newcomer path (cycle 5 work item 1, the verified debut adoption block): a bout with a UFC debutant takes its winner from the
+  line-only stack when there is a line, else from opts.seededElo, and its method from the debut method model; the debut winner
+  model is reported as a monitored candidate. The backtest universe has no debut side (0 of 1,999 train fights), and predict() is
+  bit-identical with the path on and off. Train evidence: the verified debut research's forward-chained 2019-2023 CV (cited).
+- Explainer coherence (cycle 5 work item 2): FightEngine.showFight draws the shown fight's cell from predict()'s cells, searches
+  seeds of the matchup for a fight in that cell (untraced) and replays it traced (a trace does not move the random stream). Capability
+  check on 157 train fights x 5 seeds (no outcome read): exact cell 1.000, winner 1.000, predict unchanged on every fight, 10
+  seeds searched on average; the director builds every shown fight.
+- Harness and scorer: tools/predict_harness.js mode v10; tools/v10_stat_gate.js (v8's harness with v10's arms; a binding-only
+  `--split val` look mode added after the gate); tools/v10_gate.py (fits, gate, power, look); tools/v10_explainer_check.js;
+  tools/v10_run_tests.sh.
+
+**Train gate (2021-2023; 20,000 event-cluster resamples, seed 7).**
+- PRIMARY, open-regime winner log loss, v10 package - cmp4 (the honest v4 package exactly as v7 defined it): -0.00528 [-0.00964,
+  -0.00097] on 1,222 decisive fights (0.62133 vs 0.62662); pass (point < 0, upper <= +0.002). Wiring: v10's winner equals v7's
+  ml2stack rows on 5,997 / 5,997 fight x regime rows, cmp4's records equal v7's gate records on 5,997 / 5,997.
+- CO-PRIMARY, total stat-line relative deviance, v10 engine - v4: -1.13% [-1.76%, -0.51%] on 1,254 fights; pass (upper <= +0.5%).
+- INTEGRITY: 0 failed fights in both harnesses; tests/test_v10.js 19 / 19 on the frozen files; 39 of 40 test jobs pass, test_page_parity
+  tolerated by name (4 checks: the page is not rebuilt in v10).
+- Descriptive only: no line -0.0065 [-0.0118, -0.0011], close -0.0024 [-0.0054, +0.0005]; 7-bin -0.018 / -0.019 / -0.012 (props off),
+  -0.028 / -0.029 / -0.022 with props; method -0.006 to -0.016; leave-one-out: S2 cells carry most of the method gain (vs S / SM:
+  7-bin -0.0128 [-0.0204, -0.0050]), props -0.015 [-0.027, -0.003] on close+props, the v10 simulator's cells little at w 0.2; engine
+  level: winner -0.0109 [-0.0158, -0.0061], control deviance -3.7 s but control MAE +1.6 s [+0.6, +2.6], TD-attempt 80% band
+  coverage 0.68 -> 0.80, retarget the largest engine part; who x how x when vs model S -0.045 / -0.051 / -0.057 (none / open / close).
+
+**Pre-registered look (data/derived/version_history.json v10 prereg).** Scored object: the predict package. Comparator: cmp4 (not the
+v5.0.1 package v6 used): v4 is the latest kept version (6.3), 7.1 item 10 (b) requires the honest comparator v7 pre-committed for its
+gate and look, and 10 (d) takes power from the gate's same contrast; validation-informed caveat recorded (the v6 look's and the
+ML v2 research's 2024-25 numbers were on record). Primary: open-regime winner log loss vs cmp4, branch 1 (CI upper < 0); branch 2:
+not worse (upper <= +0.002) AND total stat-line deviance vs v4 clearly better AND the paired base-rate test passing with the glove
+window excluded (7.1 item 9). Expected -0.0053, MDE 0.0076, power about 0.50 (underpowered, stated). Confirmation look. 11 fights
+without ML v2 monthly-rolling rows drop out for both packages (known before the look).
+
+**Audit 2 pre-registered** (version_history.json vault_audits[audit 2], plan 6.7): the latest kept version after the v10 look vs v4
+(v10 package minus cmp4, open regime, if v10 is kept; otherwise no confirmatory primary, v4 shipped, v10 / v7 / v8 / v6 as
+descriptive side lines), every fit through 2025-12-31, the plan's failure criteria and exposure list.
+
 ## v9 (2026-11-07): walk-forward levels, drift and judging, joint level pass by format built and frozen; binding train gate FAILED (8 of 14 checks); no pre-registration, no look; v4 (4.0.0) stays
 
 **Outcome.** v9 = the v4 simulator (bit for bit with every v9 flag off, tests/test_v9.js) + cycle 4 of docs/V6_V10_PLAN.md
