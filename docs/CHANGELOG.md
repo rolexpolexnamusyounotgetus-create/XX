@@ -5,7 +5,134 @@ Each engine version records its held-out numbers here (docs/ROADMAP.md). From v4
 2026-01-01 is in the sealed vault (docs/BACKLOG.md "Hidden-data protocol"). Older entries that say "test" meant 2024-01-01 to the
 snapshot; that window is retired.
 
+## v10 finish (2026-11-07, review, ~12:40 UTC): v10 NOT KEPT on the pre-registered primary; v4 (4.0.0) restored; no 10.0.1, no new look
+
+**Outcome.** The review's issues were reproduced from the stored look files, train-only runs and the code. Nothing was simulated on
+2024-25 and nothing dated 2026 was read. The 11:50 UTC decision ("kept by branch 2", entry below) is **corrected to NOT KEPT**,
+applying the decision rule on the pre-registered primary only:
+- **Rule.** V6_V10_PLAN 6.3 (last bullet) and 7.1 item 4, both written before the v6 look, say branch 2 is decided on the
+  pre-registered primary metric only; 6.1 allows one primary per look. v6's pre-registration read this as "no branch-2 rescue".
+- **v10's primary** is the open-regime winner log loss of the package vs cmp4. It fails branch 1: -0.00326 [-0.00653, +0.00004] on
+  842 decisive fights. The bound is marginal, so the clustered normal bound decides it: +0.00002 > 0 (the review's exact value is
+  +0.0000246).
+- **The registered branch-2 rescue** (total stat-line deviance -0.88% [-1.69%, -0.07%] plus the glove-excluded base-rate test) is a
+  second decisive metric. It is reported, not applied.
+- **The re-scope was not Kira's.** 7.1 item 1 fixed v10 as a capability look (identical scored numbers). The re-scope to a
+  consolidated bundle came from the workflow script (scratchpad/wf_engine_v6_v10.js, ~10:57 UTC), not from Kira, and only Kira can
+  override 7.1 before a look. That is an independent reason the look could not keep a package that changes every scored number.
+
+The correction can only remove a keep. No number was recomputed for it. Kira can reinstate the recorded branch-2 result
+provisionally, with no new look, by ratifying both the re-scope and the branch-2 reading (v6 stays rejected under either reading).
+A ratification before vault audit 2 switches audit 2 to `if_v10_kept`. One after audit 2 is read counts as selection.
+
+**Action.**
+- src/engine3.js and src/params3.js restored from versions/v4 (6c661f68 / e16a6481 = the v4 entry; src/ml/mlrates.js was already
+  b563032d).
+- versions/v10 renamed versions/v10-rejected (frozen files unchanged; `versions/v10` is a symlink).
+- tests/test_v10.js now defaults to the frozen copy.
+- The full standard test list passed on the restored tree: 42 of 42 jobs (versions/v10-rejected/logs/restore/_status.txt), among
+  them test_engine3 69/69, director 300 / fuzz / no-ML, test_v10 on the frozen files 19/19, test_page_parity 15/15 (it failed 4
+  tolerated checks while src held v10), test_props_capture, test_engine2 and every component, predict, blindtest and ml2 test.
+- v4 is the latest kept version again. Audit 2 applies its pre-registered `if_v4_stays` case: no confirmatory primary; v10, v7, v8
+  and v6 are descriptive side lines vs cmp4.
+- **No 10.0.1.** No fix changes a scored backtest number of the v10 package, the v6-v10 look budget is spent, and re-deciding on
+  2024-25 would be selection.
+
+**The numbers (VALIDATION 2024-25, unchanged from the look; paired, 20,000 event-cluster resamples).**
+
+| measure | v10 minus comparator | 95% CI | note |
+|---|---|---|---|
+| PRIMARY: open winner log loss vs cmp4 | -0.00326 (0.58173 vs 0.58499) | [-0.00653, +0.00004] | normal upper +0.00002: fails |
+| no-line winner (secondary) | -0.00477 | [-0.00847, -0.00091] | never decisive |
+| close winner (secondary) | -0.00226 | [-0.00455, +0.00005] | |
+| 7-bin with props, open (secondary) | -0.0250 | [-0.0393, -0.0111] | S2 cells and props pool, mostly |
+| total stat-line deviance, engine vs v4 (registered branch 2, not applied) | -0.88% | [-1.69%, -0.07%] | 2024 -0.21%, 2025 -1.54% |
+| sub-attempt deviance, engine vs v4 | +0.0110 (+1.33% of level) | [+0.0002, +0.0220] | worse; outside 6.3's +0.5% per-stat tolerance |
+| engine method vs v4 | +0.0071 | [+0.0004, +0.0140] | worse |
+| leg-landed MAE vs v4 | +0.074 | [+0.030, +0.119] | worse |
+| KO share, glove-excluded (647 fights) | 0.291 vs actual 0.314 (v4 0.305) | paired D [-0.015, +0.017] | outside the 0.02 tolerance; v4 inside |
+| SUB share, glove-excluded | 0.184 vs actual 0.166 (v4 0.179) | | outside the 0.015 tolerance; v4 inside |
+| engine winner vs v4 (evalv, 300 sims) | -0.0051 (0.6273 vs 0.6324) | [-0.0127, +0.0024] | |
+| blend test | engine weight 0.000 with and without a market | | v4: 0.037 / 0.000 |
+
+TRAIN (2021-23, the gate, descriptive): open winner vs cmp4 -0.00528 [-0.00964, -0.00097]. The same number as v7's C1, by
+construction. Total stat-line deviance vs v4 -1.13% [-1.76%, -0.51%].
+
+**Issues, as reproduced and handled** (version_history.json v10 `review`; the review text this step received was cut off inside
+the frozen-copy issue, so any later issues were not seen):
+1. **Re-scope not Kira's (high).** Reproduced: the bundle scope, the bundle gate and "branch 2 via stat-line deviance" are in the
+   workflow script's CYCLES entry for v10. Recorded as a protocol deviation needing Kira's ratification.
+2. **The gate could not fail (high).** Reproduced. The gate is relabelled "gate re-specified after v7 / v8 gate failures; parts
+   entered without passing their own gates" and is not evidence. Dropped checks, with v10's train values:
+   - v7 C1 close bound: -0.0024 [-0.0054, +0.00054]; fails.
+   - v8 K3 control MAE: +1.64 s [+0.63, +2.64]; fails.
+   - v8 K5 engine method +0.0033 [-0.0033, +0.0098] and 7-bin +0.0113 [-0.0107, +0.0355]: above +0.002, fail. Retarget
+     leave-one-out method: +0.0060 [+0.0009, +0.0112].
+   - K2 and K6 pass on train but fail on the look (sub attempts; KO and SUB).
+3. **Branch-2 rescue on a second metric (high).** Reproduced; applied as above.
+4. **The total hides per-stat worsening (medium).** Reproduced: sub attempts, method and leg-landed MAE are worse, and the gain sits
+   in 2025. Named in the decision basis, and audit 2 is pre-warned (vault_audits[audit 2] `prewarnings`): v10 already meets one of
+   its failure criteria on 2024-25.
+5. **The base-rate test has no power (medium).** Reproduced: KO and SUB `registered_fail` in the governing window, where v4 is
+   inside. The paired D is bounded by ±|new - old| once the actual is resampled.
+   - tools/evalv_decide.js now also reports a `fixed_actual` block per rate, with the actual held at its full-sample value:
+     - `drift_6_3`: plan 6.3's proposed definition. It has power, and it also flags small moves inside the tolerance (on train,
+       v10 vs v4 flags SUB, the R1 share and SD+MD).
+     - `drift_outside`: outside the tolerance AND moved out or further with a CI excluding 0. None on train.
+   - The new block was checked on train only, not run on 2024-25.
+6. **Judging not train-only (medium).** Reproduced: v10 carried v4's EM table, fit on cards through 2026-10, against plan 4.1.
+   - A hygiene variant (v4 + judge_em_train.json) needs a look, and none is left in the budget. Open item for Kira.
+   - Audit 2 flags method, 7-bin and SD+MD of every v4-judging package as not clean.
+7. **Branch-2 metric informed by 2024-25 (low).** Reproduced (research/model_statlines.md finding 4). Labelled.
+8. **Cycle-5 acceptance tests not run (low).** Reproduced; recorded as "not run". On the look, v10's 80% bands cover sig landed
+   0.865, sig attempts 0.869, TD landed 0.769 and TD attempts 0.776, outside 78-82%.
+9. **Smoothing prior from the scored fights (low).** Reproduced and fixed.
+   - tools/v8_gate.py `table()` now takes `base_fights` and refuses 2024+ fights without a train base.
+   - tools/v10_gate.py `look` and tools/v10_look_secondaries.py use the gate's train stat harness.
+   - Identical on train (1,254 fights). The stored v10 secondaries are not re-scored (weight 1/601, secondaries only).
+10. **Tests missing from the job lists (low).** Reproduced; test_props_capture.py and test_engine2.js both pass.
+    - tools/test_jobs_standard.txt lists every tests/test_* file, including test_forward_v44 and test_live_refresh, plus
+      tools/live_component_check.js.
+    - tools/v10_run_tests.sh uses the list when a run directory has none.
+11. **Optimistic expected effect (low).** Reproduced: the realised SE was 0.001674 vs 0.002695 projected (realised MDE about 0.0047),
+    so branch 1 missed on effect size (60% of the gate's), not mainly on power. Audit 2 should expect about -0.003 for the v10
+    side line.
+12. **The stat-line bundle never runs live (high).** Reproduced on versions/v10-rejected: `matchup().retarget` returns `{applied:
+    false, reason: 'no targets'}`, the spread is unset and the embed source is null. The keep rested on behaviour that existed only
+    in tools/predict_harness.js.
+    - Not fixed in engine code: v10 is rejected and frozen files are never edited.
+    - New tools/live_component_check.js (in the standard list) fails 6 of 6 on versions/v10-rejected and passes on src.
+    - tests/test_page_parity.js now covers retarget, tdIntent, ctrlSpread and the explainer: 7 failures on the frozen v10 files,
+      15/15 on src.
+    - The requirements for any re-bundle are in docs/BACKLOG.md.
+13. **Live statdist inputs differ from the validated ones (medium).** Reproduced: 2,864 / 2,864 validated inputs carry a win logit
+    and oppadj factors. On 205 train fights, zeroing them moves TD-attempt targets by a mean |log ratio| of 0.194 (p90 0.383) and
+    control by 0.106. Requirement for any re-bundle (BACKLOG).
+14. **The frozen copy drops the method-round pool (medium).** Reproduced: live predict() from versions/v10 gives weight 1 with no
+    note; from src it gives 0.2 with S2. The look was not affected (the harness builds S2 rows with ROOT's tools).
+    - Fixed in src/ml/blend.js 1.4.1: `mrLib()` searches up from its own file and the working directory, so a frozen copy finds its
+      own tools/ copy. predict() records `methodRound.mrLib {missing, note}` when a requested pool could not be computed.
+    - Tested both ways on scratch copies; outputs are unchanged when the library is found.
+
+**Files.**
+- data/derived/version_history.json v10: `status: rejected`, `decision`, `decision_superseded` (the 11:50 record), `review`,
+  `train_gate.review_relabel`, `train_gate.capability_checks_not_run`, a note.
+- vault_audits[audit 2]: `case_that_applies` = `if_v4_stays` (the old one kept as `case_that_applies_superseded`) and `prewarnings`.
+  The pre-registered text is unchanged.
+- data/derived/val_look_ledger.json: the v10 row's status (looks stays 1).
+- versions/README.md and versions/v10-rejected/README.md.
+- Tools: tools/evalv_decide.js, tools/v8_gate.py, tools/v10_gate.py, tools/v10_look_secondaries.py, tools/v10_run_tests.sh,
+  tools/test_jobs_standard.txt and tools/live_component_check.js (new).
+- Code and tests: src/ml/blend.js 1.4.1, tests/test_page_parity.js, tests/test_v10.js.
+
+**Still open, for Kira.**
+- (a) Ratify or reject the v10 re-scope and the branch-2 reading of 7.1 item 4 (docs/V6_V10_PLAN.md 7.1 item 11).
+- (b) A hygiene variant with train-only judging weights: no look is left, so the forward ledger is the only test.
+- (c) The page and the forward ledger stay on v4-era code, which is now consistent with the kept version.
+
 ## v10 look (2026-11-07, 11:39-11:44 UTC): the single pre-registered 2024-25 look run once; v10 KEPT by branch 2, "kept under the glove-window amendment"; v10 replaces v4 as the latest kept version
+
+**Superseded (v10 finish, ~12:40 UTC, above):** the decision recorded here was corrected to NOT KEPT on the pre-registered primary; v4 is the latest kept version again. The numbers below are unchanged.
 
 **Outcome.** The look ran data/derived/v10/look_protocol.json's commands once, in order (precheck, predict harness, stat
 harness, evalv, evalv_decide, tools/v10_gate.py look), on the committed protocol (HEAD 688b9a8) with the v10 ledger row committed

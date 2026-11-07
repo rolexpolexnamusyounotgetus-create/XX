@@ -883,6 +883,20 @@ before the look it governs (an override after a look is read counts as selection
       package bundles src/ml/blend.js 1.2.1 or later (line fallback, debut detection, the ml2stack interval with its own
       kappa).
 
+11. **OPEN, for Kira (added Nov 7, ~12:40 UTC, by the v10 review; not a decision).** Two calls were made for v10 by the workflow
+    script, not by Kira, and only Kira can make them (preamble of 7.1):
+    - (a) **v10's scope.** Item 1 fixed v10 as a capability look ("identical scored numbers by construction"). The script re-scoped it
+      at ~10:57 UTC into a consolidated bundle with an open-winner primary.
+    - (b) **The reading of item 4.** v6 read "branch 2 is decided on the pre-registered primary only" as "a winner-primary look has
+      no branch-2 rescue". v10 registered a branch-2 rescue on a second metric (total stat-line deviance).
+
+    Applied now: the plan as written. v10 is not kept (docs/CHANGELOG.md "v10 finish"), v4 stays the latest kept version, and audit 2
+    runs `if_v4_stays`.
+
+    If Kira ratifies both, write here that a winner-primary look may register one non-winner branch-2 metric. v6 registered none, so
+    it stays rejected either way. v10's recorded branch-2 result would then be reinstated "provisional", with no new look. If that
+    happens before audit 2 runs, audit 2 switches to `if_v10_kept`. After audit 2 is read, it counts as selection.
+
 ---
 
 ## 8. Considered, not in the five

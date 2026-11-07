@@ -64,7 +64,22 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
-- ENGINE v10 LOOKED AT ONCE AND KEPT (Nov 7, 11:39-11:44 UTC; docs/CHANGELOG.md "v10 look"; version_history.json v10 `status: kept`,
+- ENGINE v10 NOT KEPT (v10 review, Nov 7 ~12:40 UTC; docs/CHANGELOG.md "v10 finish"; version_history.json v10 `status: rejected`,
+  `decision`, `decision_superseded`, `review`). The decision rule was applied on the pre-registered primary only (V6_V10_PLAN 6.1 /
+  6.3 / 7.1 item 4, v6's reading).
+  - Open winner vs cmp4: -0.00326 [-0.00653, +0.00004]; the normal upper (+0.00002) is above 0, so branch 1 fails.
+  - The registered branch-2 rescue (total stat-line deviance -0.88% [-1.69%, -0.07%]) was a second decisive metric. It is reported,
+    not applied.
+  - The re-scope from a capability look (7.1 item 1) came from the workflow script, not from Kira.
+  - src/ = versions/v4 again; versions/v10 is now versions/v10-rejected (symlink kept). Audit 2 runs `if_v4_stays`. No 10.0.1 and no
+    new look.
+  - What the stat-line total hid: sub-attempt deviance worse (+1.33% of level, CI excludes 0), engine method worse, leg-landed MAE
+    worse. In the governing glove-excluded window, KO and SUB fall outside the registered tolerance where v4 is inside.
+  - The bundle gate is relabelled "re-specified after v7 / v8 gate failures" and is not evidence.
+  - The stat-line bundle never ran on the live path (tools/live_component_check.js: 0 of 6 on the frozen v10).
+  - Kira may reinstate the branch-2 result provisionally, with no new look, by ratifying both the re-scope and the branch-2 reading
+    (V6_V10_PLAN 7.1 item 11).
+- (superseded by the review above) ENGINE v10 LOOKED AT ONCE AND KEPT (Nov 7, 11:39-11:44 UTC; docs/CHANGELOG.md "v10 look"; version_history.json v10 `status: kept`,
   `decision`): branch 1 missed on a marginal bound (open winner vs cmp4 -0.00326 [-0.00653, +0.00004], 842 decisive fights; normal
   upper +0.00002); branch 2 kept it (not worse; total stat-line deviance vs v4 -0.88% [-1.69%, -0.07%]; glove-excluded paired
   base-rate test passes, full window fails on KD per 100 head 0.771 vs 0.684) -> "kept under the glove-window amendment". Confirmation
@@ -364,6 +379,28 @@ Findings from verified research that the next engine versions must use. Each lin
 - Engine with predict(): refuse instead of falling back to summarize when FightBlend is missing; manualProfile keeps
   n_fights 0; bundle blend.js >= 1.2.1 and data/derived/line_stack.json.
 
+## Re-bundle requirements (v10 review, Nov 7 ~12:40 UTC; docs/CHANGELOG.md "v10 finish")
+Any future version that brings back v8's / v10's stat-line parts (embed, retarget, tdIntent, ctrlSpread) or v7's package must meet
+these, fixed before its gate:
+- **Live path first.** The parts must act on the live path, not only in tools/predict_harness.js.
+  - When components.retarget is on and a statdist model is loaded, predict() builds the statdist input itself: the matchup's raw
+    mlPred, the FightEmbed etas, the embedding win logit and the live oppadj factors.
+  - The engine's rtTargets throws, or records a reason, when the retarget is on but the statdist handle was loaded without
+    {enable: true}.
+  - The package reports m.retarget, m.embed.src and m.spread.
+  - tools/live_component_check.js must pass (it is in tools/test_jobs_standard.txt), and so must tests/test_page_parity.js, which
+    now covers retarget, tdIntent, ctrlSpread and the explainer.
+- **Same inputs live as validated.** Live statdist inputs must match the validated construction (win logit and oppadj present on
+  2,864 / 2,864 validated fights), or use a refit, labelled variant without them. An all-null oppadj input is a flagged
+  degradation. statLines.dist records its input source.
+- **Original gate criteria.** Rerun the original component criteria (v7 C1-C3 bounds; v8 K1-K6 / S1-S2), fixed before the run. A
+  bundle gate that drops the checks earlier candidates failed is not a gate (v10 `train_gate.review_relabel`).
+- **One decisive metric per look** (6.1 / 7.1 item 4), unless Kira rules otherwise (7.1 item 11).
+- **Base rates.** Report evalv_decide's `fixed_actual` block (drift_6_3 / drift_outside) next to the paired test.
+- **Train-only judging.** Carry judge_em_train.json (plan 4.1). v4's EM table saw cards through 2026-10.
+- **Forward ledger.** A new fwd version that carries a stat-line block also tracks sub attempts and method, the stats on which v10
+  was worse on 2024-25.
+
 ## Research tooling note
 - Agents launched before the network opened hit DNS failures in WebFetch and a shared web-search cap
   (about 200 calls per turn). With unrestricted network, research agents should fetch pages with curl
@@ -372,7 +409,22 @@ Findings from verified research that the next engine versions must use. Each lin
 
 ## Prediction status after the ML-core round (verified, Nov 6 ~11:00 UTC)
 
-**Current (Nov 7, 6:50 am ET; after v10's look):**
+**Current (Nov 7, 7:40 am ET; after the v10 review):**
+- **The latest kept engine is v4 (4.0.0) again** (src/ = versions/v4; hashes = the v4 entry). v10's single look missed branch 1 on its
+  pre-registered primary: open winner vs the honest v4 package -0.00326 [-0.00653, +0.00004]. Its "kept by branch 2" record was
+  corrected to NOT KEPT, because the plan decides branch 2 on the primary only and the re-scope was not Kira's. The page and the
+  forward ledger (v4-era code, fwd-4.x) match the kept version.
+- **Best verified prediction pieces, unchanged.** The ML v2 stacks by line regime: page pass 3 and fwd-4.3 / 4.4 use them, and the
+  forward ledger is their clean test. S2 method cells and the props pool are verified research components.
+- **What the v10 package showed on 2024-25 (a confirmation look, not clean).** Against the v4 package: no line -0.0048
+  [-0.0085, -0.0009], close -0.0023 n.s., 7-bin with props about -0.025 in every regime (mostly S2 cells and props). The simulator
+  alone was worse on method and on three per-stat measures; its stat-line components never ran live.
+- **Clean tests left:** vault audit 2 (case `if_v4_stays`; the v10, v7, v8 and v6 packages as descriptive side lines; expect about
+  -0.003 for v10, power about 0.2) and the forward ledger.
+- **Open for Kira:** ratify or reject v10's re-scope and the branch-2 reading (V6_V10_PLAN 7.1 item 11), and decide on a train-only
+  judging hygiene variant (no look left in the v6-v10 budget).
+
+**Earlier (Nov 7, 6:50 am ET; after v10's look; superseded by the review above):**
 - **The latest kept engine is v10 (10.0.0)** (versions/v10 = src/), kept by branch 2 of its single pre-registered look and labelled
   "kept under the glove-window amendment". Best verified prediction object: v10's FightEngine.predict package (ML v2 head stacks by
   line regime, S2 cells at w 0.2, props pool). On 2024-25 vs the honest v4 package: open winner -0.0033 [-0.0065, +0.0000], no line

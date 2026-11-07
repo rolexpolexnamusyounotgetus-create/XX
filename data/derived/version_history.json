@@ -17941,7 +17941,7 @@
     "written_at": "2026-11-07T12:40:00+00:00",
     "note": "written by the v10 review before audit 2 runs; the pre-registered criteria and text are unchanged; nothing here reads a 2026 number",
     "v10_side_line_already_meets_a_failure_criterion_on_2024_25": "any_stat_line_deviance_worse_with_ci_excluding_0: v10 engine sub-attempt deviance +0.0110 [+0.0002, +0.0220] vs v4 on 2024-25; engine method +0.0071 [+0.0004, +0.0140] and leg-landed MAE worse too",
-    "expected_effect_v10_side_line": "about -0.003 (the 2024-25 realised -0.00326), not the gate's -0.005; with SE about 0.0028 on ~365 decisive vault fights (look SE 0.001674 x sqrt(842 / 365)) the power at -0.003 is about 0.18",
+    "expected_effect_v10_side_line": "about -0.003 (the 2024-25 realised -0.00326), not the gate's -0.005; with SE about 0.0025 on ~365 decisive vault fights (look SE 0.001674 x sqrt(842 / 365)) the power at -0.003 is about 0.22",
     "not_clean_judging": "method, 7-bin and SD+MD results of every package on v4's simulator (cmp4, v10, v7, v8) are 'not clean (judging fit on vault cards: v4's EM table through 2026-10)'",
     "v10_gate_not_evidence": "the v10 train gate is relabelled 'gate re-specified after v7 / v8 gate failures' (v10 train_gate.review_relabel): not to be cited as evidence",
     "base_rate_test": "report the paired test as a sensitivity and, as the powered tests, tools/evalv_decide.js's fixed_actual block (actual held fixed): drift_6_3 (plan 6.3 proposed definition) and drift_outside (outside the registered tolerance and moved out or further with a CI excluding 0)",
