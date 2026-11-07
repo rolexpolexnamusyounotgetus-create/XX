@@ -43,6 +43,16 @@
         and a line exists, the headline is the line-only stack of that line kind (data/derived/line_stack.json,
         tools/line_stack.py: fit on 2019-2023, mirrored, no intercept), source 'line'; without that file, the de-vigged
         line itself (flagged). Other winner settings keep 1.1.1 behaviour and flag `lineDropped`.
+     7. (1.3.0, engine v7: docs/V6_V10_PLAN.md cycle 2; research/model_props.md, adopted as hygiene) Market props for how and
+        when. With method props (opts.props: a de-vigged consensus { m6, ... } oriented to A / B, or { books, swap } raw
+        per-book prices de-vigged here by src/ml/propspool.js: the one power de-vig per family per book, mean over books, that
+        training and `tools/props.py capture` use) and params.blend.props.on, method given the winner becomes the joint-linear
+        pool of the package cells' and the props' method mixes (each source weighted by its own P(side wins); weights
+        params.blend.props.w, or opts.propsParams.w for a forward-chained backtest); round shapes stay the cells' (round props
+        failed the CV gate); the draw is drawC x P(decision) as in training; the winner is untouched (P(A) / (P(A) + P(B)) = p
+        exactly). decShift is a labeled P(decision) logit knob (0: the forward-chained CV rejected a tilt). Bouts on the debut
+        path keep the debut method model (the debut-bout props pool is reported, monitored, never applied). No props, or no
+        method family: the cells are unchanged (identity). Every other output is the 1.2.1 package bit for bit.
 
    Cell layout (methodround.json): [A KO r1..R, A SUB r1..R, B KO r1..R, B SUB r1..R, A DEC, B DEC, DRAW], R = scheduled
    rounds; KO includes TKO, GNP, leg, doctor and corner stoppages. Every probability is P(first-named fighter A).
@@ -54,10 +64,10 @@
   else root.FightBlend = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (root) {
   "use strict";
-  var VERSION = "1.2.1";   // 1.2.1 (v6 review; not part of any kept version): line fallback for debut / manual bouts (source 'line'), isDebutant honours record.ufc, the ml2stack interval perturbs the head without the MoE handle and has its own kappa; backtest-universe outputs are unchanged (every backtest row is ml2stack or stack). 1.2.0 (engine v6): ML v2 winner heads by line regime (winner 'ml2stack', data/derived/v6_stacks.json), S2 method/round cells (tools/methodround_model.js createS2), debut method path, distributional stat lines; every v6 path is off unless params.blend switches it on, so 1.1.1 behaviour is unchanged for v5 params
+  var VERSION = "1.3.0";   // 1.3.0 (engine v7, cycle 2): market props for method given the winner (params.blend.props, opts.props; item 7 above); with props off or absent every output equals 1.2.1. 1.2.1 (v6 review; not part of any kept version): line fallback for debut / manual bouts (source 'line'), isDebutant honours record.ufc, the ml2stack interval perturbs the head without the MoE handle and has its own kappa; backtest-universe outputs are unchanged (every backtest row is ml2stack or stack). 1.2.0 (engine v6): ML v2 winner heads by line regime (winner 'ml2stack', data/derived/v6_stacks.json), S2 method/round cells (tools/methodround_model.js createS2), debut method path, distributional stat lines; every v6 path is off unless params.blend switches it on, so 1.1.1 behaviour is unchanged for v5 params
   var VERSION_PREV = "1.1.1";   // 1.1.1 (v5.0.1): invalid market lines are refused, never treated as no line; 1.1.0 (v5 merge step 5): ML v2 package winner blend, opts.lineKind, backtest guard, v5 corner swaps
   var STATE = { stack: null, feat: null, ml2: null, mlPage: null, mktRatings: null, mr: null, mrModel: null, data: null,
-    winnerStacks: null, mrS2: null, debut: null, statDist: null, ml2Trees: null, preufc: null, lineStack: null };
+    winnerStacks: null, mrS2: null, debut: null, statDist: null, ml2Trees: null, preufc: null, lineStack: null, props: null };
 
   function clip(x, lo, hi) { return x < lo ? lo : (x > hi ? hi : x); }
   function logit(p) { p = clip(p, 1e-6, 1 - 1e-6); return Math.log(p / (1 - p)); }
@@ -95,6 +105,11 @@
     if (typeof require === "function") { try { return require("./ml2trees.js"); } catch (e) { return null; } }
     return null;
   }
+  function propsLib() {
+    if (root && root.PropsPool) return root.PropsPool;
+    if (typeof require === "function") { try { return require("./propspool.js"); } catch (e) { return null; } }
+    return null;
+  }
   function mlPageLib() {
     if (root && root.MLPage) return root.MLPage;
     if (typeof require === "function") { try { return require("./mlpage.js"); } catch (e) { return null; } }
@@ -122,7 +137,9 @@
     mrModel: "S",          // method/round model pooled with the simulator: 'S' (S / SM, v5) or 'S2' (v6: S2 cells, no SM)
     debut: false,          // v6: bouts with a UFC debutant take method given the winner from the debut model (src/ml/debut.js)
     statDist: false,       // v6: distributional stat lines (src/ml/statdist.js, P10 / P50 / P90) next to the means
-    lineFallback: null     // 1.2.1: true / false; null = on for winner 'ml2stack' only (a line is never dropped), off otherwise (1.1.1 behaviour, flagged)
+    lineFallback: null,    // 1.2.1: true / false; null = on for winner 'ml2stack' only (a line is never dropped), off otherwise (1.1.1 behaviour, flagged)
+    // 1.3.0 (engine v7): market props for method given the winner; off by default, so 1.2.1 behaviour is unchanged for v5 / v6 params
+    props: { on: false, mode: "jlin", w: null, decShift: 0, drawC: 0.01457, overMax: null, outlierMaxDev: 0.15, debutPool: false }
   };
   function cfgOf(p, opts) {
     var b = (p && p.blend) || {}, o = (opts && opts.blend) || {}, out = {}, k;
@@ -131,6 +148,7 @@
     for (k in o) out[k] = o[k];
     out.anchor = own(DEFAULTS.anchor); for (k in (b.anchor || {})) out.anchor[k] = b.anchor[k]; for (k in (o.anchor || {})) out.anchor[k] = o.anchor[k];
     out.boot = own(DEFAULTS.boot); for (k in (b.boot || {})) out.boot[k] = b.boot[k]; for (k in (o.boot || {})) out.boot[k] = o.boot[k];
+    out.props = own(DEFAULTS.props); for (k in (b.props || {})) out.props[k] = b.props[k]; for (k in (o.props || {})) out.props[k] = o.props[k];
     return out;
   }
 
@@ -685,10 +703,11 @@
     if (o.ml2Trees !== undefined) { var TL = treesLib(); STATE.ml2Trees = o.ml2Trees && TL ? TL.load(o.ml2Trees, STATE.ml2) : null; }
     if (o.preufc !== undefined) STATE.preufc = o.preufc || null;
     if (o.lineStack !== undefined) STATE.lineStack = o.lineStack || null;   // 1.2.1: data/derived/line_stack.json
+    if (o.props !== undefined) STATE.props = o.props ? (o.props.model || o.props) : null;   // 1.3.0: data/derived/props.json (its model: de-vig settings, debut pool)
     return { stack: !!STATE.stack, stackOpen: !!(STATE.stack && STATE.stack.open), feat: !!STATE.feat, mlPage: !!STATE.mlPage,
       market: !!STATE.mktRatings, ml2: !!STATE.ml2, methodRound: !!STATE.mr, data: !!STATE.data,
       winnerStacks: !!STATE.winnerStacks, mrS2: !!STATE.mrS2, debut: !!STATE.debut, statDist: !!STATE.statDist, ml2Trees: !!STATE.ml2Trees,
-      lineStack: !!STATE.lineStack };
+      lineStack: !!STATE.lineStack, props: !!STATE.props };
   }
 
   // ------------------------------------------------------------------ the package
