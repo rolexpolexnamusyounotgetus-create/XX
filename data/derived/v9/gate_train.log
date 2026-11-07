@@ -1,0 +1,10 @@
+v9_gate: 1999 train fights x 2 orders x 300 sims, arms cmp4, all, -judgeWF, -format, +levels, 3 workers, seed 9, BINDING
+  [cmp4] 300/1999 fights, 4 s
+  [cmp4] 600/1999 fights, 7 s
+  [cmp4] 900/1999 fights, 11 s
+  [cmp4] 1200/1999 fights, 14 s
+  [cmp4] 1500/1999 fights, 17 s
+  [cmp4] 1800/1999 fights, 20 s
+  [all,-judgeWF,-format,+levels] 300/1999 fights, 15 s
+  [all,-judgeWF,-format,+levels] 600/1999 fights, 27 s
+  [all,-judgeWF,-format,+levels] 900/1999 fights, 41 s
