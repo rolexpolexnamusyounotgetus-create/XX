@@ -1,0 +1,806 @@
+{
+ "tool": "tools/v10_explainer_check.js",
+ "engine": "10.0.0",
+ "params": "10.0.0-selfcal-pre2024",
+ "fights": 157,
+ "show_rows": 785,
+ "errors": 0,
+ "exact_rate": 1,
+ "winner_rate": 1,
+ "predict_unchanged": 157,
+ "mean_tries": 10.01,
+ "thresholds": {
+  "exact_rate": ">= 0.90",
+  "winner_rate": "= 1.00",
+  "predict_unchanged": "every fight"
+ },
+ "pass": true,
+ "note": "reads no outcome; capability check only",
+ "rows": [
+  {
+   "id": "3d903bc35023f50a",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "a4817b7e46028b4a",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "dd34dd337e637767",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "cd08b68f0bafafbf",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "8c34e1e0d842618d",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "17616514e8fdacb9",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "e175c1a0bff30187",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "b12bc15f384ecc42",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "4a704dae3091adaf",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "f4363f1317b47213",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "03bdbf2d18f3025d",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "68cf99b6551dc3b3",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "6002c24f0b7f8cc7",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "cd5d9828b278181a",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "71b81d8199a0fa19",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "f2c82f027201ba21",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "34d2632fd26e7078",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "26202a4bd36d3fd2",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "295a0bf12a7373c0",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "5573d46130d6b967",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "b381dc272b32ce03",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "58c5d506181812fa",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "f187c7ec92f43828",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "9127a6430e46292c",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "1e9f081a84e7ec18",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "6fd9a013cea5a403",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "4341ebb5a56e6943",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "5d5bf07dbfada0e3",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "7d0ce28ce8a77eb1",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "f0b83b05f3dd9580",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "7c3ad06a520b8716",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "9eef9b7967991296",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "dcd0793ff1a43b68",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "47a157222b2c9092",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "3a9e0fed344fd07d",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "5cd1869013741767",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "eb10feae98ea7d36",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "13a8ddb1c3f55ed4",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "bc276e0f07e30a54",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "5f444eac11e55161",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "37c484012ef24a5b",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "149d6b90f33634a4",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "330e67abac6e5ce7",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "69167b996ce7a7e4",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "58b19ba734fe93a3",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "095a351dd6f09f7e",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "2c21abbc28e3876a",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "1013cdbb6c9a4a2e",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "1cd8f5a107f64e39",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "376dddfa82debbf4",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "505397f405e40206",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "6537a32e7af905b0",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "85d9a516c3c6c205",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "2e200563dd7c4922",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "3bcbb0e039f4f5d8",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "84ebbad426d25713",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "821bef3a3394dd96",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "18a1617ee7356352",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "93026443e5140415",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "c4eb14c3de579842",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "ee278a5a25744cac",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "b400c29fbeee0206",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "70b8d357e89383bd",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "a200b5dcbdd2506e",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "3ecccdab76baa59c",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "c4e866d9dd606faa",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "dc0ab34f1952cb48",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "2e94ee4b9f5fddea",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "173d576e6247a88a",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "6b956992204ec040",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "ff6c8dab41efcc09",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "7d4e49d8a6678157",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "5c281439d20184f1",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "5eaff5c832430378",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "e5e75d831670b401",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "50eed57ea1390e16",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "897d9e21c59d0633",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "11e83902f5b8ff63",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "28be3fbe5c377380",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "1c85003f6ec59c9d",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "0308bcdd00cc72e2",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "c58b3223b5caa18a",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "74b8a36293758342",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "1c84dafe38694c05",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "a57969d4ba7d4a79",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "81a18de517a3336a",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "b5274277ef6707c9",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "f858f91453555291",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "06d6cde7479711ee",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "2cd9e3796be57a79",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "b8ca1acdf3dc2f58",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "989b8d362742f40b",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "f521ecde1e96a1bd",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "ecc56a86a1eead9d",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "fac560495e61d34c",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "904cf687d22bb486",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "25f3e4fa781c1c8a",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "f32d918ee06cb83b",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "2ab395e21080b10a",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "bee95769a221af9a",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "77c78d0a71b10692",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "594435375d641f63",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "30abc50a2e71c576",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "972e17c1b98fca06",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "4a17876e99f6baf3",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "efc64d8aae5628c9",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "4ea48bf2407b405d",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "fcf385ae75191b57",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "dde7d29cc443e263",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "ca2672e68fedf4b7",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "682ff095649c9a5c",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "2ba11e0bf32829d6",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "d6d034e98ce85246",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "804c350ce714770f",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "8a3e7085e8e5a6e9",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "16bd47ba50891833",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "33fa6793a7f984ac",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "3165b03ddc6d3b6e",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "bbde45b2c766bb67",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "277233ca9ea25674",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "d00d5ef4ae0ac01b",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "93fb6c7e590487f9",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "81fda78adcaedbc7",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "c501576b8ec35758",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "49bd9a2f1fbebd1f",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "dfc62aa72446e4a8",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "7ee8b91d7f80f8a7",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "69bc7ca8ce831731",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "98458778348ea5d7",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "8b296724a6844865",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "454265014520a3f8",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "5b71958ee063a6e8",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "0f24f3bc1b39ea45",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "81b7a6aa147bd912",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "b4e2037f180c1e0e",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "3de326b65aa6245d",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "c27e33ee8ef53866",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "2c54be25b09fce50",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "560a971c6ab8b854",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "e9754f597ec50f6f",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "ee796ecb4ee8680b",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "5531317352862978",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "4eaf54ad3c82b6fa",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "e4ed294e16e16d81",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "c0ca4c201d086ea8",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "6e1bf1b163b3aeab",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "eb7b0a6f06dbdb4f",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "a74a8c1e0a49070d",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "b84c447bb74febe2",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "f23e9729b2b73c27",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "ac37849f627a79c4",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "128ab9aa4802c73f",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "16109688429c09de",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "32813f5f46f045e8",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "9feb9500b0fedfcd",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "acc57a9c114b694a",
+   "exact": 5,
+   "winner": 5
+  },
+  {
+   "id": "521a0e016878d174",
+   "exact": 5,
+   "winner": 5
+  }
+ ]
+}
