@@ -4,7 +4,8 @@
     nice -n 5 python3 tools/vault_audit1/ml2_vault.py [--vault <dir>] [--jobs 2]
 
 1. Feature table. tools/ml2.py's own table builders (build_base: tools/ml.py's walk-forward table; build_ratings: the
-   ratings.py systems with their frozen 2019-2023 parameters; build_market_rating: the walk-forward Kalman market rating
+   ratings.py systems as the frozen build ran them (commit b9ac8d7's code and parameters, rebuilt through 2026-10 by
+   tools/vault_audit1/ratings_ml2_vault.py, which must run first); build_market_rating: the walk-forward Kalman market rating
    on earlier closing lines; build_preufc; build_fightweek) are run with ml2's parse cutoff moved from 2026-01-01 to
    2026-11-01, so 2026 rows get features built strictly from earlier fights (and, for the market rating, earlier
    closing lines from <vault>/market_vault.json). The cutoff is restored before anything else runs. Check: every
@@ -56,6 +57,14 @@ def jload_vault(name):
         d["fights"].update(MV)            # 2026 closing lines (pre-fight BFO closes), for later fights' market rating
     return d
 
+
+# rating-system features: the frozen ML v2 build used tools/ratings.py + ratings.json of commit b9ac8d7 (both changed later);
+# tools/vault_audit1/ratings_ml2_vault.py reruns that code through 2026-10-31 and checks every pre-2026 value against the frozen
+# out/ml2_cache/ratings_all.pkl (max |diff| 0). ml2.build_ratings() loads it from the cache instead of today's ratings.json.
+_R = pickle.load(open(os.path.join(AUD, "ratings_ml2_vault.pkl"), "rb"))
+pickle.dump({"fid": _R["fid"], "p": _R["p"], "rec": _R["rec"], "check_vs_ratings_json": {k: {"max_abs_diff": v["max_abs_diff_vs_frozen"]} for k, v in _R["check"].items()}},
+            open(os.path.join(CACHE, "ratings_all.pkl"), "wb"))
+del _R
 
 # ---------------------------------------------------------------- 1. table (cutoff moved, then restored)
 ml2.VAULT, ml2.VAULT_S, ml2.jload = CUT, CUT_S, jload_vault
@@ -109,7 +118,9 @@ pos = {f: i for i, f in enumerate(fid)}
 yr = T["year"].to_numpy()
 checks = {"market_rating_vs_market_json": mr_chk}
 
-# frozen table: pre-2026 design rows must match
+# out/ml2_cache/run1/table.pkl is an earlier copy of the table (16:45; it differs from the build fit.pkl was trained on only in the
+# four rating columns). Reported for information; the governing reproduction checks are the static LR vs ml2.json, the tree
+# retrains vs fit.pkl and the production-coefficient refit below.
 TF = pickle.load(open(os.path.join(FROZEN, "run1", "table.pkl"), "rb"))["df"]
 XF = ml2.superset_matrix(TF, pm)
 common = [f for f in TF["fid"] if f in pos]
@@ -133,6 +144,12 @@ missing_terms = [c for c in cols if c not in terms]
 assert not missing_terms, missing_terms
 c_prod = np.array([terms[c] for c in cols], float)
 Xc = X[cols].to_numpy(float)
+# verification only (never used for a prediction): refitting the production specification on this table's pre-2026 rows must
+# give ml2.json's page_model coefficients, i.e. the table reproduces the frozen production fit's training data
+_tr = ml2.train_mask(T, dt.date(2026, 1, 1), C["lr"])
+_m = ml2.M.LRModel(C["lr"]["lam"], C["lr"].get("rec")).fit(Xc[_tr], T["y"].fillna(0.5).to_numpy(float)[_tr], yr[_tr], 2026)
+checks["prod_coef_refit_vs_ml2json_page_model_max_abs"] = float(np.max(np.abs(np.asarray(_m.coef) - c_prod)))
+print("production coefficients reproduced by a refit on pre-2026 rows: max |diff| %.2e" % checks["prod_coef_refit_vs_ml2json_page_model_max_abs"], flush=True)
 z_static, z_prod = Xc @ c_static, Xc @ c_prod
 p_static, p_prod = 1 / (1 + np.exp(-z_static)), 1 / (1 + np.exp(-z_prod))
 mlj = J2["fights"]
