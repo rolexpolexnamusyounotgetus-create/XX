@@ -75,7 +75,7 @@ for (const f of BT) {
   const e = { cells: { "S2@close": compact(base, R) } };
   if (Array.isArray(m.method6) && m.method6.length === 6) {
     const props = { m6: m.method6, n_books: { m6: m.method_books || 1 } };
-    if (typeof m.p_dec === "number") { props.gd = m.p_dec; props.n_books.gd = m.method_books || 1; }
+    // gd (goes-the-distance) is not used by the CV-chosen spec (round and decision terms were rejected), so it is not passed
     const r = pool.predict({ pA, rounds: R, model: mdl, props, params: "production" });
     e.cells["props_pool@close"] = compact(r.cells, R);
     e.source = r.source;
