@@ -733,16 +733,18 @@
   //      deterministic), pooled per fighter over the decision simulations;
   //   2. per fighter, with shrink s = damp x n / (n + kDec) (n = pooled decision simulations): takedown attempt rate x
   //      (target / realised)^s, control target x (target / realised)^s (then the position occupancy is refit as in matchup()),
+  //      takedown accuracy odds x exp(s x (logit target - logit realised)) (takedowns landed / attempted; with the stand-up
+  //      hazard at its floor, about 18% of train sides, control can only follow the takedowns landed),
   //      attempts by position (distance, clinch, ground) x (target / realised)^s x (static change the grappling step caused)^-1,
-  //      accuracy odds x exp(s x shift) with the shift from a two-margin (target x position) logit fit of the realised vs the
+  //      strike accuracy odds x exp(s x shift) with the shift from a two-margin (target x position) logit fit of the realised vs the
   //      target accuracies on the static cells; realised rates are smoothed toward the target with kMin minutes and kAcc
   //      attempts, so a sparse stat is barely corrected;
   //   3. params.retarget.iters iterations; every cumulative multiplier is capped at [1 / mlMaxRatio, mlMaxRatio] and every
   //      accuracy shift at +-log(mlMaxRatio). Knockdown, conversion and stoppage levers are not touched.
   // Corner symmetry: the pilot runs both orders and the canonical order of the pair (by a content signature) fixes which order
   // gets which seed, so A-B and B-A get identical per-fighter corrections; the steps are cached per matchup and replayed.
-  var RT_ST = ["d_att", "c_att", "g_att", "d_lnd", "c_lnd", "g_lnd", "h_att", "b_att", "l_att", "h_lnd", "b_lnd", "l_lnd", "td_att", "ctrl"];
-  var NRT = RT_ST.length, RT_POSA = [0, 1, 2], RT_POSL = [3, 4, 5], RT_TGTA = [6, 7, 8], RT_TGTL = [9, 10, 11], RT_TD = 12, RT_CT = 13;
+  var RT_ST = ["d_att", "c_att", "g_att", "d_lnd", "c_lnd", "g_lnd", "h_att", "b_att", "l_att", "h_lnd", "b_lnd", "l_lnd", "td_att", "ctrl", "td_lnd"];
+  var NRT = RT_ST.length, RT_POSA = [0, 1, 2], RT_POSL = [3, 4, 5], RT_TGTA = [6, 7, 8], RT_TGTL = [9, 10, 11], RT_TD = 12, RT_CT = 13, RT_TDL = 14;
   var RTC = new Map(), RTC_MAX = 128;
   function rtTargets(m, opts) {
     var t = opts.statTargets || null;
@@ -801,6 +803,9 @@
     function rate(k) { var t = tg[RT_ST[k]]; return (c[k] + t * kMin) / (mins + kMin); }
     function ratio(k) { var t = tg[RT_ST[k]], r = rate(k); return t > 0 && r > 0 ? Math.pow(t / r, s) : 1; }
     var st = { s: s, n: n, td: ratio(RT_TD), ct: ratio(RT_CT), att: [ratio(0), ratio(1), ratio(2)], realPos: [], tgtT: [], realT: [], tgtQ: [], realQ: [] };
+    // takedown accuracy odds (the takedown counterpart of the strike accuracy odds): realised share smoothed toward the target
+    var tdA = clip(tg.td_lnd / Math.max(tg.td_att, 1e-9), 0.02, 0.98), tdR = clip((c[RT_TDL] + kAcc * tdA) / (c[RT_TD] + kAcc), 0.02, 0.98);
+    st.tdAcc = s * (logit(tdA) - logit(tdR));
     for (i = 0; i < 3; i++) {
       var ta = tg[RT_ST[RT_TGTA[i]]], tl = tg[RT_ST[RT_TGTL[i]]], pa = tg[RT_ST[RT_POSA[i]]], pl = tg[RT_ST[RT_POSL[i]]];
       var aT = clip(tl / Math.max(ta, 1e-9), 0.02, 0.98), aQ = clip(pl / Math.max(pa, 1e-9), 0.02, 0.98);
@@ -865,6 +870,8 @@
       var rt = capped(i, "td", S[i].td);
       m.tdD[i] *= rt; m.tdCC[i] *= rt; m.tdCU[i] *= rt;
       m.ctrlT[i] *= capped(i, "ct", S[i].ct);
+      var c0 = cum[i].tdAcc, c1 = clip(c0 + S[i].tdAcc, -lc, lc), ro = Math.exp(c1 - c0);
+      cum[i].tdAcc = c1; m.tdO[i] *= ro; m.tdOC[i] *= ro;
     }
     var xA = m.ctrlT[0] / Math.max(1e-6, m.ctrlT[0] + m.ctrlT[1]);
     m.pCtl = 0.5 + p.clinchCtrlTemper * (xA - 0.5);
@@ -895,7 +902,7 @@
       }
     }
   }
-  function rtCum() { return [{ td: 1, ct: 1, d: 1, c: 1, g: 1, acc: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { td: 1, ct: 1, d: 1, c: 1, g: 1, acc: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }]; }
+  function rtCum() { return [{ td: 1, ct: 1, tdAcc: 0, d: 1, c: 1, g: 1, acc: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { td: 1, ct: 1, tdAcc: 0, d: 1, c: 1, g: 1, acc: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }]; }
   function retarget(m, pa, pb, opts) {
     var tg = rtTargets(m, opts);
     if (!tg) { m.retarget = { applied: false, reason: "no targets" }; return m; }
