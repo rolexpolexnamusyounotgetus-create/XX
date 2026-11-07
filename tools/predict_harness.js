@@ -106,6 +106,9 @@ if (!isMainThread) {
         for (let k = 0; k < PK.length; k++) {
           const P = PK[k], R0 = rec.pk[P.name] = {};
           if (P.mode === "v6" && +f.date.slice(0, 4) < (W.v6From || 2019)) continue;
+          // the v5 package has no stacker fit before 2021 (per-year MoE exports start with the fit through 2020): it is
+          // scored on 2021+ only; the v6 package's 2019-2020 rows exist only to fit its pool weight (flagged inSample)
+          if (P.mode === "v5" && +f.date.slice(0, 4) < (W.cmpFrom || 2021)) continue;
           for (const kind of W.kinds) {
             const o = Object.assign({}, b, PRs[k].opts(f, false, { lineKind: kind }), { seed: hash32(f.id), sims: W.sims, interval: false });
             if (P.mode === "v5") { delete o.winnerStacks; delete o.winnerFit; }
