@@ -304,7 +304,8 @@ def stage_decomp():
                                   ("static+div(10,30)", "win5+div(3,30)")]),
                        ("subpm", [("kal(q=0.03,se=0.1)+div(0.3,0.002)", "win5+div(3,150)"),
                                   ("kal(q=0.03,se=0.1)", "win5")]),
-                       ("slpm", [("kal(q=0.002,se=0)+brk(vb=0.05)", "win5+div(3,30)"), ("kal(q=0.002,se=0)", "win5")]),
+                       ("slpm", [("kal(q=0.002,se=0)+brk(vb=0.05)", "win5+div(3,30)"), ("kal(q=0.002,se=0)", "win5"),
+                                 ("kal(q=0.002,se=0)+brk(vb=0.05)", "kal(q=0.002,se=0)")]),
                        ("r108", [("kal(q=0.03,se=0)", "win5")])):
         tt = tr["targets"][key]
         d = E.target_data(L, T, key)

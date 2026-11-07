@@ -1,5 +1,15 @@
 # Era drift and league-level tracking (task key: eradrift)
 
+> **Verified (adversarial pass, Nov 7, 2026, about 1:40 am UTC): NOT adopted into production** (stacks, forward
+> package, predict). The method-model gate fails, and an independent re-implementation fails it too. The stat-level
+> CV gains reproduce from the verifier's own parse: pace, takedown attempts, control and the 10-8 share. Three claims
+> were corrected in place, each marked "[verifier]":
+> - The KO and KD "confirmations" come from the division layer, not from tracking the league level.
+> - The glove trial explains about half of the 2024-25 decision miss, not most of it.
+> - The two "enabled" statline offsets change nothing in production today.
+>
+> See "Verification log" at the end; every verifier number prints from `tools/eradrift_verify.py`.
+
 Nov 7, 2026, about 1:10 am UTC. Tool: `tools/eradrift.py`. Output: `data/derived/eradrift.json` (walk-forward levels by
 month 2012-01..2026-01, current levels, candidate offsets, single-look results). Evaluator: `src/ml/eradrift.js`, checked
 by `tests/test_eradrift.js` (2,283 checks against the export's test vectors). Blind-test plugin:
@@ -54,6 +64,16 @@ Protocol (docs/BACKLOG.md; docs/V6_V10_PLAN.md sections 5-6):
      - KD per 100 head -0.0071 [-0.0137, -0.0010];
      - 10-8 share -0.035 [-0.055, -0.015]. Tracked 3.70 / 2.54 per 100 judged rounds vs actual 2.49 / 2.45; the
        5-year window says 5.53 / 4.51.
+   - **[verifier] Only the 10-8 confirmation is about tracking the era level.** The KO and KD gains come from how
+     the division deviations are estimated: EW sums with a 3- or 10-year half-life, against the window's own 5-year
+     division counts. The league-level part alone (the same tracker against win5, no division layer) shows:
+     - KO: CV 2012-23 +0.0003 [-0.0001, +0.0007]; 2024-25 +0.0002 [-0.0001, +0.0005].
+     - KD: CV +0.0003 [-0.0006, +0.0012]; 2024-25 -0.0017 [-0.0047, +0.0013].
+     - A no-drift expanding mean with the same EW division layer gets most of the KO gain on 2024-25:
+       -0.0037 [-0.0068, -0.0006].
+
+     The verifier's own trackers, sharing one division layer, never pick anything but win5 for KD or KO
+     (`tools/eradrift_verify.py league` / `decomp`).
    - **Sig strike pace: n.s. and leaning worse**, +0.0066 [-0.0016, +0.0150]. The pace that rose from 3.06 to
      4.15 per fighter-minute over 2014-2023 fell to 3.98 in 2024 and 3.79 in 2025. The tracker (4.35 at Jan 1, 2024)
      sat near engine v4's level, so tracking alone would not have prevented the +9% sig-landed drift. The current
@@ -66,6 +86,14 @@ Protocol (docs/BACKLOG.md; docs/V6_V10_PLAN.md sections 5-6):
      on 2024-25.
 4. **The 2024-25 decision-share miss is the 2024 glove trial, not a persistent drift.** This is descriptive, read
    after the look, and selects nothing.
+   - **[verifier] Correction: the glove trial explains about half of the miss, not all of it.** In the method
+     universe, 2024-25 had 48.0 more decisions than the static model predicted (+5.6 points).
+     - 23.6 of them (49%) fall in the 5.5-month new-glove window (+10.9 points there).
+     - The model also under-predicted decisions with the old gloves: +6.1 points in Jan-May 2024 and +2.8 points
+       from Feb 15, 2025. Over 2016-2023 it was calibrated (+0.3 points).
+     - The window is consistent with a glove effect. A smaller under-prediction outside it remains unexplained.
+
+     Source: `tools/eradrift_verify.py decomp` (c).
    - **Production missed.** It predicted 48.4% decisions in both years; the actual shares were 56.1% (2024) and
      52.0% (2025) in the method universe.
    - **League table by glove period:**
@@ -78,13 +106,22 @@ Protocol (docs/BACKLOG.md; docs/V6_V10_PLAN.md sections 5-6):
 
    - **The fast tracker helped.** The pre-registered descriptive candidate M2 (a 3-month half-life decision-vs-finish
      tracker on the model's own residuals) gained 7-bin -0.0055 [-0.0098, -0.0013] on 2024-25. It moved the predicted
-     share to 51.5% and caught about 40% of the gap. It cannot be promoted: it failed the 0.0005 rule in CV (-0.00045
+     share to 51.5% and caught about 40% of the 2024 gap and about 55% of the pooled 2024-25 gap (3.1 of 5.6
+     points) [verifier].
+     - [verifier] Caveat: the 2024-25 run keeps one model vintage (fit < 2024) for both years. With rho = 0, a
+       production refit at Jan 1, 2025 would reset the offset, and the refit itself would absorb part of 2024. It cannot be promoted: it failed the 0.0005 rule in CV (-0.00045
      pooled 2016-2023; better in 5 of 8 years), and the effect it caught was a dated equipment change that has since
      been reversed.
 5. **Statline level offsets: two stats confirmed, two contradicted.** CV 2021-2023 adopted six per-stat mean
    offsets under statlines' own rule.
    - **Confirmed on 2024-25 (enabled in eradrift.js):** leg strikes attempted, -0.0015 [-0.0044, +0.0014], and
      landed, -0.0041 [-0.0079, -0.0003].
+     - [verifier] Leg attempted passes only the pre-registered point rule; its CI includes 0.
+     - [verifier] "Enabled" changes nothing in production. The offsets use rho = 0, so `prod_2026` = 0 and
+       `adjustStatMeans` is the identity for dates from Jan 1, 2026. eradrift.js is not wired into predict() or the
+       forward ledger.
+     - Both offsets reproduce with the verifier's own actuals and card clusters: CV -0.0033 / -0.0027; 2024-25
+       -0.0014 [-0.0042, +0.0015] / -0.0039 [-0.0075, -0.0000].
    - **Contradicted (withdrawn):** clinch attempted, +0.0036 [+0.0012, +0.0062], and clinch landed, +0.0026
      [+0.0003, +0.0050].
    - **Not confirmed (shipped off, monitored):** ground landed and TD attempts, both with a point estimate above 0.
@@ -198,6 +235,25 @@ same division layer, with the best division setting picked on the pooled CV, whi
 - **Division layers matter, but they are not drift.** Against league-only references, the outcome-mix trackers look
   0.01-0.02 better. All of that is division composition (heavyweight KOs, flyweight decisions). Against
   references that carry the same division layer, the gain disappears.
+  - [verifier] "Same division layer" holds only loosely. `+div(h,k)` uses the same shrinkage k, but static, EW and
+    Kalman estimate the division deviation differently from win5:
+    - static and EW use slow EW sums with half-life h;
+    - Kalman uses random-walk division states;
+    - win5 uses its own 5-year window counts and ignores h.
+
+    So a "chosen - win5+div" gain can be a division-estimator gain. It is for KO and KD (bottom line 2), and partly
+    for sub attempts. With one shared division layer, the verifier's sub-attempt tracker is n.s.: -0.0024
+    [-0.0052, +0.0006].
+  - Pace, takedown attempts, control and 10-8 reproduce with one shared division layer (`tools/eradrift_verify.py
+    league`, nested 2014-2023):
+
+    | stat | verifier, nested |
+    |---|---|
+    | sig landed | -0.0409 [-0.0520, -0.0307] |
+    | sig attempted | -0.0121 |
+    | TD attempts | -0.0052 |
+    | control | -0.0104 |
+    | 10-8 share | -0.0101 [-0.0168, -0.0037] |
 - **Stat levels moved steadily 2012-2023.** Sig landed per fighter-minute went 3.33 → 4.15; KD per 100 head
   1.05 → 0.75 (0.68 in 2021); TD attempts per 15 4.2-4.4 → 3.4 (2019) → 3.8; the 10-8 share 2-3% → 7.1% (2017
   and 2019, after the criteria rewrite) → 3.9-5.0%. A 5-year window lags these moves by 2-3 years. Year-level predictions
@@ -241,6 +297,12 @@ Chosen minus the win5+div reference. Levels are in display units: % for shares; 
 
   This is not a selection result. It does say the intervention mechanism re-learned the post-glove level faster on
   the target the brief cares most about.
+  - [verifier] The evidence on breaks is mixed. For sig landed, the chosen config is the break variant, so the table
+    above does not show it.
+    - Against the same Kalman without breaks, it is -0.00005 (n.s.) in CV and worse on 2024-25: +0.0039
+      [+0.0006, +0.0077].
+    - SUB share is worse with breaks too: +0.0016.
+    - Breaks helped decision share (-0.0031) and hurt pace and SUB share.
 
 ## 4. Method model (S2 + ML v2 winner)
 
@@ -308,6 +370,11 @@ Decision share, mean predicted vs actual, in the method universe (2016-2023 show
   months before and after, with 10 points fewer KOs and KD per 100 head 0.54 vs 0.68 / 0.87. This matches the
   durability note's "KD frailty halving in the 2024 glove trial".
 - **Most of 2024-25's +6-point decision miss is that window.** With old gloves in 2025, decisions are back at 49%.
+  - [verifier] Correction: about half. In the method universe, 49% of the excess decisions fall in the window.
+  - The static model still under-predicted decisions by +6.1 points in Jan-May 2024 and +2.8 points with old gloves
+    in 2025. The league shares are back near the window's level, but the model's predictions are about 1.5 points
+    below the league base rate.
+  - The verifier's own parse reproduces this table within 0.6 points: it lacks 40 of the 8,224 fights.
 - **This is consistent with a glove effect but does not prove one.** It is observational, 21 cards, with a possible
   card-mix confound.
 - **Sig strike pace and the 10-8 share fall steadily across all periods** (4.15 → 3.79 per fighter-minute; 5.0 → 2.5
@@ -366,6 +433,10 @@ NLL per fight-side. "nested" = the choice made on 2021, scored on 2022, then mad
      2024-25.
    - **KD**: EW h 5 + division, confirmed. **10-8**: Kalman q 0.03, confirmed, strongly. **TD attempts**: EW h 0.5 +
      breaks. **Control**: Kalman.
+     - [verifier] The KD confirmation is a division-layer effect. A league-level KD tracker does not beat the window
+       (CV +0.0003; 2024-25 -0.0017 n.s.). Keep durability's tracked league KD level, and take only eradrift's
+       division deviations if the KD pass wants them.
+     - [verifier] For pace, prefer the plain Kalman without break bumps: the bumps hurt on 2024-25.
    - **Current levels** (Jan 1, 2026, league):
 
      | level | value |
@@ -386,6 +457,8 @@ NLL per fight-side. "nested" = the choice made on 2021, scored on 2022, then mad
    persistent offset from the window the change covered.
    - Reason: the 2024 decision surplus came and went with the glove trial (section 5). A tilt fit to 2024-25 would
      now be wrong in the other direction.
+   - [verifier] The 2024-25 evidence for break bumps is mixed (section 3: decision share better; pace and SUB share
+     worse). Pre-register the mechanism as a hypothesis with a forward test. Do not apply it by default.
 4. **Method cells stay static.** Every method model in the project missed 2024's decision share; the miss is
    transient (section 5), and no level adjustment passes the gate. Add M2 as a forward-ledger side column (not
    primary) in the next pre-registered fwd version. It restarts at offset 0 on the prod model (rho 0) and learns from
@@ -447,3 +520,88 @@ python3 tools/blindtest.py list | grep eradrift
   procedure.
 - **Section 5 is observational.** The glove-period split was read after the look. It informs the monitor design
   (breaks as interventions) and selects nothing.
+
+## Verification log
+
+Adversarial pass, Nov 7, 2026, about 1:10-1:45 am UTC. The verifier's own code is `tools/eradrift_verify.py`
+(stages `parse`, `league`, `decomp`, `gate`, `stat`; each runs in seconds, `nice -n 5`). It parses outcomes, stats
+and judges' cards straight from data/raw/ufc_fight_results.csv, ufc_event_details.csv and ufc_fight_stats.csv
+with pandas (no build_db), dropping 2026+ right after the event date. Trackers, scorers, the gate and the bootstrap
+are written from scratch. **Verdict: not adopted into production.** Nothing enters the stacks, the forward package or
+predict(). Monitored candidates: M2 and the two leg offsets. The stat-level league trackers (pace, TD attempts,
+control, 10-8) are a verified input option for the engine calibration workstream, which must test them on train
+only.
+
+**Protocol and timeline: clean.**
+
+| check | result |
+|---|---|
+| pre-registration | `data/derived/eradrift_prereg.json` (sha256 5f9517eb...) is identical in commit 53ca073 (00:53:16), in the cache copy the holdout read, and in the hash recorded inside holdout.json. Lock written 00:53:30. |
+| what ran before the look | `holdout --dry` (00:53:04) reads 2023 only. trackers / method / stat score CV years only: their 2024-25 predictions are computed but never scored. |
+| code changes after the look | only snapshot-query plumbing: `query` / `real` masks, and Ebar over E > 0. All are no-ops on the scored rows, and export asserts snapshot run = scored run to 1e-9. |
+| post-look method rerun | `method.json` was rewritten at 01:04, after the look. Its gate, picks and final config are identical to the values frozen in the pre-registration. |
+| 2026 data | none in the repo or the fits. eradrift.json's only 2026 strings are the build date, the 2026-01-01 state (fit on fights < 2026) and random test-vector query dates. league.pkl, base.pkl and statlines_oof rows all end 2025-12-13. Nothing was collected, so nothing went to the vault. |
+| breaks | all seven break definitions, the 2024-25 glove, ABC and old-glove dates included, are in the pre-registered code (53ca073). All were announced on or before their effective dates. |
+
+**Joins: clean.** The verifier's own parse matches the builder's league table on all 8,184 shared fights:
+- 0 mismatches in class, format, sig landed and attempted, head landed, KD, TD attempts, control, sub attempts,
+  fighter-minutes, card-implied 10-8 rounds and judged rounds.
+- The builder has 40 extra fights (2012-2025, mixed classes) that the verifier's simpler event / bout matching drops.
+- The statlines join misses 18 OOF fights, the same 40-fight set. Neither is a selection on outcomes.
+
+**Independent re-derivation.**
+
+| claim | builder | verifier (own code) | status |
+|---|---|---|---|
+| S2 + ML v2 winner rebuild | ml2 CV joint 2.14070 | `eradrift.py base` into a scratch cache: bit-identical base.pkl; own 7-bin scorer 1.51710 on 2024-25 (ml2 1.5171) and 1.60642 on CV 2020-23 | reproduced |
+| method gate, nested 2021-23 | 7-bin -0.00007, FAIL | own decision-vs-finish EW tracker (45 configs), select on finish: +0.00021 [-0.00023, +0.00066]; select on 7-bin: 0 (none every year). FAIL | **reproduced: fail** |
+| M2 in CV | pooled -0.00045 (finish), 5 of 8 years | league-only analogue: -0.00036, better in 4 of 8 years | reproduced (under the 0.0005 rule) |
+| M2 on 2024-25 (descriptive) | 7-bin -0.0055 [-0.0098, -0.0013] | league-only analogue: -0.0050 [-0.0089, -0.0010]; decision share 51.2% vs static 48.4% (actual 54.0%) | reproduced |
+| corner symmetry | 2.5e-16 | half the corners flipped at random: offsets and 7-bin losses unchanged (to the optimiser tolerance, 4e-8). No intercept, and no feature reads the corner. | reproduced |
+| sig landed tracker, nested CV | -0.0436 [-0.0548, -0.0320] | -0.0409 [-0.0520, -0.0307] | reproduced |
+| sig attempted / TD attempts / control | -0.0122 / -0.0061 / -0.0104 | -0.0121 / -0.0052 / -0.0104 | reproduced |
+| sub attempts | -0.0041 [-0.0080, -0.0002] | -0.0024 [-0.0052, +0.0006], n.s. | partly a division-layer effect |
+| 10-8 share | CV -0.0078; 2024-25 -0.0348 | CV -0.0101 [-0.0168, -0.0037]; 2024-25 -0.0311 [-0.0515, -0.0076] | reproduced |
+| sig landed on 2024-25 | +0.0066 n.s. | +0.0013 [-0.0037, +0.0063] n.s. | reproduced (no confirmation) |
+| KD tracker, CV and 2024-25 "confirmed" | -0.0016 / -0.0071 | own trackers pick win5 every year. Builder's own functions without a division layer: CV +0.0003, 2024-25 -0.0017 n.s. | **misattributed: division layer, not drift** |
+| KO 2024-25 "confirmed" | -0.0042 | without a division layer: CV +0.0003, 2024-25 +0.0002; a no-drift expanding mean with the EW division layer gets -0.0037 | **misattributed: division layer, not drift** |
+| glove-period table | section 5 | own parse within 0.6 points on every cell | reproduced |
+| "the decision miss is the glove trial" | "most of it" | method universe: 49% of the 48 excess decisions fall in the window. Old-glove periods +6.1 / +2.8 points. | **overstated: about half** |
+| statlines leg offsets | l_att -0.0033 / 2024-25 -0.0015; l_lnd -0.0027 / -0.0041 | own actuals, card clusters: -0.0033 / -0.0014 [-0.0042, +0.0015]; -0.0027 / -0.0039 [-0.0075, -0.0000] | reproduced |
+| statlines clinch offsets | contradicted | c_att +0.0029 [+0.0005, +0.0057]; c_lnd +0.0020 [-0.0004, +0.0047] | reproduced (c_lnd borderline) |
+
+**CIs.**
+- League CIs use 2,000 card-cluster resamples, paired. The method CIs use methodround's multinomial card bootstrap
+  (2,000).
+- Statline CIs cluster by date, a disclosed limitation. Card clustering, as the verifier did it, gives near-identical
+  intervals.
+
+**Selection leaks inside CV (minor, disclosed here).**
+- The league break variants and the method scope / break variants were built on the base config that was best on the
+  pooled CV years. Their nested columns are therefore not fully nested.
+- Re-scoring the league nested CV without the break variants changes little (sig landed -0.0429 against the reported
+  -0.0436). The method gate fails either way.
+
+**Defects fixed.** No tool defect changes a number. The fixes are report corrections, marked "[verifier]" above:
+1. The KO and KD confirmations are re-attributed to the division estimator. The "same division layer" wording is
+   qualified.
+2. The glove-trial share of the decision miss is about half, not most.
+3. M2's share of the gap and its single-vintage caveat are added.
+4. Leg attempted passes only the point rule. "Enabled" statline offsets are the identity in production
+   (`prod_2026` = 0; eradrift.js is not wired into predict() or the ledger).
+5. For sig landed, the break variant was worse on 2024-25: +0.0039 [+0.0006, +0.0077] against the plain Kalman.
+   The break-bump recommendation is now a hypothesis to pre-register.
+6. The KD recommendation now keeps durability's league KD level.
+
+The verifier added `tools/eradrift_verify.py`.
+
+Reproduce:
+```
+nice -n 5 python3 tools/eradrift_verify.py parse     # join audit vs out/eradrift_cache/league.pkl
+nice -n 5 python3 tools/eradrift_verify.py league    # own league trackers (nested CV, 2024-25)
+nice -n 5 python3 tools/eradrift_verify.py decomp    # division-vs-league split, glove table, method-universe excess
+nice -n 5 python3 tools/eradrift_verify.py gate      # own method gate, swap test, M2 analogue
+nice -n 5 python3 tools/eradrift_verify.py stat      # own leg / clinch statline offsets
+```
+`ERA_CACHE` points both tools at a scratch cache. The sig-landed break-vs-plain number (+0.0039) is the last
+`slpm` line of `decomp` (a).

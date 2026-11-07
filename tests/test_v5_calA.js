@@ -13,13 +13,18 @@
    3. New defaults: the current engine with no override = the step-5 engine called with the new components block (a, c).
    4. Every component off (components: false) = the step-5 engine with components: false (c).
    5. The defaults chosen by the ablation (the components block below).
-     node tests/test_v5_calA.js [matchups per random group, default 150] */
+     node tests/test_v5_calA.js [matchups per random group, default 150]
+   Since Calibrate B (components.calB, which changes src/engine3.js and src/params3.js by design), this test checks the Calibrate A
+   transition on the frozen Calibrate A state, tests/fixtures/engine3_pre_calB.js + params3_pre_calB.js (= commit 2e24835's
+   src/engine3.js and src/params3.js, verified below); tests/test_v5_calB.js ties the current engine with calB off to that state. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
 const ROOT = path.join(__dirname, "..");
-const E = require(path.join(ROOT, "src/engine3.js"));
-const FP = require(path.join(ROOT, "src/params3.js"));
+// the Calibrate A state, frozen before Calibrate B (2e24835): engine + params loaded from the fixtures (see the header)
+const CALA_ENGINE = path.join(ROOT, "tests/fixtures/engine3_pre_calB.js"), CALA_PARAMS = path.join(ROOT, "tests/fixtures/params3_pre_calB.js");
+const FP = loadModule(fs.readFileSync(CALA_PARAMS, "utf8"));
+const E = loadEngine(fs.readFileSync(CALA_ENGINE, "utf8"), { "params3.js": FP });
 const SR = require(path.join(ROOT, "tools/sosrec.js"))(E, ROOT);
 const XR = require(path.join(ROOT, "tools/mlpathrec.js"))(E, ROOT);
 const NM = +(process.argv.slice(2).find((a) => /^\d+$/.test(a)) || 150);
@@ -47,18 +52,21 @@ function loadEngine(src, mods) {
   new Function("module", "exports", "require", src)(mod, mod.exports, req);
   return mod.exports;
 }
-const engSrc = fs.readFileSync(path.join(ROOT, "src/engine3.js"), "utf8");
+const engSrc = fs.readFileSync(CALA_ENGINE, "utf8");
 const preParamsSrc = fs.readFileSync(path.join(ROOT, "tests/fixtures/params3_pre_calA.js"), "utf8");
 {
+  const ce = git(["show", "2e24835:src/engine3.js"]), cp = git(["show", "2e24835:src/params3.js"]);
+  check("fixtures engine3_pre_calB.js / params3_pre_calB.js are the Calibrate A commit's (2e24835) src files byte for byte",
+    ce === null || (ce === engSrc && cp === fs.readFileSync(CALA_PARAMS, "utf8")), ce === null ? "git not reachable, skipped" : "byte for byte");
   const ge = git(["show", "5251206:src/engine3.js"]), gp = git(["show", "5251206:src/params3.js"]);
-  check("src/engine3.js is step 5's (5251206) byte for byte", ge === null || ge === engSrc, ge === null ? "git not reachable, skipped" : "engine code unchanged");
+  check("the Calibrate A engine is step 5's (5251206) byte for byte", ge === null || ge === engSrc, ge === null ? "git not reachable, skipped" : "engine code unchanged");
   check("fixture params3_pre_calA.js is step 5's src/params3.js (5251206)", gp === null || gp === preParamsSrc, gp === null ? "git not reachable, skipped" : "byte for byte");
 }
 const P0 = loadModule(preParamsSrc);
 const R0 = loadEngine(engSrc, { "params3.js": P0 });
 const OLD = JSON.parse(JSON.stringify(P0.components)), NEW = JSON.parse(JSON.stringify(FP.components));
 check("defaults: the components block set by Calibrate A", JSON.stringify(NEW) === JSON.stringify(EXPECT) &&
-  (fs.readFileSync(path.join(ROOT, "src/params3.js"), "utf8").match(/^\s{4}components:\s*\{/mg) || []).length === 1,
+  (fs.readFileSync(CALA_PARAMS, "utf8").match(/^\s{4}components:\s*\{/mg) || []).length === 1,
   JSON.stringify(NEW));
 {
   // nothing but components (and the label) differs between the step-5 params and the current params
