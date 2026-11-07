@@ -24,6 +24,34 @@
   var FightParams = {
     version: "4.0.0-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01)
 
+
+    // ---------------- v9 components (docs/V6_V10_PLAN.md cycle 4: walk-forward levels, drift and judging, joint level pass by
+    // format; engine3.js header). Every flag off = engine 4.0.0 bit for bit (tests/test_v9.js).
+    components: {
+      levels: false,    // walk-forward level anchoring of the learned targets (needs opts.level; tools/v9_levels.js)
+      judgeWF: false,   // walk-forward EM judging weights by year + tracked 10-8 threshold (needs opts.level.r108 for the threshold)
+      format: false     // joint level pass by format: 5-round knockdown factor, championship-round factor, doctor / corner scales
+    },
+    // walk-forward judging (tools/v9_judge_wf.py -> data/derived/v9/judge_wf.json, recipe "win3" chosen on 2019-2020 decisions):
+    // row Y = EM round-winner weights on judges' cards dated before Jan 1 of Y; later dates use the last row
+    judgeWF: {
+      byYear: {
+        "2019": { head: 0.184701, body: 0.13979, leg: 0.093147, kd: 1.91182, td: 0.290388, ctrlMin: 0.446155, sub: 0.849402 },
+        "2020": { head: 0.199167, body: 0.132768, leg: 0.101313, kd: 1.772051, td: 0.236906, ctrlMin: 0.460164, sub: 0.891582 },
+        "2021": { head: 0.191968, body: 0.120963, leg: 0.101209, kd: 2.409991, td: 0.223314, ctrlMin: 0.457239, sub: 0.804571 },
+        "2022": { head: 0.178904, body: 0.115982, leg: 0.107548, kd: 2.843636, td: 0.129675, ctrlMin: 0.502025, sub: 0.882625 },
+        "2023": { head: 0.156692, body: 0.110941, leg: 0.099861, kd: 3.585794, td: 0.180746, ctrlMin: 0.479659, sub: 0.795772 },
+        "2024": { head: 0.154172, body: 0.111511, leg: 0.100266, kd: 2.877199, td: 0.248732, ctrlMin: 0.469351, sub: 0.713199 },
+        "2025": { head: 0.166729, body: 0.122055, leg: 0.098398, kd: 3.126959, td: 0.307698, ctrlMin: 0.458974, sub: 0.729786 },
+        "2026": { head: 0.187162, body: 0.140182, leg: 0.097257, kd: 3.102658, td: 0.351663, ctrlMin: 0.423899, sub: 0.698115 }
+      },
+      // 10-8 threshold from the tracked card-implied 10-8 share (eradrift r108 Kalman): target = sRef x r108 / lRef,
+      // t108 = (alpha - ln target) / beta; sRef = v4's matched 3.5% share, lRef = the tracker's 2021-2023 mean (placeholder until fit)
+      r108: { sRef: 0.035, lRef: 0.045, alpha: 0, beta: 1 }
+    },
+    // joint level pass by format (placeholders until the train fit)
+    format: { kd5: 1, late5: 1, stop3: 1, stop5: 1 },
+
     // ---------------- learned stat-line rates (engine v4) ----------------
     mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base
     mlMaxRatio: 4,    // cap on any single learned-vs-base multiplier (src/ml/mlrates.js applyToMatchup maxRatio)
