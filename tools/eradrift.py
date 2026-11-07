@@ -2011,9 +2011,10 @@ def stage_export(args):
                              "expect": [r5(x, 9) for x in Jout[0]]})
     for _ in range(20):
         dd = dt.date(2020, 1, 1) + dt.timedelta(days=int(rng.integers(0, 2600)))
-        means = {st: float(rng.uniform(0.5, 60)) for st in ("sig_lnd", "l_att", "l_lnd", "c_att", "kd")}
-        vec["stat"].append({"date": dd.isoformat(), "means": means, "all": bool(rng.integers(2)),
-                            "expect": stat_adjust(doc, means, dd, use_all=None)})
+        means = {st: float(rng.uniform(0.5, 60)) for st in ("sig_lnd", "l_att", "l_lnd", "c_att", "kd", "ctrl")}
+        al = bool(rng.integers(2))
+        vec["stat"].append({"date": dd.isoformat(), "means": means, "all": al,
+                            "expect": stat_adjust(doc, means, dd, use_all=al)})
     doc["test_vectors"] = vec
     with open(OUT_JSON, "w") as fh:
         json.dump(doc, fh, separators=(",", ":"), default=_jdef)
@@ -2082,7 +2083,7 @@ def stat_adjust(doc, means, date, use_all=None):
     out = {}
     for st, mu in means.items():
         S = doc["stat"].get(st)
-        if not S or not S["enabled"] or S["kind"] != "nb" or i < 0:
+        if not S or not (S["enabled"] or use_all) or S["kind"] != "nb" or i < 0:
             out[st] = r5(mu, 9)
             continue
         a = S["prod_2026"] if prod else S["values"][i]
@@ -2091,6 +2092,81 @@ def stat_adjust(doc, means, date, use_all=None):
 
 
 STAGES["export"] = stage_export
+
+
+# ====================================================================== stage: summary
+def _ci(c, k=4):
+    f = "%+." + str(k) + "f"
+    return (f + " [" + f + ", " + f + "]") % tuple(c)
+
+
+def stage_summary(args):
+    """Print every table of research/model_eradrift.md from data/derived/eradrift.json (no refit)."""
+    d = json.load(open(OUT_JSON))
+    print("== 1. League trackers, rolling-origin CV 2012-2023 (loss per observation; Bernoulli NLL for shares, NB NLL "
+          "for rates). 'nested' = config chosen on 2012..Y, scored on Y+1 (2014-2023)")
+    print("| target | chosen (pooled CV) | CV chosen | CV win5+div | CV static+div | nested - win5+div [CI] | n |")
+    print("|---|---|---|---|---|---|---|")
+    for k, v in d["cv"].items():
+        print("| %s | %s | %.5f | %.5f | %.5f | %s | %d |" % (k, v["best"], v["cv_best"], v["cv_win5"], v["cv_static"],
+                                                           _ci(v["ci"]["nested_vs_win5"], 5), v["n"]))
+    print("\n== 2. League trackers on 2024-25 (single look; chosen - win5+div, card-cluster CI) and year levels")
+    print("| target | chosen - win5 [CI] | verdict | 2024 actual / chosen / win5 | 2025 actual / chosen / win5 |")
+    print("|---|---|---|---|---|")
+    for k, v in d["holdout"]["league"].items():
+        u = d["levels"][k]["unit"] if d["levels"][k]["kind"] == "cnt" else 100.0
+        lv = v["levels"]
+        print("| %s | %s | %s | %.3f / %.3f / %.3f | %.3f / %.3f / %.3f |" % (
+            k, _ci(v["vs_win5"], 5), v["verdict"], lv["2024"]["actual"] * u, lv["2024"]["chosen"] * u,
+            lv["2024"]["ref_win5"] * u, lv["2025"]["actual"] * u, lv["2025"]["chosen"] * u, lv["2025"]["ref_win5"] * u))
+    print("\n   break-intervention variants vs the chosen config on 2024-25 (descriptive):")
+    for k, v in d["holdout"]["league"].items():
+        if "brk_vs_chosen" in v:
+            print("   %-9s %s" % (k, _ci(v["brk_vs_chosen"], 5)))
+    M = d["method"]
+    print("\n== 3. Method model S2 + ML v2 winner: level adjustment")
+    g = M["gate"]
+    print("gate (nested forward-chained 2021-2023, n %d): 7-bin %s; joint %s; method3 %s; finish %s" % (
+        g["bin7"]["n"], _ci([g["bin7"]["diff"]] + g["bin7"]["ci95"], 5), _ci([g["joint"]["diff"]] + g["joint"]["ci95"], 5),
+        _ci([g["method3"]["diff"]] + g["method3"]["ci95"], 5), _ci([g["finish"]["diff"]] + g["finish"]["ci95"], 5)))
+    print("CV-final config (2016-2023): %s" % {k: v["pick"] for k, v in M["cv_final"].items()})
+    print("static CV 2016-2023: %s" % {k: round(v, 5) for k, v in M["static_cv"].items()})
+    print("static 2024-25:      %s" % {k: round(v, 5) for k, v in M["static_holdout"].items()})
+    print("| candidate (2024-25, vs static) | 7-bin | method3 | finish | joint | round given finish |")
+    print("|---|---|---|---|---|---|")
+    for c, v in M["candidates"].items():
+        h = v["holdout"]
+        print("| %s | %s |" % (c, " | ".join(_ci([h[k]["diff"]] + h[k]["ci95"], 4) for k in
+                                           ("bin7", "method3", "finish", "joint", "round_given_fin"))))
+    print("\n   decision share (mean predicted vs actual), method universe:")
+    print("| year | n | actual | static | M2 |")
+    print("|---|---|---|---|---|")
+    for Y, r in list(M["dec_cal_cv"].items()) + list(M["dec_cal_holdout"].items()):
+        print("| %s | %d | %.3f | %.3f | %s |" % (Y, r["n"], r["actual_dec"], r["pred_dec_static"],
+                                               "%.3f" % r["pred_dec_M2_fast_dec"] if "pred_dec_M2_fast_dec" in r else
+                                               ("%.3f" % r["pred_dec_nested"] + " (nested)")))
+    print("\n== 4. Statlines layer: per-stat mean offsets (NLL per fight-side; CV 2021-2023, 2024-25 single look)")
+    print("| stat | CV best | CV gain [CI] | years better | CV rule | nested 2022-23 | 2024-25 (best cfg) [CI] | verdict | act/pred 2024 / 2025 |")
+    print("|---|---|---|---|---|---|---|---|---|")
+    for k, v in d["stat_cv"].items():
+        h = d["holdout"]["stat"][k]
+        print("| %s | %s | %s | %d/3 | %s | %+.5f | %s | %s | %.3f / %.3f |" % (
+            k, v["best"], _ci(v["ci"], 5), v["wins"], "adopt" if v["adopt"] else "-", v["nested_ci"][0],
+            _ci(h["nll_diff"], 5), h.get("verdict", "-"), h["level_ratio"]["2024"][0], h["level_ratio"]["2025"][0]))
+    if d.get("periods"):
+        print("\n== 5. League levels by glove period (DESCRIPTIVE, read after the look; card-cluster CIs)")
+        print("| period | cards | decision % | KO % | SUB % | KD per 100 head | sig landed / fighter-min | 10-8 per 100 judged rounds |")
+        print("|---|---|---|---|---|---|---|---|")
+        for nm, r in d["periods"].items():
+            print("| %s (%s..%s) | %d | %.1f [%.1f, %.1f] | %.1f | %.1f | %.3f [%.3f, %.3f] | %.2f | %.2f |" % (
+                nm, r["from"], r["to"], r["cards"], r["dec"][0], r["dec"][1], r["dec"][2], r["ko"][0], r["sub"][0],
+                r["kd100"][0], r["kd100"][1], r["kd100"][2], r["slpm"][0], r["r108"][0]))
+    print("\n== 6. Current levels (after the last 2025 card; league)")
+    for k, v in d["levels"].items():
+        print("   %-9s %-40s %s  (%s)" % (k, v["config"], v["current"]["ALL"], v["label"]))
+
+
+STAGES["summary"] = stage_summary
 
 
 # ====================================================================== main
