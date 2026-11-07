@@ -33,11 +33,12 @@ def main():
     tag = ("_" + a.tag) if a.tag else ""
     summ = json.load(open(os.path.join(ROOT, "data/derived", "v5_train_ablation%s.json" % tag)))
     arms = list(summ["meta"]["arms"].keys())
+    ref = summ["meta"].get("ref", "all")
     cdir = os.path.join(ROOT, "out", "v5_train_ablation" + tag)
     bt = {f["id"]: f for f in json.load(open(os.path.join(ROOT, "data/derived/backtest_dev.json")))["fights"]}
     mr = json.load(open(MR.OUT_JSON))["fights"]
     subs = {k: json.load(open(os.path.join(cdir, "cells_%s.json" % k))) for k in arms}
-    ids = [i for i in subs["all"] if i in bt and i in mr and "S" in mr[i] and D0 <= bt[i]["date"] < D1 and bt[i]["date"] < "2026-01-01"]
+    ids = [i for i in subs[ref] if i in bt and i in mr and "S" in mr[i] and D0 <= bt[i]["date"] < D1 and bt[i]["date"] < "2026-01-01"]
     rows = []
     for i in ids:
         f = bt[i]
@@ -57,19 +58,19 @@ def main():
     out = {"meta": {"tool": "tools/v5_train_ablation_mr.py", "window": "TRAIN %s..%s" % (D0, D1), "n": int(ok.sum()),
                     "scorer": "tools/methodround.py per_fight_losses / cluster_bootstrap / paired_diff (as --score)",
                     "metrics": MR.METRICS},
-           "levels": lev, "vs_S": {}, "vs_all": {}}
-    for k in arms:
+           "ref": ref, "levels": lev, "vs_S": {}, "vs_all": {}}
+    for k in arms:      # vs_all: paired vs the reference arm (named "all" for the main run's reference)
         out["vs_S"][k] = MR.paired_diff(L[k], L["S"], st, MR.METRICS)
-        if k != "all":
-            out["vs_all"][k] = MR.paired_diff(L[k], L["all"], st, MR.METRICS)
+        if k != ref:
+            out["vs_all"][k] = MR.paired_diff(L[k], L[ref], st, MR.METRICS)
     path = os.path.join(ROOT, "data/derived", "v5_train_ablation_mr%s.json" % tag)
     json.dump(out, open(path, "w"), indent=1)
     print("scored %d train fights; model S joint %.4f, method_round %.4f" % (ok.sum(), lev["S"]["joint"]["mean"], lev["S"]["method_round"]["mean"]))
     for k in arms:
         s = "%-12s joint %.4f method_round %.4f" % (k, lev[k]["joint"]["mean"], lev[k]["method_round"]["mean"])
-        if k != "all":
+        if k != ref:
             d = out["vs_all"][k]
-            s += "  vs all: joint %+.4f [%+.4f, %+.4f]  method_round %+.4f [%+.4f, %+.4f]" % (
+            s += "  vs %s:" % ref + " joint %+.4f [%+.4f, %+.4f]  method_round %+.4f [%+.4f, %+.4f]" % (
                 d["joint"]["diff"], d["joint"]["ci95"][0], d["joint"]["ci95"][1],
                 d["method_round"]["diff"], d["method_round"]["ci95"][0], d["method_round"]["ci95"][1])
         print(s)

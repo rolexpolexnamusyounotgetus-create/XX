@@ -22,7 +22,9 @@
                     judge.t108kd 0 (v3 had neither), and the v401 refits of those same fields (emJudge, mlLevels, koTargets) off;
                     learned rates and every other v5 component stay on. v3's own 10-8 rule (t108b / t108kd2) is not in the v5
                     engine, so its judging is v3's weights and noise with the v4 10-8 rule at v3's threshold.
+     v3pj           v3p with the v5 judging instead of v3's judge block (emJudge on; only with --arms)
      final          (with --final '<json components override>') the chosen defaults, for the confirmation run
+   --ref <arm> picks the reference arm (default all; it must come first in --arms).
 
    Per arm and fight (evalv's definitions and smoothing): winner log loss, Brier, soft-label cross-entropy against the closing
    line (market.json p_power_close; research/model_market.md 4.11), 7-bin and method (KO / SUB / DEC) log loss, per-fight Poisson
@@ -81,6 +83,14 @@ function v3Override() {
   o.components = { v401: { emJudge: false, mlLevels: false, koTargets: false } };
   return o;
 }
+// v3pj: v3p without v3's judge block (v3's 10-8 rule is not in the v5 engine, so v3p's cards are not v3's): the v3 simulation
+// parameters with the v5 judging (emJudge on); mlLevels and koTargets off as in v3p
+function v3OverrideJudge5() {
+  const o = v3Override();
+  delete o.judge;
+  o.components = { v401: { mlLevels: false, koTargets: false } };
+  return o;
+}
 function armDefs(finalOver) {
   const A = {
     all: {},
@@ -95,7 +105,8 @@ function armDefs(finalOver) {
     "-mlLevels": { components: { v401: { mlLevels: false } } },
     "-tdCap": { components: { v401: { tdCap: false } } },
     "-koTargets": { components: { v401: { koTargets: false } } },
-    v3p: v3Override()
+    v3p: v3Override(),
+    v3pj: v3OverrideJudge5()
   };
   if (finalOver) A.final = { components: finalOver };
   return A;
@@ -169,8 +180,9 @@ process.argv.slice(2).forEach((a, i, arr) => { if (a.startsWith("--")) args[a.sl
 const SIMS = +(args.sims || 300), WORKERS = Math.max(1, Math.min(3, +(args.workers || 3))), SEED = +(args.seed || 1), BOOT = +(args.boot || 2000);
 const FINAL = args.final ? JSON.parse(args.final) : null;
 const ARMS = armDefs(FINAL);
-const ARMLIST = String(args.arms || Object.keys(ARMS).join(",")).split(",");
-if (ARMLIST[0] !== "all") { console.error("the first arm must be 'all' (the reference)"); process.exit(2); }
+const ARMLIST = String(args.arms || Object.keys(ARMS).filter((a) => a !== "v3pj" && a !== "final").join(",")).split(",");
+const REF = String(args.ref || "all");     // the reference arm: paired differences are arm minus REF
+if (ARMLIST[0] !== REF) { console.error(`the first arm must be the reference '${REF}'`); process.exit(2); }
 for (const a of ARMLIST) if (!ARMS[a]) { console.error("unknown arm " + a); process.exit(2); }
 const TAG = args.tag ? "_" + args.tag : "";
 const OUTDIR = path.join(ROOT, "out", "v5_train_ablation" + TAG);
@@ -304,9 +316,9 @@ function finish() {
     PF[a] = okF.map((f) => perFight(results.get(f.id).arms[a], f, base));
     L[a] = PF[a].map((pf, i) => { const mk = MKT[okF[i].id]; return losses(pf, okF[i], mk && mk.p_power_close != null ? +mk.p_power_close : null); });
   }
-  // total stat-line deviance: mean over the five evalv targets of dev_k / (all-on train mean of dev_k)
+  // total stat-line deviance: mean over the five evalv targets of dev_k / (reference arm's train mean of dev_k)
   const ref = {};
-  for (const k of DEVK) { const v = L.all.map((l) => l["dev_" + k]).filter((x) => x != null); ref[k] = v.reduce((s, x) => s + x, 0) / v.length; }
+  for (const k of DEVK) { const v = L[REF].map((l) => l["dev_" + k]).filter((x) => x != null); ref[k] = v.reduce((s, x) => s + x, 0) / v.length; }
   for (const a of ARMLIST) for (const l of L[a]) {
     if (DEVK.every((k) => l["dev_" + k] != null)) l.devTot = DEVK.reduce((s, k) => s + l["dev_" + k] / ref[k], 0) / DEVK.length;
   }
@@ -332,7 +344,7 @@ function finish() {
     engine_version: require(path.join(ROOT, "src/engine3.js")).VERSION, params_version: require(path.join(ROOT, "src/params3.js")).version,
     engine_sha256: require("crypto").createHash("sha256").update(fs.readFileSync(path.join(ROOT, "src/engine3.js"))).digest("hex"),
     params_sha256: require("crypto").createHash("sha256").update(fs.readFileSync(path.join(ROOT, "src/params3.js"))).digest("hex"),
-    arms: ARMLIST.reduce((o, a) => { o[a] = ARMS[a]; return o; }, {}),
+    arms: ARMLIST.reduce((o, a) => { o[a] = ARMS[a]; return o; }, {}), ref: REF,
     devTot_ref: ref, wall_s: (Date.now() - t0) / 1000,
     note: "evalv's metric definitions and smoothing (winner p = (A wins + 0.5) / (decisive + 1), clipped 0.005..0.995; 7-bin smoothed by one " +
       "pseudo-sim of train base rates). softCE = -(q log p + (1-q) log(1-p)), q = market.json p_power_close, on every train fight with a close. " +
@@ -345,8 +357,8 @@ function finish() {
     for (const mt of METRICS) {
       const v = L[a].map((l) => l[mt] != null ? l[mt] : null);
       const b = boot(v); out.levels[a][mt] = { est: b.est, lo: b.lo, hi: b.hi, n: b.n };
-      if (a !== "all") {
-        const d = L[a].map((l, i) => (l[mt] != null && L.all[i][mt] != null ? l[mt] - L.all[i][mt] : null));
+      if (a !== REF) {
+        const d = L[a].map((l, i) => (l[mt] != null && L[REF][i][mt] != null ? l[mt] - L[REF][i][mt] : null));
         out.paired[a][mt] = boot(d);
       }
     }
@@ -362,8 +374,9 @@ function finish() {
   const outFile = path.join(ROOT, "data/derived", `v5_train_ablation${TAG}.json`);
   fs.writeFileSync(outFile, JSON.stringify(out, null, 1));
   const f4 = (x) => (x >= 0 ? "+" : "") + x.toFixed(4);
-  console.log(`all: softCE ${out.levels.all.softCE.est.toFixed(4)}  winLL ${out.levels.all.winLL.est.toFixed(4)}  bin7 ${out.levels.all.bin7.est.toFixed(4)}  method ${out.levels.all.method.est.toFixed(4)}`);
-  for (const a of ARMLIST) if (a !== "all") {
+  const LR = out.levels[REF];
+  console.log(`${REF}: softCE ${LR.softCE.est.toFixed(4)}  winLL ${LR.winLL.est.toFixed(4)}  bin7 ${LR.bin7.est.toFixed(4)}  method ${LR.method.est.toFixed(4)}`);
+  for (const a of ARMLIST) if (a !== REF) {
     const P = out.paired[a];
     console.log(`${a.padEnd(12)} ` + ["softCE", "winLL", "bin7", "method", "devTot"].map((mt) => `${mt} ${f4(P[mt].est)} [${f4(P[mt].lo)}, ${f4(P[mt].hi)}]`).join("  "));
   }
