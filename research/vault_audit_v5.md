@@ -22,10 +22,10 @@ corner orders (300 sims per order), and calibration slopes are mirrored with no 
    vs actual 0.972; v4 0.783), the opposite of the 2024 glove-trial failure that rejected it. KD / KO levels on the
    vault are "seen-level" (exposure list, item 6), so this cannot confirm a KD / KO claim.
 2. **The 2024-25 underconfidence did not persist; it reversed.** The closing line is calibrated (slope 0.96
-   [0.67, 1.31]); every production stack is over-confident: with the close 0.84 [0.60, 1.13], with the open 0.79
-   [0.56, 1.05], without a line 0.56 [0.38, 0.77].
+   [0.67, 1.31]); every production stack's slope is below 1: with the close 0.84 [0.60, 1.13], with the open 0.79
+   [0.56, 1.05], and without a line 0.56 [0.38, 0.77], the last clearly over-confident.
 3. **Drift rule 6.5.1(a): not met.** The frozen production no-line stack (blindtest_stack.json `model`, absent block,
-   = the ledger's `p_a_noline`; column fixed in writing at 4:57 am UTC before any vault prediction existed) has slope
+   = the ledger's `p_a_noline`; column fixed in writing at 4:57 am UTC before any vault-derived file existed) has slope
    **0.561 [0.380, 0.774]**: the point is below 1.15 but the CI excludes 1 (from below), so the switch to h 3, T 1 does
    not fire. Plan 4.2 calls this "inconclusive": no production change; rule (b) keeps running on the forward ledger.
    This is the case research/model_calib.md section 4 item 3 predicted the rule cannot act on (a clearly
@@ -36,7 +36,7 @@ corner orders (300 sims per order), and calibration slopes are mirrored with no 
 5. **Winner ranking on 2026** (log loss): close 0.6003, ML v2 close stacks 0.603-0.608, production stack + close
    0.6072, open 0.6199, ML v2 open stacks 0.614-0.618, ML v2 blend (static) 0.6242, ML v2 logistic 0.6287, WHR rounds
    0.6343, ML v1 logistic 0.6376, engine v5.0.1 / v4 / v5 0.640-0.643, feature LR 0.6432, market rating 0.6512, no-line
-   stacks 0.636-0.664, Elo 0.6868. The production no-line stack is worse than the ML v2 logistic alone, +0.0315
+   stacks 0.634-0.664, Elo 0.6868. The production no-line stack is worse than the ML v2 logistic alone, +0.0315
    [+0.0039, +0.0603]; the ML v2 no-line stacks beat it (-0.0197 to -0.0246, CIs exclude 0).
 6. **Method side line.** S2 beats S on who x how x when, -0.0277 [-0.0503, -0.0045]; +ml2win adds nothing (+0.0056
    n.s.). With the winner held at the close, the props pool beats S2, 7-bin -0.0324 [-0.0530, -0.0116] (2024-25:
@@ -86,6 +86,9 @@ corner orders (300 sims per order), and calibration slopes are mirrored with no 
 | round given a finish | 1.0594 | 1.0406 | 1.0265 | -0.0188 [-0.0429, +0.0065] | -0.0329 [-0.0608, -0.0063] |
 | method given the winner | 0.9458 | 0.9274 | 0.9291 | -0.0184 [-0.0490, +0.0085] | -0.0167 [-0.0460, +0.0105] |
 
+Brier and accuracy differences are evalv's own paired bootstrap (in <vault>/audit1/evalv/*_vault.json); every other
+interval is tools/vault_audit1/score_vault.py's.
+
 Stat-line deviance (Poisson, per fighter; `dev` = unconditional totals, `devpm` = conditioned on the real fight length):
 
 | stat | v4 dev | v5 - v4 | v5.0.1 - v4 | v4 devpm | v5 - v4 | v5.0.1 - v4 |
@@ -97,7 +100,7 @@ Stat-line deviance (Poisson, per fighter; `dev` = unconditional totals, `devpm` 
 | knockdowns | 0.739 | -0.032 [-0.056, -0.007] | -0.032 [-0.058, -0.006] | 1.010 | -0.042 [-0.072, -0.013] | -0.042 [-0.075, -0.012] |
 
 The validation look's clear stat-line gains (sig landed -0.71 / -0.80, attempts -1.23 / -1.40, TD -0.048 / -0.043,
-control -4.1 / -4.6 s) are not reproduced on 2026 except for control (same sign, n.s.) and knockdowns.
+control -4.1 / -4.3 s) are not reproduced on 2026 except for control (same sign, n.s.) and knockdowns.
 
 **Decision tool, applied descriptively** (tools/evalv_decide.js via tools/vault_audit1/decide_vault.js; no decision is
 taken on the vault): v5 vs v4: winner not worse, KD deviance better after Holm (p 0.004), no paired base-rate failure,
@@ -167,8 +170,8 @@ stretching.
 
 Mirrored, no-intercept slopes for every model are in the tables above (engines in section 1, winner models in section
 2). Summary: the market is calibrated (close 0.96, open 0.99); single models are close to 1 (ML v2 0.89-1.00, ML v1
-0.95-1.02, WHR 1.11, engines 1.20-1.24); every stack is below 1, and the more a stack was sharpened in production the
-lower it sits (no-line production 0.56, ML v2 production no-line 0.68, ML v2 2019-2023 no-line 0.80). The 2024-25
+0.95-1.02, WHR 1.11, engines 1.20-1.24); every production and ML v2 stack is below 1 (the ratings stack, 1.03, is the
+exception), and the more a stack was sharpened in production the lower it sits (no-line production 0.56, ML v2 production no-line 0.68, ML v2 2019-2023 no-line 0.80). The 2024-25
 pattern (every input underconfident, slopes 1.1-1.7) did not carry into 2026.
 
 **Pre-registered production drift rule 6.5.1(a)** (switch the production no-line stack to h 3, T 1 iff its mirrored
@@ -183,8 +186,9 @@ slope has point < 1.15 and a 95% CI that includes 1):
 
 **Rule state: NOT TRIGGERED. Production no-line settings stay h 1.5 with their temperature. Rule (b) (forward
 ledger, trailing 200 bouts, two consecutive quarters) remains the only live trigger.** The column was named in
-<vault>/audit1/PRECOMMIT_drift_column.txt (sha256 4f0c119b4f32c91c, written 4:57:38 am UTC, before the first vault
-prediction at 5:04 am). The readings agree, so the choice of column does not change the state.
+<vault>/audit1/PRECOMMIT_drift_column.txt (sha256 4f0c119b4f32c91c, written 4:57:38 am UTC, before any vault-derived
+file existed: the first, the learned stat-line rates, was written at 5:00:51 am, and the first winner probability
+at about 5:04 am). The readings agree, so the choice of column does not change the state.
 
 **Close edge**: absent (+0.0069 [-0.0013, +0.0158]; the 2024-25 claim was -0.0060 to -0.0096). Pre-registered
 consequence (plan 4.2): the ledger and page copy say "level with the market"; cycle 1 keeps its plan.
@@ -222,8 +226,8 @@ winner, and the predict() package's cells.
 | predict() close - SM_refit | +0.0163 [+0.0042, +0.0293] | +0.0008 | +0.0116 [-0.0008, +0.0252] | +0.0017 |
 | predict() close - engine v4 | -0.0898 [-0.1325, -0.0411] | -0.0201 [-0.0352, -0.0048] | -0.0657 [-0.1066, -0.0215] | -0.0227 [-0.0401, -0.0052] |
 
-Readings: S2 confirms on 2026 (2024-25: -0.0183 joint); the ML v2 winner reweighting does not help the cells this
-year (ML v2's winner is weaker than the close in 2026); the props pool confirms its 2024-25 gain at roughly twice the
+Readings: S2 confirms on 2026 (2024-25: -0.0303 joint vs S); the ML v2 winner reweighting, which added -0.006 on
+2024-25 (S2 + ml2win - S -0.0367), does not help the cells this year (ML v2's winner is weaker than the close in 2026); the props pool confirms its 2024-25 gain at roughly twice the
 size; mixing 30% of the v4 simulator into predict()'s cells costs +0.016 against SM_refit alone (the 0.3 weight was
 the Calibrate-B v5 setting; the engine's method shape is the weak part). The S and SM rows are not blind (exposure 1).
 
