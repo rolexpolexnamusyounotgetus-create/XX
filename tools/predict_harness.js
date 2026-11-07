@@ -102,7 +102,7 @@ if (!isMainThread) {
   }
   const XRS = PK.map((p, k) => (W.shared && k > 0) ? null : require(fs.existsSync(path.join(p.dir, "mlpathrec.js")) ? path.join(p.dir, "mlpathrec.js") : path.join(ROOT, "tools/mlpathrec.js"))(p.E, ROOT));
   const PRs = PK.map((p) => require(path.join(ROOT, "tools/predictrec.js"))(p.E, ROOT, { stacks: CMP_STACKS(W.stackDir, W.cmpStacks), inSample: true,
-    v6: p.mode === "v6", v7: p.mode === "v7", blendPath: path.relative(ROOT, path.join(p.dir, "ml", "blend.js")) }));
+    v6: p.mode === "v6", v7: p.mode === "v7", blendPath: path.relative(ROOT, path.join(p.dir, "ml", "blend.js")), ml2Rolling: !!W.ml2Rolling }));
   function baseOpts(f, k) {
     const OOF = OOFS[k], XR = XRS[k];
     const opts = { division: f.prior_division || f.division, rounds: f.rounds, title: f.title, date: f.date, priors: priors[f.date.slice(0, 4)] };
@@ -231,6 +231,7 @@ function checkProtocol() {
   if (P.sims !== undefined) want.sims = SIMS;
   if (P.kinds !== undefined) want.kinds = KINDS.join(",");
   if (P.cmp_stacks !== undefined) want.cmp_stacks = args["cmp-stacks"] ? String(args["cmp-stacks"]) : null;
+  if (P.ml2_rolling !== undefined) want.ml2_rolling = !!args["ml2-rolling"];
   for (const k of Object.keys(want)) {
     if (JSON.stringify(P[k]) !== JSON.stringify(want[k])) { console.error(`predict_harness: protocol ${rel} fixes ${k} = ${JSON.stringify(P[k])}, the command line gives ${JSON.stringify(want[k])}`); process.exit(2); }
   }
@@ -262,7 +263,7 @@ function runAll() {
     }
     for (let k = 0; k < Math.min(WORKERS, chunks.length); k++) {
       const w = new Worker(__filename, { workerData: { pkgs: PKGS, kinds: KINDS, sims: SIMS, mlpathrec: MLP_FILE, stackDir: STACK_DIR, cmpStacks: args["cmp-stacks"] || null,
-        oof: args.oof || null, v6From: +(args["v6-from"] || 2019), shared: !!args["shared-inputs"] } });
+        oof: args.oof || null, v6From: +(args["v6-from"] || 2019), shared: !!args["shared-inputs"], ml2Rolling: !!args["ml2-rolling"] } });
       live++;
       w.on("message", (m) => {
         if (m.cmd === "done") {
@@ -296,6 +297,7 @@ function runAll() {
       oof: args.oof || (+String(require(path.join(PKGS[0].dir, "engine3.js")).VERSION).split(".")[0] >= 6 ? "data/derived/mlrates_oof_fh.json" : "data/derived/mlrates_oof.json"),
       embed_recipe: "each package's frozen mlpathrec.js: fold-honest coef_fh for engine major >= 6 (data/derived/embed_blend_fh.json), leave-one-year-out / exported recipe before",
       input_pipelines: args["shared-inputs"] ? "shared (the first package's inputs for every package; sensitivity run)" : "own (each package's frozen mlpathrec.js and learned-rate table)",
+      ml2_schedule_2024_2025: args["ml2-rolling"] ? "monthly rolling (ml2.json ml2_roll / ml2_lr_roll)" : "static fit < 2024 (v6_stacks.json inputs)",
       cmp_stacks: CMP_STACKS("data/derived/v6", args["cmp-stacks"] || null),
       cmp_stacks_sha256: (() => { const o = {}; for (const [y, f] of Object.entries(CMP_STACKS("data/derived/v6", args["cmp-stacks"] || null))) { const fp = path.join(ROOT, f); if (fs.existsSync(fp)) o[y] = sha(fp); } return o; })(),
       props_sha256: fs.existsSync(path.join(ROOT, "data/derived/props.json")) ? sha(path.join(ROOT, "data/derived/props.json")) : null,

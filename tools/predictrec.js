@@ -128,7 +128,16 @@ module.exports = function predictrec(E, root, cfg) {
     const r = W.inputs[f.id];
     if (!r) throw new Error("predictrec v6: no v6_stacks.json inputs for " + f.id);
     if (r.year !== yr) throw new Error("predictrec v6: inputs year mismatch for " + f.id);
-    const m2 = { pA: r.ml2lr, pBlend: r.ml2, pMR: isNum(r.mkt_rating) ? r.mkt_rating : null };
+    let m2 = { pA: r.ml2lr, pBlend: r.ml2, pMR: isNum(r.mkt_rating) ? r.mkt_rating : null };
+    // v7 look, refit schedule 'walk-forward' (V6_V10_PLAN 7.1 item 10 c): 2024-2025 fights take ML v2's monthly-rolling rows
+    // (ml2.json ml2_roll = the blend head, ml2_lr_roll = the logistic; refit before each month's first card) instead of the
+    // static fit < 2024; the stack weights stay the fit through 2023 (v6_stacks.json Y2024). Train years are unaffected.
+    if (cfg.ml2Rolling && yr >= 2024) {
+      const q = J("data/derived/ml2.json").fights[f.id];
+      if (!q || q.set !== "valid" || !isNum(q.ml2_roll) || !isNum(q.ml2_lr_roll)) throw new Error("predictrec v6: no ML v2 monthly-rolling row for " + f.id);
+      m2 = { pA: q.ml2_lr_roll, pBlend: q.ml2_roll, pMR: m2.pMR };
+      out.ml2Schedule = "monthly rolling";
+    }
     out.ml2 = swap ? { pA: 1 - m2.pA, pBlend: 1 - m2.pBlend, pMR: flip(m2.pMR) } : m2;
     const S2 = J(cfg.mrS2 || "data/derived/mr_s2.json").fights[f.id];
     if (!S2) throw new Error("predictrec v6: no S2 cells for " + f.id);
