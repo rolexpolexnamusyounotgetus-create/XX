@@ -1,0 +1,1 @@
+predict_harness on val 2024-01-01..2026-01-01: 865 fights, kinds close/open/none, 300 sims per order; v10: engine 10.0.0 params 10.0.0-selfcal-pre2024 (v10); cmp4: engine 7.0.0 params 7.0.0-selfcal-pre2024 (cmp4)

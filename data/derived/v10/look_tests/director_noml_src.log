@@ -1,0 +1,90 @@
+director v3: 100 fights, 306 rounds (17 with a scouting file); engine 10.0.0, learned stat-line rates off, fights with a point deduction 0
+  methods {"GNP":9,"KO":12,"SD":11,"UD":34,"TKO":11,"SUB":20,"DOC":3}
+  beats/round 71.6, strikes/round 61.5, misses shown 7354 of 12782 (58%), landed 11480; max strikes by one fighter in 10 s 13
+  play-by-play lines/round 12.3, notes 828; texted beats by kind {"note":828,"td":252,"up":87,"tdx":280,"pass":366,"strike":1019,"clinch":183,"pounce":18,"recover":12,"break":34,"esc":196,"subx":54,"sweep":27,"sub":20,"reset":24}
+  key beats without text {}; silent position changes on strikes 0
+  warp range 0.6-3, quiet stretches 61% of fight time
+  moves used {"jab":4561,"hook":2161,"cross":3151,"elbow":248,"kneehead":192,"shortbody":191,"gnpelbow":300,"gnp":911,"bodykick":813,"inside":726,"calf":1174,"knee":456,"overhand":941,"upper":866,"bodystraight":608,"headkick":437,"bodyhook":661,"short":306,"upelbow":131}
+
+==== sample 1: Volkanovski vs Gaethje, 5 rounds at lightweight (seed 4242)
+Justin Gaethje def. Alexander Volkanovski by TKO, at 2:44 of round 1.
+  R1 5:00  Alexander Volkanovski vs Justin Gaethje, a five-round title fight at lightweight. UFC records: Volkanovski 16-3, Gaethje 11-5. Volkanovski in the blue corner, Gaethje in the red.
+  R1 4:28  Gaethje reads the level change and sprawls.
+  R1 4:22  Volkanovski keeps hold after the shot and pins Gaethje on the fence.
+  R1 2:16  Volkanovski crumples from a knee to the ribs to the body! Volkanovski had been knocked down four times before in the UFC.
+  R1 2:16  Gaethje jumps on top of Volkanovski!
+  R1 2:16  Gaethje pours on the hammerfists and the referee dives in!
+  R1 2:16  Justin Gaethje wins by TKO at 2:44 of round 1. It's the eighth KO or TKO win of Gaethje's UFC career.
+
+==== sample 2: #43 luan-lacerda vs umar-nurmagomedov (Bantamweight, 5 rd, seed 100305)
+Umar Nurmagomedov def. Luan Lacerda by unanimous decision (50-45, 50-45, 50-45).
+  R1 5:00  Luan Lacerda vs Umar Nurmagomedov, a five-round title fight at bantamweight. UFC records: Lacerda 1-3, Nurmagomedov 8-2. Lacerda in the blue corner, Nurmagomedov in the red.
+  R1 4:02  Nurmagomedov reads the level change and sprawls.
+  R1 3:12  Nurmagomedov changes levels and finishes a reactive double-leg, landing in half guard.
+  R1 2:54  Nurmagomedov takes the mount!
+  R1 2:17  Lacerda needs to get back up. Nurmagomedov is controlling from mount.
+  R1 1:40  Lacerda bridges out of the mount to half guard.
+  R1 1:34  Nurmagomedov moves to side control.
+  R1 1:01  Nurmagomedov keeping Lacerda flat in side control.
+  R1 0:27  Mount for Nurmagomedov. Lacerda is in trouble.
+  R1 0:21  Lacerda shrimps out from under the mount.
+  R1 0:11  Nurmagomedov threatens an arm-triangle choke. Lacerda stays calm and gets out.
+  R1 0:05  Nurmagomedov passes to side control.
+  R1 0:01  Nurmagomedov gets to the back. Danger for Lacerda.
+  R1 0:00  End of round 1. Significant strikes landed: Lacerda 3, Nurmagomedov 11. All three judges score it for Nurmagomedov.
+  R2 5:00  Round 2. Nurmagomedov took round 1 on all three cards. Nurmagomedov has 3:12 of control time so far.
+  R2 4:33  A high kick from Nurmagomedov lands clean!
+  R2 3:45  Nurmagomedov 7, Lacerda 3 in significant strikes landed this round.
+  R2 2:57  A single-leg from Lacerda, and Nurmagomedov goes down.
+  R2 2:29  Nurmagomedov gets up, but Lacerda keeps him pinned on the fence.
+  R2 1:40  Both fighters letting their hands go.
+  R2 0:50  Lacerda shoots a double-leg and drags Nurmagomedov down. Second takedown of round 2 for Lacerda.
+  R2 0:29  Nurmagomedov stands into a clinch. Lacerda keeps hold.
+  R2 0:20  Nurmagomedov pushes off the fence.
+  R2 0:00  End of round 2. Significant strikes landed: Lacerda 11, Nurmagomedov 20. All three judges score it for Nurmagomedov.
+  R3 5:00  Round 3. Nurmagomedov took round 2 on all three cards. Nurmagomedov leads 31-14 in significant strikes landed.
+  R3 4:56  Lacerda closes the distance and clinches.
+  R3 4:33  Nurmagomedov defends the body-lock takedown and circles off.
+  R3 3:11  Lacerda slips and comes back with a left hook.
+  R3 2:31  Lacerda stuffs the single-leg.
+  R3 2:28  Nurmagomedov hits a body-lock takedown from the clinch. Lacerda is on his back.
+  R3 1:59  Lacerda is tying Nurmagomedov up from guard.
+  R3 1:31  Nurmagomedov clears a leg. Half guard now.
+  R3 1:16  Nurmagomedov climbs to full mount!
+  R3 0:56  Lacerda escapes the mount.
+  R3 0:40  Nurmagomedov applying heavy pressure from half guard.
+  R3 0:25  Lacerda is slowing down.
+  R3 0:00  End of round 3. Significant strikes landed: Lacerda 9, Nurmagomedov 10. All three judges score it for Nurmagomedov.
+  R4 5:00  Round 4, into the championship rounds. Nurmagomedov took round 3 on all three cards. Nurmagomedov has 5:43 of control time so far.
+  R4 4:14  That's 5 kicks to the legs for Nurmagomedov.
+  R4 1:26  Nurmagomedov hits a single-leg. He's in Lacerda's guard. Nurmagomedov has three takedowns in the fight.
+  R4 1:04  Nurmagomedov works into half guard.
+  R4 0:57  Lacerda replaces guard.
+  R4 0:37  Nurmagomedov passes to half guard.
+  R4 0:30  Lacerda gets his guard back.
+  R4 0:25  Lacerda works back up; Nurmagomedov stays on him against the cage.
+  R4 0:15  Nurmagomedov sprawls on the body-lock takedown. Lacerda has 2 of 5 takedowns.
+  R4 0:00  End of round 4. Significant strikes landed: Lacerda 11, Nurmagomedov 13. All three judges score it for Nurmagomedov.
+  R5 5:00  Final round. Nurmagomedov took round 4 on all three cards. Nurmagomedov has 7:09 of control time so far.
+  R5 4:13  Lacerda times a double-leg and takes Nurmagomedov down.
+  R5 3:46  Lacerda clears the legs and settles in side control.
+  R5 3:38  Nurmagomedov scrambles up. We're standing again.
+  R5 3:31  Nurmagomedov makes Lacerda pay with a straight right.
+  R5 3:13  Patient stretch at range.
+  R5 2:54  Nurmagomedov gets Lacerda down with a single-leg.
+  R5 2:39  Nurmagomedov gets past the guard to half.
+  R5 2:37  Lacerda stands into a clinch. Nurmagomedov keeps hold.
+  R5 2:30  An outside trip from Nurmagomedov in the clinch, and Lacerda goes down. That's his second takedown of the round.
+  R5 2:29  Nurmagomedov slides a knee across and mounts Lacerda.
+  R5 2:27  Nurmagomedov takes the back!
+  R5 2:20  Lacerda turns in and gets out from under the back.
+  R5 1:55  Nurmagomedov slices through to side control.
+  R5 1:53  Lacerda recovers half guard.
+  R5 1:22  Nurmagomedov is grinding from half guard; 1:31 of control so far this round.
+  R5 0:52  Nurmagomedov clears the legs and settles in side control.
+  R5 0:37  Nurmagomedov takes Lacerda's back and gets the hooks in.
+  R5 0:30  Lacerda escapes the back.
+  R5 0:00  End of round 5. Significant strikes landed: Lacerda 4, Nurmagomedov 9. All three judges score it for Nurmagomedov.
+  R5 0:00  We go to the scorecards. 50-45, 50-45, 50-45, for the winner by unanimous decision, Umar Nurmagomedov!
+
+OK: every beat valid for the show, states and stats match the engine, no repeated lines.

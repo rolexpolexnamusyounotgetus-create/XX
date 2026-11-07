@@ -50,9 +50,9 @@
   },
   {
    "version": "v10 (10.0.0)",
-   "looks": 0,
-   "when": null,
-   "status": "pre-registered 2026-11-07T11:34; look not yet run",
+   "looks": 1,
+   "when": "2026-11-07 11:39 UTC (look started)",
+   "status": "look running: started 2026-11-07 11:39 UTC by the v10 look step (prechecks passed: hashes 30/30, tests/test_v10.js 19/19 on the frozen files, 39 of 40 test jobs, test_page_parity failing only its 4 tolerated checks)",
    "note": "the single pre-registered v10 look (version_history.json v10 prereg; data/derived/v10/look_protocol.json): predict package v10 vs cmp4 (open-regime winner, branch 1; branch 2 total stat-line deviance vs v4 + glove-excluded paired base-rate test). Confirmation look. The look step sets looks 1 and when."
   }
  ],

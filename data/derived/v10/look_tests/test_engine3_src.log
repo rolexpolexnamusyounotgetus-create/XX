@@ -1,0 +1,417 @@
+Fight engine 10.0.0, params 10.0.0-selfcal-pre2024; 1229 fighters; N = 8000
+
+=== API and determinism ===
+PASS  API surface  (VERSION 10.0.0)
+PASS  no learned model loaded by default: matchup = base tables
+PASS  engine source has no Math.random
+PASS  engine runs with Math.random disabled
+PASS  same seed, same fight
+PASS  same seed, same summary
+PASS  trace on/off gives the same fight (400 seeds)
+PASS  trace parity holds over a shared rng stream
+PASS  worker-style concatenation (self.FightParams + self.MLRates + self.FightEngine) reproduces Node results
+PASS  worker-style loadMLRates reproduces Node's learned-rate matchup
+
+=== Engine v4: learned stat-line rates (loadMLRates / opts.ml) ===
+PASS  matchup without a model equals matchupBase
+PASS  with a model loaded matchup applies the learned rates  (distance attempt ratio Volk 0.86, Gaethje 0.93)
+PASS  opts.ml === false keeps the base tables
+PASS  params.mlWeight 0 keeps the base tables
+PASS  opts.ml = { pred } reproduces the loaded model's tables  (max rel diff dRate 0.0e+0)
+PASS  ML: same seed, same fight
+PASS  ML: matchup is deterministic (same tables twice)
+PASS  ML: trace on/off gives the same fight (150 seeds)
+PASS  ML: predict(A, B) and predict(B, A) swap exactly
+PASS  ML: swapping corners mirrors the learned tables  (max rel diff 2.2e-16)
+PASS  ML: swapping corners swaps the probabilities  (Volk 70.0% as A vs 69.5% as B; base tables 60.2%)
+PASS  ML: a fighter vs his clone wins about 50%  (50.0% of non-draws)
+PASS  ML: Volk chin knob 1.6 raises Gaethje's KO/TKO share  (11.8% -> 16.4%)
+PASS  ML: league-average pair keeps the league level (finish rate within 4 pts, sig landed within 8%)  (finish 54.2% -> 51.3%, sig landed 39.6 -> 40.6)
+
+=== Engine v4: train-only priors (hidden-data protocol) ===
+PASS  data/derived/priors_dev.json exists and stops before 2024-01-01
+PASS  train-only priors hold fewer fights than the production priors  (Lightweight 406 vs 608)
+PASS  params are labelled as self-calibrated on the train-only priors  (10.0.0-selfcal-pre2024)
+
+=== Engine v4: judges (EM weights, shared + fight-level noise, 10-8 rule) ===
+PASS  judge weights are the EM fit
+PASS  an even round is a coin flip  (P(A) 50.2%)
+PASS  judging is corner-symmetric (mirrored differentials mirror the round)  (86.5% vs 86.6%)
+PASS  more output wins more rounds  (P(A) 86.5% for +6 head, +2 body, +1 leg, +1 TD, +30 s control)
+PASS  10-8s come with lopsided rounds, rarely with even ones  (lopsided 62.4%, even 0.00%)
+PASS  a lone knockdown edge usually wins the round  (P(KD scorer) 91.2%)
+PASS  non-unanimous share of even-looking rounds near the data (MMA Decisions |EM| < 0.5: 43%)  (42.3%)
+PASS  decision split and 10-8 share in a sane band  (UD 80.9%, SD 18.4%, 10-8 3.80% per judge-round)
+
+=== Trace format ===
+PASS  event kinds are from the spec table (+ esc)  (miss hit clinch break tdx td up hurt)
+PASS  events carry t, k, w, s, snapshots; strikes carry tg and loc; subs carry name; fin carries how
+PASS  event times are ordered within each round
+PASS  all spec kinds occur over 300 traced fights  (miss hit tdx td up clinch break esc kd recover fin pass reset hurt subx sweep sub)
+  sample event: {"t":38.73,"k":"hit","w":"B","s":0,"dA":0,"dB":0,"gA":0.8,"gB":0,"sA":0.976,"sB":0.95,"tg":2,"loc":"dist"}
+  result: A SD | Split Decision (48-47, 47-48, 48-47) | round 5 at 300.0 s | cards [[48,47],[47,48],[48,47]]
+
+=== Symmetry and clones ===
+PASS  swapping corners swaps the probabilities  (Volk 60.6% as A vs 61.2% as B; 4 se = 3.1)
+PASS  swapping corners mirrors the 7 outcome bins  (max bin diff 0.6 pts)
+PASS  alexander-volkanovski vs his clone wins about 50%  (50.1% of non-draws, 4 se = 2.2)
+PASS  justin-gaethje vs his clone wins about 50%  (50.3% of non-draws, 4 se = 2.2)
+PASS  league-average vs league-average wins about 50%  (50.0%)
+
+=== Knob directions (Volk = A, Gaethje = B) ===
+PASS  chin knob up on A -> more KO losses for A  (18.1 -> 25.4)
+PASS  chin knob down on B -> fewer KO losses for B  (13.9 -> 10.4)
+PASS  power knob up on A -> more KO wins for A  (13.9 -> 22.9)
+PASS  output knob up on A -> more attempts by A  (207.2 -> 258.8)
+PASS  accuracy knob up on A -> higher accuracy for A  (58.1 -> 66.2)
+PASS  cardio knob up on A (tires faster) -> lower win share for A  (60.5 -> 53.1)
+PASS  takedown-attempt knob up on A -> more TD attempts and control for A  (TD att 3.66 -> 10.02, ctrl 107 -> 213 s)
+PASS  takedown-defense knob up on B -> lower TD success for A  (28.3 -> 16.9)
+PASS  leg-kick share knob on B -> more leg kicks by B  (8.8% -> 36.4% of attempts)
+PASS  submission knob up on A -> more submission wins for A  (4.2 -> 11.0)
+PASS  judges.power up -> decisions shift toward the harder hitter  (Gaethje's share of decisions 28.3 -> 53.0 (damage/head 0.56 vs 0.85))
+
+=== Per-pair position calibration (simulated vs data-implied expectations) ===
+pair                                        ctrl/15 sim vs target (A, B)      clinch landed/15 sim vs exp   ground landed/15 sim vs exp
+Merab Dvalishvili vs Sean O'Malley          234/227, 36/27                    9.7 vs 11.1                   10.5 vs 9.2
+Islam Makhachev vs Belal Muhammad           204/204, 89/84                    6.9 vs 8.1                    4.3 vs 3.8
+Arman Tsarukyan vs Charles Oliveira         294/324, 250/261                  8.3 vs 9.3                    20.3 vs 23.3
+Khamzat Chimaev vs Dricus Du Plessis        358/375, 67/64                    4.0 vs 4.7                    10.5 vs 11.5
+Tom Aspinall vs Ciryl Gane                  123/130, 105/111                  8.0 vs 10.0                   10.1 vs 11.2
+Zhang Weili vs Tatiana Suarez               216/240, 355/366                  10.8 vs 11.3                  19.1 vs 22.2
+Valentina Shevchenko vs Alexa Grasso        304/316, 88/87                    9.5 vs 10.5                   4.9 vs 4.9
+Alexander Volkanovski vs Justin Gaethje     84/76, 71/66                      16.8 vs 20.4                  6.8 vs 5.3
+PASS  simulated control per 15 within 25% of each pair's data-implied target  (worst 9.1%)
+PASS  simulated clinch landed per 15 within 25% of each pair's expectation  (worst 20.2%)
+PASS  simulated ground landed per 15 within 40% of each pair's base expectation (KD follow-ups add on top)  (worst 29.1%)
+
+=== manualProfile ===
+PASS  manual profile simulates with plausible output  (landed/min 7.23, win 64.7%)
+
+=== League-average base rates by division (self-calibration check) ===
+
+--- Lightweight (155 lb): league-average vs league-average, 8000 3-round fights (data: data/derived/priors_dev.json, n=373) ---
+metric                              sim     data   tolerance
+finish rate                        53.7     52.7   +/-3 pts  ok
+KO/TKO share                       34.4     35.3   +/-3 pts  ok
+SUB share                          19.3     17.4   +/-3 pts  ok
+KD per 100 head landed            0.963    0.857   +/-20%  ok
+sig landed per 15                  59.9     60.3   +/-8%  ok
+control s per 15                  172.2    172.3   +/-15%  ok
+decision share                     46.3     47.3
+KO by round (share of fights)         0            18.4 / 9.9 / 6.1  vs data 18.8 / 12.5 / 4.1
+SUB by round                          0            9.0 / 6.1 / 4.3  vs data 8.4 / 6.5 / 2.4
+finish hazard per round reached        0            27.4 / 22.0 / 18.3  vs data 27.2 / 26.1 / 12.1
+sig attempted per 15              128.4    129.6   info
+sig accuracy                       46.7     46.5
+head landed / att per 15           37.7     37.7   98.3 att vs 99.3; acc 38.3% vs 37.9%
+body landed / att per 15           13.1     13.2   19.0 att vs 19.0; acc 68.9% vs 69.6%
+leg landed / att per 15             9.2      9.5   11.1 att vs 11.3; acc 82.9% vs 84.0%
+distance landed / att per 15       47.4     47.6   110.8 att vs 112.1; acc 42.8% vs 42.4%
+clinch landed / att per 15          5.5      5.8   7.6 att vs 7.8; acc 73.0% vs 74.1%
+ground landed / att per 15          7.0      7.0   10.0 att vs 9.7; acc 70.1% vs 71.7%
+KD per 15                         0.363    0.323   KD per 100 standing head 1.126
+P(finish same round | KD)          56.0     64.6   3420 one-sided KD rounds (data: priors kd_fin)
+TD landed per 15                   1.49     1.49   attempts 4.10 vs 4.08
+TD accuracy                        36.3     36.4
+sub attempts per 15               0.421    0.412   conversion 34.2% vs 31.3%
+decision UD / SD / MD              79.3     81.2   SD 19.9 vs 15.3, MD 0.3 vs 3.5, draws 0.5% of decisions (data ~1.7%)
+10-8 per judge-round                2.4      4.7   data 4.7% 2015+, ~2.5% 2024-25
+KO/TKO location                       0            distance 62.3% clinch 10.7% ground 24.2% between rounds 2.8%  (data all 60 / 12 / 28 of strike stoppages; doctor+corner ~2% of KO/TKOs)
+KO/TKO kinds                          0            KO 37.2%, TKO_followup 29.5%, TKO_standing 6.2%, GNP 24.2%, LEG 0.0%, DOC 2.3%, CORNER 0.5%
+submission types                      0            Rear Naked Choke 48%, Arm Triangle 12%, Guillotine Choke 10%, Armbar 8%  (data RNC 44%, guillotine 17%, armbar 10%, arm triangle 10%)
+5 rounds: finish rate              57.5     61.2   +/-6 pts (info)  ok; KO 35.6, SUB 21.9; own 5-rd data 72.7% (n=33); pooled 5-rd 55.6%
+5 rounds: hazard per round            0            16.9 / 17.3 / 16.0 / 15.8 / 12.6  vs target 22.2 / 21.8 / 18.4 / 11.6 / 11.7
+PASS  Lightweight: base rates within tolerance (finish, KO, SUB, KD/100, landed/15, ctrl/15)
+
+--- Featherweight (145 lb): league-average vs league-average, 8000 3-round fights (data: data/derived/priors_dev.json, n=323) ---
+metric                              sim     data   tolerance
+finish rate                        45.1     43.6   +/-3 pts  ok
+KO/TKO share                       27.6     27.4   +/-3 pts  ok
+SUB share                          17.5     16.2   +/-3 pts  ok
+KD per 100 head landed            0.826    0.731   +/-20%  ok
+sig landed per 15                  63.1     62.5   +/-8%  ok
+control s per 15                  161.5    162.5   +/-15%  ok
+decision share                     54.9     56.4
+KO by round (share of fights)         0            13.8 / 8.9 / 5.0  vs data 15.0 / 8.1 / 4.4
+SUB by round                          0            7.8 / 6.0 / 3.8  vs data 6.5 / 6.2 / 3.4
+finish hazard per round reached        0            21.6 / 18.9 / 13.7  vs data 21.5 / 18.3 / 12.1
+sig attempted per 15              137.3    137.1   info
+sig accuracy                       46.0     45.6
+head landed / att per 15           40.1     39.3   105.7 att vs 105.5; acc 37.9% vs 37.2%
+body landed / att per 15           13.3     13.3   19.4 att vs 19.2; acc 68.5% vs 69.2%
+leg landed / att per 15             9.8      9.9   12.3 att vs 12.4; acc 79.6% vs 80.4%
+distance landed / att per 15       51.2     50.6   120.3 att vs 120.4; acc 42.5% vs 42.0%
+clinch landed / att per 15          5.7      6.0   7.9 att vs 8.2; acc 71.9% vs 73.2%
+ground landed / att per 15          6.3      6.0   9.0 att vs 8.5; acc 69.1% vs 70.4%
+KD per 15                         0.331    0.287   KD per 100 standing head 0.942
+P(finish same round | KD)          42.7     48.3   3372 one-sided KD rounds (data: priors kd_fin)
+TD landed per 15                   1.42     1.42   attempts 3.90 vs 3.91
+TD accuracy                        36.3     36.4
+sub attempts per 15               0.500    0.501   conversion 24.0% vs 19.3%
+decision UD / SD / MD              79.3     81.3   SD 19.8 vs 16.5, MD 0.6 vs 2.3, draws 0.4% of decisions (data ~1.7%)
+10-8 per judge-round                3.1      4.7   data 4.7% 2015+, ~2.5% 2024-25
+KO/TKO location                       0            distance 59.0% clinch 9.7% ground 26.4% between rounds 4.9%  (data all 60 / 12 / 28 of strike stoppages; doctor+corner ~2% of KO/TKOs)
+KO/TKO kinds                          0            KO 34.0%, TKO_followup 25.7%, TKO_standing 9.0%, GNP 26.4%, LEG 0.0%, DOC 3.8%, CORNER 1.1%
+submission types                      0            Rear Naked Choke 48%, Arm Triangle 12%, Armbar 9%, Guillotine Choke 8%  (data RNC 44%, guillotine 17%, armbar 10%, arm triangle 10%)
+5 rounds: finish rate              50.1     53.7   +/-6 pts (info)  ok; KO 29.8, SUB 20.4; own 5-rd data 46.4% (n=29); pooled 5-rd 55.6%
+5 rounds: hazard per round            0            13.6 / 14.2 / 13.3 / 14.5 / 9.3  vs target 18.4 / 18.1 / 15.2 / 9.6 / 9.6
+PASS  Featherweight: base rates within tolerance (finish, KO, SUB, KD/100, landed/15, ctrl/15)
+
+--- Welterweight (170 lb): league-average vs league-average, 8000 3-round fights (data: data/derived/priors_dev.json, n=357) ---
+metric                              sim     data   tolerance
+finish rate                        51.5     51.1   +/-3 pts  ok
+KO/TKO share                       31.1     32.4   +/-3 pts  ok
+SUB share                          20.4     18.7   +/-3 pts  ok
+KD per 100 head landed            1.031    0.920   +/-20%  ok
+sig landed per 15                  57.9     59.3   +/-8%  ok
+control s per 15                  162.5    160.1   +/-15%  ok
+decision share                     48.5     48.9
+KO by round (share of fights)         0            16.2 / 9.5 / 5.4  vs data 16.5 / 9.9 / 6.0
+SUB by round                          0            9.8 / 6.2 / 4.5  vs data 9.4 / 6.8 / 2.6
+finish hazard per round reached        0            26.0 / 21.1 / 16.9  vs data 25.9 / 22.6 / 14.9
+sig attempted per 15              124.2    127.7   info
+sig accuracy                       46.6     46.5
+head landed / att per 15           36.6     37.2   95.8 att vs 98.6; acc 38.2% vs 37.7%
+body landed / att per 15           11.9     12.2   17.1 att vs 17.4; acc 69.5% vs 70.4%
+leg landed / att per 15             9.4      9.9   11.3 att vs 11.8; acc 83.2% vs 84.2%
+distance landed / att per 15       46.2     47.5   107.7 att vs 111.4; acc 42.9% vs 42.7%
+clinch landed / att per 15          6.1      6.5   8.5 att vs 8.9; acc 71.6% vs 73.3%
+ground landed / att per 15          5.6      5.3   8.0 att vs 7.5; acc 70.0% vs 71.1%
+KD per 15                         0.377    0.342   KD per 100 standing head 1.172
+P(finish same round | KD)          49.3     52.6   3575 one-sided KD rounds (data: priors kd_fin)
+TD landed per 15                   1.21     1.22   attempts 3.43 vs 3.44
+TD accuracy                        35.3     35.4
+sub attempts per 15               0.328    0.336   conversion 45.0% vs 35.0%
+decision UD / SD / MD              78.3     78.4   SD 21.0 vs 19.9, MD 0.3 vs 1.8, draws 0.4% of decisions (data ~1.7%)
+10-8 per judge-round                2.3      4.7   data 4.7% 2015+, ~2.5% 2024-25
+KO/TKO location                       0            distance 62.5% clinch 12.7% ground 21.8% between rounds 3.1%  (data all 60 / 12 / 28 of strike stoppages; doctor+corner ~2% of KO/TKOs)
+KO/TKO kinds                          0            KO 37.5%, TKO_followup 29.6%, TKO_standing 7.9%, GNP 21.8%, LEG 0.1%, DOC 2.6%, CORNER 0.5%
+submission types                      0            Rear Naked Choke 48%, Arm Triangle 12%, Guillotine Choke 10%, Armbar 8%  (data RNC 44%, guillotine 17%, armbar 10%, arm triangle 10%)
+5 rounds: finish rate              57.3     60.0   +/-6 pts (info)  ok; KO 31.8, SUB 25.6; own 5-rd data 44.4% (n=37); pooled 5-rd 55.6%
+5 rounds: hazard per round            0            16.7 / 18.5 / 14.4 / 16.1 / 12.4  vs target 21.6 / 21.2 / 17.8 / 11.2 / 11.3
+PASS  Welterweight: base rates within tolerance (finish, KO, SUB, KD/100, landed/15, ctrl/15)
+
+--- Heavyweight (265 lb): league-average vs league-average, 8000 3-round fights (data: data/derived/priors_dev.json, n=186) ---
+metric                              sim     data   tolerance
+finish rate                        58.1     57.0   +/-3 pts  ok
+KO/TKO share                       43.3     43.0   +/-3 pts  ok
+SUB share                          14.9     14.0   +/-3 pts  ok
+KD per 100 head landed            1.031    0.912   +/-20%  ok
+sig landed per 15                  58.8     58.8   +/-8%  ok
+control s per 15                  156.5    156.0   +/-15%  ok
+decision share                     41.9     43.0
+KO by round (share of fights)         0            24.3 / 12.0 / 7.0  vs data 23.5 / 15.1 / 4.5
+SUB by round                          0            6.9 / 4.4 / 3.6  vs data 7.3 / 5.6 / 1.1
+finish hazard per round reached        0            31.2 / 23.8 / 20.2  vs data 30.7 / 29.8 / 11.5
+sig attempted per 15              118.1    118.2   info
+sig accuracy                       49.8     49.7
+head landed / att per 15           37.1     36.9   90.7 att vs 91.0; acc 40.9% vs 40.6%
+body landed / att per 15           12.0     12.0   15.9 att vs 15.7; acc 75.2% vs 75.9%
+leg landed / att per 15             9.7      9.8   11.4 att vs 11.4; acc 85.3% vs 86.1%
+distance landed / att per 15       45.5     45.4   99.5 att vs 99.9; acc 45.7% vs 45.4%
+clinch landed / att per 15          6.8      6.8   9.4 att vs 9.2; acc 72.0% vs 73.2%
+ground landed / att per 15          6.5      6.6   9.1 att vs 9.1; acc 71.2% vs 72.9%
+KD per 15                         0.382    0.337   KD per 100 standing head 1.195
+P(finish same round | KD)          71.5     76.3   3541 one-sided KD rounds (data: priors kd_fin)
+TD landed per 15                   1.04     1.06   attempts 2.52 vs 2.55
+TD accuracy                        41.1     41.6
+sub attempts per 15               0.228    0.227   conversion 51.5% vs 47.0%
+decision UD / SD / MD              77.5     76.6   SD 21.6 vs 20.8, MD 0.5 vs 2.6, draws 0.4% of decisions (data ~1.7%)
+10-8 per judge-round                1.9      4.7   data 4.7% 2015+, ~2.5% 2024-25
+KO/TKO location                       0            distance 62.2% clinch 15.2% ground 20.5% between rounds 2.0%  (data all 60 / 12 / 28 of strike stoppages; doctor+corner ~2% of KO/TKOs)
+KO/TKO kinds                          0            KO 43.7%, TKO_followup 27.7%, TKO_standing 6.0%, GNP 20.5%, LEG 0.0%, DOC 1.8%, CORNER 0.2%
+submission types                      0            Rear Naked Choke 50%, Arm Triangle 12%, Guillotine Choke 10%, Armbar 8%  (data RNC 44%, guillotine 17%, armbar 10%, arm triangle 10%)
+5 rounds: finish rate              61.8     64.4   +/-6 pts (info)  ok; KO 41.1, SUB 20.7; own 5-rd data 80.9% (n=42); pooled 5-rd 55.6%
+5 rounds: hazard per round            0            19.6 / 19.2 / 17.4 / 18.7 / 12.3  vs target 24.1 / 23.6 / 19.9 / 12.5 / 12.6
+PASS  Heavyweight: base rates within tolerance (finish, KO, SUB, KD/100, landed/15, ctrl/15)
+
+--- Women's Flyweight (125 lb): league-average vs league-average, 8000 3-round fights (data: data/derived/priors_dev.json, n=188) ---
+metric                              sim     data   tolerance
+finish rate                        38.4     38.3   +/-3 pts  ok
+KO/TKO share                       16.0     17.0   +/-3 pts  ok
+SUB share                          22.4     21.3   +/-3 pts  ok
+KD per 100 head landed            0.255    0.224   +/-20%  ok
+sig landed per 15                  61.6     62.0   +/-8%  ok
+control s per 15                  182.4    183.1   +/-15%  ok
+decision share                     61.6     61.7
+KO by round (share of fights)         0            7.0 / 5.8 / 3.2  vs data 4.8 / 9.0 / 3.2
+SUB by round                          0            9.7 / 7.1 / 5.6  vs data 10.6 / 7.4 / 3.2
+finish hazard per round reached        0            16.7 / 15.5 / 12.4  vs data 15.4 / 19.5 / 9.4
+sig attempted per 15              140.3    142.9   info
+sig accuracy                       43.9     43.4
+head landed / att per 15           38.5     38.5   108.4 att vs 110.7; acc 35.6% vs 34.8%
+body landed / att per 15           13.5     13.6   19.8 att vs 19.8; acc 68.3% vs 68.7%
+leg landed / att per 15             9.6      9.8   12.2 att vs 12.4; acc 78.5% vs 79.2%
+distance landed / att per 15       48.7     48.9   122.4 att vs 125.2; acc 39.8% vs 39.1%
+clinch landed / att per 15          7.5      7.3   10.6 att vs 10.1; acc 71.1% vs 72.6%
+ground landed / att per 15          5.3      5.7   7.3 att vs 7.6; acc 73.0% vs 74.7%
+KD per 15                         0.098    0.086   KD per 100 standing head 0.286
+P(finish same round | KD)          40.6     42.9   1195 one-sided KD rounds (data: priors kd_fin)
+TD landed per 15                   1.25     1.26   attempts 3.14 vs 3.16
+TD accuracy                        39.7     40.0
+sub attempts per 15               0.402    0.413   conversion 35.2% vs 30.2%
+decision UD / SD / MD              78.5     79.1   SD 20.9 vs 20.9, MD 0.2 vs 0.0, draws 0.3% of decisions (data ~1.7%)
+10-8 per judge-round                2.4      4.7   data 4.7% 2015+, ~2.5% 2024-25
+KO/TKO location                       0            distance 32.9% clinch 8.0% ground 51.9% between rounds 7.3%  (data all 60 / 12 / 28 of strike stoppages; doctor+corner ~2% of KO/TKOs)
+KO/TKO kinds                          0            KO 20.3%, TKO_followup 13.5%, TKO_standing 7.0%, GNP 51.9%, LEG 0.1%, DOC 5.9%, CORNER 1.4%
+submission types                      0            Rear Naked Choke 47%, Arm Triangle 12%, Guillotine Choke 11%, Armbar 8%  (data RNC 44%, guillotine 17%, armbar 10%, arm triangle 10%)
+5 rounds: finish rate              46.1     48.8   +/-6 pts (info)  ok; KO 18.0, SUB 28.1; own 5-rd data 42.9% (n=14); pooled 5-rd 55.6%
+5 rounds: hazard per round            0            10.5 / 13.4 / 12.5 / 12.5 / 9.3  vs target 16.2 / 15.9 / 13.4 / 8.4 / 8.5
+PASS  Women's Flyweight: base rates within tolerance (finish, KO, SUB, KD/100, landed/15, ctrl/15)
+
+--- Bantamweight (135 lb): league-average vs league-average, 8000 3-round fights (data: data/derived/priors_dev.json, n=315) ---
+metric                              sim     data   tolerance
+finish rate                        50.0     48.7   +/-3 pts  ok
+KO/TKO share                       29.5     30.8   +/-3 pts  ok
+SUB share                          20.4     17.9   +/-3 pts  ok
+KD per 100 head landed            1.116    0.981   +/-20%  ok
+sig landed per 15                  60.3     60.9   +/-8%  ok
+control s per 15                  157.5    156.7   +/-15%  ok
+decision share                     50.0     51.3
+KO by round (share of fights)         0            15.6 / 8.8 / 5.1  vs data 15.6 / 9.4 / 5.8
+SUB by round                          0            10.0 / 5.8 / 4.6  vs data 8.4 / 5.8 / 3.6
+finish hazard per round reached        0            25.7 / 19.6 / 16.3  vs data 24.0 / 20.1 / 15.5
+sig attempted per 15              131.7    134.3   info
+sig accuracy                       45.8     45.3
+head landed / att per 15           37.4     37.2   100.1 att vs 102.0; acc 37.4% vs 36.5%
+body landed / att per 15           12.3     12.6   18.6 att vs 18.8; acc 66.5% vs 67.1%
+leg landed / att per 15            10.6     11.0   13.1 att vs 13.5; acc 80.6% vs 81.5%
+distance landed / att per 15       48.6     49.2   115.1 att vs 118.1; acc 42.2% vs 41.6%
+clinch landed / att per 15          5.0      5.3   7.0 att vs 7.3; acc 70.9% vs 72.4%
+ground landed / att per 15          6.8      6.4   9.6 att vs 8.9; acc 70.8% vs 71.8%
+KD per 15                         0.417    0.365   KD per 100 standing head 1.303
+P(finish same round | KD)          42.8     50.6   3868 one-sided KD rounds (data: priors kd_fin)
+TD landed per 15                   1.50     1.50   attempts 4.31 vs 4.33
+TD accuracy                        34.8     34.6
+sub attempts per 15               0.415    0.413   conversion 35.4% vs 26.8%
+decision UD / SD / MD              78.1     77.1   SD 21.1 vs 20.9, MD 0.5 vs 2.0, draws 0.2% of decisions (data ~1.7%)
+10-8 per judge-round                2.4      4.7   data 4.7% 2015+, ~2.5% 2024-25
+KO/TKO location                       0            distance 61.9% clinch 12.1% ground 22.8% between rounds 3.2%  (data all 60 / 12 / 28 of strike stoppages; doctor+corner ~2% of KO/TKOs)
+KO/TKO kinds                          0            KO 37.7%, TKO_followup 29.1%, TKO_standing 7.2%, GNP 22.8%, LEG 0.1%, DOC 2.6%, CORNER 0.6%
+submission types                      0            Rear Naked Choke 46%, Arm Triangle 13%, Guillotine Choke 10%, Armbar 8%  (data RNC 44%, guillotine 17%, armbar 10%, arm triangle 10%)
+5 rounds: finish rate              56.0     58.0   +/-6 pts (info)  ok; KO 31.7, SUB 24.3; own 5-rd data 52.2% (n=24); pooled 5-rd 55.6%
+5 rounds: hazard per round            0            15.5 / 16.7 / 15.5 / 16.0 / 12.0  vs target 20.6 / 20.2 / 17.0 / 10.7 / 10.8
+PASS  Bantamweight: base rates within tolerance (finish, KO, SUB, KD/100, landed/15, ctrl/15)
+
+--- Middleweight (185 lb): league-average vs league-average, 8000 3-round fights (data: data/derived/priors_dev.json, n=286) ---
+metric                              sim     data   tolerance
+finish rate                        59.9     58.6   +/-3 pts  ok
+KO/TKO share                       37.1     37.5   +/-3 pts  ok
+SUB share                          22.8     21.1   +/-3 pts  ok
+KD per 100 head landed            0.952    0.863   +/-20%  ok
+sig landed per 15                  57.9     57.3   +/-8%  ok
+control s per 15                  163.2    163.3   +/-15%  ok
+decision share                     40.1     41.4
+KO by round (share of fights)         0            21.3 / 9.8 / 6.0  vs data 17.9 / 13.9 / 5.7
+SUB by round                          0            11.6 / 6.7 / 4.4  vs data 8.6 / 7.9 / 4.6
+finish hazard per round reached        0            32.9 / 24.6 / 20.6  vs data 26.4 / 29.6 / 20.0
+sig attempted per 15              122.8    121.7   info
+sig accuracy                       47.1     47.0
+head landed / att per 15           36.9     36.3   94.9 att vs 94.2; acc 38.9% vs 38.5%
+body landed / att per 15           12.1     12.1   17.1 att vs 16.9; acc 70.5% vs 71.5%
+leg landed / att per 15             8.8      8.9   10.8 att vs 10.7; acc 82.1% vs 83.1%
+distance landed / att per 15       45.1     44.3   104.5 att vs 103.7; acc 43.1% vs 42.7%
+clinch landed / att per 15          6.5      6.7   9.2 att vs 9.2; acc 71.2% vs 72.7%
+ground landed / att per 15          6.3      6.2   9.1 att vs 8.8; acc 69.0% vs 70.5%
+KD per 15                         0.351    0.313   KD per 100 standing head 1.097
+P(finish same round | KD)          62.7     60.0   3177 one-sided KD rounds (data: priors kd_fin)
+TD landed per 15                   1.39     1.41   attempts 3.84 vs 3.89
+TD accuracy                        36.3     36.3
+sub attempts per 15               0.447    0.455   conversion 40.9% vs 29.2%
+decision UD / SD / MD              76.8     75.9   SD 22.4 vs 21.6, MD 0.6 vs 2.6, draws 0.2% of decisions (data ~1.7%)
+10-8 per judge-round                2.0      4.7   data 4.7% 2015+, ~2.5% 2024-25
+KO/TKO location                       0            distance 57.7% clinch 14.0% ground 26.3% between rounds 1.9%  (data all 60 / 12 / 28 of strike stoppages; doctor+corner ~2% of KO/TKOs)
+KO/TKO kinds                          0            KO 39.6%, TKO_followup 24.9%, TKO_standing 7.3%, GNP 26.3%, LEG 0.0%, DOC 1.8%, CORNER 0.1%
+submission types                      0            Rear Naked Choke 45%, Arm Triangle 13%, Guillotine Choke 11%, Armbar 7%  (data RNC 44%, guillotine 17%, armbar 10%, arm triangle 10%)
+5 rounds: finish rate              65.1     65.6   +/-6 pts (info)  ok; KO 37.0, SUB 28.1; own 5-rd data 37.5% (n=32); pooled 5-rd 55.6%
+5 rounds: hazard per round            0            20.6 / 19.5 / 20.3 / 20.5 / 13.9  vs target 24.7 / 24.2 / 20.4 / 12.8 / 13.0
+PASS  Middleweight: base rates within tolerance (finish, KO, SUB, KD/100, landed/15, ctrl/15)
+
+--- Women's Strawweight (115 lb): league-average vs league-average, 8000 3-round fights (data: data/derived/priors_dev.json, n=172) ---
+metric                              sim     data   tolerance
+finish rate                        36.7     35.1   +/-3 pts  ok
+KO/TKO share                       15.4     16.4   +/-3 pts  ok
+SUB share                          21.3     18.7   +/-3 pts  ok
+KD per 100 head landed            0.392    0.363   +/-20%  ok
+sig landed per 15                  62.4     61.8   +/-8%  ok
+control s per 15                  179.6    178.6   +/-15%  ok
+decision share                     63.3     64.9
+KO by round (share of fights)         0            7.1 / 5.2 / 3.2  vs data 6.4 / 7.0 / 2.9
+SUB by round                          0            10.0 / 6.5 / 4.9  vs data 10.5 / 7.0 / 1.2
+finish hazard per round reached        0            17.0 / 14.0 / 11.3  vs data 17.0 / 16.9 / 5.9
+sig attempted per 15              137.4    137.5   info
+sig accuracy                       45.4     44.9
+head landed / att per 15           38.3     37.7   104.0 att vs 104.4; acc 36.8% vs 36.1%
+body landed / att per 15           14.4     14.3   20.8 att vs 20.6; acc 69.0% vs 69.5%
+leg landed / att per 15             9.7      9.9   12.6 att vs 12.6; acc 77.3% vs 78.1%
+distance landed / att per 15       46.6     46.1   116.4 att vs 117.1; acc 40.0% vs 39.3%
+clinch landed / att per 15          9.4      9.2   12.4 att vs 12.0; acc 75.4% vs 77.0%
+ground landed / att per 15          6.4      6.5   8.6 att vs 8.5; acc 75.0% vs 77.0%
+KD per 15                         0.150    0.137   KD per 100 standing head 0.451
+P(finish same round | KD)          32.9     44.7   1769 one-sided KD rounds (data: priors kd_fin)
+TD landed per 15                   1.28     1.28   attempts 3.55 vs 3.58
+TD accuracy                        36.1     35.7
+sub attempts per 15               0.426    0.417   conversion 31.5% vs 26.6%
+decision UD / SD / MD              79.0     75.2   SD 20.4 vs 22.9, MD 0.4 vs 1.8, draws 0.2% of decisions (data ~1.7%)
+10-8 per judge-round                2.9      4.7   data 4.7% 2015+, ~2.5% 2024-25
+KO/TKO location                       0            distance 37.8% clinch 13.9% ground 42.0% between rounds 6.3%  (data all 60 / 12 / 28 of strike stoppages; doctor+corner ~2% of KO/TKOs)
+KO/TKO kinds                          0            KO 23.5%, TKO_followup 19.3%, TKO_standing 8.7%, GNP 42.0%, LEG 0.2%, DOC 5.2%, CORNER 1.1%
+submission types                      0            Rear Naked Choke 49%, Arm Triangle 12%, Guillotine Choke 9%, Armbar 9%  (data RNC 44%, guillotine 17%, armbar 10%, arm triangle 10%)
+5 rounds: finish rate              43.3     45.6   +/-6 pts (info)  ok; KO 19.1, SUB 24.3; own 5-rd data 37.5% (n=16); pooled 5-rd 55.6%
+5 rounds: hazard per round            0            10.7 / 11.3 / 11.1 / 12.1 / 8.4  vs target 14.8 / 14.5 / 12.2 / 7.7 / 7.8
+PASS  Women's Strawweight: base rates within tolerance (finish, KO, SUB, KD/100, landed/15, ctrl/15)
+
+=== Volkanovski (A) vs Gaethje (B): Lightweight, 5 rounds, title, 2026-11-06 ===
+win: Volkanovski 60.6%  Gaethje 39.3%  draw 0.1%   (MC se 0.35 pts)
+bins [A KO/TKO, A sub, A dec, draw, B dec, B sub, B KO/TKO]: 14.8 / 4.2 / 41.6 / 0.1 / 19.9 / 2.1 / 17.3
+finishes by round, Volk: 3.9 / 4.1 / 4.5 / 3.9 / 2.6   Gaethje: 5.7 / 4.7 / 3.5 / 3.4 / 2.1
+goes the distance 61.7% (Volk wins 67.4% of decisions); decisions UD 81.2 SD 18.3 MD 0.3 draw 0.2; 10-8 per judge-round 3.34%
+methods: A:UD 35.4%, B:UD 14.6%, B:TKO 7.0%, B:KO 6.4%, A:SD 6.0%, A:TKO 5.4%, A:KO 5.3%, B:SD 5.3%, A:SUB 4.2%, B:DOC 2.2%, B:SUB 2.1%, A:GNP 1.9%, A:DOC 1.8%, B:GNP 1.3%, B:CORNER 0.4%, A:CORNER 0.3%, A:LEG 0.1%, D:DRAW 0.1%, A:MD 0.1%, B:MD 0.1%, B:LEG 0.0%
+average fight 19.7 min; KD per 15 per fighter 0.188; control per 15 77 s
+
+per fighter (sim per 15 min of fight time vs UFC career and decayed rates per 15):
+stat                    Volk sim   career  decayed | Gaethje sim   career  decayed
+sig landed                 92.06    89.69    82.10 |       60.73    94.33    80.57
+sig attempted             159.75   157.62   144.28 |      120.91   163.88   146.93
+sig absorbed               60.73    50.00    49.17 |       92.06   102.50    88.73
+accuracy %                 57.63    56.90    56.90 |       50.23    57.56    54.83
+head landed                62.96    58.87    59.45 |       44.20    62.42    59.91
+body landed                10.14     9.16     6.81 |        8.04    10.32     9.69
+leg landed                 18.96    21.67    15.84 |        8.48    21.60    10.97
+ground landed               4.16    13.66     9.62 |        2.50     3.27     5.19
+knockdowns                  0.16     0.29     0.13 |        0.22     0.67     0.64
+TD landed                   0.79     1.63     1.31 |        0.75     0.30     0.55
+TD accuracy %              28.04    34.34    30.21 |       34.15    26.67    27.86
+control s                  80.87   177.09   126.59 |       72.68    59.15    92.27
+sub attempts                0.12     0.19     0.17 |        0.07     0.00     0.00
+PASS  summarize(Volk vs Gaethje, 20000) under 6 s of CPU on one core  (1458 ms CPU, 1585 ms wall, load average 1.2 on 4 cores)
+PASS  Volk vs Gaethje probabilities sum to 1
+
+=== explain(Volkanovski vs Gaethje) ===
+Alexander Volkanovski vs Justin Gaethje | Lightweight (155 lb), 5 rounds, title, 2026-11-06
+Expected position time (fit): distance 84.2%, clinch 7.1% (Alexander Volkanovski controls 53.2%), Alexander Volkanovski on top 4.6%, Justin Gaethje on top 4.0%  [league: distance 62.0%, clinch 6.1%, ground 31.9%]
+
+== Alexander Volkanovski (Featherweight, age 38.1, 82 decayed UFC minutes) ==
+  Attempts/min: distance 11.73 (league 12.36), clinch 12.17, ground top 5.55 (league 4.02)
+  Accuracy at distance head/body/leg 46.2% / 67.7% / 79.7%; clinch 72.8% / 86.7% / 92.4%; ground 77.6% / 89.5% / 94.1%
+  Distance target mix head/body/leg 78.6% / 6.0% / 15.4%
+  Expected per 15 (base): sig att 165.4, landed 91.7 (dist 78.0, clinch 10.4, ground 3.4); career landed/min 5.47, absorbed/min 3.28
+  KD per landed standing head strike 0.589% = p0 1.426% x power 0.56 x opp chin 0.93 x opp age 1.18 x own age (power) 0.62 x opp KO losses (3) 1.15 x opp size 1.00 x own size (power) 0.97 x knobs 1.00/1.00; damage/head 0.56
+  Takedowns: 3.33 att per 15 standing min, success 25.9% (career 32.2% vs opp allows 31.6%, league 36.2%); control target 76 s/15 (league 171), top skill 0.89 x opp escape 0.89 -> pass edge 0.89
+  When under: mean stand-up 62 s, sweeps 0.037/min
+  Submissions: 0.073 attempts per ground-minute (league 0.087), conversion 28.8% (shrunk own 26.1% vs opp 33.9%, league 30.9%)
+  Cardio: output by round 0.81 0.98 1.22 1.13 1.26 (division curve x his late-round ratio); cardio index 1.16; stamina drain x0.72 of the 3-round base (5-round pacing x0.90, cardio x0.80, knob x1.00)
+
+== Justin Gaethje (Lightweight, age 38.0, 71 decayed UFC minutes) ==
+  Attempts/min: distance 9.17 (league 12.36), clinch 12.33, ground top 3.61 (league 4.02)
+  Accuracy at distance head/body/leg 41.0% / 63.7% / 79.0%; clinch 68.4% / 84.5% / 92.2%; ground 73.8% / 87.6% / 93.8%
+  Distance target mix head/body/leg 84.7% / 6.6% / 8.7%
+  Expected per 15 (base): sig att 131.4, landed 65.1 (dist 53.1, clinch 10.1, ground 1.9); career landed/min 5.37, absorbed/min 5.92
+  KD per landed standing head strike 1.395% = p0 1.426% x power 1.12 x opp chin 1.00 x opp age 1.18 x own age (power) 0.63 x opp KO losses (2) 1.15 x opp size 1.00 x own size (power) 1.00 x knobs 1.00/1.00; damage/head 0.85
+  Takedowns: 2.58 att per 15 standing min, success 31.6% (career 32.6% vs opp allows 37.6%, league 36.2%); control target 66 s/15 (league 171), top skill 1.18 x opp escape 0.63 -> pass edge 0.86
+  When under: mean stand-up 69 s, sweeps 0.025/min
+  Submissions: 0.039 attempts per ground-minute (league 0.087), conversion 28.1% (shrunk own 30.9% vs opp 28.1%, league 30.9%)
+  Cardio: output by round 0.99 1.07 0.91 1.05 1.11 (division curve x his late-round ratio); cardio index 0.86; stamina drain x1.14 of the 3-round base (5-round pacing x0.90, cardio x1.26, knob x1.00)
+
+69 passed, 0 failed
