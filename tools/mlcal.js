@@ -92,13 +92,50 @@ function loadSpec(specPath, args) {
   if (args && args.params) spec.params = args.params;
   spec.engine = spec.engine || "src/engine3.js";
   spec.params = spec.params || "src/params3.js";
-  spec.inject = spec.inject || "opts";       // "opts": pass the full tree as opts.params; "mutate": write it into the params object
+  spec.inject = spec.inject || "opts";       // "opts": pass the full tree as opts.params; "mutate": write it into the params object;
+                                             // "overrides" (engine v5+): pass only the leaves that differ from the engine's effective
+                                             // default params (see effectiveBase), so trial 0 runs the engine exactly as shipped
   spec.backtest = spec.backtest || "data/derived/backtest_dev.json";
   spec.priors = spec.priors || "data/derived/mlcal_priors_asof.json";
   spec.objective = spec.objective || {};
   return spec;
 }
 function freshRequire(p) { const r = absPath(p); delete require.cache[require.resolve(r)]; return require(r); }
+/* Effective default parameters of an engine with components flags (engine v5): the values a matchup actually runs on with no
+   override, BEFORE any post-override factor. With "inject": "opts" the full params tree is passed as opts.params, and an
+   explicit override wins over everything the engine resolves from its flags, so the "current" set would silently undo, e.g.,
+   components.v401.mlLevels off (its fields put back to v4.0.0's values) and components.calB (Calibrate B's level set). Here the
+   flags are resolved by the engine itself (FightEngine.resolveParams) with v401.koTargets' koComp factors held out (they multiply
+   AFTER the overrides, so they must not be baked into the base); the components block is restored as configured. Engines
+   without resolveParams: the raw params. */
+function effectiveBase(E, raw) {
+  if (!E || typeof E.resolveParams !== "function") return structuredClone(raw);
+  const c = raw.components || {};
+  let over = {};
+  if (c.v401) {
+    const v = c.v401 === true ? { emJudge: true, deductions: true, mlLevels: true, tdCap: true, koTargets: true } : Object.assign({}, c.v401);
+    over = { components: Object.assign({}, structuredClone(c), { v401: Object.assign({}, v, { koTargets: false }) }) };
+  }
+  const p = JSON.parse(JSON.stringify(E.resolveParams(over, raw)));
+  p.components = structuredClone(raw.components);
+  return p;
+}
+/* flat {path: value} overrides -> nested object for opts.params; an override inside an array carries the whole array */
+function nestOverrides(flat, tree) {
+  const out = {};
+  for (const k of Object.keys(flat)) {
+    const ss = k.split(".");
+    let o = out, t = tree, done = false;
+    for (let i = 0; i < ss.length - 1 && !done; i++) {
+      const nt = t[seg(t, ss[i])];
+      if (Array.isArray(nt)) { o[ss[i]] = structuredClone(nt); done = true; break; }
+      if (o[ss[i]] == null) o[ss[i]] = {};
+      o = o[ss[i]]; t = nt;
+    }
+    if (!done) o[ss[ss.length - 1]] = flat[k];
+  }
+  return out;
+}
 
 /* Resolve spec.tune into dimensions. Entry forms:
      {"path": "kdScale", "lo": 0.6, "hi": 2.2, "log": true}      one value; lo/hi absolute
@@ -516,6 +553,9 @@ class Session {
       process.once("exit", cleanup);
     } else { spec.enginePath = absPath(spec.engine); spec.paramsPath = absPath(spec.params); }
     this.pristine = freshRequire(spec.paramsPath);
+    // "overrides" injection: the baseline is the engine's effective default set (flags resolved), and only the leaves a candidate
+    // changes are passed to the engine; trial 0 (no change) is then the engine exactly as shipped
+    if (spec.inject === "overrides") this.pristine = effectiveBase(freshRequire(spec.enginePath), this.pristine);
     this.base = structuredClone(this.pristine);
     this.fixed = resolveFixed(spec.fixed);
     for (const k of Object.keys(this.fixed.params)) {
@@ -556,7 +596,8 @@ class Session {
     const key = String(o.key || "k" + Date.now());
     const { tree, hook, overrides } = this.tree(o.x || {});
     const t0 = Date.now();
-    const r = await this.pool.run(key, tree, hook, +o.sims || 30, +o.seedOff || 0);
+    const payload = this.spec.inject === "overrides" ? nestOverrides(overrides, tree) : tree;
+    const r = await this.pool.run(key, payload, hook, +o.sims || 30, +o.seedOff || 0);
     let acc = o.accumulate === false ? null : this.accs.get(key);
     if (!acc) { acc = newAcc(this.fights.length); if (o.accumulate !== false) this.accs.set(key, acc); }
     accumulate(acc, this.tasks, r.rec);
