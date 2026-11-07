@@ -1,0 +1,5 @@
+fixtures: 64 fights; max |feature diff| 1.78e-15, max |eta diff| 1.78e-15, max swap asymmetry 0.00e+0
+adapter: max |log(engine expectation after / ML target)| over 25 fights:
+  d_att 0.0000, c_att 0.0000, g_att 0.0000, td_att 0.0156, ctrl 0.0775, sub_att 0.0000, acc_h 0.0000, acc_b 0.0000, acc_l 0.0000, acc_d 0.0000, acc_c 0.0000, acc_g 0.0000, kd_h 0.0000, td_acc 0.0097, h_share 0.0000, relevel 0.0000
+swap check: pA 0.446 vs swapped pB 0.452
+OK (47 checks)

@@ -1,0 +1,10 @@
+test_drift_monitor rc=0
+director300_src rc=0
+test_v9 rc=0
+director_noml_src rc=0
+test_mlrates rc=0
+test_statdist rc=0
+test_embed rc=0
+test_propspool rc=0
+director_fuzz_src rc=0
+test_blend121 rc=0

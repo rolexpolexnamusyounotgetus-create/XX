@@ -1,0 +1,8 @@
+PASS flag-off identity vs versions/v4 (tables, 300 sims, traced) on 24 backtest matchups
+PASS flag-off identity vs versions/v4 on the live Volkanovski vs Gaethje matchup
+PASS live matchup with default flags and no targets: retarget not applied, embed source null  ({"applied":false,"reason":"no targets"})
+PASS spread flags on with sd 0 = flag-off fights
+PASS retarget / embed on without targets or etas = flag-off fights
+PASS spread flags without the retarget: no spread draws (fights identical to flag-off)
+PASS spread on a retargeted matchup: draws present, the main stream's form draws identical
+PASS spread multipliers are mean-1 (empirical means within 4%)  ({"td":0.9956,"ctrl":1.0027})

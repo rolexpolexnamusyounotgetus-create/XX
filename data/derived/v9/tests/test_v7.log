@@ -1,0 +1,2 @@
+PASS  simulator identity: v7 summarize / simulate(trace) = frozen v4 engine, same inputs and seeds  (36/36)
+PASS  flag-off identity (a): blend_anchor false -> predict = v4 summarize package  (8/8)

@@ -1,0 +1,88 @@
+Fight engine 9.0.0, params 9.0.0-selfcal-pre2024; 1229 fighters; N = 8000
+
+=== API and determinism ===
+PASS  API surface  (VERSION 9.0.0)
+PASS  no learned model loaded by default: matchup = base tables
+PASS  engine source has no Math.random
+PASS  engine runs with Math.random disabled
+PASS  same seed, same fight
+PASS  same seed, same summary
+PASS  trace on/off gives the same fight (400 seeds)
+PASS  trace parity holds over a shared rng stream
+PASS  worker-style concatenation (self.FightParams + self.MLRates + self.FightEngine) reproduces Node results
+PASS  worker-style loadMLRates reproduces Node's learned-rate matchup
+
+=== Engine v4: learned stat-line rates (loadMLRates / opts.ml) ===
+PASS  matchup without a model equals matchupBase
+PASS  with a model loaded matchup applies the learned rates  (distance attempt ratio Volk 0.86, Gaethje 0.93)
+PASS  opts.ml === false keeps the base tables
+PASS  params.mlWeight 0 keeps the base tables
+PASS  opts.ml = { pred } reproduces the loaded model's tables  (max rel diff dRate 0.0e+0)
+PASS  ML: same seed, same fight
+PASS  ML: matchup is deterministic (same tables twice)
+PASS  ML: trace on/off gives the same fight (150 seeds)
+PASS  ML: predict(A, B) and predict(B, A) swap exactly
+PASS  ML: swapping corners mirrors the learned tables  (max rel diff 2.2e-16)
+PASS  ML: swapping corners swaps the probabilities  (Volk 69.3% as A vs 67.2% as B; base tables 60.5%)
+PASS  ML: a fighter vs his clone wins about 50%  (49.8% of non-draws)
+PASS  ML: Volk chin knob 1.6 raises Gaethje's KO/TKO share  (12.7% -> 20.1%)
+PASS  ML: league-average pair keeps the league level (finish rate within 4 pts, sig landed within 8%)  (finish 53.6% -> 51.4%, sig landed 40.6 -> 41.3)
+
+=== Engine v4: train-only priors (hidden-data protocol) ===
+PASS  data/derived/priors_dev.json exists and stops before 2024-01-01
+PASS  train-only priors hold fewer fights than the production priors  (Lightweight 406 vs 608)
+PASS  params are labelled as self-calibrated on the train-only priors  (9.0.0-selfcal-pre2024)
+
+=== Engine v4: judges (EM weights, shared + fight-level noise, 10-8 rule) ===
+PASS  judge weights are the EM fit
+PASS  an even round is a coin flip  (P(A) 50.2%)
+PASS  judging is corner-symmetric (mirrored differentials mirror the round)  (86.5% vs 86.6%)
+PASS  more output wins more rounds  (P(A) 86.5% for +6 head, +2 body, +1 leg, +1 TD, +30 s control)
+PASS  10-8s come with lopsided rounds, rarely with even ones  (lopsided 62.4%, even 0.00%)
+PASS  a lone knockdown edge usually wins the round  (P(KD scorer) 91.2%)
+PASS  non-unanimous share of even-looking rounds near the data (MMA Decisions |EM| < 0.5: 43%)  (42.3%)
+PASS  decision split and 10-8 share in a sane band  (UD 80.5%, SD 18.9%, 10-8 4.32% per judge-round)
+
+=== Trace format ===
+PASS  event kinds are from the spec table (+ esc)  (miss hit clinch break tdx td up hurt)
+PASS  events carry t, k, w, s, snapshots; strikes carry tg and loc; subs carry name; fin carries how
+PASS  event times are ordered within each round
+PASS  all spec kinds occur over 300 traced fights  (miss hit tdx td up clinch break esc kd recover hurt fin pass subx sub sweep reset)
+  sample event: {"t":38.73,"k":"hit","w":"B","s":0,"dA":0,"dB":0,"gA":0.8,"gB":0,"sA":0.976,"sB":0.95,"tg":2,"loc":"dist"}
+  result: A SD | Split Decision (48-47, 47-48, 48-47) | round 5 at 300.0 s | cards [[48,47],[47,48],[48,47]]
+
+=== Symmetry and clones ===
+PASS  swapping corners swaps the probabilities  (Volk 60.0% as A vs 60.0% as B; 4 se = 3.1)
+PASS  swapping corners mirrors the 7 outcome bins  (max bin diff 0.8 pts)
+PASS  alexander-volkanovski vs his clone wins about 50%  (49.9% of non-draws, 4 se = 2.2)
+PASS  justin-gaethje vs his clone wins about 50%  (49.4% of non-draws, 4 se = 2.2)
+PASS  league-average vs league-average wins about 50%  (49.9%)
+
+=== Knob directions (Volk = A, Gaethje = B) ===
+PASS  chin knob up on A -> more KO losses for A  (19.2 -> 27.0)
+PASS  chin knob down on B -> fewer KO losses for B  (15.4 -> 10.0)
+PASS  power knob up on A -> more KO wins for A  (15.4 -> 23.9)
+PASS  output knob up on A -> more attempts by A  (198.1 -> 246.9)
+PASS  accuracy knob up on A -> higher accuracy for A  (57.7 -> 66.0)
+PASS  cardio knob up on A (tires faster) -> lower win share for A  (60.0 -> 50.5)
+PASS  takedown-attempt knob up on A -> more TD attempts and control for A  (TD att 3.50 -> 9.60, ctrl 101 -> 203 s)
+PASS  takedown-defense knob up on B -> lower TD success for A  (28.0 -> 16.7)
+PASS  leg-kick share knob on B -> more leg kicks by B  (8.8% -> 36.3% of attempts)
+PASS  submission knob up on A -> more submission wins for A  (3.9 -> 11.2)
+PASS  judges.power up -> decisions shift toward the harder hitter  (Gaethje's share of decisions 28.9 -> 53.9 (damage/head 0.56 vs 0.85))
+
+=== Per-pair position calibration (simulated vs data-implied expectations) ===
+pair                                        ctrl/15 sim vs target (A, B)      clinch landed/15 sim vs exp   ground landed/15 sim vs exp
+Merab Dvalishvili vs Sean O'Malley          230/227, 36/27                    9.9 vs 11.1                   10.4 vs 9.2
+Islam Makhachev vs Belal Muhammad           201/204, 89/84                    7.1 vs 8.1                    4.4 vs 3.8
+Arman Tsarukyan vs Charles Oliveira         292/324, 248/261                  8.4 vs 9.3                    20.2 vs 23.3
+Khamzat Chimaev vs Dricus Du Plessis        357/375, 67/64                    4.0 vs 4.7                    10.5 vs 11.5
+Tom Aspinall vs Ciryl Gane                  116/130, 106/111                  8.2 vs 10.0                   9.9 vs 11.2
+Zhang Weili vs Tatiana Suarez               219/240, 353/366                  10.7 vs 11.3                  19.3 vs 22.2
+Valentina Shevchenko vs Alexa Grasso        305/316, 85/87                    9.2 vs 10.5                   4.9 vs 4.9
+Alexander Volkanovski vs Justin Gaethje     80/76, 72/66                      17.0 vs 20.4                  7.0 vs 5.3
+PASS  simulated control per 15 within 25% of each pair's data-implied target  (worst 7.7%)
+PASS  simulated clinch landed per 15 within 25% of each pair's expectation  (worst 18.1%)
+PASS  simulated ground landed per 15 within 40% of each pair's base expectation (KD follow-ups add on top)  (worst 32.1%)
+
+=== manualProfile ===
