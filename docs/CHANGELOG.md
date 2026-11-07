@@ -5,18 +5,118 @@ Each engine version records its held-out numbers here (docs/ROADMAP.md). From v4
 2026-01-01 is in the sealed vault (docs/BACKLOG.md "Hidden-data protocol"). Older entries that say "test" meant 2024-01-01 to the
 snapshot; that window is retired.
 
-## v6 (2026-11-07): built, train gate passed, pre-registered; the single validation look is pending
+## v6 (2026-11-07): ML v2 heads in predict(), validated once and REJECTED; v4 (4.0.0) stays
 
-**Status: frozen in versions/v6/ (engine 6.0.0, params 6.0.0-selfcal-pre2024) and pre-registered** in
-data/derived/version_history.json (entry v6, `prereg`, written 06:56 UTC before any 2024-25 run of v6). src/ holds v6 (the
-look and the decision come next; on a rejection src/ goes back to versions/v4). The page (volk-gaethje-simulator.html) is NOT
-rebuilt: it still runs v4, and tests/test_page_parity.js fails for any v5+ src until cycle 5 (v10) bundles the embed / blend /
-durability / pre-UFC modules and data (known since v5.0.1).
+**Status: rejected by the pre-registered decision rule (branch 1).** src/ holds v4 again (hashes = the v4 entry); the work is
+frozen in versions/v6-rejected/ (engine 6.0.0, params 6.0.0-selfcal-pre2024; `versions/v6` symlink). Pre-registration:
+data/derived/version_history.json (entry v6, `prereg`, written 06:56 UTC before any 2024-25 run of v6); the look ran 07:02-07:06
+UTC; the decision 07:08 UTC. The page (volk-gaethje-simulator.html) was never rebuilt for v6 and still runs v4 (page parity
+passes again on the restored src). Numbers: version_history.json v6 (`validation`, `validation.package`, `blend`,
+`decide_vs_v4`, `methodround_paired_vs_v4`, `decision`); data/derived/v6/look_val*.json; data/derived/evalv/v6_val.json,
+v6_blend.json, v6_vs_v4_val_decide.json, v6_vs_v4_val_methodround_paired.json.
+
+### Validation 2024-2025 (the single v6 look; confirmation look)
+
+Pre-checks before anything was scored: the 26 pre-registered file hashes matched; the test suite on the frozen files passed
+38 of 40 (test_engine3 80 of 81, its one failure being the Women's Flyweight self-calibration check the builder reported,
+identical deterministic output, not the "API surface" the pre-registration voids on; test_page_parity fails by design for v5+
+src); a row was appended to data/derived/val_look_ledger.json first. After the harness run and before scoring,
+tools/v6_look_wiring.py (new, outcome-blind) checked the pre-registered abort criteria: 0 harness errors, every v6 row
+`ml2stack` / fit `Y2024` / variant `S2`, frozen hashes in the harness metadata = the pre-registration. No abort.
+
+**Primary (pre-registered; branch 1).** Open-regime winner log loss, v6 package minus the v5.0.1 package, on the 842 decisive
+2024-25 fights with an opener (84 cards), 300 sims per corner order, common random numbers, each package on its own frozen
+input pipeline, 2,000 event-cluster resamples:
+
+| | v6 package | v5.0.1 package | v6 - v5.0.1 [95% CI] |
+|---|---|---|---|
+| **open: winner log loss** | **0.58193** | **0.58438** | **-0.00245 [-0.00588, +0.00099]** |
+
+The CI upper bound is above 0, so branch 1 fails. Expected -0.004 with an MDE of about 0.0037; the observed CI half-width
+(about 0.0034) is wider than the plan's +-0.0026, so the realised MDE was about 0.0048.
+
+**Secondaries (reported, never decisive).**
+
+| regime | winner log loss v6 / v5.0.1, diff [CI] | Brier diff | 7-bin diff | method diff | joint diff | slope v6 / v5.0.1 |
+|---|---|---|---|---|---|---|
+| open (842 / 846) | 0.58193 / 0.58438, -0.00245 [-0.00588, +0.00099] | -0.00107 [-0.00257, +0.00044] | -0.0064 [-0.0146, +0.0023] | -0.0009 [-0.0061, +0.0048] | -0.0047 [-0.0133, +0.0043] | 1.28 / 1.29 |
+| no line (853 / 857) | 0.58943 / 0.59258, -0.00315 [-0.00709, +0.00069] | -0.00149 [-0.00320, +0.00020] | -0.0073 [-0.0154, +0.0012] | -0.0008 [-0.0061, +0.0046] | -0.0056 [-0.0140, +0.0031] | 1.32 / 1.28 |
+| close (844 / 848) | 0.57598 / 0.57824, -0.00226 [-0.00463, +0.00014] | -0.00095 [-0.00192, +0.00008] | -0.0064 [-0.0147, +0.0024] | +0.0006 [-0.0053, +0.0065] | -0.0048 [-0.0137, +0.0045] | 1.16 / 1.14 |
+
+Soft cross-entropy against the close (screen only): +0.00132 [+0.00115, +0.00151] (v6 sits further from the closing line).
+By year (open winner): 2024 0.5862 vs 0.5874, 2025 0.5776 vs 0.5813. Against methodround model S, who x how x when: open
+-0.0484 [-0.0677, -0.0288] (v5.0.1 package -0.0437), no line -0.0432 (-0.0376), close -0.0544 (-0.0496); both packages beat S
+in every regime.
+
+Engine level (tools/evalv.js --version v6 --split val --compare v4; 865 fights, 853 decisive, ML 100%, 0 failures):
+
+| validation 2024-25 | v4 | **v6** | v6 - v4 [95% CI] |
+|---|---|---|---|
+| Winner log loss | 0.6324 | **0.6259** [0.6104, 0.6406] | -0.0065 [-0.0148, +0.0016] |
+| Brier / accuracy | 0.2206 / 65.6% | 0.2176 / 65.1% | -0.0030 [-0.0069, +0.0009] / -0.6 pts n.s. |
+| ECE / calibration slope | 0.063 / 1.72 | 0.051 / 1.74 | |
+| 7-bin / method | 1.5712 / 0.9399 | 1.5575 / 0.9404 | -0.0138 [-0.0365, +0.0056] / +0.0005 [-0.0099, +0.0115] |
+| who x how x when (methodround) | 2.0707 | 2.0555 | -0.0152 [-0.0406, +0.0078] (S 2.0418) |
+| Stat-line deviance, Holm (evalv_decide vs v4's reproduction) | | | sig landed -0.69 [-1.13, -0.26]*, attempts -1.03 [-1.94, -0.17], TD -0.043 [-0.065, -0.021]*, control -3.85 s [-6.61, -1.21]*, KD -0.002 n.s. (* Holm) |
+| Base rates sim vs actual | | finish 49.8 vs 46.0, KO 31.5 vs 29.1, SUB 18.3 vs 16.9, KD / 100 head 0.834 vs 0.684 (v4 0.746), SD 21.0 vs 18.1, 10-8 4.46 vs 2.46 | |
+
+Paired base-rate test (tools/evalv_decide.js): KD per 100 head fails on the full window (D +0.083 [+0.066, +0.101], above the
+0.082 tolerance), as in v5 and v5.0.1. With the glove-trial window excluded (the 7.1 item 9 amendment), KD passes and the SD+MD
+share of decisions fails (22.2% vs 16.1% actual, v4 20.6%; D CI [+0.011, +0.019]). Blend test: engine weight 0.124 with the
+close (blend -0.0005 [-0.0015, +0.0007]) and 0.170 without a line (-0.0016 [-0.0032, +0.0001]), both n.s.; the weights are
+learned on in-sample train rows (biased upward).
+
+### Decision: v6 is rejected (v4 stays)
+- **Pre-registered rule (branch 1 on the primary): fails.** -0.00245 [-0.00588, +0.00099]; the CI includes 0. The
+  pre-registration allows no branch-2 rescue (7.1 item 4) and the hygiene branch does not apply.
+- **Under any other reading it also fails.** The general rule's branch 2 on the package needs a 7-bin, method or stat-line gain
+  with a CI excluding 0 (none). At engine level against v4 the winner is not worse and three stat-line deviances are better
+  after Holm, but the base-rate condition fails in both windows (KD per 100 head on the full window; SD+MD share with the
+  glove window excluded).
+- **Comparator.** The task brief says "against the latest kept version"; that is v4, which has no predict(). As
+  pre-registered (plan sections 3 and 4.1), the primary compares packages (v6 against v5.0.1), and v4 is the comparator for
+  the engine-level secondaries. Both comparisons give the same answer.
+
+### Read this honestly
+- Every v6-minus-v5.0.1 point estimate in all three regimes favours v6 (winner -0.0023 to -0.0032, 7-bin -0.006 to -0.007),
+  and no CI excludes 0. The size matches the plan's expectation (-0.004 open, -0.005 no line, -0.002 close) and falls short
+  of the train gate (-0.0061 open). The gate's optimism was stated in advance: ML v2's blocks and settings were chosen by CV on
+  years that include 2021-23. This was a confirmation look, so the result is mostly a wiring check, and the wiring held
+  (routing, fits and S2 cells as registered; cells identical across line kinds).
+- The train-gate pass depended on how the comparator was defined, and that definition was fixed after a failing sensitivity
+  run (disclosed in the prereg). The look used the pre-registered definition. With v6 rejected, this no longer changes
+  anything in src/.
+- The engine-level simulator (the v5.0.1 simulator with the fold-honest inputs and refit levels) repeats the v5 lineage's
+  pattern on 2024-25: winner a little better (n.s.), stat lines clearly better, KD level too high in 2024.
+- Under V6_V10_PLAN 6.1, a component that passed its train gate but sat in a failed version may be re-bundled into the next
+  version once. Cycle 1's parts (ML v2 head stacks, routing, S2 cells, the JS tree evaluator, the predict harness) are now in
+  that position. The v5-lineage simulator has already used its re-bundle (v6). Whether to re-bundle is the v7 builder's call;
+  nothing here is a selection input.
+
+### Restore and tests (on the restored src/)
+src/engine3.js, src/params3.js, src/ml/mlrates.js restored from versions/v4/ (sha256 6c661f68..., e16a6481..., b563032d... = the
+v4 entry). tests/test_engine3.js restored to its last pre-v6 version (commit 8b7eefd, when src held v4). versions/v6 renamed to
+versions/v6-rejected/ (frozen files unchanged, `versions/v6` symlink), plus:
+- tests/: the sixteen v5- and v6-engine tests that read ROOT/src (test_blend_anchor, durability, durlevel, dynamics, officials,
+  realism_sens, styles_sos, v401, v501, v501_guards, v5_calB, v5_step2-5, v6) and v6's test_engine3.js;
+- logs/restore: the tests on the restored v4.
+
+src/ml/blend.js 1.2.0 (its defaults reproduce 1.1.1), the additive termValues hook in src/ml/ml2.js and src/ml/ml2trees.js stay
+in src/ml: the v4 engine does not load them, and v5's blend.js stayed the same way after v5's rejection. The v6 data files
+(v6_stacks.json, mr_s2.json, ml2_trees.json, mlrates_oof_fh.json, embed_blend_fh.json, data/derived/v6/) stay in
+data/derived.
+
+Tests on the restored src: 24 of 24 pass: test_engine3 (8,000 sims) 69 of 69, director 300 / NO_ML 100 / FUZZ 600,
+test_page_parity 11 of 11, test_mlrates, test_ml2trees, test_ml2, test_blindtest_stack, test_moe, test_mlpage, test_statdist,
+test_debut, test_calib, test_propspool, test_finishing, test_eradrift, test_embed, test_mlcal, test_v5_calA,
+test_forward_models, test_forward_v42, test_audio, test_forward_score42.
+
+### As built and pre-registered (before the look)
 
 Base (docs/V6_V10_PLAN.md 4.1, v5 rejected): the latest kept engine is v4, which has no predict(); v6 = the v5.0.1
 simulator re-bundled once (6.1; docs/ROADMAP.md, written before vault audit 1) + blend_anchor + cycle 1.
 
-### What changed
+#### What changed
 - **Review gate 1 (docs/BACKLOG.md "v6 GATES"), before the merge.** The learned-rate stack weights for year y are fit on the
   2017..y-1 out-of-fold rows (tools/v6_foldhonest.py; folds 2017-2018 added; the pooled weights reproduce mlrates_oof.json
   exactly) -> data/derived/mlrates_oof_fh.json (2024-25 rows unchanged); the embedding-blend recipe for year y on 2019..y-1
@@ -44,7 +144,7 @@ simulator re-bundled once (6.1; docs/ROADMAP.md, written before vault audit 1) +
 - **Predict harness** tools/predict_harness.js (+ tools/predict_score.py gate / look; tools/predictrec.js v6 mode;
   blindtest.py export now allows a fit with no forward year: no temperature, recorded).
 
-### Train gate (binding; forward-chained 2021-23, 1,222 decisive fights, 128 cards; v6 package minus v5.0.1 package)
+#### Train gate (binding; forward-chained 2021-23, 1,222 decisive fights, 128 cards; v6 package minus v5.0.1 package)
 
 | regime | winner log loss | 7-bin | method | who x how x when |
 |---|---|---|---|---|
@@ -61,13 +161,13 @@ fixed after that run. The winner gate is optimistic (ML v2's choices used CV yea
 Engine-level train (evalv v6 vs v4, 300 sims): winner -0.0089 [-0.0136, -0.0038], 7-bin -0.0380 [-0.0561, -0.0208], method
 -0.0089 [-0.0174, -0.0001]; base rates finish 48.4 vs 49.2, KO 31.8 vs 31.7, SUB 16.6 vs 17.5, KD / 100 head 0.777 vs 0.782.
 
-### Pre-registered look (one look; confirmation look)
+#### Pre-registered look (one look; confirmation look)
 Primary: open-regime winner log loss of the v6 package vs the v5.0.1 package on 2024-25 fights with an opener, branch 1 (keep
 iff the paired CI upper < 0); expected -0.004, MDE about 0.0037. Secondaries reported only (no line, close, 7-bin, method,
 calibration, engine-level stat lines and base rates vs v4 with the glove-window table, blend test). Every ingredient was
 already scored on 2024-25, so an improvement is claimed only after vault audit 2 and the forward ledger.
 
-### Tests
+#### Tests (on the frozen v6 files, at build time)
 test_v6 (16), test_ml2trees (45), test_engine3 (8,000 sims: 80 of 81; Women's Flyweight league-average KO share 14.0% vs
 17.0% data at its +-3 pt edge; at 20,000 sims that division passes and Heavyweight misses by 0.1 pt: tolerance-edge noise
 after the -3% stko / gnp re-level), director 300 / NO_ML / FUZZ 600, test_mlrates, test_ml2, test_blindtest_stack, test_moe,

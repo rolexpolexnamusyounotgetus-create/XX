@@ -64,7 +64,16 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
-- ENGINE v6 BUILT AND PRE-REGISTERED (Nov 7, 06:56 UTC; docs/CHANGELOG.md v6; version_history.json v6 `prereg`; versions/v6/):
+- ENGINE v6 VALIDATED ONCE AND REJECTED (Nov 7, look 07:02-07:06 UTC, decision 07:08 UTC; docs/CHANGELOG.md v6;
+  version_history.json v6 `validation.package` / `decision`; versions/v6-rejected/). Pre-registered primary, open-regime
+  winner log loss vs the v5.0.1 package (842 decisive 2024-25 fights with an opener): 0.58193 vs 0.58438, -0.00245
+  [-0.00588, +0.00099]: branch 1 fails (no branch-2 rescue registered). Secondaries n.s. and all leaning v6: no line -0.0032
+  [-0.0071, +0.0007], close -0.0023 [-0.0046, +0.0001], 7-bin -0.006 to -0.007. Engine level vs v4: winner -0.0065
+  [-0.0148, +0.0016]; sig landed / TD / control deviance better after Holm; KD per 100 head 0.834 vs 0.684 fails the paired
+  base-rate test (SD+MD share fails it with the glove window excluded). v4 RESTORED in src/ (hashes = the v4 entry); the
+  latest kept version stays v4. Under V6_V10_PLAN 6.1 the cycle-1 parts may be re-bundled into v7 once; the v5-lineage
+  simulator has used its re-bundle. Build record (as pre-registered):
+- (v6 as built) ENGINE v6 BUILT AND PRE-REGISTERED (Nov 7, 06:56 UTC; docs/CHANGELOG.md v6; version_history.json v6 `prereg`; versions/v6/):
   the v5.0.1 simulator re-bundled (V6_V10_PLAN 6.1) after review gate 1 (fold-honest learned-rate stack weights and embedding
   recipe; Calibrate A's embed / preufc verdicts unchanged; joint level pass rerun, train only) + cycle 1: ML v2 blend-head
   stacks by explicit line regime inside FightEngine.predict (open-trained for any non-closing line), S2 method / round cells
@@ -72,7 +81,7 @@ Findings from verified research that the next engine versions must use. Each lin
   debut path and stat-line bands (live only). Train gate (forward-chained 2021-23) PASSED vs the v5.0.1 package on its own
   input pipeline: open winner -0.0061 [-0.0108, -0.0013], no line -0.0061 [-0.0119, -0.0003], close -0.0033 [-0.0065,
   -0.0000], 7-bin and method better in every regime; DISCLOSED: with shared (v6) inputs two winner checks fail marginally.
-  Look pending: primary open-regime winner log loss vs the v5.0.1 package, branch 1; confirmation look. The page stays v4.
+  Look (done, above): primary open-regime winner log loss vs the v5.0.1 package, branch 1; confirmation look. The page stays v4.
 - eradrift (lab 5, VERIFIED ~01:50 UTC Nov 7, research/model_eradrift.md): NOT adopted into production method/round
   (level-adjusting S2 + ML v2 winner fails the forward-chained 2021-23 gate; M2's 2024-25 -0.0055 7-bin is descriptive).
   OFFER to v9 engine calibration (train-only test): stat-level league trackers (sig landed/attempted, TD attempts,
@@ -221,7 +230,13 @@ Findings from verified research that the next engine versions must use. Each lin
 
 ## Prediction status after the ML-core round (verified, Nov 6 ~11:00 UTC)
 
-**Current (Nov 6, 11:35 pm ET; v5.0.1 measured):**
+**Current (Nov 7, 2:08 am ET; v6 measured):**
+- **The current engine is still v4 (4.0.0)** in src/ and versions/v4/. v6 (the v5.0.1 simulator re-bundled + cycle 1: ML v2
+  head stacks by line regime in FightEngine.predict, S2 cells, routing) was validated once (pre-registered, a confirmation look)
+  and rejected by branch 1: open-regime winner log loss vs the v5.0.1 package -0.00245 [-0.00588, +0.00099] on 842 decisive
+  fights; engine level vs v4 -0.0065 [-0.0148, +0.0016]. See docs/CHANGELOG.md v6 and versions/v6-rejected/.
+
+**Earlier (Nov 6, 11:35 pm ET; v5.0.1 measured):**
 - **The current engine is still v4 (4.0.0)** in src/ and versions/v4/. v5.0.1 (5.0.0 + the v5 review's fixes) was validated once,
   pre-registered as the second look at 2024-25 for the v5 lineage, and rejected; see docs/CHANGELOG.md v5.0.1 and
   versions/v5.0.1-rejected/.

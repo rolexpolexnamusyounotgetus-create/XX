@@ -30,7 +30,7 @@ the paired base-rate test and Holm adjustment, per-minute stat-line deviance, pe
 ledger (data/derived/val_look_ledger.json), and the vault cleanup of the durability and styles research.
 
 What remains, in the order of docs/V6_V10_PLAN.md section 3 (re-ranked after v5.0.1):
-1. **v6 (cycle 1): the prediction package as the kept object.** Rebuild on versions/v5.0.1-rejected/; first fit the "out-of-fold"
+1. **v6 (cycle 1): the prediction package as the kept object.** (Done Nov 7: built, validated once, REJECTED by branch 1, open winner -0.00245 [-0.00588, +0.00099] vs the v5.0.1 package; v4 stays; docs/CHANGELOG.md v6.) Rebuild on versions/v5.0.1-rejected/; first fit the "out-of-fold"
    pieces fold-honestly (mlrates stack weights, embed calibration) and rerun Calibrate A / calB on them; ML v2 heads in predict(),
    line routing; one pre-registered look. KD level stays the v5 one unless train CV finds better (it did not in v5.0.1).
 2. **v7 (cycle 2): market props for how and when.**
