@@ -46,7 +46,8 @@ corner orders (300 sims per order), and calibration slopes are mirrored with no 
    SUB 17.2%, decision 44.4%), KD per 100 head 0.972; v4 48.3% / 31.0% / 0.783, v5 51.5% / 34.3% / 0.969, S 53.6%
    finish. Standard gloves all year (the trial was Jun 1 - Nov 15, 2024), so the glove-window amendment does not touch
    the vault. The 2026 KO level was visible in aggregate before the seal and is not blind.
-8. **Exposures.** The six known pre-seal items (6.5.3) are confirmed, and seven more are listed in section 6. Two of
+8. **Exposures.** The six known pre-seal items (6.5.3) are carried over (item 1 re-checked against this audit's
+   numbers), and seven more are listed in section 6. Two of
    them matter for these numbers: v4's EM judging weights were fit on cards through 2026-10 (the vault's decisions), and
    methodround.json already held S / SM cells for every vault fight (its committed note printed the S row this audit
    reproduces: method 0.9629, joint 2.1598).
@@ -59,12 +60,12 @@ corner orders (300 sims per order), and calibration slopes are mirrored with no 
 | close / open | market_vault.json | — | power de-vig of the mean US-sportsbook close (5-6 books on BFO event pages; exchanges excluded, so no post-result price); multiplicative no-vig opener; 373 / 373 present, nothing fetched | — |
 | Elo | build_db Elo (K 44, boost 1.5) | tuned 2019-2023 | backtest_vault pre-fight Elo | — |
 | ML v1 logistic | ml_vault.json `lr_refit` (January refit through 2025; `lr` = fit 2010-2023 reported too) | as frozen | tools/ml.py's own vault export | — |
-| ML v2 logistic | ml2.json page_model coefficients (fit 2010-2025); static = fit.pkl `lr|static` (fit 2010-2023) | as frozen | tools/ml2.py's own table builders with the parse cutoff moved to 2026-11-01; rating features from the frozen build's code and parameters (commit b9ac8d7) | refit of the production spec on pre-2026 rows equals page_model to 8.9e-16; static equals ml2.json 2024-25 ml2_lr to 5e-5 (4-dp rounding); rating features equal the frozen ratings_all.pkl exactly |
+| ML v2 logistic | ml2.json page_model coefficients (fit 2010-2025); static = fit.pkl's static LR coefficients (fit 2010-2023) | as frozen | tools/ml2.py's own table builders with the parse cutoff moved to 2026-11-01; rating features from the frozen build's code and parameters (commit b9ac8d7) | refit of the production spec on pre-2026 rows equals page_model to 8.9e-16; static equals ml2.json 2024-25 ml2_lr to 5e-5 (4-dp rounding); rating features equal the frozen ratings_all.pkl exactly |
 | ML v2 blend (static) | LR + LightGBM + XGBoost, fit.pkl blend weights | fit < 2024 | trees not stored, so retrained with frozen config, rounds and seeds on rows before 2024 | retrained 2024-25 predictions equal fit.pkl exactly (max diff 0) |
 | production stacks | blindtest_stack.json `model` (close), `model_open` (open), absent block (no line); fit through 2025-12-13 | as frozen | experts: market, mkt_rating (market_vault), engine v4 (this audit's run), ml (ML v1 lr_refit), feat_lr (moe_page.json production coef 2010-2025 on side records; counters by moe.py's own loop), elo_sig, elo; src/ml/moe.js | side counters equal out/moe_cache/prep.pkl on 112,640 values (max diff 0) |
 | MoE no-line | moe_page.json `model` absent block (h 1.5, T 1.1667) | as frozen | same experts | — |
 | ML v2 stacks | forward_models.json ml2_static (weights 2019-2023) and ml2.json page_model.stack (2019-2025) | as frozen | fed the production ML v2 logistic, as the forward ledger does; `_static_static` = static weights fed the static logistic (the 2024-25 configuration) | — |
-| WHR (rounds), ratings stack | ratings_vault.json | tuned 2019-2023 | tools/ratings.py's own vault export | equals this audit's walk (max diff 5e-5) |
+| WHR (rounds), ratings stack | ratings_vault.json | tuned 2019-2023 | tools/ratings.py's own vault export (today's ratings.json) | a re-run of today's ratings.py through 2026-10 matches it to 5e-5 (the ML v2 features instead use the older build, row above) |
 | predict() package, v4 base | versions/v5-rejected/ml/blend.js rescale / poolCells, v5 params blend (mrWeight 0.3, linear) | as frozen | winner = the production stack by lineKind (engine expert v4); cells = 0.3 x rescaled v4 cells + 0.7 x rescaled SM_refit (close) or S_refit (open, none) | predict() exists only in v5 engines; its point outputs are this deterministic composition |
 | S, SM, S_refit, SM_refit | methodround.json per-fight cells | through 2023 / Jan-1 refit through 2025 | stored | — |
 | S2, S2 + ml2win | tools/ml2.py stage_method, 2024 fold | fit < 2024 (as validated) | rebuilt with the frozen penalties | the same fold's S equals methodround.json S on 2024-25 and on the vault (max diff 2e-4 = JSON rounding) |
@@ -162,7 +163,7 @@ Paired log-loss differences:
 | engine v4 - close | +0.0426 [+0.0022, +0.0816] |
 
 Reading: on 2026 the frozen with-line stacks are level with the market (close and open), the ML v2 stacks are the
-best non-market winners, and the no-line production stacks lose because their production sharpening (recency
+best non-market winners, and the no-line production stacks lose, most likely because their production sharpening (recency
 weighting h 1.5 plus temperature 1.16-1.17 on top of 2024-25-heavy weights) met a year in which nothing needed
 stretching.
 
@@ -266,7 +267,7 @@ items 2 and 6).
 
 ## 6. Exposures of 2026 data before this audit
 
-Known pre-seal items (V6_V10_PLAN 6.5.3), each confirmed:
+Known pre-seal items (V6_V10_PLAN 6.5.3), carried over as registered (item 1 re-checked):
 
 1. methodround's committed note prints 2026 rows for S and SM (n 372): its "2026 | 372 | 0.9629 | ... | 2.1598" row is
    exactly the S method / joint loss scored here, and data/derived/methodround.json holds S / SM / S_refit / SM_refit cells
