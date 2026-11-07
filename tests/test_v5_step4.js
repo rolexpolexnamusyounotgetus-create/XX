@@ -157,10 +157,10 @@ function withParams(opts, params) {
   o.params = p; return o;
 }
 // v5 Calibrate B: components.calB (a later step: the joint level pass) is off in every comparison with an engine that predates it
-const OFF0 = { components: { embed: false, oppadj: false, preufc: false, calB: false } };
-const OFF1 = { components: { embed: true, oppadj: false, preufc: false, calB: false } };
-const OFF2 = { components: { embed: true, oppadj: false, preufc: false, calB: false } };
-const OFF2b = { components: { embed: true, oppadj: true, preufc: false, styles_sos: { styles: false, sos: false, newcomer: false }, calB: false } };
+const OFF0 = { components: { embed: false, oppadj: false, preufc: false, calB: false, v501: false } };
+const OFF1 = { components: { embed: true, oppadj: false, preufc: false, calB: false, v501: false } };
+const OFF2 = { components: { embed: true, oppadj: false, preufc: false, calB: false, v501: false } };
+const OFF2b = { components: { embed: true, oppadj: true, preufc: false, styles_sos: { styles: false, sos: false, newcomer: false }, calB: false, v501: false } };
 function runGroup(label, REF, refName, OFF, cases, ctx, refParams) {
   let nM = 0, nF = 0, bad = 0, badSum = 0, nSum = 0, firstBad = null, applied = 0, recs = 0, emb = 0, oa = 0;
   const go = () => {
@@ -230,9 +230,9 @@ if (R0s) {
   try {
     const nc = casesC.filter((c) => c.opts.preufc && (c.opts.preufc.A || c.opts.preufc.B));
     const ON = [
-      [R0, "embed (with inputs) on vs step 3", { components: { embed: true, oppadj: false, preufc: false, calB: false } }, casesA.slice(0, 30).concat(casesC.slice(0, 30)), 0.3],
+      [R0, "embed (with inputs) on vs step 3", { components: { embed: true, oppadj: false, preufc: false, calB: false, v501: false } }, casesA.slice(0, 30).concat(casesC.slice(0, 30)), 0.3],
       [R1, "oppadj on (sos off) vs step 3 + embed (sos off)", OFF2b, noSos(casesA.slice(0, 30).concat(casesC.slice(0, 30))), 0.3, OFF1],
-      [R2, "preufc on vs step 3 + embed + oppadj, newcomer bouts", { components: { embed: true, oppadj: false, preufc: true, calB: false } }, nc.slice(0, 40), 0.3, OFF2]
+      [R2, "preufc on vs step 3 + embed + oppadj, newcomer bouts", { components: { embed: true, oppadj: false, preufc: true, calB: false, v501: false } }, nc.slice(0, 40), 0.3, OFF2]
     ];
     for (const [REF, nm, P, cs, min, refP] of ON) {
       let diff = 0, n = 0;
@@ -255,7 +255,7 @@ if (R0s) {
     casesA.slice(0, 40).forEach((c) => {
       const o = Object.assign({}, c.opts); delete o.embed; delete o.oppadj; delete o.preufc;
       // preufc on too: without a record it is a no-op; v5 Calibrate B's components.calB (a later step) pinned off against the step-3 engine
-      const P = withParams(o, { components: { preufc: true, calB: false } });
+      const P = withParams(o, { components: { preufc: true, calB: false, v501: false } });
       const fr = fights(R0, R0.matchup(c.a, c.b, o), c.seed), fc = fights(E, E.matchup(c.a, c.b, P), c.seed);
       for (let q = 0; q < fr.length; q++) { n++; if (fr[q] !== fc[q]) bad++; }
     });

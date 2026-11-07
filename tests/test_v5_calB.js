@@ -189,7 +189,7 @@ const trainSample = train.slice().sort((x, y) => (x.id < y.id ? -1 : 1)).filter(
 const casesC = []; for (const f of trainSample) { casesC.push(btCase(f, 0)); casesC.push(btCase(f, 1)); }
 
 console.log(`engine ${E.VERSION} (params ${FP.version}; Calibrate A params ${P0.version}); ${NM} random matchups per group`);
-const OFF = { components: { calB: false } };
+const OFF = { components: { calB: false, v501: false } };
 {
   let t = 0;
   t += runGroup("3a. calB off = Calibrate A engine: random pairs, learned rates, durability roster, SOS + step-4 inputs", OFF, undefined, casesA, { ml: true, roster: true });

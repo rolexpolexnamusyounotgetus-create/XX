@@ -136,7 +136,11 @@
       // of the knockdown / finish / stoppage / judging levels with the Calibrate A flags (block `calB` below; engine3.js
       // resolveParams). ON: the levels match the 2019-2023 actuals; off reproduces the Calibrate A engine bit for bit
       // (tests/test_v5_calB.js).
-      calB: true
+      calB: true,
+      // v5.0.1 (the v5 review's behaviour fixes; block `v501` below; engine3.js resolveParams): one sub-flag per fix, each off =
+      // engine 5.0.0 for valid inputs (tests/test_v501.js). durFallback: the computed chin / power fallback re-levelled to the
+      // record path (page / newcomers only: backtests always pass full records).
+      v501: { durFallback: true, dynNoise: true, kdBase: true, levels: true }
     },
 
     // ---------------- styles_sos knobs (component "styles_sos"; src/styles_sos.js, docs/ENGINE_V3_SPEC.md) ----------------
@@ -372,12 +376,12 @@
       alphaChin: 3,      // Gamma(3, 3) prior on the fighter chin multiplier, worth ~290 standing head strikes (tuned on 2019-2023)
       alphaPow: 2.5,     // Gamma(2.5, 2.5) prior on the fighter power multiplier (~245 standing head strikes)
       fallbackEB: true,  // profiles without a durability record: chin_re / pow_re from career sums (opponent effects taken as 1)
-      // [v5.0.1] re-level of that fallback to the record path (v5 review: it ran ~19% low on chin x power, so knockdowns for fighters
-      // without a record, i.e. the page's newcomers, ran ~9% low). tools/durlevel_fit.js, data/derived/durlevel_fit.json:
-      normComputedChin: 1,   // career-sum (C) profiles: live roster record / computed, geometric mean (production constant, as normChin)
-      normComputedPow: 1,    // same for power
-      normComputedChinS: 1,  // decayed-sum (S) profiles (backtest snapshots): 2019-2023 backtest sides (train only)
-      normComputedPowS: 1,   // same for power
+      // re-level of that fallback to the record path: 1 = engine 5.0.0. The v5.0.1 values sit in v501.set.durFallback (v5 review: the
+      // raw fallback ran ~19% low on chin x power, so knockdowns for fighters without a record, i.e. the page's newcomers, ran ~9% low)
+      normComputedChin: 1,   // career-sum (C) profiles (production): record / computed
+      normComputedPow: 1,
+      normComputedChinS: 1,  // decayed-sum (S) profiles (backtest snapshots)
+      normComputedPowS: 1,
       standShare: 0.9,   // standing share of landed head strikes for that fallback (research section 1: 90% since 2019)
       engineWeight: 0.5, // [train 2019-2023] geometric weight on the engine's own KD structure (v3 ratios, or the v4 learned rates); 1 - w on durability. Static KD deviance on 2019-2023: w 0.5 beat durability alone by 20 [-42, +1] and v4 alone by 36 [-58, -15]
       kdCal: 1.1639618,  // [train 2019-2023] extra conversion x kdScale from the data hazard to the engine's base hazard (its in-fight KD modifiers average below 1); level-matched to the FROZEN v4 engine's simulated knockdowns per fight on 2019-2023 (verifier, Nov 6: 1,999 fights x 300 sims, OOF rates; kdScale 1.391 -> kdCal x kdScale 1.619): 1.18780096 (the builder's value, matched to the in-flight v4 with kdScale 1.246) gave on 0.474 vs off 0.465 per fight there, 1.164 gives 0.467. Re-match after any kdScale / KD-modifier change: kdCal x KD_off / KD_on. kdCalRel (default 1) replaces it in relative mode
@@ -657,6 +661,17 @@
       set: {
         dyn: { kdLevel3: 0.6772, kdLevel5: 0.5656, convLevel: 1.0966, stkoScale: 0.6587, gnpScale: 0.4322 },   // before: 0.655 / 0.559 / 1.045 / 0.733 / 0.481
         judge: { t108: 8.176 }                                                                                 // before: 8.31
+      }
+    },
+
+    // ---------------- v5.0.1 (components.v501): the v5 review's behaviour fixes, one set per sub-flag ----------------
+    // Applied after the calB set, before the v401 put-backs and opts.params overrides (engine3.js resolveParams).
+    v501: {
+      set: {
+        // the computed chin / power fallback re-levelled to the record path (tools/durlevel_fit.js, data/derived/durlevel_fit.json):
+        // C path (career sums, production profiles) fit on the live roster as a production constant like normChin / normPow; S path
+        // (decayed sums, backtest snapshots) fit on the 2019-2023 backtest sides. Backtest harnesses refuse this path.
+        durFallback: { durability: { normComputedChin: 1.1786, normComputedPow: 1.0125, normComputedChinS: 0.9566, normComputedPowS: 1.0043 } }
       }
     },
 

@@ -148,7 +148,7 @@ function runGroup(label, REF, refName, FLAG, cases, ctx) {
   let nM = 0, nF = 0, bad = 0, badSum = 0, nSum = 0, badPred = 0, nPred = 0, firstBad = null, applied = 0, recs = 0;
   // ctx.pin: components the current engine must take from the reference (the strict groups' v401 sub-flags; see below)
   // v5 Calibrate B: components.calB (a later step: the joint level pass) is off in every comparison with the step-4 engine
-  const FE = { components: Object.assign({}, FLAG.components, ctx.pin || {}, { calB: false }) };
+  const FE = { components: Object.assign({}, FLAG.components, ctx.pin || {}, { calB: false, v501: false }) };
   const go = () => {
     cases.forEach((c, i) => {
       const mr = REF.matchup(c.a, c.b, c.opts), mc = E.matchup(c.a, c.b, withParams(c.opts, FE));

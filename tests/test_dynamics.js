@@ -36,7 +36,7 @@ function check(name, ok, info) {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${info ? "  (" + info + ")" : ""}`);
 }
 // v5 Calibrate B: components.calB (a later step; its judge.t108 acts with dynamics off too) is off in the flag-off identity checks
-const OFF = { components: { dynamics: false, calB: false } };
+const OFF = { components: { dynamics: false, calB: false, v501: false } };
 const ON = { components: { dynamics: true } };
 function strip(f) { return JSON.stringify(f); }
 function mean(a) { return a.reduce((x, y) => x + y, 0) / Math.max(1, a.length); }

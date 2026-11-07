@@ -11,7 +11,7 @@ const E = require(path.join(ROOT, "src/engine3.js"));
 const { fit } = require(path.join(ROOT, "tools/durlevel_fit.js"));
 let pass = 0, fail = 0;
 function check(name, ok, info) { if (ok) pass++; else fail++; console.log((ok ? "PASS  " : "FAIL  ") + name + (info ? "  (" + info + ")" : "")); }
-const dp = E.params().durability;
+const dp = E.resolveParams({}).durability;   // resolved: components.v501.durFallback puts the v5.0.1 constants in
 const r = fit(E);
 const sAfter = r.S.geo_computed_chin_x_pow_raw * dp.normComputedChinS * dp.normComputedPowS;
 const cAfter = r.C.geo_computed_chin_x_pow_raw * dp.normComputedChin * dp.normComputedPow;
@@ -27,12 +27,13 @@ E.loadDurability(null);
 const m = E.matchup("alexander-volkanovski", "justin-gaethje", { division: "Lightweight", rounds: 5, title: false, date: "2026-11-14" });
 check("no record: both sides computed", m.dur.A.src === "computed" && m.dur.B.src === "computed");
 const m0 = E.matchup("alexander-volkanovski", "justin-gaethje", { division: "Lightweight", rounds: 5, title: false, date: "2026-11-14",
-  params: { durability: { normComputedChin: 1, normComputedPow: 1 } } });
+  params: { components: { v501: { durFallback: false } } } });
 check("the C-path constants multiply chin_re / pow_re exactly", Math.abs(m.dur.A.chin_re / m0.dur.A.chin_re - dp.normComputedChin) < 1e-12 && Math.abs(m.dur.B.pow_re / m0.dur.B.pow_re - dp.normComputedPow) < 1e-12);
 const rec = { chin_re: 1.1, chin_cov: 0.9, pow_re: 0.95, pow_cov: 1.02 };
 const mf = E.matchup("alexander-volkanovski", "justin-gaethje", { division: "Lightweight", rounds: 5, date: "2026-11-14", dur: { A: rec, B: Object.assign({}, rec, { pow_re: null }) } });
 check("full record -> 'record', a missing field -> 'partial'", mf.dur.A.src === "record" && mf.dur.B.src === "partial", mf.dur.A.src + " / " + mf.dur.B.src);
 const mb = E.matchup("alexander-volkanovski", "justin-gaethje", { division: "Lightweight", rounds: 5, date: "2026-11-14", dur: { A: rec, B: Object.assign({}, rec, { chin_re: "x", pow_cov: -1 }) } });
 check("invalid fields ('x', -1) are missing, not NaN", mb.dur.B.src === "partial" && isFinite(mb.kd[0]) && isFinite(mb.kd[1]) && mb.kd[0] > 0, mb.kd.join(", "));
+check("durFallback off = constants 1 (engine 5.0.0)", E.resolveParams({ components: { v501: { durFallback: false } } }).durability.normComputedChin === 1);
 console.log(pass + " passed, " + fail + " failed");
 process.exit(fail ? 1 : 0);

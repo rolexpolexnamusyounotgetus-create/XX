@@ -92,7 +92,7 @@ const dOff = digest(E, { params: wild }, NF);
 // the reference engine / stored digest predate v5 Calibrate A, which turned components.v401.mlLevels off by default
 // (research/v5_train_ablation.md): compare them with the flag pinned to their state (on)
 // v5 Calibrate B (components.calB, the joint level pass) postdates them too: off
-const wildPinned = Object.assign({}, wild, { components: Object.assign({}, wild.components, { v401: { mlLevels: true }, calB: false }) });
+const wildPinned = Object.assign({}, wild, { components: Object.assign({}, wild.components, { v401: { mlLevels: true }, calB: false, v501: false }) });
 const dOffRef = digest(E, { params: wildPinned }, NF);
 if (refE) {
   const dRef = digest(refE, null, NF);
