@@ -254,7 +254,8 @@ if (R0s) {
   try {
     casesA.slice(0, 40).forEach((c) => {
       const o = Object.assign({}, c.opts); delete o.embed; delete o.oppadj; delete o.preufc;
-      const P = withParams(o, { components: { preufc: true } });   // preufc on too: without a record it is a no-op
+      // preufc on too: without a record it is a no-op; v5 Calibrate B's components.calB (a later step) pinned off against the step-3 engine
+      const P = withParams(o, { components: { preufc: true, calB: false } });
       const fr = fights(R0, R0.matchup(c.a, c.b, o), c.seed), fc = fights(E, E.matchup(c.a, c.b, P), c.seed);
       for (let q = 0; q < fr.length; q++) { n++; if (fr[q] !== fc[q]) bad++; }
     });

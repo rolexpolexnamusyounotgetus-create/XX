@@ -229,11 +229,12 @@ if (R0s) {
   try {
     casesA.slice(0, 40).forEach((c) => {
       const o = Object.assign({}, c.opts); delete o.sos;
-      const fr = fights(R0, R0.matchup(c.a, c.b, o), c.seed), fc = fights(E, E.matchup(c.a, c.b, o), c.seed);
+      // v5 Calibrate B: the default params now carry components.calB (a later step), pinned off against the step-2 engine
+      const fr = fights(R0, R0.matchup(c.a, c.b, o), c.seed), fc = fights(E, E.matchup(c.a, c.b, withParams(o, { components: { calB: false } })), c.seed);
       for (let q = 0; q < fr.length; q++) { n++; if (fr[q] !== fc[q]) bad++; }
     });
   } finally { E.loadMLRates(null); R0.loadMLRates(null); }
-  check("default params with no SOS input (page path) = the step-2 engine, bit for bit", bad === 0, `${n} fights, ${bad} differ`);
+  check("default params (calB off) with no SOS input (page path) = the step-2 engine, bit for bit", bad === 0, `${n} fights, ${bad} differ`);
 }
 
 // ------------------------------------------------------------------ harness helper (tools/sosrec.js)
