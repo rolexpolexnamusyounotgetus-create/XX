@@ -4,6 +4,12 @@ Status: design contract for the v3 rebuild (Nov 6, 2026). The data pipeline, the
 harness, the director, the 3D show and the page all build against this file. When code and this file
 disagree, fix one of them in the same change.
 
+**Shipped engine (Nov 7, 2026): v4 (4.0.0)** in src/ (sha256 6c661f68... / e16a6481...), frozen in versions/v4/: the v3 contract
+plus the "Engine v4" section below. That is what the page, the forward ledger (fwd-4.2) and the default tools run. The "Engine v5
+..." sections and "Engine v5.0.1" at the end describe the components built and measured since; v5 (5.0.0) and v5.0.1 were each
+validated once and rejected, so they are not shipped. Their code is in versions/v5.0.1-rejected/ (every component flag-isolated,
+each flag off = the version before it), which is the base for v6.
+
 ## Goals
 
 1. **Any two fighters.** Every fighter in the UFC stats snapshot gets a profile automatically. Volkanovski
@@ -500,3 +506,53 @@ final package. It never touches matchup / simulate / summarize / explain; with t
 - Engine VERSION 5.0.0, params "5.0.0-selfcal-pre2024", frozen in versions/v5/ (engine3.js, params3.js, styles_sos.js,
   mlpathrec.js, ml/mlrates.js, ml/embed.js, ml/blend.js, ml/moe.js, ml/ml2.js, ml/mlpage.js). The API and trace format are
   unchanged.
+
+## Engine v5.0.1 (Nov 7, 2026; validated once and rejected; versions/v5.0.1-rejected/)
+
+v5.0.1 = 5.0.0 + the v5 review's fixes (docs/CHANGELOG.md v5.0.1, research/v501_fixes.md). The API and the trace format are
+unchanged (a round's `ded` key and the fight's `nDed` appear only with a point deduction, as before).
+
+**Input contract (no flag; bit-identical to 5.0.0 for valid inputs on the 2019-2023 backtest):**
+- `matchup()` checks every rate table simulate() reads (dRate, cRate, gRate, gBot, the takedown, sub-position, knockdown, damage,
+  stoppage, drain, accuracy and mixture tables, pace / finR / kdPace, the dynamics tables) after durability, pre-UFC and the
+  styles_sos hook: each value must be a finite number >= 0, else it throws `matchup table <name>[i] = <value>`. `judgePower` must
+  be finite.
+- `simulate()` throws if the total event rate is not in [0, Infinity) and caps a round at 200,000 events (a backstop; real rounds
+  have a few hundred).
+- Durability records: a field counts only when it is a finite positive number; `m.dur.A.src` / `B.src` is "record" (all four
+  fields from the record), "partial" or "computed". Backtest harnesses (tools/evalv.js, predict_eval.js, durrec.js) refuse
+  anything but complete records ("record" on both sides).
+- Pre-UFC records with a count that is not a finite number >= 0, and multipliers that are not finite and positive, are missing.
+  A non-finite embedding predictor (or target) leaves that target unblended.
+- Judges: `opts.judges.power` falls back to `params.judge.power` unless it is a finite number; judgeRound / officialsRound throw
+  on a non-finite score (a NaN used to score the round for corner B).
+- Dates: `opts.date` is normalised once to "YYYY-MM-DD" (ISO strings with or without a time part, "YYYY/MM/DD", Date objects and
+  millisecond timestamps; anything else throws) and that canonical value drives every leak guard (durability, embedding and
+  pre-UFC rosters, styles_sos through `m.opts`, officials tables). A string-compared US date once let 2026 rosters into 2019 bouts.
+- Rounds: an integer 1..5 (strings are coerced); the title default (5, else 3) applies only when `opts.rounds` is absent.
+- Params: in Node the engine requires its sibling params3.js and ml/mlrates.js before looking at the global object, and refuses
+  params whose major version differs from VERSION (`params.allowVersionMismatch` overrides). evalv.js also checks every worker's
+  engine / params version.
+- src/ml/blend.js 1.1.1: a market line counts only when the odds are finite with |odds| >= 100 and de-vig to a probability in
+  (0, 1); otherwise `lineKind` 'close' / 'open' refuses with "needs a line".
+
+**`components.v501`** (true / false / an object of sub-flags, each on unless false; `params.v501.set[sub]` holds the new values and
+goes in after the calB set, before the v401 put-backs and opts.params overrides; off = 5.0.0, tests/test_v501.js):
+- `durFallback`: the computed chin / power fallback (profiles without a durability record) multiplied by normComputedChin / Pow
+  (career sums, production profiles: 1.1786 / 1.0125, fit on the live roster) or normComputedChinS / PowS (decayed sums, backtest
+  snapshots: 0.9566 / 1.0043, fit on 2019-2023 sides), so its chin x power matches the record path within 2% (tools/durlevel_fit.js,
+  tests/test_durlevel.js). Page / newcomers only.
+- `dynNoise`: dyn.formOut 0.15, arSd 0.24, arPhi 0.6, formPace 0.42, roundPace 0.15, formAcc 0.40 (5.0.0: 0.21, 0.32, 0.85, 0.45,
+  0.10, 0.43), chosen by realism distance to the real 2019-2023 fights (tools/v501_dynfit.js).
+- `levels`: dyn.outLevel 1.0201, kdLevel3 0.67504, kdLevel5 0.56512, convLevel 1.10682, stkoScale 0.66495, gnpScale 0.4363,
+  judge.t108 7.72547 (the joint level pass redone on top of dynNoise; tools/v5_calB_levels.js, data/derived/v501_levels.json).
+- `kdBase`: no set. A pre-registered forward-chained check inside 2019-2023 kept the durability records' trailing 730-day league
+  level (tools/v501_kdlevel_cv.js, data/derived/v501_kdlevel_cv.json).
+
+**Evaluation contract from v5.0.1 on** (tools/evalv.js, tools/evalv_decide.js): per-minute stat-line deviance conditioned on the
+real fight length; base rates by year (train gate) and by dated window (validation, information only); per-fight outputs at 6
+decimals with simulated stats; the decision rule's branch 2 counts a secondary metric only after a Holm adjustment over the seven
+registered metrics, and a base rate drifts out of tolerance only when |new - actual| - |old - actual| has an event-cluster CI
+above 0 and |new - actual| exceeds max(registered tolerance, 1.96 SE of the actual). tests/test_page_parity.js checks that the
+page's ENGINE bundle runs the same model as Node and that every component the page's params switch on is shipped.
+

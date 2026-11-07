@@ -155,7 +155,9 @@ in-sample for 5.0.1's train-fit levels, so they are biased upward and are not ev
 
 ## v5 (2026-11-07): the merged roadmap engine, validated once and REJECTED; v4 (4.0.0) restored
 
-**Status: rejected by the decision rule.**
+**Status: rejected by the decision rule.** (Update, Nov 7: the review's fixes were measured as v5.0.1 above, also rejected; the
+table "Every v5 component" in the v5.0.1 entry lists each component, its train ablation and its status. Re-analysed under v5.0.1's
+paired base-rate test, v5's verdict stands: KD fails, KO passes.)
 - Timeline (ET; UTC is 5 hours ahead): the validation look ran once at 8:51 pm on Nov 6, paired against v4. The package scoring
   followed at 8:54 pm, and the decision was made at 9:10 pm.
 - src/engine3.js, src/params3.js and src/ml/mlrates.js are back to versions/v4/; the hashes match the v4 entry (6c661f68...,

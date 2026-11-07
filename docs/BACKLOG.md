@@ -141,6 +141,20 @@ Findings from verified research that the next engine versions must use. Each lin
   no-line +0.0013 n.s. Descriptive only: a per-card trailing temperature would have helped no-line -0.0047 on
   2024-25 (already-seen window: judge it only on the forward ledger / audit 2). Proposed v9 refinements to the
   pre-registered drift rule (one-sided test, longer ledger window, named column) AFTER audit 1 only.
+- ENGINE v5.0.1 MEASURED AND REJECTED (decided 04:35 UTC Nov 7; version_history.json entry v5.0.1; docs/CHANGELOG.md v5.0.1;
+  research/v501_fixes.md). Every review issue reproduced; robustness fixes (input guards, dates, rounds, judges, params loading, odds,
+  record guards) are bit-identical on train; behaviour fixes chosen on 2019-2023 only: dynNoise (within-fight noise now matches the
+  real fights' dispersion: fight-level ratio 0.99 / 0.96, A-B corr 0.705 vs 0.710), levels redone, durFallback (page only), kdBase
+  kept L730 by a pre-registered forward-chained CV (RMSE 0.141 vs 0.149-0.175 for priors level, 4- / 5-year windows, shrink).
+  Validation (second look for the lineage, pre-registered): winner -0.0057 [-0.0141, +0.0023]; 4 stat lines better after Holm;
+  KD fails the paired base-rate test (new rule: paired |err| difference with SE-scaled tolerance; v5's registered rule agrees).
+  Tooling for v6 and on: tools/evalv_decide.js (paired base-rate test + Holm), evalv per-minute deviance and per-year / per-window
+  base rates, 6-decimal per-fight stats, data/derived/val_look_ledger.json, tests/test_page_parity.js, FUZZ=1 director test.
+  v6 GATES from the review: (1) fit the mlrates stack weights and the embed calibration fold-honestly (year y on folds < y) and
+  rerun Calibrate A's preufc / embed calls and calB on them before any merge; (2) keep the per-year KD / KO gate with 2023 as the
+  pseudo-holdout; (3) select components by train-only forward-chained CV, treat 2024-25 as information; (4) a page that runs v5+
+  components must pass tests/test_page_parity.js (bundle embed.js / blend.js, ship compact durability / pre-UFC / embed rosters);
+  (5) state the in-sample bias next to any stacker engine weight; (6) never read the moved vault-period durability / styles numbers.
 - ENGINE v5 MEASURED AND REJECTED (single validation look, decided 02:10 UTC Nov 7; data/derived/version_history.json):
   winner log loss 0.6301 vs v4 0.6324, paired -0.0022 [-0.0099, +0.0053] (branch 1 fails). Branch 2: stat lines
   clearly better (sig landed -0.71, attempts -1.23, TD -0.048, control -4.1 s, CIs exclude 0) BUT two base rates
@@ -175,7 +189,20 @@ Findings from verified research that the next engine versions must use. Each lin
 
 ## Prediction status after the ML-core round (verified, Nov 6 ~11:00 UTC)
 
-**Current (Nov 6, 9:10 pm ET; v5 measured):**
+**Current (Nov 6, 11:35 pm ET; v5.0.1 measured):**
+- **The current engine is still v4 (4.0.0)** in src/ and versions/v4/. v5.0.1 (5.0.0 + the v5 review's fixes) was validated once,
+  pre-registered as the second look at 2024-25 for the v5 lineage, and rejected; see docs/CHANGELOG.md v5.0.1 and
+  versions/v5.0.1-rejected/.
+- Validation 2024-25 winner log loss: v5.0.1 0.6267 vs v4 0.6324, -0.0057 [-0.0141, +0.0023] (n.s.; an upper bound, since the fixes
+  were motivated by v5's look). Sig landed, attempts, TD and control deviance better after Holm; who x how x when level with model S
+  (+0.0172 [-0.0097, +0.0444]) for the first time; but KD per 100 head 0.827 vs 0.684 actual fails the paired base-rate test.
+  The excess is all 2024 (sim 0.85 vs 0.57; 2025 level at 0.81 vs 0.81; information only).
+- Best validated prediction package is unchanged: v5's FightEngine.predict (with the close 0.5810, beats the close by -0.0067
+  [-0.0096, -0.0036]; no line 0.5930). It needs v5 components, so it lives in versions/v5-rejected / v5.0.1-rejected, not on the page.
+- Vault cleanup: the durability and styles research had scored the 2026 vault; moved out and re-scored on 2024-25 (CHANGELOG v5.0.1).
+  KD / KO / durability results on the vault are not blind; v6 calibration must not read those numbers (V6_V10_PLAN 6.5.3).
+
+**Earlier (Nov 6, 9:10 pm ET; v5 measured):**
 - **The current engine is still v4 (4.0.0)** in src/ and versions/v4/. v5 (5.0.0, the merged roadmap) was validated once and
   rejected by the decision rule; see docs/CHANGELOG.md v5 and versions/v5-rejected/.
 - Validation 2024-25 winner log loss: v5 0.6301 vs v4 0.6324, -0.0022 [-0.0099, +0.0053]. The stat lines are better (4 of 5 CIs

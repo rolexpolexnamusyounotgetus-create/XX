@@ -38,3 +38,6 @@ src/styles_sos.js, src/ml/embed.js and src/ml/blend.js stay in src/. The v4 engi
 
 `versions/v5` is a symlink to this folder. Tools and the first vault audit (pre-registered scope: v5 vs v4 paired) keep
 working on that path.
+
+Update (Nov 7): the v5 review's fixes were measured as v5.0.1 (versions/v5.0.1-rejected/), also rejected. Build v6 from that
+folder; this one stays as the exact 5.0.0 the first vault audit pairs against v4.
