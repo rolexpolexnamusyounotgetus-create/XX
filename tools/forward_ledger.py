@@ -63,6 +63,16 @@ Forward model v4.2 (data/predictions/README.md, "Forward model v4.2 (Nov 6-7, 20
   - score: also scores the debut method against its base-rate secondary, and the stat-line block against ufcstats
     per-fight totals (Greco1899 ufc_fight_stats.csv), appended to data/predictions/statlines_results.json (append-only)
     for bouts whose two-source result is verified.
+
+Forward model v4.3 (data/predictions/README.md, "Forward model v4.3 (Nov 7, 2026)", pre-registered before this code)
+  - Supersedes fwd-4.2 for events dated 2026-11-14 or later: --fwd auto picks fwd-4.3 there (fwd-4.1 before); fwd-4.2
+    stays a dry-run option. The fwd-4.1 and fwd-4.2 paths write exactly what the tool wrote before fwd-4.3 existed
+    (tests/test_forward_v43.js; their files still say tool 1.1 / 1.2).
+  - Everything fwd-4.2 writes, except: p_a_noline (bout without a debutant) = models.ml2_stack_noline, the ML v2 no-line
+    stack with weights fit 2019-2023 (forward_models.json ml2_static.noline); the MoE no-line stack becomes the scored
+    secondary models.moe_noline and is p_a_noline's fallback (flag noline_fallback); p_a_noline_source records which.
+    A bout without a line therefore gets p_a = the ML v2 no-line stack. Debut bouts: unchanged (p_a_noline = seeded Elo).
+  - Pinned inputs: FWD43_PINNED (fwd-4.2's table with src/ml/ml2.js and tools/methodround_model.js re-pinned).
 """
 import argparse
 import csv
@@ -90,6 +100,7 @@ UA = "FightLabSim/1.0 (forward-ledger)"     # the project's fetch User-Agent (no
 DEBUT_ELO = 1500.0                        # tools/build_db.py start rating
 TOOL = "tools/forward_ledger.py 1.1"     # the fwd-4.1 path writes this exact string (byte-identical files)
 TOOL_42 = "tools/forward_ledger.py 1.2"  # tool version of fwd-4.2 files
+TOOL_43 = "tools/forward_ledger.py 1.3"  # tool version of fwd-4.3 files
 # Forward model v4.1 (pre-registered in data/predictions/README.md): p_a = the first of these models-block entries that
 # exists for the bout, when a line was captured before the lock; the ML v2 open stack (weights fit 2019-2023 on opening
 # lines) is the primary, the rest are fallbacks for a fighter missing from the ML v2 roster.
@@ -121,7 +132,9 @@ MODEL_DEFS = {
 LEDGER_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})_([a-z0-9-]+?)(?:_v(\d+))?\.json$")
 
 # ---- forward model v4.2 (data/predictions/README.md "Forward model v4.2 (Nov 6-7, 2026)")
-FWD_EFFECTIVE = (("2026-11-14", "4.2"),)  # (first event date, version) as the README assigns them; before: 4.1
+# (first event date, version) as the README assigns them, later rows win; before the first: 4.1. fwd-4.3 (pre-registered
+# Nov 7, 2026) supersedes fwd-4.2 from the same date, before any fwd-4.2 file was written.
+FWD_EFFECTIVE = (("2026-11-14", "4.2"), ("2026-11-14", "4.3"))
 MODEL_VERSION_42 = "fwd-4.2"
 FWD42_ENGINE_DIR = "versions/v4"          # frozen engine 4.0.0 / params 4.0.0-selfcal-pre2024 (= Vegas 124's engine)
 # the README table "Files and hashes fwd-4.2 reads" (sha256, first 16 hex); a different hash refuses a fwd-4.2 file
@@ -146,6 +159,23 @@ MODEL_DEFS_42 = dict(MODEL_DEFS, debut_model=(
     "monitored secondary (fwd-4.2): the no-line debut winner model (src/ml/debut.js winner(), data/derived/debut.json; "
     "16-column symmetric logistic refit 2012-2025) for a bout with a debutant; null otherwise; never the primary"))
 
+# ---- forward model v4.3 (data/predictions/README.md "Forward model v4.3 (Nov 7, 2026)")
+MODEL_VERSION_43 = "fwd-4.3"
+# the README table "Files and hashes fwd-4.3 reads": fwd-4.2's, with the two evaluators that gained v6's additive code
+# re-pinned (output-identical, checked before the pre-registration)
+FWD43_PINNED = dict(FWD42_PINNED, **{"src/ml/ml2.js": "0b62c4462dd7a915", "tools/methodround_model.js": "fea58a2f9beff3ca"})
+NOLINE_PRIMARY = "ml2_stack_noline"      # fwd-4.3: p_a_noline for a bout without a debutant
+NOLINE_FALLBACK = "moe_noline"           # ... when the ML v2 no-line stack cannot run (flag noline_fallback)
+MODEL_DEFS_43 = dict(
+    MODEL_DEFS_42,
+    stack_noline="MoE stack without a line (blindtest_stack.json model, absent block; h 1.5, temperature 1.1607); the "
+                 "same number as moe_noline",
+    ml2_stack_noline="NO-LINE PRIMARY (fwd-4.3; = p_a_noline when no debutant). ML v2 page no-line stack, weights fit "
+                     "2019-2023 (ML v2 0.7049 + market rating 0.5526, h 1.5; forward_models.json ml2_static.noline)",
+    moe_noline="scored secondary (fwd-4.3): the MoE stack without a line (= stack_noline), fwd-4.1 / fwd-4.2's p_a_noline "
+               "on bouts without a debutant, and p_a_noline's fallback; the series drift rule 6.5.1(b) tracks beside "
+               "p_a_noline")
+
 
 def fwd_for_date(date):
     """The forward model version the README assigns to an event date."""
@@ -156,9 +186,9 @@ def fwd_for_date(date):
     return v
 
 
-def pinned_mismatches():
+def pinned_mismatches(pins=None):
     out = []
-    for p, h in FWD42_PINNED.items():
+    for p, h in (FWD42_PINNED if pins is None else pins).items():
         a = sha16(os.path.join(ROOT, p))
         if a != h:
             out.append({"file": p, "pinned": h, "found": a})
@@ -359,18 +389,19 @@ def cmd_predict(args):
         raise SystemExit("refused: data/predictions/README.md assigns fwd-%s to events dated %s (asked for fwd-%s); a "
                          "ledger file is written under the pre-registered version only (--dry-run may compare)"
                          % (assigned, ev["date"], fwd))
-    engine_dir = args.engine_dir or (FWD42_ENGINE_DIR if fwd == "4.2" else "src")
+    v42 = fwd in ("4.2", "4.3")          # the fwd-4.2 path (fwd-4.3 keeps all of it and changes p_a_noline)
+    engine_dir = args.engine_dir or (FWD42_ENGINE_DIR if v42 else "src")
     mism = []
-    if fwd == "4.2":
-        mism = pinned_mismatches()
+    if v42:
+        mism = pinned_mismatches(FWD43_PINNED if fwd == "4.3" else FWD42_PINNED)
         if os.path.normpath(engine_dir) != os.path.normpath(FWD42_ENGINE_DIR):
             mism.append({"file": "--engine-dir", "pinned": FWD42_ENGINE_DIR, "found": engine_dir})
         if mism and not args.dry_run:
-            raise SystemExit("refused: fwd-4.2 reads only the files pre-registered in data/predictions/README.md; these "
-                             "differ: %s. A changed input is a new version (fwd-4.2.1+) that needs a README addendum "
-                             "first." % json.dumps(mism))
+            raise SystemExit("refused: fwd-%s reads only the files pre-registered in data/predictions/README.md; these "
+                             "differ: %s. A changed input is a new version (fwd-%s.1+) that needs a README addendum "
+                             "first." % (fwd, json.dumps(mism), fwd))
         for m in mism:
-            print("WARNING (dry run): fwd-4.2 pinned input differs: %s pinned %s, found %s" % (m["file"], m["pinned"], m["found"]))
+            print("WARNING (dry run): fwd-%s pinned input differs: %s pinned %s, found %s" % (fwd, m["file"], m["pinned"], m["found"]))
     slug = slugify(ev["name"])
     base = os.path.join(args.dir, "%s_%s.json" % (ev["date"], slug))
     existing = sorted([f for f in glob.glob(os.path.join(args.dir, "%s_%s*.json" % (ev["date"], slug)))
@@ -413,7 +444,7 @@ def cmd_predict(args):
         stack_file = bt_stack
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
         jin = {"date": ev["date"], "sims": args.sims, "bouts": bouts_in}
-        if fwd == "4.2":
+        if v42:
             jin["headline"] = args.headline
         json.dump(jin, fh)
         tmp = fh.name
@@ -421,8 +452,8 @@ def cmd_predict(args):
         cmd = ["node", os.path.join(HERE, "forward_ledger.js"), tmp, "--engine-dir", engine_dir]
         if stack_file:
             cmd += ["--moe", os.path.relpath(stack_file, ROOT)]
-        if fwd == "4.2":
-            cmd += ["--fwd", "4.2"]
+        if v42:
+            cmd += ["--fwd", fwd]
         res = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT, check=True)
     finally:
         os.unlink(tmp)
@@ -470,6 +501,16 @@ def cmd_predict(args):
         else:
             p_noline = r["stack_noline"]["p"] if r.get("stack_noline") else None
             src_no = "moe_stack"
+            if fwd == "4.3":
+                # README "Forward model v4.3": the ML v2 no-line stack (weights fit 2019-2023); the MoE stack is its
+                # fallback when a fighter is missing from the ML v2 roster
+                if models.get(NOLINE_PRIMARY) is not None:
+                    p_noline, src_no = models[NOLINE_PRIMARY], NOLINE_PRIMARY
+                elif p_noline is not None:
+                    src_no = "moe_stack (noline_fallback)"
+                    flags.append("noline_fallback")
+                else:
+                    src_no = None
             p_line = r["stack_line"]["p"] if r.get("stack_line") else None
             head = hl if (args.headline == "line" and hl) else hn
             if mk:
@@ -517,17 +558,17 @@ def cmd_predict(args):
                   "b_ko": qb * ko / fs, "b_sub": qb * sub / fs, "b_dec": qb * dc / fs, "draw": dr}
             pdist, fin_round, msrc = pm["a_dec"] + pm["b_dec"] + dr, None, "division base rates"
         extra = None
-        if fwd == "4.2":
+        if v42:
             # README "Forward model v4.2": debut bouts take the debut method model fed p_a (division base rates kept as
             # the scored secondary); every bout's primary cells by round become the stat-line fight-length grid
             extra = {}
             ko_prof, sub_prof = round_profile(fj["priors"], b.get("weight_class"), bi["rounds"])
             dm = r.get("debut_method")
             if debut and not dm:
-                raise SystemExit("fwd-4.2: the debut method model did not run for %s (%s)" % (bid, r.get("notes")))
+                raise SystemExit("fwd-%s: the debut method model did not run for %s (%s)" % (fwd, bid, r.get("notes")))
             if debut:
                 if abs(dm["p_w_used"] - p_a) > 1e-9:
-                    raise SystemExit("fwd-4.2: debut method fed %r but p_a is %r for %s" % (dm["p_w_used"], p_a, bid))
+                    raise SystemExit("fwd-%s: debut method fed %r but p_a is %r for %s" % (fwd, dm["p_w_used"], p_a, bid))
                 extra["p_method_secondary"] = {"division_base_rates": {
                     "p_method": {k: round(v, 5) for k, v in pm.items()}, "p_distance": round(pdist, 5),
                     "source": "division base rates scaled to p_a (fwd-4.1's debut method)"}}
@@ -558,6 +599,8 @@ def cmd_predict(args):
             else:
                 cells = cells_from_profile(pm, ko_prof, sub_prof)
             extra["_cells"] = cells
+            if fwd == "4.3":
+                extra["p_a_noline_source"] = src_no
         out_bouts.append({
             "bout_id": bid, "order": b.get("order"), "segment": b.get("segment"),
             "a": {"name": b["a"]["name"], "slug": b["a"].get("slug")}, "b": {"name": b["b"]["name"], "slug": b["b"].get("slug")},
@@ -574,7 +617,7 @@ def cmd_predict(args):
             "market": mk, "flags": flags, "notes": r.get("notes")})
         if extra is not None:
             out_bouts[-1].update(extra)
-    if fwd == "4.2":
+    if v42:
         sl = run_statlines(ev["date"], bouts_in, out_bouts, engine_dir)
         for ob in out_bouts:
             ob.pop("_cells", None)
@@ -618,11 +661,15 @@ def cmd_predict(args):
         "probability_conventions": "p_a, p_a_line, p_a_noline, p_elo = P(a wins | not a draw); p_method sums to 1 with "
                                    "the draw; a/b in cards_upcoming.json order",
         "bouts": out_bouts}
-    if fwd == "4.2":
+    if v42:
         apply_model_42(doc, jm, sl["meta"], args, mism)
+    if fwd == "4.3":
+        apply_model_43(doc, jm, sl["meta"], args, mism)
     print_table(doc)
-    if fwd == "4.2":
+    if v42:
         print_table_42(doc)
+    if fwd == "4.3":
+        print_table_43(doc)
     if args.dry_run:
         if args.dry_out:
             with open(args.dry_out, "w") as fh:
@@ -693,6 +740,56 @@ def apply_model_42(doc, jm, slm, args, mism):
     M["code_sha256_16"] = {p: sha16(os.path.join(ROOT, p)) for p in FWD42_CODE}
     M["fwd"] = "4.2"
     M["tool"] = TOOL_42
+
+
+def apply_model_43(doc, jm, slm, args, mism):
+    """The model block of a fwd-4.3 file (README "Forward model v4.3"): fwd-4.2's block (already applied) with the no-line
+    primary, the moe_noline secondary, the drift-rule column and the fwd-4.3 pins."""
+    M = doc["model"]
+    M["version"] = ("%s: primary %s, no-line primary %s (ML v2 %s, fit-2019-2023 stacks %s); debut method debut.json %s; "
+                    "stat lines statlines.json %s (prod); MoE stack %s (%s); engine %s / params %s (%s); methodround "
+                    "S/SM; ML page model %s" % (
+                        MODEL_VERSION_43, PRIMARY, NOLINE_PRIMARY, jm.get("ml2_built"), jm.get("forward_models_sha256_16"),
+                        (jm.get("debut_model") or {}).get("sha256_16"), slm.get("statlines_sha256_16"),
+                        os.path.basename(jm.get("stack_source") or ""), jm.get("stack_built"), jm.get("engine_version"),
+                        jm.get("params_version"), jm.get("engine_dir"), jm.get("ml_page_snapshot")))
+    if args.headline == "line":
+        M["p_a"] = ("forward model v4.3 (data/predictions/README.md): p_a = models.%s, the ML v2 open stack (weights fit "
+                    "2019-2023 on opening lines) fed the multiplicative de-vig consensus line captured at prediction "
+                    "time (market.p_a_open_stack_input), whatever the capture time before the lock; if it cannot run, "
+                    "the first of %s (flag primary_fallback); no line: p_a_noline. p_a_line = the MoE stack with the "
+                    "line (fwd-1's p_a). p_a_noline = models.%s, the ML v2 no-line stack (weights fit 2019-2023), else "
+                    "the MoE stack without a line (models.%s, flag noline_fallback). Debutants: p_a = the line, "
+                    "p_a_noline = Elo with the debutant seeded from his pre-UFC record when a seed exists (else 1500)"
+                    % (PRIMARY, list(FALLBACK), NOLINE_PRIMARY, NOLINE_FALLBACK))
+    else:
+        M["p_a"] = ("p_a = p_a_noline: models.%s (ML v2 no-line stack), else models.%s (flag noline_fallback); "
+                    "debutants: seeded Elo" % (NOLINE_PRIMARY, NOLINE_FALLBACK))
+        M["primary"] = NOLINE_PRIMARY
+    M["p_a_noline"] = ("bout without a debutant: models.%s (ML v2 no-line stack, forward_models.json ml2_static.noline, "
+                       "weights fit 2019-2023), else models.%s (MoE no-line stack; flag noline_fallback); bout with a "
+                       "debutant: p_elo (seeded Elo); p_a_noline_source says which" % (NOLINE_PRIMARY, NOLINE_FALLBACK))
+    M["noline_primary"], M["noline_fallback"] = NOLINE_PRIMARY, NOLINE_FALLBACK
+    M["drift_rule_b"] = ("docs/V6_V10_PLAN.md 6.5.1(b) reads p_a_noline from fwd-4.3 on (each scored row its own file's "
+                         "p_a_noline; scored win bouts without a debutant); the MoE no-line series (fwd-4.1 / fwd-4.2 "
+                         "p_a_noline, then models.moe_noline) is tracked beside it and never triggers")
+    M["models"] = MODEL_DEFS_43
+    M["preregistration"] = {"readme_section": "data/predictions/README.md, Forward model v4.3 (Nov 7, 2026)",
+                            "pinned_inputs": FWD43_PINNED, "pinned_inputs_ok": not mism, "pinned_mismatches": mism or None,
+                            "audit1_flag": "decided after vault audit 1 was read: listed in audit 2 as not clean on the "
+                                           "vault (plan 6.5.2); its clean test is this ledger"}
+    M["fwd"] = "4.3"
+    M["tool"] = TOOL_43
+
+
+def print_table_43(doc):
+    """fwd-4.3: the no-line primary (ML v2) next to the MoE no-line secondary."""
+    print("\nno-line (fwd-4.3): p_a_noline (source) vs models.moe_noline (MoE)")
+    for b in doc["bouts"]:
+        mo = (b.get("models") or {}).get("moe_noline")
+        print("  %-48s %s  %-28s  MoE %s" % ((b["a"]["name"] + " vs " + b["b"]["name"])[:48],
+                                           "   -  " if b["p_a_noline"] is None else "%6.3f" % b["p_a_noline"],
+                                           b.get("p_a_noline_source"), "  -  " if mo is None else "%.3f" % mo))
 
 
 def print_table_42(doc):
@@ -1295,7 +1392,7 @@ def compute_scores(files, results, B, stats=None):
     # models block (v4.1 files on): per model version, every model's metrics and its paired log-loss difference vs the
     # market at prediction time and vs the close, event-cluster bootstrap (same draws per comparison)
     out["models"] = {}
-    order = list(MODEL_DEFS)
+    order = list(MODEL_DEFS_43)
     for v in sorted({r["version"] for r in rows}):
         rs = [r for r in rows if r["version"] == v and r.get("m")]
         if not rs:
@@ -1412,10 +1509,10 @@ def main():
     p.add_argument("--odds-dir", default=None)
     p.add_argument("--sims", type=int, default=2000, help="engine sims per corner order (default 2000)")
     p.add_argument("--engine-dir", default=None,
-                   help="engine folder (default: src for fwd-4.1; fwd-4.2 is pinned to versions/v4)")
-    p.add_argument("--fwd", choices=["auto", "4.1", "4.2"], default="auto",
+                   help="engine folder (default: src for fwd-4.1; fwd-4.2 and fwd-4.3 are pinned to versions/v4)")
+    p.add_argument("--fwd", choices=["auto", "4.1", "4.2", "4.3"], default="auto",
                    help="forward model version; auto = the one data/predictions/README.md assigns to the event date "
-                        "(fwd-4.2 from 2026-11-14, fwd-4.1 before); writing under another version is refused")
+                        "(fwd-4.3 from 2026-11-14, fwd-4.1 before); writing under another version is refused")
     p.add_argument("--headline", choices=["line", "noline"], default="line")
     p.add_argument("--stack", choices=["auto", "blindtest", "page"], default="auto",
                    help="MoE weights: blindtest = data/derived/blindtest_stack.json (refit with the current engine, blind-"
