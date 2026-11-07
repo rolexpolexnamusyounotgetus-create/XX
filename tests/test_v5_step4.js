@@ -295,7 +295,10 @@ if (R0s) {
   let missing = false; try { XR.embedEtas({ id: "no-such-fight", date: "2022-01-01" }); } catch (err) { missing = true; }
   check("mlpathrec embed: swapping corners swaps the etas; train recipe = leave-one-year-out; 2024-25 = the exported recipe; 2026 and missing snapshots refused",
     JSON.stringify(e0.etaA) === JSON.stringify(e1.etaB) && JSON.stringify(e0.etaB) === JSON.stringify(e1.etaA) &&
-    JSON.stringify(e0.recipe) === JSON.stringify(LOYO.coef_loyo[y]) && JSON.stringify(XR.embedRecipe("2024-06-01")) === JSON.stringify(EMJ.mlrates_blend.targets) && refused && missing,
+    // v6 (review gate 1): engines of major version 6+ take the fold-honest recipe (embed_blend_fh.json coef_fh[year]; '2024' for 2024-25)
+    (XR.foldHonest ? (JSON.stringify(e0.recipe) === JSON.stringify(readJSON("data/derived/embed_blend_fh.json").coef_fh[y]) &&
+      JSON.stringify(XR.embedRecipe("2024-06-01")) === JSON.stringify(readJSON("data/derived/embed_blend_fh.json").coef_fh["2024"])) :
+      (JSON.stringify(e0.recipe) === JSON.stringify(LOYO.coef_loyo[y]) && JSON.stringify(XR.embedRecipe("2024-06-01")) === JSON.stringify(EMJ.mlrates_blend.targets))) && refused && missing,
     `fight ${f.id} ${f.date}`);
   const tc = LOYO.train_check.segments.all;
   check("embed_blend_loyo.json: the full 2019-2023 refit reproduces the exported recipe; train leave-one-year-out deviance improves (CIs below 0)",

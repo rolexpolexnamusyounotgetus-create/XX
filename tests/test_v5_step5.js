@@ -32,6 +32,18 @@ const ML2 = require(path.join(ROOT, "src/ml/ml2.js"));
 const SR = require(path.join(ROOT, "tools/sosrec.js"))(E, ROOT);
 const XR = require(path.join(ROOT, "tools/mlpathrec.js"))(E, ROOT);
 const NM = +(process.argv.slice(2).find((a) => /^\d+$/.test(a)) || 150);
+// v6: these are the v5 package's checks; on a v6 engine they run with the v5 blend settings (winner 'stack', mrModel 'S', debut and
+// statDist off), which tests/test_v6.js proves reproduce the frozen v5.0.1 package bit for bit. v6's own paths: tests/test_v6.js.
+if (/^6\./.test(E.VERSION)) {
+  const P0 = E.predict, V5B = { winner: "stack", mrModel: "S", debut: false, statDist: false };
+  E.predict = function (a, b, o) {
+    o = Object.assign({}, o || {});
+    const pp = Object.assign({}, o.params || {});
+    pp.blend = Object.assign({}, V5B, pp.blend || {});
+    o.params = pp;
+    return P0.call(E, a, b, o);
+  };
+}
 
 let fails = 0, passes = 0;
 function check(name, ok, info) {
@@ -70,7 +82,7 @@ let R0s = null;
 check("params: one components block, blend_anchor on, earlier components unchanged; blend settings (mrWeight 0.15 / Calibrate B 0.3, recalT 1, kappa 1.65 / Calibrate B 2.15)",
   FP.components.blend_anchor === true && FP.components.embed === true && FP.components.oppadj === false && FP.components.durability === true &&
   FP.components.dynamics === true && FP.components.officials === false && FP.components.realism_sens === false && FP.components.v401 &&
-  FP.components.styles_sos && FP.components.styles_sos.sos === true && (FP.components.calB ? FP.blend.mrWeight === 0.3 && FP.blend.boot.inflate === 2.15 : FP.blend.mrWeight === 0.15 && FP.blend.boot.inflate === 1.65) && FP.blend.recalT === 1 &&
+  FP.components.styles_sos && FP.components.styles_sos.sos === true && (FP.components.calB ? FP.blend.mrWeight === (/^6\./.test(FP.version) ? 0.35 : 0.3) && FP.blend.boot.inflate === 2.15 : FP.blend.mrWeight === 0.15 && FP.blend.boot.inflate === 1.65) && FP.blend.recalT === 1 &&
   (fs.readFileSync(path.join(ROOT, "src/params3.js"), "utf8").match(/^\s{4}components:\s*\{/mg) || []).length === 1, JSON.stringify(Object.keys(FP.components)));
 
 const dbJson = fs.readFileSync(path.join(ROOT, "data/derived/fighters.json"), "utf8");

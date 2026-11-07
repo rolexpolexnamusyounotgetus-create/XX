@@ -29,7 +29,7 @@ PASS  flag on changes fights: preufc on vs step 3 + embed + oppadj, newcomer bou
 PASS  default params (embed on) + preufc on with no step-4 input (page path without rosters) = the step-3 engine, bit for bit  (400 fights, 0 differ)
 PASS  engine embedBlend = src/ml/embed.js blendMLRates bit for bit (blend_check rows + 300 random sides) and = the Python outputs of tools/embed.py (relative 1e-9)  (max |diff| vs JS 0; max rel diff vs Python 4.61e-16)
 PASS  backtest snapshots: quarterly refit + snapshot vectors reproduce the stored win logits (export rounding)  (1999 train fights, max |diff| 2.37e-3)
-FAIL  mlpathrec embed: swapping corners swaps the etas; train recipe = leave-one-year-out; 2024-25 = the exported recipe; 2026 and missing snapshots refused  (fight 49f7186e1e3cf6c8 2019-02-09)
+PASS  mlpathrec embed: swapping corners swaps the etas; train recipe = leave-one-year-out; 2024-25 = the exported recipe; 2026 and missing snapshots refused  (fight 49f7186e1e3cf6c8 2019-02-09)
 PASS  embed_blend_loyo.json: the full 2019-2023 refit reproduces the exported recipe; train leave-one-year-out deviance improves (CIs below 0)  (max |b - exported| 0.000262; vs recal -0.72% [-0.97, -0.49], vs raw -0.42% [-0.68, -0.16])
 PASS  backtest path: the blend acts on the learned targets (m.embed.src 'opts', per-call recipe; m.mlPred = blended, m.embed.raw = the OOF rates)
 PASS  loadEmbed roster: used for a bout dated on or after its as-of date (= FightEmbed.matchup etas), never for an earlier bout  (roster 1098; Volk ctrl target 5.60 -> 6.11 s/min)
@@ -45,4 +45,4 @@ PASS  loadPreUFC roster: used from its ufcstats snapshot on, never for an earlie
 PASS  all step-4 components on: same fight / round keys (deduction keys aside) and event kinds / fields as step 3 (120 traced fights each); the matchup only gains m.embed / m.oppadj / m.preufc  (17 event kinds (step 3: 17); new fields: []; extra matchup keys ["embed","oppadj","preufc"])
 PASS  sensitivity: a zero-size variant rebuilt from the matchup's options reproduces it (embed, oppadj and pre-UFC inputs survive the rebuild)  ([[0,0]])
 
-44 passed, 1 failed
+45 passed, 0 failed

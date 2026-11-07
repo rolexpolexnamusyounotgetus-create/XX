@@ -277,7 +277,7 @@ const strip = (f) => JSON.stringify({ w: f.winner, m: f.method, d: f.detail, r: 
 
 console.log("\n=== API and determinism ===");
 check("API surface", ["loadDB", "profile", "matchup", "matchupBase", "simulate", "bucket", "makeRng", "summarize", "explain", "manualProfile",
-  "loadMLRates", "mlModel", "judgeRound", "deductions", "resolveParams", "v401Flags", "v501Flags"].every((k) => typeof E[k] === "function") && /^5\.0\.1/.test(E.VERSION), "VERSION " + E.VERSION);
+  "loadMLRates", "mlModel", "judgeRound", "deductions", "resolveParams", "v401Flags", "v501Flags"].every((k) => typeof E[k] === "function") && /^(5\.0\.1|6\.0\.0)/.test(E.VERSION), "VERSION " + E.VERSION);   // v6: the v5.0.1 simulator re-bundled
 check("no learned model loaded by default: matchup = base tables", !E.mlModel() && mVG.mlApplied === false);
 check("engine source has no Math.random", !/Math\.random/.test(fs.readFileSync(ENGINE_SRC, "utf8")));
 {

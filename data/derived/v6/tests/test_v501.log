@@ -1,4 +1,4 @@
-FAIL  reference is the frozen 5.0.0 engine  (5.0.0 / 6.0.0)
+PASS  reference is the frozen 5.0.0 engine  (5.0.0 / 6.0.0)
 engine 6.0.0 (params 6.0.0-selfcal-pre2024) vs frozen 5.0.0 (params 5.0.0-selfcal-pre2024); 120 random matchups per group
 PASS  1a. v501 off = 5.0.0: random pairs, learned rates, durability roster, SOS + step-4 inputs  (120 matchups (120 learned rates, 0 durability records, 0 on the computed path), 1200 fights, 12 summaries; 0 fight / 0 summary mismatches)
 PASS  1b. v501 off = 5.0.0: random pairs, plain tables, computed durability  (120 matchups (0 learned rates, 0 durability records, 120 on the computed path), 1200 fights, 12 summaries; 0 fight / 0 summary mismatches)
@@ -13,4 +13,4 @@ PASS  3. an explicit opts.params override wins over the v501 set
 PASS  3. v501 off keeps the usual (5.0.0) fields
 PASS  3. v501Flags: true / false / object
 
-12 passed, 1 failed
+13 passed, 0 failed

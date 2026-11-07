@@ -377,3 +377,55 @@ submission types                      0            Rear Naked Choke 48%, Arm Tri
 PASS  Women's Strawweight: base rates within tolerance (finish, KO, SUB, KD/100, landed/15, ctrl/15)
 
 === Volkanovski (A) vs Gaethje (B): Lightweight, 5 rounds, title, 2026-11-06 ===
+win: Volkanovski 54.8%  Gaethje 44.4%  draw 0.8%   (MC se 0.35 pts)
+bins [A KO/TKO, A sub, A dec, draw, B dec, B sub, B KO/TKO]: 15.1 / 4.2 / 35.6 / 0.8 / 17.3 / 2.4 / 24.6
+finishes by round, Volk: 5.7 / 5.1 / 3.4 / 3.1 / 2.0   Gaethje: 9.4 / 7.6 / 4.2 / 3.7 / 2.2
+goes the distance 53.7% (Volk wins 66.3% of decisions); decisions UD 76.8 SD 20.3 MD 1.4 draw 1.5; 10-8 per judge-round 3.16%
+methods: A:UD 29.2%, B:UD 12.0%, B:KO 11.0%, B:TKO 10.0%, A:KO 6.3%, A:SD 5.9%, A:TKO 5.4%, B:SD 5.0%, A:SUB 4.2%, B:SUB 2.4%, B:DOC 2.0%, A:DOC 1.7%, A:GNP 1.2%, B:GNP 1.1%, D:DRAW 0.8%, A:MD 0.5%, B:CORNER 0.5%, A:CORNER 0.3%, B:MD 0.3%, A:LEG 0.2%, B:LEG 0.0%
+average fight 17.9 min; KD per 15 per fighter 0.255; control per 15 85 s
+
+per fighter (sim per 15 min of fight time vs UFC career and decayed rates per 15):
+stat                    Volk sim   career  decayed | Gaethje sim   career  decayed
+sig landed                 86.20    89.69    82.10 |       60.04    94.33    80.57
+sig attempted             159.40   157.62   144.28 |      124.23   163.88   146.93
+sig absorbed               60.04    50.00    49.17 |       86.20   102.50    88.73
+accuracy %                 54.07    56.90    56.90 |       48.33    57.56    54.83
+head landed                57.23    58.87    59.45 |       42.77    62.42    59.91
+body landed                10.10     9.16     6.81 |        8.47    10.32     9.69
+leg landed                 18.87    21.67    15.84 |        8.80    21.60    10.97
+ground landed               4.89    13.66     9.62 |        3.00     3.27     5.19
+knockdowns                  0.18     0.29     0.13 |        0.33     0.67     0.64
+TD landed                   0.90     1.63     1.31 |        0.85     0.30     0.55
+TD accuracy %              28.25    34.34    30.21 |       34.28    26.67    27.86
+control s                  89.51   177.09   126.59 |       79.50    59.15    92.27
+sub attempts                0.14     0.19     0.17 |        0.08     0.00     0.00
+PASS  summarize(Volk vs Gaethje, 20000) under 6 s of CPU on one core  (1586 ms CPU, 1583 ms wall, load average 0.8 on 4 cores)
+PASS  Volk vs Gaethje probabilities sum to 1
+
+=== explain(Volkanovski vs Gaethje) ===
+Alexander Volkanovski vs Justin Gaethje | Lightweight (155 lb), 5 rounds, title, 2026-11-06
+Expected position time (fit): distance 84.2%, clinch 7.1% (Alexander Volkanovski controls 53.2%), Alexander Volkanovski on top 4.6%, Justin Gaethje on top 4.0%  [league: distance 62.0%, clinch 6.1%, ground 31.9%]
+
+== Alexander Volkanovski (Featherweight, age 38.1, 82 decayed UFC minutes) ==
+  Attempts/min: distance 11.73 (league 12.36), clinch 12.17, ground top 5.55 (league 4.02)
+  Accuracy at distance head/body/leg 41.0% / 65.5% / 80.0%; clinch 68.4% / 85.6% / 92.6%; ground 73.7% / 88.5% / 94.2%
+  Distance target mix head/body/leg 78.6% / 6.0% / 15.4%
+  Expected per 15 (base): sig att 165.4, landed 85.0 (dist 71.8, clinch 10.0, ground 3.2); career landed/min 5.47, absorbed/min 3.28
+  KD per landed standing head strike 0.711% (durability, absolute): base 0.902% x kdCal x kdScale x [opp chin 0.85 (cov 1.47 x fighter 0.58) x own power 0.55 (cov 0.72 x fighter 0.76) x knobs 1.00/1.00]^0.50 x engine structure 0.41^0.50; damage/head 0.65
+  Takedowns: 3.33 att per 15 standing min, success 25.9% (career 32.2% vs opp allows 31.6%, league 36.2%); control target 76 s/15 (league 171), top skill 0.89 x opp escape 0.89 -> pass edge 0.89
+  When under: mean stand-up 62 s, sweeps 0.037/min
+  Submissions: 0.073 attempts per ground-minute (league 0.087), conversion 28.8% (shrunk own 26.1% vs opp 33.9%, league 30.9%)
+  Cardio: output by round 0.83 1.05 1.19 1.23 1.40 (dynamics: league pace curve x his late-round ratio x opponent's^0.4; knockdown risk by round 0.81 0.71 0.41 0.30 0.30); cardio index 1.10; stamina drain x0.78 of the 3-round base (5-round pacing x0.90, cardio x0.86, knob x1.00)
+
+== Justin Gaethje (Lightweight, age 38.0, 71 decayed UFC minutes) ==
+  Attempts/min: distance 9.17 (league 12.36), clinch 12.33, ground top 3.61 (league 4.02)
+  Accuracy at distance head/body/leg 38.2% / 63.8% / 80.2%; clinch 65.9% / 84.6% / 92.6%; ground 71.5% / 87.7% / 94.2%
+  Distance target mix head/body/leg 84.7% / 6.6% / 8.7%
+  Expected per 15 (base): sig att 131.4, landed 62.2 (dist 50.5, clinch 9.9, ground 1.8); career landed/min 5.37, absorbed/min 5.92
+  KD per landed standing head strike 1.565% (durability, absolute): base 0.902% x kdCal x kdScale x [opp chin 0.97 (cov 1.37 x fighter 0.71) x own power 0.98 (cov 0.72 x fighter 1.36) x knobs 1.00/1.00]^0.50 x engine structure 0.98^0.50; damage/head 0.92
+  Takedowns: 2.58 att per 15 standing min, success 31.6% (career 32.6% vs opp allows 37.6%, league 36.2%); control target 66 s/15 (league 171), top skill 1.18 x opp escape 0.63 -> pass edge 0.86
+  When under: mean stand-up 69 s, sweeps 0.025/min
+  Submissions: 0.039 attempts per ground-minute (league 0.087), conversion 28.1% (shrunk own 30.9% vs opp 28.1%, league 30.9%)
+  Cardio: output by round 0.89 1.09 1.07 1.20 1.35 (dynamics: league pace curve x his late-round ratio x opponent's^0.4; knockdown risk by round 0.81 0.71 0.41 0.30 0.30); cardio index 0.92; stamina drain x1.02 of the 3-round base (5-round pacing x0.90, cardio x1.13, knob x1.00)
+
+79 passed, 2 failed

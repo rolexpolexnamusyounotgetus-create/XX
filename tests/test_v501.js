@@ -30,7 +30,7 @@ function check(name, ok, info) {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${info ? "  (" + info + ")" : ""}`);
 }
 const readJSON = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), "utf8"));
-check("reference is the frozen 5.0.0 engine", R0.VERSION === "5.0.0" && /^5\.0\.0/.test(R0.params().version) && /^5\.0\.1/.test(E.VERSION), R0.VERSION + " / " + E.VERSION);
+check("reference is the frozen 5.0.0 engine", R0.VERSION === "5.0.0" && /^5\.0\.0/.test(R0.params().version) && /^(5\.0\.1|6\.0\.0)/.test(E.VERSION), R0.VERSION + " / " + E.VERSION);   // v6 re-bundles 5.0.1
 const dbJson = fs.readFileSync(path.join(ROOT, "data/derived/fighters.json"), "utf8");
 for (const e of [E, R0]) e.loadDB(dbJson);
 const mlJson = readJSON("data/derived/mlrates.json");
