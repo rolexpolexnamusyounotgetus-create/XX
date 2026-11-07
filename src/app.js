@@ -151,14 +151,16 @@
   var OVR = readJSON("overrides-db", {}) || {};
   var SCOUTDB = readJSON("scouting-db", {}) || {};
   var SCOUT = SCOUTDB.scouting || {}, LIKE = SCOUTDB.likeness || {};
-  // verified models (research/model_moe.md, model_methodround.md, model_mlrates.md, model_ml.md)
-  var MOEJ = readJSON("moe-db", null);
-  var MKTJ = readJSON("mkt-db", null), BENCH = readJSON("bench-db", null), VERS = readJSON("versions-db", null), FWD = readJSON("forward-db", null);
+  // verified models (page pass 3, Nov 7, 2026): ML v2 winner stacks with the forward ledger's fit-2019-2023 weights
+  // (research/model_ml2.md, research/vault_audit_v5.md), method x round S2 (fallback S), distributional stat lines
+  // (research/model_statlines.md), the debut method model (research/model_debut.md), learned stat-line rates (engine v4)
+  var SCJ = readJSON("scorecard-db", null), FWD = readJSON("forward-db", null);
   var DB = null;
   try { DB = E.loadDB(DBJ); } catch (e) { fail("The fighter roster didn't load (" + e.message + "). Rebuild the page with python3 build.py."); return; }
-  var MOE = null, MLP = null, MR = null, MLR = { ok: false, native: false, pending: true };
-  try { if (window.MoE && MOEJ && MOEJ.model) MOE = window.MoE.load(MOEJ); } catch (e) { MOE = null; }
-  // the stat-line, ML page and method-and-round models ship gzip-compressed (build.py); inflate them off the first paint
+  var PP = window.PagePredict || null;
+  var ML2H = null, ML2META = null, MR = null, S2M = null, SDM = null, EMB = null, OPP = null, DEBM = null, DEBJ = null;
+  var MLR = { ok: false, native: false, pending: true };
+  // the models ship gzip-compressed (build.py); inflate them off the first paint
   function readGz(id) {
     var n = $(id), txt = n ? n.textContent.trim() : "";
     if (!txt || txt === "null" || !window.DecompressionStream || !window.Response || !window.atob) return Promise.resolve(null);
@@ -171,19 +173,26 @@
     } catch (e) { return Promise.resolve(null); }
   }
   function installModels(arr) {
-    var mlr = arr[0], mlp = arr[1], mr = arr[2];
-    try { if (window.MLPage && mlp) MLP = window.MLPage.load(mlp); } catch (e) { MLP = null; }
+    var mlr = arr[0], mr = arr[1], ml2 = arr[2], s2 = arr[3], sd = arr[4], deb = arr[5];
+    try { if (window.ML2 && ml2) { ML2H = window.ML2.load(ml2); ML2META = ml2.page_meta || null; } } catch (e) { ML2H = null; }
     try { if (window.MethodRound && mr) MR = window.MethodRound.create(mr); } catch (e) { MR = null; }
+    try { if (window.MethodRound && window.MethodRound.createS2 && s2 && mr) S2M = window.MethodRound.createS2(s2, mr); } catch (e) { S2M = null; }
+    try { if (window.StatDist && sd && sd.statlines) SDM = window.StatDist.load(sd.statlines, { which: "prod" }); } catch (e) { SDM = null; }
+    try { if (window.FightEmbed && sd && sd.embed) EMB = window.FightEmbed.load(sd.embed); } catch (e) { EMB = null; }
+    if (sd && sd.opp && sd.opp.roster) {
+      OPP = {};
+      Object.keys(sd.opp.roster).forEach(function (s) { var row = sd.opp.roster[s], o = {}; sd.opp.keys.forEach(function (k, i) { if (row[i] != null) o[k] = row[i]; }); OPP[s] = o; });
+    }
+    try { if (window.DebutModel && deb && deb.model) { DEBM = window.DebutModel.load(deb.model); DEBJ = deb; } } catch (e) { DEBM = null; }
     if (mlr && window.MLRates) {
       // engine v4 applies the learned rates itself (opts.ml === false turns them off); v3 takes them through the adapter
       if (typeof E.loadMLRates === "function") { try { E.loadMLRates(mlr); MLR.native = true; MLR.ok = true; MLJSON = mlr; postModel(worker); } catch (e) { MLR.native = false; } }
       if (!MLR.native) { try { window.MLRates.load(mlr); MLR.ok = true; } catch (e) { MLR.ok = false; } }
     }
-    MLR.pending = false; mlCache.key = null; mrCache = {};
+    MLR.pending = false; mlCache.key = null; mrCache = {}; sdCache = {};
   }
-  var modelsReady = Promise.all([readGz("mlrates-gz"), readGz("mlpage-gz"), readGz("mr-gz")])
+  var modelsReady = Promise.all([readGz("mlrates-gz"), readGz("mr-gz"), readGz("ml2-gz"), readGz("s2-gz"), readGz("statdist-gz"), readGz("debut-gz")])
     .then(installModels, function () { MLR.pending = false; });
-  var MKTR = (MKTJ && MKTJ.ratings) || {};
   var ENGV = "v" + String(E.VERSION || "3");          // the one engine label the page shows (FightEngine.VERSION)
   var P0 = E.params ? E.params() : window.FightParams;
   var JP0 = P0 && P0.judge && P0.judge.power != null ? P0.judge.power : 0.25;
@@ -228,7 +237,7 @@
     DEFAULT = { a: top[0].slug, b: top[1].slug };
   }
   var S = { a: DEFAULT.a, b: DEFAULT.b, div: "Lightweight", rounds: 5, title: true,
-    adj: { A: {}, B: {} }, judgePower: JP0, scen: null, odds: { A: "", B: "" }, oddsSrc: null, line: true, ml: true, tab: "A" };
+    adj: { A: {}, B: {} }, judgePower: JP0, scen: null, odds: { A: "", B: "" }, oddsSrc: null, line: true, lineKind: "open", ml: true, tab: "A" };
   var cur = { m: null, x: null, err: null };
 
   function prof(side) { return DB.fighters[side === "A" ? S.a : S.b]; }
@@ -263,7 +272,7 @@
     } else {
       S.div = defaultDivision(S.a, S.b); S.rounds = 3; S.title = false;
     }
-    S.adj = { A: {}, B: {} }; S.judgePower = JP0; S.scen = null; S.oddsSrc = null; S.line = true;
+    S.adj = { A: {}, B: {} }; S.judgePower = JP0; S.scen = null; S.oddsSrc = null; S.line = true; S.lineKind = "open";
     var mk = pd && pd.market && pd.market.odds;
     S.odds = { A: mk && mk[S.a] || "", B: mk && mk[S.b] || "" };
     var defId = pd && pd.default_scenario;
@@ -950,63 +959,83 @@
     if (done && BL && BL.head) $("tallyLive").textContent = "Headline odds: " + nameOf("A") + " " + pctW(BL.head.pA) + ", " + nameOf("B") + " " + pctW(BL.head.pB) + ", draw " + pctD(BL.head.pD) + ".";
   }
 
-  /* ================================================================ the blend (MoE) and the method-and-round model */
+  /* ================================================================ the winner (ML v2 stacks), method x round (S2), stat lines */
   var BL = null;
   function fightCtx() { return { division: S.div, rounds: S.rounds, title: S.title, date: todayISO() }; }
-  function mlFight(ctx) {
-    return { date: ctx.date, lbs: divLbs(ctx.division) || 155, five: ctx.rounds === 5 ? 1 : 0, title: ctx.title ? 1 : 0, women: /^Women/.test(ctx.division || "") ? 1 : 0, "catch": 0 };
-  }
-  // every expert the page can compute without the simulator, for any two roster fighters
-  function expertsFor(slugA, slugB, pa, pb, ctx) {
-    var out = { experts: {}, notes: {}, A: null, B: null };
-    if (!MOE || !pa || !pb) return out;
-    var MoE = window.MoE, o = { keys: DB.meta && DB.meta.keys, snapshot: DB.meta && DB.meta.snapshot, halfLife: (DB.meta && DB.meta.half_life_days) || 730 };
-    try { out.A = MoE.sideFromProfile(pa, ctx.date, o); out.B = MoE.sideFromProfile(pb, ctx.date, o); } catch (e) { return out; }
-    try {
-      var fl = MoE.featLR(MOEJ.feat, out.A, out.B, { division: ctx.division, homeA: out.A.home, homeB: out.B.home });
-      if (isFinite(fl)) out.experts.feat_lr = fl;
-    } catch (e) { out.notes.feat_lr = "could not be computed"; }
-    out.experts.elo = MoE.eloProb(out.A.elo, out.B.elo);
-    var missing = function (has) { var w = []; if (!has(slugA)) w.push(lastName(pa.name)); if (!has(slugB)) w.push(lastName(pb.name)); return w.join(" and "); };
-    if (MLP) {
-      var r = null; try { r = MLP.predict(slugA, slugB, mlFight(ctx)); } catch (e) { r = null; }
-      if (r && r.pEloSig != null && isFinite(r.pLR)) { out.experts.ml = r.pLR; out.experts.elo_sig = r.pEloSig; out.mlPlatt = r.pA; }
-      else out.notes.ml = out.notes.elo_sig = "no ML profile for " + (missing(MLP.has) || "this pair");
-    } else out.notes.ml = out.notes.elo_sig = "not in this build";
-    var ra = MKTR[slugA], rb = MKTR[slugB];
-    if (ra && rb) out.experts.mkt_rating = MoE.ratingProb(ra[0], ra[1], rb[0], rb[1]);
-    else out.notes.mkt_rating = "no closing-line history for " + missing(function (s) { return !!MKTR[s]; });
-    return out;
-  }
-  // American odds as a number; "EV" / "even" / "evens" is +100, so every line goes through the same (power) de-vig
+  // the ML v2 fight object, as the forward ledger builds it (tools/forward_ledger.js fight2)
+  function ml2Fight(ctx) { return { date: ctx.date, lbs: divLbs(ctx.division) || null, five: ctx.rounds === 5 ? 1 : 0 }; }
+  // American odds as a number; "EV" / "even" / "evens" is +100
   function oddsNum(s) {
     s = String(s == null ? "" : s).trim().toLowerCase().replace(/[−–]/g, "-");
     if (s === "ev" || s === "even" || s === "evens") return 100;
     return /^[+-]?\d+(\.\d+)?$/.test(s) ? parseFloat(s) : NaN;
   }
   var OVER_LO = -0.01, OVER_HI = 0.25;   // a two-way line whose margin falls outside this is a typo, not a price
+  // the typed line, de-vigged both ways: multiplicative for a pre-fight line (what the open stack was fit on), power for
+  // a closing line (what the close stack was fit on); p = the one the stack in use reads
   function marketLine() {
     var ia = parseOdds(S.odds.A), ib = parseOdds(S.odds.B);
     if (ia == null || ib == null || !isFinite(ia) || !isFinite(ib)) return { p: null, ia: ia, ib: ib };
     var over = ia + ib - 1;
     if (over < OVER_LO || over > OVER_HI) return { p: null, ia: ia, ib: ib, over: over, bad: true };
-    var p = ia / (ia + ib), oa = oddsNum(S.odds.A), ob = oddsNum(S.odds.B);
-    try { if (window.MoE && isFinite(oa) && isFinite(ob)) p = window.MoE.devig(oa, ob); } catch (e) { /* proportional */ }
-    return { p: p, ia: ia, ib: ib, over: over };
+    var d = PP ? PP.devig(S.odds.A, S.odds.B) : { pMult: ia / (ia + ib), pPow: ia / (ia + ib) };
+    var kind = S.lineKind === "close" ? "close" : "open";
+    return { p: kind === "close" ? d.pPow : d.pMult, pMult: d.pMult, pPow: d.pPow, kind: kind, ia: ia, ib: ib, over: over };
   }
+  // method x round cells for the pair: S2 (methodround's who-and-how model with ML v2's columns), else S. The cells do
+  // not depend on the line: the headline winner rescales each side afterwards. Cached per pair and bout settings.
   var mrCache = {};
-  function mrFor(pMkt) {
-    if (!MR) return null;
-    var ctx = fightCtx(), key = [S.a, S.b, ctx.division, ctx.rounds, ctx.title, ctx.date, pMkt == null ? "S" : pMkt.toFixed(4)].join("|");
+  function cellsFromFlat(f, R) {
+    var c = { A: { ko: f.slice(0, R), sub: f.slice(R, 2 * R), dec: f[4 * R] }, B: { ko: f.slice(2 * R, 3 * R), sub: f.slice(3 * R, 4 * R), dec: f[4 * R + 1] }, draw: f[4 * R + 2] };
+    return c;
+  }
+  function cellTotals(c) { return { pA: sum(c.A.ko) + sum(c.A.sub) + c.A.dec, pB: sum(c.B.ko) + sum(c.B.sub) + c.B.dec, pDraw: c.draw || 0 }; }
+  function mrFor() {
+    if (!MR && !S2M) return null;
+    var ctx = fightCtx(), key = [S.a, S.b, ctx.division, ctx.rounds, ctx.title, ctx.date].join("|");
     if (key in mrCache) return mrCache[key];
-    var o = null;
-    try {
-      o = MR.predict(prof("A"), prof("B"), { slugA: S.a, slugB: S.b, division: ctx.division, rounds: ctx.rounds, title: ctx.title, date: ctx.date,
-        pMarketA: pMkt == null ? undefined : pMkt });
-      if (!o || !o.cells || !isFinite(o.pA) || o.cells.A.ko.length !== S.rounds) o = null;
-    } catch (e) { o = null; }
+    var o = null, R = S.rounds;
+    if (S2M && ML2H && PP) {
+      try {
+        var fight = ml2Fight(ctx), res = PP.winner(ML2H, S.a, S.b, fight, null);
+        var s2in = PP.s2Inputs(ML2H, window.ML2.ratingProb, S.a, S.b, fight, res);
+        var q = S2M.predict(prof("A"), prof("B"), { slugA: S.a, slugB: S.b, division: ctx.division, rounds: R, title: ctx.title, date: ctx.date, s2: s2in });
+        if (q && q.cells && q.cells.length === 4 * R + 3) { var c = cellsFromFlat(q.cells, R), t = cellTotals(c); o = { variant: "S2", cells: c, pA: t.pA, pB: t.pB, pDraw: t.pDraw, s2src: s2in.src }; }
+      } catch (e) { o = null; }
+    }
+    if (!o && MR) {
+      try {
+        var mo = MR.predict(prof("A"), prof("B"), { slugA: S.a, slugB: S.b, division: ctx.division, rounds: R, title: ctx.title, date: ctx.date });
+        if (mo && mo.cells && mo.cells.A.ko.length === R) o = { variant: "S", cells: mo.cells, pA: mo.pA, pB: mo.pB, pDraw: mo.pDraw };
+      } catch (e) { o = null; }
+    }
+    if (o && !(isFinite(o.pA) && isFinite(o.pB))) o = null;
     var ks = Object.keys(mrCache); if (ks.length > 60) mrCache = {};
     mrCache[key] = o; return o;
+  }
+  // a debut side for the debut method model: the card desk's entry (data/predictions/debutants_*.json) when there is
+  // one, else a profile with no UFC fight and no known pre-UFC record (its pre-UFC rates then enter at zero)
+  function debutEntry(slug) { return DEBJ && DEBJ.debutants && slug ? DEBJ.debutants[slug] || null : null; }
+  function debutSide(slug, prof, ctx) {
+    var DM = window.DebutModel; if (!DM || !DEBM) return null;
+    var en = debutEntry(slug);
+    if (en) return DM.sideFromDebutant(en, ctx.date, DEBJ.model);
+    if (!prof) return null;
+    var s = DM.sideFromProfile(Object.assign({ slug: slug }, prof), ctx.date, ctx.division, DEBJ.model);
+    if (PP && PP.isDebutant(prof)) { s.debut = 1; s.pav = 0; }
+    return s;
+  }
+  // P(KO, SUB, DEC | each side wins) from the debut method model, fed the page's winner probability (research/model_debut.md,
+  // the setup the forward ledger adopted for fwd-4.2); null unless a side is a debutant
+  function debutMethod(slugA, profA, slugB, profB, ctx, pA, debA, debB) {
+    if (!DEBM || !(debA || debB) || pA == null) return null;
+    try {
+      var sa = debutSide(slugA, profA, ctx), sb = debutSide(slugB, profB, ctx);
+      if (!sa || !sb) return null;
+      if (debA) sa.debut = 1; if (debB) sb.debut = 1;
+      var m = DEBM.method(sa, sb, { division: ctx.division, rounds: ctx.rounds, pA: pA });
+      return { A: m.A, B: m.B, marginal: m.marginal, debA: !!debA, debB: !!debB };
+    } catch (e) { return null; }
   }
   function sum(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s; }
   // the simulator's tally with every A-win quantity scaled by f.fA and every B-win quantity by f.fB (MoE.winnerFactors)
@@ -1019,38 +1048,44 @@
     for (k in agg.methods) s.methods[k] = agg.methods[k] * (k.charAt(0) === "A" ? fa : (k.charAt(0) === "B" ? fb : 1));
     return s;
   }
+  function winnerFactors(pA, pB, pD, p) { var dec = Math.max(1e-12, 1 - pD); return { fA: pA > 0 ? p * dec / pA : 0, fB: pB > 0 ? (1 - p) * dec / pB : 0 }; }
   function computeBlend() {
-    var pa = prof("A"), pb = prof("B"), ctx = fightCtx();
-    var X = expertsFor(S.a, S.b, pa, pb, ctx), ex = {}, k;
-    for (k in X.experts) ex[k] = X.experts[k];
+    var ctx = fightCtx(), fight = ml2Fight(ctx), ex = {};
     var engStale = !ENG || !lastAgg || lastAgg.nR !== S.rounds;
     if (stack.engine != null && !engStale) ex.engine = stack.engine;
     var mk = marketLine(), hasLine = mk.p != null, useLine = hasLine && S.line;
-    var gate = X.A ? window.MoE.gateFromSides(X.A, X.B, { division: S.div, rounds: S.rounds }) : {};
-    var rNo = null, rLine = null;
-    if (MOE && Object.keys(ex).length) {
-      try { rNo = MOE.predict({ experts: ex, gate: gate }); } catch (e) { rNo = null; }
+    var rNo = null, rLine = null, rOther = null;
+    if (ML2H && PP) {
+      try { rNo = PP.winner(ML2H, S.a, S.b, fight, null); } catch (e) { rNo = null; }
       if (hasLine) {
-        var ex2 = {}; for (k in ex) ex2[k] = ex[k]; ex2.market = mk.p;
-        try { rLine = MOE.predict({ experts: ex2, gate: gate }); } catch (e) { rLine = null; }
+        try { rLine = PP.winner(ML2H, S.a, S.b, fight, { kind: mk.kind, pMult: mk.pMult, pPow: mk.pPow }); } catch (e) { rLine = null; }
+        // the same odds read through the other weights, for the note that explains the difference
+        try { rOther = PP.winner(ML2H, S.a, S.b, fight, { kind: mk.kind === "close" ? "open" : "close", pMult: mk.pMult, pPow: mk.pPow }); } catch (e) { rOther = null; }
       }
     }
+    if (rNo) { ex.ml2lr = rNo.pML2; if (rNo.pMR != null) ex.mkt_rating = rNo.pMR; }
     var r = useLine ? rLine : rNo;
     var p = r ? r.p : (ENG && !engStale ? ENG.pA / Math.max(1e-9, ENG.pA + ENG.pB) : null);
-    var mr = mrFor(useLine ? mk.p : null);
+    var mr = mrFor();
     var pD = mr ? mr.pDraw : (ENG && !engStale ? ENG.pD : 0.008);
-    var f = (ENG && !engStale && p != null && window.MoE) ? window.MoE.winnerFactors(ENG.pA, ENG.pB, ENG.pD, p) : { fA: 1, fB: 1 };
+    var f = (ENG && !engStale && p != null) ? winnerFactors(ENG.pA, ENG.pB, ENG.pD, p) : { fA: 1, fB: 1 };
     var sc = (!engStale && lastAgg) ? scaledAgg(lastAgg, f) : null;
-    var head = null;
+    var pa = prof("A"), pb = prof("B");
+    var debA = !!(PP && PP.isDebutant(pa)), debB = !!(PP && PP.isDebutant(pb));
+    var head = null, dm = null;
     if (p != null) {
       var qA = p * (1 - pD), qB = (1 - p) * (1 - pD);
-      head = { pA: qA, pB: qB, pD: pD, src: null, bins7: null, finA: null, finB: null, variant: mr ? mr.variant : null };
+      head = { pA: qA, pB: qB, pD: pD, src: null, bins7: null, finA: null, finB: null, variant: mr ? mr.variant : null, cells: null };
       if (mr) {
-        var c = mr.cells, fA = qA / Math.max(1e-9, mr.pA), fB = qB / Math.max(1e-9, mr.pB);
-        head.src = "mr";
-        head.bins7 = [sum(c.A.ko) * fA, sum(c.A.sub) * fA, c.A.dec * fA, pD, c.B.dec * fB, sum(c.B.sub) * fB, sum(c.B.ko) * fB];
-        head.finA = c.A.ko.map(function (v, i) { return (v + c.A.sub[i]) * fA; });
-        head.finB = c.B.ko.map(function (v, i) { return (v + c.B.sub[i]) * fB; });
+        var fA = qA / Math.max(1e-9, mr.pA), fB = qB / Math.max(1e-9, mr.pB), mc = mr.cells, R = S.rounds;
+        var c = { A: { ko: mc.A.ko.map(function (v) { return v * fA; }), sub: mc.A.sub.map(function (v) { return v * fA; }), dec: mc.A.dec * fA },
+                  B: { ko: mc.B.ko.map(function (v) { return v * fB; }), sub: mc.B.sub.map(function (v) { return v * fB; }), dec: mc.B.dec * fB }, draw: pD };
+        dm = debutMethod(S.a, pa, S.b, pb, ctx, p, debA, debB);
+        if (dm && PP) { c = PP.debutCells(c, R, { A: dm.debA ? dm.A : null, B: dm.debB ? dm.B : null }); head.debut = dm; }
+        head.src = "mr"; head.cells = c;
+        head.bins7 = [sum(c.A.ko), sum(c.A.sub), c.A.dec, pD, c.B.dec, sum(c.B.sub), sum(c.B.ko)];
+        head.finA = c.A.ko.map(function (v, i) { return v + c.A.sub[i]; });
+        head.finB = c.B.ko.map(function (v, i) { return v + c.B.sub[i]; });
       } else if (sc) {
         var n = Math.max(1, sc.n);
         head.src = "engine"; head.pD = sc.bins[3] / n;
@@ -1058,8 +1093,44 @@
         head.finA = sc.finA.map(function (x) { return x / n; }); head.finB = sc.finB.map(function (x) { return x / n; });
       }
     }
-    BL = { X: X, ex: ex, r: r, rNo: rNo, rLine: rLine, mk: mk, hasLine: hasLine, useLine: useLine, p: p, mr: mr, head: head, f: f, sc: sc, engStale: engStale };
+    BL = { ex: ex, r: r, rNo: rNo, rLine: rLine, rOther: rOther, mk: mk, hasLine: hasLine, useLine: useLine, kind: r ? r.kind : null,
+      p: p, mr: mr, head: head, f: f, sc: sc, engStale: engStale, debut: dm };
     return BL;
+  }
+  // per-fighter stat-line distributions (src/ml/statdist.js, production tables) mixed over the headline cells' fight
+  // length; inputs as tools/statlines_matchup.js and the fwd-4.2 ledger: learned rates, embedding, oppadj factors
+  var sdCache = {};
+  var SD_STATS = [["sig_lnd", "Sig. strikes landed"], ["sig_att", "Sig. strikes thrown"], ["td_lnd", "Takedowns landed"], ["td_att", "Takedowns tried"],
+    ["ctrl", "Control time"], ["kd", "Knockdowns"], ["sub_att", "Submission attempts"]];
+  function statLines() {
+    if (!SDM || !BL || !BL.head || !BL.head.cells || !PP) return null;
+    var pa = prof("A"), pb = prof("B"), pred = mlPredict(pa, pb);
+    if (!pred || !pred.A || !pred.B) return null;
+    var R = S.rounds, cells = PP.lengthCells(BL.head.cells, R);
+    var key = [S.a, S.b, S.div, R, S.title, todayISO(), cells.map(function (x) { return x.toFixed(4); }).join(",")].join("|");
+    if (key in sdCache) return sdCache[key];
+    var out = null;
+    try {
+      var em = null, hasEmb = false;
+      if (EMB) {
+        em = EMB.matchup(S.a, S.b, { division: S.div, rounds: R, date: todayISO() });
+        hasEmb = (EMB.embedding(S.a).expo || 0) > 0 && (EMB.embedding(S.b).expo || 0) > 0;
+      }
+      var P = SDM.prepare({ mlA: pred.A, mlB: pred.B, etaA: em ? em.etaA : null, etaB: em ? em.etaB : null, hasEmb: hasEmb,
+        winLogit: hasEmb && em ? em.logit : 0, oppA: (OPP && OPP[S.a]) || null, oppB: (OPP && OPP[S.b]) || null, rounds: R });
+      var grid = SDM.lengthGrid(cells, R);
+      out = { A: {}, B: {}, grid: grid, hasEmb: hasEmb };
+      ["A", "B"].forEach(function (side) {
+        SD_STATS.forEach(function (st) {
+          var d = P.mixture(side, st[0], grid);
+          out[side][st[0]] = { mean: d.mean, p10: d.quantile(0.1), p50: d.quantile(0.5), p90: d.quantile(0.9) };
+        });
+      });
+      var em2 = 0; for (var i = 0; i < grid.t.length; i++) em2 += grid.t[i] * grid.w[i] / sum(grid.w);
+      out.minutes = em2;
+    } catch (e) { out = null; }
+    var ks = Object.keys(sdCache); if (ks.length > 40) sdCache = {};
+    sdCache[key] = out; return out;
   }
 
   function renderForecast() {
@@ -1076,14 +1147,16 @@
     var fc = $("fcNote"); fc.textContent = "";
     var l1 = el("span");
     if (BL.r) {
-      var nUsed = BL.r.used.length;
-      l1.appendChild(el("b", null, "Who wins: " + numWord(nUsed) + " models combined" + (BL.useLine ? ", the betting line included" : (BL.hasLine ? ", the betting line switched off" : ", no betting line")) + ". "));
-    } else l1.appendChild(el("b", null, "Who wins: the simulator alone (the combined model did not load). "));
-    if (ENG && !BL.engStale) l1.appendChild(document.createTextNode("The simulator by itself: " + shortOf("A") + " " + pctW(ENG.pA) + ", " + shortOf("B") + " " + pctW(ENG.pB) + ", draw " + pctD(ENG.pD) + " over " + nf.format(ENG.n) + " fights. The cage's winners follow the headline, not the simulator alone."));
+      var kd = BL.r.kind;
+      l1.appendChild(el("b", null, "Who wins: " + (kd === "none" ? "the stats model and the market rating, no betting line" :
+        (kd === "open" ? "the stats model with your pre-fight line" : "the stats model with your closing line")) + ". "));
+    } else l1.appendChild(el("b", null, "Who wins: the simulator alone (the winner model did not load). "));
+    if (ENG && !BL.engStale) l1.appendChild(document.createTextNode("The simulator by itself: " + shortOf("A") + " " + pctW(ENG.pA) + ", " + shortOf("B") + " " + pctW(ENG.pB) + ", draw " + pctD(ENG.pD) + " over " + nf.format(ENG.n) + " fights. It explains how and when; the cage's winners follow the headline, not the simulator alone."));
     else l1.appendChild(document.createTextNode("The simulator is running."));
     fc.appendChild(l1);
     var l2 = el("span");
-    if (H && H.src === "mr") l2.textContent = "How it ends: the finish model" + (H.variant === "SM" ? " (it also reads the betting line)" : "") + ", scaled to the headline odds.";
+    if (H && H.src === "mr") l2.textContent = "How it ends: the finish model" + (H.variant === "S2" ? "" : " (older version; the newer one did not load)") + ", scaled to the headline odds" +
+      (H.debut ? ". " + [H.debut.debA ? nameOf("A") : null, H.debut.debB ? nameOf("B") : null].filter(Boolean).join(" and ") + " makes a UFC debut, so the method for that side comes from the debut model, fed the headline odds." : ".");
     else if (H && H.src === "engine") l2.textContent = "How it ends: the simulator, scaled to the headline odds (the finish model is not available for this pair).";
     if (l2.textContent) fc.appendChild(l2);
     if (cur.m && cur.m.mlStuck) fc.appendChild(el("span", null, "This simulator build keeps its learned stat lines even with the switch off."));
@@ -1112,7 +1185,38 @@
       if (mnote) mnote.textContent = "The simulator is running.";
     }
     renderHowTable(H, sc, BL.engStale ? null : lastAgg);
+    renderStatLines();
     renderStack();
+  }
+
+  // stat lines: an 80% range per fighter (statdist), next to the simulator's average fight
+  function renderStatLines() {
+    var box = $("slBody"), note = $("slNote"); if (!box) return;
+    box.textContent = "";
+    var L = statLines();
+    if (!L) { note.textContent = MLR.pending ? "Loading the stat-line model." : "The stat-line ranges are not available for this pair in this build."; return; }
+    var A0 = (lastAgg && !BL.engStale) ? lastAgg : null, ST = E.STATS, n = A0 ? Math.max(1, A0.n) : 1;
+    function simv(side, k) { if (!A0) return null; var i = ST.indexOf(k); return i < 0 ? null : (side === "A" ? A0.sumA : A0.sumB)[i] / n; }
+    ["A", "B"].forEach(function (side) {
+      var card = el("div", "slcard " + side);
+      card.appendChild(el("h4", null, nameOf(side)));
+      var w = el("div", "tbl-wrap"), t = el("table", "data sl"), th = el("thead"), hr = el("tr");
+      ["Per fight", "Low", "Typical", "High", "Simulator"].forEach(function (h, i) { var x = el("th", null, h); x.scope = "col"; if (i) x.className = "num"; hr.appendChild(x); });
+      th.appendChild(hr); t.appendChild(th);
+      var tb = el("tbody");
+      SD_STATS.forEach(function (st) {
+        var q = L[side][st[0]], v = simv(side, st[0]), ctl = st[0] === "ctrl";
+        var f = function (x) { return x == null ? "–" : (ctl ? mmss(x) : String(Math.round(x))); };
+        var tr = el("tr"); tr.appendChild(el("td", null, st[1]));
+        [q.p10, q.p50, q.p90].forEach(function (x, i) { tr.appendChild(el("td", "num" + (i === 1 ? " strong" : ""), f(x))); });
+        tr.appendChild(el("td", "num muted", v == null ? "–" : (ctl ? mmss(v) : fx(v, st[0] === "kd" || st[0] === "sub_att" || st[0] === "td_lnd" ? 2 : 1))));
+        tb.appendChild(tr);
+      });
+      t.appendChild(tb); w.appendChild(t); card.appendChild(w); box.appendChild(card);
+    });
+    note.textContent = "Low, typical and high are the 10th, 50th and 90th percentiles of each fighter's total, over the fight lengths the finish model expects (about " +
+      fx(L.minutes, 1) + " of " + S.rounds * 5 + " minutes on average), so eight fights in ten should land between low and high. Tested on 2024-25 fights (fit on earlier years), the same recipe put 77% to 82% of real totals inside that range, for every stat. " +
+      "The simulator column is its average over the 20,000 fights as played" + (A0 ? "" : " (still running)") + ". Each line is one fighter and one stat on its own; they are not a joint forecast.";
   }
 
   function numWord(n) { return ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"][n] || String(n); }

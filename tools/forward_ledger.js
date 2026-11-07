@@ -50,7 +50,12 @@
        P(KO, SUB, DEC | each winner) from the debut method model fed the ledger's winner probability pW = the line
        (p_line) unless input.headline is "noline", else the seeded Elo (models.elo, rounded as the ledger reads it);
      - adds per-round KO and SUB arrays (koA, subA, koB, subB) to the method-and-round heads, which the stat-line
-       fight-length grid needs (tools/forward_statlines.js; the ledger rescales them to p_a). */
+       fight-length grid needs (tools/forward_statlines.js; the ledger rescales them to p_a).
+
+   --fwd 4.3 (forward model v4.3, data/predictions/README.md "Forward model v4.3"): everything --fwd 4.2 writes, plus the
+   models entry "moe_noline" = the MoE stack without a line (the same number as stack_noline; null on a debut bout), and
+   meta.fwd "4.3". The ledger (tools/forward_ledger.py) then takes p_a_noline from models.ml2_stack_noline. The --fwd 4.1
+   and --fwd 4.2 outputs are byte-identical to the tool before v4.3 existed (tests/test_forward_v43.js). */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -118,8 +123,9 @@ const DEBUT_ELO = 1500;                                // tools/build_db.py star
 // a bout with a debutant gets a separate r.debut_path block (winner by regime + method); the pre-registered models
 // block, p_a and every other field are unchanged (tests/test_debut.js checks this).
 const FWD = opt("--fwd", "4.1");                          // forward model version of the output (README)
-if (FWD !== "4.1" && FWD !== "4.2") throw new Error("--fwd must be 4.1 or 4.2, got " + FWD);
-const FWD42 = FWD === "4.2";
+if (FWD !== "4.1" && FWD !== "4.2" && FWD !== "4.3") throw new Error("--fwd must be 4.1, 4.2 or 4.3, got " + FWD);
+const FWD42 = FWD === "4.2" || FWD === "4.3";             // the fwd-4.2 additions (fwd-4.3 keeps every one of them)
+const FWD43 = FWD === "4.3";                              // fwd-4.3: models.moe_noline
 const DEBUT_MODEL_PATH = opt("--debut-model", FWD42 ? path.join("data", "derived", "debut.json") : null);
 const DMJ = DEBUT_MODEL_PATH ? JSON.parse(fs.readFileSync(path.resolve(ROOT, DEBUT_MODEL_PATH), "utf8")) : null;
 const DebutJS = DMJ ? require(path.join(ROOT, "src/ml/debut.js")) : null;
@@ -289,7 +295,7 @@ function ratingsModels(sa, sb) {
 
 const MODEL_KEYS = ["market_novig", "stack_line", "stack_open", "stack_noline", "ml2_lr", "ml2_stack_close", "ml2_stack_open",
   "ml2_stack_noline", "ml2_stack_close_prod", "ml2_stack_open_prod", "ml2_stack_noline_prod", "whr_rounds", "ratings_stack",
-  "elo", "simulator"].concat(FWD42 ? ["debut_model"] : []);
+  "elo", "simulator"].concat(FWD42 ? ["debut_model"] : []).concat(FWD43 ? ["moe_noline"] : []);
 
 const out = { meta: {
   engine_dir: path.relative(ROOT, engineDir) || ".", engine_version: E.VERSION,
@@ -315,7 +321,7 @@ const out = { meta: {
   debutant_files: DEBUT_FILES.map((f) => ({ file: "data/predictions/" + f, sha256_16: sha(path.join(PRED_DIR, f)) }))
 }, bouts: [] };
 if (DMJ) out.meta.debut_model = { file: DEBUT_MODEL_PATH, built: DMJ.meta.built, sha256_16: sha(path.resolve(ROOT, DEBUT_MODEL_PATH)) };
-if (FWD42) out.meta.fwd = "4.2";
+if (FWD42) out.meta.fwd = FWD;
 const HEADLINE = input.headline === "noline" ? "noline" : "line";     // fwd-4.2: which winner probability p_a is
 
 for (const b of input.bouts) {
@@ -382,6 +388,7 @@ for (const b of input.bouts) {
   M.stack_line = rLine ? rLine.p : null;
   M.stack_open = rOpen ? rOpen.p : null;
   M.stack_noline = rNo ? rNo.p : null;
+  if (FWD43) M.moe_noline = M.stack_noline;     // fwd-4.3: the MoE no-line stack as a scored secondary (p_a_noline moved)
   M.simulator = fin(ex.engine) ? ex.engine : null;
   const fight2 = { date: ctx.date, lbs: LBS[ctx.division] || null, five: ctx.rounds === 5 ? 1 : 0 };
   const pl = hasLine ? b.p_line : undefined, po = hasOpen ? b.p_open_in : undefined;
