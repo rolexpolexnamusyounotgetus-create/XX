@@ -80,6 +80,16 @@ Findings from verified research that the next engine versions must use. Each lin
   breaks logged, never fitted) -> data/predictions/drift_monitor.json; data/derived/v9/judge_wf.json walk-forward judging rows.
   A next attempt: re-specify G1 (six year-level errors on three years; finish rate and KD are noise there) and the +0.002 7-bin /
   method bound before running; the format pass may be re-bundled once (6.1).
+- ENGINE v9 GATE FAILED (~10:55 UTC Nov 7; no look): walk-forward judging (removes v4's 2026-card leak), a joint
+  format level pass (5-round KD x1.58, R4-5 finishes x0.58, doctor/corner stoppages x0.32), era trackers built but
+  OFF (double-count the trend with learned rates), drift monitor tools/drift_monitor.py (rule (b) + level alarms,
+  writes data/predictions/drift_monitor.json). Gate failed 8 of 14 (mostly neutral: winner +0.0003, 7-bin -0.004,
+  method +0.0008, stat lines -0.04%); the 5-round structure checks PASSED (R4 KO hazard 0.075 vs 0.058 actual, v4
+  0.119; doctor/corner stoppages now 1.02x actual, v4 3.0x).
+- v10 RE-SCOPED (~10:57 UTC, before its build ran; scratchpad/wf_engine_v6_v10.js): one CONSOLIDATED BUNDLE (v4
+  simulator + v7 package + v8 stat-line bundle + v9 parts that passed their own checks + debut path + explainer) with
+  ONE pre-committed bundle-level train gate (open-regime winner vs cmp4: point < 0 and CI upper <= +0.002; stat-line
+  total CI upper <= +0.5%; per-part LOO descriptive only). Chosen after v7/v8 TRAIN results only; recorded as such.
 - ENGINE v8 GATE FAILED (Nov 7, ~10:00 UTC; docs/CHANGELOG.md v8; version_history.json v8 `status: gate_failed`, `train_gate`;
   versions/v8-gate-failed/): v8 = the v4 simulator + cycle 3 (stat-line fidelity) behind flags: embedding blend, realised-rate
   retarget toward the statlines layer (like-for-like pilot, leak-free forward-chained statlines fold tables), takedown-intent /
