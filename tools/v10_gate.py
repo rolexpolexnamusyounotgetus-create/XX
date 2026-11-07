@@ -8,6 +8,9 @@ tools/v10_stat_gate.js (engine arms cmp4 / all / leave-one-out, 2019-2023).
                                                                              (no metric, no comparator; NON-BINDING)
     python3 tools/v10_gate.py gate <predict_harness.json> <stat_harness.json> --tests <test_v10.json> --out <score.json>
     python3 tools/v10_gate.py power <score.json> --n-look N [--effect E]
+    python3 tools/v10_gate.py look <predict_harness_val.json> <stat_harness_val.json> --decide <evalv_decide v10 vs v4 val json>
+                                   --gate <gate score.json> --out <look score.json>     THE v10 look (pre-registered in
+                                   data/derived/version_history.json v10 prereg; written before any 2024-2025 number; run once)
 
 RULES (written before any v10 gate metric was computed; committed with data/derived/v10/gate_protocol.json; the RULES dict below is
 the binding text):
@@ -327,6 +330,89 @@ def cmd_power(a):
         json.dump(out, open(a.out, "w"), indent=1)
 
 
+# ------------------------------------------------------------------ the look (pre-registered; version_history.json v10 prereg)
+LOOK_YEARS = (2024, 2025)
+LOOK_RULES = {
+    "scored_object": "the predict package (FightEngine.predict of versions/v10); summarize() for stat lines and base rates",
+    "primary": "open-regime winner log loss, v10 package minus cmp4 (the honest v4 package, versions/v7:cmp4), decisive 2024-2025 fights with an opener "
+               "for both packages, refit schedule BOTH WALK-FORWARD (v10 --ml2-rolling with stack weights fit through 2023; cmp4 the blind replay's "
+               "walk-forward experts with its stacker fit through 2023)",
+    "branch1": "keep if the primary's paired 95% CI upper < 0 (20,000 event-cluster resamples, seed 7; marginal bounds by the clustered normal bound)",
+    "branch2": "keep if (a) the primary is not worse: CI upper <= +0.002, AND (b) the branch-2 metric is clearly better: total stat-line relative "
+               "deviance (tools/v8_gate.py definition) of the v10 engine minus v4 (tools/v10_stat_gate.js --split val, arms all vs cmp4) has CI upper < 0, "
+               "AND (c) no base-rate drift: tools/evalv_decide.js's paired base-rate test (v10 vs v4 evalv val runs) passes on the 2024-2025 window "
+               "EXCLUDING the announced glove-trial window 2024-06-01..2024-11-15 (V6_V10_PLAN 7.1 item 9; its sensitivity_no_glove_trial block), "
+               "the full-window table reported next to it",
+    "flags": ["confirmation look (every ingredient scored on 2024-25 in research; the v6 look scored the same ML v2 winner head)",
+              "gate design informed by v7 / v8 train results",
+              "kept under the glove-window amendment (only if branch 2 keeps while the full-window base-rate test fails)"],
+    "secondaries_never_decisive": "no-line and close regime winner; Brier, accuracy, ECE, slope; 7-bin, method, joint, round given a finish, method "
+                                  "given the winner, P(decision) in every regime, props pool where available; per-stat deviances; who x how x when vs "
+                                  "methodround S; v10 vs the v5.0.1 package (pkg 'v501' when the harness holds it); base-rate tables; blend test",
+}
+
+
+def cmd_look(a):
+    D = json.load(open(a.harness))
+    recs = D["fights"]
+    assert all("2024-01-01" <= r["date"] < "2026-01-01" for r in recs), "the look reads 2024-2025 only"
+    G = json.load(open(a.gate))
+    if G.get("verdict") != "PASS":
+        raise SystemExit("look: the train gate did not pass")
+    w10, wc = G["fits"]["w"]["v10"]["fit_2019_2023"]["w"], G["fits"]["w"]["cmp4"]["fit_2019_2023"]["w"]
+    pi = G["fits"]["pi"]["fit_2021_2023"]["pi"]
+    fits = {"w": {"v10": {str(y): {"w": w10} for y in LOOK_YEARS}, "cmp4": {str(y): {"w": wc} for y in LOOK_YEARS}},
+            "pi": {str(y): {"pi": pi} for y in LOOK_YEARS}}
+    names = [p["name"] for p in D["meta"]["packages"]]
+    if "v501" in names:
+        fits["w"]["v501"] = {str(y): {"w": None} for y in LOOK_YEARS}
+    res = {"meta": {"tool": "tools/v10_gate.py look", "predict_harness": os.path.relpath(a.harness, ROOT), "stat_harness": os.path.relpath(a.stat, ROOT),
+                    "decide": os.path.relpath(a.decide, ROOT), "gate": os.path.relpath(a.gate, ROOT), "boot": dict(PS.BOOT), "weights": {"w_v10": w10, "w_cmp4": wc, "pi": pi}},
+           "rules": LOOK_RULES}
+    rows = G7.collect(recs, "open", LOOK_YEARS, [("v10", "v10", "np"), ("cmp4", "cmp4", "cmp")], fits, "v10")
+    P1 = G7.paired(rows, ["v10", "cmp4"], LOOK_YEARS, "open")
+    d1 = P1["paired"]["v10 - cmp4"]["winLL"]
+    b1 = PS.check_upper(d1, 0.0, True)
+    nw = PS.check_upper(d1, 0.002, False)
+    Hs = json.load(open(a.stat))
+    Fs = [f for f in Hs["fights"] if not f.get("err")]
+    assert all("2024-01-01" <= f["date"] < "2026-01-01" for f in Fs)
+    arms, Ls, groups = G8.table(Hs, Fs)
+    norm = {s_: float(np.nanmean(G8.col(Ls["cmp4"], "dev_" + s_))) for s_ in G8.STATS}
+    P2 = G8.paired(groups, Ls["all"], Ls["cmp4"], ["total", "total_raw", "winLL", "bin7", "method"] + ["dev_" + s_ for s_ in G8.STATS], norm)
+    sb = PS.check_upper(P2["total"], 0.0, True)
+    DEC = json.load(open(a.decide))
+    ng = DEC.get("sensitivity_no_glove_trial") or {}
+    full_fail = (DEC.get("branch2", {}).get("base_rates") or {}).get("paired_fail")
+    base_ok = isinstance(ng.get("paired_fail"), list) and len(ng["paired_fail"]) == 0
+    branch1 = bool(b1["pass"])
+    branch2 = (not branch1) and bool(nw["pass"]) and bool(sb["pass"]) and base_ok
+    res["primary"] = {"diff": d1["diff"], "ci": d1["ci"], "ci_mcse": d1["ci_mcse"], "normal": d1["normal"], "n_decisive": P1["n_decisive"], "n_cards": P1["n_cards"],
+                      "levels": {k: P1["packages"][k]["winLL"] for k in ("v10", "cmp4")}, "branch1_check": b1, "not_worse_check": nw}
+    res["branch2_metric"] = {"total": P2["total"], "check": sb, "paired": P2}
+    res["base_rates"] = {"governing_no_glove_paired_fail": ng.get("paired_fail"), "full_window_paired_fail": full_fail, "pass": base_ok}
+    res["decision"] = {"keep": branch1 or branch2, "branch": "branch 1" if branch1 else ("branch 2" if branch2 else "neither"),
+                       "kept_under_glove_amendment": bool(branch2 and full_fail), "flags": ["confirmation look", "gate design informed by v7 / v8 train results"]}
+    sec = {}
+    for kind in ("none", "close"):
+        rk = G7.collect(recs, kind, LOOK_YEARS, [("v10", "v10", "np"), ("cmp4", "cmp4", "cmp")], fits, "v10")
+        sec[kind] = G7.paired(rk, ["v10", "cmp4"], LOOK_YEARS, kind)
+    sec["open"] = P1
+    pk = {}
+    for kind in ("open", "none", "close"):
+        rk = pkg_rows(recs, kind, [("v10", "v10", "pkg"), ("cmp4", "cmp4", "cmp")], fits, LOOK_YEARS)
+        pk[kind] = G7.paired(rk, ["v10", "cmp4"], LOOK_YEARS, kind)
+    sec["package_with_props_vs_cmp4"] = pk
+    if "v501" in names:
+        rk = G7.collect(recs, "open", LOOK_YEARS, [("v10", "v10", "np"), ("v501", "v501", "cmp")], fits, "v10")
+        sec["vs_v501_open_descriptive"] = brief(G7.paired(rk, ["v10", "v501"], LOOK_YEARS, "open"), "v10 - v501")
+    res["secondaries"] = sec
+    if a.out:
+        json.dump(res, open(a.out, "w"), indent=1, default=float)
+    print(json.dumps({"primary": {k: res["primary"][k] for k in ("diff", "ci", "n_decisive")}, "branch2_total": {k: P2["total"][k] for k in ("diff", "ci")},
+                      "base_rates": res["base_rates"], "decision": res["decision"]}, indent=1))
+
+
 def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest="cmd", required=True)
@@ -338,13 +424,19 @@ def main():
     g.add_argument("stat")
     g.add_argument("--tests", required=True)
     g.add_argument("--out", required=True)
+    lk = sp.add_parser("look")
+    lk.add_argument("harness")
+    lk.add_argument("stat")
+    lk.add_argument("--decide", required=True)
+    lk.add_argument("--gate", required=True)
+    lk.add_argument("--out", required=True)
     w = sp.add_parser("power")
     w.add_argument("path")
     w.add_argument("--n-look", type=int, required=True)
     w.add_argument("--effect", type=float)
     w.add_argument("--out")
     a = ap.parse_args()
-    {"fits": cmd_fits, "gate": cmd_gate, "power": cmd_power}[a.cmd](a)
+    {"fits": cmd_fits, "gate": cmd_gate, "power": cmd_power, "look": cmd_look}[a.cmd](a)
 
 
 if __name__ == "__main__":

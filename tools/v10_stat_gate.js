@@ -5,6 +5,11 @@
    default engine directory is versions/v10, the arms are v10's (cmp4 = every v8 flag off = engine 4.0.0; all = v10's defaults
    = v8's bundle as v8 shipped it; -embed / -retarget / -tdIntent leave-one-out; -ctrlSpread is not run because its sd is 0, a
    no-op), and a binding run checks the v10 protocol's commands.harness_stat and stat_hashes. Scored by tools/v10_gate.py.
+   LOOK MODE (--split val, written with the v10 pre-registration, before any 2024-2025 number): the same simulation on the 2024-2025
+   validation fights (2024-01-01..2025-12-31; inputs: mlrates_oof_fh.json's dev rows, the 2024 embedding recipe, the statlines
+   'dev' table fit on 2019-2023, as-of priors), for the look's branch-2 metric. It refuses to run unless --binding with a committed
+   look protocol (run 'look', the command line in its commands.look_stat, its stat_hashes) and HEAD's data/derived/val_look_ledger.json
+   holds a row for the protocol's version; it never reads a fight dated 2026 or later.
 
    Below: tools/v8_gate.js's header, which describes the simulation and the records exactly.
    v8_gate.js: the TRAIN harness of engine v8's gate (docs/V6_V10_PLAN.md cycle 3 "Train-only acceptance test": 2019-2023,
@@ -56,9 +61,10 @@ function hash32(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h 
 function mix(a, b) { let h = (a ^ Math.imul(b + 0x6d2b79f5, 0x9e3779b1)) >>> 0; h = Math.imul(h ^ (h >>> 16), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); return (h ^ (h >>> 16)) >>> 0; }
 const readJSON = (p) => JSON.parse(fs.readFileSync(path.isAbsolute(p) ? p : path.join(ROOT, p), "utf8"));
 const sha256 = (p) => crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex");
+let WINDOW = TRAIN;
 function trainFights(years, every) {
   const bt = readJSON("data/derived/backtest_dev.json");
-  let out = bt.fights.filter((f) => f.date >= TRAIN[0] && f.date < TRAIN[1] && f.date < "2026-01-01");
+  let out = bt.fights.filter((f) => f.date >= WINDOW[0] && f.date < WINDOW[1] && f.date < "2026-01-01");
   if (years) out = out.filter((f) => years.includes(+f.date.slice(0, 4)));
   if (every > 1) out = out.filter((_, i) => i % every === 0);
   for (const f of out) { f.A.keys = bt.meta.keys; f.B.keys = bt.meta.keys; }
@@ -74,6 +80,7 @@ function outcome(f) {
 // ================================================================== worker
 if (!isMainThread) {
   const W = workerData;
+  if (W.window) WINDOW = W.window;
   const E = require(path.join(W.engineDir, "engine3.js"));
   const fights = trainFights(W.years, W.every);
   const byId = new Map(fights.map((f) => [f.id, f]));
@@ -164,6 +171,12 @@ const OUT = path.isAbsolute(args.out) ? args.out : path.join(ROOT, args.out);
 const ENGINE_DIR = path.resolve(ROOT, args["engine-dir"] || "versions/v10");
 const SIMS = +(args.sims || 300), WORKERS = Math.max(1, Math.min(3, +(args.workers || 3))), SEED = +(args.seed || 10);
 const YEARS = args.years ? String(args.years).split(",").map(Number) : null, EVERY = +(args.every || 1);
+const SPLIT = String(args.split || "train");
+if (SPLIT !== "train" && SPLIT !== "val") { console.error("v10_stat_gate: --split train | val"); process.exit(2); }
+if (SPLIT === "val") {
+  WINDOW = ["2024-01-01", "2026-01-01"];
+  if (!args.binding) { console.error("v10_stat_gate: --split val is the v10 look's stat-line harness: it runs only --binding under a committed look protocol"); process.exit(2); }
+}
 const armNames = args.arms ? String(args.arms).split(",") : (args.arm.length ? [] : Object.keys(PRESET));
 const armParams = {};
 for (const n of armNames) { if (!PRESET[n]) { console.error("v10_stat_gate: unknown arm " + n); process.exit(2); } armParams[n] = PRESET[n]; }
@@ -185,12 +198,20 @@ if (args.binding) {
   try { committed = execFileSync("git", ["show", "HEAD:" + rel], { cwd: ROOT }).toString(); } catch (e) { committed = null; }
   if (committed == null || committed !== fs.readFileSync(pf, "utf8")) { console.error("v10_stat_gate: the protocol file is not committed at HEAD (or differs)"); process.exit(3); }
   const P = JSON.parse(committed);
-  const want = P.commands && P.commands.harness_stat;
-  if (!want || want.replace(/^nice -n 5 node tools\/v10_stat_gate\.js /, "") !== cmdline) { console.error("v10_stat_gate: command line differs from the protocol's commands.harness_stat"); process.exit(3); }
+  const key = SPLIT === "val" ? "look_stat" : "harness_stat";
+  if (SPLIT === "val") {
+    if (P.run !== "look" || !P.version) { console.error("v10_stat_gate: --split val needs a look protocol (run 'look')"); process.exit(3); }
+    let L = null;
+    try { L = JSON.parse(execFileSync("git", ["show", "HEAD:data/derived/val_look_ledger.json"], { cwd: ROOT }).toString()); } catch (e) { L = null; }
+    const rows = (L && L.engine_versions) || [], v = String(P.version);
+    if (!rows.some((r) => r.version === v || String(r.version).startsWith(v + " "))) { console.error("v10_stat_gate: HEAD's data/derived/val_look_ledger.json has no row for " + v + "; append and commit it before the look"); process.exit(3); }
+  }
+  const want = P.commands && P.commands[key];
+  if (!want || want.replace(/^nice -n 5 node tools\/v10_stat_gate\.js /, "") !== cmdline) { console.error("v10_stat_gate: command line differs from the protocol's commands." + key); process.exit(3); }
   for (const [k, h] of Object.entries(P.stat_hashes || {})) if (hashes[k] !== h) { console.error("v10_stat_gate: " + k + " hash differs from the protocol (" + hashes[k] + " vs " + h + ")"); process.exit(3); }
 }
 const fights = trainFights(YEARS, EVERY);
-console.log(`v10_stat_gate: ${fights.length} train fights x 2 orders x ${SIMS} sims, arms ${armNames.join(", ")}, ${WORKERS} workers, seed ${SEED}${args.binding ? ", BINDING" : ""}`);
+console.log(`v10_stat_gate: ${fights.length} ${SPLIT} fights x 2 orders x ${SIMS} sims, arms ${armNames.join(", ")}, ${WORKERS} workers, seed ${SEED}${args.binding ? ", BINDING" : ""}`);
 const VERS = new Set();
 function runAll() {
   return new Promise((resolve, reject) => {
@@ -199,7 +220,7 @@ function runAll() {
     const res = []; let next = 0, live = 0, done = 0; const t0 = Date.now();
     function feed(w) { if (next >= chunks.length) { w.terminate(); live--; if (live === 0) resolve(res); return; } w.postMessage({ cmd: "run", ids: chunks[next++] }); }
     for (let k = 0; k < Math.min(WORKERS, chunks.length); k++) {
-      const w = new Worker(__filename, { workerData: { engineDir: ENGINE_DIR, sims: SIMS, seed: SEED, arms: armNames, armParams, years: YEARS, every: EVERY } });
+      const w = new Worker(__filename, { workerData: { engineDir: ENGINE_DIR, sims: SIMS, seed: SEED, arms: armNames, armParams, years: YEARS, every: EVERY, window: WINDOW } });
       live++;
       w.on("message", (m) => { if (m.cmd === "done") { VERS.add(m.version + " | " + m.params); res.push(...m.out); done += m.out.length; if (done % 200 < m.out.length) console.log(`  ${done}/${ids.length} fights, ${((Date.now() - t0) / 1000).toFixed(0)} s`); feed(w); } });
       w.on("error", reject);
@@ -220,7 +241,7 @@ function runAll() {
   const O = { meta: { tool: "tools/v10_stat_gate.js", built: new Date().toISOString(), cmdline, binding: !!args.binding, protocol: args.protocol || null, git_head: gitHead,
     engine_dir: path.relative(ROOT, ENGINE_DIR), engine_params: [...VERS], sims_per_order: SIMS, seed: SEED, arms: armNames, arm_params: armParams, stats: STATS,
     n_fights: outF.length, failed_fights: errs.length, wall_s: (Date.now() - t0) / 1000, hashes,
-    window: "TRAIN 2019-01-01..2023-12-31 (backtest_dev.json); nothing dated 2024 or later" }, fights: outF };
+    split: SPLIT, window: SPLIT === "val" ? "VALIDATION 2024-01-01..2025-12-31 (backtest_dev.json; the v10 look, binding only); nothing dated 2026" : "TRAIN 2019-01-01..2023-12-31 (backtest_dev.json); nothing dated 2024 or later" }, fights: outF };
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(O));
   console.log(`wrote ${path.relative(ROOT, OUT)} (${outF.length} fights, ${errs.length} failed, ${((Date.now() - t0) / 1000).toFixed(0)} s); engine/params ${[...VERS].join(", ")}`);

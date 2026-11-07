@@ -119,7 +119,9 @@ stack with the market line captured at prediction time as one of its experts (it
 `fwd-4.1` instead (section "Forward model v4.1" below: the primary `p_a` and every scored secondary model). For events
 dated 2026-11-14 or later it writes `fwd-4.2` (section "Forward model v4.2" below: the debut method model and the
 stat-line block; `--fwd` picks the version by event date). From Nov 7, 2026 those events get `fwd-4.3` instead
-(section "Forward model v4.3" below: `p_a_noline` becomes the ML v2 no-line stack).
+(section "Forward model v4.3" below: `p_a_noline` becomes the ML v2 no-line stack). From Nov 7, 2026, about 11:35 am
+UTC, they get `fwd-4.4` (section "Forward model v4.4" below: fwd-4.3's models on roster inputs refreshed to the newest
+verified results by `tools/live_refresh.py`).
 `python3 tools/forward_ledger.py score`
 fetches results for finished ledger events (ufcstats through the Greco1899 CSVs and ESPN's scoreboard as the
 second source), appends them to `results.json` and regenerates `scores.json` / `scores.md`. The backtest-side
@@ -719,6 +721,123 @@ of them is a ledger file.
     and the refusal message.
 - A later edit to these files must keep the fwd-4.1 and fwd-4.2 outputs byte-identical and the fwd-4.3 output
   unchanged, or it starts a new version.
+
+## Forward model v4.4 (Nov 7, 2026)
+
+Pre-registered on Nov 7, 2026, about 11:35 am UTC, and committed on its own before the code that implements it
+(`tools/live_refresh.py` and `--fwd 4.4`). At that time no file with a `model.version` starting `fwd-4.2`, `fwd-4.3` or
+`fwd-4.4` existed and no UFC 334 prediction existed. The only ledger file was the Vegas 124 file (Nov 7, `fwd-4.1`,
+lock 10:00 pm UTC Nov 7), which this section does not touch. No forward result had been recorded (there is no
+results.json). The newest UFC event in the Greco1899 CSVs was UFC Fight Night: Moicano vs. Nolan (Oct 31), the same as the
+fwd-4.3 snapshot. The input audit behind this section is research/live_inputs_audit.md (commit 7de2fa5).
+
+- **Scope.** fwd-4.4 applies to every ledger file for an event dated **2026-11-14 (UFC 334) or later**, until a later
+  section of this README says otherwise. It supersedes fwd-4.3 for those events. No fwd-4.3 file was ever written, so
+  none will be; `--fwd 4.3` and `--fwd 4.2` stay available for dry runs with their output unchanged (tested). Events
+  dated before 2026-11-14 stay `fwd-4.1`.
+- **What changes: the inputs only.** The models, weights, evaluators, columns, primaries, fallbacks, flags, debut
+  handling, method, stat-line block, scoring and drift-rule column are exactly fwd-4.3's. No weight is refit, no
+  hyperparameter is re-selected, and no model is added or removed. What changes is the per-fighter state those frozen
+  models read: the roster-level inputs are rebuilt with the newest completed fights before each card, instead of
+  staying at the Oct 31 snapshot that fwd-4.3 pins.
+- **Forward results enter as state only.** Results of ledger events (Vegas 124 and later) reach the inputs the same way
+  any completed UFC fight does: as rating, record and stat updates under frozen parameters. They are never used to tune
+  anything (rule 5).
+
+### 1. Live inputs
+
+`tools/live_refresh.py build` writes the live files to `data/derived/live/` with `data/derived/live/manifest.json`.
+Each live file is a copy of its fwd-4.3 pinned file in which only the live part below is rebuilt. Every other key is
+copied byte for byte and guarded.
+
+| live file | replaces (fwd-4.3 pin) | live part (rebuilt at the cutoff) | how (frozen parameters) |
+|---|---|---|---|
+| `fighters_live.json` | fighters.json `df4d868a2195fb4a` | `fighters` (profiles, Elo), `priors`, `meta.snapshot`, `meta.n_fights`, `meta.n_stat_fights` | tools/build_db.py's parse, people, vectors, walk and priors functions. Elo with elo_report.json's chosen K 44 and boost 1.5 (not re-selected), half-life 730 d, roster since 2021-01-01, live priors from fights 2018-01-01..cutoff. Profiles carry exactly the pinned profile keys: today's build_db adds five durability keys (`ko_losses_365`, `kd_absorbed_365`, `last_ko_loss`, `layoff`, `ufc_years`) and `dur`, which the pinned file does not have; they are dropped (audit section 1, finding 6). |
+| `market_live.json` | market.json `8edb0a6cc9c3ca4f` | `ratings` | Kalman continuation of the stored state with eval.market_rating.params (sig_m 0.5, tau 0.5 per year, v0 1.5, kappa 1.5): for each completed bout after the stored state's snapshot, var at the fight = min(sd^2 + tau^2 x days since the snapshot / 365.25, 2 v0); then tools/market.py `run_rating`'s line update and result update; then every sd is drifted to the cutoff. A fighter new to the stored state starts at (mu0 0, v0). Exact up to the 4-decimal rounding of the stored mu and sd (audit section 4.1). |
+| `ratings_live.json` | ratings.json `5fc4f8a3be14051f` | `roster` | tools/ratings.py `load_data`, `prepare`, `run_system` for each of the 11 systems with ratings.json's stored params, `run_dims` with the stored dim_params, `roster_states(ref_day = cutoff)`. |
+| `ml_live.json` | ml.json `444b7b1e62086cc1` | `roster` (with `mr_mu` / `mr_sd` from market_live.json ratings), `page_model.snapshot` | tools/ml.py `load_all`, `run_elo`, `margin_elo` with ml.json `tuning.margin_elo`'s stored K and w (160 / 0.8 sig, 160 / 0.9 judge; not re-tuned), `build_table`, `roster_features`, and the export's 6-significant-digit rounding. |
+| `ml2_live.json` | ml2.json `0837826dbc05cd1f` | `page_model.roster`, `page_model.snapshot` | The roster as tools/ml2.py `page_model()` builds it, with the stored `keys`, `rating_systems` and `pre_keys`: `v` from ml_live.json's roster; `mr` from market_live.json; `pre` from preufc.json `current` (the pinned preufc.json, unchanged) through `preufc.side_pre`; `r` = the four rating systems (elo_full, glicko2, trueskill_mov, whr_rounds) re-run through the cutoff with ratings.json's stored params and tools/ratings.py's pre-review `opp_ufc_w` count (`OPPUFC_CLEAN = False`). The pinned ml2.json roster was exported against the ratings.json build of 4:44 pm UTC Nov 6, before the review fix rebuilt ratings.json at 8:42 pm, and the ML v2 logistic's training features came from that code; with this setting the live builder reproduces the pinned `r` block exactly at the Oct 31 cutoff (checked before this pre-registration: 0 of 1,229 rows differ). |
+| `methodround_live.json` | methodround.json `b26b7e373367f346` | `js_model.extras`, `js_model.priors` | tools/methodround.py's walk-forward table and state through the cutoff, exported with `export_js_model`'s own extras and priors code. The coefficients, scalers, `draw_c`, `fit_through` and `source` are copied. |
+| `oppadj_live.json` | oppadj.json `c27c8c6de3733c59` | `roster` | tools/oppadj.py's roster-factor code with the stored `chosen` configs, lambda and kappa and the stored engine k values, at T = cutoff + 1, on fighters_live.json's S and live priors. |
+
+- **Not refreshed in fwd-4.4** (read at their fwd-4.3 pins): every weight file (moe_page, mlrates, forward_models,
+  blindtest_stack, statlines, mr_s2), preufc.json, debut.json (its `roster_gnet` stays as of 2026-01-01) and
+  embed_model.json (its roster stays at the 2026-01-01 refit). Catching the last two up is a new builder semantics
+  (light updates with frozen loadings; re-rating against the frozen network) with no pinned cutoff to test against.
+  They feed no winner probability except the veteran side of a debut bout's method model, and a later version may add
+  them. Debutant seeds (`data/predictions/debutants_*.json`) stay per-event inputs, as in fwd-4.1.
+- **Zero-diff rule.** Run with `--cutoff 2026-10-31`, the builder must reproduce each live file's live part equal to the
+  pinned file's: the same JSON values after the pinned file's own rounding, apart from build timestamps (`built`). Where
+  a pinned file was itself built from older inputs or code, every differing value must be explained by that, in the
+  implementation addendum. A live file that fails this at the implementation commit is not used: fwd-4.4 reads that
+  input at its fwd-4.3 pin, and the addendum names it. The tests repeat the check.
+- **Guards.** The builder refuses to write when any frozen key of a live file differs from the pinned file, when a
+  frozen weight file's hash differs from its fwd-4.3 pin (checked before and after the build), or when it would write
+  outside `data/derived/live/` (and its own scratch under out/). It never writes data/derived/*.json, backtest*,
+  `*_oof*`, version_history.json, research tables or the sealed vault directory, and it never calls a builder's `main`.
+
+### 2. Results, odds and the cutoff
+
+- **Results.** The Greco1899 scrape_ufc_stats CSVs (ufcstats; User-Agent "FightLabSim/1.0"), fetched at an upstream
+  commit that the manifest records by SHA, with each file's sha256. Fights dated on or before 2026-10-31 are taken as
+  the pinned build took them. A bout dated after 2026-10-31 enters only when ESPN's public scoreboard (the second
+  source, as for `score`) lists it and agrees on both fighters, the winner (or no winner for a draw or no contest), the
+  final round, and finish versus decision; and when ufcstats has per-round stats for both men through that round. A
+  bout that fails stays out of the live inputs and is listed in the manifest with the reason. data/raw is never
+  written: the fetched CSVs are kept under out/ and only their hashes go into the manifest.
+- **Cutoff.** `as_of` = the date of the latest event the live inputs include. Every snapshot convention follows the
+  pinned builders with `as_of` as the snapshot: fighters `meta.snapshot`, ratings `ref_day`, market sd drift, ml.json and
+  ml2.json `page_model.snapshot`, and league priors through `as_of`.
+- **Odds** (market rating only). The closing line of a completed bout is the last pre-fight capture in the odds timeline
+  (data/predictions/odds_snapshot_*.json via tools/odds_upcoming.py, phase `pre_start`): the BestFightOdds sportsbook
+  mean, multiplicative no-vig (`bfo_p_a_novig`), the same construction as `score`'s closing proxy and market.json's
+  `p_close_mult`. Nothing captured after a bout's start is used, and neither are exchange prices. A bout with no
+  pre-fight capture updates by its result only, as `run_rating` does when a line is missing, and the manifest lists it.
+- **When.** The refresh is run after the Greco1899 refresh that carries the previous card and after its results pass
+  the two-source check, and it is committed before the event's prediction file. If the upstream refresh slips, the
+  latest verified `as_of` is used; that is not a failure, and the manifest and the prediction file record which.
+
+### 3. Manifest and what each fwd-4.4 file records
+
+- `manifest.json`: `as_of`, built time (UTC), the code commit, the sha256 of tools/live_refresh.py and of each builder
+  module it imported, the upstream Greco1899 commit and file hashes, the ESPN pages read, the odds snapshots read, the
+  bouts added after 2026-10-31 and the bouts held out (with reasons), the frozen parameters used, each live file's
+  sha256, the guard results and the zero-diff status of each live file.
+- Each fwd-4.4 prediction file records `model.live_inputs`: the manifest path and sha256, `as_of`, each live file's
+  sha256, the Greco1899 commit, and `fallback` (true or false, with the reason).
+
+### 4. Fallback
+
+fwd-4.4 reads the live set all or nothing. It falls back to fwd-4.3's pinned inputs (data/derived at the fwd-4.3 hashes)
+for every live input, records `model.live_inputs.fallback` = true with the reason, and flags every bout
+`live_inputs_fallback`, when any of these holds at prediction time:
+
+- `data/derived/live/manifest.json` is missing or unreadable, or a live file is missing;
+- a live file's sha256 differs from the manifest;
+- a guard fails when re-checked (a frozen key of a live file differs from the pinned file);
+- the manifest's `as_of` is before 2026-10-31, or it was built at or after the event's lock;
+- the manifest says a live file failed its build or its zero-diff check.
+
+With the fallback, every number equals what fwd-4.3 would publish. Writing a fwd-4.4 file is refused only when the
+fallback inputs themselves fail fwd-4.3's pinned-hash check.
+
+### 5. Version switch, version string, scoring
+
+- **Version switch.** `--fwd auto` (the default) picks fwd-4.4 for events dated 2026-11-14 or later and fwd-4.1 before.
+  Writing a ledger file under any other version is refused; dry runs may use any.
+- **Pinned files.** fwd-4.3's table, with the seven files above checked through the manifest instead of a fixed hash
+  (fighters, market, ratings, ml, ml2, methodround, oppadj); the pinned copies must still match fwd-4.3 for the
+  fallback. Every other file and evaluator keeps its fwd-4.3 hash.
+- **Version string.** `model.version` starts `fwd-4.4:` and names both primaries, the forward_models.json, debut.json and
+  statlines.json hashes, the engine, and the live inputs' `as_of` and manifest sha256 (or "fallback: fwd-4.3 pinned
+  inputs"). `model.preregistration` names this section.
+- **Scoring.** Exactly as fwd-4.3. fwd-4.4 is a separate tally from any other version.
+- **Tool code.** `tools/live_refresh.py` (new), `tools/forward_ledger.py` 1.4 (`predict --fwd 4.4`),
+  `tools/forward_ledger.js` (`--fwd 4.4` and the input-folder option) and `tools/forward_statlines.js` (the same
+  option). The implementation commit and the code hashes go into a dated addendum below before any fwd-4.4 file
+  exists. The fwd-4.1, fwd-4.2 and fwd-4.3 outputs of the same tools stay byte-identical (golden fixtures captured from
+  the current tools before the edit).
+- **The page is out of scope.** This section changes nothing on the page, in build.py or in src/app.js.
 
 ## Drift monitor (Nov 7, 2026; engine cycle 4 tooling, no model change)
 
