@@ -125,10 +125,33 @@ const waitTally = (pg) => pg.waitForFunction(() => /simulated fights/.test(docum
   check(sl.L && sl.rows === 14 && ord, "stat lines: 7 rows per fighter, low <= typical <= high", sl.rows);
 
   console.log("scorecard and forward test");
-  const sc = await pg.evaluate(() => ({ bt: document.getElementById("btBody").innerText, fw: document.getElementById("fwBody").innerText }));
+  const sc = await pg.evaluate(() => ({ bt: document.getElementById("btBody").innerText, fw: document.getElementById("fwBody").innerText,
+    blend: document.getElementById("blendNote").textContent, how: document.getElementById("method-h").closest("section").innerText,
+    ver: [...document.querySelectorAll(".sc-ver table.data tbody tr")].map((tr) => [...tr.children].map((td) => td.innerText)) }));
   check(/level with the market/i.test(sc.bt), "the scorecard says plainly: level with the market");
   check(/0\.6003/.test(sc.bt) && /0\.5887/.test(sc.bt) && /0\.5854/.test(sc.bt) && /−0\.0087/.test(sc.bt) && /0\.6150/.test(sc.bt), "scorecard quotes the verified numbers (2026 close 0.6003, ML v2 0.5887 vs close 0.5854, -0.0087, open stack 0.6150)");
   check(/v5\.0\.1/.test(sc.bt) && /v6/.test(sc.bt) && /rejected/.test(sc.bt) && /kept, on this page/.test(sc.bt), "engine versions table: v4 kept, v5 / v5.0.1 / v6 rejected");
+  // final state (Nov 7, 1:30 pm UTC): v4 kept; v5, v5.0.1, v6 rejected on their single look; v7-v9 failed their train gate;
+  // v10 kept, then reversed on review; one-line reasons; the lesson in one sentence
+  const vrow = Object.fromEntries(sc.ver.map((r) => [r[0].split(":")[0], r]));
+  const wantOut = { v4: "kept, on this page", v5: "rejected on its single look", "v5.0.1": "rejected on its single look", v6: "rejected on its single look",
+    v7: "failed its train gate", v8: "failed its train gate", v9: "failed its train gate", v10: "kept, then reversed on review" };
+  const badOut = Object.keys(wantOut).filter((k) => !vrow[k] || vrow[k][1] !== wantOut[k]);
+  check(!badOut.length, "engine versions table: v4 kept, v5-v6 rejected on their single look, v7-v9 failed their train gate, v10 kept then reversed", badOut.map((k) => [k, vrow[k] && vrow[k][1]]));
+  const longWhy = Object.keys(wantOut).filter((k) => vrow[k] && (vrow[k][2].length > 260 || /cmp4|branch|MC SE|->|C1|sub-part|evalv/.test(vrow[k][2])));
+  check(!longWhy.length, "every version's reason is one plain line (no protocol jargon)", longWhy.map((k) => vrow[k][2].slice(0, 80)));
+  check(/The lesson: after v4, the remaining gains were a few thousandths of log loss, smaller than one test window can detect\./.test(sc.bt), "the lesson in one sentence");
+  check(/opened twice/.test(sc.bt) && !/opened once/i.test(sc.bt + sc.blend), "the vault: two openings, never 'opened once'");
+  check(/0\.6150 against the opening line's 0\.6199, a difference of −0\.0048 \[−0\.0196, \+0\.0097\]/.test(sc.bt) && /The closing line scored 0\.6003/.test(sc.bt),
+    "2026, final audit: close 0.6003; the shipped open stack 0.6150 vs opener 0.6199, -0.0048 [-0.0196, +0.0097]");
+  check(/\+0\.0014 \[−0\.0188, \+0\.0210\]/.test(sc.bt) && /−0\.0033 \[−0\.0110, \+0\.0047\]/.test(sc.bt) && /−0\.33% \[−1\.48%, \+0\.76%\]/.test(sc.bt),
+    "2026, final audit: v4 package vs opener, v10 side line and v10 stat-line total quoted exactly");
+  check(/−0\.0172 \[−0\.0283, −0\.0056\]/.test(sc.bt) && /−0\.0324 \[−0\.0530, −0\.0116\]/.test(sc.bt) && /−0\.0344 \[−0\.0571, −0\.0123\]/.test(sc.bt) && /does not use the props pool/.test(sc.bt),
+    "how it ends: the props pool helped on 2024-25 and on both 2026 audits, and the page says it does not use it");
+  const beat = /\b(beat|beats|outscored|ahead of|better than)\b[^.;:]{0,40}\b(market|closing line|opening line|opener|the line alone)\b/i;
+  const beatHits = [sc.bt, sc.blend, sc.how].map((t) => (beat.exec(t) || [null])[0]).filter(Boolean);
+  check(!beatHits.length, "no copy says a model or version beat the market", beatHits);
+  check(/v7, v8 and v9 failed their gate/.test(sc.how) && /v10 was kept and then reversed on review/.test(sc.how), "how the engine works: v4 stays, v5-v10 accounted for");
   check(!/Every weight on this page was fit on these fights only/.test(sc.bt) && /combine the models into the pick were fit on these fights only/.test(sc.bt) && /refit on fights through 2025/.test(sc.bt),
     "testing protocol: only the stack weights are 2019-2023; the stats model was refit through 2025 (QA, Nov 7)");
   const metaD = (/<meta name="description" content="([^"]*)"/.exec(fs.readFileSync(PAGE, "utf8")) || [])[1] || "";

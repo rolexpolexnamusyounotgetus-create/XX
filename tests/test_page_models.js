@@ -14,7 +14,11 @@
 //    lines with the embedding term off for the pair, and src/app.js / tools/statlines_matchup.js carry that guard.
 // 5. Debut method model: the page block equals the full debut.json model on the card desk's debutants.
 // 6. Scorecard: every report-only number in data/derived/page_scorecard.json is quoted verbatim from its source; the
-//    JSON-derived numbers equal their sources; the 2026 readout says "level with the market".
+//    JSON-derived numbers equal their sources; the 2026 readout says "level with the market". Final state (Nov 7, 1:30 pm
+//    UTC): every engine version v3-v10 has a plain note whose numbers are digit-for-digit in its decision basis and whose
+//    outcome label follows the record (kept / rejected on its single look / failed its train gate / kept, then reversed on
+//    review); audit 2's numbers on the page are exact to research/vault_audit_v10.md; the props pool rows are quoted and
+//    equal the audits' recorded results.
 // 7. Forward ledger: the page's committed picks are byte-for-byte the committed file's (git show of the adding commit),
 //    committed before the lock.
 "use strict";
@@ -262,7 +266,7 @@ for (const s of Object.keys(B.sd.opp.roster)) { const row = B.sd.opp.roster[s], 
   check(text(N.vault_2026_readout.source).indexOf(N.vault_2026_readout.quote) >= 0 && N.vault_2026_readout.text === "level with the market", "2026 readout quoted");
   check(text(N.valid_2021_2023_line_vs_close.source).indexOf(N.valid_2021_2023_line_vs_close.quote) >= 0, "2021-23 quote");
   const VH = rd("data/derived/version_history.json");
-  const nums = (s) => (String(s).replace(/−/g, "-").match(/[+-]?\d+\.\d+/g) || []);
+  const nums = (s) => (String(s).replace(/−/g, "-").replace(/\bv\d+(?:\.\d+)*/g, "").match(/[+-]?\d+\.\d+/g) || []);   // version names are not numbers
   for (const v of VH.versions) {
     const nt = N.engine_versions[v.version];
     check(!!nt && !!nt.reason && !!nt.outcome && !!nt.what, "engine " + v.version + " has a plain note (what, outcome, one-line reason) on the page");

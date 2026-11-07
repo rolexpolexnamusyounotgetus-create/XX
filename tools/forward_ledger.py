@@ -203,6 +203,215 @@ MODEL_DEFS_43 = dict(
 MODEL_VERSION_44 = "fwd-4.4"
 FWD44_CODE = FWD42_CODE + ("tools/live_refresh.py",)
 
+# ---- forward model v4.5 (data/predictions/README.md "Forward model v4.5 (Nov 7, 2026)"): fwd-4.4 + the props pool's method
+# cells on bouts without a debutant whose props snapshot has method props
+MODEL_VERSION_45 = "fwd-4.5"
+FWD45_CODE = FWD44_CODE                  # forward_ledger.py, forward_ledger.js, forward_statlines.js, live_refresh.py
+# README v4.5 item 8: the two added pins, checked by full sha256
+FWD45_PINNED_FULL = {
+    "src/ml/propspool.js": "78f5574d20d0bf2c8a275b07b0eea9ebcbb30f1f965c07a382759d052ceca96a",
+    "data/derived/props.json": "6870d44c20cc2e990ab4fc06d4871e800c5eeaa46d6cff8a39e3c5179d169bdd",
+}
+PROPS_KEEP = ("m6", "gd", "er", "wr", "mr", "itd", "ou", "ml", "n_books", "n_dropped")
+PROPS_FAMILIES = ("m6", "gd", "er", "wr", "mr", "itd", "ou")
+POOL_TOL = 1e-9                          # README v4.5 item 2: the pool's cells must sum to 1 and keep p_a within this
+
+
+def sha256_full(path):
+    if not os.path.exists(path):
+        return None
+    return hashlib.sha256(open(path, "rb").read()).hexdigest()
+
+
+def pinned_mismatches_45():
+    """README v4.5 item 8: src/ml/propspool.js and data/derived/props.json against their full sha256."""
+    out = []
+    for p, h in FWD45_PINNED_FULL.items():
+        a = sha256_full(os.path.join(ROOT, p))
+        if a != h:
+            out.append({"file": p, "pinned": h, "found": a})
+    return out
+
+
+def latest_props_snapshot(pred_dir, before):
+    """README v4.5 item 1: the newest props_snapshot_*.json (tools/props.py capture) whose meta.snapshot_utc is before the
+    lock; a snapshot without snapshot_utc (a --replay rebuild) is not used. -> (t, path, doc) or None."""
+    best = None
+    for f in sorted(glob.glob(os.path.join(pred_dir, "props_snapshot_*.json"))):
+        d = jload(f)
+        su = ((d or {}).get("meta") or {}).get("snapshot_utc")
+        if not su:
+            continue
+        t = parse_utc(su)
+        if t < before and (best is None or t >= best[0]):
+            best = (t, f, d)
+    return best
+
+
+def props_key(bid):
+    """A bout_id compared after slugifying each fighter part (capture writes a null-slug name lower-cased with hyphens)."""
+    if not bid or ":" not in bid or "__" not in bid:
+        return None
+    d0, rest = bid.split(":", 1)
+    sa, sb = rest.split("__", 1)
+    return (d0, slugify(sa), slugify(sb))
+
+
+def mirror_props(c):
+    """A/B swap of a de-vigged consensus (tools/props_ledger.py mirror_props, src/ml/blend.js mirrorProps)."""
+    o = dict(c)
+    if isinstance(c.get("m6"), list) and len(c["m6"]) == 6:
+        o["m6"] = c["m6"][3:6] + c["m6"][0:3]
+    if isinstance(c.get("wr"), list):
+        K = (len(c["wr"]) - 2) // 2
+        o["wr"] = c["wr"][K:2 * K] + c["wr"][0:K] + [c["wr"][2 * K + 1], c["wr"][2 * K]]
+    if isinstance(c.get("mr"), list):
+        K = (len(c["mr"]) - 2) // 4
+        o["mr"] = c["mr"][2 * K:4 * K] + c["mr"][0:2 * K] + [c["mr"][4 * K + 1], c["mr"][4 * K]]
+    if isinstance(c.get("itd"), list) and len(c["itd"]) == 2:
+        o["itd"] = [c["itd"][1], c["itd"][0]]
+    if isinstance(c.get("ml"), (int, float)):
+        o["ml"] = 1 - c["ml"]
+    return o
+
+
+def has_method_props(cons):
+    m6 = (cons or {}).get("m6")
+    return (isinstance(m6, list) and len(m6) == 6 and all(isinstance(x, (int, float)) and math.isfinite(x) and x >= 0
+                                                          for x in m6) and sum(m6) > 0)
+
+
+def props_for_bout(snapt, bid, lock):
+    """README v4.5 item 1: the snapshot entry for a ledger bout, oriented to its a / b. -> (consensus or None, record)."""
+    if snapt is None:
+        return None, {"found": False, "applied": False, "reason": "no props snapshot before the lock"}
+    want = props_key(bid)
+    rev = (want[0], want[2], want[1]) if want else None
+    cands = []
+    for i, x in enumerate(snapt[2].get("bouts") or []):
+        k = props_key(x.get("bout_id"))
+        if k is None or want is None:
+            continue
+        if k == want or k == rev:
+            cons = x.get("consensus") or {}
+            n6 = ((cons.get("n_books") or {}).get("m6") or 0) if has_method_props(cons) else 0
+            cands.append((n6, len(x.get("families_present") or []), -i, i, x, k == rev))
+    if not cands:
+        return None, {"found": False, "applied": False, "reason": "no matching entry in the props snapshot"}
+    cands.sort(key=lambda c: c[:3], reverse=True)
+    n6, nf, _, i, x, flip = cands[0]
+    cons = dict(x.get("consensus") or {})
+    if flip:
+        cons = mirror_props(cons)
+    rec = {"found": True, "entry": {"index": i, "event_slug": x.get("event_slug"), "fetched_utc": x.get("fetched_utc"),
+                                    "page_t1": x.get("page_t1"), "page_t2": x.get("page_t2"), "rounds": x.get("rounds"),
+                                    "flipped_from_snapshot": flip, "families_present": x.get("families_present"),
+                                    "n_books": cons.get("n_books")},
+           "other_entries": [{"index": c[3], "event_slug": c[4].get("event_slug"), "n_books_m6": c[0]} for c in cands[1:]],
+           "has_method_props": has_method_props(cons)}
+    fu = x.get("fetched_utc")
+    if not fu or parse_utc(fu) >= lock:
+        rec.update({"applied": False, "reason": "the entry's page was fetched at or after the lock (or has no fetch time)",
+                    "has_method_props": False})
+        return None, rec
+    if not rec["has_method_props"]:
+        rec.update({"applied": False, "reason": "no method props (m6 family) in the matching entry"})
+        return None, rec
+    return {k: cons[k] for k in PROPS_KEEP if k in cons}, rec
+
+
+def run_props_pool(jobs):
+    """tools/forward_ledger.js --props-pool (PropsPool on props.json, production weights) on the fwd-4.5 jobs."""
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
+        json.dump({"params": "production", "bouts": jobs}, fh)
+        tmp = fh.name
+    try:
+        res = subprocess.run(["node", os.path.join(HERE, "forward_ledger.js"), "--props-pool", tmp], capture_output=True,
+                             text=True, cwd=ROOT, check=True)
+    finally:
+        os.unlink(tmp)
+    return json.loads(res.stdout)
+
+
+def apply_props_45(out_bouts, bouts_in, fj, snapt, lock):
+    """README v4.5 items 1-4 on the finished fwd-4.4 bouts (in place). Each bout still holds its unrounded fwd-4.4 cells in
+    "_cells"; the stat-line block keeps them (item 5). Returns the props-pool run's meta (None when nothing ran)."""
+    jobs, cons_by, recs = [], {}, {}
+    for ob, bi in zip(out_bouts, bouts_in):
+        bid = ob["bout_id"]
+        cons, rec = props_for_bout(snapt, bid, lock)
+        recs[bid] = rec
+        if cons is None:
+            continue
+        cons_by[bid] = cons
+        R = bi["rounds"]
+        if bi["a"] is None or bi["b"] is None:
+            dm = ob.get("debut_method")
+            if dm:
+                jobs.append({"bout_id": bid, "kind": "debut", "pA": ob["p_a"], "pW": dm["p_w_used"], "rounds": R,
+                             "props": cons, "debut": {"A": dm["given_a"], "B": dm["given_b"]}})
+            else:
+                rec.update({"applied": False, "reason": "debut bout without the debut method model's output"})
+        else:
+            jobs.append({"bout_id": bid, "kind": "pool", "pA": ob["p_a"], "rounds": R, "props": cons, "cells": ob["_cells"]})
+    PJ = run_props_pool(jobs) if jobs else None
+    res = {x["bout_id"]: x for x in (PJ or {}).get("bouts", [])}
+    if PJ is not None:
+        for k, h in (("propspool_sha256", FWD45_PINNED_FULL["src/ml/propspool.js"]),
+                     ("props_json_sha256", FWD45_PINNED_FULL["data/derived/props.json"])):
+            if PJ["meta"][k] != h:
+                raise SystemExit("fwd-4.5: the props pool ran on %s %s, not the pinned %s" % (k, PJ["meta"][k], h))
+    for ob, bi in zip(out_bouts, bouts_in):
+        bid = ob["bout_id"]
+        rec, x, cons = recs[bid], res.get(bid), cons_by.get(bid)
+        if cons is not None and ((cons.get("n_books") or {}).get("m6") or 0) == 1:
+            ob["flags"].append("props_single_book")
+        R = bi["rounds"]
+        if x is not None and x["kind"] == "pool":
+            ck = x["check"]
+            bad = (not ck["finite"] or ck["min"] < 0 or abs(ck["sum"] - 1) > POOL_TOL
+                   or abs(ck["p_a_not_draw"] - ob["p_a"]) > POOL_TOL)
+            rec.update({"kind": "pool", "check": ck, "source": x["source"]})
+            if bad:
+                rec.update({"applied": False, "reason": "pool output failed the check (README v4.5 item 2)"})
+                ob["flags"].append("props_pool_failed")
+            else:
+                c = x["cells23"]
+                sec = {"p_method": dict(ob["p_method"]), "p_distance": ob["p_distance"],
+                       "p_finish_round": ob["p_finish_round"], "source": ob["p_method_source"],
+                       "note": "fwd-4.4's cells (the pre-4.5 primary), scored secondary"}
+                ob["p_method"] = {k: round(v, 5) for k, v in x["p_method"].items()}
+                ob["p_distance"] = round(x["p_distance"], 5)
+                ob["p_finish_round"] = {"a": [round(c[r] + c[5 + r], 5) for r in range(R)],
+                                        "b": [round(c[10 + r] + c[15 + r], 5) for r in range(R)]}
+                ob["p_method_source"] = "props pool (props.json, production weights) on " + str(sec["source"])
+                ob["p_method_secondary"] = dict(ob.get("p_method_secondary") or {}, fwd44_cells=sec)
+                rec.update({"applied": True, "reason": None,
+                            "method_given_winner": {"classes": ["ko", "sub", "dec"], "cells": x["M_cells"],
+                                                    "props": x["M_props"], "pool": x["M_pool"]},
+                            "p_a_cells_own": x["p_own_cells"], "p_a_props": x["p_props"],
+                            "p_decision_given_not_draw": x["p_dec_given_not_draw"]})
+        elif x is not None and x["kind"] == "debut":
+            _, _, _, dr = division_method_prior(fj["priors"], ob.get("weight_class"), R)
+            pa = ob["p_a"]
+            qa, qb = pa * (1 - dr), (1 - pa) * (1 - dr)
+            A, B = x["A"], x["B"]
+            pm = {"a_ko": qa * A[0], "a_sub": qa * A[1], "a_dec": qa * A[2],
+                  "b_ko": qb * B[0], "b_sub": qb * B[1], "b_dec": qb * B[2], "draw": dr}
+            ko_prof, sub_prof = round_profile(fj["priors"], ob.get("weight_class"), R)
+            cells = cells_from_profile(pm, ko_prof, sub_prof)
+            ob["p_method_secondary"] = dict(ob.get("p_method_secondary") or {}, debut_props_pool={
+                "p_method": {k: round(v, 5) for k, v in pm.items()}, "p_distance": round(pm["a_dec"] + pm["b_dec"] + dr, 5),
+                "p_finish_round": {"a": [round(cells[i] + cells[R + i], 5) for i in range(R)],
+                                   "b": [round(cells[2 * R + i] + cells[3 * R + i], 5) for i in range(R)]},
+                "given_a": A, "given_b": B, "source": x["source"] + " (props.json debut pool, production weights)",
+                "note": "monitored secondary (README v4.5 item 4); the debut method model stays the primary"})
+            rec.update({"kind": "debut", "applied": False, "reason": "debut bout: the debut method model stays the primary; "
+                        "the debut-bout pool is recorded as p_method_secondary.debut_props_pool", "secondary_recorded": True,
+                        "source": x["source"]})
+        ob["props_pool"] = rec
+    return PJ["meta"] if PJ else None
+
 
 def live_inputs_44(lock, live_dir=None):
     """README v4.4 section 4: the live set when tools/live_refresh.py check_live passes, else the fallback record.
@@ -435,12 +644,16 @@ def cmd_predict(args):
         raise SystemExit("refused: data/predictions/README.md assigns fwd-%s to events dated %s (asked for fwd-%s); a "
                          "ledger file is written under the pre-registered version only (--dry-run may compare)"
                          % (assigned, ev["date"], fwd))
-    v42 = fwd in ("4.2", "4.3", "4.4")   # the fwd-4.2 path (fwd-4.3 keeps all of it and changes p_a_noline)
-    v43 = fwd in ("4.3", "4.4")          # the fwd-4.3 rules (fwd-4.4 = fwd-4.3 on live inputs)
+    v42 = fwd in ("4.2", "4.3", "4.4", "4.5")   # the fwd-4.2 path (fwd-4.3 keeps all of it and changes p_a_noline)
+    v43 = fwd in ("4.3", "4.4", "4.5")          # the fwd-4.3 rules (fwd-4.4 = fwd-4.3 on live inputs)
+    v44 = fwd in ("4.4", "4.5")                 # live inputs (fwd-4.5 = fwd-4.4 + the props pool's method cells)
+    v45 = fwd == "4.5"
     engine_dir = args.engine_dir or (FWD42_ENGINE_DIR if v42 else "src")
     mism = []
     if v42:
         mism = pinned_mismatches(FWD43_PINNED if v43 else FWD42_PINNED)
+        if v45:
+            mism += pinned_mismatches_45()
         if os.path.normpath(engine_dir) != os.path.normpath(FWD42_ENGINE_DIR):
             mism.append({"file": "--engine-dir", "pinned": FWD42_ENGINE_DIR, "found": engine_dir})
         if mism and not args.dry_run:
@@ -468,10 +681,14 @@ def cmd_predict(args):
     snap = snapt[2] if snapt else None
     if args.live_dir and not args.dry_run:
         raise SystemExit("refused: --live-dir is for dry runs; a fwd-4.4 ledger file reads data/derived/live (README v4.4)")
-    live = live_inputs_44(lock, args.live_dir) if fwd == "4.4" else None   # README v4.4: live inputs, else fwd-4.3's pins
+    if args.props_dir and not args.dry_run:
+        raise SystemExit("refused: --props-dir is for dry runs; a fwd-4.5 ledger file reads the newest props snapshot in "
+                         "data/predictions taken before the lock (README v4.5)")
+    live = live_inputs_44(lock, args.live_dir) if v44 else None   # README v4.4: live inputs, else fwd-4.3's pins
     if live is not None:
-        print("fwd-4.4 inputs: %s" % ("live, as of %s (manifest sha256 %s)" % (live["as_of"], live["manifest_sha256"][:16])
-                                      if live["used"] else "FALLBACK to fwd-4.3's pinned inputs: %s" % live["reason"]))
+        print("fwd-%s inputs: %s" % (fwd, "live, as of %s (manifest sha256 %s)" % (live["as_of"], live["manifest_sha256"][:16])
+                                     if live["used"] else "FALLBACK to fwd-4.3's pinned inputs: %s" % live["reason"]))
+    props_snap = latest_props_snapshot(args.props_dir or PRED_DIR, lock) if v45 else None   # README v4.5 item 1
     live_dir = live["dir"] if (live and live["used"]) else None
     fj = jload(os.path.join(ROOT, live_dir, "fighters_live.json") if live_dir else os.path.join(DERIVED, "fighters.json"))
     roster = fj["fighters"]
@@ -675,8 +892,9 @@ def cmd_predict(args):
             "market": mk, "flags": flags, "notes": r.get("notes")})
         if extra is not None:
             out_bouts[-1].update(extra)
+    pp_meta = apply_props_45(out_bouts, bouts_in, fj, props_snap, lock) if v45 else None   # README v4.5 items 1-4
     if v42:
-        sl = run_statlines(ev["date"], bouts_in, out_bouts, engine_dir, live_dir)
+        sl = run_statlines(ev["date"], bouts_in, out_bouts, engine_dir, live_dir)   # fwd-4.4's cells (README v4.5 item 5)
         for ob in out_bouts:
             ob.pop("_cells", None)
             ob["statlines"] = sl["bouts"][ob["bout_id"]]
@@ -723,15 +941,19 @@ def cmd_predict(args):
         apply_model_42(doc, jm, sl["meta"], args, mism)
     if v43:
         apply_model_43(doc, jm, sl["meta"], args, mism)
-    if fwd == "4.4":
+    if v44:
         apply_model_44(doc, jm, sl["meta"], args, mism, live)
+    if v45:
+        apply_model_45(doc, args, mism, props_snap, snapt, pp_meta)
     print_table(doc)
     if v42:
         print_table_42(doc)
     if v43:
         print_table_43(doc)
-    if fwd == "4.4":
+    if v44:
         print_table_44(doc)
+    if v45:
+        print_table_45(doc)
     if args.dry_run:
         if args.dry_out:
             with open(args.dry_out, "w") as fh:
@@ -868,6 +1090,89 @@ def apply_model_44(doc, jm, slm, args, mism, live):
     M["code_sha256_16"] = {p: sha16(os.path.join(ROOT, p)) for p in FWD44_CODE}
     M["fwd"] = "4.4"
     M["tool"] = TOOL_44
+
+
+def apply_model_45(doc, args, mism, props_snap, odds_snapt, pp_meta):
+    """The model block of a fwd-4.5 file (README "Forward model v4.5"): fwd-4.4's block (already applied) plus the props
+    pool, the props snapshot record, the two added pins and the vault flag."""
+    M = doc["model"]
+    pj_sha16 = FWD45_PINNED_FULL["data/derived/props.json"][:16]
+    snap_tag = ("props snapshot %s" % props_snap[2]["meta"].get("stamp") if props_snap else "no props snapshot before the lock")
+    M["version"] = (MODEL_VERSION_45 + M["version"][len(MODEL_VERSION_44):] + "; method props pool props.json %s "
+                    "(production weights) where the props snapshot has method props (%s)" % (pj_sha16, snap_tag))
+    M["p_a"] = M["p_a"].replace("forward model v4.4 (data/predictions/README.md; fwd-4.3's rules on live inputs)",
+                                "forward model v4.5 (data/predictions/README.md; fwd-4.4's winner rules and live inputs)", 1)
+    M["p_method"] = (
+        "README v4.5: a bout without a debutant whose props snapshot has method props (m6) takes p_method / p_distance / "
+        "p_finish_round from PropsPool (src/ml/propspool.js predict on data/derived/props.json model, params 'production': "
+        "joint-linear pool of fwd-4.4's cells and the props' method given the winner, weights cells %s / props %s, round shapes "
+        "from the cells, decision tilt 0, draw = draw_c x P(decision)) fed p_a and fwd-4.4's cells, which are kept as "
+        "p_method_secondary.fwd44_cells (scored secondary); every other bout keeps fwd-4.4's p_method (fwd-4.2's rules: "
+        "method-and-round model scaled to p_a; debut bouts the debut method model, with the debut-bout props pool recorded as "
+        "p_method_secondary.debut_props_pool when the bout has method props, monitored)" % tuple(
+            (pp_meta or {}).get("w") or jload(os.path.join(DERIVED, "props.json"))["model"]["params_production"]["m"]["w"]))
+    if isinstance(M.get("statlines"), dict):
+        M["statlines"] = dict(M["statlines"], length_grid="fwd-4.4's method cells by round on every bout (README v4.5 item 5), "
+                              "not the props pool's")
+    pjm = jload(os.path.join(DERIVED, "props.json"))["model"]
+    M["props_pool"] = {
+        "evaluator": "src/ml/propspool.js create(props.json model).predict / debutMethod, called by tools/forward_ledger.js "
+                     "--props-pool", "params": "production", "spec": pjm["spec"], "w": pjm["params_production"]["m"]["w"],
+        "beta": pjm["params_production"]["m"]["beta"], "draw_c": pjm["draw_c"],
+        "debut": {"mode": pjm["debut"]["mode"], "alpha": pjm["debut"]["params_production"]["alpha"],
+                  "beta": pjm["debut"]["params_production"]["beta"]},
+        "sha256": {p: sha256_full(os.path.join(ROOT, p)) for p in FWD45_PINNED_FULL},
+        "run": pp_meta, "check_tolerance": POOL_TOL,
+        "n_bouts_pooled": sum(1 for b in doc["bouts"] if (b.get("props_pool") or {}).get("applied")),
+        "n_debut_secondary": sum(1 for b in doc["bouts"] if (b.get("props_pool") or {}).get("secondary_recorded")),
+        "n_bouts": len(doc["bouts"])}
+    if props_snap:
+        t, f, d = props_snap
+        gap = round((t - odds_snapt[0]).total_seconds() / 60.0, 1) if odds_snapt else None
+        M["props_snapshot"] = {"file": os.path.relpath(f, ROOT), "snapshot_utc": iso(t), "stamp": d["meta"].get("stamp"),
+                               "sha256_16": sha16(f), "tool": d["meta"].get("tool"), "devig": d["meta"].get("devig"),
+                               "props_minus_odds_minutes": gap,
+                               "hours_before_lock": round((parse_utc(doc["lock_utc"]) - t).total_seconds() / 3600, 2)}
+    else:
+        M["props_snapshot"] = None
+    M["preregistration"] = {"readme_section": "data/predictions/README.md, Forward model v4.5 (Nov 7, 2026)",
+                            "models_and_rules": "fwd-4.4's (README Forward model v4.4, on fwd-4.3's rules), unchanged except "
+                                                "README v4.5 items 2-4 (method cells) and 6 (scoring additions)",
+                            "pinned_inputs": FWD43_PINNED, "pinned_inputs_added_sha256": FWD45_PINNED_FULL,
+                            "pinned_inputs_ok": not mism, "pinned_mismatches": mism or None,
+                            "pinned_note": M["preregistration"].get("pinned_note"),
+                            "audit1_flag": M["preregistration"].get("audit1_flag"),
+                            "vault_flag": "the props pool's method cells were adopted on Nov 7 after both vault openings "
+                                          "(audit 1 and audit 2; the pool's vault numbers are in both): not clean on the vault "
+                                          "(plan 6.5.2); no vault test remains, so its clean test is this ledger"}
+    M["code_sha256_16"] = {p: sha16(os.path.join(ROOT, p)) for p in FWD45_CODE}
+    M["fwd"] = "4.5"
+    M["tool"] = TOOL_45
+
+
+def print_table_45(doc):
+    """fwd-4.5: per bout, whether the props pool set the method cells, against fwd-4.4's cells."""
+    S = doc["model"].get("props_snapshot")
+    print("\nfwd-4.5 props pool: %s" % ("snapshot %s (%s, %.1f h before the lock)" % (S["stamp"], S["snapshot_utc"],
+                                                                                     S["hours_before_lock"]) if S else
+                                       "no props snapshot before the lock: every bout keeps fwd-4.4's cells"))
+    cl = ("a_ko", "a_sub", "a_dec", "draw", "b_dec", "b_sub", "b_ko")
+    for b in doc["bouts"]:
+        rec = b.get("props_pool") or {}
+        name = (b["a"]["name"] + " vs " + b["b"]["name"])[:44]
+        sec = (b.get("p_method_secondary") or {})
+        if rec.get("applied"):
+            f44 = sec["fwd44_cells"]
+            print("  %-44s POOL   %s  P(dist) %.3f (fwd-4.4 %.3f), books m6 %s" % (
+                name, " ".join("%.3f" % b["p_method"][k] for k in cl), b["p_distance"], f44["p_distance"],
+                (rec.get("entry") or {}).get("n_books", {}).get("m6")))
+            print("  %-44s fwd44  %s" % ("", " ".join("%.3f" % f44["p_method"][k] for k in cl)))
+        elif sec.get("debut_props_pool"):
+            d = sec["debut_props_pool"]
+            print("  %-44s debut: primary kept; debut props pool (secondary) P(dist) %.3f vs primary %.3f" % (
+                name, d["p_distance"], b["p_distance"]))
+        else:
+            print("  %-44s fwd-4.4 cells (%s)" % (name, rec.get("reason")))
 
 
 def print_table_44(doc):
@@ -1605,12 +1910,14 @@ def main():
     p.add_argument("--sims", type=int, default=2000, help="engine sims per corner order (default 2000)")
     p.add_argument("--engine-dir", default=None,
                    help="engine folder (default: src for fwd-4.1; fwd-4.2 to fwd-4.4 are pinned to versions/v4)")
-    p.add_argument("--fwd", choices=["auto", "4.1", "4.2", "4.3", "4.4"], default="auto",
+    p.add_argument("--fwd", choices=["auto", "4.1", "4.2", "4.3", "4.4", "4.5"], default="auto",
                    help="forward model version; auto = the one data/predictions/README.md assigns to the event date "
-                        "(fwd-4.4 from 2026-11-14, fwd-4.1 before); writing under another version is refused")
+                        "(fwd-4.5 from 2026-11-14, fwd-4.1 before); writing under another version is refused")
     p.add_argument("--headline", choices=["line", "noline"], default="line")
     p.add_argument("--live-dir", default=None, help="fwd-4.4 dry runs only: read the live inputs from this folder instead "
                                                     "of data/derived/live (tests)")
+    p.add_argument("--props-dir", default=None, help="fwd-4.5 dry runs only: read the props snapshots from this folder "
+                                                     "instead of data/predictions (tests)")
     p.add_argument("--stack", choices=["auto", "blindtest", "page"], default="auto",
                    help="MoE weights: blindtest = data/derived/blindtest_stack.json (refit with the current engine, blind-"
                         "tested by tools/blindtest.py), page = moe_page.json; auto = blindtest when the file exists")
