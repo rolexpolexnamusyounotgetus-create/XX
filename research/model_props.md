@@ -428,3 +428,168 @@ Every number in this note is in `data/derived/props.json`:
   parameters (refit 2021-2025).
 - **Pre-registration.** A ledger version that adopts this needs a new fwd version entry before the lock
   (V6_V10_PLAN 6.4).
+
+## Verification log
+
+Adversarial verifier, Nov 7, 2026, about 12:05 to 12:40 am UTC. Command: `nice -n 5 python3 tools/props_verify.py`
+(about 20 s), which writes `data/derived/props_verify.json`. Every verifier number below is in that file.
+
+**Verdict: the gain is real, but it is the gain production already has. Adopt the props path in predict() as an
+equivalent of the 40/60 blend (no claimed gain) and the debut-bout pool (a new use, monitored).**
+- Against S2 (v6's cycle-1 cells): the props pool is a clear, reproducible gain. Verifier CV 2022-23 7-bin
+  -0.0178 [-0.0312, -0.0039]; builder -0.0175 [-0.0311, -0.0043].
+- Against the incumbent 40/60 blend it is a tie: CV -0.0004 [-0.0019, +0.0009], under the 0.0005 rule. Read the v7
+  swap as engineering (refit weight, one de-vig from raw book prices in training and live), not as a gain.
+- The debut-bout pool passes the 0.0005 point rule in CV (-0.0123 [-0.047, +0.021]; CI includes 0). The 2024-25
+  re-score agrees (-0.0385 [-0.069, -0.010]).
+
+### What was re-derived with independent code
+
+- **Props.** Own parse of `data/raw/odds/bfo_props_full.csv` (14,892 rows, 0 rows dated 2026, 0 invalid American
+  odds), own power de-vig per book, own outlier rule, own mean over books.
+- **Join and outcomes.** Own date (±1 day) and fuzzy-name join to backtest_dev.json; own outcome coding from
+  `result`.
+- **Winner stack.** Own W_close: market + ML v2, no intercept, weights ≥ 0, forward-chained.
+- **Pool and scoring.** Own joint-linear pool, fit by a 1,001-point grid over its single weight. Own 7-bin, method
+  given the winner and method3. Own event-cluster bootstrap (2,000 resamples of cards, paired).
+- **Comparator inputs taken from the builder's caches.** S2 / S2+ml2win cells, W_ml2, market.json's props joint
+  (for the 40/60 blend) and the debut model's walk-forward cells. They were checked against ml2's stored outputs:
+  W_ml2 vs ml2.json max |d| 5.0e-5; S2+ml2win 2024-25 cells vs ml2's cache 5.0e-6. Outcome coding agrees with the
+  23-cell y on every bout; the 3 DQs are excluded both ways.
+- **Builder's own code.** The builder's `table` and `cv` stages were re-run into a scratch cache. The rebuilt table
+  has 0 differing family entries out of 2,864, so the post-look `_dec_q` fix changed nothing. CV, parameters and
+  CIs reproduce bit for bit.
+
+| quantity (same winner W_close) | builder | verifier |
+|---|---|---|
+| CV n (7-bin / method given winner) | 797 / 790 | 798 / 791 |
+| CV jlin S2 weight (fold 2022, 2023) | 0.46 (fit 2021-23) | 0.455, 0.420; 0.462 fit 2021-23 |
+| CV pool − S2, 7-bin | -0.0175 [-0.0311, -0.0043] | -0.0178 [-0.0312, -0.0039] |
+| CV pool − S2, method given winner | -0.0183 [-0.0321, -0.0051] | -0.0182 [-0.0316, -0.0042] |
+| CV 40/60 blend − S2, 7-bin | -0.0172 [-0.0318, -0.0032] | -0.0174 [-0.0318, -0.0025] |
+| CV pool − 40/60 blend, 7-bin | -0.0003 (no CI) | -0.0004 [-0.0019, +0.0009] |
+| CV pool − blend, rows with both prop sources (790) | | -0.0002 [-0.0015, +0.0010] |
+| CV pool − props alone, 7-bin | -0.0128 (no CI) | -0.0124 [-0.0225, -0.0032] |
+| CV log pool − jlin pool | +0.0017 | +0.0017 [-0.0003, +0.0037] |
+| CV P(decision): observed / pool / S2 / props | 48.1 / 47.5 / 50.6 / 45.2% | 47.9 / 47.4 / 50.5 / 45.0% |
+| 2024-25 re-score n (7-bin) | 830 | 830 |
+| 2024-25 pool − S2, 7-bin | -0.0172 [-0.0283, -0.0056] | -0.0171 [-0.0282, -0.0059] |
+| 2024-25 pool − blend, 7-bin | -0.0008 [-0.0023, +0.0005] | -0.0006 [-0.0020, +0.0008] |
+| 2024-25 P(decision): observed / pool | 54.2 / 47.8% | 54.1 / 47.8% |
+| debut CV n, pool − debut model | 193, -0.0150 [-0.0514, +0.0198] | 195, -0.0123 [-0.047, +0.021] |
+| debut 2024-25 n, pool − debut model | 163, -0.0364 [-0.0726, -0.0027] | 168, -0.0385 [-0.069, -0.010] |
+
+The 2024-25 rows only re-score the builder's single look; nothing was selected on them.
+
+### Protocol audit
+
+- **Pre-registration before the look.** Confirmed from file times and commits:
+  - prereg.json written 11:55:54 pm, committed in b3312e2 at 11:56:51 pm;
+  - `valid.done` written 11:57:02 pm, the look committed in 4c3aa4e at 11:58:31 pm;
+  - cv.json (11:54:21 pm) predates both.
+
+  No earlier stage prints a 2024-25 outcome metric (`winner` skips 2024; `cells` logs 2020-23 only).
+- **2026 data.**
+  - The extract stops at the 2025-12-14 BFO page date (ufcstats 2025-12-13). The fits read dev fights only (asserted
+    in the tool and here).
+  - `event_list()` reads only slugs and dates from market.py's `bfo_event_props.csv`, filtered to dates before 2026.
+    That file holds 2026 rows and belongs to another workstream.
+  - The one committed 2026 artifact, `data/predictions/props_snapshot_20261107-0001.json`, covers only upcoming cards
+    (Nov 7-21, 2026, fetched 12:01 am Nov 7). That is the forward-ledger category, like the odds snapshots. It holds
+    no vault bout and no result.
+- **Scraping.**
+  - User-Agent FightLabSim/1.0, at least 2.0 s between requests (2.5 s + jitter by default), raw cache gitignored.
+  - BFO's robots.txt, fetched again once: `Allow: /`, `Disallow: /cnadm/`.
+- **Selection on 2024-25.** None found. Every choice comes from the 2022-23 forward folds. One mild point: the CV
+  candidate that won (jlin) is the incumbent blend's structure, which earlier 2024-25 reports already favoured. It
+  won CV on its own merit, and the builder says so.
+
+### Look-ahead hunt
+
+- **Late or in-play prices in the closing props.** market.json found leaked in-play prices in BFO moneyline closing
+  ranges, so the props were tested the same way. No sign of leakage:
+  - each book vs the mean of the other books, 9,538 book-bouts: the deviation on the realised six-way cell has sd
+    0.0175 and 0 cases above +0.15. Deviations above 0.10 occur on 0.021% of realised cells vs 0.017% of
+    non-realised cells;
+  - no book is sharper than the others' consensus by more than 0.005 (per-book six-way log loss minus others,
+    -0.0034 to +0.0049);
+  - the method market's own P(A) is not sharper than the close: 0.6190 vs 0.6182 (2021-23, n = 1,204).
+- **Fold structure.**
+  - S2 cells: fit on years < Y, hazard on years < Y.
+  - W_close: fit on 2019..Y-1. The verifier's own refit matches the builder's to 8.7e-4.
+  - Pool: fit on 2021..Y-1.
+  - Debut model cells: annual walk-forward (tools/debut.py).
+- **Pre-existing, not props.** ml2's `method_new_cols` centres the pre-UFC features on all pre-2024 rows, so CV-year
+  S2 cells use a centring constant that includes 2022-23 rows. It enters every compared package through S2, so it
+  does not touch the differences.
+
+### Corner order (free-intercept checks)
+
+- **Swap tests.** Python 1.7e-16 and JS 2.2e-16; `node tests/test_propspool.js` gives 732 checks, 0 failures.
+- **Free corner tilts inside the pool.** Separate A-side and B-side SUB / DEC tilts, fit forward-chained, make CV
+  worse by +0.0080. Method given the winner carries no exploitable ordering signal.
+- **Winner stack.** A free intercept on unmirrored 2019-23 data takes +0.135, the known artefact of A winning 57.1%
+  of these fights. The stack has no intercept, and the pool cannot move the winner. Exported cells give P(A) / (P(A)
+  + P(B)) = W_close to 2e-5 (5-decimal rounding).
+
+### Joins and match bias
+
+- **Backtest join.** The verifier's own date-and-name join finds 2,086 bouts. 2,081 of them carry the same BFO
+  matchup id as market.json. The other 3 that also have a market.json id are BFO duplicate listings of the same bout.
+  The props' orientation never disagrees with the builder's.
+- **Bouts without method props.** 50 of 2,119 (2.4%); not random but harmless:
+  - where they fall: concentrated in 2025 (24) and in a few 2022-23 PPV bouts (e.g. UFC 281, 287);
+  - decision share: 43.8% vs 50.9% with props (n = 50, not significant);
+  - why it is harmless: comparisons are paired on the same rows, and the all-fights degrade row covers these bouts.
+  - The report's 2025 coverage note was incomplete and is corrected above: a whole card, 2025-07-12, was never
+    fetched because `event_list()` inherits market.py's page list.
+- **Debut join recall.** The debut-bout join (MK.name_sim ≥ 0.8 on raw names) misses 15 of the 452 debut bouts that
+  do have props, mostly name variants:
+  - examples: Lupita / "Loopy" Godinez, Zhu Rong / "Rongzhu", Ariane Lipski / "da Silva", Cheyanne Buys / Vlismas;
+  - 8 of the 15 are in 2021;
+  - with them included the conclusion is unchanged (table above).
+
+  Not fixed in tools/props.py: rebuilding the debut cache would change pre-registered, frozen parameters. Live use is
+  unaffected, because `capture` orients to cards_upcoming.json.
+
+### Gates re-run
+
+| gate (forward-chained CV 2022-23, 0.0005 rule) | result |
+|---|---|
+| props pool vs S2, method given winner | pass: -0.0182 |
+| props pool vs incumbent 40/60 blend | **fail (tie):** -0.0004 [-0.0019, +0.0009] |
+| plan's Cycle 2 train test vs cycle-1 cells (7-bin CI excludes 0; method not worse; P(decision) within 2 points: 47.4 vs 47.9%; winner bit-identical) | pass |
+| winner stack: + the method market's P(A) on top of close + ML v2 | fail: +0.0004 (n = 791) |
+| round given a finish: S2 1.0455, props "ends in round k" 1.0507, 0.75/0.25 mix 1.0453 | no props round shape earns its place (builder's +0.002 gate also fails) |
+| debut pool vs debut model alone | pass on the point estimate: -0.0123 (CI includes 0) |
+
+### Corrections made to this note
+
+1. Bottom line, table 1: added the verifier's CIs for the two unbootstrapped CV rows, and stated that the pool fails
+   the gate against the incumbent.
+2. Bottom line, item 4: the debut claim now says the CV gain passes the point rule with a CI that includes 0.
+3. The v7 recommendation now says the swap is not a gain over production.
+4. Section 1: the 2025 coverage gap is corrected.
+5. Caveats: added the single-book finding. On 196 single-book bouts (2021-23, 194 of them BetWay-only in 2021) the
+   props are +0.0285 worse than S2, against -0.0117 better on 3+ books. CV could not test this, because the scored
+   folds hold only 8 single-book bouts.
+
+### Not changed
+
+- **tools/props.py.** No defect that changes a scored number was found.
+- **Incidental: the blind-test harness.** `tools/blindtest.py score --quick` rewrote data/derived/blindtest.json and
+  research/model_blindtest.md in the repo, although `--quick` is documented as writing nothing. The verifier restored
+  both files to HEAD; that harness belongs to another workstream. The plugin itself works: a replay into a scratch
+  file gives props_pool 7-bin 1.4870 on 857 fights and an order check of 0.0225 (close 0.028).
+
+### Decision
+
+**adopt = true, scoped:**
+- (a) Props enter predict() through `PropsPool`. It is the same model as the 40/60 blend, with a forward-chained
+  weight, S2 round shapes and the raw-price power de-vig shared by training and `capture`. The plan's "one de-vig
+  everywhere" item is met. It is a tie with the incumbent, so log no gain.
+- (b) The debut-bout pool is a monitored addition. It needs its own pre-registered forward version before it
+  governs a card.
+- (c) Winner unchanged; round props, the decision tilt, SM and the book-count weight stay rejected.
+- The 2024-25 P(decision) miss (54.1% observed vs 47.8%) is shared by every source and belongs to the v9 drift
+  monitor.
