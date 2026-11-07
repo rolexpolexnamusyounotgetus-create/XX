@@ -96,6 +96,15 @@ Findings from verified research that the next engine versions must use. Each lin
   co-primary total stat deviance vs v4 -1.13% [-1.76%, -0.51%]: PASS. The look (not yet run): primary open winner vs cmp4 (branch 1),
   branch 2 = total stat deviance vs v4 + glove-excluded paired base-rate test; power ~0.50; confirmation look. Audit 2 pre-registered
   (vault_audits[audit 2]). src/ holds v10 until the look; control MAE +1.6 s on train is a known risk (v8's finding).
+- FORWARD v4.5 (VERIFIED ~14:00 UTC Nov 7; README "Forward model v4.5", pre-registered in 01bc97d before any code):
+  events >= 2026-11-14; fwd-4.4 (live-refreshed inputs, winner primaries) plus: when a pre-lock props snapshot has
+  method props for a bout without a debutant, p_method / p_distance / p_finish_round come from PropsPool (props.json
+  production weights, decision tilt 0, cells' round shapes); otherwise fwd-4.4 cells; debut bouts keep the debut
+  method model (pool as a monitored secondary). Flagged as adopted after both vault openings (forward ledger is its
+  clean test). Verifier fixed tools/drift_monitor.py's MoE-series prefix list. Capture props T-25h..T-8h before each
+  lock (UFC 334's Nov 7 snapshot had props on only 2 of 12 bouts).
+- PAGE REPUBLISHED (Version 3, ~14:05 UTC Nov 7): final scorecard (versions v4 kept; v5-v10 not kept with reasons;
+  both vault audits stated plainly, level with the market on 2026); page_check 53/53, parity 15/15, models 256/256.
 - VAULT AUDIT 2 (FINAL opening, ~13:40 UTC Nov 7; research/vault_audit_v10.md; case if_v4_stays, pre-committed 12:43
   UTC). Open regime on 369 decisive 2026 fights: shipped forward package (ML v2 open stack) 0.6150 vs opener 0.6199
   (-0.0048 [-0.0196, +0.0097]); v4 package (cmp4) 0.6213; close 0.6003. v10 package winner vs cmp4: open -0.0033 n.s.

@@ -5,10 +5,17 @@ Alexander Volkanovski vs Justin Gaethje lightweight fight (5 x 5 min, 155 lb), a
 replays one simulated fight, a live 20,000-fight tally with knobs, a model stack, a backtest and a
 scouting report. Built with Claude in one overnight chat on Nov 6, 2026.
 
-The built page is published as a private claude.ai artifact (title "Volk vs Gaethje Simulator"):
-https://claude.ai/artifact/UiJenoPYvSSoRF8SPZLBJR
-Claude Code edits and builds it here. Republishing to that link happens from a Claude chat with the
-Artifact tool: pass the link and the rebuilt volk-gaethje-simulator.html.
+The built page is published as a private claude.ai artifact (title "Fight Lab"; any-fighter page since Nov 6-7):
+https://claude.ai/artifact/PP5QsWNDwPiqP6m7V3C4JC (the original v2 page, title "Volk vs Gaethje Simulator", is
+https://claude.ai/artifact/UiJenoPYvSSoRF8SPZLBJR and is no longer updated).
+Claude Code edits and builds it here. Republishing happens with the Artifact tool: pass the link and the rebuilt
+volk-gaethje-simulator.html.
+
+Current state (Nov 7, 2026): engine v4 (4.0.0) is the kept engine; v5-v10 were measured and not kept (see
+data/derived/version_history.json, docs/CHANGELOG.md). Live predictions come from the ML v2 + line stacks (page:
+src/ml/pagepredict.js; forward-test ledger: data/predictions/README.md, versions fwd-4.1 .. fwd-4.5). Both sealed-vault
+audits are spent (research/vault_audit_v5.md, research/vault_audit_v10.md); the forward ledger is the only clean test
+left. docs/BACKLOG.md holds every verified result and decision.
 
 ## Read first
 
