@@ -620,9 +620,9 @@
      "logloss_with": 0.5788248485320001,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -8.727629959482959e-07,
-      "lo": -1.5272600814283089e-06,
-      "hi": -2.5655151717160004e-07,
+      "est": -8.727629959482959e-7,
+      "lo": -0.0000015272600814283089,
+      "hi": -2.5655151717160004e-7,
       "p_gt0": 0.002
      },
      "n": 845
@@ -632,9 +632,9 @@
      "logloss_with": 0.5930335681784208,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -1.0099141584613298e-07,
-      "lo": -1.8138076015023744e-07,
-      "hi": -1.882505288986469e-08,
+      "est": -1.0099141584613298e-7,
+      "lo": -1.8138076015023744e-7,
+      "hi": -1.882505288986469e-8,
       "p_gt0": 0.0105
      },
      "n": 845
@@ -1454,9 +1454,9 @@
      "logloss_with": 0.5930319721344538,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -1.6970353827425062e-06,
-      "lo": -2.435549185916011e-06,
-      "hi": -9.44685467941618e-07,
+      "est": -0.0000016970353827425062,
+      "lo": -0.000002435549185916011,
+      "hi": -9.44685467941618e-7,
       "p_gt0": 0
      },
      "n": 845
@@ -2295,9 +2295,9 @@
      "logloss_with": 0.5788099923758476,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -1.57289191484635e-05,
-      "lo": -3.115957049440681e-05,
-      "hi": -2.182334234371639e-07,
+      "est": -0.0000157289191484635,
+      "lo": -0.00003115957049440681,
+      "hi": -2.182334234371639e-7,
       "p_gt0": 0.0235
      },
      "n": 845
@@ -2312,9 +2312,9 @@
       "hi": 0,
       "p_gt0": null,
       "raw": {
-       "est": -2.947697791072808e-07,
-       "lo": -4.819442412118878e-07,
-       "hi": -1.0681580458083556e-07,
+       "est": -2.947697791072808e-7,
+       "lo": -4.819442412118878e-7,
+       "hi": -1.0681580458083556e-7,
        "p_gt0": 0.002
       },
       "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
@@ -5284,7 +5284,7 @@
      "v4": 0.9399330733473251,
      "v5.0.1": 0.9399711317868685,
      "S": 0.9359561823360422,
-     "diff": 4e-05,
+     "diff": 0.00004,
      "ci95": [
       -0.00963,
       0.00979
@@ -6615,7 +6615,7 @@
           "diff": -0.00095,
           "ci": [
            -0.00192,
-           8e-05
+           0.00008
           ]
          },
          "acc": {
@@ -7162,7 +7162,7 @@
         "diff": -0.00331,
         "ci95": [
          -0.00651,
-         -4e-05
+         -0.00004
         ]
        },
        "bin7": {
@@ -7190,7 +7190,7 @@
         "diff": -0.0014,
         "ci95": [
          -0.0028,
-         8e-05
+         0.00008
         ]
        }
       }
@@ -7564,7 +7564,7 @@
          "diff": -0.00492,
          "ci95": [
           -0.00993,
-          -8e-05
+          -0.00008
          ]
         }
        }
@@ -8327,7 +8327,7 @@
      "C1 close winner: CI upper <= +0.0005": {
       "pass": false,
       "boot_upper": 0.00054,
-      "mcse_upper": 2.9e-05,
+      "mcse_upper": 0.000029,
       "normal_upper": 0.0006,
       "threshold": 0.0005,
       "marginal": true,
@@ -8536,8 +8536,8 @@
          -0.00097
         ],
         "ci_mcse": [
-         4.9e-05,
-         4e-05
+         0.000049,
+         0.00004
         ],
         "normal_ci95": [
          -0.00967,
@@ -8551,8 +8551,8 @@
          -0.00967
         ],
         "ci_mcse": [
-         5.7e-05,
-         5.5e-05
+         0.000057,
+         0.000055
         ],
         "normal_ci95": [
          -0.02656,
@@ -8566,8 +8566,8 @@
          -0.00228
         ],
         "ci_mcse": [
-         6.6e-05,
-         4.6e-05
+         0.000066,
+         0.000046
         ],
         "normal_ci95": [
          -0.01381,
@@ -8581,8 +8581,8 @@
          -0.01017
         ],
         "ci_mcse": [
-         5.6e-05,
-         5.7e-05
+         0.000056,
+         0.000057
         ],
         "normal_ci95": [
          -0.02734,
@@ -8596,8 +8596,8 @@
          -0.00034
         ],
         "ci_mcse": [
-         2.4e-05,
-         1.8e-05
+         0.000024,
+         0.000018
         ],
         "normal_ci95": [
          -0.00421,
@@ -8611,8 +8611,8 @@
          -0.00382
         ],
         "ci_mcse": [
-         7.1e-05,
-         5.6e-05
+         0.000071,
+         0.000056
         ],
         "normal_ci95": [
          -0.01992,
@@ -8623,15 +8623,15 @@
         "diff": -0.00127,
         "ci95": [
          -0.00249,
-         -5e-05
+         -0.00005
         ],
         "ci_mcse": [
-         1.7e-05,
-         1.2e-05
+         0.000017,
+         0.000012
         ],
         "normal_ci95": [
          -0.00248,
-         -5e-05
+         -0.00005
         ]
        }
       }
@@ -8678,8 +8678,8 @@
          -0.00111
         ],
         "ci_mcse": [
-         4e-05,
-         5e-05
+         0.00004,
+         0.00005
         ],
         "normal_ci95": [
          -0.01185,
@@ -8693,8 +8693,8 @@
          -0.01056
         ],
         "ci_mcse": [
-         6.8e-05,
-         5.2e-05
+         0.000068,
+         0.000052
         ],
         "normal_ci95": [
          -0.02787,
@@ -8708,8 +8708,8 @@
          -0.00206
         ],
         "ci_mcse": [
-         5.5e-05,
-         5.2e-05
+         0.000055,
+         0.000052
         ],
         "normal_ci95": [
          -0.01338,
@@ -8723,8 +8723,8 @@
          -0.01116
         ],
         "ci_mcse": [
-         7e-05,
-         4.7e-05
+         0.00007,
+         0.000047
         ],
         "normal_ci95": [
          -0.02868,
@@ -8738,8 +8738,8 @@
          -0.00056
         ],
         "ci_mcse": [
-         2.4e-05,
-         3e-05
+         0.000024,
+         0.00003
         ],
         "normal_ci95": [
          -0.00544,
@@ -8753,8 +8753,8 @@
          -0.00382
         ],
         "ci_mcse": [
-         7.1e-05,
-         5.6e-05
+         0.000071,
+         0.000056
         ],
         "normal_ci95": [
          -0.01992,
@@ -8768,8 +8768,8 @@
          -0.00011
         ],
         "ci_mcse": [
-         2e-05,
-         1.7e-05
+         0.00002,
+         0.000017
         ],
         "normal_ci95": [
          -0.00261,
@@ -8822,8 +8822,8 @@
          0.00054
         ],
         "ci_mcse": [
-         3.9e-05,
-         2.9e-05
+         0.000039,
+         0.000029
         ],
         "normal_ci95": [
          -0.00541,
@@ -8837,8 +8837,8 @@
          -0.00422
         ],
         "ci_mcse": [
-         6.7e-05,
-         7e-05
+         0.000067,
+         0.00007
         ],
         "normal_ci95": [
          -0.02071,
@@ -8852,12 +8852,12 @@
          0.00015
         ],
         "ci_mcse": [
-         5.5e-05,
-         5.9e-05
+         0.000055,
+         0.000059
         ],
         "normal_ci95": [
          -0.01224,
-         9e-05
+         0.00009
         ]
        },
        "joint": {
@@ -8867,8 +8867,8 @@
          -0.00485
         ],
         "ci_mcse": [
-         6e-05,
-         7.6e-05
+         0.00006,
+         0.000076
         ],
         "normal_ci95": [
          -0.02147,
@@ -8882,8 +8882,8 @@
          0.0003
         ],
         "ci_mcse": [
-         1.8e-05,
-         1.1e-05
+         0.000018,
+         0.000011
         ],
         "normal_ci95": [
          -0.00238,
@@ -8897,8 +8897,8 @@
          -0.0005
         ],
         "ci_mcse": [
-         7.1e-05,
-         8.9e-05
+         0.000071,
+         0.000089
         ],
         "normal_ci95": [
          -0.01773,
@@ -8912,8 +8912,8 @@
          -0.00011
         ],
         "ci_mcse": [
-         1.8e-05,
-         1.3e-05
+         0.000018,
+         0.000013
         ],
         "normal_ci95": [
          -0.00278,
@@ -8999,7 +8999,7 @@
        ],
        "ci_mcse": [
         0.000116,
-        6.9e-05
+        0.000069
        ],
        "normal_ci95": [
         -0.02209,
@@ -9058,8 +9058,8 @@
         0.00125
        ],
        "ci_mcse": [
-        5e-06,
-        8e-06
+        0.000005,
+        0.000008
        ],
        "normal_ci95": [
         -0.00025,
@@ -9090,8 +9090,8 @@
          0.00109
         ],
         "ci_mcse": [
-         4.7e-05,
-         3.5e-05
+         0.000047,
+         0.000035
         ],
         "normal_ci95": [
          -0.00564,
@@ -9121,7 +9121,7 @@
         ],
         "ci_mcse": [
          0.000145,
-         9.5e-05
+         0.000095
         ],
         "normal_ci95": [
          -0.03193,
@@ -9136,7 +9136,7 @@
         ],
         "ci_mcse": [
          0.000172,
-         9.7e-05
+         0.000097
         ],
         "normal_ci95": [
          -0.04551,
@@ -9150,8 +9150,8 @@
          0.00061
         ],
         "ci_mcse": [
-         2e-05,
-         1.7e-05
+         0.00002,
+         0.000017
         ],
         "normal_ci95": [
          -0.00237,
@@ -9180,8 +9180,8 @@
          0.00089
         ],
         "ci_mcse": [
-         2.3e-05,
-         1.4e-05
+         0.000023,
+         0.000014
         ],
         "normal_ci95": [
          -0.00223,
@@ -9229,7 +9229,7 @@
        ],
        "ci_mcse": [
         0.000101,
-        7.8e-05
+        0.000078
        ],
        "normal_ci95": [
         -0.02138,
@@ -9288,8 +9288,8 @@
         0.00119
        ],
        "ci_mcse": [
-        5e-06,
-        8e-06
+        0.000005,
+        0.000008
        ],
        "normal_ci95": [
         -0.00028,
@@ -9336,7 +9336,7 @@
        ],
        "ci_mcse": [
         0.000113,
-        5.1e-05
+        0.000051
        ],
        "normal_ci95": [
         -0.02073,
@@ -9395,8 +9395,8 @@
         0.00116
        ],
        "ci_mcse": [
-        5e-06,
-        8e-06
+        0.000005,
+        0.000008
        ],
        "normal_ci95": [
         -0.00032,
@@ -9434,7 +9434,7 @@
         ],
         "ci_mcse": [
          0.000121,
-         5.7e-05
+         0.000057
         ],
         "normal_ci95": [
          -0.02348,
@@ -9448,8 +9448,8 @@
          -0.00329
         ],
         "ci_mcse": [
-         8.7e-05,
-         6.7e-05
+         0.000087,
+         0.000067
         ],
         "normal_ci95": [
          -0.01807,
@@ -9464,7 +9464,7 @@
         ],
         "ci_mcse": [
          0.000121,
-         5.7e-05
+         0.000057
         ],
         "normal_ci95": [
          -0.02348,
@@ -9494,7 +9494,7 @@
         ],
         "ci_mcse": [
          0.00014,
-         6.2e-05
+         0.000062
         ],
         "normal_ci95": [
          -0.02365,
@@ -9508,11 +9508,11 @@
          0.00135
         ],
         "ci_mcse": [
-         5e-06,
-         6e-06
+         0.000005,
+         0.000006
         ],
         "normal_ci95": [
-         8e-05,
+         0.00008,
          0.00135
         ]
        }
@@ -10220,7 +10220,7 @@
         ]
        },
        "dev_kd": {
-        "diff": 5e-05,
+        "diff": 0.00005,
         "ci": [
          -0.003745,
          0.003795
@@ -10325,7 +10325,7 @@
        "total": {
         "diff": 0.002621,
         "ci": [
-         3.6e-05,
+         0.000036,
          0.005182
         ]
        },
@@ -11633,7 +11633,7 @@
      "G1 year-level acc error falls: CI upper < 0": {
       "pass": false,
       "boot_upper": 0.000303,
-      "mcse_upper": 1e-06,
+      "mcse_upper": 0.000001,
       "normal_upper": 0.00041,
       "threshold": 0,
       "marginal": false,
@@ -11642,7 +11642,7 @@
      "G1 year-level kd100 error falls: CI upper < 0": {
       "pass": false,
       "boot_upper": 0.015952,
-      "mcse_upper": 6.2e-05,
+      "mcse_upper": 0.000062,
       "normal_upper": 0.021362,
       "threshold": 0,
       "marginal": false,
@@ -11651,8 +11651,8 @@
      "G1 year-level td15 error falls: CI upper < 0": {
       "pass": false,
       "boot_upper": 0.0002,
-      "mcse_upper": 1.1e-05,
-      "normal_upper": 1.2e-05,
+      "mcse_upper": 0.000011,
+      "normal_upper": 0.000012,
       "threshold": 0,
       "marginal": false,
       "decided_by": "bootstrap"
@@ -11669,7 +11669,7 @@
      "G1 year-level finish error falls: CI upper < 0": {
       "pass": false,
       "boot_upper": 0.009605,
-      "mcse_upper": 7e-06,
+      "mcse_upper": 0.000007,
       "normal_upper": 0.010107,
       "threshold": 0,
       "marginal": false,
@@ -11687,7 +11687,7 @@
      "G2b total stat deviance not worse: CI upper <= +0.005 (0.5% of level)": {
       "pass": true,
       "boot_upper": 0.00207,
-      "mcse_upper": 2.5e-05,
+      "mcse_upper": 0.000025,
       "normal_upper": 0.0021,
       "threshold": 0.005,
       "marginal": false,
@@ -11726,7 +11726,7 @@
      "G7 winLL: CI upper <= +0.002": {
       "pass": true,
       "boot_upper": 0.001414,
-      "mcse_upper": 9e-06,
+      "mcse_upper": 0.000009,
       "normal_upper": 0.00141,
       "threshold": 0.002,
       "marginal": false,
@@ -11744,7 +11744,7 @@
      "G7 method: CI upper <= +0.002": {
       "pass": false,
       "boot_upper": 0.003069,
-      "mcse_upper": 1.7e-05,
+      "mcse_upper": 0.000017,
       "normal_upper": 0.00309,
       "threshold": 0.002,
       "marginal": false,
@@ -11864,14 +11864,14 @@
      "acc": {
       "diff": 0.000216,
       "ci": [
-       -4.9e-05,
+       -0.000049,
        0.000303
       ],
       "err_cand": 0.009203,
       "err_cmp4": 0.008987
      },
      "kd100": {
-      "diff": -4.6e-05,
+      "diff": -0.000046,
       "ci": [
        -0.011956,
        0.015952
@@ -11937,7 +11937,7 @@
        ],
        "ci_mcse": [
         0.000274,
-        1.4e-05
+        0.000014
        ],
        "pass": true
       },
@@ -11979,7 +11979,7 @@
        ],
        "ci_mcse": [
         0.000279,
-        2.3e-05
+        0.000023
        ],
        "pass": false
       },
@@ -12183,12 +12183,12 @@
        "acc": {
         "diff": 0.000216,
         "ci": [
-         -4.9e-05,
+         -0.000049,
          0.000303
         ]
        },
        "kd100": {
-        "diff": -4.6e-05,
+        "diff": -0.000046,
         "ci": [
          -0.011956,
          0.015952
@@ -12240,7 +12240,7 @@
         ]
        },
        "winLL": {
-        "diff": 6.6e-05,
+        "diff": 0.000066,
         "ci": [
          -0.000544,
          0.000679
@@ -13026,11 +13026,557 @@
     },
     "file": "data/derived/evalv/v10_train.json"
    },
-   "validation": null,
-   "blend": null,
+   "validation": {
+    "n_fights": 865,
+    "n_decisive": 853,
+    "sims_per_order": 300,
+    "metrics": {
+     "winLL": {
+      "est": 0.6273,
+      "lo": 0.613,
+      "hi": 0.6411
+     },
+     "brier": {
+      "est": 0.2182,
+      "lo": 0.2114,
+      "hi": 0.2247
+     },
+     "acc": {
+      "est": 0.6671,
+      "lo": 0.6379,
+      "hi": 0.6974
+     },
+     "bin7": {
+      "est": 1.5652,
+      "lo": 1.5275,
+      "hi": 1.6077
+     },
+     "method": {
+      "est": 0.942,
+      "lo": 0.9135,
+      "hi": 0.9713
+     },
+     "dev_sig_lnd": {
+      "est": 21.5441,
+      "lo": 20.0002,
+      "hi": 23.1468
+     },
+     "dev_sig_att": {
+      "est": 42.9965,
+      "lo": 39.7231,
+      "hi": 46.4001
+     },
+     "dev_td_lnd": {
+      "est": 1.7654,
+      "lo": 1.6453,
+      "hi": 1.8947
+     },
+     "dev_ctrl": {
+      "est": 149.6417,
+      "lo": 141.0752,
+      "hi": 158.5202
+     },
+     "dev_kd": {
+      "est": 0.6527,
+      "lo": 0.6124,
+      "hi": 0.6997
+     },
+     "mae_sig_lnd": {
+      "est": 24.8461,
+      "lo": 23.7521,
+      "hi": 25.9079
+     },
+     "mae_sig_att": {
+      "est": 50.9673,
+      "lo": 48.6977,
+      "hi": 53.3061
+     },
+     "mae_td_lnd": {
+      "est": 1.0587,
+      "lo": 1.005,
+      "hi": 1.1124
+     },
+     "mae_ctrl": {
+      "est": 111.4226,
+      "lo": 106.64,
+      "hi": 116.3902
+     },
+     "mae_kd": {
+      "est": 0.3183,
+      "lo": 0.304,
+      "hi": 0.3325
+     },
+     "devpm_sig_lnd": {
+      "est": 10.823,
+      "lo": 9.9121,
+      "hi": 11.7896
+     },
+     "devpm_sig_att": {
+      "est": 19.0011,
+      "lo": 17.4152,
+      "hi": 20.8036
+     },
+     "devpm_td_lnd": {
+      "est": 1.471,
+      "lo": 1.3749,
+      "hi": 1.5748
+     },
+     "devpm_ctrl": {
+      "est": 110.6,
+      "lo": 103.7459,
+      "hi": 117.1704
+     },
+     "devpm_kd": {
+      "est": 0.8691,
+      "lo": 0.8033,
+      "hi": 0.9406
+     },
+     "ece": {
+      "est": 0.073,
+      "lo": 0.0483,
+      "hi": 0.1044
+     },
+     "calSlope": {
+      "est": 1.8632,
+      "lo": 1.567,
+      "hi": 2.2166
+     }
+    },
+    "baseRates": {
+     "n": 857,
+     "finish": {
+      "sim": 0.4755,
+      "actual": 0.4597,
+      "diff": 0.0158
+     },
+     "KO": {
+      "sim": 0.2916,
+      "actual": 0.2905,
+      "diff": 0.001
+     },
+     "SUB": {
+      "sim": 0.1839,
+      "actual": 0.1692,
+      "diff": 0.0147
+     },
+     "DEC": {
+      "sim": 0.5245,
+      "actual": 0.5403,
+      "diff": -0.0158
+     },
+     "finByRound3": {
+      "n": 752,
+      "sim": [
+       0.2452,
+       0.1405,
+       0.0883
+      ],
+      "actual": [
+       0.2367,
+       0.137,
+       0.0785
+      ]
+     },
+     "finByRound5": {
+      "n": 105,
+      "sim": [
+       0.1347,
+       0.1175,
+       0.0958,
+       0.0865,
+       0.0515
+      ],
+      "actual": [
+       0.1524,
+       0.1619,
+       0.0952,
+       0.0762,
+       0.0286
+      ]
+     },
+     "kdPer100Head": {
+      "sim": 0.771,
+      "actual": 0.6844,
+      "diff": 0.0866
+     },
+     "decision": {
+      "sim": {
+       "UD": 0.8037,
+       "SD": 0.1928,
+       "MD": 0.0035
+      },
+      "actual": {
+       "UD": 0.8148,
+       "SD": 0.1808,
+       "MD": 0.0044
+      },
+      "nActual": 459
+     },
+     "r108": {
+      "sim": 0.0323,
+      "actual": 0.0246,
+      "diff": 0.0077
+     },
+     "sigLndPer15": {
+      "sim": 61.0104,
+      "actual": 58.1061,
+      "diff": 2.9044
+     },
+     "tdPer15": {
+      "sim": 1.3877,
+      "actual": 1.4128,
+      "diff": -0.0251
+     },
+     "ctrlPer15": {
+      "sim": 174.3689,
+      "actual": 168.3007,
+      "diff": 6.0682
+     }
+    },
+    "pitCoverage": {
+     "sig_lnd": {
+      "in80": 0.8688,
+      "gtP90": 0.0509,
+      "ltP10": 0.0803,
+      "n": 1730
+     },
+     "sig_att": {
+      "in80": 0.8665,
+      "gtP90": 0.0561,
+      "ltP10": 0.0775,
+      "n": 1730
+     },
+     "h_lnd": {
+      "in80": 0.8266,
+      "gtP90": 0.0815,
+      "ltP10": 0.0919,
+      "n": 1730
+     },
+     "b_lnd": {
+      "in80": 0.811,
+      "gtP90": 0.0671,
+      "ltP10": 0.122,
+      "n": 1730
+     },
+     "l_lnd": {
+      "in80": 0.8058,
+      "gtP90": 0.0873,
+      "ltP10": 0.1069,
+      "n": 1730
+     },
+     "kd": {
+      "in80": 0.815,
+      "gtP90": 0.0855,
+      "ltP10": 0.0994,
+      "n": 1730
+     },
+     "td_lnd": {
+      "in80": 0.7717,
+      "gtP90": 0.111,
+      "ltP10": 0.1173,
+      "n": 1730
+     },
+     "td_att": {
+      "in80": 0.7792,
+      "gtP90": 0.1214,
+      "ltP10": 0.0994,
+      "n": 1730
+     },
+     "ctrl": {
+      "in80": 0.8116,
+      "gtP90": 0.0803,
+      "ltP10": 0.1081,
+      "n": 1730
+     },
+     "sub_att": {
+      "in80": 0.8052,
+      "gtP90": 0.0942,
+      "ltP10": 0.1006,
+      "n": 1730
+     }
+    },
+    "methodround": {
+     "joint": {
+      "submitted": 2.0702,
+      "model_S": 2.0418,
+      "diff": 0.0284,
+      "ci95": [
+       0.0005,
+       0.0558
+      ]
+     },
+     "method3": {
+      "submitted": 0.942,
+      "model_S": 0.936,
+      "diff": 0.0061,
+      "ci95": [
+       -0.0085,
+       0.0206
+      ]
+     },
+     "finish": {
+      "submitted": 0.6634,
+      "model_S": 0.6593,
+      "diff": 0.0041,
+      "ci95": [
+       -0.0077,
+       0.0157
+      ]
+     },
+     "bin7": {
+      "submitted": 1.5652,
+      "model_S": 1.5538,
+      "diff": 0.0114,
+      "ci95": [
+       -0.0091,
+       0.0322
+      ]
+     },
+     "method_round": {
+      "submitted": 1.4383,
+      "model_S": 1.424,
+      "diff": 0.0143,
+      "ci95": [
+       -0.0059,
+       0.0334
+      ]
+     },
+     "round_given_fin": {
+      "submitted": 1.0679,
+      "model_S": 1.0601,
+      "diff": 0.0078,
+      "ci95": [
+       -0.0106,
+       0.0258
+      ]
+     },
+     "ko_vs_sub": {
+      "submitted": 0.6059,
+      "model_S": 0.6017,
+      "diff": 0.0042,
+      "ci95": [
+       -0.0134,
+       0.0223
+      ]
+     },
+     "method_given_winner": {
+      "submitted": 0.9159,
+      "model_S": 0.9073,
+      "diff": 0.0087,
+      "ci95": [
+       -0.0082,
+       0.0252
+      ]
+     },
+     "winner": {
+      "submitted": 0.6273,
+      "model_S": 0.6213,
+      "diff": 0.006,
+      "ci95": [
+       -0.0027,
+       0.0146
+      ]
+     },
+     "winner_brier": {
+      "submitted": 0.2182,
+      "model_S": 0.2154,
+      "diff": 0.0027,
+      "ci95": [
+       -0.0015,
+       0.0067
+      ]
+     },
+     "winner_acc": {
+      "submitted": 0.6688,
+      "model_S": 0.6753,
+      "diff": -0.0064,
+      "ci95": [
+       -0.0322,
+       0.0209
+      ]
+     },
+     "method3_brier": {
+      "submitted": 0.5655,
+      "model_S": 0.561,
+      "diff": 0.0045,
+      "ci95": [
+       -0.0056,
+       0.0143
+      ]
+     }
+    },
+    "compare": {
+     "against": "v4",
+     "paired": {
+      "winLL": {
+       "diff": -0.0051,
+       "lo": -0.0127,
+       "hi": 0.0024,
+       "n": 853
+      },
+      "brier": {
+       "diff": -0.0024,
+       "lo": -0.0062,
+       "hi": 0.0011,
+       "n": 853
+      },
+      "acc": {
+       "diff": 0.01,
+       "lo": -0.0139,
+       "hi": 0.034,
+       "n": 853
+      },
+      "bin7": {
+       "diff": -0.0061,
+       "lo": -0.0229,
+       "hi": 0.0084,
+       "n": 857
+      },
+      "method": {
+       "diff": 0.0021,
+       "lo": -0.0053,
+       "hi": 0.0095,
+       "n": 857
+      },
+      "dev_sig_lnd": {
+       "diff": -0.3216,
+       "lo": -0.7024,
+       "hi": 0.0765,
+       "n": 865
+      },
+      "dev_sig_att": {
+       "diff": -0.4251,
+       "lo": -1.1932,
+       "hi": 0.3132,
+       "n": 865
+      },
+      "dev_td_lnd": {
+       "diff": -0.0403,
+       "lo": -0.0691,
+       "hi": -0.0074,
+       "n": 865
+      },
+      "dev_ctrl": {
+       "diff": -4.4806,
+       "lo": -7.9376,
+       "hi": -1.2996,
+       "n": 865
+      },
+      "dev_kd": {
+       "diff": 0.001,
+       "lo": -0.0058,
+       "hi": 0.0077,
+       "n": 865
+      },
+      "mae_sig_lnd": {
+       "diff": -0.1633,
+       "lo": -0.4629,
+       "hi": 0.1389,
+       "n": 865
+      },
+      "mae_sig_att": {
+       "diff": -0.0361,
+       "lo": -0.584,
+       "hi": 0.5125,
+       "n": 865
+      },
+      "mae_td_lnd": {
+       "diff": 0.0015,
+       "lo": -0.0113,
+       "hi": 0.015,
+       "n": 865
+      },
+      "mae_ctrl": {
+       "diff": 0.3339,
+       "lo": -0.8966,
+       "hi": 1.5832,
+       "n": 865
+      },
+      "mae_kd": {
+       "diff": -0.0023,
+       "lo": -0.0042,
+       "hi": -0.0004,
+       "n": 865
+      },
+      "devpm_sig_lnd": {
+       "diff": 0,
+       "lo": 0,
+       "hi": 0,
+       "n": 0
+      },
+      "devpm_sig_att": {
+       "diff": 0,
+       "lo": 0,
+       "hi": 0,
+       "n": 0
+      },
+      "devpm_td_lnd": {
+       "diff": 0,
+       "lo": 0,
+       "hi": 0,
+       "n": 0
+      },
+      "devpm_ctrl": {
+       "diff": 0,
+       "lo": 0,
+       "hi": 0,
+       "n": 0
+      },
+      "devpm_kd": {
+       "diff": 0,
+       "lo": 0,
+       "hi": 0,
+       "n": 0
+      }
+     }
+    },
+    "file": "data/derived/evalv/v10_val.json"
+   },
+   "blend": {
+    "market": {
+     "engine_weight": 0,
+     "logloss_with": 0.5788247052492325,
+     "logloss_without": 0.5788257212949961,
+     "diff": {
+      "est": 0,
+      "lo": 0,
+      "hi": 0,
+      "p_gt0": null,
+      "raw": {
+       "est": -0.0000010160457635899362,
+       "lo": -0.0000016705291281985487,
+       "hi": -4.039958275342407e-7,
+       "p_gt0": 0.0005
+      },
+      "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
+     },
+     "n": 845
+    },
+    "nomarket": {
+     "engine_weight": 0,
+     "logloss_with": 0.5930337328752766,
+     "logloss_without": 0.5930336691698366,
+     "diff": {
+      "est": 0,
+      "lo": 0,
+      "hi": 0,
+      "p_gt0": null,
+      "raw": {
+       "est": 6.370543993818552e-8,
+       "lo": -4.4096442667096906e-8,
+       "hi": 1.7749123509874926e-7,
+       "p_gt0": 0.879
+      },
+      "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
+     },
+     "n": 845
+    },
+    "dry": false
+   },
    "notes": [
     "2026-11-07T11:31 train: v10 candidate (binding bundle gate PASSED: data/derived/v10/gate_train_score.json); standard TRAIN evaluation of the frozen files (every flag as shipped), descriptive",
-    "2026-11-07T11:34 v10 built (v4 simulator + v8's stat-line bundle as shipped + v7's predict package + cycle 5: newcomer path in FightBlend 1.4.0, explainer FightEngine.showFight), frozen in versions/v10 (engine e5c05d2f, params 8c20073f); ONE bundle-level gate protocol committed first (0358a0c 11:19:34 UTC), binding runs once (11:19-11:25 UTC), scored: PASS (primary -0.00528 [-0.00964, -0.00097] = v7's C1 open number reproduced; co-primary total stat deviance -1.13% [-1.76%, -0.51%]). Status preregistered; validation null. src/ holds v10 until the look decides."
+    "2026-11-07T11:34 v10 built (v4 simulator + v8's stat-line bundle as shipped + v7's predict package + cycle 5: newcomer path in FightBlend 1.4.0, explainer FightEngine.showFight), frozen in versions/v10 (engine e5c05d2f, params 8c20073f); ONE bundle-level gate protocol committed first (0358a0c 11:19:34 UTC), binding runs once (11:19-11:25 UTC), scored: PASS (primary -0.00528 [-0.00964, -0.00097] = v7's C1 open number reproduced; co-primary total stat deviance -1.13% [-1.76%, -0.51%]). Status preregistered; validation null. src/ holds v10 until the look decides.",
+    "2026-11-07T11:42 val: the single pre-registered v10 look (engine level, secondaries + base rates)"
    ],
    "status": "preregistered",
    "train_gate": {
@@ -13069,8 +13615,8 @@
       -0.00097
      ],
      "ci_mcse": [
-      4.9e-05,
-      4e-05
+      0.000049,
+      0.00004
      ],
      "normal_ci95": [
       -0.00967,
@@ -13086,7 +13632,7 @@
      "check": {
       "pass": true,
       "boot_upper": -0.00097,
-      "mcse_upper": 4e-05,
+      "mcse_upper": 0.00004,
       "normal_upper": -0.0009,
       "threshold": 0.002,
       "marginal": false,
@@ -13104,7 +13650,7 @@
      ],
      "ci_mcse": [
       0.000109,
-      7.1e-05
+      0.000071
      ],
      "normal_ci95": [
       -0.01759,
@@ -13114,7 +13660,7 @@
      "check": {
       "pass": true,
       "boot_upper": -0.005139,
-      "mcse_upper": 7.1e-05,
+      "mcse_upper": 0.000071,
       "normal_upper": -0.00507,
       "threshold": 0.005,
       "marginal": false,
@@ -13263,7 +13809,7 @@
         "diff": -0.00608,
         "ci": [
          -0.01221,
-         3e-05
+         0.00003
         ]
        },
        "joint": {
@@ -13446,17 +13992,17 @@
      },
      "props_effect_close_props_2022_2023": {
       "winLL": {
-       "diff": 0.0,
+       "diff": 0,
        "ci": [
-        0.0,
-        0.0
+        0,
+        0
        ]
       },
       "brier": {
-       "diff": 0.0,
+       "diff": 0,
        "ci": [
-        0.0,
-        0.0
+        0,
+        0
        ]
       },
       "bin7": {
@@ -13498,14 +14044,14 @@
      "package_leave_one_out_open": {
       "v10 - v10_simv4": {
        "winLL": {
-        "diff": 0.0,
+        "diff": 0,
         "ci": [
-         0.0,
-         0.0
+         0,
+         0
         ]
        },
        "bin7": {
-        "diff": 7e-05,
+        "diff": 0.00007,
         "ci": [
          -0.00226,
          0.00233
@@ -13528,10 +14074,10 @@
       },
       "v10 - v10_S": {
        "winLL": {
-        "diff": 0.0,
+        "diff": 0,
         "ci": [
-         0.0,
-         0.0
+         0,
+         0
         ]
        },
        "bin7": {
@@ -13911,7 +14457,7 @@
        "kd100": {
         "sim": 0.76276,
         "actual": 0.76283,
-        "err": -7e-05,
+        "err": -0.00007,
         "tol": 0.09154,
         "inside": true
        },
@@ -14236,7 +14782,8 @@
     "every v10 ingredient was scored on 2024-25 in research; the v6 look scored the same ML v2 winner head on 2024-25 (confirmation look)",
     "methodround.json held S / SM cells for vault fights (audit 1 exposure): cmp4's method cells come from it",
     "audit 1's side line scored the props pool and the debut method model on the vault: their audit-2 side-line results are not blind (same fights)"
-   ]
+   ],
+   "validated_at": "2026-11-07T11:42:34.073Z"
   }
  ],
  "vault_audits": [

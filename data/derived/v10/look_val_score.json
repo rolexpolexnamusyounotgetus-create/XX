@@ -1,0 +1,1749 @@
+{
+ "meta": {
+  "tool": "tools/v10_gate.py look",
+  "predict_harness": "data/derived/v10/look_val.json",
+  "stat_harness": "data/derived/v10/look_stat_val.json",
+  "decide": "data/derived/evalv/v10_vs_v4_val_decide.json",
+  "gate": "data/derived/v10/gate_train_score.json",
+  "boot": {
+   "B": 20000,
+   "seed": 7
+  },
+  "weights": {
+   "w_v10": 0.2,
+   "w_cmp4": 0.2,
+   "pi": 0.47
+  }
+ },
+ "rules": {
+  "scored_object": "the predict package (FightEngine.predict of versions/v10); summarize() for stat lines and base rates",
+  "primary": "open-regime winner log loss, v10 package minus cmp4 (the honest v4 package, versions/v7:cmp4), decisive 2024-2025 fights with an opener for both packages, refit schedule BOTH WALK-FORWARD (v10 --ml2-rolling with stack weights fit through 2023; cmp4 the blind replay's walk-forward experts with its stacker fit through 2023)",
+  "branch1": "keep if the primary's paired 95% CI upper < 0 (20,000 event-cluster resamples, seed 7; marginal bounds by the clustered normal bound)",
+  "branch2": "keep if (a) the primary is not worse: CI upper <= +0.002, AND (b) the branch-2 metric is clearly better: total stat-line relative deviance (tools/v8_gate.py definition) of the v10 engine minus v4 (tools/v10_stat_gate.js --split val, arms all vs cmp4) has CI upper < 0, AND (c) no base-rate drift: tools/evalv_decide.js's paired base-rate test (v10 vs v4 evalv val runs) passes on the 2024-2025 window EXCLUDING the announced glove-trial window 2024-06-01..2024-11-15 (V6_V10_PLAN 7.1 item 9; its sensitivity_no_glove_trial block), the full-window table reported next to it",
+  "flags": [
+   "confirmation look (every ingredient scored on 2024-25 in research; the v6 look scored the same ML v2 winner head)",
+   "gate design informed by v7 / v8 train results",
+   "kept under the glove-window amendment (only if branch 2 keeps while the full-window base-rate test fails)"
+  ],
+  "secondaries_never_decisive": "no-line and close regime winner; Brier, accuracy, ECE, slope; 7-bin, method, joint, round given a finish, method given the winner, P(decision) in every regime, props pool where available; per-stat deviances; who x how x when vs methodround S; v10 vs the v5.0.1 package (pkg 'v501' when the harness holds it); base-rate tables; blend test"
+ },
+ "primary": {
+  "diff": -0.00326,
+  "ci": [
+   -0.00653,
+   4e-05
+  ],
+  "ci_mcse": [
+   2.9e-05,
+   3e-05
+  ],
+  "normal": {
+   "se": 0.001674,
+   "ci": [
+    -0.00654,
+    2e-05
+   ]
+  },
+  "n_decisive": 842,
+  "n_cards": 84,
+  "levels": {
+   "v10": 0.58173,
+   "cmp4": 0.58499
+  },
+  "branch1_check": {
+   "pass": false,
+   "boot_upper": 4e-05,
+   "mcse_upper": 3e-05,
+   "normal_upper": 2e-05,
+   "threshold": 0.0,
+   "marginal": true,
+   "decided_by": "normal"
+  },
+  "not_worse_check": {
+   "pass": true,
+   "boot_upper": 4e-05,
+   "mcse_upper": 3e-05,
+   "normal_upper": 2e-05,
+   "threshold": 0.002,
+   "marginal": false,
+   "decided_by": "bootstrap"
+  }
+ },
+ "branch2_metric": {
+  "total": {
+   "diff": -0.008789,
+   "ci": [
+    -0.016894,
+    -0.000731
+   ],
+   "ci_mcse": [
+    9e-05,
+    6.6e-05
+   ],
+   "normal": {
+    "se": 0.004127,
+    "ci": [
+     -0.01688,
+     -0.0007
+    ]
+   },
+   "n": 865
+  },
+  "check": {
+   "pass": true,
+   "boot_upper": -0.000731,
+   "mcse_upper": 6.6e-05,
+   "normal_upper": -0.0007,
+   "threshold": 0.0,
+   "marginal": false,
+   "decided_by": "bootstrap"
+  },
+  "paired": {
+   "total": {
+    "diff": -0.008789,
+    "ci": [
+     -0.016894,
+     -0.000731
+    ],
+    "ci_mcse": [
+     9e-05,
+     6.6e-05
+    ],
+    "normal": {
+     "se": 0.004127,
+     "ci": [
+      -0.01688,
+      -0.0007
+     ]
+    },
+    "n": 865
+   },
+   "total_raw": {
+    "diff": -5.514493,
+    "ci": [
+     -9.184708,
+     -2.104966
+    ],
+    "ci_mcse": [
+     0.037336,
+     0.031159
+    ],
+    "normal": {
+     "se": 1.812124,
+     "ci": [
+      -9.06619,
+      -1.9628
+     ]
+    },
+    "n": 865
+   },
+   "winLL": {
+    "diff": -0.004297,
+    "ci": [
+     -0.010976,
+     0.002282
+    ],
+    "ci_mcse": [
+     7e-05,
+     7e-05
+    ],
+    "normal": {
+     "se": 0.003426,
+     "ci": [
+      -0.01101,
+      0.00242
+     ]
+    },
+    "n": 853
+   },
+   "bin7": {
+    "diff": 0.004858,
+    "ci": [
+     -0.007684,
+     0.017443
+    ],
+    "ci_mcse": [
+     0.000131,
+     0.000185
+    ],
+    "normal": {
+     "se": 0.006442,
+     "ci": [
+      -0.00777,
+      0.01748
+     ]
+    },
+    "n": 857
+   },
+   "method": {
+    "diff": 0.007085,
+    "ci": [
+     0.000435,
+     0.013962
+    ],
+    "ci_mcse": [
+     7e-05,
+     5.7e-05
+    ],
+    "normal": {
+     "se": 0.003441,
+     "ci": [
+      0.00034,
+      0.01383
+     ]
+    },
+    "n": 857
+   },
+   "dev_sig_lnd": {
+    "diff": -0.240678,
+    "ci": [
+     -0.568608,
+     0.092207
+    ],
+    "ci_mcse": [
+     0.0047,
+     0.003584
+    ],
+    "normal": {
+     "se": 0.169277,
+     "ci": [
+      -0.57246,
+      0.0911
+     ]
+    },
+    "n": 865
+   },
+   "dev_sig_att": {
+    "diff": -0.344637,
+    "ci": [
+     -0.959247,
+     0.27005
+    ],
+    "ci_mcse": [
+     0.005478,
+     0.007335
+    ],
+    "normal": {
+     "se": 0.318038,
+     "ci": [
+      -0.96798,
+      0.27871
+     ]
+    },
+    "n": 865
+   },
+   "dev_h_lnd": {
+    "diff": -0.1745,
+    "ci": [
+     -0.47282,
+     0.130268
+    ],
+    "ci_mcse": [
+     0.004277,
+     0.003559
+    ],
+    "normal": {
+     "se": 0.154943,
+     "ci": [
+      -0.47818,
+      0.12918
+     ]
+    },
+    "n": 865
+   },
+   "dev_b_lnd": {
+    "diff": -0.015574,
+    "ci": [
+     -0.092514,
+     0.060545
+    ],
+    "ci_mcse": [
+     0.000703,
+     0.000543
+    ],
+    "normal": {
+     "se": 0.039477,
+     "ci": [
+      -0.09295,
+      0.0618
+     ]
+    },
+    "n": 865
+   },
+   "dev_l_lnd": {
+    "diff": 0.016256,
+    "ci": [
+     -0.05935,
+     0.092984
+    ],
+    "ci_mcse": [
+     0.000627,
+     0.000402
+    ],
+    "normal": {
+     "se": 0.039027,
+     "ci": [
+      -0.06024,
+      0.09275
+     ]
+    },
+    "n": 865
+   },
+   "dev_kd": {
+    "diff": 0.002721,
+    "ci": [
+     -0.004012,
+     0.009778
+    ],
+    "ci_mcse": [
+     5.5e-05,
+     6e-05
+    ],
+    "normal": {
+     "se": 0.003561,
+     "ci": [
+      -0.00426,
+      0.0097
+     ]
+    },
+    "n": 865
+   },
+   "dev_td_lnd": {
+    "diff": -0.043459,
+    "ci": [
+     -0.07362,
+     -0.012959
+    ],
+    "ci_mcse": [
+     0.000372,
+     0.000393
+    ],
+    "normal": {
+     "se": 0.015562,
+     "ci": [
+      -0.07396,
+      -0.01296
+     ]
+    },
+    "n": 865
+   },
+   "dev_td_att": {
+    "diff": -0.07567,
+    "ci": [
+     -0.166459,
+     0.017366
+    ],
+    "ci_mcse": [
+     0.000871,
+     0.000983
+    ],
+    "normal": {
+     "se": 0.047491,
+     "ci": [
+      -0.16875,
+      0.01741
+     ]
+    },
+    "n": 865
+   },
+   "dev_ctrl": {
+    "diff": -4.649975,
+    "ci": [
+     -8.033241,
+     -1.52706
+    ],
+    "ci_mcse": [
+     0.019656,
+     0.026409
+    ],
+    "normal": {
+     "se": 1.675482,
+     "ci": [
+      -7.93386,
+      -1.36609
+     ]
+    },
+    "n": 865
+   },
+   "dev_sub_att": {
+    "diff": 0.011022,
+    "ci": [
+     0.000176,
+     0.021954
+    ],
+    "ci_mcse": [
+     0.000141,
+     9.5e-05
+    ],
+    "normal": {
+     "se": 0.005619,
+     "ci": [
+      1e-05,
+      0.02204
+     ]
+    },
+    "n": 865
+   }
+  }
+ },
+ "base_rates": {
+  "governing_no_glove_paired_fail": [],
+  "full_window_paired_fail": [
+   "kd100"
+  ],
+  "pass": true
+ },
+ "decision": {
+  "keep": true,
+  "branch": "branch 2",
+  "kept_under_glove_amendment": true,
+  "flags": [
+   "confirmation look",
+   "gate design informed by v7 / v8 train results"
+  ]
+ },
+ "secondaries": {
+  "none": {
+   "kind": "none",
+   "years": [
+    2024,
+    2025
+   ],
+   "n_outcome": 853,
+   "n_decisive": 853,
+   "n_finish": 394,
+   "n_cards": 84,
+   "packages": {
+    "v10": {
+     "winLL": 0.58899,
+     "brier": 0.20206,
+     "acc": 0.6835,
+     "ece": 0.0355,
+     "slope": 1.292,
+     "bin7": 1.49221,
+     "method": 0.92575,
+     "joint": 1.98277,
+     "rgf": 1.05717,
+     "mgw": 0.89707,
+     "pdec": 0.4927,
+     "ydec": 0.5381
+    },
+    "cmp4": {
+     "winLL": 0.59377,
+     "brier": 0.20424,
+     "acc": 0.6846,
+     "ece": 0.0334,
+     "slope": 1.277,
+     "bin7": 1.50447,
+     "method": 0.92779,
+     "joint": 1.99495,
+     "rgf": 1.05811,
+     "mgw": 0.90442,
+     "pdec": 0.4872,
+     "ydec": 0.5381
+    }
+   },
+   "paired": {
+    "v10 - cmp4": {
+     "bin7": {
+      "diff": -0.01225,
+      "ci": [
+       -0.02101,
+       -0.00347
+      ],
+      "ci_mcse": [
+       0.0001,
+       8e-05
+      ],
+      "normal": {
+       "se": 0.004558,
+       "ci": [
+        -0.02119,
+        -0.00332
+       ]
+      }
+     },
+     "method": {
+      "diff": -0.00204,
+      "ci": [
+       -0.00804,
+       0.00402
+      ],
+      "ci_mcse": [
+       4.8e-05,
+       7e-05
+      ],
+      "normal": {
+       "se": 0.003148,
+       "ci": [
+        -0.00821,
+        0.00413
+       ]
+      }
+     },
+     "joint": {
+      "diff": -0.01219,
+      "ci": [
+       -0.02154,
+       -0.00278
+      ],
+      "ci_mcse": [
+       9.2e-05,
+       6.2e-05
+      ],
+      "normal": {
+       "se": 0.004866,
+       "ci": [
+        -0.02172,
+        -0.00265
+       ]
+      }
+     },
+     "winLL": {
+      "diff": -0.00477,
+      "ci": [
+       -0.00847,
+       -0.00091
+      ],
+      "ci_mcse": [
+       2.3e-05,
+       5.8e-05
+      ],
+      "normal": {
+       "se": 0.00194,
+       "ci": [
+        -0.00858,
+        -0.00097
+       ]
+      }
+     },
+     "brier": {
+      "diff": -0.00217,
+      "ci": [
+       -0.00384,
+       -0.00041
+      ],
+      "ci_mcse": [
+       8e-06,
+       2.3e-05
+      ],
+      "normal": {
+       "se": 0.000876,
+       "ci": [
+        -0.00389,
+        -0.00046
+       ]
+      }
+     },
+     "acc": {
+      "diff": -0.00117,
+      "ci": [
+       -0.01593,
+       0.0137
+      ],
+      "ci_mcse": [
+       0.000137,
+       0.000196
+      ],
+      "normal": {
+       "se": 0.007551,
+       "ci": [
+        -0.01597,
+        0.01363
+       ]
+      }
+     },
+     "mgw": {
+      "diff": -0.00735,
+      "ci": [
+       -0.01594,
+       0.00098
+      ],
+      "ci_mcse": [
+       8.5e-05,
+       8.9e-05
+      ],
+      "normal": {
+       "se": 0.004363,
+       "ci": [
+        -0.01591,
+        0.0012
+       ]
+      }
+     },
+     "rgf": {
+      "diff": -0.00094,
+      "ci": [
+       -0.00372,
+       0.00181
+      ],
+      "ci_mcse": [
+       2.3e-05,
+       3.8e-05
+      ],
+      "normal": {
+       "se": 0.001418,
+       "ci": [
+        -0.00372,
+        0.00184
+       ]
+      }
+     },
+     "pdec_bias_v10": {
+      "diff": -0.0454,
+      "ci": [
+       -0.07686,
+       -0.01401
+      ]
+     },
+     "pdec_bias_cmp4": {
+      "diff": -0.05092,
+      "ci": [
+       -0.08197,
+       -0.01998
+      ]
+     }
+    }
+   },
+   "boot": {
+    "B": 20000,
+    "seed": 7
+   }
+  },
+  "close": {
+   "kind": "close",
+   "years": [
+    2024,
+    2025
+   ],
+   "n_outcome": 844,
+   "n_decisive": 844,
+   "n_finish": 391,
+   "n_cards": 84,
+   "packages": {
+    "v10": {
+     "winLL": 0.576,
+     "brier": 0.19649,
+     "acc": 0.7002,
+     "ece": 0.0371,
+     "slope": 1.152,
+     "bin7": 1.48124,
+     "method": 0.92756,
+     "joint": 1.97349,
+     "rgf": 1.0584,
+     "mgw": 0.89909,
+     "pdec": 0.4917,
+     "ydec": 0.5367,
+     "softCE_vs_close": 0.60325
+    },
+    "cmp4": {
+     "winLL": 0.57826,
+     "brier": 0.19745,
+     "acc": 0.6991,
+     "ece": 0.036,
+     "slope": 1.136,
+     "bin7": 1.49132,
+     "method": 0.92832,
+     "joint": 1.98355,
+     "rgf": 1.05912,
+     "mgw": 0.9068,
+     "pdec": 0.4861,
+     "ydec": 0.5367,
+     "softCE_vs_close": 0.6018
+    }
+   },
+   "paired": {
+    "v10 - cmp4": {
+     "bin7": {
+      "diff": -0.01008,
+      "ci": [
+       -0.01968,
+       -0.00063
+      ],
+      "ci_mcse": [
+       7.8e-05,
+       7.8e-05
+      ],
+      "normal": {
+       "se": 0.004877,
+       "ci": [
+        -0.01964,
+        -0.00052
+       ]
+      }
+     },
+     "method": {
+      "diff": -0.00076,
+      "ci": [
+       -0.00759,
+       0.00584
+      ],
+      "ci_mcse": [
+       6.5e-05,
+       5e-05
+      ],
+      "normal": {
+       "se": 0.003443,
+       "ci": [
+        -0.00751,
+        0.00599
+       ]
+      }
+     },
+     "joint": {
+      "diff": -0.01006,
+      "ci": [
+       -0.02017,
+       -8e-05
+      ],
+      "ci_mcse": [
+       7.1e-05,
+       5.1e-05
+      ],
+      "normal": {
+       "se": 0.005165,
+       "ci": [
+        -0.02018,
+        7e-05
+       ]
+      }
+     },
+     "winLL": {
+      "diff": -0.00226,
+      "ci": [
+       -0.00455,
+       5e-05
+      ],
+      "ci_mcse": [
+       1.9e-05,
+       1.4e-05
+      ],
+      "normal": {
+       "se": 0.001174,
+       "ci": [
+        -0.00456,
+        4e-05
+       ]
+      }
+     },
+     "brier": {
+      "diff": -0.00096,
+      "ci": [
+       -0.00194,
+       3e-05
+      ],
+      "ci_mcse": [
+       1.2e-05,
+       7e-06
+      ],
+      "normal": {
+       "se": 0.000502,
+       "ci": [
+        -0.00194,
+        3e-05
+       ]
+      }
+     },
+     "acc": {
+      "diff": 0.00118,
+      "ci": [
+       -0.00833,
+       0.01078
+      ],
+      "ci_mcse": [
+       3.8e-05,
+       5.9e-05
+      ],
+      "normal": {
+       "se": 0.004913,
+       "ci": [
+        -0.00844,
+        0.01081
+       ]
+      }
+     },
+     "mgw": {
+      "diff": -0.00771,
+      "ci": [
+       -0.0169,
+       0.00131
+      ],
+      "ci_mcse": [
+       8.4e-05,
+       7.2e-05
+      ],
+      "normal": {
+       "se": 0.004654,
+       "ci": [
+        -0.01683,
+        0.00141
+       ]
+      }
+     },
+     "soft": {
+      "diff": 0.00146,
+      "ci": [
+       0.00128,
+       0.00164
+      ],
+      "ci_mcse": [
+       1e-06,
+       3e-06
+      ],
+      "normal": {
+       "se": 9e-05,
+       "ci": [
+        0.00128,
+        0.00163
+       ]
+      }
+     },
+     "rgf": {
+      "diff": -0.00073,
+      "ci": [
+       -0.00351,
+       0.00201
+      ],
+      "ci_mcse": [
+       2.2e-05,
+       2.9e-05
+      ],
+      "normal": {
+       "se": 0.001423,
+       "ci": [
+        -0.00351,
+        0.00206
+       ]
+      }
+     },
+     "pdec_bias_v10": {
+      "diff": -0.04503,
+      "ci": [
+       -0.07662,
+       -0.01362
+      ]
+     },
+     "pdec_bias_cmp4": {
+      "diff": -0.05063,
+      "ci": [
+       -0.08189,
+       -0.0195
+      ]
+     }
+    }
+   },
+   "boot": {
+    "B": 20000,
+    "seed": 7
+   }
+  },
+  "open": {
+   "kind": "open",
+   "years": [
+    2024,
+    2025
+   ],
+   "n_outcome": 842,
+   "n_decisive": 842,
+   "n_finish": 389,
+   "n_cards": 84,
+   "packages": {
+    "v10": {
+     "winLL": 0.58173,
+     "brier": 0.19879,
+     "acc": 0.6912,
+     "ece": 0.0251,
+     "slope": 1.258,
+     "bin7": 1.4873,
+     "method": 0.92773,
+     "joint": 1.97843,
+     "rgf": 1.05885,
+     "mgw": 0.89942,
+     "pdec": 0.4924,
+     "ydec": 0.538
+    },
+    "cmp4": {
+     "winLL": 0.58499,
+     "brier": 0.20022,
+     "acc": 0.6865,
+     "ece": 0.0258,
+     "slope": 1.278,
+     "bin7": 1.49789,
+     "method": 0.92986,
+     "joint": 1.98905,
+     "rgf": 1.05977,
+     "mgw": 0.90662,
+     "pdec": 0.4864,
+     "ydec": 0.538
+    }
+   },
+   "paired": {
+    "v10 - cmp4": {
+     "bin7": {
+      "diff": -0.01058,
+      "ci": [
+       -0.01964,
+       -0.00156
+      ],
+      "ci_mcse": [
+       0.000113,
+       6.3e-05
+      ],
+      "normal": {
+       "se": 0.00471,
+       "ci": [
+        -0.01981,
+        -0.00135
+       ]
+      }
+     },
+     "method": {
+      "diff": -0.00213,
+      "ci": [
+       -0.00812,
+       0.00395
+      ],
+      "ci_mcse": [
+       3.4e-05,
+       7.2e-05
+      ],
+      "normal": {
+       "se": 0.003146,
+       "ci": [
+        -0.00829,
+        0.00404
+       ]
+      }
+     },
+     "joint": {
+      "diff": -0.01062,
+      "ci": [
+       -0.02035,
+       -0.00085
+      ],
+      "ci_mcse": [
+       0.000103,
+       7.8e-05
+      ],
+      "normal": {
+       "se": 0.005043,
+       "ci": [
+        -0.02051,
+        -0.00074
+       ]
+      }
+     },
+     "winLL": {
+      "diff": -0.00326,
+      "ci": [
+       -0.00653,
+       4e-05
+      ],
+      "ci_mcse": [
+       2.9e-05,
+       3e-05
+      ],
+      "normal": {
+       "se": 0.001674,
+       "ci": [
+        -0.00654,
+        2e-05
+       ]
+      }
+     },
+     "brier": {
+      "diff": -0.00143,
+      "ci": [
+       -0.00289,
+       4e-05
+      ],
+      "ci_mcse": [
+       1.4e-05,
+       1.5e-05
+      ],
+      "normal": {
+       "se": 0.000748,
+       "ci": [
+        -0.0029,
+        4e-05
+       ]
+      }
+     },
+     "acc": {
+      "diff": 0.00475,
+      "ci": [
+       -0.00479,
+       0.01471
+      ],
+      "ci_mcse": [
+       1.8e-05,
+       0.000123
+      ],
+      "normal": {
+       "se": 0.00505,
+       "ci": [
+        -0.00515,
+        0.01465
+       ]
+      }
+     },
+     "mgw": {
+      "diff": -0.0072,
+      "ci": [
+       -0.01589,
+       0.00118
+      ],
+      "ci_mcse": [
+       8.1e-05,
+       7.5e-05
+      ],
+      "normal": {
+       "se": 0.004407,
+       "ci": [
+        -0.01584,
+        0.00143
+       ]
+      }
+     },
+     "rgf": {
+      "diff": -0.00092,
+      "ci": [
+       -0.00368,
+       0.00179
+      ],
+      "ci_mcse": [
+       3e-05,
+       3.6e-05
+      ],
+      "normal": {
+       "se": 0.001419,
+       "ci": [
+        -0.0037,
+        0.00186
+       ]
+      }
+     },
+     "pdec_bias_v10": {
+      "diff": -0.0456,
+      "ci": [
+       -0.07725,
+       -0.01403
+      ]
+     },
+     "pdec_bias_cmp4": {
+      "diff": -0.05159,
+      "ci": [
+       -0.0829,
+       -0.02023
+      ]
+     }
+    }
+   },
+   "boot": {
+    "B": 20000,
+    "seed": 7
+   }
+  },
+  "package_with_props_vs_cmp4": {
+   "open": {
+    "kind": "open",
+    "years": [
+     2024,
+     2025
+    ],
+    "n_outcome": 842,
+    "n_decisive": 842,
+    "n_finish": 389,
+    "n_cards": 84,
+    "packages": {
+     "v10": {
+      "winLL": 0.58173,
+      "brier": 0.19879,
+      "acc": 0.6912,
+      "ece": 0.0251,
+      "slope": 1.258,
+      "bin7": 1.4729,
+      "method": 0.9184,
+      "joint": 1.96403,
+      "rgf": 1.05844,
+      "mgw": 0.8842,
+      "pdec": 0.4813,
+      "ydec": 0.538
+     },
+     "cmp4": {
+      "winLL": 0.58499,
+      "brier": 0.20022,
+      "acc": 0.6865,
+      "ece": 0.0258,
+      "slope": 1.278,
+      "bin7": 1.49789,
+      "method": 0.92986,
+      "joint": 1.98905,
+      "rgf": 1.05977,
+      "mgw": 0.90662,
+      "pdec": 0.4864,
+      "ydec": 0.538
+     }
+    },
+    "paired": {
+     "v10 - cmp4": {
+      "bin7": {
+       "diff": -0.02498,
+       "ci": [
+        -0.03927,
+        -0.01105
+       ],
+       "ci_mcse": [
+        0.000169,
+        0.000106
+       ],
+       "normal": {
+        "se": 0.007275,
+        "ci": [
+         -0.03924,
+         -0.01072
+        ]
+       }
+      },
+      "method": {
+       "diff": -0.01146,
+       "ci": [
+        -0.02134,
+        -0.00184
+       ],
+       "ci_mcse": [
+        0.000107,
+        9.9e-05
+       ],
+       "normal": {
+        "se": 0.005001,
+        "ci": [
+         -0.02126,
+         -0.00165
+        ]
+       }
+      },
+      "joint": {
+       "diff": -0.02502,
+       "ci": [
+        -0.03958,
+        -0.01079
+       ],
+       "ci_mcse": [
+        0.000151,
+        0.000118
+       ],
+       "normal": {
+        "se": 0.007455,
+        "ci": [
+         -0.03964,
+         -0.01041
+        ]
+       }
+      },
+      "winLL": {
+       "diff": -0.00326,
+       "ci": [
+        -0.00653,
+        4e-05
+       ],
+       "ci_mcse": [
+        2.9e-05,
+        3e-05
+       ],
+       "normal": {
+        "se": 0.001674,
+        "ci": [
+         -0.00654,
+         2e-05
+        ]
+       }
+      },
+      "brier": {
+       "diff": -0.00143,
+       "ci": [
+        -0.00289,
+        4e-05
+       ],
+       "ci_mcse": [
+        1.4e-05,
+        1.5e-05
+       ],
+       "normal": {
+        "se": 0.000748,
+        "ci": [
+         -0.0029,
+         4e-05
+        ]
+       }
+      },
+      "acc": {
+       "diff": 0.00475,
+       "ci": [
+        -0.00479,
+        0.01471
+       ],
+       "ci_mcse": [
+        1.8e-05,
+        0.000123
+       ],
+       "normal": {
+        "se": 0.00505,
+        "ci": [
+         -0.00515,
+         0.01465
+        ]
+       }
+      },
+      "mgw": {
+       "diff": -0.02242,
+       "ci": [
+        -0.03666,
+        -0.00864
+       ],
+       "ci_mcse": [
+        0.000118,
+        0.000104
+       ],
+       "normal": {
+        "se": 0.007203,
+        "ci": [
+         -0.03654,
+         -0.00831
+        ]
+       }
+      },
+      "rgf": {
+       "diff": -0.00133,
+       "ci": [
+        -0.00418,
+        0.00147
+       ],
+       "ci_mcse": [
+        2.4e-05,
+        3e-05
+       ],
+       "normal": {
+        "se": 0.001458,
+        "ci": [
+         -0.00418,
+         0.00153
+        ]
+       }
+      },
+      "pdec_bias_v10": {
+       "diff": -0.05673,
+       "ci": [
+        -0.08802,
+        -0.0253
+       ]
+      },
+      "pdec_bias_cmp4": {
+       "diff": -0.05159,
+       "ci": [
+        -0.0829,
+        -0.02023
+       ]
+      }
+     }
+    },
+    "boot": {
+     "B": 20000,
+     "seed": 7
+    }
+   },
+   "none": {
+    "kind": "none",
+    "years": [
+     2024,
+     2025
+    ],
+    "n_outcome": 853,
+    "n_decisive": 853,
+    "n_finish": 394,
+    "n_cards": 84,
+    "packages": {
+     "v10": {
+      "winLL": 0.58899,
+      "brier": 0.20206,
+      "acc": 0.6835,
+      "ece": 0.0355,
+      "slope": 1.292,
+      "bin7": 1.47766,
+      "method": 0.91648,
+      "joint": 1.96821,
+      "rgf": 1.05678,
+      "mgw": 0.88169,
+      "pdec": 0.4819,
+      "ydec": 0.5381
+     },
+     "cmp4": {
+      "winLL": 0.59377,
+      "brier": 0.20424,
+      "acc": 0.6846,
+      "ece": 0.0334,
+      "slope": 1.277,
+      "bin7": 1.50447,
+      "method": 0.92779,
+      "joint": 1.99495,
+      "rgf": 1.05811,
+      "mgw": 0.90442,
+      "pdec": 0.4872,
+      "ydec": 0.5381
+     }
+    },
+    "paired": {
+     "v10 - cmp4": {
+      "bin7": {
+       "diff": -0.02681,
+       "ci": [
+        -0.04063,
+        -0.01318
+       ],
+       "ci_mcse": [
+        0.000128,
+        0.000115
+       ],
+       "normal": {
+        "se": 0.007079,
+        "ci": [
+         -0.04068,
+         -0.01293
+        ]
+       }
+      },
+      "method": {
+       "diff": -0.01131,
+       "ci": [
+        -0.0209,
+        -0.00191
+       ],
+       "ci_mcse": [
+        0.000103,
+        9e-05
+       ],
+       "normal": {
+        "se": 0.004879,
+        "ci": [
+         -0.02087,
+         -0.00175
+        ]
+       }
+      },
+      "joint": {
+       "diff": -0.02674,
+       "ci": [
+        -0.04081,
+        -0.01285
+       ],
+       "ci_mcse": [
+        0.000146,
+        0.000118
+       ],
+       "normal": {
+        "se": 0.00724,
+        "ci": [
+         -0.04093,
+         -0.01255
+        ]
+       }
+      },
+      "winLL": {
+       "diff": -0.00477,
+       "ci": [
+        -0.00847,
+        -0.00091
+       ],
+       "ci_mcse": [
+        2.3e-05,
+        5.8e-05
+       ],
+       "normal": {
+        "se": 0.00194,
+        "ci": [
+         -0.00858,
+         -0.00097
+        ]
+       }
+      },
+      "brier": {
+       "diff": -0.00217,
+       "ci": [
+        -0.00384,
+        -0.00041
+       ],
+       "ci_mcse": [
+        8e-06,
+        2.3e-05
+       ],
+       "normal": {
+        "se": 0.000876,
+        "ci": [
+         -0.00389,
+         -0.00046
+        ]
+       }
+      },
+      "acc": {
+       "diff": -0.00117,
+       "ci": [
+        -0.01593,
+        0.0137
+       ],
+       "ci_mcse": [
+        0.000137,
+        0.000196
+       ],
+       "normal": {
+        "se": 0.007551,
+        "ci": [
+         -0.01597,
+         0.01363
+        ]
+       }
+      },
+      "mgw": {
+       "diff": -0.02273,
+       "ci": [
+        -0.03684,
+        -0.00907
+       ],
+       "ci_mcse": [
+        0.000125,
+        6.7e-05
+       ],
+       "normal": {
+        "se": 0.007155,
+        "ci": [
+         -0.03675,
+         -0.0087
+        ]
+       }
+      },
+      "rgf": {
+       "diff": -0.00133,
+       "ci": [
+        -0.00416,
+        0.00147
+       ],
+       "ci_mcse": [
+        2.3e-05,
+        3.3e-05
+       ],
+       "normal": {
+        "se": 0.001451,
+        "ci": [
+         -0.00418,
+         0.00151
+        ]
+       }
+      },
+      "pdec_bias_v10": {
+       "diff": -0.05622,
+       "ci": [
+        -0.08701,
+        -0.02523
+       ]
+      },
+      "pdec_bias_cmp4": {
+       "diff": -0.05092,
+       "ci": [
+        -0.08197,
+        -0.01998
+       ]
+      }
+     }
+    },
+    "boot": {
+     "B": 20000,
+     "seed": 7
+    }
+   },
+   "close": {
+    "kind": "close",
+    "years": [
+     2024,
+     2025
+    ],
+    "n_outcome": 844,
+    "n_decisive": 844,
+    "n_finish": 391,
+    "n_cards": 84,
+    "packages": {
+     "v10": {
+      "winLL": 0.576,
+      "brier": 0.19649,
+      "acc": 0.7002,
+      "ece": 0.0371,
+      "slope": 1.152,
+      "bin7": 1.46732,
+      "method": 0.91826,
+      "joint": 1.95957,
+      "rgf": 1.058,
+      "mgw": 0.88436,
+      "pdec": 0.4806,
+      "ydec": 0.5367,
+      "softCE_vs_close": 0.60325
+     },
+     "cmp4": {
+      "winLL": 0.57826,
+      "brier": 0.19745,
+      "acc": 0.6991,
+      "ece": 0.036,
+      "slope": 1.136,
+      "bin7": 1.49132,
+      "method": 0.92832,
+      "joint": 1.98355,
+      "rgf": 1.05912,
+      "mgw": 0.9068,
+      "pdec": 0.4861,
+      "ydec": 0.5367,
+      "softCE_vs_close": 0.6018
+     }
+    },
+    "paired": {
+     "v10 - cmp4": {
+      "bin7": {
+       "diff": -0.024,
+       "ci": [
+        -0.0383,
+        -0.01021
+       ],
+       "ci_mcse": [
+        9.8e-05,
+        0.000113
+       ],
+       "normal": {
+        "se": 0.007191,
+        "ci": [
+         -0.03809,
+         -0.0099
+        ]
+       }
+      },
+      "method": {
+       "diff": -0.01007,
+       "ci": [
+        -0.02015,
+        -0.00023
+       ],
+       "ci_mcse": [
+        0.000133,
+        0.000114
+       ],
+       "normal": {
+        "se": 0.005122,
+        "ci": [
+         -0.02011,
+         -3e-05
+        ]
+       }
+      },
+      "joint": {
+       "diff": -0.02397,
+       "ci": [
+        -0.03848,
+        -0.00999
+       ],
+       "ci_mcse": [
+        0.000108,
+        8.1e-05
+       ],
+       "normal": {
+        "se": 0.007342,
+        "ci": [
+         -0.03836,
+         -0.00958
+        ]
+       }
+      },
+      "winLL": {
+       "diff": -0.00226,
+       "ci": [
+        -0.00455,
+        5e-05
+       ],
+       "ci_mcse": [
+        1.9e-05,
+        1.4e-05
+       ],
+       "normal": {
+        "se": 0.001174,
+        "ci": [
+         -0.00456,
+         4e-05
+        ]
+       }
+      },
+      "brier": {
+       "diff": -0.00096,
+       "ci": [
+        -0.00194,
+        3e-05
+       ],
+       "ci_mcse": [
+        1.2e-05,
+        7e-06
+       ],
+       "normal": {
+        "se": 0.000502,
+        "ci": [
+         -0.00194,
+         3e-05
+        ]
+       }
+      },
+      "acc": {
+       "diff": 0.00118,
+       "ci": [
+        -0.00833,
+        0.01078
+       ],
+       "ci_mcse": [
+        3.8e-05,
+        5.9e-05
+       ],
+       "normal": {
+        "se": 0.004913,
+        "ci": [
+         -0.00844,
+         0.01081
+        ]
+       }
+      },
+      "mgw": {
+       "diff": -0.02243,
+       "ci": [
+        -0.03664,
+        -0.00873
+       ],
+       "ci_mcse": [
+        0.00011,
+        7.8e-05
+       ],
+       "normal": {
+        "se": 0.007153,
+        "ci": [
+         -0.03645,
+         -0.00841
+        ]
+       }
+      },
+      "soft": {
+       "diff": 0.00146,
+       "ci": [
+        0.00128,
+        0.00164
+       ],
+       "ci_mcse": [
+        1e-06,
+        3e-06
+       ],
+       "normal": {
+        "se": 9e-05,
+        "ci": [
+         0.00128,
+         0.00163
+        ]
+       }
+      },
+      "rgf": {
+       "diff": -0.00112,
+       "ci": [
+        -0.00395,
+        0.00164
+       ],
+       "ci_mcse": [
+        2e-05,
+        2.6e-05
+       ],
+       "normal": {
+        "se": 0.00144,
+        "ci": [
+         -0.00394,
+         0.0017
+        ]
+       }
+      },
+      "pdec_bias_v10": {
+       "diff": -0.05614,
+       "ci": [
+        -0.08734,
+        -0.02484
+       ]
+      },
+      "pdec_bias_cmp4": {
+       "diff": -0.05063,
+       "ci": [
+        -0.08189,
+        -0.0195
+       ]
+      }
+     }
+    },
+    "boot": {
+     "B": 20000,
+     "seed": 7
+    }
+   }
+  },
+  "vs_v501_open_descriptive": {
+   "bin7": {
+    "diff": -0.00514,
+    "ci": [
+     -0.01392,
+     0.00363
+    ]
+   },
+   "method": {
+    "diff": 0.00021,
+    "ci": [
+     -0.00555,
+     0.00605
+    ]
+   },
+   "joint": {
+    "diff": -0.00521,
+    "ci": [
+     -0.0145,
+     0.0045
+    ]
+   },
+   "winLL": {
+    "diff": -0.00265,
+    "ci": [
+     -0.00606,
+     0.00081
+    ]
+   },
+   "brier": {
+    "diff": -0.0011,
+    "ci": [
+     -0.00259,
+     0.00042
+    ]
+   },
+   "acc": {
+    "diff": -0.00238,
+    "ci": [
+     -0.01535,
+     0.01056
+    ]
+   },
+   "mgw": {
+    "diff": -0.0014,
+    "ci": [
+     -0.00929,
+     0.0065
+    ]
+   },
+   "rgf": {
+    "diff": -1e-05,
+    "ci": [
+     -0.00447,
+     0.00446
+    ]
+   }
+  }
+ }
+}

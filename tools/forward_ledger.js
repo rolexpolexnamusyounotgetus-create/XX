@@ -55,7 +55,14 @@
    --fwd 4.3 (forward model v4.3, data/predictions/README.md "Forward model v4.3"): everything --fwd 4.2 writes, plus the
    models entry "moe_noline" = the MoE stack without a line (the same number as stack_noline; null on a debut bout), and
    meta.fwd "4.3". The ledger (tools/forward_ledger.py) then takes p_a_noline from models.ml2_stack_noline. The --fwd 4.1
-   and --fwd 4.2 outputs are byte-identical to the tool before v4.3 existed (tests/test_forward_v43.js). */
+   and --fwd 4.2 outputs are byte-identical to the tool before v4.3 existed (tests/test_forward_v43.js).
+
+   --fwd 4.4 (forward model v4.4, README "Forward model v4.4"): exactly --fwd 4.3's computation, with meta.fwd "4.4".
+   --live-dir data/derived/live (any version; the ledger passes it for fwd-4.4 when the live inputs pass
+   tools/live_refresh.py check_live): fighters.json, ml.json, market.json, methodround.json, ml2.json and ratings.json are
+   read from <dir>/<name>_live.json instead of data/derived (meta.live_dir and meta.live_files say so). Without the option
+   nothing changes: the --fwd 4.1 / 4.2 / 4.3 outputs are byte-identical to the tool before v4.4 existed
+   (tests/test_forward_v44.js). */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -74,9 +81,15 @@ const rd = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), "utf8"));
 const rdOpt = (p) => (fs.existsSync(path.join(ROOT, p)) ? rd(p) : null);
 const sha = (p) => crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex").slice(0, 16);
 const shaOpt = (p) => (fs.existsSync(path.join(ROOT, p)) ? sha(path.join(ROOT, p)) : null);
+// fwd-4.4 live roster inputs (tools/live_refresh.py): the six live files replace their data/derived copies
+const LIVE_DIR = opt("--live-dir", null);
+const LIVE_NAMES = { "fighters.json": "fighters_live.json", "ml.json": "ml_live.json", "market.json": "market_live.json",
+  "methodround.json": "methodround_live.json", "ml2.json": "ml2_live.json", "ratings.json": "ratings_live.json" };
+const dpath = (name) => (LIVE_DIR && LIVE_NAMES[name] ? path.join(path.relative(ROOT, path.resolve(ROOT, LIVE_DIR)), LIVE_NAMES[name])
+  : "data/derived/" + name);
 
 const input = JSON.parse(fs.readFileSync(args[0], "utf8"));
-const FJ = rd("data/derived/fighters.json");
+const FJ = rd(dpath("fighters.json"));
 const DB = E.loadDB(FJ);
 let mlNative = false;
 const mlr = rd("data/derived/mlrates.json");
@@ -86,13 +99,13 @@ const stackPath = opt("--moe", null);                            // e.g. data/de
 const STACKJ = stackPath ? JSON.parse(fs.readFileSync(path.resolve(ROOT, stackPath), "utf8")) : MOEJ;
 const MOE = MoE.load(STACKJ);
 const MOE_OPEN = STACKJ.model_open ? MoE.load(STACKJ, "model_open") : null;   // open-trained line weights (blindtest)
-const mlj = rd("data/derived/ml.json");
+const mlj = rd(dpath("ml.json"));
 const MLP = MLPage.load({ snapshot: mlj.page_model.snapshot, winner: mlj.page_model.winner, stack: mlj.page_model.stack,
   roster: mlj.roster });
-const MKT = rd("data/derived/market.json");
+const MKT = rd(dpath("market.json"));
 const MKTR = {};
 for (const s in MKT.ratings) { const r = MKT.ratings[s]; if (Array.isArray(r) && r.length >= 2) MKTR[s] = [r[0], r[1]]; }
-const mrj = rd("data/derived/methodround.json").js_model;
+const mrj = rd(dpath("methodround.json")).js_model;
 const jm = Object.assign({}, mrj); delete jm.source;
 const MR = MRm.create(jm);
 const LBS = { "Flyweight": 125, "Bantamweight": 135, "Featherweight": 145, "Lightweight": 155, "Welterweight": 170, "Middleweight": 185,
@@ -100,11 +113,11 @@ const LBS = { "Flyweight": 125, "Bantamweight": 135, "Featherweight": 145, "Ligh
   "Women's Featherweight": 145 };
 
 // ---- forward model v4.1 inputs (each optional: a missing file leaves its models null and says so in meta)
-const ML2J = rdOpt("data/derived/ml2.json");
+const ML2J = rdOpt(dpath("ml2.json"));
 const FMJ = rdOpt("data/derived/forward_models.json");
 const ML2P = ML2J ? ML2.load(ML2J.page_model) : null;                                  // production stacks (2019-2025)
 const ML2S = (ML2J && FMJ) ? ML2.load(Object.assign({}, ML2J.page_model, { stack: FMJ.ml2_static })) : null; // fit 2019-2023
-const RTJ = rdOpt("data/derived/ratings.json");
+const RTJ = rdOpt(dpath("ratings.json"));
 const PUJ = rdOpt("data/derived/preufc.json");
 const PRED_DIR = path.resolve(ROOT, opt("--pred-dir", path.join("data", "predictions")));   // where debutants_*.json live
 const DEBUT_FILES = fs.existsSync(PRED_DIR) ? fs.readdirSync(PRED_DIR).filter((f) => /^debutants_.*\.json$/.test(f)).sort() : [];
@@ -123,9 +136,9 @@ const DEBUT_ELO = 1500;                                // tools/build_db.py star
 // a bout with a debutant gets a separate r.debut_path block (winner by regime + method); the pre-registered models
 // block, p_a and every other field are unchanged (tests/test_debut.js checks this).
 const FWD = opt("--fwd", "4.1");                          // forward model version of the output (README)
-if (FWD !== "4.1" && FWD !== "4.2" && FWD !== "4.3") throw new Error("--fwd must be 4.1, 4.2 or 4.3, got " + FWD);
-const FWD42 = FWD === "4.2" || FWD === "4.3";             // the fwd-4.2 additions (fwd-4.3 keeps every one of them)
-const FWD43 = FWD === "4.3";                              // fwd-4.3: models.moe_noline
+if (FWD !== "4.1" && FWD !== "4.2" && FWD !== "4.3" && FWD !== "4.4") throw new Error("--fwd must be 4.1, 4.2, 4.3 or 4.4, got " + FWD);
+const FWD42 = FWD === "4.2" || FWD === "4.3" || FWD === "4.4";   // the fwd-4.2 additions (fwd-4.3 and 4.4 keep every one)
+const FWD43 = FWD === "4.3" || FWD === "4.4";             // fwd-4.3: models.moe_noline (fwd-4.4: the same computation)
 const DEBUT_MODEL_PATH = opt("--debut-model", FWD42 ? path.join("data", "derived", "debut.json") : null);
 const DMJ = DEBUT_MODEL_PATH ? JSON.parse(fs.readFileSync(path.resolve(ROOT, DEBUT_MODEL_PATH), "utf8")) : null;
 const DebutJS = DMJ ? require(path.join(ROOT, "src/ml/debut.js")) : null;
@@ -305,16 +318,16 @@ const out = { meta: {
   moe_page_built: (MOEJ.meta || {}).built || null, moe_js: MoE.VERSION,
   stack_source: stackPath || "data/derived/moe_page.json", stack_built: (STACKJ.meta || {}).built || null,
   stack_sha256_16: sha(path.resolve(ROOT, stackPath || "data/derived/moe_page.json")), ml_page_snapshot: mlj.page_model.snapshot,
-  ml_built: mlj.meta.built, market_built: MKT.meta.built, methodround_built: (rd("data/derived/methodround.json").meta || {}).built,
+  ml_built: mlj.meta.built, market_built: MKT.meta.built, methodround_built: (rd(dpath("methodround.json")).meta || {}).built,
   roster_snapshot: (FJ.meta || {}).snapshot, mlrates_native: mlNative, sims_per_order: input.sims,
   model_keys: MODEL_KEYS, stack_open_available: !!MOE_OPEN,
   ml2_built: ML2J ? ML2J.meta.built : null, ml2_page_snapshot: ML2J ? ML2J.page_model.snapshot : null,
-  ml2_sha256_16: shaOpt("data/derived/ml2.json"),
+  ml2_sha256_16: shaOpt(dpath("ml2.json")),
   forward_models_built: FMJ ? FMJ.meta.built : null, forward_models_sha256_16: shaOpt("data/derived/forward_models.json"),
   ml2_static_weights: FMJ ? Object.fromEntries(Object.entries(FMJ.ml2_static).map(([k, v]) => [k, { inputs: v.inputs, weights: v.weights }])) : null,
   ml2_prod_weights: ML2J ? Object.fromEntries(Object.entries(ML2J.page_model.stack || {}).map(([k, v]) => [k, { inputs: v.inputs, weights: v.weights }])) : null,
   ratings_built: RTJ ? RTJ.meta.built : null, ratings_snapshot: RTJ ? RTJ.meta.snapshot : null,
-  ratings_sha256_16: shaOpt("data/derived/ratings.json"),
+  ratings_sha256_16: shaOpt(dpath("ratings.json")),
   ratings_stack: RTJ && RTJ.systems.stack ? { members: RTJ.systems.stack.members, weights: RTJ.systems.stack.weights } : null,
   preufc_built: PUJ ? PUJ.meta.built : null, preufc_sha256_16: shaOpt("data/derived/preufc.json"),
   seed_betas: SEED_LIVE ? SEED_LIVE.name : null,
@@ -322,6 +335,10 @@ const out = { meta: {
 }, bouts: [] };
 if (DMJ) out.meta.debut_model = { file: DEBUT_MODEL_PATH, built: DMJ.meta.built, sha256_16: sha(path.resolve(ROOT, DEBUT_MODEL_PATH)) };
 if (FWD42) out.meta.fwd = FWD;
+if (LIVE_DIR) {
+  out.meta.live_dir = path.relative(ROOT, path.resolve(ROOT, LIVE_DIR));
+  out.meta.live_files = Object.fromEntries(Object.keys(LIVE_NAMES).map((n) => [dpath(n), shaOpt(dpath(n))]));
+}
 const HEADLINE = input.headline === "noline" ? "noline" : "line";     // fwd-4.2: which winner probability p_a is
 
 for (const b of input.bouts) {

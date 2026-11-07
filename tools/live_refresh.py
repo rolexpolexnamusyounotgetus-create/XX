@@ -562,9 +562,9 @@ def _ratings_roster(S, systems, oppufc_clean, with_dims):
         if k == "elo_ref":
             # elo_ref is untuned (grid None in ratings.py specs): K = 44 * LN, the pipeline's Elo K 44 in logit units.
             # ratings.json stores it rounded to 6 decimals (0.253284); the pinned build ran the exact value.
-            if round(44 * RT.LN, 6) != P["K"]:
+            if round(44 * RT.LN10_400, 6) != P["K"]:
                 raise SystemExit("ratings: elo_ref K %r is not 44 * LN rounded" % P["K"])
-            P["K"] = 44 * RT.LN
+            P["K"] = 44 * RT.LN10_400
         _, _, st = RT.run_system(D, v["kind"], P, record=True, eval_idx=D.bt_idx[:5])
         finals[k] = {"kind": v["kind"], "P": P, "state": st if v["kind"] != "whr" else None,
                      "model": st if v["kind"] == "whr" else None}

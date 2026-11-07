@@ -1,0 +1,34 @@
+{
+ "primary": {
+  "diff": -0.00326,
+  "ci": [
+   -0.00653,
+   4e-05
+  ],
+  "n_decisive": 842
+ },
+ "branch2_total": {
+  "diff": -0.008789,
+  "ci": [
+   -0.016894,
+   -0.000731
+  ]
+ },
+ "base_rates": {
+  "governing_no_glove_paired_fail": [],
+  "full_window_paired_fail": [
+   "kd100"
+  ],
+  "pass": true
+ },
+ "decision": {
+  "keep": true,
+  "branch": "branch 2",
+  "kept_under_glove_amendment": true,
+  "flags": [
+   "confirmation look",
+   "gate design informed by v7 / v8 train results"
+  ]
+ }
+}
+rc=0

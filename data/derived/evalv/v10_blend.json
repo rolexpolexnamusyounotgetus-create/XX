@@ -1,0 +1,181 @@
+{
+ "meta": {
+  "tool": "tools/evalv_blend.py",
+  "engine_bt": "out/evalv/v10_engine_bt.json",
+  "engine_meta": {
+   "tool": "tools/evalv.js",
+   "version": "v10",
+   "engine_sha256": "e5c05d2ff2e26532556ac65f2a6b99b865f9fedd2207bb14321520533df1d53d",
+   "params_sha256": "8c20073f15d36723806fc4db9adafd55a2e1cd5865ad25b624ce856fabfe6f77",
+   "sims_per_orientation": 300
+  },
+  "experts": [
+   "market",
+   "mkt_rating",
+   "engine",
+   "ml",
+   "feat_lr",
+   "elo_sig",
+   "elo"
+  ],
+  "dry": false,
+  "train": "2019-2023",
+  "valid": "2024-2025",
+  "engine_coverage": {
+   "train": 1.0,
+   "valid": 1.0
+  },
+  "hp": {
+   "market": {},
+   "nomarket": {
+    "h": 1.5
+   }
+  },
+  "family": "linear (constrained logit-linear, no intercept), one weight vector per availability pattern"
+ },
+ "patterns": {
+  "market": {
+   "n": 845,
+   "experts_with": [
+    "market",
+    "mkt_rating",
+    "engine",
+    "ml",
+    "feat_lr",
+    "elo_sig",
+    "elo"
+   ],
+   "experts_without": [
+    "market",
+    "mkt_rating",
+    "ml",
+    "feat_lr",
+    "elo_sig",
+    "elo"
+   ],
+   "engine_weight": 0.0,
+   "weights_with": {
+    "market": 0.8637314320338997,
+    "mkt_rating": 0.10631568195078893,
+    "engine": 0.0,
+    "ml": 0.14736499523116572,
+    "feat_lr": 0.05529757138973892,
+    "elo_sig": 0.0,
+    "elo": 0.0
+   },
+   "weights_without": {
+    "market": 0.8637669143835934,
+    "mkt_rating": 0.10630082272628578,
+    "ml": 0.14734845388394213,
+    "feat_lr": 0.05527005696871116,
+    "elo_sig": 0.0,
+    "elo": 0.0
+   },
+   "logloss_with": 0.5788247052492325,
+   "logloss_without": 0.5788257212949961,
+   "diff_with_minus_without": {
+    "est": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "p_gt0": null,
+    "raw": {
+     "est": -1.0160457635899362e-06,
+     "lo": -1.6705291281985487e-06,
+     "hi": -4.039958275342407e-07,
+     "p_gt0": 0.0005
+    },
+    "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
+   }
+  },
+  "nomarket": {
+   "n": 845,
+   "experts_with": [
+    "mkt_rating",
+    "engine",
+    "ml",
+    "feat_lr",
+    "elo_sig",
+    "elo"
+   ],
+   "experts_without": [
+    "mkt_rating",
+    "ml",
+    "feat_lr",
+    "elo_sig",
+    "elo"
+   ],
+   "engine_weight": 0.0,
+   "weights_with": {
+    "mkt_rating": 0.8542591934654842,
+    "engine": 0.0,
+    "ml": 0.5551949530062164,
+    "feat_lr": 0.025466490588782757,
+    "elo_sig": 0.0,
+    "elo": 0.0
+   },
+   "weights_without": {
+    "mkt_rating": 0.854254311988562,
+    "ml": 0.5552081904160845,
+    "feat_lr": 0.025457307680403895,
+    "elo_sig": 0.0,
+    "elo": 0.0
+   },
+   "logloss_with": 0.5930337328752766,
+   "logloss_without": 0.5930336691698366,
+   "diff_with_minus_without": {
+    "est": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "p_gt0": null,
+    "raw": {
+     "est": 6.370543993818552e-08,
+     "lo": -4.4096442667096906e-08,
+     "hi": 1.7749123509874926e-07,
+     "p_gt0": 0.879
+    },
+    "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
+   }
+  }
+ },
+ "summary": {
+  "market": {
+   "engine_weight": 0.0,
+   "logloss_with": 0.5788247052492325,
+   "logloss_without": 0.5788257212949961,
+   "diff": {
+    "est": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "p_gt0": null,
+    "raw": {
+     "est": -1.0160457635899362e-06,
+     "lo": -1.6705291281985487e-06,
+     "hi": -4.039958275342407e-07,
+     "p_gt0": 0.0005
+    },
+    "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
+   },
+   "n": 845
+  },
+  "nomarket": {
+   "engine_weight": 0.0,
+   "logloss_with": 0.5930337328752766,
+   "logloss_without": 0.5930336691698366,
+   "diff": {
+    "est": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "p_gt0": null,
+    "raw": {
+     "est": 6.370543993818552e-08,
+     "lo": -4.4096442667096906e-08,
+     "hi": 1.7749123509874926e-07,
+     "p_gt0": 0.879
+    },
+    "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
+   },
+   "n": 845
+  },
+  "dry": false
+ }
+}

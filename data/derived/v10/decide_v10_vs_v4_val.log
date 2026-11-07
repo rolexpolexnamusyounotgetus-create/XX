@@ -1,0 +1,28 @@
+{
+ "winLL": {
+  "diff": -0.005069402110199294,
+  "ci": [
+   -0.012673341232227499,
+   0.0024461358313817376
+  ],
+  "p_two_sided": 0.186,
+  "n": 853
+ },
+ "branch1": false,
+ "clearly_better_holm": [
+  "dev_ctrl"
+ ],
+ "clearly_worse_holm": [],
+ "base_rate_paired_fail": [
+  "kd100"
+ ],
+ "base_rate_registered_fail": [
+  "kd100"
+ ],
+ "decision": {
+  "keep": false,
+  "basis": "neither branch",
+  "registered_v5_rule_would_keep": false
+ }
+}
+rc=0
