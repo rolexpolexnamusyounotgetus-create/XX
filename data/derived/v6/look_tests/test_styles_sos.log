@@ -1,0 +1,44 @@
+PASS  stripped engine differs from the hooked one only by the hook  (15 lines removed)
+PASS  merged engine with the [styles_sos] lines stripped == the step-2 engine (tests/fixtures/engine3_pre_styles_sos.js)
+PASS  the current engine carries the same [styles_sos] lines as the merge
+PASS  flag off: tables, traced fights and summaries identical to the engine without the component (24 matchups)
+PASS  params.components = false is also the plain engine
+PASS  both sub-flags off changes no table
+PASS  default params: component on in this branch (strength of schedule on, style blocks off)
+PASS  defaults without an SOS input: tables identical to the engine without the component (base and learned rates)
+PASS  style features match tools/styles.py Side.features (30 fights)  (max diff 2.22e-16)
+PASS  term values match tools/styles.py term_value  (max diff 4.44e-16)
+PASS  open-stance centering constant matches the 2019-2023 side mean  (0.274637)
+PASS  z terms have mean ~0 on 2019-2023 sides (no centering needed)
+PASS  styles: dist_att, td_att, ctrl_per_td, gnp_att move exactly their tables by exp(s)
+PASS  styles: every other table untouched (strikes in the clinch, accuracy, takedown success, KD, subs, cardio)
+PASS  styles (ab1): s equals section 9's a = b = 1 equations without the |z| < 2 terms, open centred
+PASS  styles (fit): free-exponent coefficients with every term
+PASS  styleMatchups knob scales s (0.5 -> square root of the multipliers)
+PASS  styleMatchups 0 reproduces the plain tables
+PASS  styles: swapping corners swaps the multipliers
+PASS  sos (base tables): multipliers = exp(beta_a (bias_a - c_a) + beta_o (bias_o - c_o)) on the documented tables
+PASS  sos (learned rates): multipliers = exp(beta_a (bias_a - c_a) + beta_o (bias_o - c_o)) on the documented tables
+PASS  sos: sides without an input are neutral
+PASS  sos: a loaded roster table (by slug) gives the same result as opts.sos
+PASS  sos: roster table not used for bouts on or before its roster_asof (backtest without opts.sos is neutral)
+PASS  sos: roster table used for bouts after its roster_asof
+PASS  sos: a side missing from opts.sos stays neutral (not filled from the roster table)
+PASS  default: no style block on the learned-rate path (tables unchanged)
+PASS  default: all four style blocks on the base tables
+PASS  styleBlocks 'all' / per-path lists select the blocks
+PASS  oppadj (base tables): factors multiply the engine R fields of the recommended families only
+PASS  oppadj factors are inert unless sosSource is 'oppadj'
+PASS  oppadj (learned rates): final tables x (F_off,X F_def,Y)^beta
+PASS  component on by default records its work on m.stylesSOS (sos applied, styles off)
+PASS  same seed, same fight (component on)
+PASS  trace on and off give the same fight (component on)
+PASS  trace format unchanged (event kinds)  (hit,miss,tdx,clinch,break,kd,recover,td,pass,esc)
+PASS  API surface unchanged
+PASS  component source has no Math.random
+PASS  corner swap swaps the probabilities (component on, within MC error)  (0.614 vs 0.604)
+PASS  explain() works with the component on
+PASS  worker-style concatenation with styles_sos.js reproduces Node (component on)
+PASS  flag on without styles_sos.js loaded: plain tables, flagged as missing
+
+42 passed, 0 failed

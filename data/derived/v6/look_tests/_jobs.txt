@@ -1,0 +1,40 @@
+test_engine3|node tests/test_engine3.js 8000
+director300|node tests/test_director3.js 300
+director_noml|env NO_ML=1 node tests/test_director3.js 100
+director_fuzz|env FUZZ=1 node tests/test_director3.js 600
+test_v6|node tests/test_v6.js
+test_ml2trees|node tests/test_ml2trees.js
+test_mlrates|node tests/test_mlrates.js
+test_ml2|node tests/test_ml2.js
+test_blindtest_stack|node tests/test_blindtest_stack.js
+test_moe|node tests/test_moe.js
+test_mlpage|node tests/test_mlpage.js
+test_statdist|node tests/test_statdist.js
+test_debut|node tests/test_debut.js
+test_calib|node tests/test_calib.js
+test_propspool|node tests/test_propspool.js
+test_finishing|node tests/test_finishing.js
+test_eradrift|node tests/test_eradrift.js
+test_embed|node tests/test_embed.js
+test_mlcal|node tests/test_mlcal.js
+test_v5_calA|node tests/test_v5_calA.js
+test_forward_models|node tests/test_forward_models.js
+test_forward_v42|node tests/test_forward_v42.js
+test_audio|node tests/test_audio.js
+test_v501|node tests/test_v501.js
+test_v501_guards|node tests/test_v501_guards.js
+test_durlevel|node tests/test_durlevel.js
+test_v401|node tests/test_v401.js
+test_v5_calB|node tests/test_v5_calB.js
+test_v5_step2|node tests/test_v5_step2.js
+test_v5_step3|node tests/test_v5_step3.js
+test_v5_step4|node tests/test_v5_step4.js
+test_v5_step5|node tests/test_v5_step5.js
+test_durability|node tests/test_durability.js
+test_dynamics|node tests/test_dynamics.js
+test_styles_sos|node tests/test_styles_sos.js
+test_officials|node tests/test_officials.js
+test_realism_sens|node tests/test_realism_sens.js
+test_blend_anchor|node tests/test_blend_anchor.js
+test_page_parity|node tests/test_page_parity.js
+test_forward_score42|python3 tests/test_forward_score42.py

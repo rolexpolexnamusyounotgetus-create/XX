@@ -1,0 +1,26 @@
+dynamics component tests: engine 6.0.0, params 6.0.0-selfcal-pre2024, default components.dynamics = true
+PASS  flag off reproduces the pre-dynamics engine bit for bit (plain rates)  (2600 fights over 13 matchups, traced and untraced, plus summaries)
+PASS  flag off reproduces the pre-dynamics engine bit for bit (learned rates)  (2600 fights over 13 matchups, traced and untraced, plus summaries)
+PASS  flag off: a shared rng stream stays aligned with the pre-dynamics engine
+PASS  flag on builds the dynamics tables
+PASS  flag on: same seed, same fight
+PASS  flag on: trace on/off gives the same fight (300 seeds)
+PASS  flag on keeps the fight object and trace format  (fight true, round true, stats true, events true over kinds break clinch esc fin hit hurt kd miss pass recover reset sub subx sweep td tdx up)
+PASS  flag on changes the simulation
+PASS  flag on: probabilities sum to 1
+PASS  AR(1) round noise makes a man's output persist from round 1 to round 2  (corr R1-R2 0.638 with arPhi 0.85 vs 0.538 with arPhi 0)
+PASS  knockdowns per standing head strike fall by round as the kdRound3 table says  (R3/R1 0.317 vs table 0.373 (hurts and selection add noise))
+PASS  a flat kdRound3 table removes most of the decline  (R3/R1 0.925 flat vs 0.317)
+PASS  knockdown momentum: the scorer eases off and the dropped man does not slow next round  (R2 attempts scorer/dropped 0.28 with strong momentum vs 0.87 without (n 942, 967))
+PASS  grappling carry-over: takedown attempts fall after being controlled  (R2 TD attempts 0.069 vs 0.647)
+PASS  takedown round curve: attempts per minute rise from round 1 to round 3 (they fall with a flat curve)  (R3/R1 1.351 with tdRound3 1/1.17/1.58 vs 0.890 flat)
+PASS  kPace 45 shrinks each man's late-round ratio harder than 15  (sum |rho - 1|: 0.409 vs 0.635)
+PASS  mutual pace moves a man's late output with his opponent's cardio  (Volk R5/R1 1.698 with paceMutual 0.4 vs 1.736 alone (Gaethje rho5 0.946))
+PASS  non-knockdown stoppage hazards decay by round
+PASS  stkoHurtGate: off by default; on, the standing table x hurt gate decays as exp(noKdRound r)  (gate on: R3/R1 0.712 vs exp(2 noKdRound) 0.712)
+PASS  knockdown conversion odds decay by round
+PASS  stkoHurtGate on: standing TKO per strike absorbed decays by round about as E9 says (steeper with it off)  (mean(R2, R3) / R1: 0.98 with the gate vs 0.41 without (E9 0.78; events 224/236/228 vs 237/127/79))
+PASS  flag on: chin knob up on A -> more KO losses for A  (23.0 -> 31.9)
+PASS  flag on: output knob up on A -> more attempts by A  (195.4 -> 244.7)
+
+23 passed, 0 failed

@@ -1,0 +1,30 @@
+PASS  NaN strikeScale: matchup throws naming dRate
+PASS  Infinity kdScale: matchup throws naming kd
+PASS  negative tdScale: matchup throws (a table it poisons is named)
+PASS  durability record with a string field: finite hazards, side labelled partial / computed  (partial/computed)
+PASS  ... and 200 fights finish with finite clocks (was an infinite loop)  (169 ms)
+PASS  NaN embedding predictors: targets stay unblended, tables finite
+PASS  ... no fight ends at t = NaN
+PASS  negative pre-UFC counts: record treated as missing
+PASS  simulate refuses a NaN total rate
+PASS  judge power 'abc' falls back to params.judge.power  (0.25)
+PASS  ... and no longer hands the fight to corner B  (191 A / 107 B)
+PASS  judgeRound throws on a NaN score
+PASS  Date object -> ISO
+PASS  timestamp -> ISO
+PASS  '2019/06/15' -> ISO
+PASS  ISO with a time part -> date
+PASS  US-style '6/15/2019' throws
+PASS  '2019-02-30' throws
+PASS  2019 bout (2019-06-15) never picks up a live-fit roster  (["computed","computed",null])
+PASS  2019 bout (Date) never picks up a live-fit roster  (["computed","computed",null])
+PASS  2019 bout (timestamp) never picks up a live-fit roster  (["computed","computed",null])
+PASS  2019 bout (2019/06/15) never picks up a live-fit roster  (["computed","computed",null])
+PASS  a current bout does use the rosters
+PASS  officialsTableFor takes a Date
+PASS  rounds '5' -> number 5
+PASS  rounds undefined + title -> 5, without -> 3
+PASS  rounds 0 / 7 / 'abc' throw
+PASS  global FightParams of v4 loaded first: the engine still uses its sibling params3.js  (6.0.0-selfcal-pre2024|12)
+PASS  params with another major version are refused
+29 passed, 0 failed

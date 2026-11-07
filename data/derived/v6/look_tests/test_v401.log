@@ -1,0 +1,18 @@
+PASS  versions/v4 is v4.0.0 by sha256 (data/derived/version_history.json)  (4.0.0)
+engine 6.0.0 (params 6.0.0-selfcal-pre2024) vs v4.0.0 (versions/v4) and v4.0.1 (versions/v4.0.1-rejected); 150 random matchups per group
+PASS  flag off = v4.0.0, a. random pairs, production learned rates: identical fights (JSON incl. trace) and summaries  (150 matchups (150 with learned rates), 1500 fights, 15 summaries; 0 fight / 0 summary mismatches)
+PASS  flag off = v4.0.0, b. random pairs, plain tables (ml: false): identical fights (JSON incl. trace) and summaries  (150 matchups (0 with learned rates), 1500 fights, 15 summaries; 0 fight / 0 summary mismatches)
+PASS  flag off = v4.0.0, c. 2019-2023 backtest fights x 2 corner orders, out-of-fold learned rates: identical fights (JSON incl. trace) and summaries  (150 matchups (150 with learned rates), 1500 fights, 15 summaries; 0 fight / 0 summary mismatches)
+PASS  identity covers >= 300 random matchups incl. traced fights  (450 matchups)
+PASS  sub-flags a-d on, koTargets off = v4.0.1 (the port is faithful)  (100 matchups, 1000 fights, 0 mismatches)
+PASS  sub-flag emJudge alone changes fights  (13 of 320 fights differ from v4.0.0)
+PASS  sub-flag emJudge alone leaves every fight unchanged up to the cards
+PASS  sub-flag deductions alone changes fights  (4 of 320 fights differ from v4.0.0)
+PASS  sub-flag deductions alone leaves every fight unchanged up to the cards
+PASS  sub-flag mlLevels alone changes fights  (301 of 320 fights differ from v4.0.0)
+PASS  sub-flag tdCap alone changes fights  (79 of 80 fights differ from v4.0.0)
+PASS  sub-flag koTargets alone changes fights  (49 of 320 fights differ from v4.0.0)
+PASS  default params: the Calibrate A sub-flags (emJudge, deductions, tdCap, koTargets on; mlLevels off)  ({"emJudge":true,"deductions":true,"mlLevels":false,"tdCap":true,"koTargets":true})
+PASS  v401 off resolves to v4.0.0's parameter values (judge, KO block, levels)
+
+15 passed, 0 failed

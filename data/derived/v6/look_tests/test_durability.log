@@ -1,0 +1,43 @@
+=== 1. flag off equals the engine before the component ===
+PASS  flag off == tests/fixtures/engine3_pre_durability.js (v5 merge step 1 engine): plain VG 5rd title
+PASS  flag off == tests/fixtures/engine3_pre_durability.js (v5 merge step 1 engine): plain GV 3rd
+PASS  flag off == tests/fixtures/engine3_pre_durability.js (v5 merge step 1 engine): plain knobs
+PASS  flag off == tests/fixtures/engine3_pre_durability.js (v5 merge step 1 engine): oof pred 2019
+PASS  flag off == tests/fixtures/engine3_pre_durability.js (v5 merge step 1 engine): ml model VG
+PASS  flag off == tests/fixtures/engine3_pre_durability.js (v5 merge step 1 engine): manual
+PASS  opts.params.components.durability=false == global flag off
+PASS  flag on changes the knockdown tables  (kd 0.00654,0.01548 -> 0.00711,0.01565)
+
+=== 2. covariates reproduce the roster (live coefficients) ===
+PASS  chin_cov and pow_cov match the roster for 1229 fighters  (max |log ratio| chin 3.62e-4 (stephanie-luciano), power 2.77e-4)
+
+=== 3. Volkanovski-Gaethje knockdown probabilities (research section 8) ===
+PASS  pure durability, 730-day level: Volk drops Gaethje 0.59 / 100, Gaethje drops Volk 1.04 / 100  (0.588 / 1.044)
+PASS  roster totals: Volk chin 1.07 power 0.74, Gaethje chin 0.80 power 0.98  ([1.071,0.74,0.8,0.981])
+PASS  365-day level scenario: 0.67 / 1.19 per 100  (0.670 / 1.190)
+PASS  title fight x0.908
+
+=== 4. structure ===
+PASS  corner swap swaps kd, gnp and damage exactly
+PASS  defender 30 -> 38: chin x1.618
+PASS  attacker 30 -> 38: power x0.724
+PASS  KO loss in the last year x1.21, older x1.08 (no cap)
+PASS  four older KO losses x1.349 (v3 capped at 1.15)
+PASS  power and chin knobs multiply the hazard
+PASS  no size tax by default (both moved up from featherweight)
+PASS  sizeChin knob raises the moved-up defender's hazard  (1.0513)
+PASS  age unknown x2.22
+PASS  engineWeight 1: the engine's own structure at the durability level (gnp and damage unchanged)
+PASS  engineWeight 0.5 is the geometric mean of 0 and 1
+PASS  level null: relative mode on the engine's division level
+PASS  opts.dur records and base override the roster and the level
+PASS  layoff, last-fight KO and UFC-years terms neutral by default
+PASS  withdrawn layoff knob works when set (x0.64 at 730+ days)
+PASS  trace format unchanged (fight, round, stats keys)
+PASS  Volk vs Gaethje (roster records) simulates sensibly  (Volk 54.0%, KO by Volk 17.6%, by Gaethje 27.7%, KD/15 0.31)
+PASS  no record: chin_re / pow_re from career sums (Gaethje: good chin, heavy hands)  (Gaethje chin_re 0.58 (roster 0.58), pow_re 1.36 (roster 1.35))
+PASS  roster used on or after its snapshot (2026-10-31), never for an earlier fight date
+PASS  an earlier fight still takes its opts.dur walk-forward record
+PASS  manual profile without an age: chin covariate 1 (data profiles without an age keep x2.22)
+
+OK (34 checks)
