@@ -1659,9 +1659,10 @@
     if (BL.rLine) tile(BL.rLine.kind === "close" ? "With the closing line" : "With the pre-fight line", A + " " + pct(BL.rLine.p, 0), "line alone " + pct(mk.p, 0) +
       (BL.rOther ? "; read as " + (BL.rOther.kind === "close" ? "a closing line " : "a pre-fight line ") + pct(BL.rOther.p, 0) : ""));
     else if (BL.rNo) tile("Betting line", "–", "enter odds to compare");
-    var V = SCJ && SCJ.vault, ce = V && V.close_edge && V.close_edge["ml2_stack_close_static-close"];
-    $("blendNote").textContent = "Tested on fights the weights never saw. On 2024-25 the stats model alone was level with the closing line and the version with a closing line beat it slightly; on the sealed 2026 fights, opened once on Nov 7, the market won that back: " +
-      (ce ? "with a closing line the pick was " + sgn(ce.diff) + " " + ci2(ce.ci) + " against the line alone, " : "") + "level with the market, not ahead of it. The scorecard below has every number.";
+    var V = SCJ && SCJ.vault, V2 = SCJ && SCJ.vault2, ce = V && V.close_edge && V.close_edge["ml2_stack_close_static-close"], fo = V2 && V2.forward_minus_opener;
+    var vs = [ce ? "with a closing line " + dCell(ce) + " against the line alone" : null, fo ? "with a pre-fight line " + dCell(fo) + " against the opener" : null].filter(Boolean);
+    $("blendNote").textContent = "Tested on fights the weights never saw. On 2024-25 the stats model alone was level with the closing line. On the sealed 2026 fights, opened by an auditor on Nov 7, the pick was level with the market, not ahead of it" +
+      (vs.length ? ": " + vs.join(", ") : "") + ". The scorecard below has every number.";
     // market marker on the forecast bar
     var mkM = $("mktMark"), mkN = $("mktNote");
     if (hasM) {
@@ -1730,27 +1731,40 @@
   }
   // "3.0.0" -> "v3", "4.0.1" -> "v4.0.1"
   function verLabel(v) { if (!v) return null; var p = String(v).replace(/^v/, "").split("."); while (p.length > 1 && p[p.length - 1] === "0") p.pop(); return "v" + p.join("."); }
-  var VERSION_WHAT = { v3: "raw UFC rates", v4: "learned stat lines inside the simulator", "v4.0.1": "v4 with refit judging and grappling levels" };
+  // fallbacks only: data/derived/page_scorecard.json carries each version's "what", outcome and one-line reason
   var VER_WHAT = { v3: "raw UFC rates", v4: "learned stat lines inside the simulator", "v4.0.1": "refit judging and grappling levels",
-    v5: "durability, fight dynamics, schedule strength", "v5.0.1": "v5 with robustness fixes", v6: "v5 parts re-bundled with the ML v2 package" };
+    v5: "durability, fight dynamics, schedule strength", "v5.0.1": "v5 with robustness fixes", v6: "v5 parts re-bundled with the ML v2 pick",
+    v7: "simulator v4 with the ML v2 pick and the props pool", v8: "simulator v4 with stat lines pulled toward the stat-line model",
+    v9: "simulator v4 with judging refit year by year and levels set by fight length", v10: "v7's package plus v8's stat lines and a debut path" };
   function versionTable() {
-    var d = el("div", "sc-ver");
-    d.appendChild(el("h3", "mini", "Simulator versions: each scored once on 2024-25, kept only if it clearly beat the one before"));
-    var list = SCJ && SCJ.versions || [], notes = (SCJ && SCJ.notes && SCJ.notes.engine_versions) || {}, onPage = verLabel(E.VERSION);
-    var vault = SCJ && SCJ.vault && SCJ.vault.engines || {};
+    var d = el("div", "sc-ver"), N = (SCJ && SCJ.notes) || {};
+    d.appendChild(el("h3", "mini", "Simulator versions: at most one look each at 2024-25, kept only if it clearly beat the one before"));
+    var list = SCJ && SCJ.versions || [], notes = N.engine_versions || {}, onPage = verLabel(E.VERSION);
+    var vault = SCJ && SCJ.vault && SCJ.vault.engines || {}, e26 = (N.engine_2026 && N.engine_2026.values) || {};
     if (!list.length) { d.appendChild(el("p", "small", "The version history is not in this build.")); return d; }
+    d.appendChild(el("p", "small", "From v7 on, a version first had to pass a gate on the 2019-2023 tuning fights to earn its look. The last two columns score each simulator by itself at picking winners."));
     var rows = list.map(function (v) {
       var lab = verLabel(v.engine || v.version) || v.version, nt = notes[v.version] || notes[lab] || null;
-      var status = v.kept === true ? "kept" : (v.kept === false ? "rejected" : (nt && nt.verdict) || "replaced");
+      var status = nt && nt.outcome ? nt.outcome : (v.kept === true ? "kept" : (v.kept === false ? "rejected" : "replaced"));
       if (lab === onPage) status = "kept, on this page";
-      var vv = vault[v.version] || vault[lab];
+      var vv = vault[v.version] || vault[lab], w26 = vv && vv.log_loss != null ? vv.log_loss : (e26[v.version] != null ? e26[v.version] : e26[lab]);
+      var what = (nt && nt.what) || VER_WHAT[lab];
       var why = nt ? nt.reason : (v.basis ? String(v.basis).split(/;|\. /)[0] + "." : "");
-      return { strong: lab === onPage, cells: [lab + (VER_WHAT[lab] ? ": " + VER_WHAT[lab] : ""), status, v.winLL && v.winLL.est != null ? fx(v.winLL.est, 4) : "–",
-        vv && vv.log_loss != null ? fx(vv.log_loss, 4) : "–", why] };
+      return { strong: lab === onPage, cells: [lab + (what ? ": " + what : ""), status, why, v.winLL && v.winLL.est != null ? fx(v.winLL.est, 4) : "–", w26 != null ? fx(w26, 4) : "–"] };
     });
-    d.appendChild(table(["Version", "Status", "Winner log loss, 2024-25", "Sealed 2026 (read only)", "Why"], rows, { caption: "Simulator versions and why each was kept or rejected" }));
-    d.appendChild(el("p", "small", "The 2026 column is descriptive: the sealed fights never choose a version. Every version trails the learned models at picking winners, which is why the simulator explains how a fight goes and the pick comes from the stats model and the market."));
+    d.appendChild(table(["Version", "Outcome", "Why", "Winner log loss, 2024-25", "Sealed 2026 (read only)"], rows, { caption: "Simulator versions and why each was kept or rejected" }));
+    var ls = N.versions_lesson && N.versions_lesson.text, cut = ls ? ls.indexOf(":") : -1, lp = el("p", "sc-lesson");
+    if (ls && cut > 0) { lp.appendChild(el("b", null, ls.slice(0, cut + 1))); lp.appendChild(document.createTextNode(ls.slice(cut + 1))); d.appendChild(lp); }
+    var V2 = SCJ && SCJ.vault2, B = SCJ && SCJ.vault && SCJ.vault.bench;
+    d.appendChild(el("p", "small", "The 2026 column is descriptive: the sealed fights never chose a version. There every simulator trailed the closing line" + (B && B.close ? " (" + fx(B.close.log_loss, 4) + ")" : "") +
+      (V2 && V2.statlines_total ? ", and v10's stat-line gain did not repeat (" + pctCI(V2.statlines_total) + " against v4)" : "") +
+      ". The learned models pick winners better than any simulator version, which is why the simulator explains how a fight goes and the pick comes from the stats model and the market."));
     return d;
+  }
+  // a relative difference as percent with its interval: -0.0033 [-0.0148, 0.0076] -> "−0.33% [−1.48%, +0.76%]"
+  function pctCI(o) {
+    function p(x) { return (x > 0 ? "+" : (x < 0 ? "−" : "")) + Math.abs(100 * x).toFixed(2) + "%"; }
+    return o && o.ci ? p(o.diff) + " [" + p(o.ci[0]) + ", " + p(o.ci[1]) + "]" : "–";
   }
   function mdy(iso, yr) { var p = String(iso || "").split("-"); return p.length < 3 ? String(iso || "") : MONTHS[+p[1] - 1] + " " + (+p[2]) + (yr ? ", " + p[0] : ""); }
   function scTable(head, rows, cap) { return table(head, rows, { caption: cap }); }
@@ -1762,20 +1776,25 @@
     var V = SCJ.valid || {}, P = V.paired || {}, VA = SCJ.vault, N = SCJ.notes || {};
     box.appendChild(el("p", "lede", "Every number here is out of sample: each fight is predicted from what was known before it, by weights that never saw it. Picks right is the share of fights where the favorite won. Log loss also rewards confidence when it is right and punishes it when it is wrong; lower is better, a coin flip scores 0.693, and a few thousandths is a real difference at this level."));
     // the 2026 readout first, in plain words
-    var ce = VA && VA.close_edge && VA.close_edge["ml2_stack_close_static-close"], oe = VA && VA.open_regime && VA.open_regime["ml2_stack_open_static-open"];
+    var V2 = SCJ.vault2 || null, ce = VA && VA.close_edge && VA.close_edge["ml2_stack_close_static-close"], oe = VA && VA.open_regime && VA.open_regime["ml2_stack_open_static-open"];
+    var fo = (V2 && V2.forward_minus_opener) || oe, has0 = function (o) { return !o || !o.ci || (o.ci[0] < 0 && o.ci[1] > 0); };
     var call = el("div", "callout sc-call");
     call.appendChild(el("b", null, "On the sealed 2026 fights: level with the market."));
-    call.appendChild(el("span", null, "Opened once, on Nov 7, 2026, by an independent audit" + (VA ? " (" + nf.format(VA.n_decisive || 0) + " decisive fights on " + (VA.n_cards || "–") + " cards, " + mdy(VA.dates[0], false) + " to " + mdy(VA.dates[1], true) + ")" : "") +
-      ". With a closing line the pick scored " + (ce ? sgn(ce.diff) + " " + ci2(ce.ci) : "–") + " against the line alone; with a pre-fight line, " + (oe ? sgn(oe.diff) + " " + ci2(oe.ci) : "–") +
-      " against that line. Both intervals include zero. The edge over the closing line seen on 2024-25 did not carry into 2026, so this page claims no edge over the market."));
+    call.appendChild(el("span", null, "An auditor opened them twice on Nov 7, 2026, after v5 and a final time after v10" +
+      (VA ? " (" + nf.format(VA.n_decisive || 0) + " decisive fights on " + (VA.n_cards || "–") + " cards, " + mdy(VA.dates[0], false) + " to " + mdy(VA.dates[1], true) + ")" : "") + "; neither opening chose anything. " +
+      (V2 && V2.close != null ? "The closing line scored " + fx(V2.close, 4) + ". " : "") +
+      (V2 && V2.forward_open != null ? "With a pre-fight line, the pick this page and the forward test use scored " + fx(V2.forward_open, 4) + " against the opening line's " + fx(V2.opener, 4) + ", a difference of " + dCell(fo) + " (final audit). "
+        : (fo ? "With a pre-fight line the pick scored " + dCell(fo) + " against that line. " : "")) +
+      (ce ? "With a closing line it scored " + dCell(ce) + " against the line alone (first audit). " : "") +
+      (has0(fo) && has0(ce) ? "Both intervals include zero: the edge over the closing line seen on 2024-25 did not carry into 2026, so this page claims no edge over the market." : "This page claims no edge over the market.")));
     box.appendChild(call);
     var grid = el("div", "bt-grid"), c1 = el("div", "bt-col"), c2 = el("div", "bt-col");
     grid.appendChild(c1); grid.appendChild(c2); box.appendChild(grid);
     c1.appendChild(el("h3", "mini", "How the testing works"));
     var ol = el("ol", "proto");
     [["Tuning years, 2019-2023.", " The weights that combine the models into the pick were fit on these fights only. Once testing was done, the stats model under them was refit on fights through 2025, as were the finish, stat-line and debut models. The left column scores the stats model's earlier copy, fit before 2024; the right column scores the copy this page runs."],
-      ["Test years, 2024-2025.", " Used to choose between models and versions. Left column."],
-      ["A sealed vault, 2026.", " Every fight from Jan 1, 2026 on, kept apart from the project and opened once by an auditor. It chooses nothing. Right column."],
+      ["Test years, 2024-2025.", " Used to choose between models and versions, with one look per version. Left column."],
+      ["A sealed vault, 2026.", " Every fight from Jan 1, 2026 on, kept apart from the project and opened twice by an auditor: after v5, and a final time after v10. It chooses nothing. Right column."],
       ["The forward test.", " Before each card the picks are committed with a timestamp, then scored after the fights (next panel)."]
     ].forEach(function (x) { var li = el("li"), sp = el("span"); sp.appendChild(el("b", null, x[0])); sp.appendChild(document.createTextNode(x[1])); li.appendChild(sp); ol.appendChild(li); });
     c1.appendChild(ol);
@@ -1787,14 +1806,17 @@
     c1.appendChild(scTable(["Model", "Picks right", "Log loss", "Fights"], r1.map(function (r) { return { strong: r[2], cells: [r[0], r[1].acc != null ? pct(r[1].acc, 1) : "–", llCell(r[1].ll, b1, Math.log(2)), r[1].n ? nf.format(r[1].n) : "–"] }; }), "Picks right and log loss on 2024-25 test fights"));
     var ul = el("ul", "caveats");
     if (P.ml2_lr_minus_close) ul.appendChild(el("li", null, "The ML v2 model alone, with no betting line, tied the closing line: " + dCell(P.ml2_lr_minus_close) + " on the " + nf.format(P.ml2_lr_minus_close.n) + " fights with a line (log loss " + fx(V.ml2_lr.ll, 4) + " for the model, " + fx(V.close.ll, 4) + " for the line)."));
-    if (P.line_stack_minus_close) ul.appendChild(el("li", null, "With a closing line, the ML v2 stack beat the line alone by " + dCell(P.line_stack_minus_close) + " on 2024-25, but tied it on 2021-23" +
-      (P.line_stack_minus_close_2021_2023 ? " (" + dCell(P.line_stack_minus_close_2021_2023) + ")" : "") + ". So the edge came from one stretch of fights, and 2026 did not repeat it."));
-    if (P.open_stack_minus_open) ul.appendChild(el("li", null, "With an opening line, the pick beat the opener by " + dCell(P.open_stack_minus_open) + ". Feeding an opener to weights fit on closing lines costs " + dCell(P.close_weights_fed_open) + ", which is why the page asks before treating a line as the close."));
+    if (P.line_stack_minus_close) ul.appendChild(el("li", null, "With a closing line, the ML v2 stack scored " + dCell(P.line_stack_minus_close) + " against the line alone on 2024-25, but " +
+      (P.line_stack_minus_close_2021_2023 ? dCell(P.line_stack_minus_close_2021_2023) + " on 2021-23" : "tied it on 2021-23") + (ce ? " and " + dCell(ce) + " on 2026" : "") +
+      ". A gain from one stretch of fights is not an edge over the market."));
+    if (P.open_stack_minus_open) ul.appendChild(el("li", null, "With an opening line, the pick scored " + dCell(P.open_stack_minus_open) + " against the opener on 2024-25" + (fo ? ", but " + dCell(fo) + " on 2026, inside the noise" : "") +
+      ". Feeding an opener to weights fit on closing lines costs " + dCell(P.close_weights_fed_open) + ", which is why the page asks before treating a line as the close."));
     ul.appendChild(el("li", null, "Every model, the market included, was too cautious on 2024-25 (favorites won more often than predicted). The page keeps the weights fit on 2019-2023, not a sharper refit, and 2026 showed why: the refit stacks did worse there."));
     c1.appendChild(ul);
     // 2026
     if (VA) {
       c2.appendChild(el("h3", "mini", "The sealed 2026 vault"));
+      c2.appendChild(el("p", "small", "First audit, after v5: every frozen model, scored once."));
       var B = VA.bench || {}, ev4 = VA.engine_v4 || null;
       var r2 = [["Closing line (the market)", B.close, false], ["Pick with a closing line", B.ml2_stack_close_static, true], ["Opening line", B.open, false], ["Pick with a pre-fight line", B.ml2_stack_open_static, true],
         ["ML v2 model alone", B.ml2_lr, false], ["Pick with no line", B.ml2_stack_noline_static, true], ["Simulator v4 alone", ev4, false], ["Previous page's no-line blend", B.moe_page_noline, false], ["Elo rating", B.elo, false]].filter(function (r) { return r[1] && r[1].log_loss != null; });

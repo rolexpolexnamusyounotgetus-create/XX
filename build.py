@@ -235,14 +235,14 @@ def debut_block():
 
 def scorecard_block():
     """The honest scorecard: 2024-25 numbers (ml2.json, forward_models.json), the sealed 2026 vault (version_history.json
-    vault_audits) and the engine versions (version_history.json versions), plus the few report-only numbers in
-    data/derived/page_scorecard.json (each with its source line). Read, never recomputed."""
+    vault_audits: audit 1 and the final audit 2) and the engine versions (version_history.json versions), plus the few
+    report-only numbers in data/derived/page_scorecard.json (each with its source line). Read, never recomputed."""
     m = load_json("data/derived/ml2.json") or {}
     fm = load_json("data/derived/forward_models.json") or {}
     vh = load_json("data/derived/version_history.json") or {}
     ps = load_json("data/derived/page_scorecard.json") or {}
     vs = g(m, "results", "valid_2024_2025", "static") or {}
-    out = {"valid": {}, "vault": None, "versions": [], "notes": ps}
+    out = {"valid": {}, "vault": None, "vault2": None, "versions": [], "notes": ps}
 
     def met(o):
         return None if not o else {"ll": o.get("log_loss"), "n": o.get("n"), "acc": o.get("accuracy"), "slope": o.get("calib_slope")}
@@ -280,7 +280,21 @@ def scorecard_block():
                         "dates": g(au, "vault", "dates"), "bench": {k: B[k] for k in keep if k in B},
                         "engine_v4": g(au, "engines", "v4"), "engines": {k: g(au, "engines", k) for k in ("v4", "v5", "v5.0.1")},
                         "close_edge": au.get("close_edge"), "open_regime": au.get("open_regime"),
-                        "drift": g(au, "drift_rule_6_5_1a", "state")}
+                        "drift": g(au, "drift_rule_6_5_1a", "state"),
+                        "props_pool_minus_s2": g(au, "side_line", "props_pool_minus_S2_same_winner", "bin7")}
+    # audit 2 (final opening, case if_v4_stays): the pre-registered descriptive headline (open regime vs the opener), the
+    # v10 side line, the props-pool effect and the v10 / v8 stat-line total, as recorded in its results block
+    R2 = (au2 or {}).get("results") or {}
+    if R2:
+        H2 = R2.get("headline_descriptive") or {}
+        SL = R2.get("side_lines_vs_cmp4") or {}
+        out["vault2"] = {"case": g(au2, "case_that_applies", "case"),
+                         "opener": H2.get("opener"), "forward_open": H2.get("forward_package_open"), "cmp4_open": H2.get("cmp4_open"),
+                         "close": H2.get("close"), "forward_minus_opener": H2.get("forward_minus_opener"),
+                         "cmp4_minus_opener": H2.get("cmp4_minus_opener"), "cmp4_minus_forward": H2.get("cmp4_minus_forward"),
+                         "v10_minus_cmp4_open": g(SL, "winner", "open"), "props_effect_bin7": g(SL, "props_effect_in_v10_open", "bin7"),
+                         "statlines_total": g(R2, "statlines_v10_v8_vs_v4", "total_relative_deviance"),
+                         "slopes": R2.get("calibration_slopes")}
     for v in vh.get("versions") or []:
         d = v.get("decision") or {}
         out["versions"].append({"version": v.get("version"), "engine": v.get("engine_version"), "date": v.get("date"),
