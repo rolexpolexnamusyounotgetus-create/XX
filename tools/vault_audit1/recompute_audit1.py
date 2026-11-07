@@ -239,6 +239,23 @@ for i, fid in enumerate(ids):
                           "spark_first_pA_raw": round(1 / sp[0], 4), "spark_second_pA_raw": round(p2, 4), "close_pA": round(close[i], 4),
                           "winner": f["result"]["winner"]})
 chk["reversed_opener_suspects"] = flip_open
+# broader descriptive screen: the BFO opener is the sparkline's first point; flag it when it sits on the other side of 50%
+# from the second point by more than 1 logit while the second and the last points agree (an isolated opener, corrected at
+# once). Descriptive only: the frozen open definition (market.py p_novig_open) is what audit 1 scores.
+iso_open = []
+for i, fid in enumerate(ids):
+    m, f = MV[fid], FIGHTS[i]
+    mu = (m.get("bfo") or {}).get("matchup")
+    r = best_row(rng_.get(mu, {}) if mu else {}, f["A"]["name"], f["B"]["name"])
+    if not r:
+        continue
+    sp = [float(x) for x in r["spark"].split(";") if x]
+    if len(sp) < 3:
+        continue
+    q0, q1, qL = 1 / sp[0], 1 / sp[1], 1 / sp[-1]
+    if abs(lg(q0) - lg(q1)) > 1.0 and (q0 - 0.5) * (q1 - 0.5) < 0 and (q1 - 0.5) * (qL - 0.5) > 0:
+        iso_open.append(fid)
+chk["isolated_opener_screen"] = {"n": len(iso_open), "ids": iso_open}
 
 # ------------------------------------------------------------------ 2. Elo, ML v1, mkt rating, elo_sig, ratings
 elo = np.array([1 / (1 + 10 ** ((f["B"]["elo"] - f["A"]["elo"]) / 400.0)) for f in FIGHTS])
@@ -603,8 +620,24 @@ def rule(k):
     return {"column": k, "slope": s["est"], "ci": s["ci"], "switch_to_h3_T1": bool(fire), "plan_4_2_branch": br}
 
 
+# descriptive opener sensitivity (no number in the report is replaced by it)
+keep = np.array([f not in set(iso_open) for f in ids])
+open_sens = {"excluded_fights": len(iso_open)}
+for k in ("open", "close", "stack_open", "ml2_stack_open_static", "ml2_stack_open_prod"):
+    L = np.where(keep, LL[k], np.nan)
+    est, ci, nn = wmean(L)
+    open_sens[k] = {"log_loss": est, "n": nn}
+for a_, b_ in (("stack_open", "open"), ("ml2_stack_open_static", "open"), ("open", "close")):
+    est, ci, nn = wmean(np.where(keep, LL[a_] - LL[b_], np.nan))
+    open_sens["%s - %s" % (a_, b_)] = {"diff": est, "ci": ci, "n": nn}
+# robustness of the drift-rule reading: share of card resamples whose primary slope reaches 1
+xs = np.where(dec, np.log(np.clip(P["stack_noline"], 1e-6, 1 - 1e-6) / (1 - np.clip(P["stack_noline"], 1e-6, 1 - 1e-6))), 0.0)
+bs = slope(np.r_[xs, -xs], np.r_[np.where(dec, win, 0), np.where(dec, 1 - win, 0)], np.c_[W, W] * np.r_[dec, dec][None, :])
+drift_robust = {"share_resamples_slope_ge_1": float(np.mean(bs >= 1.0)), "max_resample_slope": float(bs.max()),
+                "share_resamples_slope_ge_1.15": float(np.mean(bs >= 1.15))}
 drift = {"primary": rule("stack_noline"), "secondary": [rule(k) for k in ("ml2_stack_noline_prod", "moe_page_noline", "ml2_stack_noline_static")]}
-sens = {"ml2_stack_noline_static_with_market_vault_mr": {"max_abs_vs_ml2_mr": float(np.nanmax(np.abs(S2_mv - S2["ml2_stack_noline_static"])))}}
+sens = {"open_isolated_opener_exclusion": open_sens, "drift_primary_bootstrap": drift_robust,
+        "ml2_stack_noline_static_with_market_vault_mr": {"max_abs_vs_ml2_mr": float(np.nanmax(np.abs(S2_mv - S2["ml2_stack_noline_static"])))}}
 
 out = {"meta": {"tool": "tools/vault_audit1/recompute_audit1.py", "built": dt.datetime.now(dt.timezone.utc).isoformat(),
                 "boot": a.boot, "seed": a.seed, "engines_dir": ENGD, "ci": "percentile 2.5 / 97.5 of 2,000 card resamples"},
