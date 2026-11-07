@@ -1,6 +1,9 @@
 # Engine roadmap: v3 to v10
 
-**Status, Nov 7, 2026, 5:05 am ET (after v8's train gate).** The current validated engine is still **v4 (4.0.0)**. v8 (cycle 3,
+**Status, Nov 7, 2026, 5:55 am ET (after v9's train gate).** The current validated engine is still **v4 (4.0.0)**. v9 (cycle 4,
+walk-forward levels, drift and judging, joint level pass by format, on the v4 simulator) was built and frozen; its binding train gate
+failed 8 of 14 checks: no pre-registration, no look (docs/CHANGELOG.md v9). The forward-ledger drift monitor (tools/drift_monitor.py)
+stays as tooling. Earlier status (5:05 am ET, after v8's train gate): the current validated engine is still **v4 (4.0.0)**. v8 (cycle 3,
 stat-line fidelity: embedding blend, realised-rate retarget toward the statlines layer, takedown-intent / control-spread draws, on
 the v4 simulator) was built and frozen; its binding train gate kept no sub-part: no pre-registration, no look (docs/CHANGELOG.md v8).
 Earlier status (3:40 am ET, after v7's train gate): the current validated engine is still **v4 (4.0.0)**. v7 (cycle 2,
@@ -52,7 +55,10 @@ What remains, in the order of docs/V6_V10_PLAN.md section 3 (re-ranked after v5.
    train gate FAILED, no sub-part kept: the retarget improved total stat-line deviance on train but missed the 7-bin / method
    +0.002 bounds and a SUB base-rate tolerance the comparator also misses; control MAE worsens; versions/v8-gate-failed/.)
 4. **v9 (cycle 4): levels and drift.** The 2024 knockdown and KO drop (glove trial and early 2024) is the main open level question;
-   handle dated breaks as variance bumps on the forward ledger, never as a tilt fit on 2024-25.
+   handle dated breaks as variance bumps on the forward ledger, never as a tilt fit on 2024-25. (Done Nov 7: built on v4, binding
+   train gate FAILED 8 of 14 checks: year-level base-rate errors fall only for control, sig-landed deviance n.s., 7-bin / method
+   above the +0.002 bounds; the 5-round shape and doctor / corner checks pass where v4 fails; level trackers built but dropped on
+   2019-20 because the learned rates already carry the level; versions/v9-gate-failed/. Kept as tooling: tools/drift_monitor.py.)
 5. **v10 (cycle 5): newcomers, explainer, the page.** The page currently runs v4; a v5+ page must pass tests/test_page_parity.js.
 
 The 3D show and the page improve alongside: modern renderer, image-based lighting, post-processing, likeness avatars from the tale

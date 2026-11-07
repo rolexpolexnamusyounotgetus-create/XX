@@ -5,6 +5,85 @@ Each engine version records its held-out numbers here (docs/ROADMAP.md). From v4
 2026-01-01 is in the sealed vault (docs/BACKLOG.md "Hidden-data protocol"). Older entries that say "test" meant 2024-01-01 to the
 snapshot; that window is retired.
 
+## v9 (2026-11-07): walk-forward levels, drift and judging, joint level pass by format built and frozen; binding train gate FAILED (8 of 14 checks); no pre-registration, no look; v4 (4.0.0) stays
+
+**Outcome.** v9 = the v4 simulator (bit for bit with every v9 flag off, tests/test_v9.js) + cycle 4 of docs/V6_V10_PLAN.md
+behind flags. The binding train gate (protocol committed first, f97d110 at 10:48 UTC; run once, 10:49-10:51 UTC) failed 8 of
+its 14 applicable checks, so there is no pre-registration and no 2024-25 look. src/ is v4 again (6c661f68 / e16a6481 /
+b563032d); the candidate is frozen in versions/v9-gate-failed/ (engine 47bfaa17, params c52dcedc; versions/v9 is a symlink).
+Nothing dated 2024 or later was simulated or scored by any v9 run; 2026 was never read. Branches: plan 4.1 (v5 rejected) ->
+v4 base, the format items stay, the dynamics level pass and durability's five/title terms do not exist in v4; plan 4.2 (audit
+1 inconclusive) -> nothing in v9 was chosen because of an audit-1 number, and rule 6.5.1 (b) is implemented exactly as
+pre-registered.
+
+**What was built (engine 9.0.0, params 9.0.0-selfcal-pre2024).**
+- `components.judgeWF` (work item 2): EM round-winner weights by year (tools/v9_judge_wf.py -> data/derived/v9/judge_wf.json,
+  each row fit on judges' cards before Jan 1 of its year; recipe "win3" chosen on 2019-2020 decisions among exp / win2 / win3 /
+  shr2 / shr3, 0.34619 vs exp 0.35232) replacing v4's all-cards fit (2015..2026-10: a known contamination, so this part is
+  also hygiene); the 10-8 threshold follows the eradrift verified 10-8 tracker (opts.level.r108; t108 = (0.59164 - ln(0.035 x
+  r108 / 5.2636)) / 0.45779, mapping fit on train simulations).
+- `components.format` (work item 6, the joint level pass by format; tools/v9_format_fit.py, one fixed point on 2019-2023): 5-round
+  KD factor kd5 1.579 (the 5-round KD gap was z -3.05 > 2, so the plan's format factor is added), rounds 4-5 finish-hazard factor
+  late5 0.575, conversion odds conv 0.928, one doctor / corner scale stop 0.321 for both formats (v4 simulated 3x the real
+  between-round stoppage rate).
+- `components.levels` (work item 1): built and tested, OFF. With learned rates on, v4's level does not come from the 5-year
+  window (the adapter's eL(P) x ML / base(P) cancels P), so a literal re-level to eradrift's trackers double-counts the learned
+  year trend (development check on 2019-2020: every stat worse). The engine-level analogue (tools/v9_levels.js: trailing trackers
+  of log(actual / comparator-engine expectation), eradrift's verified settings, league-pooled) was dropped whole by its
+  pre-declared 2019-2020 keep rule (each tracker raised its stat's deviance).
+- Drift monitor (work item 5): tools/drift_monitor.py implements rule 6.5.1 (b) as pre-registered (trigger p_a_noline, tracked
+  MoE series) plus the separate level-alarm channel of research/model_eradrift.md 7.5 with the decision share of
+  research/model_props.md (calibration in the large of decision / KO / round-1 shares, realised / predicted sig landed, control,
+  TD attempts, KD; two-quarter clock; an alarm opens a review and never applies a tilt; dated breaks logged, never fitted).
+  `ledger` writes data/predictions/drift_monitor.json; `replay` is the gate's 2015-2023 replay. Tests: tests/test_drift_monitor.py.
+- Not built, with the reason in the protocol: per-card stack refits and method-head offsets (no predict() in v4; their verifiers
+  did not adopt them), outcome-mix and sub-attempt trackers and break bumps (eradrift verifier), the within-round hazard ramp and
+  the format-specific round-cell pool (flagged items without verified evidence / without predict()).
+- tools/evalv.js: engines with components.judgeWF get the tracked 10-8 level per fight and must report walk-forward judging
+  applied; components.levels is refused (no level input). tests/test_v9.js (32 checks).
+
+**Train gate** (tools/v9_gate.js two-pass harness: cmp4 first, then the candidate and descriptive arms; tools/v9_gate.py RULES;
+binding scope 2021-2023, 1,254 fights; G6 on 2019-2023; 300 sims per order, seed 9, common random numbers; comparator cmp4 = v4
+on the same honest inputs; 20,000 event-cluster resamples, seed 7):
+
+| check | candidate vs cmp4 | verdict |
+|---|---|---|
+| G1 year-level error, sig landed per 15 | +0.062 [-0.039, +0.092] | FAIL |
+| G1 accuracy | +0.0002 [-0.00005, +0.0003] | FAIL |
+| G1 KD per 100 head | -0.00005 [-0.012, +0.016] | FAIL |
+| G1 TD per 15 | -0.0012 [-0.0023, +0.0002] | FAIL |
+| G1 control per 15 | -0.46 s [-0.76, -0.11] | pass |
+| G1 finish rate | +0.0031 [-0.0032, +0.0096] | FAIL |
+| G2a sig-landed deviance | -0.025 [-0.137, +0.092] | FAIL |
+| G2b total stat deviance (+0.5% of level) | -0.04% [-0.28%, +0.21%] | pass |
+| G5 drift rule replay 2015-2023 (one-way switch) | 1 switch (2015-09-30); condition held at 28 of 36 quarter ends, 3 episodes | pass (by construction) |
+| G6a 5-round R4 KO-type hazard covers actual | 0.075 vs 0.058, +0.017 [-0.024, +0.054] (v4 0.119, fails) | pass |
+| G6b 5-round R5 SUB hazard covers actual | 0.023 vs 0.008, +0.015 [-0.003, +0.024] (v4 fails) | pass |
+| G6c doctor / corner <= 1.5x the 2019-23 rate | 0.38% vs 0.37% per interval (v4 1.12%) | pass |
+| G7 winner | +0.00034 [-0.00074, +0.00141] | pass |
+| G7 7-bin | -0.0039 [-0.0184, +0.0089] | FAIL (+0.002 bound) |
+| G7 method | +0.0008 [-0.0014, +0.0031] | FAIL (+0.002 bound) |
+| G3 per-card stacks / G4 method offsets | not built (no predict() in v4; not adopted by their verifiers) | n/a |
+
+Descriptive, not decisions: "+levels" (every tracker on as designed) vs cmp4 on 2021-2023: control year-level error -6.3 s
+[-9.4, +1.3], TD per 15 -0.058 [-0.082, +0.018], sig landed -0.44 [-2.5, +2.2], but 7-bin +0.0145 [-0.006, +0.035] and method
++0.0055 [-0.0006, +0.0117]; leave-one-out: format carries the G6 fix and the KO-share and 7-bin moves, judgeWF changes winner and
+7-bin only through decisions (method and stat lines identical). Standard train evaluation of the candidate:
+data/derived/evalv/v9_train.json (winner 0.6665, 7-bin 1.6654, method 0.9665; KD per 100 head 0.823 vs 0.782; 10-8 4.04% vs 5.29%).
+
+**Disclosed.** Choices were made on 2019-2020 (judging recipe, tracker keep / drop, dispersion) and fits on 2019-2023 (format
+pass, 10-8 mapping), all listed in data/derived/v9/gate_protocol.json with every development run whose output was seen, including
+v4's existing per-year train base rates, a data-level level table, and a 100-fight scorer smoke test. The binding run used a fresh
+seed. Tolerated test: test_engine3_src (1 of 69: Women's Strawweight league-average SUB share 21.9% vs 18.7%, +-3 pts; v4 21.3%).
+35 of 36 test jobs pass on the candidate (data/derived/v9/tests/); test_v9.js 32/32 on the frozen copy; test_engine3.js 69/69 on
+the restored v4.
+
+**For a next attempt** (re-specify before any run, never from this one): G1 as written needs all six year-level errors to fall on
+three years, and the finish rate and KD per 100 head are noise-dominated at that level with nothing verified targeting them; with
+learned rates the engine's level is set by the learned model, so "replace the window with a tracker" has no lever in v4; the
++0.002 bound on 7-bin / method decided against an arm whose 7-bin leans better (half-widths here ~0.013 / ~0.0022). The format
+pass is a real fix of v4's 5-round round shape and between-round stoppages (in-sample) and may be re-bundled once (6.1).
+
 ## v8 (2026-11-07): stat-line fidelity built and frozen; binding train gate FAILED (no sub-part kept); no pre-registration, no look; v4 (4.0.0) stays
 
 **Outcome.** v8 = the v4 simulator (bit for bit with every v8 flag off) + cycle 3 of docs/V6_V10_PLAN.md behind flags, with the

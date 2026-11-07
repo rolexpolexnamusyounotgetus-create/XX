@@ -64,6 +64,22 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- ENGINE v9 GATE FAILED (Nov 7, ~10:55 UTC; docs/CHANGELOG.md v9; version_history.json v9 `status: gate_failed`, `train_gate`,
+  `drift_monitor`; versions/v9-gate-failed/): v9 = the v4 simulator + cycle 4 behind flags: walk-forward EM judging by year (rows
+  fit on cards before each year; recipe win3 chosen on 2019-20) with the 10-8 threshold following the eradrift 10-8 tracker
+  (also removes v4's all-cards judging contamination), the joint level pass by format (5-round KD factor 1.58, rounds 4-5 factor
+  0.575, conversion 0.928, doctor / corner scale 0.321; fit on 2019-23), walk-forward level anchoring built but OFF (with learned
+  rates the 5-year window cancels in the adapter, so a tracker re-level double-counts the learned year trend; the engine-residual
+  trackers lost on 2019-20 under the pre-declared rule). Binding gate run once under data/derived/v9/gate_protocol.json (committed
+  f97d110 first) vs v4 on honest inputs, 2021-2023: FAIL 8 of 14. Year-level base-rate error falls only for control per 15 (-0.46 s
+  [-0.76, -0.11]); sig-landed deviance -0.025 [-0.137, +0.092] n.s.; 7-bin -0.0039 [-0.0184, +0.0089] and method +0.0008
+  [-0.0014, +0.0031] above the +0.002 bounds; passes: total stat deviance, winner, the 5-round R4 KO / R5 SUB hazards and doctor /
+  corner rate (v4 fails all three), the drift-rule replay (by construction). No pre-registration, no look, src/ stays v4.
+  KEPT AS TOOLING (no production change): tools/drift_monitor.py = rule 6.5.1 (b) exactly as pre-registered + the level-alarm
+  channel (decision / KO / R1 shares, realised / predicted sig landed, control, TD, KD; two-quarter clock; alarms open a review;
+  breaks logged, never fitted) -> data/predictions/drift_monitor.json; data/derived/v9/judge_wf.json walk-forward judging rows.
+  A next attempt: re-specify G1 (six year-level errors on three years; finish rate and KD are noise there) and the +0.002 7-bin /
+  method bound before running; the format pass may be re-bundled once (6.1).
 - ENGINE v8 GATE FAILED (Nov 7, ~10:00 UTC; docs/CHANGELOG.md v8; version_history.json v8 `status: gate_failed`, `train_gate`;
   versions/v8-gate-failed/): v8 = the v4 simulator + cycle 3 (stat-line fidelity) behind flags: embedding blend, realised-rate
   retarget toward the statlines layer (like-for-like pilot, leak-free forward-chained statlines fold tables), takedown-intent /
@@ -314,7 +330,14 @@ Findings from verified research that the next engine versions must use. Each lin
 
 ## Prediction status after the ML-core round (verified, Nov 6 ~11:00 UTC)
 
-**Current (Nov 7, 3:00 am ET; after the v6 review):**
+**Current (Nov 7, 5:55 am ET; after v9's train gate):**
+- **The current engine is still v4 (4.0.0)** in src/ and versions/v4/ (hashes = the v4 entry). v7, v8 and v9 were built on v4 and
+  failed their binding train gates (no look); v6 was looked at once and rejected. Cycle 4 (v9) leaves two pieces of tooling with
+  no production change: the forward-ledger drift monitor (rule 6.5.1 (b) as pre-registered + level alarms incl. the decision share)
+  and walk-forward judging rows; its format pass (5-round round shape, doctor / corner) fixes real v4 misfits on train and is a
+  re-bundle candidate.
+
+**Earlier (Nov 7, 3:00 am ET; after the v6 review):**
 - **The current engine is still v4 (4.0.0)** in src/ and versions/v4/ (hashes = the v4 entry). The v6 review changed no
   scored number and added no version: v6 stays rejected (open winner -0.00245 [-0.00588, +0.00099] vs the v5.0.1 package).
 - **What the review changed in how to read v6.** Its train gate did not honestly pass (the comparator definition was chosen

@@ -14,6 +14,7 @@ they turn out to be.
 | `results.json` | Official results, appended after each event. | Append-only |
 | `statlines_results.json` | Official per-fight stat totals (ufcstats) for bouts with a stat-line forecast (fwd-4.2 on), appended after each event. | Append-only |
 | `scores.json` (+ `scores.md`) | Scores recomputed from the prediction files and `results.json` by a script. Never hand-edited. | Regenerated |
+| `drift_monitor.json` | Drift-monitor state (rule 6.5.1 (b) and the level alarms) recomputed from the scored files by `tools/drift_monitor.py ledger`. Never hand-edited; changes no prediction. | Regenerated |
 
 ## Rules
 
@@ -718,6 +719,26 @@ of them is a ledger file.
     and the refusal message.
 - A later edit to these files must keep the fwd-4.1 and fwd-4.2 outputs byte-identical and the fwd-4.3 output
   unchanged, or it starts a new version.
+
+## Drift monitor (Nov 7, 2026; engine cycle 4 tooling, no model change)
+
+`python3 tools/drift_monitor.py ledger` regenerates `drift_monitor.json` from the scored files (the same file selection as
+`score`). It runs docs/V6_V10_PLAN.md 6.5.1's "cycle 4 monitor" and changes no prediction. It was built in cycle 4 (v9, whose
+engine failed its train gate; the monitor is not part of any engine). Its rules were written into data/derived/version_history.json
+v9 `drift_monitor` before any ledger bout was scored, independent of vault audit 1:
+
+- **Rule 6.5.1 (b), unchanged.** Trigger series `p_a_noline` and tracked series the MoE no-line stack, as in "Drift rule
+  6.5.1(b): the column it reads" above; trailing-200 mirrored slope with a Wald 95% CI at every calendar quarter end
+  (tools/calib.py `drift_rule_b`); the rule fires at the first quarter end whose check and the previous one's are ready and both
+  include 1. A firing switches the production no-line stack to h 3, T 1 through a new fwd version with a README addendum first.
+- **Level alarms** (research/model_eradrift.md 7.5, plus the decision share of research/model_props.md): over the trailing 200
+  scored bouts at each quarter end, calibration in the large of the decision share (`p_distance`), the KO/TKO share and the
+  round-1 share of finishes (`p_finish_round`), and the realised / predicted ratio of sig strikes landed, control, takedown
+  attempts and knockdowns (the `statlines` block against `statlines_results.json`). An alarm fires when the 95% CI of the gap
+  excludes 0 at two consecutive quarter ends (the rule-(b) clock). An alarm opens a review that may pre-register a new candidate;
+  it never applies a tilt, and forward results still never tune a model between milestones.
+- **Breaks.** Dated, pre-announced changes (equipment, rules, judging criteria) are listed in the file with their effective date
+  and source and flagged on every check whose window spans them. They are variance interventions, never fitted tilts.
 
 ## Props capture (Nov 7, 2026; recorded, never scored)
 

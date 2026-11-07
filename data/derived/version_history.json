@@ -11577,7 +11577,8 @@
    "blend": null,
    "notes": [
     "2026-11-07T10:53 train: v9 candidate (gate run once: FAILED); standard TRAIN evaluation of the gated configuration (judgeWF + format on, levels off), descriptive",
-    "2026-11-07T10:53 v9 built (v4 simulator + cycle 4: walk-forward judging, joint level pass by format, level trackers built but dropped by the 2019-2020 rule, drift monitor), protocol committed (f97d110), binding train gate run once (seed 9, 300 sims, 1,999 fights simulated, 1,254 binding 2021-2023) and scored: FAIL (8 of 14 applicable checks). Status gate_failed; no pre-registration; validation null. Frozen candidate: versions/v9-gate-failed (engine 47bfaa17, params c52dcedc). Tests on the frozen copy: tests/test_v9.js 32/32 (data/derived/v9/tests/test_v9_frozen.json); restored v4 src: tests/test_engine3.js 8000 69/69."
+    "2026-11-07T10:53 v9 built (v4 simulator + cycle 4: walk-forward judging, joint level pass by format, level trackers built but dropped by the 2019-2020 rule, drift monitor), protocol committed (f97d110), binding train gate run once (seed 9, 300 sims, 1,999 fights simulated, 1,254 binding 2021-2023) and scored: FAIL (8 of 14 applicable checks). Status gate_failed; no pre-registration; validation null. Frozen candidate: versions/v9-gate-failed (engine 47bfaa17, params c52dcedc). Tests on the frozen copy: tests/test_v9.js 32/32 (data/derived/v9/tests/test_v9_frozen.json); restored v4 src: tests/test_engine3.js 8000 69/69.",
+    "after the binding run: tests/test_v9.js changed only to locate the engine (V9_DIR, else src/ while it is 9.0.0, else versions/v9 after the restore; no check changed; the protocol's recorded hash is the pre-run file); data/predictions/drift_monitor.json generated (0 scored rows on Nov 7); docs updated (CHANGELOG v9, BACKLOG, ROADMAP, versions README, data/predictions/README.md 'Drift monitor')"
    ],
    "status": "gate_failed",
    "train_gate": {
