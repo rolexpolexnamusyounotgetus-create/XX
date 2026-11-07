@@ -1048,7 +1048,10 @@
       }
       // the v5 kappa (boot.inflate) was fit on the v5 expert-stack construction; the head stack has its own (boot.inflateMl2stack)
       var bootI = cfg.boot;
-      if (source === "ml2stack" || source === "line") { bootI = own(cfg.boot); bootI.inflate = (source === "ml2stack" && isNum(cfg.boot.inflateMl2stack)) ? cfg.boot.inflateMl2stack : 0; }
+      if (source === "ml2stack" || source === "line") {
+        var km = cfg.boot.inflateMl2stack, kv = isNum(km) ? km : (km && isNum(km[line.kind]) ? km[line.kind] : null);   // a number or { none, open, close }
+        bootI = own(cfg.boot); bootI.inflate = (source === "ml2stack" && isNum(kv)) ? kv : 0;
+      }
       iv = interval(blendP, ex, featShift, { rng: rng, rdA: opts.rdA, rdB: opts.rdB, mrSd: opts.mrSd, engineN: N * sim.runs, sign: flip ? -1 : 1 }, bootI);
       if (iv && (source === "ml2stack" || source === "line")) {
         iv.construction = source;
