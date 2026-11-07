@@ -115,7 +115,7 @@
       if (miss(v)) return 0;
       return (v - t.mean) * (t.tau ? Math.exp(-n / t.tau) : 1);
     }
-    var z = 0, T = doc.terms;
+    var z = 0, T = doc.terms, xs = arguments[4] || null;
     for (var i = 0; i < T.length; i++) {
       var t = T[i], x = baseTerm(t, a, b);
       if (x === null) {
@@ -131,6 +131,7 @@
           default: throw new Error("ML2: unknown term " + t.type);
         }
       }
+      if (xs) xs[t.name] = x;
       z += t.coef * x;
     }
     return z;
@@ -185,6 +186,9 @@
       doc: doc,
       has: function (slug) { return !!R[slug]; },
       side: side,
+      // v6: the logistic's term values (A's view) by term name, for the tree design (src/ml/ml2trees.js)
+      termValues: function (a, b, fight) { var xs = {}; evalLogit(doc, a, b, fight, xs); return xs; },
+      baseTerm: baseTerm,
       predictSides: predictSides,
       predict: function (slugA, slugB, fight, pLine, pOpen) {
         var a = side(slugA, fight), b = side(slugB, fight);

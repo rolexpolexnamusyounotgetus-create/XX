@@ -217,7 +217,13 @@ def main():
                     "n_train": int(tr.sum())},
            "columns": names, "blend_w": {"lr": w[0], "lgb": w[1], "xgb": w[2]},
            "lgb": exp["lgb"], "xgb": exp["xgb"], "xgb_base_score": [float(b) for b in xbs], "vectors": vec}
-    s = json.dumps(doc, separators=(",", ":"))
+    def _d(o):
+        if isinstance(o, (np.floating,)):
+            return float(o)
+        if isinstance(o, (np.integer,)):
+            return int(o)
+        raise TypeError(type(o))
+    s = json.dumps(doc, separators=(",", ":"), default=_d)
     open(os.path.join(DER, "ml2_trees.json"), "w").write(s)
     gz = len(gzip.compress(s.encode()))
     log("wrote data/derived/ml2_trees.json: %.0f KB raw, %.0f KB gzipped (budget 1 MB gzipped)" % (len(s) / 1024, gz / 1024))
