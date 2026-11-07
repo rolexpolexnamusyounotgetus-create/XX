@@ -360,7 +360,7 @@ def two_source(bout, comps, stat_rounds):
     g_dec = "decision" in bout["method"].lower()
     sched = c.get("rounds") or (5 if "5 Rnd" in bout["format"] else 3)
     e_dec = c["period"] == sched and str(c["clock"]) == "5:00"
-    if g_win is not None and g_dec != e_dec:
+    if g_dec != e_dec:          # README v4.4 section 2 applies this to every bout, draws and no contests included
         return "finish vs decision differs (ufcstats %s, ESPN round %s %s)" % (bout["method"], c["period"], c["clock"])
     have = stat_rounds.get((bout["event"], bout["bout"].strip()), {})
     need = set(range(1, g_round + 1))
@@ -401,6 +401,44 @@ def verify_new(raw_dir, until, cache_dir, offline_espn=None, after=PIN_SNAPSHOT)
         as_of = max(as_of, d)
         log.append({"event": ev, "date": d, "status": "included", "bouts": len(evb), "passed": len(ok)})
     return as_of, kept, held, log
+
+
+FIGHT_FILES = ("ufc_event_details.csv", "ufc_fight_details.csv", "ufc_fight_results.csv", "ufc_fight_stats.csv")
+
+
+def merge_pinned(src, pinned, dst):
+    """README v4.4 section 2: fights dated on or before PIN_SNAPSHOT are taken as the pinned build took them. Upstream
+    refreshes rewrite rows of earlier events (5d6622f -> 3d4886d rewrote 62 UFC 333 stats rows), so copies of the six CSVs
+    are made in which every row of an event dated on or before the snapshot is the pinned CSVs' row, and only rows of later
+    events come from `src` (in upstream order, ahead of the pinned rows: the files are newest first). The fighter files are
+    the fetched ones (debutants need their rows). Returns per-file counts: later-event rows taken, and fetched rows of
+    pinned-period events that differ from the pinned rows (ignored; listed in the manifest)."""
+    from collections import Counter
+    os.makedirs(dst, exist_ok=True)
+    ed = event_dates(src)
+    info = {}
+    for f in GRECO_FILES:
+        sp, pp, dp = os.path.join(src, f), os.path.join(pinned, f), os.path.join(dst, f)
+        if f not in FIGHT_FILES:
+            shutil.copyfile(sp, dp)
+            continue
+        h, rows = read_csv_rows(sp)
+        hp, prow = read_csv_rows(pp)
+        if h != hp:
+            raise SystemExit("%s: the fetched header differs from the pinned CSV's (%s vs %s)" % (f, h, hp))
+        ie = h.index("EVENT")
+        later = [r for r in rows if ed.get(r[ie].strip(), "") > PIN_SNAPSHOT]
+        early, pc = Counter(tuple(r) for r in rows if ed.get(r[ie].strip(), "") <= PIN_SNAPSHOT), Counter(tuple(r) for r in prow)
+        info[f] = {"later_event_rows": len(later), "pinned_period_rows_only_upstream": sum((early - pc).values()),
+                   "pinned_period_rows_only_pinned": sum((pc - early).values())}
+        if not later:
+            shutil.copyfile(pp, dp)
+        else:
+            with open(dp, "w", newline="", encoding="utf-8") as fh:
+                w = csv.writer(fh, lineterminator="\n")
+                w.writerow(h)
+                w.writerows(later + prow)
+    return info
 
 
 def write_filtered_raw(src, dst, as_of, held):
@@ -847,6 +885,11 @@ def build_set(raw_dir, until, work, offline_espn=None, timeline=None):
     t0 = time.time()
     os.makedirs(os.path.join(work, "out"), exist_ok=True)
     os.makedirs(os.path.join(work, "steps"), exist_ok=True)
+    pin_raw, pin_src = regress_raw(work)                 # README v4.4 section 2: events up to the snapshot as pinned
+    pinned_period = {"pinned_csvs": pin_src, "merge": None}
+    if os.path.realpath(raw_dir) != os.path.realpath(pin_raw):
+        pinned_period["merge"] = merge_pinned(raw_dir, pin_raw, os.path.join(work, "raw_merged"))
+        raw_dir = os.path.join(work, "raw_merged")
     as_of, kept, held, evlog = verify_new(raw_dir, until, os.path.join(work, "espn"), offline_espn)
     filt = os.path.join(work, "raw_filtered")
     dropped = write_filtered_raw(raw_dir, filt, as_of, held)
@@ -888,7 +931,8 @@ def build_set(raw_dir, until, work, offline_espn=None, timeline=None):
             "bouts_added": [{k: b[k] for k in ("date", "event", "bout", "outcome", "method", "round", "url")} for b in kept],
             "bouts_held_out": [{k: b[k] for k in ("date", "event", "bout", "outcome", "method", "round", "url", "reason")}
                                for b in held],
-            "rows_dropped_from_csv_copies": dropped, "market": minfo, "guards": guards, "step_seconds": times,
+            "rows_dropped_from_csv_copies": dropped, "pinned_period": pinned_period, "market": minfo, "guards": guards,
+            "step_seconds": times,
             "builder_code_sha256": code, "fighters_logs": side["logs"], "elo": side["elo"],
             "ml_margin_elo": jload(os.path.join(work, "steps", "ml_side.json"))["margin_elo"],
             "ratings_round_model": rs["round_fit"], "seconds": round(time.time() - t0, 1)}
@@ -1018,7 +1062,8 @@ def cmd_build(args):
                                                                         "files": {k: {kk: vv for kk, vv in v.items() if kk != "diff"}
                                                                                   for k, v in zero["files"].items()}},
         "results": {"events_after_pin": info["events_after_pin"], "bouts_added": info["bouts_added"],
-                    "bouts_held_out": info["bouts_held_out"], "rows_dropped_from_csv_copies": info["rows_dropped_from_csv_copies"]},
+                    "bouts_held_out": info["bouts_held_out"], "rows_dropped_from_csv_copies": info["rows_dropped_from_csv_copies"],
+                    "pinned_period": info["pinned_period"]},
         "market_update": info["market"], "fighters_logs": info["fighters_logs"],
         "changes_vs_pinned": changes_vs_pinned(paths), "seconds": round((now_utc() - t0).total_seconds(), 1),
         "work_dir": os.path.relpath(work, ROOT),
