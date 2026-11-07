@@ -10,6 +10,9 @@ Caches: `out/finishing_cache/` (gitignored). Every number below is printed by `p
 **Not adopted. Production method / round stays S2 + ML v2 winner (with the 40/60 props blend when props exist).**
 The finishing model is kept as a monitored candidate for the forward ledger and vault audit 2.
 
+Verified Nov 7, about 12:30 am UTC: the rejection was reproduced with the verifier's own code. Points 3 and 5 below
+were corrected; see the Verification log at the end.
+
 1. **The stack gate rejects it.** Forward-chained 2021-2023, the blend of the finishing model with S2+ml2win changes
    7-bin log loss by **+0.0007 [-0.0044, +0.0055]** (needs < -0.0005). The nested selection procedure alone, on
    2020-2023: **+0.0012 [-0.0038, +0.0061]**.
@@ -38,10 +41,14 @@ The finishing model is kept as a monitored candidate for the forward ledger and 
      2020-2023.
    - The 2019+ verified layers (statlines, durability, bayes) as a residual on S2+ml2win: all worse,
      +0.0007 to +0.0037 at the pre-set penalty.
-5. **One structural lead is worth a pre-registered test.** The finisher-oriented continuation-ratio round model on
-   methodround's hazard columns, with no fighter round tendencies, is the only round variant that is steady across
-   both CV periods: sided round loss -0.0025 (2016-2019) and -0.0020 (2020-2023). Its round-given-finish was +0.0007
-   on 2020-2023, and it carries most of the 2024-25 joint gain.
+5. **The round model has no CV case of its own (corrected by the verifier).** The finisher-oriented
+   continuation-ratio round model on methodround's hazard columns, with no fighter round tendencies, looked steady in
+   the two-period split: sided round loss -0.0025 (2016-2019) and -0.0020 (2020-2023). By year it is better than S2's
+   round shapes in 5 of 8 years and worse in 3. Its 2020-2023 average is carried by 2020 (-0.017). On the gate years
+   2021-2023 it is worse (+0.0019 per finish; 2023 +0.013), and a joint-metric stack gate for the round model alone
+   fails (+0.0002), even though this candidate was picked on 2016-2023. Its round-given-finish was +0.0007 on
+   2020-2023. The only support for it is the 2024-25 look, which cannot promote it. Track it only as a descriptive
+   side line.
 
 ## What was built
 
@@ -148,7 +155,10 @@ Frozen and scored on 2020-2023 (1,581 fights), the choice did not transfer:
 | family check: MNL / GBM / average | 1.60754 / 1.61785 / 1.60891 | | | |
 
 Diagnosis: the optimal penalty drifts. The 2016-2019 folds want C 0.0015, while 2020-2023 keep improving down to
-C 0.0007 or below. The EB block is worth about -0.0025 at every penalty.
+C 0.0007 or below. The EB block helps at every penalty, but by less as the penalty loosens (verifier, from
+`grid.pkl`, core minus s2cond at matched settings):
+- 2016-2019: -0.0026 to -0.0053;
+- 2020-2023: -0.0009 to -0.0035.
 
 ### 2. Decision procedure: nested forward-chained selection over the full grid
 
@@ -188,14 +198,20 @@ loss on 2016..Y-1, so the 2020-2023 numbers measure the procedure, choice includ
 
 **Round candidates by period** (sided round loss = joint minus 7-bin, finishes only; minus S2's shapes):
 
-| round candidate | 2016-2019 | 2020-2023 | round given finish 2020-2023 |
-|---|---|---|---|
-| haz, C 0.003, no slope (production pick) | -0.0025 | -0.0020 | +0.0007 |
-| haz + EB + fight + win + filter + cardio, C 0.003 | -0.0058 | +0.0011 | +0.0048 |
-| EB + fight + win + filter + cardio, C 0.003, slope | -0.0059 | +0.0017 | +0.0071 |
+| round candidate | 2016-2019 | 2020-2023 | 2021-2023 (gate years; verifier) | round given finish 2020-2023 |
+|---|---|---|---|---|
+| haz, C 0.003, no slope (production pick) | -0.0025 | -0.0020 | +0.0019 | +0.0007 |
+| haz + EB + fight + win + filter + cardio, C 0.003 | -0.0058 | +0.0011 | +0.0064 | +0.0048 |
+| EB + fight + win + filter + cardio, C 0.003, slope | -0.0059 | +0.0017 | +0.0056 | +0.0071 |
 
 The fighter-level round tendencies (early finishers, late fade) look strong on 2016-2019 and do not survive
-2020-2023. Reproduce this table with the per-candidate losses in `out/finishing_cache/grid.pkl` (`grid` stage).
+2020-2023.
+
+By year, the production pick's sided loss per finish (2016 to 2023) is -0.0007, -0.0072, +0.0078, -0.0103,
+-0.0170, -0.0019, -0.0051, +0.0134. It is not steady.
+
+Reproduce this table with the per-candidate losses in `out/finishing_cache/grid.pkl` (`grid` stage), or with
+`python3 tools/finishing_verify.py rounds`.
 
 ### 3. Stack gate (forward-chained 2021-2023, the 0.0005 rule)
 
@@ -253,9 +269,10 @@ Every scored object was fixed in code before the run, and a marker file refuses 
 - **By year (7-bin):** 2024: 1.4920 S2+ml2win vs 1.4892 finishing; 2025: 1.5422 vs 1.5372.
 - **The blind-test harness agrees on its own universe (857 scored fights):** finishing 1.5132, S2+ml2win 1.5171. The
   plugin registers both.
-- **This look cannot change the decision.** Section 6.3's MDE for "7-bin when only the method given the winner
-  changes" is about 0.015 on these fights. The joint gain comes mainly from the round model, whose CV evidence is
-  mixed.
+- **This look cannot change the decision.** Section 6.3's generic MDE for "7-bin when only the method given the
+  winner changes" is about 0.015. This pair's own paired CI is tighter (half-width about 0.0046, so an MDE of about
+  0.0065), and the observed -0.0039 is still below it. About half of the joint gain comes from the round model, whose
+  CV evidence is negative on the gate years (section 2).
 
 ## Checks
 
@@ -295,8 +312,9 @@ Every scored object was fixed in code before the run, and a marker file refuses 
   experimental, both with P(A) = the ML v2 winner. Their 7 bins are paired in the harness's 7-bin table.
 - **Forward ledger / audit 2.** If it is monitored, pre-register it before the audit-2 freeze as a descriptive side line
   next to S2+ml2win:
-  - the joint (who x how x when) is the metric where 2024-25 leaned its way;
-  - the round model is the component to watch.
+  - 7-bin is primary, as at the gate, and joint is secondary;
+  - do not pick the metric because 2024-25 leaned its way on the joint, since that would be selection on 2024-25
+    (verifier).
 
   It must not replace S2+ml2win without a new forward version and a clean test.
 
@@ -328,6 +346,8 @@ Each value is the posterior shift of the fighter's log-odds from the division x 
   (-0.0042) is pure optimism.
 - **Do not judge a method-model penalty on 2016-2019 alone.** The optimum drifts toward stronger shrinkage on later
   years.
+- **Do not replace S2's round shapes with the continuation-ratio round model on its two-period average (verifier).**
+  It loses on the 2021-2023 gate years and swings by year. A replacement needs a gate-years win first.
 
 ## Caveats
 
@@ -366,3 +386,127 @@ node tests/test_finishing.js
 Inputs: data/raw (through build_db), out/ml2_cache (`table.pkl`, `fit.pkl`, `cv.json`, `method.json` from
 `tools/ml2.py`), data/derived/methodround.json (chosen penalties, draw share), preufc.json, statlines_oof.json,
 durability.json, bayes.json.
+
+## Verification log
+
+Adversarial verifier, Nov 7, 2026, 12:15-12:35 am UTC. **Verdict: NOT ADOPTED (confirmed).** Production method /
+round stays S2 + ML v2 winner, with the 40/60 props blend when props exist. No look-ahead, no 2026 data and no
+selection on 2024-25 was found in the numbers. The stack gate fails when re-run with the verifier's own code, on the
+7-bin metric and on the joint metric. Two claims were overstated and are corrected above: the round model's
+"steadiness", and the reading of the 2024-25 joint gain.
+
+**Commands.** All verifier code is in `tools/finishing_verify.py` (own raw-CSV outcome parser, losses, beta search
+and event-cluster bootstrap):
+
+```
+FIN_CACHE=<scratch> nice -n 5 python3 tools/finishing.py {base,feats,tune,cvfixed,grid,nested,gate,stage2,swap}
+FIN_CACHE=<scratch> python3 tools/finishing_verify.py {score,gate,rounds,eb,lookahead,corner}
+node tests/test_finishing.js
+```
+
+### Protocol and timeline
+
+- **Order of work (git autosaves and cache mtimes).** Every selection artefact was written before the single
+  2024-25 look (`holdout.done` 00:02:20):
+  - tune.json 11:49 pm;
+  - grid and nested 11:59 pm;
+  - gate 12:00 am;
+  - stage2 12:01 am;
+  - swap 12:02:11 am.
+- **After the look, only cosmetic or export code changed:**
+  - slugs and names added to `feats` (feats.pkl rewritten 12:03 am);
+  - the `roster=` option of `eb_block`;
+  - the export, the summary and the docstrings.
+  - `cvfixed` was re-run at 12:04 am with unchanged code. It is deterministic: the verifier's re-run gives identical
+    numbers.
+  - No CV choice, grid value or gate input changed after the look.
+- **No second 2024-25 run.** No other holdout marker or holdout prediction cache exists on the machine.
+- **2026 data.** None found.
+  - `finishing.json` holds no 2026 date except build timestamps. Its fights run 2019-01-19..2025-12-13.
+  - The parse wrapper is asserted.
+  - The roster stops at 2025: Volkanovski 17 UFC bouts, Gaethje 14 (his 2026 bout is absent).
+  - No vault file was needed.
+- **Adaptive route (disclosed).** The C values 0.0005 and 0.0007 and the six-class candidates were added after the
+  2016-2019 route failed on 2020-2023. This happened before 2024, so the nested 2020-2023 estimate is slightly
+  optimistic about the grid's design. It does not change the verdict, because the estimate is already a loss.
+
+### Independent reproduction
+
+| check (verifier code) | builder | verifier |
+|---|---|---|
+| full pipeline re-run into a scratch cache (base .. swap, stage2) | (all tables) | identical to 5 decimals: S2 / S2+ml2win reproduce ml2 (joint 2.14070, 7-bin 1.60642); tune, cvfixed, nested picks, gate, stage2, swap |
+| 2020-23 nested, re-scored from `finishing.json` against raw-CSV outcomes (1,581 fights, 169 cards) | 7-bin +0.0012, joint +0.0024, round given finish +0.0043 | +0.00119 [-0.0037, +0.0058], +0.00236, +0.00426 |
+| stack gate 2021-23, 7-bin, own beta grid and bootstrap (1,235 fights) | +0.0007 [-0.0044, +0.0055], betas 0.95/0.85/0.80 | +0.00072 [-0.0043, +0.0058], same betas: **fail** |
+| stack gate 2021-23 on the joint metric (not run by the builder) | - | nested +0.00002 [-0.0048, +0.0051]: **fail**; round model alone on S2+ml2win +0.00015: **fail** |
+| production pick (method and round both chosen on 2016-2023) put through the gate | - | -0.0016 (7-bin): it "passes" only because it was chosen on the gate years. This is the optimism the nested procedure removes; not a valid gate input |
+| own re-implementation: raw-CSV finishing counts by fighter name, beta-shrunk logits, sklearn conditional logit; k and C chosen on 2016-19, scored on 2020-23 (method given winner, 1,564 fights) | EB block -0.0015; conditional + EB worse than the incumbent | EB block -0.0011 [-0.0026, +0.0004]; own conditional + EB vs S2+ml2win +0.0035 [-0.0011, +0.0081]: same conclusion |
+| 2024-25 look, re-scored from the exported cells (857 fights, 84 cards) | 7-bin -0.0039, joint -0.0085 [-0.0146, -0.0020] | -0.00389 [-0.0085, +0.0007], -0.00851 [-0.0147, -0.0019]; round part -0.0046 [-0.0096, +0.0004] |
+| the exported 2024-25 cells come from a fit on fights before 2024 | stated | a fresh fit before 2024 reproduces all 865 exported rows to 5e-6 (export rounding); nothing new was scored |
+| JS evaluator | 371 checks | `node tests/test_finishing.js`: 371/371 |
+
+### Leakage and symmetry hunts
+
+- **Look-ahead self-test (new).** Every outcome and per-round stat dated on or after 2022-07-01 was perturbed:
+  method and round labels swapped between winner and loser, filter winners flipped, cardio randomised. Then fold
+  2022 was rebuilt and refit.
+  - The 204 rows dated on or before that day did not move: max |dP6| 7e-15, |dH| 0, |dEB| 1e-13.
+  - The 218 later rows did move: max |dP6| 0.015.
+  - So the EB posteriors, the filter and cardio read only strictly earlier events. Same-day bouts were included in
+    the perturbation and did not leak.
+- **Normalisation and baselines.** Each is fit on its training rows only, or is a fixed constant:
+  - the scalers;
+  - the baseline logits (events before the fold);
+  - the EB hyperparameters (events before the fold);
+  - the pre-UFC league mean (rows before the fold);
+  - the cardio league ratios (constants from before 2016);
+  - the methodround priors (window [y-5, y)).
+- **The statlines layer.** It reads `[-1]`, the unconditional mean, never the actual-length mu.
+- **Corner order.**
+  - `build_features` builds FX = f(A, B) and FY = f(B, A) with one function. Fight columns are identical in both.
+  - The swap refit test was re-run: 7.8e-16.
+  - A free corner flag added to the production method model makes 2020-23 slightly worse (7-bin +0.0003). Its
+    standardized coefficients are about 0.01. No ordering signal is present, and the symmetric model cannot read
+    one.
+- **Joins.**
+  - All 2,864 exported fights match raw ufcstats by fight id with equal dates.
+  - All 5,058 pre-2024 methodround rows match.
+  - ML v2's winner is present in 100% of 2012+ rows. It is 0 (neutral) in 2008-2011 training rows, a modelling
+    choice that CV handled through the start-year grid.
+  - Pre-UFC counts cover 82.8% of 2016+ row sides; missing sides get a zero prior shift.
+  - Debut bouts are excluded by design (stated).
+
+### Defects fixed in the tool (minimal edits)
+
+1. **Stale fold cache (`get_folds`).** A cached `fd_*.pkl` pickles its own copy of base.pkl (the S2 design and the
+   ML v2 winner) and the EB block built from feats.pkl. The documented recheck after an ml2 or methodround rebuild
+   (rerun `base` → `export`) would therefore have reused stale designs and winner logits silently.
+   - Fix: the cache is rebuilt when base.pkl or feats.pkl is newer than it.
+   - Tested: after touching base.pkl, `cvfixed` rebuilt the cache and gave identical results.
+   - The builder's numbers were not affected. Their fold caches were built after base.pkl, and the later feats change
+     was cosmetic.
+2. **Stale docstrings.**
+   - The module docstring still described the dropped gamma-Poisson prior.
+   - `eb_block` claimed 24-node Gauss-Hermite quadrature; the code uses an 81-point grid on [-4, 4].
+
+### Report corrections
+
+1. **The round model.** It is not "the only round variant steady across both CV periods".
+   - Sided loss per finish against S2's shapes, by year 2016-2023: -0.0007, -0.0072, +0.0078, -0.0103, -0.0170,
+     -0.0019, -0.0051, +0.0134.
+   - On the 2021-2023 gate years it is +0.0019 (worse).
+   - The joint gate for the round model alone fails.
+   - Recommendation 3 (pre-register it as a v6/v7 candidate) has no CV basis. Its only support is the 2024-25 look, so
+     it is downgraded to a descriptive side line.
+2. **The 2024-25 joint gain.** Its CI excludes 0, but it is one nominal result among about 20 comparisons. Its round
+   part on its own is not significant (-0.0046 [-0.0096, +0.0004]). "Most of the joint gain" became "about half".
+3. **The EB block's size.** Not "about -0.0025 at every penalty": -0.0009 to -0.0035 on 2020-23 and -0.0026 to
+   -0.0053 on 2016-19, shrinking as C rises.
+4. **The MDE.** The generic 0.015 from plan section 6.3 is looser than this pair's own paired CI (half-width 0.0046,
+   so an MDE of about 0.0065). The -0.0039 is still below it.
+5. **The monitored metric.** The forward-ledger side line must not use the joint as primary *because* 2024-25 leaned
+   that way: 7-bin is primary and joint secondary.
+
+### Not re-run
+
+- The blind-test harness replay (heavy refits). The plugin reads the same `finishing.json` cells that the verifier
+  re-scored, and both registered models are experimental with P(A) = ML v2, so no stacker reads them.
