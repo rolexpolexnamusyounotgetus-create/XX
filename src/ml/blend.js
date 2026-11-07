@@ -111,7 +111,11 @@
     recalT: 1,             // temperature on the blended logit (1 = none)
     anchor: { cAcc: 0.5, cTd: 1, cPow: 1, powNorm: true, slope0: 0.86, priorWeight: 2, iters: 4, step: 0.05, tol: 0.01, sims: 300, maxAbs: 4 },
     boot: { B: 200, seed: 7, level: [0.8, 0.95], cvOut: 0.45, cvGrap: 1.0, cvSub: 1.5, cvKd: 1.0, cvAcc: 0.25,
-      count: true, eloRd: 0, eloRdScale: 0, mrSd: 0, engineMC: true, inflate: 1.65, inflateMl2stack: null },
+      count: true, eloRd: 0, eloRdScale: 0, mrSd: 0, engineMC: true, inflate: 1.65,
+      // 1.2.1 (v6 review): kappa of the head-stack construction (winner 'ml2stack'), fit on 2021-2023 by tools/v6_kappa.js
+      // (data/derived/v6/review/kappa_ml2stack.json): raw cover of the close 69% / 65% at 80% (no line / open); out of fold
+      // by year 79.7% / 79.7% at 80%, 94.0% / 93.5% at 95%. close = the open value (no outside benchmark; judgment)
+      inflateMl2stack: { none: 1.2569, open: 1.3691, close: 1.3691 } },
     // engine v6 (cycle 1, docs/V6_V10_PLAN.md section 3); the defaults reproduce 1.1.1 (engine v5 params carry none of these)
     winner: "stack",       // 'stack' = the MoE expert stack (v5); 'ml2' = ML v2 page stack (v5 option); 'ml2stack' = v6 ML v2 heads
     ml2Head: "lr",         // ML v2 head inside the v6 stacks: 'blend' (LR + LightGBM + XGBoost, the CV choice) or 'lr'

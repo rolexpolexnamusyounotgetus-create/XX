@@ -1,0 +1,85 @@
+{
+ "meta": {
+  "tool": "tools/v6_kappa.js",
+  "built": "2026-11-07T07:51:40.800Z",
+  "fights": 1224,
+  "B": 200,
+  "what": "kappa for the ml2stack interval (src/ml/blend.js params.blend.boot.inflateMl2stack): the 80% interval covers the close 80% of the time on 2021-2023",
+  "feature_lr": "moe_page.json feat coef_valid",
+  "stacks": "v6_stacks.json <regime>|blend by_fit_year = fight year (fit 2019..Y-1)"
+ },
+ "regimes": {
+  "none": {
+   "n": 1224,
+   "median_sd_logit": 0.3797,
+   "raw_cover80": 0.6871,
+   "raw_cover95": 0.866,
+   "kappa80": 1.2569,
+   "kappa95": 1.3197,
+   "oof": {
+    "cover80": 0.7974,
+    "cover95": 0.9395,
+    "by_year": {
+     "2021": {
+      "kappa": 1.2875,
+      "cover80": 0.8265,
+      "cover95": 0.959,
+      "n": 415
+     },
+     "2022": {
+      "kappa": 1.2857,
+      "cover80": 0.821,
+      "cover95": 0.9403,
+      "n": 419
+     },
+     "2023": {
+      "kappa": 1.2098,
+      "cover80": 0.741,
+      "cover95": 0.9179,
+      "n": 390
+     }
+    }
+   },
+   "median_width80_calibrated": 0.2683
+  },
+  "open": {
+   "n": 1224,
+   "median_sd_logit": 0.2516,
+   "raw_cover80": 0.6544,
+   "raw_cover95": 0.8374,
+   "kappa80": 1.3691,
+   "kappa95": 1.4775,
+   "oof": {
+    "cover80": 0.7966,
+    "cover95": 0.9346,
+    "by_year": {
+     "2021": {
+      "kappa": 1.399,
+      "cover80": 0.8145,
+      "cover95": 0.9325,
+      "n": 415
+     },
+     "2022": {
+      "kappa": 1.3651,
+      "cover80": 0.7947,
+      "cover95": 0.9308,
+      "n": 419
+     },
+     "2023": {
+      "kappa": 1.3497,
+      "cover80": 0.7795,
+      "cover95": 0.941,
+      "n": 390
+     }
+    }
+   },
+   "median_width80_calibrated": 0.1933
+  }
+ },
+ "inflateMl2stack": {
+  "none": 1.2569,
+  "open": 1.3691,
+  "close": 1.3691,
+  "note": "close takes the open value (an interval centred on the close has no outside benchmark; labelled judgment)"
+ }
+}
