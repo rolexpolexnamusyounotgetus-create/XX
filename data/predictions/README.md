@@ -1218,6 +1218,8 @@ file or the vault.
 - **Order.** Pre-registration 01bc97d (1:22:07 pm). tests/fixtures/forward_v44_golden.json first appears in autosave ab10e18
   (1:23:32 pm) and, re-captured with one temporary path normalised, in ecd72ee (1:25:34 pm), which also holds the first fwd-4.5
   code. Its `code_sha256_16_at_capture` equals the fwd-4.4 addenda's hashes, so it was captured from the tools before the edit.
+  The code at the hashes below is first committed whole in autosave 3fdb600 (1:37:44 pm) and is the code of the implementation
+  commit 1e16b3f (1:38:49 pm), which only finishes this addendum.
 - **Tool code hashes** (sha256, first 16 hex), recorded in every fwd-4.5 file as `model.code_sha256_16`:
   - `tools/forward_ledger.py` (1.5): 650844849df34de5
   - `tools/forward_ledger.js`: 40339b2883ed58c1
@@ -1288,11 +1290,27 @@ file or the vault.
   ideally T-25h to T-8h when most bouts have method props, then commit the snapshot. `predict --event <date>` (fwd-4.5 by default)
   uses the newest snapshot taken before the lock.
 - **Still open** (outside the files this version owns; no rule is affected):
-  - tools/drift_monitor.py picks the MoE tracked series by version prefix (`fwd-4.3`, `fwd-4.4`). On a fwd-4.5 bout whose
-    `models.moe_noline` is null (the MoE stack failed on a bout without a debutant), it would track `p_a_noline` instead. It
-    should treat `fwd-4.5` like `fwd-4.4`. Every UFC 334 bout without a debutant has `moe_noline` today.
   - tools/props_ledger.py's docstring and the "Props capture" section still say no forward version reads props. That stays
     true of `<date>_<slug>.props.json`; fwd-4.5 reads the snapshot itself (item 1).
+- **Verification** (Nov 7, about 2:00 pm UTC; adversarial verifier, own code, before any fwd-4.5 file):
+  - Order: 01bc97d changes only this README, and no tool, test or fixture at that commit implements fwd-4.5.
+  - Old against new tools: a checkout of 01bc97d (the fwd-4.4 tool code, hashes f8aec0838cc8d8df and 39e0ae0596d54455) and the
+    current tools wrote the same UFC 334 dry-run documents for fwd-4.1, 4.2, 4.3 and 4.4 (both headlines), fwd-4.4 in fallback and
+    Vegas 124 (fwd-4.1), apart from the code commit and hash fields and, in the fallback, the relative path to the missing folder
+    (it depends on the checkout's location). The printed tables were identical.
+  - The pool, recomputed in Python from props.json (production weights, `draw_c`), the snapshot's `m6` and fwd-4.4's cells, gives
+    the file's `p_method`, `p_distance` and `p_finish_round` for Gane vs Hokit and Harrison vs Nunes exactly at 5 decimals (raw
+    difference at most 4.9e-6, the file's rounding), with P(a | not a draw) = `p_a` to 1e-16; `fwd44_cells` equals fwd-4.4's fields.
+  - Corner symmetry on the real card (corners reversed, the same snapshot, which the tool then mirrors): `p_a`, `p_method`,
+    `p_distance`, `p_finish_round`, `fwd44_cells` and the pool's method given the winner mirror exactly (max 1.7e-16).
+  - Inputs: only propspool.js and props.json (unchanged since 12:00 am Nov 7, before audit 1; at the pinned hashes) and the props
+    snapshot. No results.json exists, and nothing reads the vault.
+  - One defect fixed, outside the pinned tool code: tools/drift_monitor.py took the MoE tracked series by version prefix
+    (`fwd-4.3`, `fwd-4.4`), so on a fwd-4.5 bout whose `models.moe_noline` is null it would have tracked `p_a_noline` (the ML v2
+    no-line stack) as the MoE series. It now treats `fwd-4.5` like fwd-4.3 and 4.4 (tests/test_drift_monitor.py check 8). The
+    ledger tools and their hashes above are unchanged.
+  - Left as is (rounding only): the debut secondary is composed with the file's 5-decimal `p_a`, while the debut primary uses the
+    unrounded `p_a` (they differ by at most 5e-6).
 
 ## Card snapshot notes (`cards_upcoming.json`)
 
