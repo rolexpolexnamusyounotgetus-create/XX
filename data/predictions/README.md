@@ -1208,6 +1208,92 @@ fwd-4.5 files, fwd-4.2's "the bout's primary method cells" for the stat-line gri
   section, the two added pins and the vault flag.
 - **The page is out of scope.**
 
+### Addendum: fwd-4.5 implementation (Nov 7, 2026, about 1:45 pm UTC; before any fwd-4.5 file)
+
+The code was written after the README-only pre-registration commit (01bc97d, 1:22:07 pm UTC). It follows the rules above without
+changing them. The repository's autosave commits picked up in-flight edits between the commits (including page work from another
+workflow); none of them is a ledger file, and none touched src/ml/propspool.js, data/derived/props.json, a pinned input, a backtest
+file or the vault.
+
+- **Order.** Pre-registration 01bc97d (1:22:07 pm). tests/fixtures/forward_v44_golden.json first appears in autosave ab10e18
+  (1:23:32 pm) and, re-captured with one temporary path normalised, in ecd72ee (1:25:34 pm), which also holds the first fwd-4.5
+  code. Its `code_sha256_16_at_capture` equals the fwd-4.4 addenda's hashes, so it was captured from the tools before the edit.
+- **Tool code hashes** (sha256, first 16 hex), recorded in every fwd-4.5 file as `model.code_sha256_16`:
+  - `tools/forward_ledger.py` (1.5): 650844849df34de5
+  - `tools/forward_ledger.js`: 40339b2883ed58c1
+  - `tools/forward_statlines.js` (unchanged): a8ae3e47c01e87e6
+  - `tools/live_refresh.py` (unchanged): 3f5c10f95e00f7d0
+- **What the code adds.**
+  - JS: `--fwd 4.5` (the `--fwd 4.4` computation, `meta.fwd` "4.5") and the `--props-pool` mode. The mode returns before
+    anything else in the file loads, reads only src/ml/propspool.js and data/derived/props.json, refuses parameters other than
+    "production" and a non-zero `beta`, and reports both files' full sha256, which the ledger checks against the pins.
+  - Python `predict --fwd 4.5`: the snapshot choice, matching, mirroring and duplicate rule of item 1 (`latest_props_snapshot`,
+    `props_for_bout`); the pool pass on the finished fwd-4.4 bouts (`apply_props_45`, run with the unrounded fwd-4.4 cells and the
+    file's 5-decimal `p_a`); the check of item 2 (`props_pool_failed`); `p_method_secondary.fwd44_cells` and
+    `.debut_props_pool`; the `props_pool` record (including the oriented `m6` used); the model block (`props_pool`,
+    `props_snapshot`, `preregistration` with the two full-sha256 pins and the vault flag, tool 1.5); `--props-dir` for dry runs
+    only; `--fwd auto` picks fwd-4.5 from 2026-11-14.
+  - Python `score`: scores.json `method_secondary` and its scores.md tables (item 6). Every other block is unchanged, and a file
+    without a fwd-4.5 secondary gets no such block.
+- **Details the rules leave open, settled here.**
+  - `props_single_book` is set on any bout whose used entry has one book on `m6`, a debut bout's secondary included.
+  - In each bout, `props_pool` comes last; on a pooled bout `p_method_secondary` comes just before it. On a bout without method
+    props the fields before `props_pool` are fwd-4.4's, in fwd-4.4's order.
+  - The capture names entries by tools/props.py's own name match (similarity 0.8 to cards_upcoming.json). fwd-4.5 matches by
+    `bout_id` only, so an entry the capture could not name (BestFightOdds' "Bia Mesquita" for Beatriz Mesquita on Nov 7) counts
+    as no matching entry. That entry had no method props.
+- **Props capture** (the first after the pre-registration): `python3 tools/props.py capture --until 2026-11-15` at 1:33:44 pm UTC
+  wrote `props_snapshot_20261107-1333.json` (sha256-16 6bc8a7775226db21; 27 bouts on 4 BestFightOdds pages, 17 with method props).
+  It is committed with this addendum. UFC 334, 176 hours out: 2 of its 12 bouts have method props (Gane vs Hokit and Harrison vs
+  Nunes, 3 books each, the same 2 as in the 12:01 am snapshot).
+- **UFC 334 dry run** (`predict --event 2026-11-14 --dry-run`, fwd-4.5 by `--fwd auto`, 2,000 sims per corner order; live inputs as
+  of 2026-10-31; odds snapshot 20261106-2118; props snapshot 20261107-1333). It wrote nothing under data/predictions and read
+  every pin at its pinned hash (`pinned_inputs_ok` true). Against the fwd-4.4 dry run of the same minute:
+  - `p_a`, every `models` entry, `p_a_noline` and the stat-line blocks are identical on all 12 bouts;
+  - the 10 bouts without method props are identical in every field (the one addition is `props_pool`);
+  - the 2 pooled bouts change only `p_method`, `p_distance`, `p_finish_round` and `p_method_source`, and their
+    `p_method_secondary.fwd44_cells` equals fwd-4.4's fields:
+
+    | bout (p_a) | cells | a KO | a SUB | a DEC | draw | b DEC | b SUB | b KO | P(distance) |
+    |---|---|---|---|---|---|---|---|---|---|
+    | Gane vs Hokit (0.715) | fwd-4.4 | 0.380 | 0.085 | 0.246 | 0.005 | 0.073 | 0.024 | 0.188 | 0.323 |
+    | | fwd-4.5 | 0.388 | 0.086 | 0.237 | 0.005 | 0.088 | 0.049 | 0.146 | 0.330 |
+    | Harrison vs Nunes (0.650) | fwd-4.4 | 0.087 | 0.243 | 0.315 | 0.007 | 0.185 | 0.072 | 0.091 | 0.507 |
+    | | fwd-4.5 | 0.092 | 0.284 | 0.269 | 0.006 | 0.151 | 0.046 | 0.151 | 0.426 |
+
+  - Elder vs Sanches (the debut bout) has no method props, so no debut secondary is recorded.
+- **Tests.**
+  - `node tests/test_forward_v45.js` (about 30 s; 239 checks):
+    - fwd-4.4 (JS, both headlines; ledger documents on the live set, both headlines, and in fallback) byte-identical to
+      tests/fixtures/forward_v44_golden.json, and fwd-4.3 / 4.2 / 4.1 to tests/fixtures/forward_v43_golden.json;
+    - JS `--fwd 4.5` = `--fwd 4.4` apart from `meta.fwd`;
+    - with no props snapshot, or one without the card, every bout field equals fwd-4.4's;
+    - on a synthetic snapshot in a temporary folder:
+      - cells sum to 1 and keep `p_a` (unrounded check within 1e-9);
+      - an independent joint-linear pool reproduces the cells (max 5.1e-6, the 5-decimal rounding of its inputs);
+      - an independent log-linear pool reproduces the debut secondary;
+      - `fwd44_cells` equals fwd-4.4's fields;
+      - the duplicate, b / a, single-book, no-`m6`, late-fetch, no-entry, older-snapshot and replay rules hold;
+    - corner symmetry of the fwd-4.5 document with props (max 1e-5, rounding);
+    - the scoring arithmetic by hand;
+    - the guards, including a write refused when the props.json pin differs;
+    - the README table, full hashes and weights, and this hash list.
+  - tests/test_forward_v44.js, tests/test_forward_v43.js and tests/test_forward_v42.js now expect fwd-4.5 where `--fwd auto` and
+    the refusal messages name the version for events from 2026-11-14. test_forward_v44.js reads its code hashes from the fwd-4.4
+    section through the later sections, as the other two already did.
+  - Results: test_forward_v45.js 239/239, test_forward_v44.js 42/42, test_forward_v43.js 434/434, test_forward_v42.js 453/453,
+    test_forward_models.js PASS, test_forward_score42.py 271/271, test_propspool.js 732/732, test_drift_monitor.py and
+    test_props_capture.py 0 failures.
+- **Runbook per card** (fwd-4.4's, plus one step). Before the lock, next to the odds snapshot: `python3 tools/props.py capture`,
+  ideally T-25h to T-8h when most bouts have method props, then commit the snapshot. `predict --event <date>` (fwd-4.5 by default)
+  uses the newest snapshot taken before the lock.
+- **Still open** (outside the files this version owns; no rule is affected):
+  - tools/drift_monitor.py picks the MoE tracked series by version prefix (`fwd-4.3`, `fwd-4.4`). On a fwd-4.5 bout whose
+    `models.moe_noline` is null (the MoE stack failed on a bout without a debutant), it would track `p_a_noline` instead. It
+    should treat `fwd-4.5` like `fwd-4.4`. Every UFC 334 bout without a debutant has `moe_noline` today.
+  - tools/props_ledger.py's docstring and the "Props capture" section still say no forward version reads props. That stays
+    true of `<date>_<slug>.props.json`; fwd-4.5 reads the snapshot itself (item 1).
+
 ## Card snapshot notes (`cards_upcoming.json`)
 
 - `order` 1 is the main event, then down the card. `segment` is `main`, `prelims`, `early_prelims`

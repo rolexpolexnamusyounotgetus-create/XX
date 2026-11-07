@@ -306,7 +306,7 @@ def props_for_bout(snapt, bid, lock):
     rec = {"found": True, "entry": {"index": i, "event_slug": x.get("event_slug"), "fetched_utc": x.get("fetched_utc"),
                                     "page_t1": x.get("page_t1"), "page_t2": x.get("page_t2"), "rounds": x.get("rounds"),
                                     "flipped_from_snapshot": flip, "families_present": x.get("families_present"),
-                                    "n_books": cons.get("n_books")},
+                                    "n_books": cons.get("n_books"), "m6": cons.get("m6")},
            "other_entries": [{"index": c[3], "event_slug": c[4].get("event_slug"), "n_books_m6": c[0]} for c in cands[1:]],
            "has_method_props": has_method_props(cons)}
     fu = x.get("fetched_utc")
