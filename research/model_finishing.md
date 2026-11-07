@@ -25,9 +25,11 @@ The finishing model is kept as a monitored candidate for the forward ledger and 
    - method given the winner -0.0038 [-0.0083, +0.0010];
    - round given a finish -0.0067 [-0.0150, +0.0019].
 
-   The gate's blend (beta 0.70) scores 7-bin -0.0032 [-0.0063, +0.0001] and joint -0.0072 [-0.0115, -0.0027]. Most
-   of the joint gain comes from the round model, and on 2020-2023 that same round model made round-given-finish worse
-   (+0.0007). The decision follows CV, so these numbers are a confirmation look only.
+   The gate's blend (beta 0.70) scores 7-bin -0.0032 [-0.0063, +0.0001] and joint -0.0072 [-0.0115, -0.0027]. About
+   half of the joint gain comes from the round model (round part, joint minus 7-bin: -0.0046 [-0.0096, +0.0004], not
+   significant on its own), and on 2020-2023 that same round model made round-given-finish worse (+0.0007). The joint
+   CI is nominal: it is one of about 20 comparisons (4 models x 5 metrics) in a window that earlier labs have already
+   used heavily. The decision follows CV, so these numbers are a confirmation look only.
 4. **Nothing else earned a place:**
    - GBM: 7-bin +0.010 on 2020-2023 vs the logit.
    - The opponent-adjusted finishing filter: -0.0003 on top of the EB block, under the 0.0005 rule.
