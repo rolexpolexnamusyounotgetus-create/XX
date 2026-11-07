@@ -1,6 +1,9 @@
 # Engine roadmap: v3 to v10
 
-**Status, Nov 7, 2026, 3:40 am ET (after v7's train gate).** The current validated engine is still **v4 (4.0.0)**. v7 (cycle 2,
+**Status, Nov 7, 2026, 5:05 am ET (after v8's train gate).** The current validated engine is still **v4 (4.0.0)**. v8 (cycle 3,
+stat-line fidelity: embedding blend, realised-rate retarget toward the statlines layer, takedown-intent / control-spread draws, on
+the v4 simulator) was built and frozen; its binding train gate kept no sub-part: no pre-registration, no look (docs/CHANGELOG.md v8).
+Earlier status (3:40 am ET, after v7's train gate): the current validated engine is still **v4 (4.0.0)**. v7 (cycle 2,
 market props, on the v4 simulator with cycle 1 re-bundled) was built and frozen, and its binding train gate failed one marginal
 check (cycle 1's close-regime winner bound vs the honest v4 package; cycle 2's own checks passed): no pre-registration, no look
 (docs/CHANGELOG.md v7). Earlier status (3:00 am ET, after v6 and its review): the current validated engine is **v4 (4.0.0)**. v6 (the
@@ -45,7 +48,9 @@ What remains, in the order of docs/V6_V10_PLAN.md section 3 (re-ranked after v5.
    honest per-year comparator inputs, one refit schedule for both packages, power from the gate's SE and 20,000-resample CIs
    (V6_V10_PLAN 7.1 item 10; docs/BACKLOG.md "v7 gate and look requirements"). The v5-lineage simulator has used its re-bundle;
    predict() therefore has to be carried onto the v4 simulator (refusing, not falling back, when FightBlend is missing).
-3. **v8 (cycle 3): stat-line fidelity** (control, attempts; the one cycle most likely to pass).
+3. **v8 (cycle 3): stat-line fidelity** (control, attempts; the one cycle most likely to pass). (Done Nov 7: built on v4, binding
+   train gate FAILED, no sub-part kept: the retarget improved total stat-line deviance on train but missed the 7-bin / method
+   +0.002 bounds and a SUB base-rate tolerance the comparator also misses; control MAE worsens; versions/v8-gate-failed/.)
 4. **v9 (cycle 4): levels and drift.** The 2024 knockdown and KO drop (glove trial and early 2024) is the main open level question;
    handle dated breaks as variance bumps on the forward ledger, never as a tilt fit on 2024-25.
 5. **v10 (cycle 5): newcomers, explainer, the page.** The page currently runs v4; a v5+ page must pass tests/test_page_parity.js.

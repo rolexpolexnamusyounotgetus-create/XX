@@ -64,6 +64,16 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- ENGINE v8 GATE FAILED (Nov 7, ~10:00 UTC; docs/CHANGELOG.md v8; version_history.json v8 `status: gate_failed`, `train_gate`;
+  versions/v8-gate-failed/): v8 = the v4 simulator + cycle 3 (stat-line fidelity) behind flags: embedding blend, realised-rate
+  retarget toward the statlines layer (like-for-like pilot, leak-free forward-chained statlines fold tables), takedown-intent /
+  control-spread draws (sd 1.1 / 0, only on retargeted matchups). Binding gate run once under data/derived/v8/gate_protocol.json
+  (committed 1d8e729 first) vs v4 on honest inputs, 2020-2023: NO sub-part kept. Retarget: total stat-line deviance -0.38%
+  [-0.74, -0.01], control -1.36 s, winner -0.0033 n.s., but 7-bin / method upper bounds above +0.002 and SUB share out of
+  tolerance (cmp4 is out too); embed no gain; TD intent fixes the takedown PIT (0.79 / 0.11) but worsens deviance; control spread
+  fits to 0. Descriptive all-on vs v4: control deviance -3.2 s [-5.4, -1.1] BUT control MAE +1.7 s [+0.8, +2.6]. No
+  pre-registration, no look, src/ stays v4. A next attempt needs a new protocol; re-specify the 7-bin / method bound and the
+  absolute base-rate check before running, never from this run. tools/evalv.js now reports per-stat PIT coverage for every run.
 - ENGINE v7 GATE FAILED (Nov 7, ~08:36 UTC; docs/CHANGELOG.md v7; version_history.json v7 `status: gate_failed`, `train_gate`;
   versions/v7-gate-failed/): v7 = the v4 simulator + predict() with cycle 1 (ML v2 head stacks, S2 pool) re-bundled and cycle 2
   (the verified props pool; finishing not adopted by its verifier, not in v7). Binding gate run once under data/derived/v7/

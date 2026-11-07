@@ -5,6 +5,63 @@ Each engine version records its held-out numbers here (docs/ROADMAP.md). From v4
 2026-01-01 is in the sealed vault (docs/BACKLOG.md "Hidden-data protocol"). Older entries that say "test" meant 2024-01-01 to the
 snapshot; that window is retired.
 
+## v8 (2026-11-07): stat-line fidelity built and frozen; binding train gate FAILED (no sub-part kept); no pre-registration, no look; v4 (4.0.0) stays
+
+**Outcome.** v8 = the v4 simulator (bit for bit with every v8 flag off) + cycle 3 of docs/V6_V10_PLAN.md behind flags, with the
+verified statlines layer (research/model_statlines.md) as the retarget goal. The binding train gate (protocol committed first,
+1d8e729; run once, 09:56-10:00 UTC) kept no sub-part, so there is no pre-registration and no 2024-25 look. src/ is v4 again
+(6c661f68 / e16a6481 / b563032d); the candidate is frozen in versions/v8-gate-failed/ (versions/v8 is a symlink). Nothing
+dated 2024 or later was simulated or scored by any v8 run; 2026 was never read. Base (plan 4.1): v5 was rejected, so v8 builds
+on v4 and SOS "wf" is absent (the overlap ablation is moot).
+
+**What was built (engine 8.0.0, params 8.0.0-selfcal-pre2024).**
+- `components.embed`: the embedding blend of the learned targets (the v6 engine's code; backtests get the fold-honest per-year
+  recipe embed_blend_fh.json through tools/mlpathrec.js, 2019 = identity).
+- `components.retarget`: a realised-rate retarget in matchup() toward statdist engineTargets. A pilot of 200 simulations per
+  corner order and iteration (fixed seeds, canonical pair order, so A-B and B-A get identical per-fighter corrections; cached and
+  replayed bit for bit), 2 iterations, damped (s = 0.9 n / (n + 20)), capped by mlMaxRatio. Like for like: each pilot simulation
+  is compared with the statlines mean at its own length and finished status (full-length rates for decisions, a finished-fight
+  grid interpolated log-log for stoppages). Levers: takedown attempt rate, control target (then the occupancy refit, with a
+  substep integrator), takedown odds, attempts by position, strike accuracy odds (two-margin logit fit). Knockdown, conversion
+  and stoppage levers untouched. Leak-free targets for train: tools/v8_statlines_folds.py refits statlines' pre-registered
+  choice forward-chained (f2020..f2023 fit on 2019..Y-1; the dev refit reproduces statlines.json exactly and the folds reproduce
+  statlines_oof.json), tools/v8_targets.js evaluates them with src/ml/statdist.js (JS = Python to 2e-15); 2019 has no table.
+- `components.tdIntent` / `ctrlSpread`: fight-level mean-1 lognormal takedown intent / top-stint length per fighter from an
+  auxiliary generator (the main stream is untouched), acting only on a retargeted matchup; sds fit on 2019-2023 PITs: td 1.1
+  (the smallest value meeting the plan's band; v4's takedown band held 0.68 inside / 0.15 above P90), ctrl 0 (the intent draw
+  alone calibrates control: 0.80 / 0.10 / 0.10).
+- tools/evalv.js: retarget targets for engines with components.retarget, and a per-stat PIT coverage diagnostic for every run
+  (plan cycle 3 item 5; output only). tests/test_v8.js (26 checks, including flag-off identity vs versions/v4).
+
+**Train gate** (tools/v8_gate.js harness, tools/v8_gate.py RULES; 2020-2023 binding scope, 1,606 fights, both orders, 300 sims,
+seed 8, common random numbers; comparator cmp4 = v4 on the same honest inputs; 20,000 event-cluster resamples):
+
+| sub-part (all minus without) | total 10-stat deviance | control deviance | winner | 7-bin | method | verdict |
+|---|---|---|---|---|---|---|
+| retarget | -0.38% [-0.74, -0.01] | -1.36 s [-2.79, +0.08] | -0.0033 [-0.0069, +0.0004] | +0.0037 [-0.0103, +0.0189] | +0.0037 [-0.0008, +0.0081] | dropped: K5 7-bin / method upper > +0.002; K6 SUB |
+| embed | +0.18% [-0.10, +0.46] | +0.46 s [-0.32, +1.25] | -0.0007 | +0.0016 | +0.0016 | dropped: no gain, control MAE +0.45 s [+0.11, +0.78] |
+| tdIntent | +0.26% [+0.004, +0.52] | -0.14 s | +0.0006 | -0.0080 | +0.0016 | dropped: takedown PIT 0.794 / 0.105 vs 0.685 / 0.152 (S1 passes) but deviance worse (S2) |
+| ctrlSpread | 0 | 0 | 0 | 0 | 0 | dropped: sd 0, a no-op |
+
+K6 (base rates inside the mlcal tolerances) fails for every sub-part through the SUB share of the all-on arm (16.6% vs 18.5%
+actual); cmp4 itself is outside (16.8%). Descriptive, not a gate result: all flags on vs cmp4, total -0.80% [-1.35, -0.24],
+control deviance -3.24 s [-5.37, -1.13], TD attempts -0.085 [-0.137, -0.034], winner -0.0080 [-0.0125, -0.0036], but control
+MAE +1.72 s [+0.83, +2.61] and sub attempts deviance +0.012 [+0.001, +0.023]: it would fail as a package too. Standard train
+evaluation of the all-on candidate: data/derived/evalv/v8_train.json (control deviance 154.1 vs v7/v4-on-honest-inputs 156.8).
+
+**Disclosed.** The design was developed on the same train fights before the protocol (data/derived/v8/gate_protocol.json lists
+every development run and the changes they informed: decision-subset -> all-simulation matching, takedown odds lever, substep
+integrator, an elasticity step tried and reverted, stratified pilot draws, the sd rule, spread coupled to the retarget, the
+2020-2023 scope). The binding run used a fresh seed, so it guards against Monte Carlo luck and wiring errors more than it tests
+those choices. Tolerated test: test_page_parity (2 checks: the page does not bundle FightEmbed; the page is not rebuilt in this
+cycle). 33 of 34 test jobs pass on the candidate (data/derived/v8/tests/).
+
+**For a next attempt** (new design and a new protocol before its gate; this run must not pick the comparator, tolerances or
+sub-parts): two registered criteria were near-unpassable on this data and should be re-specified before any run: the +0.002
+upper bound on 7-bin / method (paired train half-widths ~0.015 / ~0.005) and an absolute base-rate tolerance the comparator
+itself misses (SUB). The substantive obstacle is control MAE: retargeting the control mean worsens its MAE, as the statlines
+verifier warned.
+
 ## v7 (2026-11-07): built and frozen; binding train gate FAILED on one marginal check; no pre-registration, no look; v4 (4.0.0) stays
 
 **Outcome.** v7 = the v4 simulator (unchanged, bit for bit) + FightEngine.predict carrying cycle 1 of docs/V6_V10_PLAN.md

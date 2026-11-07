@@ -620,9 +620,9 @@
      "logloss_with": 0.5788248485320001,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -8.727629959482959e-7,
-      "lo": -0.0000015272600814283089,
-      "hi": -2.5655151717160004e-7,
+      "est": -8.727629959482959e-07,
+      "lo": -1.5272600814283089e-06,
+      "hi": -2.5655151717160004e-07,
       "p_gt0": 0.002
      },
      "n": 845
@@ -632,9 +632,9 @@
      "logloss_with": 0.5930335681784208,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -1.0099141584613298e-7,
-      "lo": -1.8138076015023744e-7,
-      "hi": -1.882505288986469e-8,
+      "est": -1.0099141584613298e-07,
+      "lo": -1.8138076015023744e-07,
+      "hi": -1.882505288986469e-08,
       "p_gt0": 0.0105
      },
      "n": 845
@@ -1454,9 +1454,9 @@
      "logloss_with": 0.5930319721344538,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -0.0000016970353827425062,
-      "lo": -0.000002435549185916011,
-      "hi": -9.44685467941618e-7,
+      "est": -1.6970353827425062e-06,
+      "lo": -2.435549185916011e-06,
+      "hi": -9.44685467941618e-07,
       "p_gt0": 0
      },
      "n": 845
@@ -2295,9 +2295,9 @@
      "logloss_with": 0.5788099923758476,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -0.0000157289191484635,
-      "lo": -0.00003115957049440681,
-      "hi": -2.182334234371639e-7,
+      "est": -1.57289191484635e-05,
+      "lo": -3.115957049440681e-05,
+      "hi": -2.182334234371639e-07,
       "p_gt0": 0.0235
      },
      "n": 845
@@ -2312,9 +2312,9 @@
       "hi": 0,
       "p_gt0": null,
       "raw": {
-       "est": -2.947697791072808e-7,
-       "lo": -4.819442412118878e-7,
-       "hi": -1.0681580458083556e-7,
+       "est": -2.947697791072808e-07,
+       "lo": -4.819442412118878e-07,
+       "hi": -1.0681580458083556e-07,
        "p_gt0": 0.002
       },
       "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
@@ -5284,7 +5284,7 @@
      "v4": 0.9399330733473251,
      "v5.0.1": 0.9399711317868685,
      "S": 0.9359561823360422,
-     "diff": 0.00004,
+     "diff": 4e-05,
      "ci95": [
       -0.00963,
       0.00979
@@ -6615,7 +6615,7 @@
           "diff": -0.00095,
           "ci": [
            -0.00192,
-           0.00008
+           8e-05
           ]
          },
          "acc": {
@@ -7162,7 +7162,7 @@
         "diff": -0.00331,
         "ci95": [
          -0.00651,
-         -0.00004
+         -4e-05
         ]
        },
        "bin7": {
@@ -7190,7 +7190,7 @@
         "diff": -0.0014,
         "ci95": [
          -0.0028,
-         0.00008
+         8e-05
         ]
        }
       }
@@ -7564,7 +7564,7 @@
          "diff": -0.00492,
          "ci95": [
           -0.00993,
-          -0.00008
+          -8e-05
          ]
         }
        }
@@ -8327,7 +8327,7 @@
      "C1 close winner: CI upper <= +0.0005": {
       "pass": false,
       "boot_upper": 0.00054,
-      "mcse_upper": 0.000029,
+      "mcse_upper": 2.9e-05,
       "normal_upper": 0.0006,
       "threshold": 0.0005,
       "marginal": true,
@@ -8536,8 +8536,8 @@
          -0.00097
         ],
         "ci_mcse": [
-         0.000049,
-         0.00004
+         4.9e-05,
+         4e-05
         ],
         "normal_ci95": [
          -0.00967,
@@ -8551,8 +8551,8 @@
          -0.00967
         ],
         "ci_mcse": [
-         0.000057,
-         0.000055
+         5.7e-05,
+         5.5e-05
         ],
         "normal_ci95": [
          -0.02656,
@@ -8566,8 +8566,8 @@
          -0.00228
         ],
         "ci_mcse": [
-         0.000066,
-         0.000046
+         6.6e-05,
+         4.6e-05
         ],
         "normal_ci95": [
          -0.01381,
@@ -8581,8 +8581,8 @@
          -0.01017
         ],
         "ci_mcse": [
-         0.000056,
-         0.000057
+         5.6e-05,
+         5.7e-05
         ],
         "normal_ci95": [
          -0.02734,
@@ -8596,8 +8596,8 @@
          -0.00034
         ],
         "ci_mcse": [
-         0.000024,
-         0.000018
+         2.4e-05,
+         1.8e-05
         ],
         "normal_ci95": [
          -0.00421,
@@ -8611,8 +8611,8 @@
          -0.00382
         ],
         "ci_mcse": [
-         0.000071,
-         0.000056
+         7.1e-05,
+         5.6e-05
         ],
         "normal_ci95": [
          -0.01992,
@@ -8623,15 +8623,15 @@
         "diff": -0.00127,
         "ci95": [
          -0.00249,
-         -0.00005
+         -5e-05
         ],
         "ci_mcse": [
-         0.000017,
-         0.000012
+         1.7e-05,
+         1.2e-05
         ],
         "normal_ci95": [
          -0.00248,
-         -0.00005
+         -5e-05
         ]
        }
       }
@@ -8678,8 +8678,8 @@
          -0.00111
         ],
         "ci_mcse": [
-         0.00004,
-         0.00005
+         4e-05,
+         5e-05
         ],
         "normal_ci95": [
          -0.01185,
@@ -8693,8 +8693,8 @@
          -0.01056
         ],
         "ci_mcse": [
-         0.000068,
-         0.000052
+         6.8e-05,
+         5.2e-05
         ],
         "normal_ci95": [
          -0.02787,
@@ -8708,8 +8708,8 @@
          -0.00206
         ],
         "ci_mcse": [
-         0.000055,
-         0.000052
+         5.5e-05,
+         5.2e-05
         ],
         "normal_ci95": [
          -0.01338,
@@ -8723,8 +8723,8 @@
          -0.01116
         ],
         "ci_mcse": [
-         0.00007,
-         0.000047
+         7e-05,
+         4.7e-05
         ],
         "normal_ci95": [
          -0.02868,
@@ -8738,8 +8738,8 @@
          -0.00056
         ],
         "ci_mcse": [
-         0.000024,
-         0.00003
+         2.4e-05,
+         3e-05
         ],
         "normal_ci95": [
          -0.00544,
@@ -8753,8 +8753,8 @@
          -0.00382
         ],
         "ci_mcse": [
-         0.000071,
-         0.000056
+         7.1e-05,
+         5.6e-05
         ],
         "normal_ci95": [
          -0.01992,
@@ -8768,8 +8768,8 @@
          -0.00011
         ],
         "ci_mcse": [
-         0.00002,
-         0.000017
+         2e-05,
+         1.7e-05
         ],
         "normal_ci95": [
          -0.00261,
@@ -8822,8 +8822,8 @@
          0.00054
         ],
         "ci_mcse": [
-         0.000039,
-         0.000029
+         3.9e-05,
+         2.9e-05
         ],
         "normal_ci95": [
          -0.00541,
@@ -8837,8 +8837,8 @@
          -0.00422
         ],
         "ci_mcse": [
-         0.000067,
-         0.00007
+         6.7e-05,
+         7e-05
         ],
         "normal_ci95": [
          -0.02071,
@@ -8852,12 +8852,12 @@
          0.00015
         ],
         "ci_mcse": [
-         0.000055,
-         0.000059
+         5.5e-05,
+         5.9e-05
         ],
         "normal_ci95": [
          -0.01224,
-         0.00009
+         9e-05
         ]
        },
        "joint": {
@@ -8867,8 +8867,8 @@
          -0.00485
         ],
         "ci_mcse": [
-         0.00006,
-         0.000076
+         6e-05,
+         7.6e-05
         ],
         "normal_ci95": [
          -0.02147,
@@ -8882,8 +8882,8 @@
          0.0003
         ],
         "ci_mcse": [
-         0.000018,
-         0.000011
+         1.8e-05,
+         1.1e-05
         ],
         "normal_ci95": [
          -0.00238,
@@ -8897,8 +8897,8 @@
          -0.0005
         ],
         "ci_mcse": [
-         0.000071,
-         0.000089
+         7.1e-05,
+         8.9e-05
         ],
         "normal_ci95": [
          -0.01773,
@@ -8912,8 +8912,8 @@
          -0.00011
         ],
         "ci_mcse": [
-         0.000018,
-         0.000013
+         1.8e-05,
+         1.3e-05
         ],
         "normal_ci95": [
          -0.00278,
@@ -8999,7 +8999,7 @@
        ],
        "ci_mcse": [
         0.000116,
-        0.000069
+        6.9e-05
        ],
        "normal_ci95": [
         -0.02209,
@@ -9058,8 +9058,8 @@
         0.00125
        ],
        "ci_mcse": [
-        0.000005,
-        0.000008
+        5e-06,
+        8e-06
        ],
        "normal_ci95": [
         -0.00025,
@@ -9090,8 +9090,8 @@
          0.00109
         ],
         "ci_mcse": [
-         0.000047,
-         0.000035
+         4.7e-05,
+         3.5e-05
         ],
         "normal_ci95": [
          -0.00564,
@@ -9121,7 +9121,7 @@
         ],
         "ci_mcse": [
          0.000145,
-         0.000095
+         9.5e-05
         ],
         "normal_ci95": [
          -0.03193,
@@ -9136,7 +9136,7 @@
         ],
         "ci_mcse": [
          0.000172,
-         0.000097
+         9.7e-05
         ],
         "normal_ci95": [
          -0.04551,
@@ -9150,8 +9150,8 @@
          0.00061
         ],
         "ci_mcse": [
-         0.00002,
-         0.000017
+         2e-05,
+         1.7e-05
         ],
         "normal_ci95": [
          -0.00237,
@@ -9180,8 +9180,8 @@
          0.00089
         ],
         "ci_mcse": [
-         0.000023,
-         0.000014
+         2.3e-05,
+         1.4e-05
         ],
         "normal_ci95": [
          -0.00223,
@@ -9229,7 +9229,7 @@
        ],
        "ci_mcse": [
         0.000101,
-        0.000078
+        7.8e-05
        ],
        "normal_ci95": [
         -0.02138,
@@ -9288,8 +9288,8 @@
         0.00119
        ],
        "ci_mcse": [
-        0.000005,
-        0.000008
+        5e-06,
+        8e-06
        ],
        "normal_ci95": [
         -0.00028,
@@ -9336,7 +9336,7 @@
        ],
        "ci_mcse": [
         0.000113,
-        0.000051
+        5.1e-05
        ],
        "normal_ci95": [
         -0.02073,
@@ -9395,8 +9395,8 @@
         0.00116
        ],
        "ci_mcse": [
-        0.000005,
-        0.000008
+        5e-06,
+        8e-06
        ],
        "normal_ci95": [
         -0.00032,
@@ -9434,7 +9434,7 @@
         ],
         "ci_mcse": [
          0.000121,
-         0.000057
+         5.7e-05
         ],
         "normal_ci95": [
          -0.02348,
@@ -9448,8 +9448,8 @@
          -0.00329
         ],
         "ci_mcse": [
-         0.000087,
-         0.000067
+         8.7e-05,
+         6.7e-05
         ],
         "normal_ci95": [
          -0.01807,
@@ -9464,7 +9464,7 @@
         ],
         "ci_mcse": [
          0.000121,
-         0.000057
+         5.7e-05
         ],
         "normal_ci95": [
          -0.02348,
@@ -9494,7 +9494,7 @@
         ],
         "ci_mcse": [
          0.00014,
-         0.000062
+         6.2e-05
         ],
         "normal_ci95": [
          -0.02365,
@@ -9508,11 +9508,11 @@
          0.00135
         ],
         "ci_mcse": [
-         0.000005,
-         0.000006
+         5e-06,
+         6e-06
         ],
         "normal_ci95": [
-         0.00008,
+         8e-05,
          0.00135
         ]
        }
@@ -9986,7 +9986,1200 @@
    "validation": null,
    "blend": null,
    "notes": [
-    "2026-11-07T10:01 train: v8 candidate (gate run once: FAILED, no sub-part kept); standard TRAIN evaluation of the gated configuration (all four flags on), descriptive"
+    "2026-11-07T10:01 train: v8 candidate (gate run once: FAILED, no sub-part kept); standard TRAIN evaluation of the gated configuration (all four flags on), descriptive",
+    "2026-11-07T10:03 v8 built (v4 simulator + cycle 3: embed, retarget toward statlines, tdIntent / ctrlSpread), protocol committed (1d8e729), binding train gate run once (09:56-10:00 UTC) and scored: FAIL (no sub-part kept). Status gate_failed; no pre-registration; validation null. Frozen candidate: versions/v8-gate-failed (engine cb68df43, params ce637891)."
+   ],
+   "status": "gate_failed",
+   "train_gate": {
+    "rule": "V6_V10_PLAN section 3 cycle 3 'Train-only acceptance test' (leave-one-out per sub-part, keep rules K1-K6 / S1-S2, package check vs cmp4) as implemented in the RULES block of tools/v8_gate.py; 7.1 item 10: comparator and rules committed first, binding run once, 20,000 event-cluster resamples (seed 7), Monte Carlo SE, marginal bounds decided by the clustered normal bound",
+    "protocol": {
+     "file": "data/derived/v8/gate_protocol.json",
+     "sha256": "cea693e092e5e86630c4950b76615efac477a43574ee8f5e4f95923b269b3086",
+     "commit": "1d8e729 (2026-11-07 09:55:28 UTC)"
+    },
+    "binding_run": {
+     "harness": "data/derived/v8/gate_train.json",
+     "harness_sha256": "64c65fe3a0c5251bb1dcbcd64c68c11e239ac0c7eb3156babd90a2475329b60c",
+     "score": "data/derived/v8/gate_train_score.json",
+     "score_sha256": "d3b463d1dbb05571dc63622cc17de69de1be46b28fef4db4a32be3ba629038ab",
+     "git_head_at_run": "1d8e7299c64b5b5af6109276f0290a04fd831e71",
+     "n_fights_run": 1999,
+     "n_fights_binding_2020_2023": 1606,
+     "failed_fights": 0,
+     "wall_s": 235,
+     "sims_per_order": 300,
+     "seed": 8,
+     "arms": [
+      "cmp4",
+      "all",
+      "-embed",
+      "-retarget",
+      "-tdIntent",
+      "-ctrlSpread"
+     ]
+    },
+    "result": "FAIL",
+    "reason": "no sub-part kept",
+    "kept": [],
+    "subparts": {
+     "embed": {
+      "kept": false,
+      "failed_checks": [
+       "K1 total relative deviance: CI upper < 0",
+       "K2 dev_sub_att not worse: CI lower <= 0",
+       "K3 mae_td_lnd not worse: CI lower <= 0",
+       "K3 mae_td_att not worse: CI lower <= 0",
+       "K3 mae_ctrl not worse: CI lower <= 0",
+       "K5 winLL: CI upper <= +0.002",
+       "K5 bin7: CI upper <= +0.002",
+       "K5 method: CI upper <= +0.002",
+       "K6 base rate SUB inside tolerance"
+      ],
+      "paired_all_minus_without": {
+       "total": {
+        "diff": 0.001772,
+        "ci": [
+         -0.00105,
+         0.004573
+        ]
+       },
+       "dev_ctrl": {
+        "diff": 0.457484,
+        "ci": [
+         -0.319232,
+         1.24925
+        ]
+       },
+       "dev_sig_att": {
+        "diff": 0.138296,
+        "ci": [
+         -0.110798,
+         0.385317
+        ]
+       },
+       "dev_sig_lnd": {
+        "diff": 0.096188,
+        "ci": [
+         -0.018928,
+         0.211855
+        ]
+       },
+       "dev_td_att": {
+        "diff": -0.007433,
+        "ci": [
+         -0.029999,
+         0.013573
+        ]
+       },
+       "dev_td_lnd": {
+        "diff": 0.002153,
+        "ci": [
+         -0.007188,
+         0.011408
+        ]
+       },
+       "dev_kd": {
+        "diff": -0.003758,
+        "ci": [
+         -0.010043,
+         0.0019
+        ]
+       },
+       "dev_sub_att": {
+        "diff": 0.012883,
+        "ci": [
+         0.004048,
+         0.022199
+        ]
+       },
+       "mae_ctrl": {
+        "diff": 0.448961,
+        "ci": [
+         0.112455,
+         0.778299
+        ]
+       },
+       "mae_td_att": {
+        "diff": 0.013987,
+        "ci": [
+         0.003338,
+         0.024434
+        ]
+       },
+       "mae_td_lnd": {
+        "diff": 0.004946,
+        "ci": [
+         0.001315,
+         0.008518
+        ]
+       },
+       "winLL": {
+        "diff": -0.000671,
+        "ci": [
+         -0.003509,
+         0.002154
+        ]
+       },
+       "bin7": {
+        "diff": 0.001613,
+        "ci": [
+         -0.014111,
+         0.017161
+        ]
+       },
+       "method": {
+        "diff": 0.001618,
+        "ci": [
+         -0.003295,
+         0.00654
+        ]
+       }
+      },
+      "pit_with": {
+       "td_att": {
+        "in80": 0.7939,
+        "gtP90": 0.1049,
+        "ltP10": 0.1012,
+        "n": 3212,
+        "ce": 0.0122
+       },
+       "ctrl": {
+        "in80": 0.8064,
+        "gtP90": 0.0943,
+        "ltP10": 0.0993,
+        "n": 3212,
+        "ce": 0.0127
+       }
+      },
+      "pit_without": {
+       "td_att": {
+        "in80": 0.7858,
+        "gtP90": 0.1143,
+        "ltP10": 0.0999,
+        "n": 3212,
+        "ce": 0.0285
+       },
+       "ctrl": {
+        "in80": 0.802,
+        "gtP90": 0.0959,
+        "ltP10": 0.1021,
+        "n": 3212,
+        "ce": 0.0082
+       }
+      }
+     },
+     "retarget": {
+      "kept": false,
+      "failed_checks": [
+       "K5 bin7: CI upper <= +0.002",
+       "K5 method: CI upper <= +0.002",
+       "K6 base rate SUB inside tolerance"
+      ],
+      "paired_all_minus_without": {
+       "total": {
+        "diff": -0.003831,
+        "ci": [
+         -0.007446,
+         -0.000127
+        ]
+       },
+       "dev_ctrl": {
+        "diff": -1.355461,
+        "ci": [
+         -2.791374,
+         0.078791
+        ]
+       },
+       "dev_sig_att": {
+        "diff": -0.186273,
+        "ci": [
+         -0.553263,
+         0.185169
+        ]
+       },
+       "dev_sig_lnd": {
+        "diff": -0.137417,
+        "ci": [
+         -0.312705,
+         0.040777
+        ]
+       },
+       "dev_td_att": {
+        "diff": -0.050411,
+        "ci": [
+         -0.090675,
+         -0.009887
+        ]
+       },
+       "dev_td_lnd": {
+        "diff": -0.004843,
+        "ci": [
+         -0.017611,
+         0.008044
+        ]
+       },
+       "dev_kd": {
+        "diff": 5e-05,
+        "ci": [
+         -0.003745,
+         0.003795
+        ]
+       },
+       "dev_sub_att": {
+        "diff": 0.003505,
+        "ci": [
+         -0.004346,
+         0.011087
+        ]
+       },
+       "mae_ctrl": {
+        "diff": 0.571756,
+        "ci": [
+         -0.049395,
+         1.195188
+        ]
+       },
+       "mae_td_att": {
+        "diff": -0.033962,
+        "ci": [
+         -0.052798,
+         -0.014872
+        ]
+       },
+       "mae_td_lnd": {
+        "diff": -0.002802,
+        "ci": [
+         -0.008151,
+         0.002472
+        ]
+       },
+       "winLL": {
+        "diff": -0.00327,
+        "ci": [
+         -0.00688,
+         0.000364
+        ]
+       },
+       "bin7": {
+        "diff": 0.003697,
+        "ci": [
+         -0.010314,
+         0.018881
+        ]
+       },
+       "method": {
+        "diff": 0.003662,
+        "ci": [
+         -0.000753,
+         0.008148
+        ]
+       }
+      },
+      "pit_with": {
+       "td_att": {
+        "in80": 0.7939,
+        "gtP90": 0.1049,
+        "ltP10": 0.1012,
+        "n": 3212,
+        "ce": 0.0122
+       },
+       "ctrl": {
+        "in80": 0.8064,
+        "gtP90": 0.0943,
+        "ltP10": 0.0993,
+        "n": 3212,
+        "ce": 0.0127
+       }
+      },
+      "pit_without": {
+       "td_att": {
+        "in80": 0.6852,
+        "gtP90": 0.1482,
+        "ltP10": 0.1666,
+        "n": 3212,
+        "ce": 0.2295
+       },
+       "ctrl": {
+        "in80": 0.7765,
+        "gtP90": 0.1174,
+        "ltP10": 0.1062,
+        "n": 3212,
+        "ce": 0.0471
+       }
+      }
+     },
+     "tdIntent": {
+      "kept": false,
+      "failed_checks": [
+       "S2 total relative deviance not worse: CI lower <= 0",
+       "S2 dev_sig_lnd not worse: CI lower <= 0",
+       "S2 dev_b_lnd not worse: CI lower <= 0",
+       "S2 dev_l_lnd not worse: CI lower <= 0",
+       "K5 winLL: CI upper <= +0.002",
+       "K5 bin7: CI upper <= +0.002",
+       "K5 method: CI upper <= +0.002",
+       "K6 base rate SUB inside tolerance"
+      ],
+      "paired_all_minus_without": {
+       "total": {
+        "diff": 0.002621,
+        "ci": [
+         3.6e-05,
+         0.005182
+        ]
+       },
+       "dev_ctrl": {
+        "diff": -0.139564,
+        "ci": [
+         -0.859304,
+         0.573038
+        ]
+       },
+       "dev_sig_att": {
+        "diff": 0.255681,
+        "ci": [
+         -0.023357,
+         0.527847
+        ]
+       },
+       "dev_sig_lnd": {
+        "diff": 0.142402,
+        "ci": [
+         0.009998,
+         0.269665
+        ]
+       },
+       "dev_td_att": {
+        "diff": 0.005974,
+        "ci": [
+         -0.013593,
+         0.025502
+        ]
+       },
+       "dev_td_lnd": {
+        "diff": 0.002719,
+        "ci": [
+         -0.00757,
+         0.013153
+        ]
+       },
+       "dev_kd": {
+        "diff": -0.003213,
+        "ci": [
+         -0.006614,
+         -0.0
+        ]
+       },
+       "dev_sub_att": {
+        "diff": 0.000707,
+        "ci": [
+         -0.005194,
+         0.007029
+        ]
+       },
+       "mae_ctrl": {
+        "diff": -0.085922,
+        "ci": [
+         -0.365834,
+         0.193277
+        ]
+       },
+       "mae_td_att": {
+        "diff": -0.0229,
+        "ci": [
+         -0.033241,
+         -0.012598
+        ]
+       },
+       "mae_td_lnd": {
+        "diff": -0.010189,
+        "ci": [
+         -0.01399,
+         -0.006454
+        ]
+       },
+       "winLL": {
+        "diff": 0.000598,
+        "ci": [
+         -0.002334,
+         0.003544
+        ]
+       },
+       "bin7": {
+        "diff": -0.008048,
+        "ci": [
+         -0.025214,
+         0.008096
+        ]
+       },
+       "method": {
+        "diff": 0.001633,
+        "ci": [
+         -0.002012,
+         0.005293
+        ]
+       }
+      },
+      "pit_with": {
+       "td_att": {
+        "in80": 0.7939,
+        "gtP90": 0.1049,
+        "ltP10": 0.1012,
+        "n": 3212,
+        "ce": 0.0122
+       },
+       "ctrl": {
+        "in80": 0.8064,
+        "gtP90": 0.0943,
+        "ltP10": 0.0993,
+        "n": 3212,
+        "ce": 0.0127
+       }
+      },
+      "pit_without": {
+       "td_att": {
+        "in80": 0.6846,
+        "gtP90": 0.1522,
+        "ltP10": 0.1631,
+        "n": 3212,
+        "ce": 0.2308
+       },
+       "ctrl": {
+        "in80": 0.7786,
+        "gtP90": 0.1102,
+        "ltP10": 0.1111,
+        "n": 3212,
+        "ce": 0.0427
+       }
+      },
+      "pit_ce_diff": {
+       "diff": -0.218555,
+       "ci": [
+        -0.237685,
+        -0.183199
+       ],
+       "ci_mcse": [
+        0.0002,
+        0.000523
+       ]
+      }
+     },
+     "ctrlSpread": {
+      "kept": false,
+      "failed_checks": [
+       "S1 PIT calibration error of ctrl improves: CI upper < 0",
+       "K6 base rate SUB inside tolerance"
+      ],
+      "paired_all_minus_without": {
+       "total": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "dev_ctrl": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "dev_sig_att": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "dev_sig_lnd": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "dev_td_att": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "dev_td_lnd": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "dev_kd": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "dev_sub_att": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "mae_ctrl": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "mae_td_att": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "mae_td_lnd": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "winLL": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "bin7": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       },
+       "method": {
+        "diff": 0.0,
+        "ci": [
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "pit_with": {
+       "td_att": {
+        "in80": 0.7939,
+        "gtP90": 0.1049,
+        "ltP10": 0.1012,
+        "n": 3212,
+        "ce": 0.0122
+       },
+       "ctrl": {
+        "in80": 0.8064,
+        "gtP90": 0.0943,
+        "ltP10": 0.0993,
+        "n": 3212,
+        "ce": 0.0127
+       }
+      },
+      "pit_without": {
+       "td_att": {
+        "in80": 0.7939,
+        "gtP90": 0.1049,
+        "ltP10": 0.1012,
+        "n": 3212,
+        "ce": 0.0122
+       },
+       "ctrl": {
+        "in80": 0.8064,
+        "gtP90": 0.0943,
+        "ltP10": 0.0993,
+        "n": 3212,
+        "ce": 0.0127
+       }
+      },
+      "pit_ce_diff": {
+       "diff": 0.0,
+       "ci": [
+        0.0,
+        0.0
+       ],
+       "ci_mcse": [
+        0.0,
+        0.0
+       ]
+      }
+     }
+    },
+    "levels_2020_2023": {
+     "cmp4": {
+      "dev": {
+       "sig_lnd": 23.6521,
+       "sig_att": 48.3729,
+       "h_lnd": 17.7892,
+       "b_lnd": 7.461,
+       "l_lnd": 6.9132,
+       "kd": 0.7158,
+       "td_lnd": 1.7864,
+       "td_att": 3.2793,
+       "ctrl": 159.8114,
+       "sub_att": 0.9286
+      },
+      "mae_ctrl": 109.9919,
+      "winLL": 0.66706,
+      "bin7": 1.6834,
+      "method": 0.9756,
+      "pit_td_att": {
+       "in80": 0.6768,
+       "gtP90": 0.161,
+       "ltP10": 0.1622,
+       "n": 3212,
+       "ce": 0.2463
+      },
+      "pit_ctrl": {
+       "in80": 0.7668,
+       "gtP90": 0.1264,
+       "ltP10": 0.1068,
+       "n": 3212,
+       "ce": 0.0664
+      },
+      "base_rates": {
+       "KO": {
+        "sim": 0.32383,
+        "actual": 0.31562,
+        "err": 0.0082,
+        "tol": 0.02,
+        "inside": true
+       },
+       "SUB": {
+        "sim": 0.1676,
+        "actual": 0.18469,
+        "err": -0.01709,
+        "tol": 0.015,
+        "inside": false
+       },
+       "DEC": {
+        "sim": 0.50857,
+        "actual": 0.49968,
+        "err": 0.00889,
+        "tol": 0.035,
+        "inside": true
+       },
+       "kd100": {
+        "sim": 0.76733,
+        "actual": 0.76079,
+        "err": 0.00654,
+        "tol": 0.0913,
+        "inside": true
+       },
+       "td15": {
+        "sim": 1.26155,
+        "actual": 1.34602,
+        "err": -0.08447,
+        "tol": 0.1346,
+        "inside": true
+       },
+       "ctrl15": {
+        "sim": 155.78534,
+        "actual": 166.75589,
+        "err": -10.97055,
+        "tol": 16.67559,
+        "inside": true
+       }
+      }
+     },
+     "all": {
+      "dev": {
+       "sig_lnd": 23.4469,
+       "sig_att": 48.0641,
+       "h_lnd": 17.6304,
+       "b_lnd": 7.4378,
+       "l_lnd": 6.8552,
+       "kd": 0.7139,
+       "td_lnd": 1.772,
+       "td_att": 3.1945,
+       "ctrl": 156.5757,
+       "sub_att": 0.9402
+      },
+      "mae_ctrl": 111.7084,
+      "winLL": 0.65903,
+      "bin7": 1.68542,
+      "method": 0.9801,
+      "pit_td_att": {
+       "in80": 0.7939,
+       "gtP90": 0.1049,
+       "ltP10": 0.1012,
+       "n": 3212,
+       "ce": 0.0122
+      },
+      "pit_ctrl": {
+       "in80": 0.8064,
+       "gtP90": 0.0943,
+       "ltP10": 0.0993,
+       "n": 3212,
+       "ce": 0.0127
+      },
+      "base_rates": {
+       "KO": {
+        "sim": 0.30835,
+        "actual": 0.31562,
+        "err": -0.00727,
+        "tol": 0.02,
+        "inside": true
+       },
+       "SUB": {
+        "sim": 0.16582,
+        "actual": 0.18469,
+        "err": -0.01887,
+        "tol": 0.015,
+        "inside": false
+       },
+       "DEC": {
+        "sim": 0.52583,
+        "actual": 0.49968,
+        "err": 0.02615,
+        "tol": 0.035,
+        "inside": true
+       },
+       "kd100": {
+        "sim": 0.78317,
+        "actual": 0.76079,
+        "err": 0.02238,
+        "tol": 0.0913,
+        "inside": true
+       },
+       "td15": {
+        "sim": 1.29261,
+        "actual": 1.34602,
+        "err": -0.05341,
+        "tol": 0.1346,
+        "inside": true
+       },
+       "ctrl15": {
+        "sim": 163.30145,
+        "actual": 166.75589,
+        "err": -3.45445,
+        "tol": 16.67559,
+        "inside": true
+       }
+      }
+     },
+     "-embed": {
+      "dev": {
+       "sig_lnd": 23.3507,
+       "sig_att": 47.9258,
+       "h_lnd": 17.5705,
+       "b_lnd": 7.4315,
+       "l_lnd": 6.8817,
+       "kd": 0.7177,
+       "td_lnd": 1.7698,
+       "td_att": 3.2019,
+       "ctrl": 156.1182,
+       "sub_att": 0.9274
+      },
+      "mae_ctrl": 111.2594,
+      "winLL": 0.6597,
+      "bin7": 1.68381,
+      "method": 0.97848,
+      "pit_td_att": {
+       "in80": 0.7858,
+       "gtP90": 0.1143,
+       "ltP10": 0.0999,
+       "n": 3212,
+       "ce": 0.0285
+      },
+      "pit_ctrl": {
+       "in80": 0.802,
+       "gtP90": 0.0959,
+       "ltP10": 0.1021,
+       "n": 3212,
+       "ce": 0.0082
+      },
+      "base_rates": {
+       "KO": {
+        "sim": 0.31305,
+        "actual": 0.31562,
+        "err": -0.00257,
+        "tol": 0.02,
+        "inside": true
+       },
+       "SUB": {
+        "sim": 0.17123,
+        "actual": 0.18469,
+        "err": -0.01347,
+        "tol": 0.015,
+        "inside": true
+       },
+       "DEC": {
+        "sim": 0.51572,
+        "actual": 0.49968,
+        "err": 0.01604,
+        "tol": 0.035,
+        "inside": true
+       },
+       "kd100": {
+        "sim": 0.78758,
+        "actual": 0.76079,
+        "err": 0.02678,
+        "tol": 0.0913,
+        "inside": true
+       },
+       "td15": {
+        "sim": 1.28041,
+        "actual": 1.34602,
+        "err": -0.06561,
+        "tol": 0.1346,
+        "inside": true
+       },
+       "ctrl15": {
+        "sim": 163.92489,
+        "actual": 166.75589,
+        "err": -2.831,
+        "tol": 16.67559,
+        "inside": true
+       }
+      }
+     },
+     "-retarget": {
+      "dev": {
+       "sig_lnd": 23.5843,
+       "sig_att": 48.2504,
+       "h_lnd": 17.7415,
+       "b_lnd": 7.4174,
+       "l_lnd": 6.8719,
+       "kd": 0.7139,
+       "td_lnd": 1.7768,
+       "td_att": 3.2449,
+       "ctrl": 157.9311,
+       "sub_att": 0.9367
+      },
+      "mae_ctrl": 111.1366,
+      "winLL": 0.6623,
+      "bin7": 1.68173,
+      "method": 0.97644,
+      "pit_td_att": {
+       "in80": 0.6852,
+       "gtP90": 0.1482,
+       "ltP10": 0.1666,
+       "n": 3212,
+       "ce": 0.2295
+      },
+      "pit_ctrl": {
+       "in80": 0.7765,
+       "gtP90": 0.1174,
+       "ltP10": 0.1062,
+       "n": 3212,
+       "ce": 0.0471
+      },
+      "base_rates": {
+       "KO": {
+        "sim": 0.3106,
+        "actual": 0.31562,
+        "err": -0.00502,
+        "tol": 0.02,
+        "inside": true
+       },
+       "SUB": {
+        "sim": 0.17023,
+        "actual": 0.18469,
+        "err": -0.01447,
+        "tol": 0.015,
+        "inside": true
+       },
+       "DEC": {
+        "sim": 0.51918,
+        "actual": 0.49968,
+        "err": 0.01949,
+        "tol": 0.035,
+        "inside": true
+       },
+       "kd100": {
+        "sim": 0.77132,
+        "actual": 0.76079,
+        "err": 0.01053,
+        "tol": 0.0913,
+        "inside": true
+       },
+       "td15": {
+        "sim": 1.29099,
+        "actual": 1.34602,
+        "err": -0.05503,
+        "tol": 0.1346,
+        "inside": true
+       },
+       "ctrl15": {
+        "sim": 162.58199,
+        "actual": 166.75589,
+        "err": -4.1739,
+        "tol": 16.67559,
+        "inside": true
+       }
+      }
+     },
+     "-tdIntent": {
+      "dev": {
+       "sig_lnd": 23.3045,
+       "sig_att": 47.8084,
+       "h_lnd": 17.5772,
+       "b_lnd": 7.3878,
+       "l_lnd": 6.8105,
+       "kd": 0.7171,
+       "td_lnd": 1.7692,
+       "td_att": 3.1885,
+       "ctrl": 156.7152,
+       "sub_att": 0.9395
+      },
+      "mae_ctrl": 111.7943,
+      "winLL": 0.65843,
+      "bin7": 1.69347,
+      "method": 0.97847,
+      "pit_td_att": {
+       "in80": 0.6846,
+       "gtP90": 0.1522,
+       "ltP10": 0.1631,
+       "n": 3212,
+       "ce": 0.2308
+      },
+      "pit_ctrl": {
+       "in80": 0.7786,
+       "gtP90": 0.1102,
+       "ltP10": 0.1111,
+       "n": 3212,
+       "ce": 0.0427
+      },
+      "base_rates": {
+       "KO": {
+        "sim": 0.30535,
+        "actual": 0.31562,
+        "err": -0.01028,
+        "tol": 0.02,
+        "inside": true
+       },
+       "SUB": {
+        "sim": 0.17402,
+        "actual": 0.18469,
+        "err": -0.01067,
+        "tol": 0.015,
+        "inside": true
+       },
+       "DEC": {
+        "sim": 0.52063,
+        "actual": 0.49968,
+        "err": 0.02095,
+        "tol": 0.035,
+        "inside": true
+       },
+       "kd100": {
+        "sim": 0.786,
+        "actual": 0.76079,
+        "err": 0.0252,
+        "tol": 0.0913,
+        "inside": true
+       },
+       "td15": {
+        "sim": 1.35178,
+        "actual": 1.34602,
+        "err": 0.00576,
+        "tol": 0.1346,
+        "inside": true
+       },
+       "ctrl15": {
+        "sim": 163.61373,
+        "actual": 166.75589,
+        "err": -3.14217,
+        "tol": 16.67559,
+        "inside": true
+       }
+      }
+     },
+     "-ctrlSpread": {
+      "dev": {
+       "sig_lnd": 23.4469,
+       "sig_att": 48.0641,
+       "h_lnd": 17.6304,
+       "b_lnd": 7.4378,
+       "l_lnd": 6.8552,
+       "kd": 0.7139,
+       "td_lnd": 1.772,
+       "td_att": 3.1945,
+       "ctrl": 156.5757,
+       "sub_att": 0.9402
+      },
+      "mae_ctrl": 111.7084,
+      "winLL": 0.65903,
+      "bin7": 1.68542,
+      "method": 0.9801,
+      "pit_td_att": {
+       "in80": 0.7939,
+       "gtP90": 0.1049,
+       "ltP10": 0.1012,
+       "n": 3212,
+       "ce": 0.0122
+      },
+      "pit_ctrl": {
+       "in80": 0.8064,
+       "gtP90": 0.0943,
+       "ltP10": 0.0993,
+       "n": 3212,
+       "ce": 0.0127
+      },
+      "base_rates": {
+       "KO": {
+        "sim": 0.30835,
+        "actual": 0.31562,
+        "err": -0.00727,
+        "tol": 0.02,
+        "inside": true
+       },
+       "SUB": {
+        "sim": 0.16582,
+        "actual": 0.18469,
+        "err": -0.01887,
+        "tol": 0.015,
+        "inside": false
+       },
+       "DEC": {
+        "sim": 0.52583,
+        "actual": 0.49968,
+        "err": 0.02615,
+        "tol": 0.035,
+        "inside": true
+       },
+       "kd100": {
+        "sim": 0.78317,
+        "actual": 0.76079,
+        "err": 0.02238,
+        "tol": 0.0913,
+        "inside": true
+       },
+       "td15": {
+        "sim": 1.29261,
+        "actual": 1.34602,
+        "err": -0.05341,
+        "tol": 0.1346,
+        "inside": true
+       },
+       "ctrl15": {
+        "sim": 163.30145,
+        "actual": 166.75589,
+        "err": -3.45445,
+        "tol": 16.67559,
+        "inside": true
+       }
+      }
+     }
+    },
+    "descriptive_all_vs_cmp4_not_a_gate_result": {
+     "file": "data/derived/v8/gate_train_descriptive.json",
+     "paired": {
+      "total": {
+       "diff": -0.007981,
+       "ci": [
+        -0.013517,
+        -0.002407
+       ]
+      },
+      "winLL": {
+       "diff": -0.008035,
+       "ci": [
+        -0.012485,
+        -0.003606
+       ]
+      },
+      "bin7": {
+       "diff": 0.002021,
+       "ci": [
+        -0.015481,
+        0.02019
+       ]
+      },
+      "method": {
+       "diff": 0.004501,
+       "ci": [
+        -0.001691,
+        0.010816
+       ]
+      },
+      "dev_sig_lnd": {
+       "diff": -0.205246,
+       "ci": [
+        -0.45446,
+        0.048062
+       ]
+      },
+      "dev_sig_att": {
+       "diff": -0.308762,
+       "ci": [
+        -0.804483,
+        0.188079
+       ]
+      },
+      "dev_td_lnd": {
+       "diff": -0.01449,
+       "ci": [
+        -0.033268,
+        0.004282
+       ]
+      },
+      "dev_td_att": {
+       "diff": -0.084798,
+       "ci": [
+        -0.137363,
+        -0.03345
+       ]
+      },
+      "dev_ctrl": {
+       "diff": -3.235774,
+       "ci": [
+        -5.365506,
+        -1.128492
+       ]
+      },
+      "dev_sub_att": {
+       "diff": 0.011638,
+       "ci": [
+        0.000824,
+        0.022793
+       ]
+      },
+      "mae_td_att": {
+       "diff": -0.017617,
+       "ci": [
+        -0.03861,
+        0.003588
+       ]
+      },
+      "mae_ctrl": {
+       "diff": 1.7165,
+       "ci": [
+        0.825613,
+        2.611544
+       ]
+      }
+     }
+    },
+    "power_not_computed": "no pre-registration (the gate failed), so no MDE / power for a look"
+   },
+   "prereg": null,
+   "prereg_note": "not written: the binding train gate failed (task rule and V6_V10_PLAN 6.2 item 4: the train gate must already have passed). No validation look is pre-registered or run; validation stays null.",
+   "decision": {
+    "kept": false,
+    "rule": "train gate (binding, run once under the protocol committed in 1d8e729) failed; no 2024-25 look",
+    "against": "cmp4 = v4 (4.0.0) on the same honest inputs (the candidate engine with every v8 flag off, bit-identical to versions/v4)",
+    "basis": "no sub-part met its keep rule on the 2020-2023 train fights. retarget: total relative 10-stat deviance -0.38% [-0.74%, -0.01%] (K1 passes), control -1.36 s [-2.79, +0.08], TD attempts -0.050 [-0.091, -0.010], winner -0.0033 [-0.0069, +0.0004]; FAILS K5 (7-bin +0.0037 [-0.0103, +0.0189], method +0.0037 [-0.0008, +0.0081], upper bounds above +0.002) and K6 (SUB share 16.6% vs 18.5% actual, outside +-1.5 pts; cmp4 itself is outside too, 16.8%). embed: total +0.18% [-0.10%, +0.46%], control MAE +0.45 s [+0.11, +0.78]: fails K1, K3, K5. tdIntent: takedown-attempt PIT in80 0.794 vs 0.685, above P90 0.105 vs 0.152 (S1 passes), but total deviance +0.26% [+0.004%, +0.52%] and sig / body / leg landed worse (S2 fails). ctrlSpread: sd fit 0, a no-op (S1 cannot pass). K6 SUB fails for every sub-part (the rule checks the arm with the sub-part, i.e. 'all').",
+    "descriptive_only": "arm all vs cmp4 (every flag on; not a gate check): total -0.80% [-1.35%, -0.24%], control deviance -3.24 s [-5.37, -1.13], TD attempts -0.085 [-0.137, -0.034], winner -0.0080 [-0.0125, -0.0036]; but control MAE +1.72 s [+0.83, +2.61] (the v4.0.1 / statlines-verifier warning: matching the control mean worsens its MAE), sub attempts deviance +0.012 [+0.001, +0.023], 7-bin +0.0020 [-0.0155, +0.0202], method +0.0045 [-0.0017, +0.0108]; it would fail K2, K3, K5 and K6 as a package too",
+    "action": "src/ restored to v4 (6c661f68 / e16a6481 / b563032d); the frozen candidate is versions/v8-gate-failed (versions/v8 is a compatibility symlink); no fwd version is pre-registered; tools/evalv.js keeps the v8 inputs (retarget targets) and gains the per-stat PIT coverage diagnostic for every version (output only)",
+    "lessons_for_a_next_attempt": "a next attempt needs a new design and a new protocol committed before its gate; this run must not be used to pick the comparator, the tolerances or the sub-parts. Two registered criteria were near-unpassable on this data and should be re-specified BEFORE any new run, not tuned to it: K5's +0.002 upper bound for 7-bin / method (paired train CI half-widths ~0.015 / ~0.005) and K6's absolute tolerance on a base rate the comparator itself misses (SUB). The control MAE worsening of any control-mean retarget (descriptive +1.7 s) is the substantive obstacle (research/model_statlines.md, verifier).",
+    "decided_at": "2026-11-07T10:03:28+00:00"
+   },
+   "known_exposures": [
+    "the v4 simulator's EM judging weights were fit on judges' rounds through 2026-10 (incl. 2024-25 and the vault); v8 and cmp4 share them; irrelevant to the train-only gate in kind",
+    "the statlines layer (the retarget's target) and the embedding blend were scored on 2024-25 in earlier research (a v8 look would have been a partial confirmation look); nothing of 2024-25 was used here",
+    "development runs on the same 2019-2023 fights informed the design before the protocol (data/derived/v8/gate_protocol.json development_runs_disclosed); the binding run used a fresh seed"
    ]
   }
  ],
