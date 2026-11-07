@@ -22,7 +22,20 @@
    method/round model's rescaled cells (so the scorer can refit the pool weight), pD, the stack fit used. Seeds: hash(fight
    id), the same for every package and kind (common random numbers; the simulators of two packages with identical engine
    code must give identical raw cells, asserted). The interval is skipped (interval: false): it never moves a point output.
-   Inputs per fight are leak-free exactly as tools/evalv.js / tools/predict_eval.js build them. Never reads a 2026 fight. */
+   Inputs per fight are leak-free exactly as tools/evalv.js / tools/predict_eval.js build them. Never reads a 2026 fight.
+
+   v7 (docs/V6_V10_PLAN.md cycle 2 + the cycle-1 re-bundle onto the v4 simulator; 7.1 item 10):
+   --pkg name=engineDir:v7     the v7 package (winner 'ml2stack', S2 cells, as mode v6) run with props OFF (opts.propsOn false), so the
+                               record holds the cycle-1 cells; the bout's de-vigged props consensus (data/derived/props.json, A/B in the
+                               data's orientation) is recorded once per fight in rec.props, and tools/v7_gate.py composes the props
+                               package from these pieces with forward-chained weights (src/ml/blend.js applyProps, checked JS = Python)
+   --pkg name=engineDir:cmp4   the honest v4 package (the latest kept version's package composition, as vault audit 1 "predict() v4
+                               base"): the same engine file with params.blend { winner 'stack' (MoE expert stack, close-trained `model`
+                               with a closing line, open-trained `model_open` with an opener, the absent block without a line), mrModel
+                               'S' (methodround S, SM with a closing line), debut / statDist / props off }; per-year stackers
+                               --cmp-stacks <prefix> (<prefix>2020.json ... <prefix>2023.json: fit on 2019..Y-1 with this engine's
+                               evalv rows); 2019-2020 rows use the fit through 2020 (flagged inSample; only used to fit pool weights)
+   Packages on the same engine file must produce identical simulator cells (common random numbers; asserted). */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -41,9 +54,9 @@ function loadBacktest() {
   return fights;
 }
 const r9 = (x) => (x == null || !isFinite(x) ? x : Math.round(x * 1e9) / 1e9);
-const CMP_STACKS = (dir) => ({ "2019": dir + "/cmp_stack_v501_fit2020.json", "2020": dir + "/cmp_stack_v501_fit2020.json",
-  "2021": dir + "/cmp_stack_v501_fit2020.json", "2022": dir + "/cmp_stack_v501_fit2021.json", "2023": dir + "/cmp_stack_v501_fit2022.json",
-  "2024": dir + "/cmp_stack_v501_fit2023.json", "2025": dir + "/cmp_stack_v501_fit2023.json" });
+const CMP_STACKS = (dir, prefix) => { const P = prefix || (dir + "/cmp_stack_v501_fit"); return { "2019": P + "2020.json", "2020": P + "2020.json",
+  "2021": P + "2020.json", "2022": P + "2021.json", "2023": P + "2022.json", "2024": P + "2023.json", "2025": P + "2023.json" }; };
+const CMP4_BLEND = { winner: "stack", mrModel: "S", debut: false, statDist: false, props: { on: false } };
 
 // ================================================================== worker
 if (!isMainThread) {
@@ -88,7 +101,8 @@ if (!isMainThread) {
     return p;
   }
   const XRS = PK.map((p, k) => (W.shared && k > 0) ? null : require(fs.existsSync(path.join(p.dir, "mlpathrec.js")) ? path.join(p.dir, "mlpathrec.js") : path.join(ROOT, "tools/mlpathrec.js"))(p.E, ROOT));
-  const PRs = PK.map((p) => require(path.join(ROOT, "tools/predictrec.js"))(p.E, ROOT, { stacks: CMP_STACKS(W.stackDir), inSample: true, v6: p.mode === "v6" }));
+  const PRs = PK.map((p) => require(path.join(ROOT, "tools/predictrec.js"))(p.E, ROOT, { stacks: CMP_STACKS(W.stackDir, W.cmpStacks), inSample: true,
+    v6: p.mode === "v6", v7: p.mode === "v7", blendPath: path.relative(ROOT, path.join(p.dir, "ml", "blend.js")) }));
   function baseOpts(f, k) {
     const OOF = OOFS[k], XR = XRS[k];
     const opts = { division: f.prior_division || f.division, rounds: f.rounds, title: f.title, date: f.date, priors: priors[f.date.slice(0, 4)] };
@@ -124,6 +138,16 @@ if (!isMainThread) {
           for (const kind of W.kinds) {
             const o = Object.assign({}, b, PRs[k].opts(f, false, { lineKind: kind }), { seed: hash32(f.id), sims: W.sims, interval: false });
             if (P.mode === "v5") { delete o.winnerStacks; delete o.winnerFit; }
+            if (P.mode === "v7") {
+              // cycle-1 cells (props off); the consensus is recorded once per fight for tools/v7_gate.py
+              if (o.props && !rec.props) rec.props = { m6: o.props.m6 || null, n_books: o.props.n_books || null, gd: o.props.gd == null ? null : o.props.gd };
+              o.propsOn = false;
+            }
+            if (P.mode === "cmp4") {
+              o.params = Object.assign({}, o.params || {}, { blend: Object.assign({}, ((o.params || {}).blend) || {}, CMP4_BLEND) });
+              delete o.props; delete o.winnerStacks; delete o.winnerFit;
+              if (+f.date.slice(0, 4) < 2021) o.inSample = true;   // the 2019-2020 rows use the stacker fit through 2020 (pool-weight fits only)
+            }
             const pk = P.E.predict(f.A, f.B, o);
             if (simRef === null) simRef = pk.sim.cells;
             else if (pk.sim.cells.some((v, i) => v !== simRef[i])) throw new Error("simulator cells differ between line kinds for " + f.id + " (" + P.name + " " + kind + ")");
@@ -136,6 +160,14 @@ if (!isMainThread) {
             };
           }
           if (simRef) rec.simCellsBy[P.name] = simRef.map(r9);
+        }
+        // common random numbers across packages that share an engine file (v7: the v7 and cmp4 packages run one simulator)
+        const byFile = {};
+        for (const P of PK) {
+          const c = rec.simCellsBy[P.name]; if (!c) continue;
+          const key = path.join(P.dir, "engine3.js");
+          if (byFile[key] && JSON.stringify(byFile[key]) !== JSON.stringify(c)) throw new Error("simulator cells differ between packages on " + key + " for " + f.id);
+          byFile[key] = c;
         }
       } catch (e) { rec.err = String((e && e.stack) || e).slice(0, 800); }
       out.push(rec);
@@ -162,7 +194,8 @@ const SPLIT = String(args.split || "train");
 if (!SPLITS[SPLIT]) { console.error("predict_harness: --split train | val"); process.exit(2); }
 if (!args.pkg.length) { console.error("predict_harness: --pkg name=engineDir:mode (v6 | v5) at least once"); process.exit(2); }
 const PKGS = args.pkg.map((s) => { const [name, rest] = s.split("="), i = rest.lastIndexOf(":"); return { name, dir: path.resolve(ROOT, rest.slice(0, i)), mode: rest.slice(i + 1) }; });
-for (const p of PKGS) if (p.mode !== "v6" && p.mode !== "v5") { console.error("predict_harness: mode must be v6 or v5"); process.exit(2); }
+for (const p of PKGS) if (["v6", "v5", "v7", "cmp4"].indexOf(p.mode) < 0) { console.error("predict_harness: mode must be v6, v5, v7 or cmp4"); process.exit(2); }
+if (PKGS.some((p) => p.mode === "cmp4") && !args["cmp-stacks"]) { console.error("predict_harness: mode cmp4 needs --cmp-stacks <prefix> (per-year stackers <prefix>2020.json ...)"); process.exit(2); }
 const KINDS = String(args.kinds || "close,open,none").split(",");
 const SIMS = +(args.sims || 300);
 const WORKERS = Math.max(1, Math.min(3, +(args.workers || 3)));
@@ -193,6 +226,11 @@ function checkProtocol() {
   try { gitOut(["ls-files", "--error-unmatch", rel]); } catch (e) { console.error("predict_harness: protocol " + rel + " is not tracked by git; commit it before the run"); process.exit(2); }
   try { gitOut(["diff", "--quiet", "HEAD", "--", rel]); } catch (e) { console.error("predict_harness: protocol " + rel + " differs from HEAD; commit it before the run"); process.exit(2); }
   const P = readJSON(rel), want = { split: SPLIT, input_pipelines: args["shared-inputs"] ? "shared" : "own", packages: args.pkg.slice(), out: String(OUT) };
+  // v7: a protocol may also fix the years, sims, kinds and comparator stackers; when it does, the command line must match
+  if (P.years !== undefined) want.years = args.years ? String(args.years) : null;
+  if (P.sims !== undefined) want.sims = SIMS;
+  if (P.kinds !== undefined) want.kinds = KINDS.join(",");
+  if (P.cmp_stacks !== undefined) want.cmp_stacks = args["cmp-stacks"] ? String(args["cmp-stacks"]) : null;
   for (const k of Object.keys(want)) {
     if (JSON.stringify(P[k]) !== JSON.stringify(want[k])) { console.error(`predict_harness: protocol ${rel} fixes ${k} = ${JSON.stringify(P[k])}, the command line gives ${JSON.stringify(want[k])}`); process.exit(2); }
   }
@@ -223,7 +261,7 @@ function runAll() {
       w.postMessage({ cmd: "run", ids: chunks[next++] });
     }
     for (let k = 0; k < Math.min(WORKERS, chunks.length); k++) {
-      const w = new Worker(__filename, { workerData: { pkgs: PKGS, kinds: KINDS, sims: SIMS, mlpathrec: MLP_FILE, stackDir: STACK_DIR,
+      const w = new Worker(__filename, { workerData: { pkgs: PKGS, kinds: KINDS, sims: SIMS, mlpathrec: MLP_FILE, stackDir: STACK_DIR, cmpStacks: args["cmp-stacks"] || null,
         oof: args.oof || null, v6From: +(args["v6-from"] || 2019), shared: !!args["shared-inputs"] } });
       live++;
       w.on("message", (m) => {
@@ -258,7 +296,10 @@ function runAll() {
       oof: args.oof || (+String(require(path.join(PKGS[0].dir, "engine3.js")).VERSION).split(".")[0] >= 6 ? "data/derived/mlrates_oof_fh.json" : "data/derived/mlrates_oof.json"),
       embed_recipe: "each package's frozen mlpathrec.js: fold-honest coef_fh for engine major >= 6 (data/derived/embed_blend_fh.json), leave-one-year-out / exported recipe before",
       input_pipelines: args["shared-inputs"] ? "shared (the first package's inputs for every package; sensitivity run)" : "own (each package's frozen mlpathrec.js and learned-rate table)",
-      cmp_stacks: CMP_STACKS("data/derived/v6") },
+      cmp_stacks: CMP_STACKS("data/derived/v6", args["cmp-stacks"] || null),
+      cmp_stacks_sha256: (() => { const o = {}; for (const [y, f] of Object.entries(CMP_STACKS("data/derived/v6", args["cmp-stacks"] || null))) { const fp = path.join(ROOT, f); if (fs.existsSync(fp)) o[y] = sha(fp); } return o; })(),
+      props_sha256: fs.existsSync(path.join(ROOT, "data/derived/props.json")) ? sha(path.join(ROOT, "data/derived/props.json")) : null,
+      market_sha256: sha(path.join(ROOT, "data/derived/market.json")), methodround_sha256: sha(path.join(ROOT, "data/derived/methodround.json")) },
     n_fights: recs.length, failed: recs.filter((r) => r.err).length, wall_s: Math.round((Date.now() - t0) / 1000) };
   fs.writeFileSync(path.isAbsolute(OUT) ? OUT : path.join(ROOT, OUT), JSON.stringify({ meta, fights: recs }));
   console.log(`wrote ${OUT}: ${recs.length} fights, ${meta.failed} failed, ${meta.wall_s} s`);
