@@ -82,6 +82,17 @@ reviewer's `v3p` ("v3 params + learned rates"). For every arm, delta = arm minus
   Each arm asserts its inputs were applied.
 - Metrics use evalv's definitions and smoothing. 2,000 event-date cluster resamples, the same for every arm and metric.
 
+## Tests
+
+- New tests/test_v5_calA.js (13 passed): src/engine3.js is step 5's byte for byte; only the components block and the label
+  changed in params3.js; the current engine with step 5's components passed explicitly reproduces the step-5 engine on step 5's
+  own params (tests/fixtures/params3_pre_calA.js) bit for bit over 450 matchups (random pairs with learned rates + roster + SOS +
+  step-4 inputs, plain tables, 2019-2023 backtest fights x 2 orders with every walk-forward input; whole fight JSON incl. traces,
+  summaries, explain()); the new defaults = the step-5 engine with the new block (300 matchups); components: false identical.
+- Tests whose fixtures predate the default change compare with v401.mlLevels pinned to their state (on): the strict groups of
+  test_v5_step3/4/5, the stored digest of test_realism_sens and the golden of test_officials. test_v401's default check and
+  test_engine3's mlLevels / koTargets checks name the sub-flag explicitly.
+
 ## Results (main run: every arm vs all on)
 
 Run: 1999 fights x 2 orders x 300 sims per arm, 211 event-date clusters, 2000 bootstrap resamples, errors 0, wall 369 s.
@@ -253,7 +264,8 @@ subConvScale 1.847 (koTargets' koComp factors still multiply the KO block after 
 - Rebuild blend_anchor's method x round cells (tools/blend_anchor_bt.js) and refit mrWeight / slope0 with these defaults.
 - Measure: evalv a frozen versions/v5/ with these params; the history entry's train block should reproduce the `final` arm's
   levels to Monte Carlo error (evalv uses one rng stream per fight and order; this harness uses one seed per simulated fight).
-- The page path changes only through mlLevels (Volkanovski vs Gaethje below).
+- The page path changes only through mlLevels. Volkanovski vs Gaethje (5 x 5 title, production learned rates, live durability
+  roster, 20,000 fights, information only): 62.8% Volk with the step-5 defaults, 62.1% with these (finish 48.2% -> 48.5%).
 
 ## Reproduce
 

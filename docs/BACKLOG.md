@@ -392,6 +392,13 @@ Findings from verified research that the next engine versions must use. Each lin
     - Merge fix: predict's mirrored run now swaps the v5 per-call inputs (dur, sos, embed, oppadj, preufc).
     - Calibrate rebuilds the method x round cells (tools/blend_anchor_bt.js, now with every v5 input), mrWeight and slope0 after
       the final flags. versions/v5/ must also include ml/blend.js, ml/moe.js, ml/ml2.js and ml/mlpage.js.
+  - Calibrate A done (~01:00 UTC Nov 7; research/v5_train_ablation.md, docs/CHANGELOG.md "v5 merge log"): train leave-one-out
+    (1,999 fights x 2 orders x 300 sims, soft CE vs the close primary). Defaults as merged except components.v401.mlLevels OFF
+    (neutral; its levels overshoot TD / control / SUB with embed on). Removal hurts: embed +0.0038, durability +0.0009, SOS +0.0009,
+    preufc +0.0004 (+ every outcome secondary); deductions / tdCap / koTargets neutral on soft CE but worse on 7-bin or method x
+    round without them; dynamics kept (structure). SOS over oppadj (+0.0005 [-0.0001, +0.0012] for oppadj). emJudge kept on as a
+    protocol exception (off = the all-cards EM through 2026-10; -0.0001 on train). v3 params + learned rates not better.
+    tests/test_v5_calA.js proves step 5's flags passed explicitly reproduce step 5 bit for bit.
 - blindtest harness (VERIFIED ~21:10 UTC, research/model_blindtest.md "Verification log"): independent no-cache
   replay, own scorer and own stacker reproduce every headline. MoE stack + close 0.5774 vs close 0.5854
   (-0.0081 [-0.0125, -0.0036], ahead on 56 of 84 cards); no-line stack ties the close (+0.0001); removing the

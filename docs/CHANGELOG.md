@@ -491,6 +491,82 @@ No validation (2024-2025) number is computed in these steps; the Measure stage t
   - Nothing from 2024-25 was scored and no 2026 fight was read. The one new fit (the pre-2024 stacker export) used only
     2019-2023 rows.
 
+### Calibrate A (Nov 6, 8:00 pm ET): leave-one-out train ablation, v5's default flags
+
+- **Base.** The step-5 commit 5251206 (src/engine3.js sha256 923ffd1b..., params3.js b63ee9ab...; the working tree matched). The
+  engine code is unchanged by this step; only params3.js's components block, comments and label changed.
+- **Ablation** (research/v5_train_ablation.md; new tools/v5_train_ablation.js, v5_train_ablation_mr.py, v5_train_ablation_report.py).
+  - TRAIN 2019-2023 only: 1,999 backtest_dev fights, both corner orders, 300 sims per order and arm. One seed per simulated fight,
+    the same in every arm (common random numbers that survive differing rng use, e.g. deductions after the last round).
+  - evalv's leak-free inputs, each asserted per arm: as-of priors, OOF learned rates, durrec, sosrec, mlpathrec.
+  - 13 arms: all on, all minus each component or v401 sub-flag, oppadj instead of SOS, and the reviewer's "v3 params + learned
+    rates". A confirmation run against the final defaults added v3pj (v3 params with the v5 judging).
+  - Metrics: soft-label CE vs the closing line (primary), winner, 7-bin, method, methodround's method x round and who x how x when
+    (its own scorer), stat-line deviance per target and total, base rates. Paired arm - all, 2,000 event-date cluster resamples.
+  - The decision rule was written into the report before the full run (neutral band 0.0005 on the primary).
+- **Result** (arm without the component minus all on; > 0 = it helps):
+
+  | component | soft CE vs close | best secondary | decision |
+  |---|---|---|---|
+  | embed | +0.0038 [+0.0030, +0.0047] | who x how x when +0.0150 [+0.0026, +0.0285] | on |
+  | durability | +0.0009 [+0.0004, +0.0015] | 7-bin +0.0065 [+0.0020, +0.0108] | on |
+  | SOS (vs neither) | +0.0009 [+0.0004, +0.0015] | 7-bin +0.0133 [+0.0041, +0.0243] | on; oppadj instead +0.0005 [-0.0001, +0.0012]: off |
+  | preufc | +0.0004 [-0.0000, +0.0009] | method x round +0.0071 [+0.0021, +0.0123]; winner +0.0034 [+0.0015, +0.0051] | on |
+  | dynamics (structure) | +0.0002 [-0.0005, +0.0009] | none either way | on |
+  | v401 deductions | +0.0000 [+0.0000, +0.0001] | 7-bin +0.0194 [+0.0067, +0.0345] | on |
+  | v401 tdCap | +0.0000 [-0.0000, +0.0001] | 7-bin +0.0002 [+0.0000, +0.0004] | on |
+  | v401 koTargets | +0.0001 [-0.0001, +0.0003] | method x round +0.0027 [+0.0001, +0.0051] | on |
+  | v401 mlLevels | -0.0001 [-0.0005, +0.0004] | none | **off** |
+  | v401 emJudge | -0.0001 [-0.0002, -0.0000] | none (7-bin -0.0006 n.s.) | on, protocol exception |
+  | v3 params + learned rates | v3p -0.0001 [-0.0006, +0.0005]; v3pj +0.0001 [-0.0003, +0.0005] vs final | | v4 set stays |
+
+- **Defaults set in src/params3.js** (label "5.0.0-dev.6-selfcal-pre2024"): `components.v401.mlLevels: false`; everything else as
+  merged. officials and realism_sens stay off and blend_anchor on (not ablated: off already / predict only).
+  - mlLevels off: neutral on the primary and on every secondary. With embed on, its learned-path levels overshoot: TD per 15
+    1.380 vs 1.306 actual, control 172 vs 163 s, SUB share 18.1% vs 17.5%. Off gives 1.300, 164 s and 17.5%, with KO 31.7% vs
+    31.7% actual.
+  - emJudge stays on against the rule's verdict. Its off state is v4's EM weights, fit on cards through 2026-10 (the validation
+    years and the vault), so it is not admissible under the hidden-data protocol. The train-only weights cost 0.0001 of soft CE.
+  - The final set is exactly the `-mlLevels` arm. The confirmation run reproduces it to the last digit.
+- **Disclosed deviations.**
+  - The verdict code treats |delta| < 1e-9 as 0. Without that, a float-rounding method delta of -3e-18 would have turned
+    deductions off.
+  - The v3pj arm was added after the main run.
+- **Tests (all pass).**
+  - New `node tests/test_v5_calA.js`: 13 passed.
+    - Engine byte-identical to step 5, and only components and the label differ in params.
+    - Step 5's components passed explicitly reproduce the step-5 engine on step 5's own params (fixture params3_pre_calA.js) bit
+      for bit over 450 matchups. The groups are random pairs with learned rates, roster, SOS and step-4 inputs; plain tables; and
+      2019-2023 backtest fights x 2 orders with every walk-forward input. Each compares whole fight JSON incl. traces, summaries
+      and explain().
+    - New defaults = the step-5 engine with the new block (300 matchups), and components: false is identical.
+  - Fixtures that predate the change now pin v401.mlLevels to their state (on):
+    - the strict groups of test_v5_step3 / 4 / 5;
+    - test_realism_sens' stored digest;
+    - test_officials' golden.
+  - test_v401's default check and test_engine3's mlLevels / koTargets checks name the sub-flag explicitly.
+  - `node tests/test_engine3.js 20000`: 81 passed. `node tests/test_director3.js 300`: OK, 300 of 300 with learned rates, and
+    `NO_ML=1 ... 100`: OK.
+  - test_mlrates 47 OK, test_v401 15, test_v5_step2 16, test_v5_step3 28, test_v5_step4 45, test_v5_step5 34, test_durability 34,
+    test_dynamics 23, test_mlcal 33, test_styles_sos 42, test_officials 24, test_realism_sens 45, test_blend_anchor 64, test_embed
+    OK, test_moe 21, test_mlpage 5, test_calib 14, test_statdist 3,059, test_forward_models PASS, test_blindtest_stack PASS,
+    test_ml2 365, test_forward_v42 457, test_debut 23, test_finishing 371, test_propspool 732.
+  - `python3 build.py <tmp>` builds (10.4 MB). The published page was not rebuilt.
+- **Volkanovski vs Gaethje** (information only; 5 x 5 title, production learned rates and durability roster, 20,000 fights):
+  62.8% Volk with the step-5 defaults, 62.1% with these; finish 48.2% -> 48.5%.
+- **For the next stages.**
+  - Calibrate B: run the joint KD level pass and the league-average selfcal re-fit with these flags. KD per 100 head is 0.759 vs
+    0.782 actual on train.
+    - mlLevels off puts v4.0.0's kdScale, kdInstant, kdRefStop, stko, gnpTko and subConvScale back.
+    - tools/v4_levels.js --write and test_engine3 --fit --write write the flag-on fields, which the default path no longer reads.
+  - Rebuild blend_anchor's method x round cells with these defaults, then refit mrWeight / slope0.
+  - Misfits no flag fixes:
+    - 3-round finish timing: R2 13.6% vs 16.7%, R3 8.9% vs 7.5%;
+    - 5-round R4 7.9% vs 5.3%;
+    - draws 0.59% vs 1.01%, MD 0.9% vs 2.0%;
+    - 10-8 share 4.5% vs 5.3%.
+  - Nothing from 2024-25 was simulated or scored, and no 2026 fight was read. No parameter was fit: the step chose flags only.
+
 ## v4.0.1 (2026-11-06): the v4 review's fixes, REJECTED; v4 (4.0.0) restored
 
 **Status: rejected by the decision rule.** The validation look ran once, at 11:45 am ET, paired against v4. The
