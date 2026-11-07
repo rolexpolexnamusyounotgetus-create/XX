@@ -668,7 +668,7 @@
     // engine v6
     if (o.winnerStacks !== undefined) STATE.winnerStacks = o.winnerStacks || null;
     if (o.mrS2 !== undefined) STATE.mrS2 = o.mrS2 ? (o.mrS2.js_model || o.mrS2) : null;
-    if (o.debut !== undefined) { var DL = debutLib(); STATE.debut = o.debut && DL ? { M: DL.load(o.debut.model || o.debut), lib: DL } : null; }
+    if (o.debut !== undefined) { var DL = debutLib(); STATE.debut = o.debut && DL ? { M: DL.load(o.debut.model || o.debut), lib: DL, model: o.debut.model || o.debut } : null; }
     if (o.statDist !== undefined) { var SL = statLib(); STATE.statDist = o.statDist && SL ? SL.load(o.statDist, { which: "prod" }) : null; }
     if (o.ml2Trees !== undefined) { var TL = treesLib(); STATE.ml2Trees = o.ml2Trees && TL ? TL.load(o.ml2Trees) : null; }
     if (o.preufc !== undefined) STATE.preufc = o.preufc || null;
@@ -703,6 +703,77 @@
       opts.mrFitThrough + " are not walk-forward for a fight on " + date);
     return ft;
   }
+  // ------------------------------------------------------------------ engine v6: ML v2 heads by line regime, S2, debut
+  var V6_BLOCK = { none: "none", open: "open", close: "close" };
+  /** The v6 winner stack for line kind `kind` (routing: 'none' -> the no-line stack, 'open' -> the OPEN-trained stack,
+      'close' -> the close-trained stack; an opener never reaches close-trained weights) and ML v2 head `head` ('blend' |
+      'lr'): { key, inputs, weights, fitThrough, pclip, fit }. doc = data/derived/v6_stacks.json (tools/v6_prep.py stacks);
+      fitYear names the forward-chained fit for backtests (weights fit on 2019..fitYear-1; 2024 = fit through 2023-12-31),
+      none = the production fit (2019-2025; page / ledger only). */
+  function v6Stack(doc, kind, head, fitYear) {
+    if (!doc || !doc.stacks) return null;
+    var key = V6_BLOCK[kind] + "|" + head, blk = doc.stacks[key];
+    if (!blk) return null;
+    var f = fitYear ? blk.by_fit_year[String(fitYear)] : blk.production;
+    if (!f) return null;
+    return { key: key, inputs: blk.inputs, weights: f.weights, fitThrough: f.fit_through, pclip: blk.pclip || 0.01,
+      fit: fitYear ? "Y" + fitYear : "production", halfLife: blk.recency_half_life_years };
+  }
+  /** logit p = sum_i w_i logit(clip(input_i, pclip)), no intercept (exactly corner-symmetric). The head ('ml2') and the
+      line ('open' / 'market') are required; an absent market rating enters as 0, as in the fit (tools/ml2.py zmat). */
+  function v6StackP(st, inp) {
+    var z = 0;
+    for (var i = 0; i < st.inputs.length; i++) {
+      var nm = st.inputs[i], q = inp[nm];
+      if (!isNum(q)) { if (nm === "ml2" || nm === "open" || nm === "market") return null; continue; }
+      z += st.weights[i] * logit(clip(q, st.pclip, 1 - st.pclip));
+    }
+    return sigm(z);
+  }
+  /** Live S2 inputs from the ML v2 page handle (A's view): z = logit of the ML v2 logistic, zw = logit of its round-level
+      WHR probability, zm = logit of the market-rating probability (tools/ml2.py method_new_cols); pre-UFC rates and
+      weight-miss flags only when given (opts.s2pre / opts.missed), else 0 (no record / before the weigh-in). */
+  function s2Inputs(h, pa, pb, m, date, ml2, opts) {
+    var out = { z: 0, zw: 0, zm: 0, pre: opts.s2pre || null, missed: opts.missed || null, src: [] };
+    if (ml2 && isNum(ml2.pA)) { out.z = logit(ml2.pA); out.src.push("z"); }
+    if (ml2 && isNum(ml2.pMR)) { var q = clip(ml2.pMR, 1e-3, 1 - 1e-3); out.zm = Math.log(q / (1 - q)); out.src.push("zm"); }
+    var L = ml2Lib();
+    if (h && L && h.side && pa.slug && pb.slug && h.has(pa.slug) && h.has(pb.slug)) {
+      var fight = { date: date, lbs: LBS[m.division] || 155, five: m.rounds === 5 ? 1 : 0 }, sa = h.side(pa.slug, fight), sb = h.side(pb.slug, fight);
+      var T = (h.doc.terms || []).filter(function (t) { return t.type === "rating" && t.sys === "whr_rounds"; })[0];
+      if (T && sa && sb && sa.r && sb.r && sa.r.whr_rounds && sb.r.whr_rounds) {
+        var pw = clip(L.ratingProb(T.kind, T.kappa, sa.r.whr_rounds, sb.r.whr_rounds), 1e-3, 1 - 1e-3);
+        out.zw = Math.log(pw / (1 - pw)); out.src.push("zw");
+      }
+    }
+    return out;
+  }
+  /** Debut path (lab 3, research/model_debut.md, adopted for bouts with a UFC debutant): replace the package's method
+      given the winner with the debut model's (src/ml/debut.js M.method), keeping each side's round shapes and the
+      package's winner and draw. Backtests never reach it (the backtest universe has no debut bouts). */
+  function debutCells(cells, R, dm) {
+    var out = cells.slice(), i, side;
+    for (side = 0; side < 2; side++) {
+      var k0 = side === 0 ? 0 : 2 * R, s0 = side === 0 ? R : 3 * R, d0 = side === 0 ? 4 * R : 4 * R + 1;
+      var ko = 0, sub = 0;
+      for (i = 0; i < R; i++) { ko += cells[k0 + i]; sub += cells[s0 + i]; }
+      var tot = ko + sub + cells[d0], sh = side === 0 ? dm.A : dm.B;
+      for (i = 0; i < R; i++) {
+        out[k0 + i] = tot * sh[0] * (ko > 0 ? cells[k0 + i] / ko : 1 / R);
+        out[s0 + i] = tot * sh[1] * (sub > 0 ? cells[s0 + i] / sub : 1 / R);
+      }
+      out[d0] = tot * sh[2];
+    }
+    return out;
+  }
+  function isDebutant(prof, flag) {
+    if (flag === true) return true;
+    if (flag === false) return false;
+    if (!prof) return false;
+    var rec = prof.record || {}, n = isNum(prof.n_fights) ? prof.n_fights : (rec.w || 0) + (rec.l || 0) + (rec.d || 0) + (rec.nc || 0);
+    return n === 0 && !!(prof.record || isNum(prof.n_fights));
+  }
+
   /** FightEngine.predict with the component on. opts: the matchup options (division, rounds, title, date, priors, adjA,
       adjB, ml, dur, sos, embed, oppadj, preufc ...) plus sims, seed / seeds, lineKind ('close' | 'open' | 'none'), line
       { oddsA, oddsB } (American) or pMarket, experts { engine, feat_lr, elo, ml, elo_sig, mkt_rating, market }, stack
@@ -764,8 +835,19 @@
     var gate = M && sides ? M.gateFromSides(sides[0], sides[1], { division: division, rounds: rounds, preufcA: opts.preufcA, preufcB: opts.preufcB }) :
       { rounds: rounds, division: division };
     var T = isNum(opts.recalT) ? opts.recalT : cfg.recalT;
-    var winner = opts.winner || "stack";
-    if (winner !== "stack" && winner !== "ml2") throw new Error("FightBlend.predict: opts.winner must be 'stack' or 'ml2', got " + winner);
+    var winner = opts.winner || cfg.winner || "stack";
+    if (winner !== "stack" && winner !== "ml2" && winner !== "ml2stack") throw new Error("FightBlend.predict: opts.winner must be 'stack', 'ml2' or 'ml2stack', got " + winner);
+    // engine v6: the ML v2 head stack for this line kind (routing by the EXPLICIT lineKind; checked before any simulation
+    // result is used, so a backtest without walk-forward weights fails loudly)
+    var head = opts.ml2Head || cfg.ml2Head || "lr", st6 = null, v6 = null;
+    if (head !== "blend" && head !== "lr") throw new Error("FightBlend.predict: ml2Head must be 'blend' or 'lr', got " + head);
+    if (winner === "ml2stack") {
+      var wdoc = opts.winnerStacks || (BT ? null : STATE.winnerStacks);
+      if (BT && !opts.winnerStacks) throw new Error("FightBlend.predict (backtest): winner 'ml2stack' needs opts.winnerStacks (data/derived/v6_stacks.json) and opts.winnerFit (the forward-chained fit year)");
+      if (BT && !opts.winnerFit) throw new Error("FightBlend.predict (backtest): winner 'ml2stack' needs opts.winnerFit (weights fit on 2019..winnerFit-1)");
+      st6 = v6Stack(wdoc, line.kind, head, BT ? opts.winnerFit : null);
+      if (BT && st6 && !(st6.fitThrough < date)) throw new Error("FightBlend.predict (backtest): v6 stack " + st6.key + " is fit through " + st6.fitThrough + ", not before " + date);
+    }
     // The stack throws when no trained pattern fits the available experts (every stored pattern carries feat_lr, so a
     // manual profile without decayed sums S has none): fall back to the simulator alone and say why (verifier fix)
     var r = null, pRaw = ex.engine, source = "engine", blendError = null;
@@ -776,7 +858,37 @@
       if (ml2 && isNum(ml2.p)) { pRaw = ml2.p; source = "ml2"; }
       else blendError = (blendError ? blendError + "; " : "") + "winner 'ml2': " + ((ml2 && ml2.note) || "ML v2 not available") + ", kept " + source;
     }
+    if (winner === "ml2stack") {
+      // the head: backtests pass walk-forward values ({ pA: logistic, pBlend: blend, pMR }); live: the page logistic, and
+      // the blend from the JS tree evaluator (src/ml/ml2trees.js) when it is loaded (else the logistic, flagged)
+      var hv = null, hsrc = null, note6 = null;
+      if (head === "blend") {
+        if (ml2src && !ml2live && isNum(ml2src.pBlend)) { hv = ml2src.pBlend; hsrc = "given"; }
+        else if (!BT && STATE.ml2Trees && ml2 && isNum(ml2.pA) && pa.slug && pb.slug) {
+          try { var tb = STATE.ml2Trees.predict(pa.slug, pb.slug, { date: date, lbs: LBS[division] || 155, five: rounds === 5 ? 1 : 0 }, ml2.pA);
+            if (tb && isNum(tb.p)) { hv = tb.p; hsrc = "trees"; } } catch (e) { note6 = "tree evaluator: " + String((e && e.message) || e); }
+        }
+        if (!isNum(hv) && !BT && ml2 && isNum(ml2.pA)) {
+          var stL = v6Stack(wdoc, line.kind, "lr", null);
+          if (stL) { st6 = stL; hv = ml2.pA; hsrc = "lr fallback"; note6 = (note6 ? note6 + "; " : "") + "ML v2 blend unavailable (tree evaluator not loaded or a fighter outside its roster): the logistic head's stack is used"; }
+        }
+      } else if (ml2 && isNum(ml2.pA)) { hv = ml2.pA; hsrc = "logistic"; }
+      var inp6 = { ml2: hv, mkt_rating: (ml2 && isNum(ml2.pMR)) ? ml2.pMR : (isNum(ex.mkt_rating) ? ex.mkt_rating : null),
+        open: line.kind === "open" ? line.p : null, market: line.kind === "close" ? line.p : null };
+      var p6 = st6 && isNum(hv) ? v6StackP(st6, inp6) : null;
+      v6 = { head: head, headValue: hv, headSource: hsrc, stack: st6 ? st6.key : null, weights: st6 ? st6.weights : null,
+        inputs: st6 ? st6.inputs : null, fit: st6 ? st6.fit : null, fitThrough: st6 ? st6.fitThrough : null, inp: inp6, note: note6 };
+      if (isNum(p6)) { pRaw = p6; source = "ml2stack"; }
+      else blendError = (blendError ? blendError + "; " : "") + "winner 'ml2stack': " + (st6 ? (note6 || "no ML v2 head value") : "no v6 stack for lineKind " + line.kind + " / head " + head) + ", kept " + source;
+    }
     function blendP(e) {
+      if (source === "ml2stack") {
+        // the profile-noise shift of ML v2's logistic (interval: e.ml2) moves the head by the same logit amount
+        var d6 = (isNum(e.ml2) && isNum(ex.ml2)) ? logit(e.ml2) - logit(ex.ml2) : 0, q6 = own(v6.inp);
+        q6.ml2 = sigm(logit(v6.inp.ml2) + d6);
+        if (isNum(e.mkt_rating) && isNum(q6.mkt_rating)) q6.mkt_rating = e.mkt_rating;
+        return sigm(T * logit(v6StackP(st6, q6)));
+      }
       if (source === "ml2") {
         var inp = own(ml2.inp); inp.ml2lr = e.ml2;
         return sigm(T * logit(ml2StackP(ml2.W[ml2.stack], inp)));
@@ -797,7 +909,20 @@
     }
     // 4. method x round (S without a line; SM only with a closing line: SM was fit with the closing line as a feature, so
     // an opener goes to S, the same close-vs-open rule as the winner stack). Backtests pass walk-forward cells (opts.mrCells).
-    var mrCells = opts.mrCells || null, mrVariant = opts.mrCells ? (opts.mrVariant || "passed") : null;
+    var mrCells = opts.mrCells || null, mrVariant = opts.mrCells ? (opts.mrVariant || "passed") : null, mrModel = opts.mrModel || cfg.mrModel || "S", s2in = null;
+    if (mrModel !== "S" && mrModel !== "S2") throw new Error("FightBlend.predict: mrModel must be 'S' or 'S2', got " + mrModel);
+    if (BT && mrModel === "S2" && opts.mrCells && opts.mrVariant !== "S2") throw new Error("FightBlend.predict (backtest): mrModel 'S2' needs walk-forward S2 cells (opts.mrVariant 'S2'), got " + opts.mrVariant);
+    if (!mrCells && opts.mrCells !== false && !BT && mrModel === "S2" && STATE.mrS2 && STATE.mrModel) {
+      var MRL = mrLib();
+      if (MRL && MRL.createS2 && Array.isArray(pa.C) && Array.isArray(pb.C)) {
+        try {
+          s2in = s2Inputs(ml2src && ml2src.predictSides ? ml2src : STATE.ml2, pa, pb, m, date, ml2, opts);
+          var o2 = MRL.createS2(STATE.mrS2, STATE.mrModel).predict(pa, pb, { slugA: pa.slug, slugB: pb.slug, division: division, rounds: rounds,
+            title: m.title, date: date, s2: s2in });
+          if (o2.cells.length === 4 * R + 3) { mrCells = o2.cells; mrVariant = "S2"; }
+        } catch (e) { mrCells = null; }
+      }
+    }
     if (!mrCells && opts.mrCells !== false && !BT) {
       var MR = opts.methodRound ? (opts.methodRound.predict ? opts.methodRound : (mrLib() ? mrLib().create(opts.methodRound.js_model || opts.methodRound) : null)) : STATE.mr;
       if (MR && Array.isArray(pa.C) && Array.isArray(pb.C)) {
@@ -815,6 +940,19 @@
     var simR = rescale(cellSim, R, p), cells = simR, mrR = null;
     if (mrCells && mrCells.length === cellSim.length) { mrR = rescale(mrCells, R, p); cells = poolCells(simR, mrR, w, cfg.mrPool); }
     else w = 1;
+    // engine v6, debut path: method given the winner from the debut model for a bout with a UFC debutant
+    var deb = null, debOn = opts.debut !== undefined ? !!opts.debut : !!cfg.debut;
+    if (debOn && !BT) {
+      var dA = isDebutant(pa, opts.debutA), dB = isDebutant(pb, opts.debutB), DM = opts.debutModel || STATE.debut;
+      if ((dA || dB) && DM) {
+        try {
+          var sd0 = opts.debutSides || { A: DM.lib.sideFromProfile(pa, date, division, DM.model || {}, null), B: DM.lib.sideFromProfile(pb, date, division, DM.model || {}, null) };
+          var dm = DM.M.method(sd0.A, sd0.B, { division: division, rounds: rounds, pA: p });
+          cells = debutCells(cells, R, dm);
+          deb = { applied: true, debutant: { A: dA, B: dB }, methodGivenWin: { A: dm.A, B: dm.B } };
+        } catch (e) { deb = { applied: false, error: String((e && e.message) || e) }; }
+      } else if (dA || dB) deb = { applied: false, error: "debut model not loaded (FightEngine.loadBlend({ debut: debut.json }))" };
+    }
     var mg = marginals(cells, R);
     // 5. stat lines
     var expMin = expectedMinutes(cells, cellMin, R);
@@ -824,6 +962,23 @@
       sim: { perMin: rates, total: { A: scaleRates(rates.A, expMin), B: scaleRates(rates.B, expMin) }, anchored: !!anc },
       ml: mlR ? { perMin: mlR, total: { A: scaleRates(mlR.A, expMin), B: scaleRates(mlR.B, expMin) } } : null
     };
+    // engine v6 (lab 3, research/model_statlines.md, adopted): P10 / P50 / P90 per fighter, mixed over the package's
+    // fight-length distribution (src/ml/statdist.js "prod" tables; page / ledger only, never a backtest score)
+    var sdOn = opts.statDist !== undefined ? !!opts.statDist : !!cfg.statDist, SDh = opts.statDistModel || STATE.statDist;
+    if (sdOn && SDh && !BT) {
+      try {
+        var si = opts.statDistInputs || null;
+        if (!si && m.mlPred) {
+          var raw = (m.embed && m.embed.raw) ? m.embed.raw : m.mlPred, eta = m.embed && m.embed.eta;
+          si = { mlA: raw.A, mlB: raw.B, etaA: eta ? eta.A : null, etaB: eta ? eta.B : null, hasEmb: !!(eta && eta.A && eta.B), winLogit: 0, oppA: null, oppB: null };
+        }
+        if (si) {
+          var Pd = SDh.prepare({ mlA: si.mlA, mlB: si.mlB, etaA: si.etaA, etaB: si.etaB, hasEmb: !!si.hasEmb, winLogit: si.winLogit || 0,
+            oppA: si.oppA || null, oppB: si.oppB || null, rounds: R }), grid = SDh.lengthGrid(cells, R);
+          statLines.dist = { A: Pd.line("A", grid), B: Pd.line("B", grid), source: opts.statDistInputs ? "opts" : "matchup (winLogit 0)" };
+        }
+      } catch (e) { statLines.dist = { error: String((e && e.message) || e) }; }
+    }
     // 6. uncertainty
     var iv = null;
     if (opts.interval !== false && cfg.boot.B > 0) {
@@ -852,13 +1007,16 @@
       experts: ex, blend: r ? { weights: r.weights, contrib: r.contrib, used: r.used, regime: r.regime || null, scale: r.scale, ignored: r.ignored } : null,
       // v5 merge step 5: which line, which stack block, which headline, and ML v2 next to it
       lineKind: line.kind, line: line.kind === "none" ? null : { kind: line.kind, p: line.p, src: line.src, devig: line.devig },
-      winner: source === "ml2" ? "ml2" : "stack",
+      winner: source === "ml2" ? "ml2" : (source === "ml2stack" ? "ml2stack" : "stack"),
+      // engine v6: the routing record (which line type, which trained weights) and the ML v2 head
+      lineType: line.kind, routing: { lineType: line.kind, winner: source, weights: source === "ml2stack" ? (v6 && v6.stack) : (stk ? (line.kind === "open" ? "model_open" : "model") + ":" + (line.kind === "none" ? "absent" : "present") : null) },
+      v6: v6, debut: deb,
       stack: stk ? { block: block, regime: r ? r.regime || null : null, fitThrough: stackFT, built: stk.built, from: (opts.stack || opts.moe) ? "opts" : "loaded" } : null,
       ml2: ml2 ? { pA: ml2.pA, pMR: ml2.pMR, stacks: ml2.stacks || null, stack: ml2.stack || null, p: isNum(ml2.p) ? ml2.p : null, note: ml2.note || null } : null,
       backtest: BT ? { date: date, stackFitThrough: stackFT, inSample: !!(stackFT && date && stackFT >= date), mrCells: opts.mrCells ? "passed" : "none",
         mrFitThrough: opts.mrFitThrough || null } : null,
       cells: cells, R: R, marginals: mg, bins7: mg.bins7,
-      methodRound: { weight: w, pool: cfg.mrPool || "linear", variant: mrVariant, simRescaled: simR, mrRescaled: mrR },
+      methodRound: { weight: w, pool: cfg.mrPool || "linear", variant: mrVariant, model: mrModel, s2Inputs: s2in ? { src: s2in.src } : null, simRescaled: simR, mrRescaled: mrR },
       sim: { p: sim.p, pA: sim.pA, pB: sim.pB, pD: sim.pD, cells: sim.cells, n: N, runs: sim.runs, avgMin: sim.avgMin, rates: sim.rates },
       // anchor.adjA / adjB: the knobs that reproduce the anchored matchup (e.g. FightEngine.matchup(a, b, {..., adjA, adjB})
       // for the 3D show's traced fight)
@@ -874,6 +1032,7 @@
     cfgOf: cfgOf, cellOf: cellOf, nCells: nCells, mirrorCells: mirrorCells, sideSums: sideSums, rescale: rescale, poolCells: poolCells, smoothCells: smoothCells,
     marginals: marginals, simCells: simCells, symSim: symSim, swapOpts: swapOpts, anchorOpts: anchorOpts, anchor: anchor,
     nnLogit: nnLogit, fitTemp: fitTemp, perturbS: perturbS, interval: interval, mlStatRates: mlStatRates,
+    v6Stack: v6Stack, v6StackP: v6StackP, debutCells: debutCells, isDebutant: isDebutant,
     expectedMinutes: expectedMinutes, logit: logit, sigm: sigm
   };
 });
