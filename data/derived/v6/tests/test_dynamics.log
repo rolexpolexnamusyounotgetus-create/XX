@@ -19,3 +19,8 @@ PASS  mutual pace moves a man's late output with his opponent's cardio  (Volk R5
 PASS  non-knockdown stoppage hazards decay by round
 PASS  stkoHurtGate: off by default; on, the standing table x hurt gate decays as exp(noKdRound r)  (gate on: R3/R1 0.712 vs exp(2 noKdRound) 0.712)
 PASS  knockdown conversion odds decay by round
+PASS  stkoHurtGate on: standing TKO per strike absorbed decays by round about as E9 says (steeper with it off)  (mean(R2, R3) / R1: 0.98 with the gate vs 0.41 without (E9 0.78; events 224/236/228 vs 237/127/79))
+PASS  flag on: chin knob up on A -> more KO losses for A  (23.0 -> 31.9)
+PASS  flag on: output knob up on A -> more attempts by A  (195.4 -> 244.7)
+
+23 passed, 0 failed
