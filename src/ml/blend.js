@@ -35,7 +35,14 @@
         the profile-driven experts (feature LR exactly; the ML expert by the same logit shift), with optional rating
         noise (Glicko RD on Elo, market-rating sd) and the simulator's Monte Carlo error, then through the blend. The raw
         bootstrap is too narrow (it covers the closing line 55% / 76% at 80% / 95%), so `calibrated` inflates its logit
-        sd by params.blend.boot.inflate = 1.65 (80% / 94% out of fold on 2019-2023).
+        sd by params.blend.boot.inflate = 1.65 (80% / 94% out of fold on 2019-2023). The v6 head stack (winner
+        'ml2stack') has its own inflation, params.blend.boot.inflateMl2stack (1.2.1; fit on 2019-2023 by
+        tools/v6_kappa.js); without one its interval carries no `calibrated` block (never the v5 kappa).
+     6. (1.2.1, v6 review) A line is never dropped: with winner 'ml2stack', when neither the head stack nor the expert stack
+        can be evaluated (a UFC debutant or manual fighter outside ML v2's roster, a manual profile without decayed sums)
+        and a line exists, the headline is the line-only stack of that line kind (data/derived/line_stack.json,
+        tools/line_stack.py: fit on 2019-2023, mirrored, no intercept), source 'line'; without that file, the de-vigged
+        line itself (flagged). Other winner settings keep 1.1.1 behaviour and flag `lineDropped`.
 
    Cell layout (methodround.json): [A KO r1..R, A SUB r1..R, B KO r1..R, B SUB r1..R, A DEC, B DEC, DRAW], R = scheduled
    rounds; KO includes TKO, GNP, leg, doctor and corner stoppages. Every probability is P(first-named fighter A).
@@ -47,10 +54,10 @@
   else root.FightBlend = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (root) {
   "use strict";
-  var VERSION = "1.2.0";   // 1.2.0 (engine v6): ML v2 winner heads by line regime (winner 'ml2stack', data/derived/v6_stacks.json), S2 method/round cells (tools/methodround_model.js createS2), debut method path, distributional stat lines; every v6 path is off unless params.blend switches it on, so 1.1.1 behaviour is unchanged for v5 params
+  var VERSION = "1.2.1";   // 1.2.1 (v6 review; not part of any kept version): line fallback for debut / manual bouts (source 'line'), isDebutant honours record.ufc, the ml2stack interval perturbs the head without the MoE handle and has its own kappa; backtest-universe outputs are unchanged (every backtest row is ml2stack or stack). 1.2.0 (engine v6): ML v2 winner heads by line regime (winner 'ml2stack', data/derived/v6_stacks.json), S2 method/round cells (tools/methodround_model.js createS2), debut method path, distributional stat lines; every v6 path is off unless params.blend switches it on, so 1.1.1 behaviour is unchanged for v5 params
   var VERSION_PREV = "1.1.1";   // 1.1.1 (v5.0.1): invalid market lines are refused, never treated as no line; 1.1.0 (v5 merge step 5): ML v2 package winner blend, opts.lineKind, backtest guard, v5 corner swaps
   var STATE = { stack: null, feat: null, ml2: null, mlPage: null, mktRatings: null, mr: null, mrModel: null, data: null,
-    winnerStacks: null, mrS2: null, debut: null, statDist: null, ml2Trees: null, preufc: null };
+    winnerStacks: null, mrS2: null, debut: null, statDist: null, ml2Trees: null, preufc: null, lineStack: null };
 
   function clip(x, lo, hi) { return x < lo ? lo : (x > hi ? hi : x); }
   function logit(p) { p = clip(p, 1e-6, 1 - 1e-6); return Math.log(p / (1 - p)); }
@@ -104,13 +111,14 @@
     recalT: 1,             // temperature on the blended logit (1 = none)
     anchor: { cAcc: 0.5, cTd: 1, cPow: 1, powNorm: true, slope0: 0.86, priorWeight: 2, iters: 4, step: 0.05, tol: 0.01, sims: 300, maxAbs: 4 },
     boot: { B: 200, seed: 7, level: [0.8, 0.95], cvOut: 0.45, cvGrap: 1.0, cvSub: 1.5, cvKd: 1.0, cvAcc: 0.25,
-      count: true, eloRd: 0, eloRdScale: 0, mrSd: 0, engineMC: true, inflate: 1.65 },
+      count: true, eloRd: 0, eloRdScale: 0, mrSd: 0, engineMC: true, inflate: 1.65, inflateMl2stack: null },
     // engine v6 (cycle 1, docs/V6_V10_PLAN.md section 3); the defaults reproduce 1.1.1 (engine v5 params carry none of these)
     winner: "stack",       // 'stack' = the MoE expert stack (v5); 'ml2' = ML v2 page stack (v5 option); 'ml2stack' = v6 ML v2 heads
     ml2Head: "lr",         // ML v2 head inside the v6 stacks: 'blend' (LR + LightGBM + XGBoost, the CV choice) or 'lr'
     mrModel: "S",          // method/round model pooled with the simulator: 'S' (S / SM, v5) or 'S2' (v6: S2 cells, no SM)
     debut: false,          // v6: bouts with a UFC debutant take method given the winner from the debut model (src/ml/debut.js)
-    statDist: false        // v6: distributional stat lines (src/ml/statdist.js, P10 / P50 / P90) next to the means
+    statDist: false,       // v6: distributional stat lines (src/ml/statdist.js, P10 / P50 / P90) next to the means
+    lineFallback: null     // 1.2.1: true / false; null = on for winner 'ml2stack' only (a line is never dropped), off otherwise (1.1.1 behaviour, flagged)
   };
   function cfgOf(p, opts) {
     var b = (p && p.blend) || {}, o = (opts && opts.blend) || {}, out = {}, k;
@@ -672,9 +680,11 @@
     if (o.statDist !== undefined) { var SL = statLib(); STATE.statDist = o.statDist && SL ? SL.load(o.statDist, { which: "prod" }) : null; }
     if (o.ml2Trees !== undefined) { var TL = treesLib(); STATE.ml2Trees = o.ml2Trees && TL ? TL.load(o.ml2Trees, STATE.ml2) : null; }
     if (o.preufc !== undefined) STATE.preufc = o.preufc || null;
+    if (o.lineStack !== undefined) STATE.lineStack = o.lineStack || null;   // 1.2.1: data/derived/line_stack.json
     return { stack: !!STATE.stack, stackOpen: !!(STATE.stack && STATE.stack.open), feat: !!STATE.feat, mlPage: !!STATE.mlPage,
       market: !!STATE.mktRatings, ml2: !!STATE.ml2, methodRound: !!STATE.mr, data: !!STATE.data,
-      winnerStacks: !!STATE.winnerStacks, mrS2: !!STATE.mrS2, debut: !!STATE.debut, statDist: !!STATE.statDist, ml2Trees: !!STATE.ml2Trees };
+      winnerStacks: !!STATE.winnerStacks, mrS2: !!STATE.mrS2, debut: !!STATE.debut, statDist: !!STATE.statDist, ml2Trees: !!STATE.ml2Trees,
+      lineStack: !!STATE.lineStack };
   }
 
   // ------------------------------------------------------------------ the package
@@ -770,8 +780,22 @@
     if (flag === true) return true;
     if (flag === false) return false;
     if (!prof) return false;
-    var rec = prof.record || {}, n = isNum(prof.n_fights) ? prof.n_fights : (rec.w || 0) + (rec.l || 0) + (rec.d || 0) + (rec.nc || 0);
-    return n === 0 && !!(prof.record || isNum(prof.n_fights));
+    var rec = prof.record || {};
+    // 1.2.1 (v6 review): a UFC fight count wins over the pro record. Engine manualProfile turns n_fights 0 into null, so a
+    // hand-entered debutant with a pro record (12-1) used to count 13 prior fights; record.ufc (or ufc_fights) is honoured
+    if (isNum(prof.n_fights)) return prof.n_fights === 0;
+    if (isNum(rec.ufc)) return rec.ufc === 0;
+    if (isNum(prof.ufc_fights)) return prof.ufc_fights === 0;
+    var n = (rec.w || 0) + (rec.l || 0) + (rec.d || 0) + (rec.nc || 0);
+    return n === 0 && !!prof.record;
+  }
+  /** 1.2.1: the line-only stack block for line kind `kind` (data/derived/line_stack.json, tools/line_stack.py): fitYear names
+      the forward-chained fit for backtests (2019..fitYear-1), none = production (the 2019-2023 fit). */
+  function lineStackBlock(doc, kind, fitYear) {
+    if (!doc || !doc.stacks || !doc.stacks[kind]) return null;
+    var blk = doc.stacks[kind], f = fitYear ? blk.by_fit_year[String(fitYear)] : blk.production;
+    if (!f || !isNum(f.slope)) return null;
+    return { key: kind + (fitYear ? "|Y" + fitYear : "|production"), slope: f.slope, fitThrough: f.fit_through, pclip: blk.pclip || 0.01 };
   }
 
   /** FightEngine.predict with the component on. opts: the matchup options (division, rounds, title, date, priors, adjA,
@@ -884,6 +908,23 @@
       if (isNum(p6)) { pRaw = p6; source = "ml2stack"; }
       else blendError = (blendError ? blendError + "; " : "") + "winner 'ml2stack': " + (st6 ? (note6 || "no ML v2 head value") : "no v6 stack for lineKind " + line.kind + " / head " + head) + ", kept " + source;
     }
+    // 1.2.1 (v6 review): never drop a line silently. Both stacks failed (source 'engine') and a line exists: with the line
+    // fallback on (default for 'ml2stack'), the headline is the line-only stack of this line kind, source 'line'; otherwise
+    // the 1.1.1 behaviour is kept and flagged (lineDropped).
+    var lineFb = null, lineDropped = false, lfbOn = cfg.lineFallback != null ? !!cfg.lineFallback : winner === "ml2stack";
+    if (source === "engine" && line.kind !== "none" && isNum(line.p)) {
+      if (lfbOn) {
+        var lsb = lineStackBlock(opts.lineStack || (BT ? null : STATE.lineStack), line.kind, BT ? opts.winnerFit : null);
+        var pl = lsb ? sigm(lsb.slope * logit(clip(line.p, lsb.pclip, 1 - lsb.pclip))) : line.p;
+        lineFb = { kind: line.kind, stack: lsb ? lsb.key : null, slope: lsb ? lsb.slope : 1, fitThrough: lsb ? lsb.fitThrough : null,
+          note: lsb ? "line-only stack (data/derived/line_stack.json)" : "de-vigged line itself (no line stack loaded: FightEngine.loadBlend({ lineStack }))" };
+        blendError = (blendError ? blendError + "; " : "") + "headline from the " + line.kind + " line: " + lineFb.note;
+        pRaw = pl; source = "line";
+      } else {
+        lineDropped = true;
+        blendError = (blendError ? blendError + "; " : "") + "LINE DROPPED: a " + line.kind + " line was given but the headline is the simulator alone (params.blend.lineFallback off)";
+      }
+    }
     function blendP(e) {
       if (source === "ml2stack") {
         // the profile-noise shift of ML v2's logistic (interval: e.ml2) moves the head by the same logit amount
@@ -896,6 +937,7 @@
         var inp = own(ml2.inp); inp.ml2lr = e.ml2;
         return sigm(T * logit(ml2StackP(ml2.W[ml2.stack], inp)));
       }
+      if (source === "line") return sigm(T * logit(pRaw));   // the line carries no profile noise
       if (!r) return sigm(T * logit(e.engine));
       return sigm(T * logit(moe.predict({ experts: e, gate: gate }).p));
     }
@@ -990,7 +1032,9 @@
       // (the one seedsOf uses) and the rating / Monte Carlo noise is mirrored, so predict(B, A) draws the same noise for
       // the same fighter and its interval is the mirror image of predict(A, B)'s
       var flip = canonFlip(pa, pb);
-      if (M && feat && (r || source === "ml2") && sides) {
+      // 1.2.1 (v6 review): the head stack ('ml2stack') takes the profile-noise shift too, with or without the MoE handle (r);
+      // 1.2.0 required r or 'ml2', so the v6 interval was degenerate (sd 0) whenever the expert stack was not loaded
+      if (M && feat && (r || source === "ml2" || source === "ml2stack") && sides) {
         var keys = sides.opts.keys, f0 = logit(M.featLR(feat, sides[0], sides[1], { division: division, homeA: sides[0].home, homeB: sides[1].home, coef: featCoef }));
         var shifts = [];
         for (var bI = 0; bI < cfg.boot.B; bI++) {
@@ -1002,7 +1046,16 @@
         }
         featShift = function (i) { return shifts[i]; };
       }
-      iv = interval(blendP, ex, featShift, { rng: rng, rdA: opts.rdA, rdB: opts.rdB, mrSd: opts.mrSd, engineN: N * sim.runs, sign: flip ? -1 : 1 }, cfg.boot);
+      // the v5 kappa (boot.inflate) was fit on the v5 expert-stack construction; the head stack has its own (boot.inflateMl2stack)
+      var bootI = cfg.boot;
+      if (source === "ml2stack" || source === "line") { bootI = own(cfg.boot); bootI.inflate = (source === "ml2stack" && isNum(cfg.boot.inflateMl2stack)) ? cfg.boot.inflateMl2stack : 0; }
+      iv = interval(blendP, ex, featShift, { rng: rng, rdA: opts.rdA, rdB: opts.rdB, mrSd: opts.mrSd, engineN: N * sim.runs, sign: flip ? -1 : 1 }, bootI);
+      if (iv && (source === "ml2stack" || source === "line")) {
+        iv.construction = source;
+        if (!(bootI.inflate > 0)) iv.calibratedNote = source === "line" ? "line headline: no profile noise, no calibrated interval" :
+          "no kappa fit for the ml2stack construction (params.blend.boot.inflateMl2stack): raw bootstrap only";
+        if (source === "ml2stack" && !featShift) iv.degenerate = "no profile-noise shift (feature LR or decayed sums missing): sd 0";
+      }
     }
     return {
       component: "blend_anchor", version: VERSION, on: true, source: source, blendError: blendError,
@@ -1010,10 +1063,10 @@
       experts: ex, blend: r ? { weights: r.weights, contrib: r.contrib, used: r.used, regime: r.regime || null, scale: r.scale, ignored: r.ignored } : null,
       // v5 merge step 5: which line, which stack block, which headline, and ML v2 next to it
       lineKind: line.kind, line: line.kind === "none" ? null : { kind: line.kind, p: line.p, src: line.src, devig: line.devig },
-      winner: source === "ml2" ? "ml2" : (source === "ml2stack" ? "ml2stack" : "stack"),
+      winner: source === "ml2" ? "ml2" : (source === "ml2stack" ? "ml2stack" : (source === "line" ? "line" : "stack")),
       // engine v6: the routing record (which line type, which trained weights) and the ML v2 head
       lineType: line.kind, routing: { lineType: line.kind, winner: source, weights: source === "ml2stack" ? (v6 && v6.stack) : (stk ? (line.kind === "open" ? "model_open" : "model") + ":" + (line.kind === "none" ? "absent" : "present") : null) },
-      v6: v6, debut: deb,
+      v6: v6, debut: deb, lineFallback: lineFb, lineDropped: lineDropped || undefined,
       stack: stk ? { block: block, regime: r ? r.regime || null : null, fitThrough: stackFT, built: stk.built, from: (opts.stack || opts.moe) ? "opts" : "loaded" } : null,
       ml2: ml2 ? { pA: ml2.pA, pMR: ml2.pMR, stacks: ml2.stacks || null, stack: ml2.stack || null, p: isNum(ml2.p) ? ml2.p : null, note: ml2.note || null } : null,
       backtest: BT ? { date: date, stackFitThrough: stackFT, inSample: !!(stackFT && date && stackFT >= date), mrCells: opts.mrCells ? "passed" : "none",
@@ -1035,7 +1088,7 @@
     cfgOf: cfgOf, cellOf: cellOf, nCells: nCells, mirrorCells: mirrorCells, sideSums: sideSums, rescale: rescale, poolCells: poolCells, smoothCells: smoothCells,
     marginals: marginals, simCells: simCells, symSim: symSim, swapOpts: swapOpts, anchorOpts: anchorOpts, anchor: anchor,
     nnLogit: nnLogit, fitTemp: fitTemp, perturbS: perturbS, interval: interval, mlStatRates: mlStatRates,
-    v6Stack: v6Stack, v6StackP: v6StackP, debutCells: debutCells, isDebutant: isDebutant,
+    v6Stack: v6Stack, v6StackP: v6StackP, debutCells: debutCells, isDebutant: isDebutant, lineStackBlock: lineStackBlock,
     expectedMinutes: expectedMinutes, logit: logit, sigm: sigm
   };
 });

@@ -109,6 +109,12 @@ Findings from verified research that the next engine versions must use. Each lin
   penalty searches for method models.
 - LAB 4 SCORECARD: props adopted as hygiene (tie vs incumbent), finishing not adopted. Method/round is close to the
   market's information too; production stays S2 + ML v2 winner + props pool, debut method model for debut bouts.
+- FORWARD v4.3 (VERIFIED ~08:00 UTC Nov 7; README "Forward model v4.3", pre-registered in 386b99c before any code):
+  events >= 2026-11-14. p_a_noline = models.ml2_stack_noline (forward_models.json ml2_static.noline, weights 0.7049
+  ML v2 logistic + 0.5526 market rating, fit 2019-2023, h 1.5); MoE no-line kept as models.moe_noline (secondary,
+  fallback). Rule 6.5.1(b) reads the new p_a_noline from fwd-4.3 on. Flagged "decided after audit 1" (not clean on
+  the vault; pre-vault evidence already supported it). fwd-4.1/4.2 outputs byte-identical. Example (UFC 334):
+  Johnson vs Almeida no-line 0.908 (MoE) -> 0.768 (ML v2 stack).
 - FORWARD v4.2 (VERIFIED ~00:15 UTC Nov 7; data/predictions/README.md "Forward model v4.2", pre-registered in
   6011e6f before any code): effective for events dated >= 2026-11-14. Winner primaries as fwd-4.1; debut bouts take
   method / distance / finish round from the debut method model (base rates kept as a scored secondary); debut
