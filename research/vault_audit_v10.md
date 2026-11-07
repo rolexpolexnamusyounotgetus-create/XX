@@ -76,7 +76,7 @@ Fits named in the pre-registration ("everything fit through 2025-12-31 by each p
 | result through 2025 | **w: v10 0.20, cmp4 0.25, v7 0.20, v6 0.35; pi: v10 0.44, v7 0.44** | |
 | stat-line retarget targets (v10 / v8) | tools/v8_targets.js's code path on statlines.json `models.prod` (fit 2019-2025), inputs = production learned rates, the 2026-01-01 embedding export (etas and win logit), oppadj.json snapshots (tools/vault_audit2/targets_vault.js) | the code path reproduces the stored v8 targets from the stored inputs (95,600 values, max relative difference 0) |
 | learned stat-line rates (every engine) | the production mlrates.json (fit 2010-2025), audit 1's build `<vault>/audit1/mlrates_vault.json` | audit 1: reproduces every 2024-25 dev rate exactly |
-| embedding inputs (v10 / v8 / v6) | the production export at 2026-01-01 (embed_model.json, fit through 2025-12-13); recipe = each frozen package's own rule for any fight dated 2024 or later (fold-honest coef_fh["2024"], fit 2019-2023); 34 of 746 sides lack a 2026-01-01 vector and get embed.js's zero vector | no recipe fit through 2025 exists (deviation 3) |
+| embedding inputs (v10 / v8 / v6) | the production export at 2026-01-01 (embed_model.json, fit through 2025-12-13); recipe = each frozen package's own rule for any fight dated 2024 or later (fold-honest coef_fh["2024"], fit 2019-2023); 39 of 746 sides (34 fighters) lack a 2026-01-01 vector and get embed.js's zero vector | no recipe fit through 2025 exists (deviation 3) |
 | props (v10 / v7 and the props-pool benchmark) | market_vault's consensus method6 (BFO pre-fight method props); props pool benchmark = src/ml/propspool.js with props.json production parameters (fit 2021-2025) | audit 1: the consensus agrees with the pool's own per-book consensus to 0.0036 on 2024-25 |
 | v6 extra inputs | durability walk-forward records of durability_vault.json (fit through 2023) + the train NORM, SOS pairs with the 2019-2023 coefficients (audit 1's build) | as audit 1 (deviation 4) |
 
@@ -190,7 +190,7 @@ smoothing prior from the gate's 2021-2023 train fights). v8's file gives rows id
 
 No deviance is worse (or better) with a CI excluding 0: **failure criterion (ii) not met** for v10 or v8. Mean absolute error: leg landed
 +0.061 [+0.013, +0.110] and sub attempts +0.0086 [+0.0044, +0.0124] worse, control +1.73 s [-0.20, +3.59] n.s. 80% PIT coverage (v4 ->
-v10): TD attempts 0.68 -> 0.80, TD landed 0.71 -> 0.77, control 0.77 -> 0.81, leg landed 0.77 -> 0.80; every other stat within 0.02.
+v10): TD attempts 0.68 -> 0.80, TD landed 0.71 -> 0.77, control 0.77 -> 0.81, leg landed 0.77 -> 0.80, sig attempts 0.82 -> 0.84; every other stat within 0.02.
 
 **evalv** (tools/vault_audit2/evalv_vault2.js, seed 1, 300 sims per order; its own 2,000-resample paired CIs) v10 - v4: winner +0.0017
 [-0.0105, +0.0133]; 7-bin +0.0545 [+0.0183, +0.0944]; method +0.0065 [-0.0068, +0.0189]; deviance sig landed +0.034, attempts +0.216,
@@ -343,7 +343,7 @@ v10, v7, v8, the v4 engine) use v4's EM judging weights fit on ufcstats cards th
    2024-2025 engine rows came from a DEV evalv run of the v7 engine on 2024-25 (outputs outside the repo; identical to v4's stored rows);
    their 2024-25 scores were not used.
 3. **Embeddings.** The walk-forward snapshots (embed.json) stop before 2026, so every 2026 bout uses the production export at
-   2026-01-01 without in-year updates (as audit 1 did for v5); 34 of 746 sides have no 2026-01-01 vector (zero vector). The blend recipe
+   2026-01-01 without in-year updates (as audit 1 did for v5); 39 of 746 sides (34 fighters) have no 2026-01-01 vector (zero vector). The blend recipe
    is each frozen package's own rule for fights from 2024 on (fit through 2023); no recipe fit through 2025 exists, and none was fit.
 4. **v6.** Its durability inputs are the vault walk-forward records fit through 2023 (no through-2025 records exist) with the train NORM,
    and its SOS pairs use the 2019-2023 coefficients, both as audit 1 ran v5; v6 is a descriptive side line.
