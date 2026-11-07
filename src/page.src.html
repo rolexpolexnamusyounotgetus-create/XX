@@ -589,6 +589,9 @@ table.data tr.grp td { font-weight: 700; color: var(--ink); padding-top: 12px; b
   .fw-row .fw-go { grid-column: 2; grid-row: 1; }
   .fw-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .fw-sum .tile:nth-child(3) { padding-left: 0; border-left: 0; }
+  .fw-sum.five { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fw-sum.five .tile:nth-child(5) { padding-left: 0; border-left: 0; }
+  .fw-go { min-width: 0; }
 }
 
 .slwrap { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
@@ -609,6 +612,9 @@ table.data small.ci { display: block; color: var(--muted); font-size: 11px; font
 .fw-strip .nl { position: absolute; top: 4px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--surface); border: 2px solid var(--ink-2); box-sizing: border-box; }
 .fw-key i.nl { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink-2); box-sizing: border-box; }
 .fw-nums { flex-wrap: wrap; }
+.fw-nums.stack { display: grid; gap: 3px; justify-content: start; }
+.fw-sum.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.fw-go { min-width: 108px; display: flex; justify-content: flex-end; }
 .fw-deb { font-size: 12px; color: var(--muted); }
 .fw-how { display: grid; gap: 6px; padding-top: 6px; }
 .fw-later .fw-ev { margin-top: 6px; }

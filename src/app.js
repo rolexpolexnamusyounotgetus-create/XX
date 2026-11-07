@@ -1795,9 +1795,11 @@
       var ul2 = el("ul", "caveats"), pr = {};
       (N.vault_2026_paired || []).forEach(function (x) { pr[x.key] = x; });
       ul2.appendChild(el("li", null, "Confidence check: 1.00 means the stated chances matched how often favorites won; below 1 means too sure. The closing line scored " + (B.close ? fx(B.close.slope, 2) : "–") + "."));
-      if (B.moe_page_noline) ul2.appendChild(el("li", null, "The no-line blend this page used before was too sure (" + fx(B.moe_page_noline.slope, 2) + (B.moe_page_noline.slope_ci ? " [" + fx(B.moe_page_noline.slope_ci[0], 2) + ", " + fx(B.moe_page_noline.slope_ci[1], 2) + "]" : "") + ") and scored worse than the ML v2 model alone" +
-        (pr.prod_noline_minus_ml2_lr ? " (the production no-line stack it was built like: " + sgn(pr.prod_noline_minus_ml2_lr.diff) + " " + ci2(pr.prod_noline_minus_ml2_lr.ci) + ")" : "") +
-        ". The ML v2 no-line stack that replaces it beat that stack by " + (pr.ml2_noline_minus_prod_noline ? sgn(pr.ml2_noline_minus_prod_noline.diff) + " " + ci2(pr.ml2_noline_minus_prod_noline.ci) : "–") + "."));
+      if (B.moe_page_noline) ul2.appendChild(el("li", null, "The no-line blend this page used before was too sure (confidence check " + fx(B.moe_page_noline.slope, 2) + (B.moe_page_noline.slope_ci ? " [" + fx(B.moe_page_noline.slope_ci[0], 2) + ", " + fx(B.moe_page_noline.slope_ci[1], 2) + "]" : "") + ")." +
+        (pr.prod_noline_minus_ml2_lr ? " Its twin in the forward ledger, built the same way, lost to the ML v2 model alone by " + sgn(pr.prod_noline_minus_ml2_lr.diff) + " " + ci2(pr.prod_noline_minus_ml2_lr.ci) + "," : "") +
+        " and the ML v2 no-line stack that replaces both beat that twin by " + (pr.ml2_noline_minus_prod_noline ? sgn(pr.ml2_noline_minus_prod_noline.diff) + " " + ci2(pr.ml2_noline_minus_prod_noline.ci) : "–") + "."));
+      if (B.ml2_stack_noline_static && B.ml2_lr) ul2.appendChild(el("li", null, "Adding the market rating to the stats model did not help in 2026 (" + fx(B.ml2_stack_noline_static.log_loss, 4) + " against " + fx(B.ml2_lr.log_loss, 4) +
+        " for the stats model alone). The page keeps the no-line stack chosen on 2019-2023, the one the forward test scores; the vault chooses nothing."));
       if (pr.ml2_lr_minus_close) ul2.appendChild(el("li", null, "Without a line nothing matched the market in 2026: the ML v2 model alone trailed the closing line by " + sgn(pr.ml2_lr_minus_close.diff) + " " + ci2(pr.ml2_lr_minus_close.ci) +
         (pr.engine_v4_minus_close ? ", the simulator by " + sgn(pr.engine_v4_minus_close.diff) + " " + ci2(pr.engine_v4_minus_close.ci) : "") + "."));
       ul2.appendChild(el("li", null, "Fights in 2026 ended early more often than any model expected, the simulator included. 369 fights give wide intervals: about ±0.05 on a log loss, ±0.01 to ±0.03 on a difference."));
@@ -1890,7 +1892,7 @@
       hd.appendChild(el("h3", null, L.event + (L.alt_names && L.alt_names.length ? " (" + L.alt_names[0] + ")" : "")));
       hd.appendChild(el("span", null, fmtDate(L.date) + " · " + L.bouts.length + " bouts"));
       wrap.appendChild(hd);
-      var facts = el("div", "fw-sum");
+      var facts = el("div", "fw-sum five");
       function tile(l, v, sub) { var t = el("div", "tile"); t.appendChild(el("span", "tl", l)); t.appendChild(el("span", "tv", v)); if (sub) t.appendChild(el("span", "tl", sub)); facts.appendChild(t); }
       tile("Locked", L.lock_utc ? fmtUTC(L.lock_utc) : "–", "first bout's start");
       tile("Committed", L.commit_utc ? fmtUTC(L.commit_utc) : "not in git", L.commit ? "commit " + L.commit.slice(0, 7) + (L.committed_before_lock ? ", before the lock" : ", AFTER the lock") : "");
@@ -1920,7 +1922,7 @@
         row.appendChild(nm);
         var bar = el("div", "fw-bar");
         bar.appendChild(strip(b.p_a, b.p_noline, b.p_market, "Committed pick: " + b.a.name + " " + pct(b.p_a, 0) + "; no-line pick " + pct(b.p_noline, 0) + (b.p_market != null ? "; market " + pct(b.p_market, 0) : "")));
-        var nums = el("div", "fw-nums");
+        var nums = el("div", "fw-nums stack");
         nums.appendChild(el("span", null, "Pick: " + favTxt(b.p_a, b.a.name, b.b.name) + (deb ? " (the line, for a debut)" : "")));
         nums.appendChild(el("span", null, "No line: " + favTxt(b.p_noline, b.a.name, b.b.name) + (b.p_ml2_noline != null ? " (ML v2: " + favTxt(b.p_ml2_noline, b.a.name, b.b.name) + ")" : "")));
         nums.appendChild(el("span", null, b.p_market != null ? "Market: " + favTxt(b.p_market, b.a.name, b.b.name) : "No odds at commit"));
