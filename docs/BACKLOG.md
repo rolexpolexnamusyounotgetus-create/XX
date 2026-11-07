@@ -357,6 +357,15 @@ Findings from verified research that the next engine versions must use. Each lin
     - SOS acts only with opts.sos. Backtest tools get the pairs from tools/sosrec.js: sos_wf.json, corners swapped, LOYO
       coefficients on train and meta.coef on 2024-25. tools/evalv.js has its own copy, and versions/v5/ must include
       styles_sos.js.
+  - Step 4 done (~00:05 UTC Nov 7; docs/CHANGELOG.md "v5 merge log"): components.embed (on), components.oppadj (off; refused
+    together with styles_sos sos) and components.preufc (on), each flag off = the engine before it bit for bit
+    (tests/test_v5_step4.js, incl. a strict check on step 3's own params). Inputs for backtests: tools/mlpathrec.js.
+    - embed confirmed on train before leaving it on: leave-one-year-out mean relative deviance over 18 targets -0.72% [-0.97,
+      -0.49] vs recalibrated, -0.42% [-0.68, -0.16] vs raw learned rates; engine winner -0.0042 [-0.0074, -0.0011], stat lines
+      better (tools/embed_blend_loyo.py, tools/v5_step4_check.js).
+    - preufc vs embed on train: method -0.0060 [-0.0115, -0.0005], newcomer KO-win -0.0092 [-0.0168, -0.0014] (exponents fit on
+      2015-2023, not out of sample on train). oppadj vs SOS: nothing significant; Calibrate picks one.
+    - versions/v5/ must also include ml/embed.js and mlpathrec.js.
 - blindtest harness (VERIFIED ~21:10 UTC, research/model_blindtest.md "Verification log"): independent no-cache
   replay, own scorer and own stacker reproduce every headline. MoE stack + close 0.5774 vs close 0.5854
   (-0.0081 [-0.0125, -0.0036], ahead on 56 of 84 cards); no-line stack ties the close (+0.0001); removing the

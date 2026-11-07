@@ -1708,8 +1708,9 @@ def r5_(x, k=5):
 
 
 def lr_block(model_sc, lr, cols):
-    return {"cols": list(cols), "mean": [r5_(v, 8) for v in model_sc.mean_], "scale": [r5_(v, 8) for v in model_sc.scale_],
-            "coef": [[r5_(v, 8) for v in row] for row in lr.coef_], "intercept": [r5_(v, 8) for v in lr.intercept_]}
+    """Full-precision coefficients (rounding to 8 dp drifts 1e-8 over ~200 columns)."""
+    return {"cols": list(cols), "mean": [float(v) for v in model_sc.mean_], "scale": [float(v) for v in model_sc.scale_],
+            "coef": [[float(v) for v in row] for row in lr.coef_], "intercept": [float(v) for v in lr.intercept_]}
 
 
 def method_cols(pc, base):

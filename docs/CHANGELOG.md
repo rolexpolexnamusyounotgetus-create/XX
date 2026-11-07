@@ -282,6 +282,103 @@ No validation (2024-2025) number is computed in these steps; the Measure stage t
     records nor SOS pairs.
   - Nothing from 2024-25 was scored, no 2026 fight was read, and the only number fit here (engAdj) used 2019-2023 fights.
 
+### Step 4 (Nov 6, 7:05 pm ET): the learned stat-line path and newcomer priors (`components.embed`, `.oppadj`, `.preufc`)
+
+- **Base.** The step-3 commit df75ccd (src/engine3.js sha256 0862fbf0..., params3.js 48265239..., mlrates.js 40d87006...; the
+  working tree matched). No component patch existed for this step (scratchpad/components has none for embed, oppadj or preufc),
+  so the three were implemented by hand from the verified recipes and their reference code, in this order, freezing the engine
+  before each: tests/fixtures/engine3_pre_step4.js (= df75ccd), engine3_pre_oppadj.js (+ embed), engine3_pre_preufc.js
+  (+ oppadj). src/ml/mlrates.js and src/styles_sos.js are unchanged; no other component's lines were touched.
+- **(a) embed, ON** (engine3.js `embedTargets`; research/model_embed.md "Integration recipe").
+  - Before the adapter re-targets the tables, each learned target becomes link(rate) = b0 + b1 link(mlrates rate) + b2
+    eta[task] with the exported CV-selected recipe (embed_model.json `mlrates_blend.targets`, copied into `params.embed.recipe`
+    with the model's task order; b2 = 0 for rev, acc_g, td_acc, kd_h). Same arithmetic as src/ml/embed.js `blendMLRates`, bit
+    for bit (and the Python outputs to 5e-16).
+  - Inputs: `opts.embed = { etaA, etaB, recipe? }`, else a roster loaded with the new `FightEngine.loadEmbed(embed_model.json)`
+    for bouts dated on or after 2026-01-01 only. `m.embed` records the source and the raw learned targets; `m.mlPred` now holds
+    what the simulator plays.
+  - **Train confirmation before leaving it on** (tools/embed_blend_loyo.py -> data/derived/embed_blend_loyo.json; 3,998
+    directed 2019-2023 rows: mlrates_oof.json, the etas exactly as the engine path computes them, the 18 targets' counts):
+    - The full 2019-2023 refit reproduces the exported recipe (max |b difference| 0.0003), so the inputs match the research's.
+    - Each year scored by the recipe refit without it: mean relative deviance over 18 targets **-0.72% [-0.97, -0.49]** vs the
+      recalibrated rates (the embedding's own gain; research LOYO column reproduced per target, e.g. distance attempts -1.01%,
+      control -1.92%, head accuracy -1.69%) and **-0.42% [-0.68, -0.16]** vs the raw learned rates the engine used before
+      (the b2 = 0 recalibration alone costs +0.30% out of year). Attackers with 1-3 UFC fights: -0.32% [-0.73, +0.10].
+    - Engine level (tools/v5_step4_check.js, all 1,999 train fights x 2 orders x 300 sims, common random numbers, evalv's
+      inputs and metrics, vs embed off): winner log loss -0.0042 [-0.0074, -0.0011]; per-fight deviance sig landed -0.31
+      [-0.46, -0.16], sig attempts -0.72 [-1.05, -0.39], control -1.61 [-2.91, -0.35]; 7-bin -0.0063, method -0.0007, TD and
+      KD n.s.
+  - Backtests use leave-one-year-out coefficients on train fights (`coef_loyo[year]`; the exported recipe is fit on all of
+    2019-2023) and the exported recipe on 2024-2025, the learned rates' out-of-fold policy, as SOS does.
+- **(b) oppadj, OFF** (engine3.js `oppadjTargets`; research/model_oppadj.md item 3, the ML-path recipe).
+  - After the blend: target x (F_off,X F_def,Y)^beta for d_att, c_att, g_att, td_att, ctrl (h/b/l attempts follow the total),
+    on odds for acc_h, acc_l, td_acc; `params.oppadj.beta` = oppadj.json `ml_path_beta`; knockdowns, body accuracy and
+    submissions stay 0. Equal to tools/oppadj_engine.js `adjTargets` on all 3,998 train sides (relative 2e-16). topSkill /
+    escWeak are not applied (the reference left them out, so that combination is untested).
+  - **Never stacked with SOS**: matchupBase throws when `components.oppadj` is on with `components.styles_sos` sos on (any
+    source, so also the sosSource "oppadj" approximation). The Calibrate arm is `{ oppadj: true, styles_sos: { sos: false } }`.
+  - For the Calibrate ablation only (train, 300 sims per order, vs embed with SOS "wf"): winner +0.0016 [-0.0013, +0.0045],
+    7-bin +0.0066 [-0.0013, +0.0144], method +0.0016, sig landed deviance -0.12 [-0.31, +0.06], control -0.85 [-2.28, +0.56].
+    Nothing significant either way; no choice was made here.
+- **(c) preufc, ON** (engine3.js `applyPreUFC`; research/model_preufc.md item 3, the verified recipe).
+  - For sides with at most 3 prior UFC fights, from the non-UFC record entering the bout: odds multipliers M_pow = (KO rate /
+    0.3433)^0.601, M_sub = (sub rate / 0.2466)^0.627, M_chin = (KO-loss rate / 0.0436)^0.244, faded by exp(-n_UFC / 8). The
+    research report rounds these to 0.343 / 0.247 / 0.044 and 0.60 / 0.63 / 0.24; params use preufc.json's exact
+    `eval.side_finish` values. preufc.json's own roster block differs from them by up to 0.006 at very small rates (it was
+    evidently exported from a slightly different fit); the eval constants are the recipe's.
+  - Applied after durability as hazard multipliers: X's kd, gnp, stko x M_pow,X^s x M_chin,Y^s; X's submission attempt tables
+    x M_sub,X^s. The scales (pow 1.007, sub 1.314, chin 0.991) come from tools/preufc_scale.js: league-average pairs on the
+    train priors, 40,000 sims per config, 3 divisions x 2 formats, so the simulated per-fight finish odds move by M (no outcome
+    is fit). The Calibrate stage may refit them on 2019-2023 newcomer bouts (and try tau 16, as the report suggests).
+  - Inputs: `opts.preufc = { A, B }` ({ n, ko_w, sub_w, ko_l, n_ufc }), else `prof.preufc`, else a roster loaded with the new
+    `FightEngine.loadPreUFC(preufc.json)` for bouts dated on or after its ufcstats snapshot (2026-10-31). All 1,261 train
+    newcomer sides have a pre-bout record whose UFC count equals backtest_dev's `n`.
+  - The styles_sos `newcomer` sub-flag is the older unimplemented stub: the engine refuses it together with preufc.
+  - Train check vs embed alone (300 sims per order, common random numbers): method -0.0060 [-0.0115, -0.0005], 7-bin -0.0084
+    [-0.0168, +0.0002], KD deviance -0.0078 [-0.0127, -0.0027], KO-win log loss per newcomer side -0.0092 [-0.0168, -0.0014];
+    winner -0.0003 and the stat lines n.s. Caveat: the recipe's exponents were fit on 2015-2023 newcomer sides, so 2019-2023
+    is not out of sample for them.
+  - Not done here (out of this step's scope): the seeded-Elo level shift (it belongs in the winner blend) and WHR-rounds / dims
+    skill inputs (optional; no second age term).
+- **Harness.** New tools/mlpathrec.js gives backtest fights all three inputs (embed.json snapshots + quarterly refits and the
+  leave-one-year-out coefficients, oppadj.json snapshots, preufc.json snapshots), A/B swapped with the corners, 2026 refused, a
+  missing snapshot refused. Wired into tools/evalv.js (which prefers a frozen copy's own mlpathrec.js + ml/embed.js and records
+  the helper's hash and the step-4 flags in its meta), dynamics_bt.js, dynamics_calibrate.js, mlcal.js, moe_engine_bt.js,
+  officials_engcal.js, realism.js and v4_levels.js, each with an assertion that the input was applied. evalv smoke runs on
+  train: the step-4 engine and the frozen versions/v4 both ran 1,999 fights with 0 failures (outputs deleted; not
+  measurements). **The freeze must copy src/ml/embed.js and tools/mlpathrec.js into versions/v5/ (ml/embed.js, mlpathrec.js),
+  next to styles_sos.js.**
+- **Version labels.** Engine VERSION stays "5.0.0-dev"; params label "5.0.0-dev.4-selfcal-pre2024".
+- **Tests (all pass).**
+  - New `node tests/test_v5_step4.js`: 45 passed. Four references, each over 450 matchups (random pairs with learned rates,
+    the durability roster, random SOS and step-4 inputs; plain tables; 2019-2023 backtest fights x 2 corner orders with OOF
+    rates, durability records, SOS pairs and the step-4 walk-forward inputs): whole fight JSON incl. traces (4,500 fights), 45
+    summaries and explain() outputs, 0 mismatches.
+    - all three off = step 3; oppadj + preufc off = step 3 + embed; preufc off = + oppadj, with oppadj off and on (SOS off);
+    - strict: the step-3 engine on df75ccd's own params3.js and mlrates.js, 300 matchups, 0 mismatches.
+    - Also: each flag changes fights; default params with no step-4 input (the page path) = step 3 bit for bit; the blend =
+      blendMLRates; the backtest etas reproduce the snapshots' win logits (2.4e-3, export rounding); mlpathrec corner swap,
+      leave-one-year-out vs exported recipe, 2026 refused; oppadj = adjTargets and refuses SOS; pre-UFC constants, formula and
+      hazards; roster leak guards; trace format with everything on; sensitivity() rebuilds keep the inputs.
+  - `node tests/test_engine3.js` (N 20,000): 81 passed. `node tests/test_director3.js 300`: OK, 300 of 300 with learned rates;
+    `NO_ML=1 ... 100`: OK.
+  - test_mlrates 47 OK, test_v401 15, test_v5_step2 16, test_v5_step3 28, test_durability 34 OK, test_dynamics 23, test_mlcal
+    33, test_styles_sos 42, test_officials 24, test_realism_sens 45, test_embed OK, test_moe 21, test_mlpage 5, test_calib 14,
+    test_statdist 3,059 checks, test_forward_models PASS, test_blindtest_stack PASS.
+  - `python3 build.py <tmp>` builds (10.4 MB). The published page was not rebuilt; the page loads neither roster, so it plays
+    exactly step 3.
+- **Volkanovski vs Gaethje** (5 x 5 title, production learned rates, live durability roster, 20,000 fights; information only):
+  62.1% Volk on the page path; 62.2% with the embedding roster loaded (finish 47.3% -> 49.1%, KD per 15 0.251 -> 0.262).
+  Neither man is a newcomer, so preufc does not apply.
+- **For the next stages.**
+  - Calibrate: pick SOS "wf" or oppadj by train soft CE + stat lines (never both); include embed and preufc in the
+    leave-one-out; optionally refit `params.preufc.scale` / tau on 2019-2023 newcomer bouts.
+  - Release: refit the embed blend on 2019-2025 out-of-fold rows and rerun tools/embed.py (research/model_embed.md); wire
+    loadEmbed / loadPreUFC into src/app.js if the page should use them.
+  - calibrate.js, statlines_engine.js, oppadj_engine.js, mlrates_engine.js and mlcal_verify.js still pass no step-4 inputs.
+  - Nothing from 2024-25 was scored, no 2026 fight was read, and every number fit here (the leave-one-year-out blend
+    coefficients) used 2019-2023 fights; the preufc scales use train priors and no outcomes.
+
 ## v4.0.1 (2026-11-06): the v4 review's fixes, REJECTED; v4 (4.0.0) restored
 
 **Status: rejected by the decision rule.** The validation look ran once, at 11:45 am ET, paired against v4. The
