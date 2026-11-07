@@ -887,10 +887,10 @@ def _feat_lr(ctx):
     return FeatLR(ctx, refit=ctx.args.ml_refit)
 
 
-def _engine_factory(ver):
+def _engine_factory(ver, train_only=False):
     def fac(ctx):
         P, B = {}, {}
-        for split in ("train", "val"):
+        for split in (("train",) if train_only else ("train", "val")):
             p = os.path.join(DERIVED, "evalv", "%s_%s.json" % (ver, split))
             if not os.path.exists(p):
                 continue
@@ -901,8 +901,10 @@ def _engine_factory(ver):
                     if r.get("b7"):
                         B[r["id"]] = r["b7"]
             meta = d["meta"]
-        if not any(WINDOW[0] <= ctx.date[i] <= WINDOW[1] for i in P):
+        if not train_only and not any(WINDOW[0] <= ctx.date[i] <= WINDOW[1] for i in P):
             return None
+        if train_only and any(ctx.date[i] >= WINDOW[0] for i in P):
+            raise SystemExit("engine_%s (train-only): its evalv train file holds rows dated on or after %s" % (ver, WINDOW[0]))
         hist = {i: p for i, p in P.items() if ctx.date[i] < WINDOW[0]}
         return Stored(P, history=hist, bins=B, version="evalv %s (engine %s, params %s sha %s, %s sims/order, built %s)" % (
             ver, meta.get("engine_version"), meta.get("params_version"), str(meta.get("params_sha256", ""))[:12],
@@ -929,6 +931,15 @@ for _p in sorted(glob.glob(os.path.join(DERIVED, "evalv", "v*_val.json"))):
     register("engine_" + _ver, desc="simulator %s (tools/evalv.js validation run, %s)%s" % (
         _ver, os.path.basename(_p), "; REJECTED at its validation look (version_history.json), scored for the record"
         if "engine_" + _ver in _ENG_REJECTED else ""))(_engine_factory(_ver))
+# engine v7 (train gate comparator, V6_V10_PLAN 7.1 item 10 b): BLINDTEST_MOE_ENGINE_TRAIN=v7 registers engine_v7 from
+# data/derived/evalv/v7_train.json ALONE (a version has no validation rows before its look). Its history rows (2019-2023) feed only
+# `export --fit-through` (the per-year stackers of a backtest comparator); it never enters the 2024-2025 replay.
+_TRAIN_ONLY = os.environ.get("BLINDTEST_MOE_ENGINE_TRAIN")
+if _TRAIN_ONLY and "engine_" + _TRAIN_ONLY not in REGISTRY:
+    if not os.path.exists(os.path.join(DERIVED, "evalv", "%s_train.json" % _TRAIN_ONLY)):
+        raise SystemExit("BLINDTEST_MOE_ENGINE_TRAIN=%s: data/derived/evalv/%s_train.json is missing" % (_TRAIN_ONLY, _TRAIN_ONLY))
+    register("engine_" + _TRAIN_ONLY, desc="simulator %s (tools/evalv.js TRAIN run only; history rows for pre-2024 stacker exports)" % _TRAIN_ONLY)(
+        _engine_factory(_TRAIN_ONLY, train_only=True))
 
 
 def _mr_cells_to(cells, R):
