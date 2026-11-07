@@ -48,6 +48,9 @@
      (data/derived/v8/statlines_targets.json; forward-chained fold tables on train, the 2019-2023 dev table on 2024-2025, none for
      2019) and must report the retarget applied; every run reports per-stat PIT coverage (pitCoverage: shares of fight-sides inside
      the central 80% band / above P90 / below P10; a pre-registered diagnostic, never a rule input in this tool).
+   v9 additions (V6_V10_PLAN cycle 4): engines with components.judgeWF get the tracked 10-8 level per fight (opts.level.r108 from the
+     eradrift verified tracker at the fight's month start, fit on fights strictly before it) and must report walk-forward judging
+     applied (weights from params.judgeWF.byYear of the fight's year); components.levels is refused (no level-factor input here).
    Outputs: data/derived/evalv/<version>_<split>.json (metrics + per-fight predictions), and the version's entry in
    data/derived/version_history.json {version, date, engine_sha256, params_sha256, train, validation, blend, notes}.
    A train run creates or updates the entry's train block (and leaves validation null). A validation run fills
@@ -153,6 +156,14 @@ if (!isMainThread) {
   const P8 = typeof E.resolveParams === "function" ? E.resolveParams({}) : null;
   const useRT = !!(P8 && P8.components && P8.components.retarget);
   const RTJ = useRT ? readJSON("data/derived/v8/statlines_targets.json") : null;
+  // engine v9 components.judgeWF: the walk-forward judging weights live in params.judgeWF.byYear (each fit on cards before Jan 1 of
+  // its year); the 10-8 threshold follows the eradrift verified 10-8 tracker at the fight's month start, passed as opts.level.r108
+  // (tools/v9_levels.js r108At; fit on fights strictly before that month). components.levels needs per-fight factors that this
+  // tool does not build: refused (v9's candidate has it off).
+  const useJW = !!(P8 && P8.components && P8.components.judgeWF);
+  const useLV = !!(P8 && P8.components && P8.components.levels);
+  if (useLV) throw new Error("evalv: components.levels is on but evalv has no level-factor input (tools/v9_levels.js computeLevels needs a reference run)");
+  const LV9 = useJW ? require(path.join(ROOT, "tools/v9_levels.js")) : null;
   const names = OOF ? OOF.meta.targets : null;
   const rates = (arr) => { const o = {}; names.forEach((n, i) => { o[n] = arr[i]; }); return o; };
   parentPort.on("message", (msg) => {
@@ -180,7 +191,9 @@ if (!isMainThread) {
           if (useSOS) { const so = sosOpts(f, o, opts.params); opts.sos = so.sos; opts.params = so.params; }
           XR.apply(opts, f, o === 1, opts.params);   // step 4: opts.embed / opts.oppadj / opts.preufc for each component that is on
           if (useRT && rtT.fold) opts.statTargets = o === 0 ? { A: rtT.A, B: rtT.B, fin: rtT.fin } : { A: rtT.B, B: rtT.A, fin: { t: rtT.fin.t, A: rtT.fin.B, B: rtT.fin.A } };
+          if (useJW) opts.level = Object.assign({}, opts.level || {}, { r108: LV9.r108At(f.date) });
           const m = E.matchup(A, B, opts);
+          if (useJW && !(m.judgeWF && m.judgeWF.src === "byYear" && m.judgeWF.t108 > 0)) throw new Error("judgeWF: walk-forward judging not applied for " + f.id);
           if (useRT && rtT.fold && !(m.retarget && m.retarget.applied)) throw new Error("retarget: targets not applied for " + f.id);
           if (m.retarget && m.retarget.applied) acc.rtApplied++;
           XR.assertApplied(m, f.id, opts.params);
