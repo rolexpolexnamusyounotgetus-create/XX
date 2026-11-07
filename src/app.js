@@ -1200,7 +1200,7 @@
     ["A", "B"].forEach(function (side) {
       var card = el("div", "slcard " + side);
       card.appendChild(el("h4", null, nameOf(side)));
-      var w = el("div", "tbl-wrap"), t = el("table", "data sl"), th = el("thead"), hr = el("tr");
+      var w = el("div", "tbl-wrap"), t = el("table", "data slt"), th = el("thead"), hr = el("tr");
       ["Per fight", "Low", "Typical", "High", "Simulator"].forEach(function (h, i) { var x = el("th", null, h); x.scope = "col"; if (i) x.className = "num"; hr.appendChild(x); });
       th.appendChild(hr); t.appendChild(th);
       var tb = el("tbody");
@@ -1540,7 +1540,7 @@
   function expertSub(k, row) {
     var mk = BL.mk, missing = [];
     switch (k) {
-      case "ml2lr": return row.p != null ? "learned from stats, four rating systems, record, age and layoff" : "no ML v2 profile for this pair";
+      case "ml2lr": return row.p != null ? "learned from stats, rating systems, record, age and layoff" : "no ML v2 profile for this pair";
       case "mkt_rating":
         if (row.p == null) {
           ["A", "B"].forEach(function (s) { if (!(ML2H && ML2H.side(slugOf(s), ml2Fight(fightCtx())) || {}).mr) missing.push(shortOf(s)); });
@@ -1707,16 +1707,6 @@
   }
 
   /* ================================================================ backtest */
-  function findModels() {
-    var test = calibGet(["test", "holdout", "held_out", "test_2024_plus", "metrics.test", "metrics.holdout", "metrics.held_out", "metrics.test_2024_plus", "report.test", "winner.test"]);
-    if (!test || typeof test !== "object") return null;
-    var names = { engine: ["engine", "sim", "engine_v3", "model"], elo: ["elo"], blend: ["blend", "stack", "stacked", "engine_elo_blend", "engine+elo"], coin: ["coin", "coin_flip", "baseline", "naive_coin"], naive: ["naive", "more_wins", "more_ufc_wins"] };
-    var out = {};
-    for (var k in names) names[k].forEach(function (nm) { if (!out[k] && test[nm] && typeof test[nm] === "object") out[k] = test[nm]; });
-    if (!out.coin) out.coin = { log_loss: Math.log(2), brier: 0.25, accuracy: 0.5 };
-    return out.engine || out.elo ? { models: out, n: test.n || (out.engine && out.engine.n) || (out.elo && out.elo.n) } : null;
-  }
-  function metric(o, keys) { if (!o) return null; for (var i = 0; i < keys.length; i++) if (o[keys[i]] != null && isFinite(o[keys[i]])) return +o[keys[i]]; return null; }
   function ci(o) { return o && o.lo != null ? "[" + sgn(o.lo) + ", " + sgn(o.hi) + "]" : ""; }
   function sgn(v) { return (v > 0 ? "+" : (v < 0 ? "−" : "")) + Math.abs(v).toFixed(4); }
   function table(head, rows, opts) {
@@ -1745,134 +1735,90 @@
   // "3.0.0" -> "v3", "4.0.1" -> "v4.0.1"
   function verLabel(v) { if (!v) return null; var p = String(v).replace(/^v/, "").split("."); while (p.length > 1 && p[p.length - 1] === "0") p.pop(); return "v" + p.join("."); }
   var VERSION_WHAT = { v3: "raw UFC rates", v4: "learned stat lines inside the simulator", "v4.0.1": "v4 with refit judging and grappling levels" };
+  var VER_WHAT = { v3: "raw UFC rates", v4: "learned stat lines inside the simulator", "v4.0.1": "refit judging and grappling levels",
+    v5: "durability, fight dynamics, schedule strength", "v5.0.1": "v5 with robustness fixes", v6: "v5 parts re-bundled with the ML v2 package" };
   function versionTable() {
-    var d = el("div"); d.appendChild(el("h3", "mini", "Every simulator version, scored once on 2024-25 fights"));
-    var list = VERS && Array.isArray(VERS.versions) ? VERS.versions : (Array.isArray(VERS) ? VERS : null);
-    var sm0 = BENCH && BENCH.sim, onPage = verLabel(E.VERSION);
-    if (list && list.length && list.some(function (v) { return v && (v.train || v.validation); })) {
-      var est = function (M, k) { var x = M && M[k]; return x == null ? null : (typeof x === "number" ? x : (x.est != null ? +x.est : null)); };
-      var anyTrain = false, nDec = 0;
-      var vr = list.map(function (v) {
-        var val = v.validation && v.validation.metrics ? v.validation : null, tr = v.train && v.train.metrics ? v.train : null, src = val || tr, M = src ? src.metrics : null;
-        if (!val) anyTrain = true;
-        if (val && val.n_decisive) nDec = val.n_decisive;
-        var bl = v.blend || {}, wl = bl.market && bl.market.engine_weight, wn = bl.nomarket && bl.nomarket.engine_weight;
-        var lab = verLabel(v.version) || v.version, what = VERSION_WHAT[lab], rej = !!(v.decision && v.decision.kept === false);
-        return { cells: [lab + (val ? "" : " *") + (lab === onPage ? " (this page)" : "") + (rej ? " (rejected)" : "") + (what ? ": " + what : ""), pct(est(M, "acc"), 1), fx(est(M, "winLL"), 4), fx(est(M, "bin7"), 4),
-          (wl == null ? "–" : pct(wl, 0)) + " / " + (wn == null ? "–" : pct(wn, 0))] };
-      });
-      d.appendChild(table(["Version", "Picks right", "Winner log loss", "Winner and method log loss", "Weight in the blend, with / without a line"], vr));
-      d.appendChild(el("p", "small", "Lower log loss is better. Each version gets a single look at 2024-25" + (nDec ? " (" + nf.format(nDec) + " decisive fights)" : "") + "; to replace the version before it, it also has to earn weight in the blend and beat the finish model at how fights end." +
-        (anyTrain ? " * marks tuning-period numbers (2019-23), shown until the version's single look is recorded." : "")));
-      if (sm0 && sm0.val_plain && sm0.val_ml) d.appendChild(el("p", "small", "From the stat-line model's own report, 2024-25 (" + nf.format(sm0.n || 0) + " fights, " + (sm0.nsim || 400) + " simulations each): the v3 simulator scored " + fx(sm0.val_plain.winner_log_loss, 4) + " on raw UFC rates and " + fx(sm0.val_ml.winner_log_loss, 4) + " with the learned stat lines; pooled over 2019-2025 the lines lower its log loss by " + (sm0.pooled ? fx(-sm0.pooled.ml_minus_plain.mean, 4) : "–") + ", in all seven years."));
-      return d;
-    }
-    var rows = [];
-    if (sm0 && sm0.val_plain) rows.push({ cells: ["v3 simulator, raw UFC rates", pct(sm0.val_plain.accuracy, 1), fx(sm0.val_plain.winner_log_loss, 4)] });
-    if (sm0 && sm0.val_ml) rows.push({ cells: ["v3 with the learned stat lines", pct(sm0.val_ml.accuracy, 1), fx(sm0.val_ml.winner_log_loss, 4)] });
-    if (rows.length) d.appendChild(table(["Version, 2024-25 (" + nf.format(sm0.n || 0) + " fights)", "Picks right", "Winner log loss"], rows));
-    else d.appendChild(el("p", "small", "The version history has not been written yet."));
+    var d = el("div", "sc-ver");
+    d.appendChild(el("h3", "mini", "Simulator versions: each scored once on 2024-25, kept only if it clearly beat the one before"));
+    var list = SCJ && SCJ.versions || [], notes = (SCJ && SCJ.notes && SCJ.notes.engine_versions) || {}, onPage = verLabel(E.VERSION);
+    var vault = SCJ && SCJ.vault && SCJ.vault.engines || {};
+    if (!list.length) { d.appendChild(el("p", "small", "The version history is not in this build.")); return d; }
+    var rows = list.map(function (v) {
+      var lab = verLabel(v.engine || v.version) || v.version, nt = notes[v.version] || notes[lab] || null;
+      var status = v.kept === true ? "kept" : (v.kept === false ? "rejected" : (nt && nt.verdict) || "replaced");
+      if (lab === onPage) status = "kept, on this page";
+      var vv = vault[v.version] || vault[lab];
+      var why = nt ? nt.reason : (v.basis ? String(v.basis).split(/;|\. /)[0] + "." : "");
+      return { strong: lab === onPage, cells: [lab + (VER_WHAT[lab] ? ": " + VER_WHAT[lab] : ""), status, v.winLL && v.winLL.est != null ? fx(v.winLL.est, 4) : "–",
+        vv && vv.log_loss != null ? fx(vv.log_loss, 4) : "–", why] };
+    });
+    d.appendChild(table(["Version", "Status", "Winner log loss, 2024-25", "Sealed 2026 (read only)", "Why"], rows, { caption: "Simulator versions and why each was kept or rejected" }));
+    d.appendChild(el("p", "small", "The 2026 column is descriptive: the sealed fights never choose a version. Every version trails the learned models at picking winners, which is why the simulator explains how a fight goes and the pick comes from the stats model and the market."));
     return d;
   }
-  function drawReliability(box, series) {
-    var W = Math.max(280, Math.min(460, Math.round(box.clientWidth || 360))), H = W * 0.86, L = 40, R = 10, T = 10, B = 34;
-    var pw = W - L - R, ph = H - T - B, lo = 0.5;
-    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Reliability chart: " + series.map(function (s) { return s[0] + " " + s[1].map(function (b) { return "predicted " + pct(b.pred, 0) + " actual " + pct(b.obs, 0); }).join("; "); }).join(". ") });
-    function X(v) { return L + pw * (v - lo) / (1 - lo); } function Y(v) { return T + ph - ph * (v - lo) / (1 - lo); }
-    [0.5, 0.6, 0.7, 0.8, 0.9, 1].forEach(function (v) {
-      svg.appendChild(svgEl("line", { x1: X(lo), x2: X(1), y1: Y(v), y2: Y(v), stroke: "var(--line)", "stroke-width": 1 }));
-      svgText(svg, L - 6, Y(v) + 4, Math.round(v * 100) + "%", { "text-anchor": "end", "font-size": 10.5, fill: "var(--muted)" });
-      svgText(svg, X(v), H - 16, Math.round(v * 100) + "%", { "text-anchor": "middle", "font-size": 10.5, fill: "var(--muted)" });
-    });
-    svgText(svg, L + pw / 2, H - 2, "Predicted chance for the favorite", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" });
-    svg.appendChild(svgEl("line", { x1: X(lo), y1: Y(lo), x2: X(1), y2: Y(1), stroke: "var(--axis)", "stroke-width": 1.5 }));
-    var maxN = 1; series.forEach(function (s) { s[1].forEach(function (b) { maxN = Math.max(maxN, b.n || 1); }); });
-    series.forEach(function (s) {
-      var pts2 = s[1].filter(function (b) { return b.pred != null && b.obs != null && (b.n || 0) >= 10; }).map(function (b) { return [b.pred, b.obs, b.n || 1]; });
-      if (pts2.length > 1) svg.appendChild(svgEl("polyline", { points: pts2.map(function (p) { return X(p[0]) + "," + Y(Math.max(lo, p[1])); }).join(" "), fill: "none", stroke: s[2], "stroke-width": 2, "stroke-linejoin": "round" }));
-      pts2.forEach(function (p) { svg.appendChild(svgEl("circle", { cx: X(p[0]), cy: Y(Math.max(lo, p[1])), r: 3 + 5 * Math.sqrt(p[2] / maxN), fill: s[2], stroke: "var(--surface)", "stroke-width": 2 })); });
-    });
-    box.textContent = ""; box.appendChild(svg);
-  }
-  function simulatorAlone() {
-    var d = el("div");
-    var mods = CALIB ? findModels() : null;
-    if (!mods) return d;
-    var cv = verLabel(BENCH && BENCH.calib_version || calibGet(["version", "meta.engine_version", "engine_version"])) || "v3";
-    d.appendChild(el("h3", "mini", "Older check: the " + cv + " simulator's calibration run"));
-    var M = mods.models, rows = [["Simulator " + cv, M.engine], ["Elo", M.elo], ["Simulator + Elo, an early blend", M.blend], ["More UFC wins", M.naive], ["Coin flip", M.coin]].filter(function (r) { return r[1]; });
-    d.appendChild(table(["Fights from 2024 on", "Picks right", "Log loss", "Fights"], rows.map(function (r) {
-      var o = r[1], ll = metric(o, ["log_loss", "logloss", "ll"]), n = metric(o, ["n"]) || mods.n;
-      return { cells: [r[0], pct(metric(o, ["accuracy", "acc"]), 1), fx(ll, 4), n ? nf.format(n) : "–"] };
-    })));
-    d.appendChild(el("p", "small", "Older check, includes 2026 fights; not used for any choice. It scored the " + cv + " simulator on fights from Jan 2024 to Oct 2026, with neutral knobs, before the 2026 fights were sealed away. The scoreboard above covers 2024-25 only."));
-    return d;
-  }
+  function scTable(head, rows, cap) { return table(head, rows, { caption: cap }); }
+  function intv(c) { return c && c.length === 2 ? " [" + fx(c[0], 4) + ", " + fx(c[1], 4) + "]" : ""; }
+  function dCell(o) { return o ? sgn(o.diff) + " " + ci2(o.ci) : "–"; }
   function renderBacktest() {
     var box = $("btBody"); box.textContent = "";
-    box.appendChild(el("p", "lede", "Every number here is out of sample: each fight is predicted from what was known the day before, by models that never saw it. Picks right is the share of fights where the model's favorite won. Log loss also rewards confidence when it is right and punishes it when it is wrong; lower is better, a coin flip scores 0.693, and a few thousandths is a real difference at this level."));
+    if (!SCJ) { box.appendChild(el("p", "small", "The scorecard is not in this build.")); return; }
+    var V = SCJ.valid || {}, P = V.paired || {}, VA = SCJ.vault, N = SCJ.notes || {};
+    box.appendChild(el("p", "lede", "Every number here is out of sample: each fight is predicted from what was known before it, by weights that never saw it. Picks right is the share of fights where the favorite won. Log loss also rewards confidence when it is right and punishes it when it is wrong; lower is better, a coin flip scores 0.693, and a few thousandths is a real difference at this level."));
+    // the 2026 readout first, in plain words
+    var ce = VA && VA.close_edge && VA.close_edge["ml2_stack_close_static-close"], oe = VA && VA.open_regime && VA.open_regime["ml2_stack_open_static-open"];
+    var call = el("div", "callout sc-call");
+    call.appendChild(el("b", null, "On the sealed 2026 fights: level with the market."));
+    call.appendChild(el("span", null, "Opened once, on Nov 7, 2026, by an independent audit" + (VA ? " (" + nf.format(VA.n_decisive || 0) + " decisive fights on " + (VA.n_cards || "–") + " cards, " + fmtDate(VA.dates[0], true) + " to " + fmtDate(VA.dates[1], true) + ")" : "") +
+      ". With a closing line the pick scored " + (ce ? sgn(ce.diff) + " " + ci2(ce.ci) : "–") + " against the line alone; with a pre-fight line, " + (oe ? sgn(oe.diff) + " " + ci2(oe.ci) : "–") +
+      " against that line. Both intervals include zero. The edge over the closing line seen on 2024-25 did not carry into 2026, so this page claims no edge over the market."));
+    box.appendChild(call);
     var grid = el("div", "bt-grid"), c1 = el("div", "bt-col"), c2 = el("div", "bt-col");
     grid.appendChild(c1); grid.appendChild(c2); box.appendChild(grid);
-    // the protocol, plainly
     c1.appendChild(el("h3", "mini", "How the testing works"));
     var ol = el("ol", "proto");
-    [["Tuning years, 2019-2023.", " Every model, weight and setting was fit or tuned on these fights only."],
-      ["Test years, 2024-2025.", " Used only to choose between versions. The scoreboard below comes from here."],
-      ["A sealed vault, 2026.", " Every fight from Jan 1, 2026 on (about 370) is kept apart from the project. Nothing is tuned or scored on it; an independent auditor opens it once at milestones."],
-      ["The forward test.", " Before each upcoming card the current picks are committed with a timestamp, so they provably came first. They are scored after the fights (see the next panel)."]
+    [["Tuning years, 2019-2023.", " Every weight on this page was fit on these fights only."],
+      ["Test years, 2024-2025.", " Used to choose between models and versions. Left column."],
+      ["A sealed vault, 2026.", " Every fight from Jan 1, 2026 on, kept apart from the project and opened once by an auditor. It chooses nothing. Right column."],
+      ["The forward test.", " Before each card the picks are committed with a timestamp, then scored after the fights (next panel)."]
     ].forEach(function (x) { var li = el("li"), sp = el("span"); sp.appendChild(el("b", null, x[0])); sp.appendChild(document.createTextNode(x[1])); li.appendChild(sp); ol.appendChild(li); });
     c1.appendChild(ol);
-    // one scoreboard: 2024-25 test fights
-    if (BENCH && BENCH.singles) {
-      c1.appendChild(el("h3", "mini", "Scoreboard, 2024-25 test fights"));
-      var sg = BENCH.singles, rowsB = [], ev = verLabel(BENCH.engine_version) || "v3";
-      if (BENCH.line && BENCH.line.moe) rowsB.push(["The blend, with the closing line", BENCH.line.moe.est, BENCH.line.n, true, BENCH.line.acc]);
-      if (sg.market) rowsB.push(["Market closing line alone", sg.market.ll, sg.market.n, false, sg.market.acc]);
-      if (BENCH.noline) rowsB.push(["The blend, no line", BENCH.noline.ll, BENCH.noline.n, true, BENCH.noline.acc]);
-      [["ml", "ML model"], ["feat_lr", "Feature model"], ["mkt_rating", "Market rating"], ["engine", "Simulator " + ev + " (the version the blend's weights were fit with)"], ["elo_sig", "Strike-share Elo"], ["elo", "Elo"]].forEach(function (k) { if (sg[k[0]]) rowsB.push([k[1], sg[k[0]].ll, sg[k[0]].n, false, sg[k[0]].acc]); });
-      rowsB.push(["Coin flip", Math.log(2), null, false, 0.5]);
-      var best = Math.min.apply(null, rowsB.map(function (r) { return r[1]; })), worst = Math.log(2);
-      c1.appendChild(table(["Model", "Picks right", "Log loss", "Fights"], rowsB.map(function (r) { return { strong: r[3], cells: [r[0], r[4] != null ? pct(r[4], 1) : "–", llCell(r[1], best, worst), r[2] ? nf.format(r[2]) : "–"] }; }), { caption: "Picks right and log loss on 2024-25 test fights" }));
-      var ul = el("ul", "caveats"), L = BENCH.line || {}, NL = BENCH.noline || {}, CV = BENCH.noline_cv || {};
-      if (L.diff) ul.appendChild(el("li", null, "With a line, the blend's log loss beat the closing line's on 2024-25 by " + fx(-L.diff.est, 4) + " (95% interval " + ci(L.diff) + "), but it was level in the 2021-23 checks" + (L.cv_2021_2023 ? " (" + sgn(L.cv_2021_2023.est) + " " + ci(L.cv_2021_2023) + ")" : "") + ". Pooled over every out-of-sample year, 2021-2025" + (L.pooled_n ? " (" + nf.format(L.pooled_n) + " fights)" : "") + ", it is " + (L.pooled_2021_2025 ? sgn(L.pooled_2021_2025.est) + " " + ci(L.pooled_2021_2025) : "–") + ": level with the market to slightly better, not a reliable edge."));
-      if (NL.vs_best) ul.appendChild(el("li", null, "Without a line it beats every single model: " + fx(-NL.vs_best.est, 4) + " lower log loss than the best one (the ML model) on 2024-25 " + ci(NL.vs_best) + (CV.moe_minus_ml ? ", and " + fx(-CV.moe_minus_ml.est, 4) + " lower in the 2021-23 checks " + ci(CV.moe_minus_ml) : "") + "."));
-      ul.appendChild(el("li", null, "The simulator gets little weight because on its own it trails the learned models; for the winner it added nothing beyond them. Its job is the how: methods, rounds, the story of a fight."));
-      if (BENCH.line && BENCH.line.acc == null) ul.appendChild(el("li", null, "Picks right for the blend with a line is not shown: the reports scored it only on a slightly different set of fights."));
-      c1.appendChild(ul);
+    // 2024-25
+    c1.appendChild(el("h3", "mini", "2024-25 test fights"));
+    var r1 = [["Closing line (the market)", V.close, false], ["Opening line", V.open, false], ["Pick with a closing line", V.stack_line, true], ["Pick with a pre-fight line", V.stack_open, true],
+      ["Pick with no line", V.stack_noline, true], ["ML v2 model alone", V.ml2_lr, false], ["Older ML model (v1)", V.ml_v1, false], ["Elo rating", V.elo, false]].filter(function (r) { return r[1] && r[1].ll != null; });
+    var b1 = Math.min.apply(null, r1.map(function (r) { return r[1].ll; }));
+    c1.appendChild(scTable(["Model", "Picks right", "Log loss", "Fights"], r1.map(function (r) { return { strong: r[2], cells: [r[0], r[1].acc != null ? pct(r[1].acc, 1) : "–", llCell(r[1].ll, b1, Math.log(2)), r[1].n ? nf.format(r[1].n) : "–"] }; }), "Picks right and log loss on 2024-25 test fights"));
+    var ul = el("ul", "caveats");
+    if (P.ml2_lr_minus_close) ul.appendChild(el("li", null, "The ML v2 model alone, with no betting line, tied the closing line: " + dCell(P.ml2_lr_minus_close) + " on the " + nf.format(P.ml2_lr_minus_close.n) + " fights with a line (log loss " + fx(V.ml2_lr.ll, 4) + " for the model, " + fx(V.close.ll, 4) + " for the line)."));
+    if (P.line_stack_minus_close) ul.appendChild(el("li", null, "With a closing line, the ML v2 stack beat the line alone by " + dCell(P.line_stack_minus_close) + " on 2024-25, but tied it on 2021-23" +
+      (P.line_stack_minus_close_2021_2023 ? " (" + dCell(P.line_stack_minus_close_2021_2023) + ")" : "") + ". So the edge came from one stretch of fights, and 2026 did not repeat it."));
+    if (P.open_stack_minus_open) ul.appendChild(el("li", null, "With an opening line, the pick beat the opener by " + dCell(P.open_stack_minus_open) + ". Feeding an opener to weights fit on closing lines costs " + dCell(P.close_weights_fed_open) + ", which is why the page asks before treating a line as the close."));
+    ul.appendChild(el("li", null, "Every model, the market included, was too cautious on 2024-25 (favorites won more often than predicted). The page keeps the weights fit on 2019-2023, not a sharper refit, and 2026 showed why: the refit stacks did worse there."));
+    c1.appendChild(ul);
+    // 2026
+    if (VA) {
+      c2.appendChild(el("h3", "mini", "The sealed 2026 vault"));
+      var B = VA.bench || {}, ev4 = VA.engine_v4 || null;
+      var r2 = [["Closing line (the market)", B.close, false], ["Pick with a closing line", B.ml2_stack_close_static, true], ["Opening line", B.open, false], ["Pick with a pre-fight line", B.ml2_stack_open_static, true],
+        ["ML v2 model alone", B.ml2_lr, false], ["Pick with no line", B.ml2_stack_noline_static, true], ["Simulator v4 alone", ev4, false], ["Previous page's no-line blend", B.moe_page_noline, false], ["Elo rating", B.elo, false]].filter(function (r) { return r[1] && r[1].log_loss != null; });
+      var b2 = Math.min.apply(null, r2.map(function (r) { return r[1].log_loss; }));
+      c2.appendChild(scTable(["Model", "Picks right", "Log loss, 95% interval", "Confidence check"], r2.map(function (r) {
+        var o = r[1], ll = el("span"); ll.appendChild(llCell(o.log_loss, b2, Math.log(2))); ll.appendChild(el("small", "ci", intv(o.ci)));
+        return { strong: r[2], cells: [r[0], o.accuracy != null ? pct(o.accuracy, 1) : "–", ll, o.slope != null ? fx(o.slope, 2) + (o.slope < 0.8 ? ", too sure" : "") : "–"] };
+      }), "Picks right and log loss on the sealed 2026 fights"));
+      var ul2 = el("ul", "caveats"), pr = {};
+      (N.vault_2026_paired || []).forEach(function (x) { pr[x.key] = x; });
+      ul2.appendChild(el("li", null, "Confidence check: 1.00 means the stated chances matched how often favorites won; below 1 means too sure. The closing line scored " + (B.close ? fx(B.close.slope, 2) : "–") + "."));
+      if (B.moe_page_noline) ul2.appendChild(el("li", null, "The no-line blend this page used before was too sure (" + fx(B.moe_page_noline.slope, 2) + intv(B.moe_page_noline.slope_ci).replace(/(\d\.\d{2})\d{2}/g, "$1") + ") and scored worse than the ML v2 model alone" +
+        (pr.prod_noline_minus_ml2_lr ? " (the production no-line stack it was built like: " + sgn(pr.prod_noline_minus_ml2_lr.diff) + " " + ci2(pr.prod_noline_minus_ml2_lr.ci) + ")" : "") +
+        ". The ML v2 no-line stack that replaces it beat that stack by " + (pr.ml2_noline_minus_prod_noline ? sgn(pr.ml2_noline_minus_prod_noline.diff) + " " + ci2(pr.ml2_noline_minus_prod_noline.ci) : "–") + "."));
+      if (pr.ml2_lr_minus_close) ul2.appendChild(el("li", null, "Without a line nothing matched the market in 2026: the ML v2 model alone trailed the closing line by " + sgn(pr.ml2_lr_minus_close.diff) + " " + ci2(pr.ml2_lr_minus_close.ci) +
+        (pr.engine_v4_minus_close ? ", the simulator by " + sgn(pr.engine_v4_minus_close.diff) + " " + ci2(pr.engine_v4_minus_close.ci) : "") + "."));
+      ul2.appendChild(el("li", null, "Fights in 2026 ended early more often than any model expected, the simulator included. 369 fights give wide intervals: about ±0.05 on a log loss, ±0.01 to ±0.03 on a difference."));
+      c2.appendChild(ul2);
     }
-    // everything else in one place, collapsed: the source reports, every version, the older calibration run
-    var more = el("details", "more"), msum = el("summary", null, "More checks: the source reports, every simulator version, an older calibration run");
-    more.appendChild(msum); var mb = el("div", "dbody"); more.appendChild(mb);
-    if (BENCH && BENCH.since2024 && BENCH.since2024.length) {
-      var per = BENCH.since_periods || {}, both25 = /2025-12-31/.test(String(per.market || "")) && /2025-12-31/.test(String(per.ml || ""));
-      var sd = el("div"); sd.appendChild(el("h3", "mini", both25 ? "From the source reports, 2024-25" : "Benchmarks on fights from 2024 on"));
-      var R2 = BENCH.since2024, b2 = Math.min.apply(null, R2.map(function (r) { return r.ll; }));
-      sd.appendChild(table(["Model", "Picks right", "Log loss", "Fights"], R2.map(function (r) { return { cells: [r.label, pct(r.acc, 1), llCell(r.ll, b2, Math.log(2)), r.n ? nf.format(r.n) : "–"] }; })));
-      sd.appendChild(el("p", "small", both25 ? "As the market and ML reports score them (test fights Jan 2024 to Dec 2025; both reports leave the 2026 vault out). The numbers differ slightly from the scoreboard because each report keeps the fights it can price or rate (843 rather than 844 for the closing line, for example)." :
-        "As the market and ML reports score them. Test periods: market " + (per.market || "?") + "; ML " + (per.ml || "?") + "."));
-      mb.appendChild(sd);
-    }
-    mb.appendChild(versionTable());
-    mb.appendChild(simulatorAlone());
-    c1.appendChild(more);
-    // reliability
-    var cal = BENCH && BENCH.calibration;
-    if (cal && (cal.moe_market || cal.moe_nomarket)) {
-      c2.appendChild(el("h3", "mini", "Reliability, 2024-25: when it says 70%, does the favorite win 70%?"));
-      var series = [];
-      if (cal.moe_market) series.push(["Blend, with the line", cal.moe_market, "var(--s1)"]);
-      if (cal.moe_nomarket) series.push(["Blend, no line", cal.moe_nomarket, "var(--s2)"]);
-      if (cal.market) series.push(["Market closing line", cal.market, "var(--s3)"]);
-      var cb = el("div", "chart relchart"); c2.appendChild(cb); drawReliability(cb, series);
-      var lg = el("div", "bt-legend"); series.forEach(function (s) { var x = el("span"), i = el("i"); i.style.background = s[2]; x.appendChild(i); x.appendChild(document.createTextNode(s[0])); lg.appendChild(x); });
-      lg.appendChild(el("span", null, "Diagonal: perfect calibration. Dot size: number of fights.")); c2.appendChild(lg);
-      var det = el("details", "more"), sm = el("summary", null, "Reliability as a table"); det.appendChild(sm);
-      var rr = [];
-      series.forEach(function (s) { s[1].forEach(function (b) { rr.push({ cells: [s[0], Math.round(b.lo * 100) + "-" + Math.round(b.hi * 100) + "%", pct(b.pred, 1), pct(b.obs, 1), nf.format(b.n)] }); }); });
-      det.appendChild(table(["Model", "Bin", "Predicted", "Actual", "Fights"], rr)); c2.appendChild(det);
-      c2.appendChild(el("p", "small", "Points above the diagonal mean the favorite won more often than predicted. In 2024-25 every input, the market included, was too cautious; the blend on this page is refit with recent fights weighted up to correct for it."));
-    }
-    var cvt = el("div"); cvt.id = "btCaveats"; c2.appendChild(cvt); renderCaveats();
+    box.appendChild(versionTable());
+    var cvt = el("div"); cvt.id = "btCaveats"; box.appendChild(cvt); renderCaveats();
   }
   // pair-specific cautions: moving up a weight class, little UFC data
   function pairCaveats() {
@@ -1888,121 +1834,189 @@
     var d = $("btCaveats"); if (!d) return; d.textContent = "";
     d.appendChild(el("h3", "mini", "Read with care"));
     var ul = el("ul", "caveats");
-    ["The blend on this page is refit on 2019-2025 with recent fights weighted up, so it is sharper than the tested one. If 2026 fights look more like 2019-2023 than 2024-25, that costs it some accuracy; the forward test will tell.",
-      "Scenario presets and knobs change the simulator, not the blend. They are judgment calls the backtest can't check.",
-      "Fighters with little UFC data are pulled hard toward their division average, so debut and early-career predictions lean on the market."].concat(pairCaveats()).forEach(function (t) { ul.appendChild(el("li", null, t)); });
+    ["This page claims no edge over the market. With a line, the pick follows the line closely; without one, it is the best non-market read the project has, and on 2026 it still trailed the closing line.",
+      "Scenario presets and knobs change the simulator, not the pick. They are judgment calls the tests can't check.",
+      "Fighters with little UFC data are pulled hard toward their division average, so debut and early-career picks lean on the market."].concat(pairCaveats()).forEach(function (t) { ul.appendChild(el("li", null, t)); });
     d.appendChild(ul);
   }
   /* ================================================================ forward test */
   function divFor(wc, sa, sb) { return DIVS.indexOf(wc) >= 0 ? wc : defaultDivision(sa, sb); }
+  // a live pick for a bout not yet in the ledger: the page's no-line stack (the market is shown beside it, not mixed in)
   function liveForward(b, date) {
     var sa = b.a && b.a.slug, sb = b.b && b.b.slug;
-    if (!MOE || !sa || !sb || !DB.fighters[sa] || !DB.fighters[sb]) return null;
+    if (!ML2H || !PP || !sa || !sb || !DB.fighters[sa] || !DB.fighters[sb]) return null;
     var ctx = { division: divFor(b.wc, sa, sb), rounds: b.rounds || 3, title: !!b.title, date: date };
-    var X = expertsFor(sa, sb, DB.fighters[sa], DB.fighters[sb], ctx);
-    if (!Object.keys(X.experts).length) return null;
-    try { var r = MOE.predict({ experts: X.experts, gate: window.MoE.gateFromSides(X.A, X.B, { division: ctx.division, rounds: ctx.rounds }) }); return { p: r.p, n: r.used.length, ctx: ctx }; }
-    catch (e) { return null; }
+    try { var r = PP.winner(ML2H, sa, sb, ml2Fight(ctx), null); return r ? { p: r.p, ctx: ctx } : null; } catch (e) { return null; }
   }
+  // a live method read for a bout with a UFC debutant: the debut method model, fed the market line (else seeded Elo)
+  function liveDebut(b, date) {
+    if (!DEBM || !window.DebutModel) return null;
+    var keyA = b.a.slug || slugify(b.a.name), keyB = b.b.slug || slugify(b.b.name);
+    var debA = !b.a.slug, debB = !b.b.slug; if (!debA && !debB) return null;
+    var pfA = b.a.slug ? DB.fighters[b.a.slug] : null, pfB = b.b.slug ? DB.fighters[b.b.slug] : null;
+    if ((debA && !debutEntry(keyA) && !pfA) && (debB && !debutEntry(keyB) && !pfB)) return null;
+    var ctx = { division: DIVS.indexOf(b.wc) >= 0 ? b.wc : (b.wc || "Lightweight"), rounds: b.rounds || 3, date: date };
+    var pA = b.mkt && b.mkt.p != null ? b.mkt.p : null, src = "market";
+    if (pA == null) {
+      var ea = debA ? 1500 + ((g2(debutEntry(keyA), "derived", "seeded_elo", "elo_debut_shift")) || 0) : (pfA && pfA.elo) || 1500;
+      var eb = debB ? 1500 + ((g2(debutEntry(keyB), "derived", "seeded_elo", "elo_debut_shift")) || 0) : (pfB && pfB.elo) || 1500;
+      pA = 1 / (1 + Math.pow(10, -(ea - eb) / 400)); src = "seeded Elo";
+    }
+    var m = debutMethod(keyA, pfA, keyB, pfB, ctx, pA, debA, debB);
+    return m ? { m: m, pA: pA, src: src } : null;
+  }
+  function g2(o) { for (var i = 1; i < arguments.length; i++) { if (!o || typeof o !== "object") return null; o = o[arguments[i]]; } return o == null ? null : o; }
   function fmtOdds(v) { return v == null ? "" : (v > 0 ? "+" + v : String(v)); }
+  // "2026-11-07T22:00:00Z" -> "Nov 7, 10:00 pm UTC"
+  function fmtUTC(iso) {
+    var d = new Date(String(iso || "").replace(/Z?$/, "Z").replace(/\+00:00Z$/, "Z")); if (isNaN(d)) return String(iso || "");
+    var h = d.getUTCHours(), m = d.getUTCMinutes(), ap = h >= 12 ? "pm" : "am", h12 = h % 12 || 12;
+    return MONTHS[d.getUTCMonth()] + " " + d.getUTCDate() + ", " + h12 + ":" + (m < 10 ? "0" : "") + m + " " + ap + " UTC";
+  }
   function loadBout(b, ev) {
     var sa = b.a.slug, sb = b.b.slug; if (!DB.fighters[sa] || !DB.fighters[sb]) return;
     S.a = sa; S.b = sb; applyPairDefaults();
     S.div = divFor(b.wc, sa, sb); S.rounds = b.rounds === 5 ? 5 : 3; S.title = !!b.title;
-    if (b.mkt && b.mkt.oa != null && b.mkt.ob != null) { S.odds = { A: fmtOdds(b.mkt.oa), B: fmtOdds(b.mkt.ob) }; S.oddsSrc = "consensus odds snapshot" + (FWD && FWD.odds && FWD.odds.utc ? " of " + fmtDate(FWD.odds.utc.slice(0, 10)) : "") + " for " + ev.name; }
+    if (b.mkt && b.mkt.oa != null && b.mkt.ob != null) { S.odds = { A: fmtOdds(b.mkt.oa), B: fmtOdds(b.mkt.ob) }; S.oddsSrc = "consensus odds snapshot" + (FWD && FWD.odds && FWD.odds.utc ? " of " + fmtDate(FWD.odds.utc.slice(0, 10)) : "") + " for " + ev.name + ", read as a pre-fight line"; }
     matchupChanged(true);
     var mb = document.querySelector(".matchbar"); if (mb && mb.scrollIntoView) mb.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   }
+  function strip(pA, pN, pM, label) {
+    var tr = el("div", "fw-strip"); tr.appendChild(el("i", "mid"));
+    if (pM != null) { var u = el("i", "mt"); u.style.left = (pM * 100) + "%"; tr.appendChild(u); }
+    if (pN != null) { var o = el("i", "nl"); o.style.left = (pN * 100) + "%"; tr.appendChild(o); }
+    if (pA != null) { var dt = el("i", "md"); dt.style.left = (pA * 100) + "%"; tr.appendChild(dt); }
+    tr.setAttribute("role", "img"); tr.setAttribute("aria-label", label);
+    return tr;
+  }
+  function favTxt(p, a, b) { return p == null ? "–" : (p >= 0.5 ? lastName(a) : lastName(b)) + " " + pct(Math.max(p, 1 - p), 0); }
   function renderForward() {
     var box = $("fwBody"); if (!box) return; box.textContent = "";
     if (!FWD || !FWD.events || !FWD.events.length) { box.appendChild(el("p", "small", "No upcoming cards in this build.")); return; }
-    var nB = 0, nPick = 0, nAgree = 0, nBoth = 0, scored = [], rowsOut = [];
-    FWD.events.forEach(function (ev) {
-      ev.bouts.forEach(function (b) {
-        nB++;
-        var live = liveForward(b, ev.date); b._live = live;
-        if (live) nPick++;
-        if (live && b.mkt && b.mkt.p != null) { nBoth++; if ((live.p > 0.5) === (b.mkt.p > 0.5)) nAgree++; }
-        var res = b.result, led = b.ledger;
-        if (res && res.outcome === "win" && led && led.p_a != null) {
-          var pw = res.winner === "a" ? led.p_a : 1 - led.p_a, mk = b.mkt ? (res.winner === "a" ? b.mkt.p : 1 - b.mkt.p) : null;
-          scored.push({ ll: -Math.log(clamp(pw, 1e-6, 1)), mll: mk != null ? -Math.log(clamp(mk, 1e-6, 1)) : null, hit: pw > 0.5 ? 1 : (pw === 0.5 ? 0.5 : 0) });
-        }
-      });
-    });
-    $("fwSub").textContent = "Cards as of " + fmtDate(String(FWD.as_of || "").slice(0, 10)) + (FWD.odds && FWD.odds.utc ? " · odds " + fmtDate(FWD.odds.utc.slice(0, 10)) : "");
-    var evs = FWD.events, d0 = evs[0].date, d1 = evs[evs.length - 1].date;
-    function md(iso) { var p = String(iso).split("-"); return (MONTHS[+p[1] - 1] || p[1]) + " " + (+p[2]); }
-    var lede = el("p", "lede", "The model's pick for every announced bout on the next " + numWord(evs.length) + " cards (" + md(d0) + " to " + md(d1) + "), next to the betting market. These picks are computed live in your browser from the blend without a betting line, so the two can be compared (the simulator is left out to keep the page quick). The record that counts is the ledger: before each card the current picks are committed with a timestamp, and once results land this panel scores those picks against the market.");
-    box.appendChild(lede);
-    var sumBox = el("div", "fw-sum");
-    function tile(l, v) { var t = el("div", "tile"); t.appendChild(el("span", "tl", l)); t.appendChild(el("span", "tv", v)); sumBox.appendChild(t); }
-    tile("Bouts on " + evs.length + " cards", String(nB));
-    tile("With a model pick", String(nPick));
-    tile("Same favorite as the market", nBoth ? nAgree + " of " + nBoth : "–");
-    if (scored.length) {
-      var ll = 0, mll = 0, nm = 0, hit = 0; scored.forEach(function (s) { ll += s.ll; hit += s.hit; if (s.mll != null) { mll += s.mll; nm++; } });
-      tile("Scored: picks right, and log loss model vs market", pct(hit / scored.length, 0) + " · " + fx(ll / scored.length, 3) + (nm ? " vs " + fx(mll / nm, 3) : ""));
-    } else tile("Scored so far", "None yet");
-    box.appendChild(sumBox);
-    if (!scored.length) box.appendChild(el("p", "small", FWD.n_ledger ? "Picks are in the ledger; the first scores come once those fights are done." :
-      "Ledger starts with the " + md(d0) + " card; first scores after it."));
-    var key = el("div", "fw-key");
-    var k1 = el("span"); k1.appendChild(el("i", "md")); k1.appendChild(document.createTextNode("Model's chance for the first-named fighter")); key.appendChild(k1);
-    var k2 = el("span"); k2.appendChild(el("i", "mt")); k2.appendChild(document.createTextNode("Market, with the bookmaker's cut removed")); key.appendChild(k2);
-    key.appendChild(el("span", null, "Strip runs 0 to 100%; the middle line is 50-50."));
-    box.appendChild(key);
-    FWD.events.forEach(function (ev) {
-      var wrap = el("div", "fw-ev"), hd = el("div", "fw-eh");
-      hd.appendChild(el("h3", null, ev.name)); hd.appendChild(el("span", null, fmtDate(ev.date) + (ev.loc ? " · " + String(ev.loc).split(",")[0] : "") + (ev.status && ev.status !== "official" ? " · not yet official" : "")));
+    var LG = FWD.ledgers || [];
+    $("fwSub").textContent = (LG.length ? LG.length + " committed card" + (LG.length > 1 ? "s" : "") + " · " : "") + "cards as of " + fmtDate(String(FWD.as_of || "").slice(0, 10));
+    box.appendChild(el("p", "lede", "A backtest can leak, however carefully it is split. A pick committed to git before the fight cannot. Before each card the current picks are written to a file and committed; the commit time proves they came first, and the file is never edited afterwards. The picks below are read from those committed files exactly as written; nothing in this section is recomputed."));
+    // committed cards
+    var resById = {};
+    FWD.events.forEach(function (ev) { ev.bouts.forEach(function (b) { if (b.result) resById[b.id] = b.result; }); });
+    LG.forEach(function (L) {
+      var wrap = el("div", "fw-ev fw-led"), hd = el("div", "fw-eh");
+      hd.appendChild(el("h3", null, L.event + (L.alt_names && L.alt_names.length ? " (" + L.alt_names[0] + ")" : "")));
+      hd.appendChild(el("span", null, fmtDate(L.date) + " · " + L.bouts.length + " bouts"));
       wrap.appendChild(hd);
-      ev.bouts.forEach(function (b) {
-        var row = el("div", "fw-row"), live = b._live, pA = live ? live.p : null;
-        var nm = el("div", "fw-names");
-        var an = el("span", pA != null && pA >= 0.5 ? "pick" : null, b.a.name), bn = el("span", pA != null && pA < 0.5 ? "pick" : null, b.b.name);
-        nm.appendChild(an); nm.appendChild(el("span", "vs", "vs")); nm.appendChild(bn);
-        var meta = [b.wc, (b.rounds || 3) + " rds", b.title ? "title" : null, b.order === 1 ? "main event" : null].filter(Boolean).join(" · ");
-        var mt = el("span", "fw-meta", meta); nm.appendChild(mt);
-        if (b.status && b.status !== "official") mt.appendChild(el("span", "fw-flag", String(b.status).replace(/rumoured/i, "rumored")));
-        if (!b.a.slug || !b.b.slug) mt.appendChild(el("span", "fw-flag", "UFC debut"));
-        else if (!live) mt.appendChild(el("span", "fw-flag", "no profile"));
+      var facts = el("div", "fw-sum");
+      function tile(l, v, sub) { var t = el("div", "tile"); t.appendChild(el("span", "tl", l)); t.appendChild(el("span", "tv", v)); if (sub) t.appendChild(el("span", "tl", sub)); facts.appendChild(t); }
+      tile("Locked", L.lock_utc ? fmtUTC(L.lock_utc) : "–", "first bout's start");
+      tile("Committed", L.commit_utc ? fmtUTC(L.commit_utc) : "not in git", L.commit ? "commit " + L.commit.slice(0, 7) + (L.committed_before_lock ? ", before the lock" : ", AFTER the lock") : "");
+      tile("Model", L.version || "–", "pick: ML v2 with the line at commit time");
+      var sc = [], agree = 0, nmk = 0;
+      L.bouts.forEach(function (b) {
+        if (b.p_market != null && b.p_a != null) { nmk++; if ((b.p_a > 0.5) === (b.p_market > 0.5)) agree++; }
+        var r = resById[b.id];
+        if (r && r.outcome === "win" && b.p_a != null) { var pw = r.winner === "a" ? b.p_a : 1 - b.p_a, pm = b.p_market == null ? null : (r.winner === "a" ? b.p_market : 1 - b.p_market); sc.push({ ll: -Math.log(clamp(pw, 1e-6, 1)), mll: pm == null ? null : -Math.log(clamp(pm, 1e-6, 1)), hit: pw > 0.5 ? 1 : (pw === 0.5 ? 0.5 : 0) }); }
+      });
+      tile("Same favorite as the market", nmk ? agree + " of " + nmk : "–");
+      if (sc.length) {
+        var ll = 0, mll = 0, nm = 0, hit = 0; sc.forEach(function (x) { ll += x.ll; hit += x.hit; if (x.mll != null) { mll += x.mll; nm++; } });
+        tile("Scored: picks right · log loss vs market", pct(hit / sc.length, 0) + " · " + fx(ll / sc.length, 3) + (nm ? " vs " + fx(mll / nm, 3) : ""), sc.length + " bouts");
+      } else tile("Scored so far", "None yet", "results come after the card");
+      wrap.appendChild(facts);
+      var key = el("div", "fw-key");
+      var k1 = el("span"); k1.appendChild(el("i", "md")); k1.appendChild(document.createTextNode("Committed pick for the first-named fighter")); key.appendChild(k1);
+      var k3 = el("span"); k3.appendChild(el("i", "nl")); k3.appendChild(document.createTextNode("Committed no-line pick")); key.appendChild(k3);
+      var k2 = el("span"); k2.appendChild(el("i", "mt")); k2.appendChild(document.createTextNode("Market at commit time, margin removed")); key.appendChild(k2);
+      wrap.appendChild(key);
+      L.bouts.slice().sort(function (x, y) { return (x.order || 99) - (y.order || 99); }).forEach(function (b) {
+        var row = el("div", "fw-row"), nm = el("div", "fw-names"), deb = (b.flags || []).some(function (f) { return /^debut_/.test(f); });
+        nm.appendChild(el("span", b.p_a != null && b.p_a >= 0.5 ? "pick" : null, b.a.name)); nm.appendChild(el("span", "vs", "vs")); nm.appendChild(el("span", b.p_a != null && b.p_a < 0.5 ? "pick" : null, b.b.name));
+        var mt = el("span", "fw-meta", [b.wc, (b.rounds || 3) + " rds", b.order === 1 ? "main event" : null].filter(Boolean).join(" · ")); nm.appendChild(mt);
+        if (deb) mt.appendChild(el("span", "fw-flag", "UFC debut"));
         row.appendChild(nm);
         var bar = el("div", "fw-bar");
-        if (pA != null) {
-          // a 0-100 strip for the first-named fighter: the model's dot and the market's gold tick
-          var tr = el("div", "fw-strip"); tr.appendChild(el("i", "mid"));
-          if (b.mkt && b.mkt.p != null) { var u = el("i", "mt"); u.style.left = (b.mkt.p * 100) + "%"; tr.appendChild(u); }
-          var dt = el("i", "md"); dt.style.left = (pA * 100) + "%"; tr.appendChild(dt);
-          tr.setAttribute("role", "img"); tr.setAttribute("aria-label", "Model: " + b.a.name + " " + pct(pA, 0) + (b.mkt && b.mkt.p != null ? "; market " + pct(b.mkt.p, 0) : ""));
-          bar.appendChild(tr);
-          var nums = el("div", "fw-nums"), fav = pA >= 0.5 ? lastName(b.a.name) : lastName(b.b.name);
-          nums.appendChild(el("span", null, "Model: " + fav + " " + pct(Math.max(pA, 1 - pA), 0)));
-          nums.appendChild(el("span", null, b.mkt && b.mkt.p != null ? "Market " + (b.mkt.p >= 0.5 ? lastName(b.a.name) : lastName(b.b.name)) + " " + pct(Math.max(b.mkt.p, 1 - b.mkt.p), 0) : "No odds yet"));
-          bar.appendChild(nums);
-        } else {
-          bar.appendChild(el("span", "fw-res", b.mkt && b.mkt.p != null ? "Market: " + (b.mkt.p >= 0.5 ? lastName(b.a.name) : lastName(b.b.name)) + " " + pct(Math.max(b.mkt.p, 1 - b.mkt.p), 0) + " · no model pick" : "No model pick and no odds yet"));
-        }
+        bar.appendChild(strip(b.p_a, b.p_noline, b.p_market, "Committed pick: " + b.a.name + " " + pct(b.p_a, 0) + "; no-line pick " + pct(b.p_noline, 0) + (b.p_market != null ? "; market " + pct(b.p_market, 0) : "")));
+        var nums = el("div", "fw-nums");
+        nums.appendChild(el("span", null, "Pick: " + favTxt(b.p_a, b.a.name, b.b.name) + (deb ? " (the line, for a debut)" : "")));
+        nums.appendChild(el("span", null, "No line: " + favTxt(b.p_noline, b.a.name, b.b.name) + (b.p_ml2_noline != null ? " (ML v2: " + favTxt(b.p_ml2_noline, b.a.name, b.b.name) + ")" : "")));
+        nums.appendChild(el("span", null, b.p_market != null ? "Market: " + favTxt(b.p_market, b.a.name, b.b.name) : "No odds at commit"));
+        bar.appendChild(nums);
         row.appendChild(bar);
-        var rs = el("div", "fw-res");
-        if (!b.result && !b.ledger) { /* nothing to show until the ledger or a result exists */ }
-        else if (b.result && b.result.outcome) {
-          var w = b.result.winner === "a" ? b.a.name : (b.result.winner === "b" ? b.b.name : null);
-          rs.appendChild(el("b", null, b.result.outcome === "win" && w ? lastName(w) + " won" : b.result.outcome));
-          if (b.result.method) rs.appendChild(document.createTextNode(" · " + b.result.method + (b.result.round ? " R" + b.result.round : "")));
-          if (!b.ledger) rs.appendChild(el("span", "fw-meta", "not in the ledger, so not scored"));
-        } else rs.appendChild(document.createTextNode("Pick committed (" + (b.ledger.model || "ledger") + ")"));
+        var rs = el("div", "fw-res"), r = resById[b.id];
+        if (r && r.outcome) {
+          var w = r.winner === "a" ? b.a.name : (r.winner === "b" ? b.b.name : null);
+          rs.appendChild(el("b", null, r.outcome === "win" && w ? lastName(w) + " won" : r.outcome));
+          if (r.method) rs.appendChild(document.createTextNode(" · " + r.method + (r.round ? " R" + r.round : "")));
+        } else rs.appendChild(document.createTextNode("Awaiting result"));
         row.appendChild(rs);
         var go = el("div", "fw-go");
-        if (live) {
+        if (b.a.slug && b.b.slug && DB.fighters[b.a.slug] && DB.fighters[b.b.slug]) {
+          var ev0 = { name: L.event }, bb = { a: b.a, b: b.b, wc: b.wc, rounds: b.rounds, title: b.title, mkt: b.odds_a != null ? { oa: b.odds_a, ob: b.odds_b } : null };
           var btn = el("button", "btn ghost", "Simulate this"); btn.type = "button"; btn.setAttribute("aria-label", "Simulate " + b.a.name + " vs " + b.b.name);
-          btn.addEventListener("click", function () { loadBout(b, ev); }); go.appendChild(btn);
+          btn.addEventListener("click", function () { loadBout(bb, ev0); }); go.appendChild(btn);
         }
         row.appendChild(go);
         wrap.appendChild(row);
       });
+      wrap.appendChild(el("p", "small", "Pick: the ML v2 stack with the consensus line captured at commit time (" + (L.bouts[0] && L.bouts[0].hours_before_lock != null ? Math.round(L.bouts[0].hours_before_lock) + " hours before the lock" : "before the lock") +
+        "), read as a pre-fight line. For a UFC debutant the pick is the line itself. No line: this file's no-line pick is the older blend, which the 2026 audit found too sure; in brackets, the ML v2 no-line stack the page now uses, committed in the same file and scored beside it. Market: the bookmakers' consensus at commit time with the margin removed."));
       box.appendChild(wrap);
     });
-    box.appendChild(el("p", "small", "Model: the blend without a betting line; the bold name is its pick. Market: the consensus price across bookmakers in the latest odds snapshot, with the bookmaker's cut removed. Bouts with a UFC debutant or a fighter outside the roster get no model pick."));
+    // how scoring works
+    var how = el("div", "fw-how");
+    how.appendChild(el("h3", "mini", "How the forward test is scored"));
+    var hl = el("ul", "caveats");
+    ["Only the latest file committed before a card's first bout counts; a mistake stays in the record. Every bout on the card gets a pick, debutants included.",
+      "Results are recorded only when two independent sources agree. Draws, no contests and cancelled bouts are void.",
+      "The main score is log loss on the probability given to the actual winner, compared bout by bout with the market at commit time and with the closing line. The interval comes from resampling whole cards (and is widened to the bout-level one when that is wider).",
+      "No lead over the market is claimed until that interval excludes zero. Each card adds 10 to 14 bouts, so that takes many cards.",
+      "From UFC 334 (Nov 14) the ledger's no-line pick becomes the ML v2 no-line stack the page uses, as pre-registered on Nov 7; this card keeps the rules it was committed under."
+    ].forEach(function (t) { hl.appendChild(el("li", null, t)); });
+    how.appendChild(hl); box.appendChild(how);
+    // later cards: live picks, not committed
+    var led = {}; LG.forEach(function (L) { L.bouts.forEach(function (b) { led[b.id] = 1; }); });
+    var later = FWD.events.filter(function (ev) { return ev.bouts.some(function (b) { return !led[b.id]; }); });
+    if (later.length) {
+      var det = el("details", "more fw-later"), sm = el("summary", null, "Later cards: live picks, not committed yet (" + later.length + " card" + (later.length > 1 ? "s" : "") + ")");
+      det.appendChild(sm); var db = el("div", "dbody"); det.appendChild(db);
+      db.appendChild(el("p", "small", "Computed live in your browser by the page's no-line pick, next to the latest odds snapshot" + (FWD.odds && FWD.odds.utc ? " (" + fmtUTC(FWD.odds.utc) + ")" : "") + ". These are not the record: each card's picks are committed before it starts."));
+      later.forEach(function (ev) {
+        var wrap = el("div", "fw-ev"), hd = el("div", "fw-eh");
+        hd.appendChild(el("h3", null, ev.name)); hd.appendChild(el("span", null, fmtDate(ev.date) + (ev.loc ? " · " + String(ev.loc).split(",")[0] : "") + (ev.status && ev.status !== "official" ? " · not yet official" : "")));
+        wrap.appendChild(hd);
+        ev.bouts.forEach(function (b) {
+          if (led[b.id]) return;
+          var row = el("div", "fw-row"), live = liveForward(b, ev.date), pA = live ? live.p : null, nm = el("div", "fw-names");
+          nm.appendChild(el("span", pA != null && pA >= 0.5 ? "pick" : null, b.a.name)); nm.appendChild(el("span", "vs", "vs")); nm.appendChild(el("span", pA != null && pA < 0.5 ? "pick" : null, b.b.name));
+          var mt = el("span", "fw-meta", [b.wc, (b.rounds || 3) + " rds", b.title ? "title" : null, b.order === 1 ? "main event" : null].filter(Boolean).join(" · ")); nm.appendChild(mt);
+          if (b.status && b.status !== "official") mt.appendChild(el("span", "fw-flag", String(b.status).replace(/rumoured/i, "rumored")));
+          var dbt = (!b.a.slug || !b.b.slug) ? liveDebut(b, ev.date) : null;
+          if (!b.a.slug || !b.b.slug) mt.appendChild(el("span", "fw-flag", "UFC debut"));
+          else if (!live) mt.appendChild(el("span", "fw-flag", "no profile"));
+          row.appendChild(nm);
+          var bar = el("div", "fw-bar"), mp = b.mkt && b.mkt.p != null ? b.mkt.p : null;
+          if (pA != null) {
+            bar.appendChild(strip(pA, null, mp, "Live pick: " + b.a.name + " " + pct(pA, 0) + (mp != null ? "; market " + pct(mp, 0) : "")));
+            var nums = el("div", "fw-nums");
+            nums.appendChild(el("span", null, "Live pick: " + favTxt(pA, b.a.name, b.b.name)));
+            nums.appendChild(el("span", null, mp != null ? "Market " + favTxt(mp, b.a.name, b.b.name) : "No odds yet"));
+            bar.appendChild(nums);
+          } else if (dbt) {
+            var M = dbt.m, wa = lastName(b.a.name), wb = lastName(b.b.name);
+            bar.appendChild(el("span", "fw-res", "Winner: " + (dbt.src === "market" ? "the market, " : "seeded Elo, ") + favTxt(dbt.pA, b.a.name, b.b.name)));
+            bar.appendChild(el("span", "fw-res fw-deb", "How (debut method model): if " + wa + " wins, KO " + pct(M.A[0], 0) + " · sub " + pct(M.A[1], 0) + " · decision " + pct(M.A[2], 0) +
+              "; if " + wb + " wins, KO " + pct(M.B[0], 0) + " · sub " + pct(M.B[1], 0) + " · decision " + pct(M.B[2], 0)));
+          } else bar.appendChild(el("span", "fw-res", mp != null ? "Market: " + favTxt(mp, b.a.name, b.b.name) + " · no model pick" : "No model pick and no odds yet"));
+          row.appendChild(bar);
+          row.appendChild(el("div", "fw-res"));
+          var go = el("div", "fw-go");
+          if (live) { var btn = el("button", "btn ghost", "Simulate this"); btn.type = "button"; btn.setAttribute("aria-label", "Simulate " + b.a.name + " vs " + b.b.name); btn.addEventListener("click", function () { loadBout(b, ev); }); go.appendChild(btn); }
+          row.appendChild(go);
+          wrap.appendChild(row);
+        });
+        db.appendChild(wrap);
+      });
+      db.appendChild(el("p", "small", "Live pick: the page's no-line pick (ML v2 model and market rating); the bold name is its favorite. Market: the consensus price in the latest snapshot. A bout with a UFC debutant gets no stats pick; its method comes from the debut model, which was tested on 2019-2025 debut bouts and beat division averages on the sealed 2026 debut bouts too."));
+      box.appendChild(det);
+    }
   }
 
   /* ================================================================ research section visibility */
@@ -2617,6 +2631,7 @@
       $("odd" + s).addEventListener("input", function () { S.odds[s] = this.value.trim(); S.oddsSrc = null; renderForecast(); });
     });
     $("lineTog").addEventListener("change", function () { S.line = this.checked; renderForecast(); });
+    $("lineClose").addEventListener("change", function () { S.lineKind = this.checked ? "close" : "open"; renderForecast(); });
     $("mlTog").checked = S.ml; $("mlTog").disabled = !MLR.ok && !MLR.pending;
     $("mlTog").addEventListener("change", function () { S.ml = this.checked; buildMatchup(); dropEngine(); renderWhy(); renderKnobPanel(); renderMLCard(); renderForecast(); queueTally(true); });
     $("soundTog").addEventListener("change", function () { audioUnlock(); AU.on = this.checked; audioApply(); });
@@ -2679,7 +2694,8 @@
   resetHud({ rounds: [], form: null }, null);
   writeHash();
   $("runStatus").textContent = "Starting the tally";
-  window.FightLab = { state: S, matchup: function () { return cur.m; }, tally: function () { return lastAgg; }, newFight: function () { newFight(); }, script: function () { return script; }, blend: function () { return BL; }, models: function () { return { moe: !!MOE, mlpage: !!MLP, methodround: !!MR, mlrates: MLR }; },
+  window.FightLab = { state: S, matchup: function () { return cur.m; }, tally: function () { return lastAgg; }, newFight: function () { newFight(); }, script: function () { return script; }, blend: function () { return BL; }, models: function () { return { ml2: !!ML2H, s2: !!S2M, methodround: !!MR, statdist: !!SDM, embed: !!EMB, debut: !!DEBM, mlrates: MLR, pagepredict: !!PP }; },
+    statLines: function () { return statLines(); }, ml2: function () { return ML2H; }, fightCtx: function () { return ml2Fight(fightCtx()); },
     hud: function () { return H ? { A: totals("A"), B: totals("B") } : null; }, fight: function () { return H && H.f; }, lastPick: function () { return lastPick; } };
   // the compressed models arrive a few milliseconds after the first paint: re-render everything that reads them
   var started = false;
