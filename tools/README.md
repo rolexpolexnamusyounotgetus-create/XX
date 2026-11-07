@@ -249,7 +249,6 @@ and Sherdog fighter pages (sharing tools/preufc.py's cache and keeping the combi
   in `meta.eval`. Details, audit and caveats: `research/data_fightweek.md`.
 
 
-<<<<<<< ours
 ## blindtest.py: the standing blind test (event-by-event walk-forward replay of every model)
 
 ```
@@ -473,7 +472,7 @@ const m = E.matchup(A, B, opts); XR.assertApplied(m, f.id, params);
 - `node tools/v5_step4_check.js [--sims 300] [--configs ...]`: the engine-level train check (evalv's inputs, metrics and
   smoothing, common random numbers): base (step 3), embed, embed + preufc, embed + oppadj with SOS off; paired vs base and vs
   embed (data/derived/v5_step4_check.json). About two minutes at 300 sims per order with 3 workers.
-=======
+
 ## blend_anchor_*: FightEngine.predict (engine component "blend_anchor") and its 2019-2023 ablation
 
 ```
@@ -489,4 +488,3 @@ node tests/test_blend_anchor.js
 
 Only fights dated 2019-01-01..2023-12-31 are read, fitted or scored. Method, numbers and caveats:
 `research/model_blend_anchor.md`. Runs: nice -n 5, at most 3 parts at once.
->>>>>>> theirs

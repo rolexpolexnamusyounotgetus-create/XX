@@ -95,7 +95,12 @@
       // -0.0060 [-0.0115, -0.0005], 7-bin -0.0084 [-0.0168, +0.0002], KD deviance -0.0078 [-0.0127, -0.0027], KO-win log loss
       // per newcomer side -0.0092 [-0.0168, -0.0014]; winner and stat lines n.s. Caveat: the recipe's exponents were fit on
       // 2015-2023 newcomer sides, so 2019-2023 is not out of sample for them; the research's held-out check is its 2024-25 look.
-      preufc: true
+      preufc: true,
+      // v5 merge step 5: FightEngine.predict, the final prediction package (src/ml/blend.js; block `blend` below; research/
+      // model_blend_anchor.md, verified). ON: blend P(win) (the ML v2 package: data/derived/blindtest_stack.json `model` /
+      // `model_open` by opts.lineKind, + src/ml/ml2.js) + rescaled / pooled method x round + anchor mode + interval (kappa 1.65).
+      // It never touches matchup / simulate / summarize / explain; off, predict returns summarize's own numbers.
+      blend_anchor: true
     },
 
     // ---------------- styles_sos knobs (component "styles_sos"; src/styles_sos.js, docs/ENGINE_V3_SPEC.md) ----------------
@@ -259,11 +264,7 @@
       tdLevel: 1.126                              // [dyncal v4.0.1] takedown-attempt level (keeps the realised takedown volume; E4 / E6 shift attempts between rounds)
     },
 
-    // ---------------- engine components (each one behind its own flag; false = the engine without it, bit-for-bit) ----------------
-    components: {
-      blend_anchor: true   // FightEngine.predict: blend P(win) + rescaled/pooled method x round + anchor + interval (src/ml/blend.js)
-    },
-    // blend_anchor settings (FightEngine.predict / src/ml/blend.js). Every fitted value was chosen on 2019-2023 backtest_dev
+    // blend_anchor settings (v5 merge step 5; the flag is components.blend_anchor above) (FightEngine.predict / src/ml/blend.js). Every fitted value was chosen on 2019-2023 backtest_dev
     // fights only (tools/blend_anchor_eval.js; numbers in data/derived/blend_anchor.json and research/model_blend_anchor.md).
     blend: {
       sims: 1000,          // simulations per corner order in predict() (both orders are run and averaged; exact corner symmetry)
