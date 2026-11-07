@@ -64,6 +64,22 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- props (lab 4, VERIFIED ~00:50 UTC Nov 7, research/model_props.md): ADOPT PropsPool as the props path in predict()
+  (v7), scoped as hygiene: vs S2 cells the pool gains 7-bin -0.0172 [-0.0283, -0.0056] on 2024-25 (CV -0.0175), but
+  vs the current 40/60 props blend it is a tie (CV -0.0004, under the 0.0005 rule): one de-vig from raw book prices
+  in training and live, forward-chained weight, explicit degrade (no props -> model mix). Round props rejected (keep
+  S2 round shapes); props' P(A) adds nothing to the winner stack. Debut-bout pool is a monitored candidate (needs its
+  own pre-registered forward version). Decision share drifted up in 2024-25 (54.2% actual vs ~48% predicted by every
+  model): add it to the v9 drift monitor; never fit a tilt on 2024-25. Forward: run tools/props.py capture with the
+  odds snapshots.
+- finishing (lab 4, VERIFIED): NOT adopted. Fighter finishing tendencies fail the forward-chained gate (7-bin
+  +0.0007, joint +0.00002); 2024-25 leans its way (joint -0.0085 [-0.0146, -0.0020]) but that window cannot select.
+  Monitored candidate only (pre-register as an audit-2 side line). Structural lead for a future pre-registered test:
+  the finisher-oriented round model on methodround's hazard columns. DO-NOT-DO: GBM for method|winner; fighter
+  early/late/cardio round features; the 2019+ layers (statlines, durability, bayes) inside the method model; wide
+  penalty searches for method models.
+- LAB 4 SCORECARD: props adopted as hygiene (tie vs incumbent), finishing not adopted. Method/round is close to the
+  market's information too; production stays S2 + ML v2 winner + props pool, debut method model for debut bouts.
 - FORWARD v4.2 (VERIFIED ~00:15 UTC Nov 7; data/predictions/README.md "Forward model v4.2", pre-registered in
   6011e6f before any code): effective for events dated >= 2026-11-14. Winner primaries as fwd-4.1; debut bouts take
   method / distance / finish round from the debut method model (base rates kept as a scored secondary); debut
