@@ -57,7 +57,10 @@ const preParSrc = fs.readFileSync(path.join(ROOT, "tests/fixtures/params3_pre_ca
   const ge = git(["show", "2e24835:src/engine3.js"]), gp = git(["show", "2e24835:src/params3.js"]);
   check("fixtures are the Calibrate A commit's (2e24835) src/engine3.js and src/params3.js", ge === null || (ge === preEngSrc && gp === preParSrc),
     ge === null ? "git not reachable, skipped" : "byte for byte");
-  const cur = fs.readFileSync(path.join(ROOT, "src/engine3.js"), "utf8");
+  // v5.0.1: from engine 5.0.1 on, src/ carries later changes (components.v501 and the input guards); the source checks then
+  // verify the Calibrate B diff on the frozen 5.0.0 files (versions/v5-rejected/), and the behaviour checks below pin v501 off
+  const SRC5 = /^5\.0\.0/.test(E.VERSION) ? "src" : "versions/v5-rejected";
+  const cur = fs.readFileSync(path.join(ROOT, SRC5, "engine3.js"), "utf8");
   const vnorm = (s) => s.replace(/var VERSION = "[^"]*";[^\n]*/, "var VERSION;");
   const norm = cur.split("\n").filter((l) => !l.includes("[calB]") || l.includes("if (back)"))
     .map((l) => (l.includes("[calB]") ? l.replace(/\s*\/\/ \[calB\].*$/, "").replace("mergeParams(b0, back)", "mergeParams(base, back)") : l)).join("\n");
@@ -73,8 +76,9 @@ const R0 = loadEngine(preEngSrc, { "params3.js": P0 });
     if (o.blend) { delete o.blend.mrWeight; if (o.blend.anchor) delete o.blend.anchor.slope0; if (o.blend.boot) delete o.blend.boot.inflate; }
     return JSON.stringify(o);
   };
-  check("params: only the label, components.calB, the calB block and blend.mrWeight / anchor.slope0 / boot.inflate changed", strip(P0) === strip(FP),
-    `${P0.version} -> ${FP.version}`);
+  const FP5 = /^5\.0\.0/.test(E.VERSION) ? FP : loadModule(fs.readFileSync(path.join(ROOT, "versions/v5-rejected/params3.js"), "utf8"));
+  check("params: only the label, components.calB, the calB block and blend.mrWeight / anchor.slope0 / boot.inflate changed", strip(P0) === strip(FP5),
+    `${P0.version} -> ${FP5.version}` + (FP5 === FP ? "" : " (frozen 5.0.0 params; src is " + FP.version + ")"));
   check("defaults: components.calB on, the set holds the fitted levels", FP.components.calB === true && FP.calB && FP.calB.set &&
     FP.calB.set.dyn && FP.calB.set.judge && Object.keys(FP.calB.set).sort().join(",") === "dyn,judge", JSON.stringify(FP.calB.set));
 }
