@@ -50,9 +50,9 @@ Protocol (docs/BACKLOG.md; docs/V6_V10_PLAN.md sections 5-6):
      | sig attempted | -0.012 [-0.017, -0.007] |
      | control | -0.010 [-0.018, -0.003] |
      | TD attempts | -0.006 [-0.010, -0.002] |
-     | sub attempts | -0.004 [-0.008, -0.0002] |
+     | sub attempts | -0.004 [-0.008, -0.0002] (partly division layer [verifier]) |
      | 10-8 share | -0.008 [-0.015, -0.001] |
-     | KD per 100 head strikes | -0.0016 [-0.0031, -0.0002] |
+     | KD per 100 head strikes | -0.0016 [-0.0031, -0.0002] (division layer, not drift [verifier]) |
 
    - **No tracker beats the 5-year window on the outcome mix**: decision, KO and SUB shares, UD/SD/MD, round-1 share
      of finishes, 3- vs 5-round decision share. The best nested results range from -0.0005 to +0.010, all n.s. or worse.
@@ -84,8 +84,8 @@ Protocol (docs/BACKLOG.md; docs/V6_V10_PLAN.md sections 5-6):
      decision-share residual has almost no year-to-year persistence.
    - **CV-final configuration.** It keeps only a round-1 shape tracker, which was +0.0022 [-0.0014, +0.0063] (joint)
      on 2024-25.
-4. **The 2024-25 decision-share miss is the 2024 glove trial, not a persistent drift.** This is descriptive, read
-   after the look, and selects nothing.
+4. **The 2024-25 decision-share miss is the 2024 glove trial, not a persistent drift** ([verifier]: about half of
+   it; see below). This is descriptive, read after the look, and selects nothing.
    - **[verifier] Correction: the glove trial explains about half of the miss, not all of it.** In the method
      universe, 2024-25 had 48.0 more decisions than the static model predicted (+5.6 points).
      - 23.6 of them (49%) fall in the 5.5-month new-glove window (+10.9 points there).
@@ -109,9 +109,9 @@ Protocol (docs/BACKLOG.md; docs/V6_V10_PLAN.md sections 5-6):
      share to 51.5% and caught about 40% of the 2024 gap and about 55% of the pooled 2024-25 gap (3.1 of 5.6
      points) [verifier].
      - [verifier] Caveat: the 2024-25 run keeps one model vintage (fit < 2024) for both years. With rho = 0, a
-       production refit at Jan 1, 2025 would reset the offset, and the refit itself would absorb part of 2024. It cannot be promoted: it failed the 0.0005 rule in CV (-0.00045
-     pooled 2016-2023; better in 5 of 8 years), and the effect it caught was a dated equipment change that has since
-     been reversed.
+       production refit at Jan 1, 2025 would reset the offset, and the refit itself would absorb part of 2024.
+   - It cannot be promoted: it failed the 0.0005 rule in CV (-0.00045 pooled 2016-2023; better in 5 of 8 years), and
+     the effect it caught was a dated equipment change that has since been reversed.
 5. **Statline level offsets: two stats confirmed, two contradicted.** CV 2021-2023 adopted six per-stat mean
    offsets under statlines' own rule.
    - **Confirmed on 2024-25 (enabled in eradrift.js):** leg strikes attempted, -0.0015 [-0.0044, +0.0014], and
@@ -374,7 +374,8 @@ Decision share, mean predicted vs actual, in the method universe (2016-2023 show
   - The static model still under-predicted decisions by +6.1 points in Jan-May 2024 and +2.8 points with old gloves
     in 2025. The league shares are back near the window's level, but the model's predictions are about 1.5 points
     below the league base rate.
-  - The verifier's own parse reproduces this table within 0.6 points: it lacks 40 of the 8,224 fights.
+  - The verifier's own parse reproduces this table within 1 point on every cell (largest gap: transition KO, 35.4
+    against 36.3). The parse lacks 40 of the 8,224 fights.
 - **This is consistent with a glove effect but does not prove one.** It is observational, 21 cards, with a possible
   card-mix confound.
 - **Sig strike pace and the 10-8 share fall steadily across all periods** (4.15 → 3.79 per fighter-minute; 5.0 → 2.5
@@ -565,7 +566,7 @@ only.
 | sig landed on 2024-25 | +0.0066 n.s. | +0.0013 [-0.0037, +0.0063] n.s. | reproduced (no confirmation) |
 | KD tracker, CV and 2024-25 "confirmed" | -0.0016 / -0.0071 | own trackers pick win5 every year. Builder's own functions without a division layer: CV +0.0003, 2024-25 -0.0017 n.s. | **misattributed: division layer, not drift** |
 | KO 2024-25 "confirmed" | -0.0042 | without a division layer: CV +0.0003, 2024-25 +0.0002; a no-drift expanding mean with the EW division layer gets -0.0037 | **misattributed: division layer, not drift** |
-| glove-period table | section 5 | own parse within 0.6 points on every cell | reproduced |
+| glove-period table | section 5 | own parse within 1 point on every cell | reproduced |
 | "the decision miss is the glove trial" | "most of it" | method universe: 49% of the 48 excess decisions fall in the window. Old-glove periods +6.1 / +2.8 points. | **overstated: about half** |
 | statlines leg offsets | l_att -0.0033 / 2024-25 -0.0015; l_lnd -0.0027 / -0.0041 | own actuals, card clusters: -0.0033 / -0.0014 [-0.0042, +0.0015]; -0.0027 / -0.0039 [-0.0075, -0.0000] | reproduced |
 | statlines clinch offsets | contradicted | c_att +0.0029 [+0.0005, +0.0057]; c_lnd +0.0020 [-0.0004, +0.0047] | reproduced (c_lnd borderline) |
@@ -579,8 +580,9 @@ only.
 **Selection leaks inside CV (minor, disclosed here).**
 - The league break variants and the method scope / break variants were built on the base config that was best on the
   pooled CV years. Their nested columns are therefore not fully nested.
-- Re-scoring the league nested CV without the break variants changes little (sig landed -0.0429 against the reported
-  -0.0436). The method gate fails either way.
+- Re-scoring the league nested CV without the break variants changes little: sig landed -0.0433 against the reported
+  -0.0436, TD attempts -0.0055 against -0.0061, 10-8 -0.0080 against -0.0078 (`decomp` (a2)). The method gate fails
+  either way.
 
 **Defects fixed.** No tool defect changes a number. The fixes are report corrections, marked "[verifier]" above:
 1. The KO and KD confirmations are re-attributed to the division estimator. The "same division layer" wording is

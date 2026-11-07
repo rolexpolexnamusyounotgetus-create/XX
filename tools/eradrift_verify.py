@@ -321,6 +321,21 @@ def stage_decomp():
             h = boot((nl[a] - nl[b])[ho], d["event"][ho], seed=11)
             print("  %-6s %-34s - %-16s CV 2012-23 %+.5f [%+.5f, %+.5f] | 2024-25 %+.5f [%+.5f, %+.5f]" % (
                 key, a, b, *c, *h))
+    print("(a2) builder's nested league CV re-scored without the break variants (their base configs were picked on"
+          " pooled 2012-2023): nested - win5 reference, 2014-2023")
+    for key, tt in tr["targets"].items():
+        d = E.target_data(L, T, key)
+        nY = {Y: int((d["year"] == Y).sum()) for Y in tr["years"]}
+        res = tt["res"]
+        names = [nm for nm in res if "brk" not in nm]
+        num = den = ref = 0.0
+        for Y1 in tr["years"][2:]:
+            pick = min(names, key=lambda nm: sum(res[nm]["by_year"][str(Y)] * nY[Y] for Y in tr["years"] if Y < Y1))
+            num += res[pick]["by_year"][str(Y1)] * nY[Y1]
+            ref += res[tt["refs"]["win5"]]["by_year"][str(Y1)] * nY[Y1]
+            den += nY[Y1]
+        print("  %-9s without breaks %+.5f | as reported %+.5f" % (key, (num - ref) / den,
+                                                                   tt["nested_loss"] - tt["nested_win5"]))
     F = own_table()
     print("(b) glove periods from the own parse (league; dec / KO / SUB %, KD per 100 head, sig landed per fighter-min,"
           " 10-8 per 100 judged rounds)")
