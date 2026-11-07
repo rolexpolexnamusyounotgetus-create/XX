@@ -11,9 +11,11 @@
      fit on judges' cards strictly before Jan 1 of that year, tools/v9_judge_wf.py) instead of the all-cards fit; with
      opts.level.r108 (the tracked card-implied 10-8 share at the fight date, eradrift's verified tracker) the 10-8 threshold
      follows it: target share = sRef x r108 / lRef, t108 = (alpha - ln target) / beta (mapping fit on train simulations).
-   - components.format: the joint level pass by format: 5-round fights get a knockdown factor kd5 and a championship-round
-     factor late5 on rounds 4-5 (knockdown, GNP TKO and submission-conversion hazards, like caution5); doctor / corner hazards
-     between rounds are scaled per format (stop3 / stop5) to the 2019-2023 per-round-reached rates.
+   - components.format: the joint level pass by format (fit once on 2019-2023 train fights): 5-round fights get a knockdown
+     factor kd5 and a championship-round factor late5 on rounds 4-5 (knockdown, GNP TKO and submission-conversion hazards,
+     like caution5); the knockdown-to-finish conversion odds (instant KO, follow-up stoppage) get conv in every format; the
+     doctor / corner hazards between rounds get one scale stop for both formats (the strong prior: the engine's damage
+     build-up keeps the 3- vs 5-round ratio; the level follows the 2019-2023 per-round-reached rate).
    Fight engine v4: a data-driven, continuous-time simulation of an MMA bout between any two fighters.
    Contract: docs/ENGINE_V3_SPEC.md (+ "Engine v4" section). Parameters: src/params3.js (FightParams).
    The file names stay engine3.js / params3.js for every version; VERSION below is the engine version.
@@ -517,6 +519,7 @@
       for (k = 3; k < nR; k++) m.finR[k] *= l5;
       m.kd[0] *= kd5; m.kd[1] *= kd5;
     }
+    if (fmt && fmt.conv != null) { m.instO *= +fmt.conv; m.refO *= +fmt.conv; }   // knockdown-to-finish conversion (odds), every format
     for (k = 0; k < nR; k++) { m.paceCurve.push(curve[k] / cm0); m.kdPace.push(Math.pow(curve[k] / cm0, p.kdPaceExp)); }
     m.drain = [0, 0]; m.cardio = [0, 0];
     for (i = 0; i < 2; i++) {
@@ -589,9 +592,9 @@
       tdStam: p.tdStam
     };
     if (fmt) {
-      var stS = nR >= 5 ? (fmt.stop5 != null ? +fmt.stop5 : 1) : (fmt.stop3 != null ? +fmt.stop3 : 1);
+      var stS = fmt.stop != null ? +fmt.stop : 1;     // one scale for both formats: the engine's damage build-up carries the format ratio (strong prior)
       m.k.doc = p.doc * stS; m.k.corner = p.corner * stS;
-      m.format = { kd5: nR >= 5 ? (fmt.kd5 != null ? +fmt.kd5 : 1) : 1, late5: nR >= 5 ? (fmt.late5 != null ? +fmt.late5 : 1) : 1, stop: stS };
+      m.format = { kd5: nR >= 5 ? (fmt.kd5 != null ? +fmt.kd5 : 1) : 1, late5: nR >= 5 ? (fmt.late5 != null ? +fmt.late5 : 1) : 1, stop: stS, conv: fmt.conv != null ? +fmt.conv : 1 };
     }
     return m;
   }

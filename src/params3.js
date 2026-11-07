@@ -50,7 +50,7 @@
       r108: { sRef: 0.035, lRef: 0.045, alpha: 0, beta: 1 }
     },
     // joint level pass by format (placeholders until the train fit)
-    format: { kd5: 1, late5: 1, stop3: 1, stop5: 1 },
+    format: { kd5: 1, late5: 1, conv: 1, stop: 1 },
 
     // ---------------- learned stat-line rates (engine v4) ----------------
     mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base

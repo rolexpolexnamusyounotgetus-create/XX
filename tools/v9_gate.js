@@ -157,7 +157,10 @@ const armNames = args.arms ? String(args.arms).split(",") : (args.arm.length ? [
 const armParams = {};
 for (const n of armNames) { if (!PRESET[n]) { console.error("v9_gate: unknown arm " + n); process.exit(2); } armParams[n] = PRESET[n]; }
 for (const s of args.arm) { const i = s.indexOf("="); const n = s.slice(0, i); armParams[n] = JSON.parse(s.slice(i + 1)); armNames.push(n); }
-if (!armNames.includes("cmp4")) { armNames.unshift("cmp4"); armParams.cmp4 = PRESET.cmp4; }
+// the comparator always runs first (it is the level tracker's reference); --skip-ref (development runs only, never with
+// --binding) drops it when no arm turns components.levels on
+const SKIPREF = !!args["skip-ref"] && !args.binding && !Object.keys(armParams).some((n) => armParams[n].components && armParams[n].components.levels);
+if (!armNames.includes("cmp4") && !SKIPREF) { armNames.unshift("cmp4"); armParams.cmp4 = PRESET.cmp4; }
 const cmdline = process.argv.slice(2).join(" ");
 const files = { engine: path.join(ENGINE_DIR, "engine3.js"), params: path.join(ENGINE_DIR, "params3.js"), mlrates: path.join(ENGINE_DIR, "ml", "mlrates.js"),
   levels_js: path.join(ROOT, "tools/v9_levels.js"), phi: path.resolve(ROOT, PHI), eradrift: path.join(ROOT, "data/derived/eradrift.json"),
@@ -206,7 +209,7 @@ function runPass(arms, levels) {
 }
 (async function () {
   const t0 = Date.now();
-  const r1 = await runPass(["cmp4"], null);
+  const r1 = SKIPREF ? fights.map((f) => ({ id: f.id, err: null, arms: {} })) : await runPass(["cmp4"], null);
   const byId = new Map(r1.map((r) => [r.id, r]));
   // levels from the comparator's realised rates of earlier fights (strictly earlier dates), + the tracked 10-8 level
   const ref = new Map();
