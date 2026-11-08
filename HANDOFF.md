@@ -1,6 +1,51 @@
 # Handoff: where the Volk vs Gaethje work stands
 
-Built in one chat on Friday, Nov 6, 2026, between about 1:00 am and 3:10 am ET.
+Built in one chat on Friday, Nov 6, 2026, between about 1:00 am and 3:10 am ET; extended through Sat Nov 7, 2026.
+
+## Current state (Sat Nov 7, 2026, evening ET) — start here
+
+**Page.** https://claude.ai/artifact/PP5QsWNDwPiqP6m7V3C4JC ("Fight Lab", Version 3). Built from this repo with
+`python3 build.py` (output volk-gaethje-simulator.html); checks: `node tests/page_check.js`,
+`node tests/test_page_parity.js`, `node tests/test_page_models.js`. Republish with the Artifact tool, same URL.
+
+**Predictions (what is live).**
+- Winner: ML v2 stacked with the betting line (src/ml/pagepredict.js on the page; tools/forward_ledger.py/.js for the
+  forward test). No line: ML v2 + market rating. Opener or any pre-fight line: the open-trained stack. Close: the
+  close-trained stack.
+- Method/round: S2 cells scaled to the winner odds; the debut method model for UFC debutants; the props pool when
+  method props were captured (forward ledger fwd-4.5).
+- Stat lines: statlines P10/P50/P90 bands (src/ml/statdist.js).
+- Honest numbers: 2024-25 held-out, ML v2 logistic 0.5887 vs close 0.5854 (tie); with-line stack beat the close by
+  -0.0087 (2024-25 only). Sealed 2026 fights (opened twice, now spent): close 0.6003; shipped ML v2 open stack 0.6150
+  vs opener 0.6199 -> level with the market. research/vault_audit_v5.md, research/vault_audit_v10.md.
+
+**Engine.** v4 (4.0.0) is the kept engine (src/engine3.js, src/params3.js = versions/v4). v5, v5.0.1, v6 rejected on
+their single 2024-25 looks; v7, v8, v9 failed their train gates; v10 kept on branch 2 then reversed on review
+(second decisive metric forbidden by docs/V6_V10_PLAN.md 7.1 item 4; re-scope not ratified by Kira; stat-line parts
+not on the live path). Every decision with numbers: data/derived/version_history.json, docs/CHANGELOG.md.
+Open decision for Kira: the review recorded a path to ratify v10 after the fact (7.1 item 11); Claude recommended
+not ratifying (choosing a rule after seeing the result).
+
+**Forward-test ledger (the only clean test left).** data/predictions/README.md (rules; versions fwd-4.1 .. fwd-4.5).
+- UFC Vegas 124 (Nov 7) locked under fwd-4.1 (commit 87e0050); pre-lock check kept it (344f100).
+- Scoring: `python3 tools/forward_ledger.py score` (two sources: Greco1899 CSVs, refreshed Sundays ~18:00 UTC, + ESPN).
+- Before each card: `nice -n 5 python3 tools/live_refresh.py` (inputs only, models frozen; fwd-4.4+), debutant records
+  (`python3 tools/debut.py features ... --live`), odds (`tools/odds_upcoming.py`), props (`python3 tools/props.py
+  capture`, T-25h..T-8h), then `python3 tools/forward_ledger.py predict --event <date> --fwd auto --sims 20000`.
+- Scheduled one-shot tasks on Kira's account do this: score Vegas 124 (Nov 8 19:30 UTC), UFC 334 (Nov 13 21:30 UTC),
+  Qatar card (Nov 20 11:00 UTC), Dec 5 card (Dec 4 20:00 UTC), UFC 335 (Dec 11 21:30 UTC).
+- Drift monitor: tools/drift_monitor.py (pre-registered rule 6.5.1(b) + level alarms).
+
+**Research record.** docs/BACKLOG.md (every verified result, decision and correction, newest near the top of each
+section), research/*.md (each with a Verification log), docs/V6_V10_PLAN.md (the selection protocol), docs/ROADMAP.md.
+Lab results: adopted = debut method model, statlines, props pool; not adopted = crowd picks, line timing, calibration,
+sequence net, Bayesian skill model, finishing tendencies, era drift (glove-trial finding kept).
+
+**3D.** Paused by Kira on Nov 6 (resources moved to prediction). Last pass shipped beard/short-hair caps, skin, body
+definition and the women's sports top; per-fighter likeness labs were not run (scripts in archive/).
+
+**Session archive.** archive/2026-11-06_session/ holds the orchestration scripts, component patches and the SPENT 2026
+vault (for reproducing the audits only; never for model selection). See its README.
 
 ## Engine v4 (Nov 6, 2026 afternoon)
 

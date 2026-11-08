@@ -1,0 +1,2705 @@
+--- a/src/engine3.js
++++ b/src/engine3.js
+@@ -64,6 +64,9 @@
+   function pw(x, e) { return e === 1 ? x : Math.pow(x, e); }
+   function lnorm(rng, sd) { return sd > 0 ? Math.exp(sd * rng.normal() - 0.5 * sd * sd) : (rng.normal(), 1); }
+   function getParams() { return FP0 || (root && root.FightParams) || null; }
++  // fight-dynamics component (research/model_dynamics.md E1-E11): on when params.components.dynamics is true and the
++  // params carry the dyn block; off reproduces the engine before the component bit for bit
++  function dynOn(p) { return !!(p && p.components && p.components.dynamics && p.dyn); }
+   function getML() { return MLR0 || (root && root.MLRates) || null; }
+ 
+   function mergeParams(base, over) {
+@@ -223,10 +226,11 @@
+     if (pc && pwt) for (r = 3; r < 5; r++) if (pc[r] != null && pwt[r] > 0) five = true;
+     var lc = five ? p.paceLnd5 : p.paceLnd3;
+     var rho = [1, 1, 1, 1, 1], rw = [0, 0, 0, 0, 0];
++    var kP = dynOn(p) ? p.dyn.kPace : p.kPace;     // dynamics E10: per-round pace ratio prior strength (train-chosen 45)
+     for (r = 1; r < 5; r++) {
+       if (pc && pwt && pc[r] != null && pwt[r] > 0 && r < lc.length) {
+         var ratio = clip(pc[r] / lc[r], 0.3, 3);
+-        rho[r] = (ratio * pwt[r] + p.kPace) / (pwt[r] + p.kPace); rw[r] = pwt[r];
++        rho[r] = (ratio * pwt[r] + kP) / (pwt[r] + kP); rw[r] = pwt[r];
+       } else if (r >= 1) { rho[r] = 1 + 0.5 * (rho[r - 1] - 1); }
+     }
+     R.rho = rho; R.rhoW = rw;
+@@ -440,7 +444,8 @@
+         m.mixC[(i * 4 + pc) * 2] = mx[0]; m.mixC[(i * 4 + pc) * 2 + 1] = mx[0] + mx[1];
+         var posq = pc < 2 ? pc : 2;
+         for (var t = 0; t < 3; t++) {
+-          var z = L.accA[t] + L.accB[posq] + a * R[i].accSh[t] + b * R[j].accAgSh[t];
++          var z = dynOn(p) ? L.accA[t] + L.accB[posq] + a * p.dyn.accProfA * R[i].accSh[t] + b * p.dyn.accProfB * R[j].accAgSh[t]
++            : L.accA[t] + L.accB[posq] + a * R[i].accSh[t] + b * R[j].accAgSh[t];
+           m.accO[(i * 4 + pc) * 3 + t] = Math.exp(z) * (pc === 3 ? p.botAccOdds : 1) * p.accScale * adj[i].acc;
+         }
+       }
+@@ -562,9 +567,80 @@
+       tdLand: p.tdLand,
+       tdStam: p.tdStam
+     };
++    m.dyn = dynOn(p) ? dynTables(m, p, R, nR) : null;
+     return m;
+   }
+ 
++  // ------------------------------------------------------------------ fight dynamics (component "dynamics")
++  // research/model_dynamics.md section 8, recipe E1-E11, fit on 2019-2023 round data (data/derived/dynamics.json);
++  // level factors re-fit on 2019-2023 backtest fights (tools/dynamics_calibrate.js). Per-round tables used by simulate():
++  //   pace[i][r]  output multiplier: league distance pace curve (E1) x own cardio ratio (kPace 45) x opponent's^paceMutual
++  //               (E10), normalised over the first rounds, x outLevel
++  //   kdP[r]      knockdown multiplier per landed standing strike: kdRound table by format x kdLevel (E7; replaces the
++  //               stamina, pace and damage terms and the 5-round caution on knockdowns)
++  //   conv[r]     odds multiplier on the instant-KO and follow-up stoppage chances after a knockdown: convLevel x
++  //               exp(convRound (r - 1)) (E8; replaces damage and stamina terms)
++  //   stkoR[r], gnpR[r]  non-knockdown stoppage hazards: scale x exp(noKdRound (r - 1)), with damage slopes
++  //               stkoBase / gnpDmg (E9; replaces attacker stamina)
++  //   tdR[r]      takedown-attempt round curve (tdRound3 / tdRound5, normalised like pace), the marginal round shape the E6
++  //               carry-over multipliers act within (real attempts rise by round; carry-over alone made them fall)
++  function dynTables(m, p, R, nR) {
++    var Y = p.dyn, i, j, k, r;
++    var curve = nR === 5 ? Y.pace5 : (nR === 3 ? Y.pace3 : null);
++    if (!curve) { curve = []; for (k = 0; k < nR; k++) curve.push(Y.pace5[Math.min(k, Y.pace5.length - 1)]); }
++    var nb = Math.min(3, nR), cm0 = 0;
++    for (k = 0; k < nb; k++) cm0 += curve[k];
++    cm0 /= nb;
++    var rel = [[], []], pace = [[], []];
++    for (i = 0; i < 2; i++) {
++      var rho = R[i].rho, rm = 0;
++      for (k = 0; k < nb; k++) rm += rho[k];
++      rm /= nb;
++      for (k = 0; k < nR; k++) rel[i].push(rho[Math.min(4, k)] / rm);
++    }
++    for (i = 0; i < 2; i++) {
++      j = 1 - i;
++      var raw = [], s = 0;
++      for (k = 0; k < nR; k++) { raw.push(rel[i][k] * Math.pow(rel[j][k], Y.paceMutual)); if (k < nb) s += raw[k]; }
++      s /= nb;
++      for (k = 0; k < nR; k++) pace[i].push(curve[k] / cm0 * raw[k] / s * Y.outLevel);
++    }
++    var kdTab = nR === 5 ? Y.kdRound5 : (nR === 3 ? Y.kdRound3 : null);
++    if (!kdTab) { kdTab = []; for (k = 0; k < nR; k++) kdTab.push(Y.kdRound5[Math.min(k, Y.kdRound5.length - 1)]); }
++    var kdL = nR >= 5 ? Y.kdLevel5 : Y.kdLevel3;
++    // takedown-attempt round curve (marginal round shape that the carry-over terms act within), normalised like pace
++    var tdCurve = nR === 5 ? Y.tdRound5 : (nR === 3 ? Y.tdRound3 : null), tdR = [];
++    if (!tdCurve) { tdCurve = []; for (k = 0; k < nR; k++) tdCurve.push(Y.tdRound5 ? Y.tdRound5[Math.min(k, Y.tdRound5.length - 1)] : 1); }
++    var tm0 = 0;
++    for (k = 0; k < nb; k++) tm0 += tdCurve[k];
++    tm0 /= nb;
++    for (k = 0; k < nR; k++) tdR.push(tdCurve[k] / tm0);
++    var kdP = [], conv = [], stkoR = [], gnpR = [];
++    for (r = 0; r < nR; r++) {
++      var kdT = kdTab[Math.min(r, kdTab.length - 1)];
++      kdP.push(kdT * kdL);
++      conv.push(Y.convLevel * Math.exp(Y.convRound * r));
++      // E9 is a hazard per standing head strike absorbed. A standing TKO needs the hurt state, whose incidence already
++      // follows kdRound (hurts are drawn with the knockdown chance), so the realised standing TKO per strike decays as
++      // kdRound x exp(noKdRound r). Knob stkoHurtGate (verifier; default off, it did not score better on train) divides the
++      // hurt gate's round decline back out so that it decays as exp(noKdRound r) alone
++      stkoR.push(Y.stkoScale * Math.exp(Y.noKdRound * r) * (Y.stkoHurtGate ? kdTab[0] / kdT : 1));
++      gnpR.push(Y.gnpScale * Math.exp(Y.noKdRound * r));
++    }
++    // E3: fatigue on output is small (distance -4.5% per 100 own attempts); the other stamina terms stay
++    m.k.outStam = Y.outStam;
++    var arPhi = Y.arPhi, aaPhi = Y.accArPhi;
++    return {
++      formPace: Y.formPace, formOut: Y.formOut, formAcc: Y.formAcc, vol: Y.vol, roundPace: Y.roundPace,
++      arPhi: arPhi, arSd: Y.arSd, arInn: Y.arSd * Math.sqrt(1 - arPhi * arPhi), arC: 0.5 * Y.arSd * Y.arSd,
++      accArPhi: aaPhi, accArSd: Y.accArSd, accArInn: Y.accArSd * Math.sqrt(1 - aaPhi * aaPhi), accLevel: Y.accLevel,
++      pace: pace, kdP: kdP, conv: conv, stkoR: stkoR, gnpR: gnpR, stkoBase: Y.stkoBase, gnpDmg: Y.gnpDmg,
++      momScOut: Y.momScorerOut, momScAcc: Y.momScorerAcc, momScTd: Y.momScorerTd, momDrOut: Y.momDroppedOut, momDrTd: Y.momDroppedTd,
++      tdCtrlOpp: Y.tdCtrlOpp, tdTdl: Y.tdTdl, tdCtrlOwn: Y.tdCtrlOwn, distCtrlOpp: Y.distCtrlOpp, lostAcc: Y.lostAcc,
++      tdLevel: Y.tdLevel != null ? Y.tdLevel : 1, tdR: tdR
++    };
++  }
++
+   // ------------------------------------------------------------------ matchup (v4): base tables + learned stat-line rates
+   // opts.ml: false -> plain base tables (v3-style rates); undefined / true -> apply the loaded model (loadMLRates) when there
+   // is one; { pred } or { A, B } -> apply these precomputed per-side rates (corner order of this call; e.g. out-of-fold
+@@ -711,13 +787,14 @@
+     var dRate = m.dRate, cRate = m.cRate, tdD = m.tdD, tdCC = m.tdCC, tdCU = m.tdCU, gPos = m.gPos, gBot = m.gBot, gEdge = m.gEdge;
+     var swPos = m.swPos, upPos = m.upPos, subTPos = m.subTPos, subBPos = m.subBPos, subOPos = m.subOPos, subO = m.subO, gillo = m.gillo;
+     var clE = m.clE, pCtl = m.pCtl, clBreak = m.clBreak, clSwap = m.clSwap, subBotO = m.subBotO, subStandO = m.subStandO;
++    var DY = m.dyn;                              // fight-dynamics tables (component "dynamics"), null when off
+     // fight-night form (fixed draw order, independent of trace)
+     // every multiplicative draw is a mean-1 lognormal: exp(sd * z - sd^2 / 2)
+-    var sharedPace = lnorm(rng, F.pace);
+-    var vol = lnorm(rng, F.vol);                 // shared fight volatility: a war vs a tactical fight
++    var sharedPace = lnorm(rng, DY ? DY.formPace : F.pace);
++    var vol = lnorm(rng, DY ? DY.vol : F.vol);   // shared fight volatility: a war vs a tactical fight
+     var fOut = [1, 1], fAcc = [1, 1], fPow = [1, 1], fChin = [1, 1], fCard = [1, 1], fGrap = [1, 1], fSubO = [1, 1], fSubD = [1, 1];
+     for (i = 0; i < 2; i++) {
+-      fOut[i] = lnorm(rng, F.out); fAcc[i] = Math.exp(F.acc * rng.normal());   // accuracy: logit-normal (odds multiplier)
++      fOut[i] = lnorm(rng, DY ? DY.formOut : F.out); fAcc[i] = Math.exp((DY ? DY.formAcc : F.acc) * rng.normal());   // accuracy: logit-normal (odds multiplier)
+       fPow[i] = lnorm(rng, F.pow); fChin[i] = lnorm(rng, F.chin);
+       fCard[i] = lnorm(rng, F.cardio); fGrap[i] = lnorm(rng, F.grap);
+       fSubO[i] = lnorm(rng, F.sub); fSubD[i] = lnorm(rng, F.sub);
+@@ -750,15 +827,38 @@
+               B: { out: fOut[1], acc: fAcc[1], pow: fPow[1], chin: 1 / fChin[1], cardio: 1 / fCard[1], grap: fGrap[1], subOff: fSubO[1], subDef: 1 / fSubD[1] } },
+       rounds: rounds, fin: null, n108: 0, kdr: 0, kdrf: 0, pace: sharedPace, vol: vol };
+     var po = [0, 0], fin = null;
++    // dynamics state: fA = accuracy odds multiplier used by strikes (the fight-level form when off); dc / tdc = distance
++    // output and takedown-attempt carry-over; arO / arA = AR(1) round noise on output / accuracy; mom* = knockdown momentum
++    var fA = DY ? [fAcc[0], fAcc[1]] : fAcc, dc = [1, 1], tdc = [1, 1];
++    var arO = [0, 0], arA = [0, 0], momO = [1, 1], momA = [1, 1], momT = [1, 1];
+ 
+     for (var r = 0; r < nR; r++) {
+       for (k = 0; k < 2 * NS; k++) st[k] = 0;
+       var t = 0, state = 0, ctl = -1, pos = 0, downed = -1, kdLoc = 0;
+       var ev = trace ? [] : null;
+-      var rp = sharedPace * lnorm(rng, F.roundPace);
+-      po[0] = m.pace[0][r] * fOut[0] * rp * lnorm(rng, F.roundOut);
+-      po[1] = m.pace[1][r] * fOut[1] * rp * lnorm(rng, F.roundOut);
+-      var fr = m.finR[r], kdP = m.kdPace[r] * fr;
++      var rp = sharedPace * lnorm(rng, DY ? DY.roundPace : F.roundPace);
++      if (DY) {
++        // E2: each man's round output noise is AR(1) (stationary sd arSd, autocorrelation arPhi); the same two normals
++        // the plain engine spends on its iid round noise, then two more for the accuracy AR(1)
++        var zo0 = rng.normal(), zo1 = rng.normal(), za0 = rng.normal(), za1 = rng.normal();
++        if (r === 0) { arO[0] = DY.arSd * zo0; arO[1] = DY.arSd * zo1; arA[0] = DY.accArSd * za0; arA[1] = DY.accArSd * za1; }
++        else {
++          arO[0] = DY.arPhi * arO[0] + DY.arInn * zo0; arO[1] = DY.arPhi * arO[1] + DY.arInn * zo1;
++          arA[0] = DY.accArPhi * arA[0] + DY.accArInn * za0; arA[1] = DY.accArPhi * arA[1] + DY.accArInn * za1;
++        }
++        for (i = 0; i < 2; i++) {
++          po[i] = DY.pace[i][r] * fOut[i] * rp * Math.exp(arO[i] - DY.arC) * momO[i];
++          fA[i] = fAcc[i] * Math.exp(arA[i]) * DY.accLevel * momA[i];
++          // E6: grappling carry-over from earlier rounds (minutes controlled by the opponent, takedowns landed, own control)
++          var oc = tot[(1 - i) * NS + I_CTRL] / 60, ocw = tot[i * NS + I_CTRL] / 60, otl = tot[i * NS + I_TDL];
++          dc[i] = Math.exp(DY.distCtrlOpp * oc);
++          tdc[i] = Math.exp(DY.tdCtrlOpp * oc + DY.tdTdl * otl + DY.tdCtrlOwn * ocw) * momT[i] * DY.tdLevel * DY.tdR[r];
++        }
++      } else {
++        po[0] = m.pace[0][r] * fOut[0] * rp * lnorm(rng, F.roundOut);
++        po[1] = m.pace[1][r] * fOut[1] * rp * lnorm(rng, F.roundOut);
++      }
++      var fr = m.finR[r], kdP = DY ? DY.kdP[r] : m.kdPace[r] * fr;
+ 
+       while (true) {
+         var h0 = t < hurtEnd[0], h1 = t < hurtEnd[1];
+@@ -768,20 +868,20 @@
+         var out1 = po[1] * (1 - K.outStam * (1 - S[1])) * (h1 ? K.outHurt : 1) * (1 - K.outMob * (1 - mob1));
+         var n = 0, top = -1, bot = -1, k5 = 0;
+         if (state === 0) {
+-          evT[n] = E_STRIKE; evW[n] = 0; evX[n] = 0; evR[n++] = dRate[0] * out0;
+-          evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 0; evR[n++] = dRate[1] * out1;
++          evT[n] = E_STRIKE; evW[n] = 0; evX[n] = 0; evR[n++] = dRate[0] * out0 * dc[0];
++          evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 0; evR[n++] = dRate[1] * out1 * dc[1];
+           evT[n] = E_CLINCH; evW[n] = 0; evX[n] = 0; evR[n++] = clE * pCtl;
+           evT[n] = E_CLINCH; evW[n] = 1; evX[n] = 0; evR[n++] = clE * (1 - pCtl);
+-          evT[n] = E_TD; evW[n] = 0; evX[n] = 0; evR[n++] = tdD[0] * (1 - K.tdAttStam * (1 - S[0])) * (h0 ? 0.5 : 1);
+-          evT[n] = E_TD; evW[n] = 1; evX[n] = 0; evR[n++] = tdD[1] * (1 - K.tdAttStam * (1 - S[1])) * (h1 ? 0.5 : 1);
++          evT[n] = E_TD; evW[n] = 0; evX[n] = 0; evR[n++] = tdD[0] * (1 - K.tdAttStam * (1 - S[0])) * (h0 ? 0.5 : 1) * tdc[0];
++          evT[n] = E_TD; evW[n] = 1; evX[n] = 0; evR[n++] = tdD[1] * (1 - K.tdAttStam * (1 - S[1])) * (h1 ? 0.5 : 1) * tdc[1];
+         } else if (state === 1) {
+           var cs = K.clinchCtrlStrike;
+           evT[n] = E_STRIKE; evW[n] = 0; evX[n] = 1; evR[n++] = cRate[0] * out0 * (ctl === 0 ? cs : 2 - cs);
+           evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 1; evR[n++] = cRate[1] * out1 * (ctl === 1 ? cs : 2 - cs);
+           evT[n] = E_BREAK; evW[n] = 1 - ctl; evX[n] = 0; evR[n++] = clBreak;
+           evT[n] = E_SWAP; evW[n] = 1 - ctl; evX[n] = 0; evR[n++] = clSwap * 2 * (ctl === 0 ? 1 - pCtl : pCtl);
+-          evT[n] = E_TD; evW[n] = ctl; evX[n] = 1; evR[n++] = tdCC[ctl] * (1 - K.tdAttStam * (1 - S[ctl]));
+-          evT[n] = E_TD; evW[n] = 1 - ctl; evX[n] = 1; evR[n++] = tdCU[1 - ctl] * (1 - K.tdAttStam * (1 - S[1 - ctl]));
++          evT[n] = E_TD; evW[n] = ctl; evX[n] = 1; evR[n++] = tdCC[ctl] * (1 - K.tdAttStam * (1 - S[ctl])) * tdc[ctl];
++          evT[n] = E_TD; evW[n] = 1 - ctl; evX[n] = 1; evR[n++] = tdCU[1 - ctl] * (1 - K.tdAttStam * (1 - S[1 - ctl])) * tdc[1 - ctl];
+         } else {
+           top = state - 2; bot = 1 - top; k5 = top * 5 + pos;
+           if (downed === bot) {
+@@ -828,7 +928,7 @@
+           else {
+             var mb = (i * 4 + pc) * 2;
+             tg = ut < mixC[mb] ? 0 : (ut < mixC[mb + 1] ? 1 : 2);
+-            o = accO[(i * 4 + pc) * 3 + tg] * fAcc[i] * (1 - K.accSelfStam * (1 - S[i])) * (hj ? K.accHurt : 1) * (1 + K.accStam * (1 - S[j]));
++            o = accO[(i * 4 + pc) * 3 + tg] * fA[i] * (1 - K.accSelfStam * (1 - S[i])) * (hj ? K.accHurt : 1) * (1 + K.accStam * (1 - S[j]));
+             if (pc === 0) o *= 1 + K.accMob * (1 - mobj);
+           }
+           st[so + I_SA]++; st[so + I_HA + 2 * tg]++; S[i] -= K.drainAtt;
+@@ -844,23 +944,26 @@
+             D[j] += dw[i] * dmgPos[pc]; st[so + I_DMG] += dw[i];
+             if (pc <= 1) {
+               st[so + I_SHL]++;
+-              var pk = kdB[i] * kdPos[pc] * chinM[j] * (1 + D[j] / K.kdDmg) * (hj ? K.kdHurt : 1) * (1 + K.kdStamDef * (1 - S[j])) *
++              // dynamics E7/E11: per-strike knockdown risk by round only (no damage, stamina or pace terms)
++              var pk = DY ? kdB[i] * kdPos[pc] * chinM[j] * (hj ? K.kdHurt : 1) * kdP * (0.75 + 0.25 * mobi)
++                : kdB[i] * kdPos[pc] * chinM[j] * (1 + D[j] / K.kdDmg) * (hj ? K.kdHurt : 1) * (1 + K.kdStamDef * (1 - S[j])) *
+                 Math.max(0.05, 1 - K.kdStamAtt * (1 - S[i])) * kdP * (0.75 + 0.25 * mobi);
+               var uk = rng.u();
+               if (uk < pk) kind = "kd";
+               else if (uk < pk * (1 + K.hurtRatio)) kind = "hurt";
+-              else if (hj) { if (rng.u() < stkoB[i] * chinM[j] * (K.stkoBase + D[j] / 100)) { kind = "fin"; finHow = "TKO"; } }
++              else if (hj) { if (rng.u() < stkoB[i] * chinM[j] * (DY ? (DY.stkoBase + D[j] / 100) * DY.stkoR[r] : (K.stkoBase + D[j] / 100))) { kind = "fin"; finHow = "TKO"; } }
+             } else if (pc === 2) {
+               if (follow) {
+-                var ro = refO * chinM[j] * (1 + D[j] / K.refDmg) * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]));
++                var ro = DY ? refO * chinM[j] * DY.conv[r] : refO * chinM[j] * (1 + D[j] / K.refDmg) * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]));
+                 if (rng.u() < ro / (1 + ro)) { kind = "fin"; finHow = "TKO"; }
+-              } else if (rng.u() < gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / K.gnpDmg) * (hj ? K.gnpHurt : 1) * chinM[j] * fr * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]))) { kind = "fin"; finHow = "GNP"; }
++              } else if (rng.u() < (DY ? gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / DY.gnpDmg) * (hj ? K.gnpHurt : 1) * chinM[j] * fr * DY.gnpR[r]
++                : gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / K.gnpDmg) * (hj ? K.gnpHurt : 1) * chinM[j] * fr * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i])))) { kind = "fin"; finHow = "GNP"; }
+             }
+           } else if (tg === 1) {
+             S[j] -= K.bodyDrain * dw[i]; if (S[j] < 0.05) S[j] = 0.05;
+             if (pc <= 1) {
+               st[so + I_SBL]++;
+-              if (rng.u() < kdB[i] * K.kdBodyRatio * kdPos[pc] * (1 + K.kdStamDef * (1 - S[j])) * kdP) kind = "kd";
++              if (rng.u() < (DY ? kdB[i] * K.kdBodyRatio * kdPos[pc] * kdP : kdB[i] * K.kdBodyRatio * kdPos[pc] * (1 + K.kdStamDef * (1 - S[j])) * kdP)) kind = "kd";
+             }
+           } else {
+             G[j] += dw[i];
+@@ -869,7 +972,7 @@
+           }
+           if (kind === "kd") {
+             st[so + I_KD]++; kdN[j]++; D[j] += K.dmgKD; chinM[j] *= K.kdRepeat;
+-            var io = instO * (1 + D[j] / K.kdInstantDmg) * (1 - K.instStam * (1 - S[i]));
++            var io = DY ? instO * DY.conv[r] : instO * (1 + D[j] / K.kdInstantDmg) * (1 - K.instStam * (1 - S[i]));
+             if (rng.u() < io / (1 + io)) { kind = "fin"; finHow = "KO"; }
+           }
+           if (kind === "fin") {
+@@ -993,6 +1096,7 @@
+       // ---- judges: EM round-winner weights (data fit), shared + individual noise, fight-level tastes, margin 10-8 rule
+       var a0 = 0, b0 = NS;
+       var js = trace ? [] : null;
++      var cpre = DY && DY.lostAcc !== 1 ? [cards[0][0] - cards[0][1], cards[1][0] - cards[1][1], cards[2][0] - cards[2][1]] : null;
+       n108 += judgeRound(J, m.judgePower, st[a0 + I_HL] - st[b0 + I_HL], st[a0 + I_BL] - st[b0 + I_BL], st[a0 + I_LL] - st[b0 + I_LL],
+         st[a0 + I_KD] - st[b0 + I_KD], st[a0 + I_TDL] - st[b0 + I_TDL], st[a0 + I_CTRL] - st[b0 + I_CTRL], st[a0 + I_SUB] - st[b0 + I_SUB],
+         st[a0 + I_HURT] - st[b0 + I_HURT], (st[a0 + I_DMG] - st[a0 + I_HL]) - (st[b0 + I_DMG] - st[b0 + I_HL]), tS, tG, tP, jF, rng, cards, js);
+@@ -1000,6 +1104,22 @@
+ 
+       // ---- between rounds: recovery, doctor and corner stoppages
+       if (r < nR - 1) {
++        if (DY) {
++          // dynamics E4: knockdown momentum for the next round only (the scorer eases off, the dropped man does not slow);
++          // E5 (knob, default off): accuracy odds x lostAcc after a round lost on the majority of cards
++          momO[0] = momO[1] = momA[0] = momA[1] = momT[0] = momT[1] = 1;
++          for (i = 0; i < 2; i++) {
++            if (st[i * NS + I_KD] > 0) {
++              momO[i] *= DY.momScOut; momA[i] *= DY.momScAcc; momT[i] *= DY.momScTd;
++              momO[1 - i] *= DY.momDrOut; momT[1 - i] *= DY.momDrTd;
++            }
++          }
++          if (cpre) {
++            var wA = 0;
++            for (j = 0; j < 3; j++) if (cards[j][0] - cards[j][1] > cpre[j]) wA++;
++            momA[wA >= 2 ? 1 : 0] *= DY.lostAcc;
++          }
++        }
+         for (i = 0; i < 2; i++) { S[i] += K.recover * (1 - S[i]); D[i] *= 1 - K.dmgHeal; hurtEnd[i] = -1; }
+         var stop = [false, false], kindS = ["", ""];
+         for (i = 0; i < 2; i++) {
+@@ -1141,7 +1261,7 @@
+         topSkill: R[i].topSkill, oppEscapeWeakness: R[j].escWeak, passEdge: m.gEdge[i], standUpMeanSecWhenUnder: 1 / Math.max(1e-9, m.up[i]),
+         sweepPerMinBottom: m.sw[i] * 60 };
+       o.subs = { attemptsPerGroundMin: m.threat[i], conversion: m.subConv[i], careerConvShrunk: R[i].subConv, oppDefFailShrunk: R[j].subDefFail, guillotinePerStuffedShot: m.gillo[i] };
+-      o.cardio = { paceByRound: m.pace[i].slice(), cardioIndex: m.cardio[i], drainPerSec: m.drain[i], drainVsLeague: m.drain[i] / m.p.drain,
++      o.cardio = { paceByRound: (m.dyn ? m.dyn.pace[i] : m.pace[i]).slice(), cardioIndex: m.cardio[i], drainPerSec: m.drain[i], drainVsLeague: m.drain[i] / m.p.drain,
+         drainSchedule: Math.pow(3 / m.rounds, m.p.drainSchedExp), drainCardio: Math.pow(clip(m.cardio[i], 0.5, 1.6), -m.p.cardioExp) };
+       o.knobs = m.adj[i];
+       sides.push(o);
+@@ -1160,7 +1280,9 @@
+       lines.push("  When under: mean stand-up " + f(1 / m.up[i], 0) + " s, sweeps " + f(m.sw[i] * 60, 3) + "/min");
+       lines.push("  Submissions: " + f(m.threat[i], 3) + " attempts per ground-minute (league " + f(L.sub, 3) + "), conversion " + pct(m.subConv[i]) + " (shrunk own " + pct(R[i].subConv) + " vs opp " + pct(R[j].subDefFail) + ", league " + pct(P.sub_conv) + ")");
+       var schedF = Math.pow(3 / m.rounds, m.p.drainSchedExp), cardF = Math.pow(clip(m.cardio[i], 0.5, 1.6), -m.p.cardioExp);
+-      lines.push("  Cardio: output by round " + m.pace[i].map(function (x) { return f(x); }).join(" ") + " (division curve x his late-round ratio); cardio index " + f(m.cardio[i]) +
++      lines.push("  Cardio: output by round " + (m.dyn ? m.dyn.pace[i] : m.pace[i]).map(function (x) { return f(x); }).join(" ") +
++        (m.dyn ? " (dynamics: league pace curve x his late-round ratio x opponent's^" + m.p.dyn.paceMutual + "; knockdown risk by round " +
++          m.dyn.kdP.map(function (x) { return f(x); }).join(" ") + ")" : " (division curve x his late-round ratio)") + "; cardio index " + f(m.cardio[i]) +
+         "; stamina drain x" + f(m.drain[i] / m.p.drain) + " of the 3-round base (" + m.rounds + "-round pacing x" + f(schedF) + ", cardio x" + f(cardF) + ", knob x" + f(m.adj[i].cardio) + ")");
+     }
+     out.A = sides[0]; out.B = sides[1];
+--- a/src/params3.js
++++ b/src/params3.js
+@@ -24,6 +24,100 @@
+   var FightParams = {
+     version: "4.0.0-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01)
+ 
++    // ---------------- engine components (each one a labeled switch; false = the engine before that component) ----------------
++    components: {
++      dynamics: true    // fight dynamics, research/model_dynamics.md E1-E11 (block `dyn` below); false reproduces the pre-dynamics engine bit for bit
++    },
++
++    // ---------------- fight dynamics (component "dynamics"; research/model_dynamics.md section 8, data/derived/dynamics.json) ----------------
++    // Recipe values were fit on 2019-2023 ufcstats round data (train) by tools/dynamics.py and re-checked against the same JSON;
++    // [dyncal v4.0.1] values are level factors re-fit by tools/dynamics_calibrate.js on 2019-2023 backtest fights (out-of-fold
++    // learned rates) on top of engine v4.0.1: 1,000 train fights, 16 sims per corner order, 5 damped iterations plus one final
++    // update step from the last iteration (train only; scratchpad dyn/cal10.log). Volume, accuracy and takedown attempts follow
++    // the flag-off engine; knockdowns per fight-minute the 2019-2023 actuals by format; conversion the data's 0.512 per knockdown;
++    // the KO/TKO share the flag-off engine.
++    dyn: {
++      // E1 pace curves. RM 2.1: output per minute of position rises more steeply than per round-minute because control time rises
++      // by round, so a position-based engine starts from the distance curve [1, 1.15, 1.26] / [1, 1.22, 1.23, 1.31, 1.37]. With the
++      // takedown round curve below, the engine's control share rises by round as in real fights, and the recipe curves realised
++      // [1, 1.072, 1.072] / [1, 1.103, 1.054, 1.056, 1.013] per round-minute on train matchups (survivor selection is stronger
++      // with persistent fight-night output: high-output fights end early). Inputs = recipe x target / realised (5 rounds damped):
++      pace3: [1, 1.16, 1.34],                 // E1: output multiplier by round, 3 rounds (train realised target [1, 1.083, 1.141] per round-minute)
++      pace5: [1, 1.28, 1.30, 1.42, 1.52],     // E1: same, 5 rounds (target [1, 1.176, 1.130, 1.187, 1.185])
++      outStam: 0.05,                          // E1/E3: output x (1 - outStam (1 - S)); own earlier output costs at most -4.5% per 100 attempts (was 0.12)
++      // E2 form and persistence. Recipe: pace 0.35, out 0.20, AR(1) 0.30 / 0.68 (corrected E2: pace ~0.40, out 0.18-0.20, phi ~0.6,
++      // acc ~0.30). The first builder's train check (tools/dynamics_check_train.py on 2019-2023 rounds; real own-round corr R1-R2
++      // 0.570, R1-R3 0.474, fighters 0.656) found the recipe realising 0.468 / 0.424 / 0.553 because the engine's other round noise
++      // attenuates persistence; pace 0.45 and AR 0.32 / 0.85 fit best of four. Realised on v4.0.1 train matchups (same estimators,
++      // run abl402; real / flag off / these values): own-round corr R1-R2 0.570 / 0.462 / 0.540, AR(1) 0.63 / 0.01 / 0.49, sd
++      // fighter-fight 0.44 / 0.51 / 0.56, fighters' corr 0.85 / 0.50 / 0.63. A sensitivity run with formOut 0.12, formPace 0.43
++      // (abl403) gave 0.514 / 0.47 / 0.53 / 0.67 and no better scores (stat-line deviance +0.44, n.s.; control deviance worse).
++      // The individual form sds (formOut, formAcc) also carry the matchup model's error,
++      // not only true fight-night form: on the v4.0.1 train ablation (abl401) the narrow alternative (formOut 0, formAcc 0.31, the
++      // real accuracy dispersion) scored worse than these values on method (+0.0055) and method x round (+0.0108 [+0.0001, +0.0214]).
++      formPace: 0.45,                         // E2: lognormal sd of the shared fight-level pace (RE with profiles: 0.37; real fighters' corr 0.84 needs more)
++      formOut: 0.21,                          // E2: lognormal sd of each man's fight-level output form (recipe 0.20; with the AR(1) the flag-off total 0.37)
++      arSd: 0.32,                             // E2: stationary sd of each man's AR(1) round output noise (RE: 0.31)
++      arPhi: 0.85,                            // E2: its round-to-round autocorrelation (RE: 0.68; engine round noise attenuates the realised value to ~0.5)
++      roundPace: 0.10,                        // E2: lognormal sd of the shared round pace (engine already realises 0.41 vs 0.36 real)
++      formAcc: 0.43,                          // E2: logit sd of each man's fight-level accuracy form (recipe 0.28; RE with profiles 0.29; with the AR(1) the
++                                              // flag-off total 0.48; 0.31 matches the real accuracy dispersion but scores worse, see above)
++      accArSd: 0.28,                          // accuracy AR(1) round noise, stationary logit sd (RE with profiles 0.244; 0.24 realised 0.19 vs 0.24 real)
++      accArPhi: 0.73,                         // its autocorrelation (RE with profiles: 0.727)
++      accProfA: 0.61,                         // attenuation of the attacker's profile accuracy shift (RE profile coefficient 0.61; no effect when ML rates re-target accuracy)
++      accProfB: 0.50,                         // attenuation of the defender's allowed-accuracy shift (0.50)
++      vol: 0.50,                              // E7: lognormal sd of the shared per-fight knockdown volatility (was 0.6). Recipe 0.30 was sized to 2024-25 (engine
++                                              // frailty 1.7 vs 0.9 real); on 2019-2023 matchups real frailty is 1.49 (flag off 1.65, vol 0.30 1.09), so 0.50
++      // E4 knockdown momentum (corrected recipe, research/model_dynamics.md section 5 and its verification log): engine multipliers on
++      // the baseline rate must match the skip-round contrast (next round vs the round before the knockdown round; 2010-2023: scorer
++      // -5.9% SE 4.8%, dropped -2.6% SE 4.9%), not the dynamic-RE coefficients (-8.8% / +6%, relative to the knockdown round itself)
++      momScorerOut: 0.92,                     // E4: next-round output of a man who scored a knockdown (removes the engine's +6.5% over baseline)
++      momScorerAcc: 0.94,                     // E4: his accuracy odds (-0.058 logit)
++      momScorerTd: 0.88,                      // E4: his takedown attempts (-12%)
++      momDroppedOut: 0.95,                    // E4: next-round output of the man who was dropped (corrected: x0.95, not x1.05)
++      momDroppedTd: 1.12,                     // E4: his takedown attempts (+11-12%)
++      lostAcc: 1,                             // E5 knob, default off: accuracy odds x this after a round lost on the cards (published round scores: -0.079
++                                              // logit, SE 0.015, i.e. x0.92; may be form information the stats miss, not a choice, so off)
++      tdCtrlOpp: -0.104,                      // E6: takedown attempts x exp(tdCtrlOpp x minutes controlled by the opponent in earlier rounds) (z = 6.5)
++      tdTdl: -0.063,                          // E6: x exp(tdTdl x own takedowns landed in earlier rounds)
++      tdCtrlOwn: 0,                           // E6 optional: x exp(tdCtrlOwn x own minutes in control earlier) (data +0.048, may be style persistence; off)
++      distCtrlOpp: -0.013,                    // E6: distance output x exp(distCtrlOpp x minutes controlled by the opponent earlier)
++      // E6 companion: the carry-over coefficients are conditional effects inside a model with round cells; real takedown attempts
++      // RISE by round (targets_by_round.train, per 15 min: 3 rounds 3.58 / 3.75 / 4.30; 5 rounds 2.64 / 2.76 / 3.41 / 3.28 / 3.62,
++      // smoothed log-linear +8% per round) and so does control (18.4% -> 20.5% of round time). Without a round curve the carry-over
++      // made the engine's attempts FALL by round (abl401: 4.01 / 3.68 / 3.41) and worsened takedown-attempt deviance on train.
++      // Inputs = target shape / realised shape, two fixed-point steps on train matchups (flat curve realised 3 rounds [1, .919, .850],
++      // 5 rounds [1, .933, .891, .844, .801]; first step [1, 1.14, 1.41] / [1, 1.16, 1.31, 1.50, 1.72] realised [1, 1.02, 1.07] /
++      // [1, 1.04, 1.11, 1.14, 1.21]). The steep inputs say the carry-over bites harder in the engine than in the data (the
++      // controlled-minutes term was weaker, -0.040, on the 2024-25 refit); the marginal round shape is what is matched here.
++      tdRound3: [1, 1.17, 1.58],              // E6: takedown-attempt multiplier by round, 3 rounds (normalised over the first rounds; tdLevel sets the level)
++      tdRound5: [1, 1.20, 1.38, 1.65, 1.95],  // E6: same, 5 rounds
++      kdRound3: [1.50, 0.85, 0.56],           // E7: knockdown risk per landed standing strike by round, 3 rounds ([1, .57, .37] with frailty, train)
++      kdRound5: [1.445, 1.27, 0.737, 0.535, 0.535], // E7: 5 rounds = [1, .88, .51, .37, .37], the train-only (2019-2023) frailty fit with R4-5
++                                              // pooled (the recipe's [1, .65, .405, .29, .29] is a 2010-2023 fit, outside the tuning window; on the
++                                              // first builder's runs it and a geometric-mean compromise over-predicted 5-round round-1 KO/TKO)
++      kdLevel3: 0.655,                           // [dyncal v4.0.1] knockdown level in 3-round fights (replaces kdStamAtt, kdPaceExp, kdDmg, kdStamDef)
++      kdLevel5: 0.559,                           // [dyncal v4.0.1] knockdown level in 5-round fights (replaces caution5 / r1Caution5 on knockdowns)
++      convLevel: 1.045,                           // [dyncal v4.0.1] odds scale on the instant-KO and follow-up stoppage chances after a knockdown (per-KD conversion 0.512 train)
++      convRound: -0.155,                      // E8: conversion odds x exp(convRound (r - 1)) (SE 0.077); replaces kdInstantDmg, refDmg, instStam, finStamAtt
++      stkoBase: 0.9,                          // E9: standing TKO while hurt = stko x (stkoBase + D / 100) (was 0.3; data slope +0.0104 per head strike absorbed)
++      gnpDmg: 100,                            // E9: ground TKO x (1 + D / gnpDmg) (was 600)
++      noKdRound: -0.17,                       // E9: non-knockdown stoppage hazards x exp(noKdRound (r - 1)) (standing -0.18, ground -0.17)
++      stkoHurtGate: false,                    // E9 knob (verifier, default off): a standing TKO needs the hurt state, whose incidence follows kdRound, so the
++                                              // realised standing TKO per standing head absorbed decays as kdRound x exp(noKdRound r) ([1, .54, .37] in 3-round
++                                              // train fights vs E9 [1, .84, .70]; E9 round SE 0.24). true divides the stop chance per hurt strike by
++                                              // kdRound[r] / kdRound[0] (refit: stkoScale 0.700, gnpScale 0.459). Train ablation, gate on vs off: n.s. on every metric
++                                              // (7-bin +0.0041, method +0.0018); 3-round R3 KO hazard 0.087 vs 0.072 real (0.079 gate off), so not adopted
++      stkoScale: 0.733,                       // [dyncal v4.0.1] standing TKO scale; with gnpScale one joint factor (data ratio of the two hazards kept) so the
++                                              // KO/TKO share matches the flag-off engine (data: 0.00045 per landed standing head absorbed, no-KD rounds)
++      gnpScale: 0.481,                        // [dyncal v4.0.1] ground TKO scale (data: 0.0067 per ground sig strike absorbed, no-KD rounds)
++      kPace: 45,                              // E10: per-round pace ratio prior strength (train-best 45; was 15; verified: 30-45 supported, 45 vs 15 n.s. held out)
++      paceMutual: 0.4,                        // E10: pace partly mutual: x opponent's late-round ratio^paceMutual (0.39 train)
++      outLevel: 1.039,                           // [dyncal v4.0.1] output level (keeps the realised attempts per minute)
++      accLevel: 0.998,                            // [dyncal v4.0.1] accuracy odds level (keeps the realised accuracy)
++      tdLevel: 1.126                              // [dyncal v4.0.1] takedown-attempt level (keeps the realised takedown volume; E4 / E6 shift attempts between rounds)
++    },
++
+     // ---------------- learned stat-line rates (engine v4) ----------------
+     mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base
+     mlMaxRatio: 4,    // cap on any single learned-vs-base multiplier (src/ml/mlrates.js applyToMatchup maxRatio)
+--- /dev/null
++++ b/tests/fixtures/engine3_pre_dynamics.js
+@@ -0,0 +1,1254 @@
++/* Fight engine v4: a data-driven, continuous-time simulation of an MMA bout between any two fighters.
++   Contract: docs/ENGINE_V3_SPEC.md (+ "Engine v4" section). Parameters: src/params3.js (FightParams).
++   The file names stay engine3.js / params3.js for every version; VERSION below is the engine version.
++
++   Profiles (data/derived/fighters.json, or backtest snapshots) hold decayed sums; matchup() turns them
++   into rates by exposure-based shrinkage toward the fight division's priors, combines attacker and
++   defender log-linearly (rates) or by log5 on odds (probabilities), and fits position occupancy so the
++   pair's simulated control and clinch time match their data-implied expectations. v4: when a learned
++   stat-line model is loaded (FightEngine.loadMLRates(mlrates.json), src/ml/mlrates.js), matchup() then
++   re-targets the rate tables to the model's per-matchup predictions (attempts by position and target,
++   accuracy, knockdowns, takedowns, control, submissions, reversals) at the engine's own league level;
++   opts.ml === false keeps the plain v3-style tables. simulate() plays one fight as competing exponential
++   clocks recomputed after every event: strike attempts (misses are real events) by target and position,
++   clinch entries and breaks, takedowns, ground sub-positions with passes, escapes, sweeps and stand-ups,
++   submissions, knockdowns with a follow-up sequence, hurt states, standing / ground-and-pound / leg TKOs,
++   stamina and pace, three judges (v4: EM round-winner weights with shared + individual noise and a
++   margin-based 10-8 rule, all fit on 2019-2023 judges' rounds), and doctor / corner stoppages.
++
++   UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM; all randomness comes from makeRng(seed). */
++(function (root, factory) {
++  var FP = root && root.FightParams, MLR = root && root.MLRates;
++  if (!FP && typeof require === "function") { try { FP = require("./params3.js"); } catch (e) { FP = null; } }
++  if (!MLR && typeof require === "function") { try { MLR = require("./ml/mlrates.js"); } catch (e) { MLR = null; } }
++  var api = factory(FP, root, MLR);
++  if (typeof module !== "undefined" && module.exports) module.exports = api;
++  else root.FightEngine = api;
++})(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (FP0, root, MLR0) {
++  "use strict";
++  var VERSION = "4.0.0";
++
++  // Sum keys (spec order; profiles may carry their own order in meta.keys / prof.keys)
++  var KEYS = ["min", "n", "rds", "d_att", "d_lnd", "c_att", "c_lnd", "g_att", "g_lnd", "h_att", "h_lnd", "b_att", "b_lnd",
++    "l_att", "l_lnd", "t_att", "t_lnd", "od_att", "od_lnd", "oc_att", "oc_lnd", "og_att", "og_lnd", "oh_att", "oh_lnd",
++    "ob_att", "ob_lnd", "ol_att", "ol_lnd", "ot_att", "ot_lnd", "kd", "okd", "td_att", "td_lnd", "otd_att", "otd_lnd",
++    "ctrl", "octrl", "sub_att", "osub_att", "rev", "orev", "ko_w", "ko_l", "sub_w", "sub_l", "dec_w", "dec_l",
++    "r5_min", "r5_min_1", "r5_min_2", "r5_min_3", "r5_min_4", "r5_min_5", "r5_lnd_1", "r5_lnd_2", "r5_lnd_3", "r5_lnd_4", "r5_lnd_5"];
++
++  // Per-fighter fight statistics (round and fight totals), in this order
++  var STK = ["sig_att", "sig_lnd", "h_att", "h_lnd", "b_att", "b_lnd", "l_att", "l_lnd", "d_att", "d_lnd", "c_att", "c_lnd",
++    "g_att", "g_lnd", "kd", "td_att", "td_lnd", "ctrl", "sub_att", "rev", "hurt", "pass", "up", "dmg", "sh_lnd", "sb_lnd", "sl_lnd"];
++  var NS = STK.length;
++  var I_SA = 0, I_SL = 1, I_HA = 2, I_HL = 3, I_BA = 4, I_BL = 5, I_LA = 6, I_LL = 7, I_DA = 8, I_DL = 9, I_CA = 10, I_CL = 11,
++    I_GA = 12, I_GL = 13, I_KD = 14, I_TDA = 15, I_TDL = 16, I_CTRL = 17, I_SUB = 18, I_REV = 19, I_HURT = 20, I_PASS = 21,
++    I_UP = 22, I_DMG = 23, I_SHL = 24, I_SBL = 25, I_SLL = 26;
++
++  var POSN = ["guard", "half", "side", "mount", "back"];
++  var LOCN = ["dist", "clinch", "ground", "ground"];
++  var SIDE = ["A", "B"];
++  // event types
++  var E_STRIKE = 0, E_CLINCH = 1, E_BREAK = 2, E_TD = 3, E_PASS = 4, E_ESC = 5, E_SWEEP = 6, E_UP = 7, E_SUB = 8,
++    E_RECOVER = 9, E_RESET = 10, E_SWAP = 11;
++
++  var DB = null;
++  var MLMODEL = null;          // learned stat-line model handle (MLRates.load), set by loadMLRates()
++
++  // ------------------------------------------------------------------ helpers
++  function clip(x, lo, hi) { return x < lo ? lo : (x > hi ? hi : x); }
++  function odds(p) { p = clip(p, 1e-6, 1 - 1e-6); return p / (1 - p); }
++  function prob(o) { return o / (1 + o); }
++  function logit(p) { return Math.log(odds(p)); }
++  function sigm(z) { return 1 / (1 + Math.exp(-z)); }
++  function log5(a, b, l) { return prob(odds(a) * odds(b) / odds(l)); }
++  function shr(ev, ex, prior, k) { return (ev + k * prior) / (Math.max(0, ex) + k); }
++  function pw(x, e) { return e === 1 ? x : Math.pow(x, e); }
++  function lnorm(rng, sd) { return sd > 0 ? Math.exp(sd * rng.normal() - 0.5 * sd * sd) : (rng.normal(), 1); }
++  function getParams() { return FP0 || (root && root.FightParams) || null; }
++  function getML() { return MLR0 || (root && root.MLRates) || null; }
++
++  function mergeParams(base, over) {
++    var out = {}, k, k2;
++    for (k in base) {
++      var v = base[k];
++      if (v && typeof v === "object" && !Array.isArray(v)) { out[k] = {}; for (k2 in v) out[k][k2] = v[k2]; }
++      else out[k] = v;
++    }
++    if (over) for (k in over) {
++      var o = over[k];
++      if (o && typeof o === "object" && !Array.isArray(o) && out[k] && typeof out[k] === "object" && !Array.isArray(out[k])) {
++        for (k2 in o) {
++          if (o[k2] && typeof o[k2] === "object" && !Array.isArray(o[k2]) && out[k][k2] && typeof out[k][k2] === "object") {
++            var inner = {}, k3; for (k3 in out[k][k2]) inner[k3] = out[k][k2][k3]; for (k3 in o[k2]) inner[k3] = o[k2][k3]; out[k][k2] = inner;
++          } else out[k][k2] = o[k2];
++        }
++      } else out[k] = o;
++    }
++    return out;
++  }
++
++  function sums(prof) {
++    var S = prof.S, keys = prof.keys || (DB && DB.meta && DB.meta.keys) || KEYS, o = {}, i;
++    for (i = 0; i < KEYS.length; i++) o[KEYS[i]] = 0;
++    if (Array.isArray(S)) { for (i = 0; i < keys.length && i < S.length; i++) o[keys[i]] = +S[i] || 0; }
++    else if (S) { for (var k in S) o[k] = +S[k] || 0; }
++    return o;
++  }
++
++  function yearsBetween(d0, d1) {
++    var a = Date.parse(d0), b = Date.parse(d1);
++    if (!isFinite(a) || !isFinite(b)) return null;
++    return (b - a) / (365.2425 * 86400000);
++  }
++  function ageAt(prof, date) {
++    if (prof.age != null && isFinite(prof.age)) return +prof.age;
++    if (prof.dob && date) return yearsBetween(prof.dob, date);
++    return null;
++  }
++
++  function priorFor(division, priors) {
++    var src = priors || (DB && DB.priors);
++    if (!src) throw new Error("FightEngine: no priors loaded. Call FightEngine.loadDB(fightersJson) or pass opts.priors.");
++    var all = src.ALL || {}, d = src[division] || all, out = {}, k;
++    for (k in all) out[k] = all[k];
++    for (k in d) if (d[k] != null) out[k] = d[k];
++    return out;
++  }
++
++  // ------------------------------------------------------------------ league (division) derived quantities
++  function league(P, p) {
++    var L = {}, gs = p.ctrlGroundShare;
++    var cf = P.ctrl / 60;                       // fraction of fight time each fighter controls
++    L.ground = 2 * cf * gs; L.clinch = 2 * cf * (1 - gs); L.dist = 1 - L.ground - L.clinch;
++    L.stand = 1 - L.ground; L.top = cf * gs;
++    L.dAtt = P.d_att / L.dist;                  // distance attempts per distance-minute (per fighter)
++    L.gAtt = P.g_att / L.top;                   // ground attempts per top-minute
++    L.tdAtt = P.td_att / L.stand;               // takedown attempts per standing minute
++    L.sub = P.sub_att / L.ground;               // submission attempts per ground-minute (either side)
++    L.rev = P.rev / L.top;                      // reversals per bottom-minute
++    // distance target mix = totals minus clinch and ground mixes
++    var cm = p.clinchMix, gm = p.groundTopMix, tA = [P.h_att, P.b_att, P.l_att], dm = [0, 0, 0], s = 0, t;
++    for (t = 0; t < 3; t++) { dm[t] = Math.max(0.02 * P.d_att, tA[t] - P.c_att * cm[t] - P.g_att * gm[t]); s += dm[t]; }
++    for (t = 0; t < 3; t++) dm[t] /= s;
++    L.mixD = dm;
++    // accuracy table: logit p(pos, tgt) = alpha_tgt + beta_pos, fit to the division's target and position marginals
++    var att = [P.d_att, P.c_att, P.g_att], mix = [dm, cm, gm];
++    var tm = [P.acc_h, P.acc_b, P.acc_l], pm = [P.acc_d, P.acc_c, P.acc_g];
++    var a = [logit(tm[0]), logit(tm[1]), logit(tm[2])], b = [0, logit(pm[1]) - logit(pm[0]), logit(pm[2]) - logit(pm[0])];
++    for (var it = 0; it < 80; it++) {
++      var q, num, den, w;
++      for (t = 0; t < 3; t++) {
++        num = 0; den = 0;
++        for (q = 0; q < 3; q++) { w = att[q] * mix[q][t]; num += w * sigm(a[t] + b[q]); den += w; }
++        a[t] += logit(tm[t]) - logit(num / den);
++      }
++      for (q = 0; q < 3; q++) {
++        num = 0; den = 0;
++        for (t = 0; t < 3; t++) { w = att[q] * mix[q][t]; num += w * sigm(a[t] + b[q]); den += w; }
++        b[q] += logit(pm[q]) - logit(num / den);
++      }
++    }
++    L.accA = a; L.accB = b;
++    // knockdowns per landed standing head strike: KDs only come from standing strikes
++    var groundHead = P.g_lnd * gm[0];
++    L.kd0 = P.kd_per_h * P.h_lnd / Math.max(0.2 * P.h_lnd, P.h_lnd - groundHead);
++    return L;
++  }
++
++  function expAcc(L, w, mix, t) {
++    var num = 0, den = 0;
++    for (var q = 0; q < 3; q++) { var x = w[q] * mix[q][t]; num += x * sigm(L.accA[t] + L.accB[q]); den += x; }
++    return den > 0 ? num / den : sigm(L.accA[t]);
++  }
++
++  function distMix(s, pre, L, p) {
++    // a fighter's distance target mix: his totals by target minus clinch / ground shares, shrunk to the league mix
++    var cm = p.clinchMix, gm = p.groundTopMix, names = ["h", "b", "l"], c = [0, 0, 0], tot = 0, t;
++    var dAtt = s[pre + "d_att"], cAtt = s[pre + "c_att"], gAtt = s[pre + "g_att"];
++    for (t = 0; t < 3; t++) {
++      c[t] = Math.max(0.02 * dAtt, s[pre + names[t] + "_att"] - cAtt * cm[t] - gAtt * gm[t]);
++      tot += c[t];
++    }
++    var out = [0, 0, 0];
++    for (t = 0; t < 3; t++) out[t] = (c[t] + p.kTgt * L.mixD[t]) / (tot + p.kTgt);
++    return out;
++  }
++
++  // ------------------------------------------------------------------ one fighter's shrunk rates
++  function fighterRates(prof, P, L, p, nR) {
++    var s = sums(prof), gs = p.ctrlGroundShare, R = { sums: s };
++    var min = Math.max(0, s.min);
++    var topMin = s.ctrl / 60 * gs, botMin = s.octrl / 60 * gs, grMin = topMin + botMin;
++    var clMin = (s.ctrl + s.octrl) / 60 * (1 - gs);
++    var distMin = Math.max(0.25 * min, min - grMin - clMin), standMin = Math.max(0.3 * min, min - grMin);
++    R.min = min; R.distMin = distMin; R.topMin = topMin; R.botMin = botMin; R.standMin = standMin;
++    R.dAtt = shr(s.d_att, distMin, L.dAtt, p.kPM * L.dist);
++    R.dAttAg = shr(s.od_att, distMin, L.dAtt, p.kPM * L.dist);
++    R.cAtt = shr(s.c_att, min, P.c_att, p.kPM);
++    R.cAttAg = shr(s.oc_att, min, P.c_att, p.kPM);
++    R.gAtt = shr(s.g_att, topMin, L.gAtt, p.kPM * L.top);
++    R.gAttAg = shr(s.og_att, botMin, L.gAtt, p.kPM * L.top);
++    R.tdAtt = shr(s.td_att, standMin, L.tdAtt, p.kTdPM * L.stand);
++    R.tdAttAg = shr(s.otd_att, standMin, L.tdAtt, p.kTdPM * L.stand);
++    R.tdAcc = clip(shr(s.td_lnd, s.td_att, P.td_acc, p.kTdAcc), 0.03, 0.95);
++    R.tdAccAg = clip(shr(s.otd_lnd, s.otd_att, P.td_acc, p.kTdAcc), 0.03, 0.95);
++    R.ctrl = shr(s.ctrl, min, P.ctrl, p.kPM);
++    R.octrl = shr(s.octrl, min, P.ctrl, p.kPM);
++    var cpt = P.ctrl_per_td;
++    R.topSkill = shr(s.ctrl, s.td_lnd, cpt, p.kCtrlTD) / cpt;
++    R.escWeak = shr(s.octrl, s.otd_lnd, cpt, p.kCtrlTD) / cpt;
++    R.sub = shr(s.sub_att, grMin, L.sub, p.kPM * L.ground);
++    R.subAg = shr(s.osub_att, grMin, L.sub, p.kPM * L.ground);
++    R.subConv = clip(shr(s.sub_w, s.sub_att, P.sub_conv, p.kSub), 0.03, 0.85);
++    R.subDefFail = clip(shr(s.sub_l, s.osub_att, P.sub_conv, p.kSub), 0.03, 0.85);
++    R.rev = shr(s.rev, botMin, L.rev, p.kRev * L.top);
++    R.revAg = shr(s.orev, topMin, L.rev, p.kRev * L.top);
++    R.pow = shr(s.kd, s.h_lnd, P.kd_per_h, p.kKD);
++    R.chin = shr(s.okd, s.oh_lnd, P.kd_per_h, p.kKD);
++    // target mix at distance and accuracy shifts by target (relative to what his position mix implies)
++    R.mixD = distMix(s, "", L, p);
++    R.mixDAg = distMix(s, "o", L, p);
++    var eps = 1e-6, cm = p.clinchMix, gm = p.groundTopMix, names = ["h", "b", "l"], t;
++    var wX = [s.d_att + eps * P.d_att, s.c_att + eps * P.c_att, s.g_att + eps * P.g_att];
++    var wO = [s.od_att + eps * P.d_att, s.oc_att + eps * P.c_att, s.og_att + eps * P.g_att];
++    R.accSh = [0, 0, 0]; R.accAgSh = [0, 0, 0]; R.acc = [0, 0, 0]; R.accAg = [0, 0, 0];
++    for (t = 0; t < 3; t++) {
++      var eX = expAcc(L, wX, [R.mixD, cm, gm], t), eO = expAcc(L, wO, [R.mixDAg, cm, gm], t);
++      var aX = shr(s[names[t] + "_lnd"], s[names[t] + "_att"], eX, p.kAcc);
++      var aO = shr(s["o" + names[t] + "_lnd"], s["o" + names[t] + "_att"], eO, p.kAcc);
++      R.acc[t] = aX; R.accAg[t] = aO;
++      R.accSh[t] = logit(aX) - logit(eX); R.accAgSh[t] = logit(aO) - logit(eO);
++    }
++    // pace: landed/min by round vs round 1, relative to the league curve, shrunk toward 1
++    var pc = prof.pace, pwt = prof.pace_w, five = false, r;
++    if (pc && pwt) for (r = 3; r < 5; r++) if (pc[r] != null && pwt[r] > 0) five = true;
++    var lc = five ? p.paceLnd5 : p.paceLnd3;
++    var rho = [1, 1, 1, 1, 1], rw = [0, 0, 0, 0, 0];
++    for (r = 1; r < 5; r++) {
++      if (pc && pwt && pc[r] != null && pwt[r] > 0 && r < lc.length) {
++        var ratio = clip(pc[r] / lc[r], 0.3, 3);
++        rho[r] = (ratio * pwt[r] + p.kPace) / (pwt[r] + p.kPace); rw[r] = pwt[r];
++      } else if (r >= 1) { rho[r] = 1 + 0.5 * (rho[r - 1] - 1); }
++    }
++    R.rho = rho; R.rhoW = rw;
++    var cs = 0, cn = 0, lastR = Math.max(2, nR || 3);
++    for (r = 1; r < Math.min(5, lastR); r++) { cs += rho[r]; cn++; }
++    R.cardio = cn ? cs / cn : 1;
++    return R;
++  }
++
++  function normAdj(a) {
++    a = a || {};
++    function g(k, d) { return a[k] != null && isFinite(a[k]) ? +a[k] : d; }
++    return { out: g("out", 1), acc: g("acc", 1), pow: g("pow", 1), chin: g("chin", 1), cardio: g("cardio", 1),
++      tdAtt: g("tdAtt", 1), tdDef: g("tdDef", 1), leg: a.leg != null && isFinite(a.leg) ? clip(+a.leg, 0, 0.9) : null, sub: g("sub", 1) };
++  }
++
++  // ------------------------------------------------------------------ position occupancy (macro CTMC) for the fit
++  // states: 0 distance, 1 clinch A controls, 2 clinch B controls, 3 A on top, 4 B on top. Integrated over one round from distance.
++  function occupancy(q, T) {
++    var D = 1, CA = 0, CB = 0, TA = 0, TB = 0, o0 = 0, o1 = 0, o2 = 0, o3 = 0, o4 = 0, dt = 1, n = Math.round(T / dt);
++    var e = q.e, pA = q.pA, x = q.x, sw = q.swap, fc = q.fc;
++    for (var s = 0; s < n; s++) {
++      o0 += D; o1 += CA; o2 += CB; o3 += TA; o4 += TB;
++      var fDCA = e * pA * D + q.tdD[0] * (1 - q.pD[0]) * q.ftc * D, fDCB = e * (1 - pA) * D + q.tdD[1] * (1 - q.pD[1]) * q.ftc * D;
++      var fDTA = q.tdD[0] * q.pD[0] * D, fDTB = q.tdD[1] * q.pD[1] * D;
++      var fCAD = x * CA, fCBD = x * CB, fCACB = sw * 2 * (1 - pA) * CA, fCBCA = sw * 2 * pA * CB;
++      var fCATA = q.tdCC[0] * q.pC[0] * CA, fCATB = q.tdCU[1] * q.pC[1] * CA;
++      var fCBTB = q.tdCC[1] * q.pC[1] * CB, fCBTA = q.tdCU[0] * q.pC[0] * CB;
++      var fTAD = q.up[1] * (1 - fc) * TA, fTACA = q.up[1] * fc * TA, fTATB = q.rev[1] * TA;
++      var fTBD = q.up[0] * (1 - fc) * TB, fTBCB = q.up[0] * fc * TB, fTBTA = q.rev[0] * TB;
++      D += dt * (fCAD + fCBD + fTAD + fTBD - fDCA - fDCB - fDTA - fDTB);
++      CA += dt * (fDCA + fCBCA + fTACA - fCAD - fCACB - fCATA - fCATB);
++      CB += dt * (fDCB + fCACB + fTBCB - fCBD - fCBCA - fCBTB - fCBTA);
++      TA += dt * (fDTA + fCATA + fCBTA + fTBTA - fTAD - fTACA - fTATB);
++      TB += dt * (fDTB + fCBTB + fCATB + fTATB - fTBD - fTBCB - fTBTA);
++    }
++    return [o0 / n, o1 / n, o2 / n, o3 / n, o4 / n];
++  }
++
++  // sub-position occupancy over a ground stint for a top man with pass multiplier pm (escape multiplier 1/pm)
++  function subposOcc(p, pm) {
++    var x = p.tdLand.slice(), acc = [0, 0, 0, 0, 0], h = 1 / 150, a, b;
++    for (var s = 0; s < 600; s++) {
++      var nx = x.slice();
++      for (a = 0; a < 5; a++) {
++        acc[a] += x[a];
++        for (b = 0; b < 5; b++) {
++          var f = x[a] * (p.pass[a][b] * pm + p.retain[a][b] / pm);
++          nx[a] -= f; nx[b] += f;
++        }
++      }
++      for (a = 0; a < 5; a++) x[a] = nx[a] * (1 - h);
++    }
++    var t = acc[0] + acc[1] + acc[2] + acc[3] + acc[4];
++    for (a = 0; a < 5; a++) acc[a] /= t;
++    return acc;
++  }
++  function wavg(occ, mult) { var s = 0; for (var i = 0; i < 5; i++) s += occ[i] * mult[i]; return s; }
++
++  function info(prof) {
++    return { slug: prof.slug || null, name: prof.name || "Fighter", nick: prof.nick || null, division: prof.division || prof.home || null,
++      dob: prof.dob || null, height_in: prof.height_in || null, reach_in: prof.reach_in || null, stance: prof.stance || null,
++      record: prof.record || null, elo: prof.elo || null, ko_losses: prof.ko_losses || 0, n_fights: prof.n_fights || prof.n || null };
++  }
++
++  function resolve(x) {
++    if (typeof x === "string") { var p = profile(x); if (!p) throw new Error("FightEngine: unknown fighter " + x); return p; }
++    return x;
++  }
++
++  // ------------------------------------------------------------------ matchup (v3 rate tables, no learned model)
++  function matchupBase(profA, profB, opts) {
++    opts = opts || {};
++    var base = getParams();
++    if (!base) throw new Error("FightEngine: FightParams not loaded (load params3.js first)");
++    var p = mergeParams(base, opts.params);
++    profA = resolve(profA); profB = resolve(profB);
++    var division = opts.division || profA.division || profA.home || "Lightweight";
++    var P = priorFor(division, opts.priors);
++    var nR = opts.rounds || (opts.title ? 5 : 3);
++    var dv = (p.div && p.div[division]) || {};
++    function dvf(k) { return dv[k] != null ? dv[k] : 1; }
++    var L = league(P, p);
++    var profs = [profA, profB];
++    var R = [fighterRates(profA, P, L, p, nR), fighterRates(profB, P, L, p, nR)];
++    var adj = [normAdj(opts.adjA), normAdj(opts.adjB)];
++    var jud = opts.judges || {};
++    var date = opts.date || (DB && DB.meta && DB.meta.snapshot) || null;
++    var a = p.combA, b = p.combB, i, j, k;
++    var m = { version: VERSION, A: info(profA), B: info(profB), division: division, rounds: nR, title: !!opts.title, date: date,
++      p: p, P: P, L: L, R: R, adj: adj, judgePower: jud.power != null ? +jud.power : p.judge.power, opts: opts };
++
++    // ---- strike attempt rates
++    m.dRate = [0, 0]; m.cRate = [0, 0]; m.gRate = [0, 0]; m.gBot = [0, 0];
++    var Ec = [0, 0], gRateAvg = [0, 0];
++    for (i = 0; i < 2; i++) {
++      j = 1 - i;
++      var sc = p.strikeScale * dvf("att");
++      m.dRate[i] = L.dAtt * pw(R[i].dAtt / L.dAtt, a) * pw(R[j].dAttAg / L.dAtt, b) / 60 * sc * adj[i].out;
++      Ec[i] = P.c_att * pw(R[i].cAtt / P.c_att, a) * pw(R[j].cAttAg / P.c_att, b);
++      gRateAvg[i] = L.gAtt * pw(R[i].gAtt / L.gAtt, a) * pw(R[j].gAttAg / L.gAtt, b) / 60 * sc * p.groundScale * adj[i].out;
++    }
++    var clinchMult = Math.pow((Ec[0] + Ec[1]) / (2 * P.c_att), p.clinchTimeExp);
++    var clT = clip(L.clinch * clinchMult, 0.005, 0.3);
++    for (i = 0; i < 2; i++) m.cRate[i] = Ec[i] / clT / 60 * p.strikeScale * dvf("att") * p.clinchScale * adj[i].out;
++
++    // ---- takedowns (knob-neutral for the occupancy fit; knobs applied after)
++    var tdS = [0, 0], pTd = [0, 0];
++    for (i = 0; i < 2; i++) {
++      j = 1 - i;
++      tdS[i] = L.tdAtt * pw(R[i].tdAtt / L.tdAtt, a) * pw(R[j].tdAttAg / L.tdAtt, b) / 60 * p.tdScale * dvf("td");
++      pTd[i] = prob(odds(log5(R[i].tdAcc, R[j].tdAccAg, P.td_acc)) * p.tdOddsScale);
++    }
++    // ---- control targets (s per fight-minute) and clinch controller share
++    var ctrlT = [0, 0];
++    var ctrlSc = p.ctrlScale != null ? p.ctrlScale : 1;   // global control-target scale (walk-forward; the inverse of a get-up scale)
++    for (i = 0; i < 2; i++) { j = 1 - i; ctrlT[i] = P.ctrl * pw(R[i].ctrl / P.ctrl, a) * pw(R[j].octrl / P.ctrl, b) * dvf("ctrl") * ctrlSc; }
++    var xA = ctrlT[0] / (ctrlT[0] + ctrlT[1]);
++    var pCtl = 0.5 + p.clinchCtrlTemper * (xA - 0.5);
++    var pcs = [pCtl, 1 - pCtl];
++    var standT = Math.max(0.2, L.stand), distT = Math.max(0.1, standT - clT);
++    m.tdD = [0, 0]; m.tdCC = [0, 0]; m.tdCU = [0, 0];
++    for (i = 0; i < 2; i++) {
++      var rd = tdS[i] * (distT + clT) / (distT + clT * (pcs[i] * p.tdClinchMult + (1 - pcs[i]) * p.tdClinchUnder));
++      m.tdD[i] = rd; m.tdCC[i] = rd * p.tdClinchMult; m.tdCU[i] = rd * p.tdClinchUnder;
++    }
++    var pTdC = [prob(odds(pTd[0]) * p.tdClinchOdds), prob(odds(pTd[1]) * p.tdClinchOdds)];
++    // ---- sweeps
++    var sw = [0, 0];
++    for (i = 0; i < 2; i++) { j = 1 - i; sw[i] = L.rev * pw(R[i].rev / L.rev, a) * pw(R[j].revAg / L.rev, b) / 60 * p.sweepScale; }
++    // ---- grappling edge on top (passes) from control per takedown vs control conceded per takedown absorbed
++    var gEdge = [0, 0], occS = [null, null];
++    for (i = 0; i < 2; i++) { j = 1 - i; gEdge[i] = clip(Math.sqrt(R[i].topSkill * R[j].escWeak), 0.4, 2.5); occS[i] = subposOcc(p, gEdge[i]); }
++    var avgSweep = [wavg(occS[0], p.sweepPos), wavg(occS[1], p.sweepPos)];
++    var avgStand = [wavg(occS[0], p.standPos), wavg(occS[1], p.standPos)];
++    // ---- fit clinch entry and stand-up hazards so occupancy matches the targets
++    var q = { e: 0.0025, pA: pCtl, x: p.clinchBreak, swap: p.clinchSwap, fc: p.standClinch, ftc: p.failTdClinch,
++      tdD: m.tdD, pD: pTd, tdCC: m.tdCC, tdCU: m.tdCU, pC: pTdC,
++      up: [1 / 200, 1 / 200], rev: [sw[0] * avgSweep[1], sw[1] * avgSweep[0]] };   // rev[i] = i sweeps from bottom (top = other)
++    var occ = null, it, gTarget = [0, 0];
++    for (it = 0; it < 60; it++) {
++      occ = occupancy(q, 300);
++      var cl = occ[1] + occ[2];
++      q.e = clip(q.e * Math.pow(clT / Math.max(1e-6, cl), 0.8), 1e-5, 0.08);
++      gTarget[0] = Math.max(0.002, ctrlT[0] / 60 - occ[1]);
++      gTarget[1] = Math.max(0.002, ctrlT[1] / 60 - occ[2]);
++      q.up[1] = clip(q.up[1] * Math.pow(occ[3] / gTarget[0], 0.8), 1 / 3000, 1 / 6);   // B gets up from under A
++      q.up[0] = clip(q.up[0] * Math.pow(occ[4] / gTarget[1], 0.8), 1 / 3000, 1 / 6);
++    }
++    occ = occupancy(q, 300);
++    m.occ = occ; m.ctrlT = ctrlT; m.clT = clT; m.gTarget = gTarget;
++    m.clE = q.e; m.pCtl = pCtl; m.clBreak = p.clinchBreak; m.clSwap = p.clinchSwap;
++    m.up = q.up.slice(); m.sw = sw; m.gEdge = gEdge; m.occS = occS;
++    // knobs on takedowns after the fit: attempts x tdAtt, success odds / opponent's tdDef
++    m.tdO = [0, 0]; m.tdOC = [0, 0];
++    for (i = 0; i < 2; i++) {
++      j = 1 - i;
++      m.tdD[i] *= adj[i].tdAtt; m.tdCC[i] *= adj[i].tdAtt; m.tdCU[i] *= adj[i].tdAtt;
++      m.tdO[i] = odds(pTd[i]) / adj[j].tdDef; m.tdOC[i] = odds(pTdC[i]) / adj[j].tdDef;
++    }
++    m.pTd = pTd; m.tdS = tdS;
++
++    // ---- per sub-position tables (index top*5 + pos)
++    m.upPos = new Float64Array(10); m.swPos = new Float64Array(10); m.gPos = new Float64Array(10);
++    m.subTPos = new Float64Array(10); m.subBPos = new Float64Array(10); m.subOPos = new Float64Array(10);
++    var threat = [0, 0];
++    for (i = 0; i < 2; i++) { j = 1 - i; threat[i] = L.sub * pw(R[i].sub / L.sub, a) * pw(R[j].subAg / L.sub, b) * p.subAttScale * adj[i].sub; }
++    var sb = p.subBotShare, ss = p.subStandShare;
++    var oddsNorm = (1 - sb - ss) + sb * p.subBotOdds + ss * p.subStandOdds;
++    for (i = 0; i < 2; i++) {
++      j = 1 - i;                                   // i on top, j on bottom
++      var oc = occS[i];
++      var aSt = avgStand[i], aSw = avgSweep[i], aG = wavg(oc, p.gnpPos), aT = wavg(oc, p.subTopPos), aB = wavg(oc, p.subBotPos);
++      var oddsW = 0; for (k = 0; k < 5; k++) oddsW += oc[k] * p.subTopPos[k] * p.subOddsPos[k];
++      var aO = oddsW / aT;
++      for (k = 0; k < 5; k++) {
++        m.upPos[i * 5 + k] = m.up[j] * p.standPos[k] / aSt;
++        m.swPos[i * 5 + k] = sw[j] * p.sweepPos[k] / aSw;
++        m.gPos[i * 5 + k] = gRateAvg[i] * p.gnpPos[k] / aG;
++        m.subTPos[i * 5 + k] = threat[i] * (1 - sb - ss) * 2 / 60 * p.subTopPos[k] / aT;
++        m.subBPos[i * 5 + k] = threat[j] * sb * 2 / 60 * p.subBotPos[k] / aB;    // the bottom man (j) attacking
++        m.subOPos[i * 5 + k] = p.subOddsPos[k] / aO / oddsNorm;
++      }
++      m.gBot[j] = gRateAvg[j] * p.gBotRel;
++      m.gRate[i] = gRateAvg[i];
++    }
++    m.threat = threat;
++    m.subO = [0, 0]; m.subConv = [0, 0]; m.gillo = [0, 0];
++    for (i = 0; i < 2; i++) {
++      j = 1 - i;
++      m.subConv[i] = log5(R[i].subConv, R[j].subDefFail, P.sub_conv);
++      m.subO[i] = odds(m.subConv[i]) * p.subConvScale * dvf("sub") * Math.sqrt(adj[i].sub);
++      // standing guillotine attempts per stuffed shot by the opponent (league: standing share of attempts / failed shots)
++      var lg = P.sub_att * ss / Math.max(1e-4, P.td_att - P.td_lnd);
++      m.gillo[i] = clip(lg * threat[i] / L.sub * p.gilloScale, 0, 0.3);
++    }
++    m.subBotO = p.subBotOdds / oddsNorm; m.subStandO = p.subStandOdds / oddsNorm;
++
++    // ---- accuracy odds by attacker, position code (0 dist, 1 clinch, 2 top, 3 bottom), target
++    m.accO = new Float64Array(24); m.mixC = new Float64Array(16);
++    for (i = 0; i < 2; i++) {
++      j = 1 - i;
++      var mixD = R[i].mixD.slice();
++      if (adj[i].leg != null) {
++        var hb = mixD[0] + mixD[1], rest = 1 - adj[i].leg;
++        mixD = [mixD[0] / hb * rest, mixD[1] / hb * rest, adj[i].leg];
++      }
++      var mixes = [mixD, p.clinchMix, p.groundTopMix, p.groundBotMix];
++      for (var pc = 0; pc < 4; pc++) {
++        var mx = mixes[pc];
++        m.mixC[(i * 4 + pc) * 2] = mx[0]; m.mixC[(i * 4 + pc) * 2 + 1] = mx[0] + mx[1];
++        var posq = pc < 2 ? pc : 2;
++        for (var t = 0; t < 3; t++) {
++          var z = L.accA[t] + L.accB[posq] + a * R[i].accSh[t] + b * R[j].accAgSh[t];
++          m.accO[(i * 4 + pc) * 3 + t] = Math.exp(z) * (pc === 3 ? p.botAccOdds : 1) * p.accScale * adj[i].acc;
++        }
++      }
++      m.mixD = m.mixD || [null, null]; m.mixD[i] = mixD;
++    }
++
++    // ---- power, chin and their factors
++    var ages = [ageAt(profA, date), ageAt(profB, date)];
++    var homeLbs = [null, null], fightLbs = P.lbs;
++    for (i = 0; i < 2; i++) {
++      var hd = profs[i].division || profs[i].home;
++      try { homeLbs[i] = hd ? priorFor(hd, opts.priors).lbs : null; } catch (e) { homeLbs[i] = null; }
++    }
++    m.ages = ages; m.homeLbs = homeLbs; m.fightLbs = fightLbs;
++    var fac = [{}, {}];
++    for (i = 0; i < 2; i++) {
++      var ag = ages[i] != null ? Math.max(0, ages[i] - p.chinAge0) : 0;
++      var upLb = (fightLbs && homeLbs[i]) ? Math.max(0, fightLbs - homeLbs[i]) / 10 : 0;
++      var kol = profs[i].ko_losses || 0;
++      fac[i] = {
++        powRaw: R[i].pow / P.kd_per_h, chinRaw: R[i].chin / P.kd_per_h,
++        ageChin: Math.exp(p.chinAge * ag), agePow: Math.exp(-p.powAge * ag),
++        koChin: Math.min(p.chinKOcap, Math.pow(1 + p.chinKO, kol)), koLosses: kol,
++        sizeChin: Math.exp(p.sizeChin * upLb), sizePow: Math.exp(-p.sizePow * upLb), lbsUp: upLb * 10
++      };
++      // power / chin exponents (walk-forward tunable; default to the log-linear combination exponents)
++      fac[i].pow = pw(fac[i].powRaw, p.powExp != null ? p.powExp : a) * fac[i].agePow * fac[i].sizePow * adj[i].pow;
++      fac[i].chin = pw(fac[i].chinRaw, p.chinExp != null ? p.chinExp : b) * fac[i].ageChin * fac[i].koChin * fac[i].sizeChin * adj[i].chin;
++    }
++    m.fac = fac;
++    var koF = dvf("ko"), finOdds = odds(P.kd_fin != null ? P.kd_fin : p.kdFinRef) / odds(p.kdFinRef);
++    m.kd = [0, 0]; m.dw = [0, 0]; m.gnp = [0, 0]; m.stko = [0, 0];
++    for (i = 0; i < 2; i++) {
++      j = 1 - i;
++      m.kd[i] = L.kd0 * p.kdScale * dvf("kd") * fac[i].pow * fac[j].chin;
++      m.dw[i] = Math.pow(fac[i].pow, p.powDmgExp);
++      var pc2 = Math.sqrt(fac[i].pow * fac[j].chin);
++      m.gnp[i] = p.gnpTko * pc2 * koF;
++      m.stko[i] = p.stko * pc2 * koF;
++    }
++    m.instO = odds(p.kdInstant) * Math.sqrt(finOdds) * koF;
++    m.refO = odds(p.kdRefStop) * finOdds * koF;
++
++    // ---- pace and cardio
++    var curve = nR === 5 ? p.pace5 : (nR === 3 ? p.pace3 : null);
++    if (!curve) { curve = []; for (k = 0; k < nR; k++) curve.push(k < p.pace5.length ? p.pace5[k] : p.pace5[p.pace5.length - 1]); }
++    var nb = Math.min(3, nR), cm0 = 0; for (k = 0; k < nb; k++) cm0 += curve[k]; cm0 /= nb;
++    m.paceCurve = []; m.kdPace = []; m.pace = [[], []]; m.finR = [];
++    var c5 = p.caution5 != null ? p.caution5 : 1;   // 5-round (main event / title) caution on knockdowns, GNP TKOs and submission conversion, every round
++    for (k = 0; k < nR; k++) m.finR.push(nR >= 5 ? (k === 0 ? p.r1Caution5 : 1) * c5 : 1);
++    for (k = 0; k < nR; k++) { m.paceCurve.push(curve[k] / cm0); m.kdPace.push(Math.pow(curve[k] / cm0, p.kdPaceExp)); }
++    m.drain = [0, 0]; m.cardio = [0, 0];
++    for (i = 0; i < 2; i++) {
++      var rho = R[i].rho, rm = 0; for (k = 0; k < nb; k++) rm += rho[k]; rm /= nb;
++      for (k = 0; k < nR; k++) m.pace[i].push(m.paceCurve[k] * rho[Math.min(4, k)] / rm);
++      m.cardio[i] = R[i].cardio;
++      m.drain[i] = p.drain * Math.pow(3 / nR, p.drainSchedExp) * Math.pow(clip(R[i].cardio, 0.5, 1.6), -p.cardioExp) * adj[i].cardio;
++    }
++    // fixed-shape constants for the simulation loop (one literal: a stable, fast object layout)
++    m.k = {
++      accHurt: p.accHurt,
++      accMob: p.accMob,
++      accSelfStam: p.accSelfStam,
++      accStam: p.accStam,
++      bodyDrain: p.bodyDrain,
++      clinchCtrlStrike: p.clinchCtrlStrike,
++      corner: p.corner,
++      dmgHeal: p.dmgHeal,
++      dmgHurt: p.dmgHurt,
++      dmgKD: p.dmgKD,
++      dmgPos: p.dmgPos,
++      doc: p.doc,
++      docCap: p.docCap,
++      drainPos: p.drainPos,
++      drainTd: p.drainTd,
++      drainAtt: p.drainAtt,
++      failTdClinch: p.failTdClinch,
++      finStamAtt: p.finStamAtt,
++      gnpDmg: p.gnpDmg,
++      gnpHurt: p.gnpHurt,
++      gnpTkoPos: p.gnpTkoPos,
++      groundReset: p.groundReset,
++      hurtKdSecs: p.hurtKdSecs,
++      hurtRatio: p.hurtRatio,
++      hurtSecs: p.hurtSecs,
++      instStam: p.instStam,
++      kdBodyRatio: p.kdBodyRatio,
++      kdDmg: p.kdDmg,
++      kdGnpAcc: p.kdGnpAcc,
++      kdGnpRate: p.kdGnpRate,
++      kdHurt: p.kdHurt,
++      kdInstantDmg: p.kdInstantDmg,
++      kdPos: p.kdPos,
++      kdPounce: p.kdPounce,
++      kdRecover: p.kdRecover,
++      kdRecoverStand: p.kdRecoverStand,
++      kdRepeat: p.kdRepeat,
++      kdStamAtt: p.kdStamAtt,
++      kdStamDef: p.kdStamDef,
++      legDmgScale: p.legDmgScale,
++      legMobFloor: p.legMobFloor,
++      legTko: p.legTko,
++      legTko0: p.legTko0,
++      outHurt: p.outHurt,
++      outMob: p.outMob,
++      outStam: p.outStam,
++      pass: p.pass,
++      powDmgExp: p.powDmgExp,
++      recover: p.recover,
++      refDmg: p.refDmg,
++      retain: p.retain,
++      standClinch: p.standClinch,
++      standStam: p.standStam,
++      stkoBase: p.stkoBase,
++      subFailLose: p.subFailLose,
++      subHurt: p.subHurt,
++      subStam: p.subStam,
++      tdAttStam: p.tdAttStam,
++      tdLand: p.tdLand,
++      tdStam: p.tdStam
++    };
++    return m;
++  }
++
++  // ------------------------------------------------------------------ matchup (v4): base tables + learned stat-line rates
++  // opts.ml: false -> plain base tables (v3-style rates); undefined / true -> apply the loaded model (loadMLRates) when there
++  // is one; { pred } or { A, B } -> apply these precomputed per-side rates (corner order of this call; e.g. out-of-fold
++  // tables for leak-free backtests; base = league rates of the shrinkage division, filled in when missing); { model } ->
++  // that model handle instead of the loaded one. opts.mlModel is accepted as a shorthand for { model }.
++  // params.mlWeight (0..1) blends toward the base tables (1 = full learned rates); params.mlMaxRatio caps any single
++  // multiplier. The result carries m.mlApplied (true / false) and, when applied, m.ml (targets, ratios) and m.mlPred.
++  function mlPredFor(MLR, m, pa, pb, opts, model) {
++    var x = opts.ml;
++    var pred = null;
++    if (x && typeof x === "object" && (x.pred || (x.A && x.B))) {
++      var src = x.pred || x;
++      pred = { A: src.A, B: src.B, base: src.base || null };
++    } else if (model) {
++      var priors = opts.priors || (DB && DB.priors) || null;
++      if (!priors) { priors = {}; priors.ALL = m.P; priors[m.division] = m.P; }
++      pred = MLR.predict(model, pa, pb, { division: m.division, prior_division: opts.prior_division || null, rounds: m.rounds,
++        title: m.title, date: m.date, priors: priors });
++    }
++    if (!pred) return null;
++    if (!pred.base) {
++      var names = (model && model.targets) || MLR.TNAMES;
++      pred.base = names.map(function (t) { var v = m.P[MLR.BASE_KEY[t]]; return v == null ? 0 : +v; });
++    }
++    return pred;
++  }
++  function matchup(profA, profB, opts) {
++    opts = opts || {};
++    var pa = resolve(profA), pb = resolve(profB);
++    var m = matchupBase(pa, pb, opts);
++    m.mlApplied = false;
++    if (opts.ml === false) return m;
++    var MLR = getML();
++    if (!MLR) return m;
++    var model = opts.mlModel || (opts.ml && typeof opts.ml === "object" && opts.ml.model) || MLMODEL;
++    var pred = mlPredFor(MLR, m, pa, pb, opts, model);
++    if (!pred) return m;
++    var w = m.p.mlWeight != null ? +m.p.mlWeight : 1;
++    if (!(w > 0)) return m;
++    MLR.applyToMatchup(m, pred, { engine: api, model: model || undefined, weight: w, maxRatio: m.p.mlMaxRatio || 4,
++      parts: opts.mlParts || undefined });
++    m.mlPred = { A: pred.A, B: pred.B, base: pred.base };
++    m.mlApplied = true;
++    return m;
++  }
++  // learned stat-line model (data/derived/mlrates.json; tools/mlrates.py). Returns the model handle.
++  function loadMLRates(json) {
++    var MLR = getML();
++    if (!MLR) throw new Error("FightEngine.loadMLRates: src/ml/mlrates.js (MLRates) is not loaded");
++    if (json == null) { MLMODEL = null; return null; }
++    MLMODEL = json && json.targets && json.stack && json.raw ? json : MLR.load(json);
++    return MLMODEL;
++  }
++  function mlModel() { return MLMODEL; }
++
++  // ------------------------------------------------------------------ RNG (v2's xoshiro-style generator)
++  function makeRng(seed) {
++    var a = seed >>> 0, b = 0x9e3779b9, c = 0x243f6a88, d = (0xb7e15162 ^ seed) >>> 0;
++    function next() {
++      a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0;
++      var t = (a + b) | 0;
++      a = b ^ (b >>> 9); b = (c + (c << 3)) | 0; c = (c << 21) | (c >>> 11); d = (d + 1) | 0;
++      t = (t + d) | 0; c = (c + t) | 0;
++      return (t >>> 0) / 4294967296;
++    }
++    for (var i = 0; i < 20; i++) next();
++    var spare = null;
++    return {
++      u: next,
++      normal: function () {
++        if (spare !== null) { var s = spare; spare = null; return s; }
++        var u1 = next(); if (u1 < 1e-300) u1 = 1e-300;
++        var u2 = next(), r = Math.sqrt(-2 * Math.log(u1));
++        spare = r * Math.sin(2 * Math.PI * u2);
++        return r * Math.cos(2 * Math.PI * u2);
++      },
++      expo: function () { var u = next(); if (u < 1e-300) u = 1e-300; return -Math.log(u); }
++    };
++  }
++
++  // ------------------------------------------------------------------ names and details
++  var SUBN = {
++    back: [["Rear Naked Choke", 0.86], ["Neck Crank", 0.06], ["Arm Triangle", 0.04], ["Armbar", 0.04]],
++    mount: [["Arm Triangle", 0.45], ["Armbar", 0.35], ["Americana", 0.1], ["Rear Naked Choke", 0.1]],
++    side: [["Arm Triangle", 0.45], ["Kimura", 0.25], ["D'Arce Choke", 0.15], ["Armbar", 0.15]],
++    half: [["Arm Triangle", 0.35], ["D'Arce Choke", 0.25], ["Kimura", 0.2], ["Anaconda Choke", 0.2]],
++    guard: [["Kimura", 0.3], ["Arm Triangle", 0.2], ["D'Arce Choke", 0.2], ["Guillotine Choke", 0.15], ["Neck Crank", 0.15]],
++    bottom: [["Guillotine Choke", 0.38], ["Triangle Choke", 0.24], ["Armbar", 0.22], ["Kimura", 0.08], ["Heel Hook", 0.08]],
++    stand: [["Guillotine Choke", 0.8], ["D'Arce Choke", 0.1], ["Anaconda Choke", 0.1]]
++  };
++  function pickName(list, u) { var acc = 0; for (var i = 0; i < list.length; i++) { acc += list[i][1]; if (u < acc) return list[i][0]; } return list[list.length - 1][0]; }
++  var GNPPOS = ["From Guard", "From Half Guard", "From Side Control", "From Mount", "From Back Control"];
++
++  function koDetail(how, tg, pc, pos, u) {
++    if (how === "LEG") return "Kick to Leg At Distance";
++    if (how === "GNP") return (u < 0.8 ? "Punches" : "Elbows") + " to Head " + GNPPOS[pos];
++    var where = pc === 1 ? "In Clinch" : "At Distance";
++    if (tg === 1) return (pc === 1 ? "Knee" : (u < 0.5 ? "Kick" : "Punch")) + " to Body " + where;
++    if (how === "TKO") return (pc === 1 ? (u < 0.5 ? "Knees" : "Punches") : "Punches") + " to Head " + where;
++    if (pc === 1) return (u < 0.45 ? "Knee" : (u < 0.75 ? "Elbow" : "Punch")) + " to Head " + where;
++    return (u < 0.88 ? "Punch" : (u < 0.97 ? "Kick" : "Knee")) + " to Head " + where;
++  }
++
++  function evObj(t, k, w, s, pos, down, D, G, S) {
++    var e = { t: +t.toFixed(2), k: k, w: w, s: s };
++    if (s >= 2) e.pos = down ? "down" : POSN[pos];
++    e.dA = +D[0].toFixed(1); e.dB = +D[1].toFixed(1); e.gA = +G[0].toFixed(1); e.gB = +G[1].toFixed(1);
++    e.sA = +S[0].toFixed(3); e.sB = +S[1].toFixed(3);
++    return e;
++  }
++  function statObj(st, i) { var o = {}; for (var k = 0; k < NS; k++) o[STK[k]] = st[i * NS + k]; o.ctrl = +o.ctrl.toFixed(1); o.dmg = +o.dmg.toFixed(2); return o; }
++
++  // ------------------------------------------------------------------ judges (one round)
++  // Each judge j scores z_j = tS_j * striking + tG_j * grappling + tP_j * damage + shared + individual noise (logits; A
++  // minus B differentials; the shared noise has a fight-level part sF, variance share sharedFight, drawn once per fight:
++  // the panel's view beyond the counts persists from round to round), with the EM round-winner weights fit on 7,550 ufcstats cards (research/data_baserates.md):
++  // striking = head * dHead + body * dBody + leg * dLeg landed; grappling = td * dTD + ctrlMin * dCtrl / 60 + sub * dSubAtt;
++  // damage = kd * dKD + hurt * dHurt + judgePower * head * dPow (engine-only: hurts and power beyond the strike count).
++  // The round goes to sign(z_j); a 10-8 when |z_j| > t108 - t108kd * min(2, winner's KD edge). The shared and individual
++  // sds, the fight-level share, the tastes and the 10-8 thresholds are fit to the 2019-2023 judges' rounds
++  // (tools/judgecal.js). Draw order: one shared normal, then one normal per judge. Adds the scores to cards and returns the number of 10-8s; js (optional)
++  // receives [A, B] per judge.
++  function judgeRound(J, jp, dHL, dBL, dLL, dKd, dTd, dCtrl, dSub, dHu, dPow, tS, tG, tP, sF, rng, cards, js) {
++    var dStr = J.head * dHL + J.body * dBL + J.leg * dLL;
++    var dGr = J.td * dTd + J.ctrlMin * dCtrl / 60 + J.sub * dSub;
++    var dDm = J.kd * dKd + J.hurt * dHu + jp * J.head * dPow;
++    var rho = J.sharedFight || 0;
++    var shared = (sF || 0) + J.sharedSd * Math.sqrt(1 - rho) * rng.normal(), n108 = 0, kc = J.t108kd || 0;
++    for (var j = 0; j < 3; j++) {
++      var z = dStr * tS[j] + dGr * tG[j] + dDm * tP[j] + shared + J.indSd * rng.normal();
++      var aw = z > 0, mg = aw ? z : -z, kdE = aw ? dKd : -dKd;
++      var big = mg > J.t108 - kc * (kdE <= 0 ? 0 : (kdE >= 2 ? 2 : kdE));
++      var scA = aw ? 10 : (big ? 8 : 9), scB = aw ? (big ? 8 : 9) : 10;
++      if (big) n108++;
++      cards[j][0] += scA; cards[j][1] += scB;
++      if (js) js.push([scA, scB]);
++    }
++    return n108;
++  }
++
++  // ------------------------------------------------------------------ simulate one fight
++  function simulate(m, rng, trace) {
++    var p = m.p, K = m.k, F = p.form, J = p.judge, nR = m.rounds, i, j, k;
++    var dRate = m.dRate, cRate = m.cRate, tdD = m.tdD, tdCC = m.tdCC, tdCU = m.tdCU, gPos = m.gPos, gBot = m.gBot, gEdge = m.gEdge;
++    var swPos = m.swPos, upPos = m.upPos, subTPos = m.subTPos, subBPos = m.subBPos, subOPos = m.subOPos, subO = m.subO, gillo = m.gillo;
++    var clE = m.clE, pCtl = m.pCtl, clBreak = m.clBreak, clSwap = m.clSwap, subBotO = m.subBotO, subStandO = m.subStandO;
++    // fight-night form (fixed draw order, independent of trace)
++    // every multiplicative draw is a mean-1 lognormal: exp(sd * z - sd^2 / 2)
++    var sharedPace = lnorm(rng, F.pace);
++    var vol = lnorm(rng, F.vol);                 // shared fight volatility: a war vs a tactical fight
++    var fOut = [1, 1], fAcc = [1, 1], fPow = [1, 1], fChin = [1, 1], fCard = [1, 1], fGrap = [1, 1], fSubO = [1, 1], fSubD = [1, 1];
++    for (i = 0; i < 2; i++) {
++      fOut[i] = lnorm(rng, F.out); fAcc[i] = Math.exp(F.acc * rng.normal());   // accuracy: logit-normal (odds multiplier)
++      fPow[i] = lnorm(rng, F.pow); fChin[i] = lnorm(rng, F.chin);
++      fCard[i] = lnorm(rng, F.cardio); fGrap[i] = lnorm(rng, F.grap);
++      fSubO[i] = lnorm(rng, F.sub); fSubD[i] = lnorm(rng, F.sub);
++    }
++    var subK = [fSubO[0] * fSubD[1], fSubO[1] * fSubD[0]], subKs = [Math.sqrt(subK[0]), Math.sqrt(subK[1])];
++    var tS = [1, 1, 1], tG = [1, 1, 1], tP = [1, 1, 1];
++    for (j = 0; j < 3; j++) { tS[j] = lnorm(rng, J.tasteSd); tG[j] = lnorm(rng, J.tasteSd); tP[j] = lnorm(rng, J.tasteSd); }
++    var jF = J.sharedSd * Math.sqrt(J.sharedFight || 0) * rng.normal();   // judges' fight-level shared view (always drawn: fixed draw order)
++    var kdB = [m.kd[0] * fPow[0] * fChin[1] * vol, m.kd[1] * fPow[1] * fChin[0] * vol];
++    var dw = [m.dw[0] * Math.pow(fPow[0], K.powDmgExp), m.dw[1] * Math.pow(fPow[1], K.powDmgExp)];
++    var pcF = [Math.sqrt(fPow[0] * fChin[1] * vol), Math.sqrt(fPow[1] * fChin[0] * vol)];
++    var gnpB = [m.gnp[0] * pcF[0], m.gnp[1] * pcF[1]], stkoB = [m.stko[0] * pcF[0], m.stko[1] * pcF[1]];
++    var drain = [m.drain[0] * fCard[0], m.drain[1] * fCard[1]];
++    var gR = [fGrap[0] / fGrap[1], fGrap[1] / fGrap[0]];
++    var gRs = [Math.sqrt(gR[0]), Math.sqrt(gR[1])];
++    var tdO = [m.tdO[0] * gR[0], m.tdO[1] * gR[1]], tdOC = [m.tdOC[0] * gR[0], m.tdOC[1] * gR[1]];
++    var instO = m.instO, refO = m.refO;
++    var kdGnpO = odds(K.kdGnpAcc);
++    var mixC = m.mixC, accO = m.accO, pass = K.pass, retain = K.retain;
++    var dmgPos = K.dmgPos, kdPos = K.kdPos, gnpTkoPos = K.gnpTkoPos, drainPos = K.drainPos;
++    var legScale = K.legDmgScale, legFloor = K.legMobFloor;
++
++    var D = [0, 0], G = [0, 0], S = [1, 1], hurtEnd = [-1, -1], kdN = [0, 0], chinM = [1, 1];
++    var st = new Float64Array(2 * NS), tot = new Float64Array(2 * NS);
++    var evR = new Float64Array(24), evT = new Int8Array(24), evW = new Int8Array(24), evX = new Int8Array(24);
++    var cards = [[0, 0], [0, 0], [0, 0]], n108 = 0, kdr = 0, kdrf = 0;
++    var rounds = trace ? [] : null;
++    var fight = { winner: "D", method: "DRAW", detail: "", round: nR, t: 300, cards: cards, totals: null,
++      form: { A: { out: fOut[0], acc: fAcc[0], pow: fPow[0], chin: 1 / fChin[0], cardio: 1 / fCard[0], grap: fGrap[0], subOff: fSubO[0], subDef: 1 / fSubD[0] },
++              B: { out: fOut[1], acc: fAcc[1], pow: fPow[1], chin: 1 / fChin[1], cardio: 1 / fCard[1], grap: fGrap[1], subOff: fSubO[1], subDef: 1 / fSubD[1] } },
++      rounds: rounds, fin: null, n108: 0, kdr: 0, kdrf: 0, pace: sharedPace, vol: vol };
++    var po = [0, 0], fin = null;
++
++    for (var r = 0; r < nR; r++) {
++      for (k = 0; k < 2 * NS; k++) st[k] = 0;
++      var t = 0, state = 0, ctl = -1, pos = 0, downed = -1, kdLoc = 0;
++      var ev = trace ? [] : null;
++      var rp = sharedPace * lnorm(rng, F.roundPace);
++      po[0] = m.pace[0][r] * fOut[0] * rp * lnorm(rng, F.roundOut);
++      po[1] = m.pace[1][r] * fOut[1] * rp * lnorm(rng, F.roundOut);
++      var fr = m.finR[r], kdP = m.kdPace[r] * fr;
++
++      while (true) {
++        var h0 = t < hurtEnd[0], h1 = t < hurtEnd[1];
++        var mob0 = 1 - G[0] / legScale; if (mob0 < legFloor) mob0 = legFloor;
++        var mob1 = 1 - G[1] / legScale; if (mob1 < legFloor) mob1 = legFloor;
++        var out0 = po[0] * (1 - K.outStam * (1 - S[0])) * (h0 ? K.outHurt : 1) * (1 - K.outMob * (1 - mob0));
++        var out1 = po[1] * (1 - K.outStam * (1 - S[1])) * (h1 ? K.outHurt : 1) * (1 - K.outMob * (1 - mob1));
++        var n = 0, top = -1, bot = -1, k5 = 0;
++        if (state === 0) {
++          evT[n] = E_STRIKE; evW[n] = 0; evX[n] = 0; evR[n++] = dRate[0] * out0;
++          evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 0; evR[n++] = dRate[1] * out1;
++          evT[n] = E_CLINCH; evW[n] = 0; evX[n] = 0; evR[n++] = clE * pCtl;
++          evT[n] = E_CLINCH; evW[n] = 1; evX[n] = 0; evR[n++] = clE * (1 - pCtl);
++          evT[n] = E_TD; evW[n] = 0; evX[n] = 0; evR[n++] = tdD[0] * (1 - K.tdAttStam * (1 - S[0])) * (h0 ? 0.5 : 1);
++          evT[n] = E_TD; evW[n] = 1; evX[n] = 0; evR[n++] = tdD[1] * (1 - K.tdAttStam * (1 - S[1])) * (h1 ? 0.5 : 1);
++        } else if (state === 1) {
++          var cs = K.clinchCtrlStrike;
++          evT[n] = E_STRIKE; evW[n] = 0; evX[n] = 1; evR[n++] = cRate[0] * out0 * (ctl === 0 ? cs : 2 - cs);
++          evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 1; evR[n++] = cRate[1] * out1 * (ctl === 1 ? cs : 2 - cs);
++          evT[n] = E_BREAK; evW[n] = 1 - ctl; evX[n] = 0; evR[n++] = clBreak;
++          evT[n] = E_SWAP; evW[n] = 1 - ctl; evX[n] = 0; evR[n++] = clSwap * 2 * (ctl === 0 ? 1 - pCtl : pCtl);
++          evT[n] = E_TD; evW[n] = ctl; evX[n] = 1; evR[n++] = tdCC[ctl] * (1 - K.tdAttStam * (1 - S[ctl]));
++          evT[n] = E_TD; evW[n] = 1 - ctl; evX[n] = 1; evR[n++] = tdCU[1 - ctl] * (1 - K.tdAttStam * (1 - S[1 - ctl]));
++        } else {
++          top = state - 2; bot = 1 - top; k5 = top * 5 + pos;
++          if (downed === bot) {
++            evT[n] = E_STRIKE; evW[n] = top; evX[n] = 2; evR[n++] = K.kdGnpRate;
++            evT[n] = E_RECOVER; evW[n] = bot; evX[n] = 0; evR[n++] = K.kdRecover;
++          } else {
++            var gTop = gR[top], hb = bot === 0 ? h0 : h1;
++            evT[n] = E_STRIKE; evW[n] = top; evX[n] = 2; evR[n++] = gPos[k5] * (top === 0 ? out0 : out1);
++            evT[n] = E_STRIKE; evW[n] = bot; evX[n] = 3; evR[n++] = gBot[bot] * (bot === 0 ? out0 : out1);
++            var prow = pass[pos], rrow = retain[pos];
++            for (var to = pos + 1; to < 5; to++) if (prow[to] > 0) { evT[n] = E_PASS; evW[n] = top; evX[n] = to; evR[n++] = prow[to] * gEdge[top] * gTop; }
++            for (to = 0; to < pos; to++) if (rrow[to] > 0) { evT[n] = E_ESC; evW[n] = bot; evX[n] = to; evR[n++] = rrow[to] / (gEdge[top] * gTop); }
++            evT[n] = E_SWEEP; evW[n] = bot; evX[n] = 0; evR[n++] = swPos[k5] / gTop;
++            evT[n] = E_UP; evW[n] = bot; evX[n] = 0; evR[n++] = upPos[k5] / gTop * (1 - K.standStam * (1 - S[bot])) * (hb ? 0.5 : 1);
++            evT[n] = E_SUB; evW[n] = top; evX[n] = 2; evR[n++] = subTPos[k5] * gRs[top] * subKs[top];
++            evT[n] = E_SUB; evW[n] = bot; evX[n] = 3; evR[n++] = subBPos[k5] * gRs[bot] * subKs[bot];
++            evT[n] = E_RESET; evW[n] = -1; evX[n] = 0; evR[n++] = K.groundReset;
++          }
++        }
++        var Rs = 0; for (k = 0; k < n; k++) Rs += evR[k];
++        var dt = rng.expo() / Rs;
++        var horizon = 300;
++        if (hurtEnd[0] > t && hurtEnd[0] < horizon) horizon = hurtEnd[0];
++        if (hurtEnd[1] > t && hurtEnd[1] < horizon) horizon = hurtEnd[1];
++        var adv = t + dt < horizon ? dt : horizon - t;
++        // stamina and control accrue over the interval
++        var pc0 = state === 0 ? 0 : (state === 1 ? 1 : (state === 2 ? 2 : 3)), pc1 = state === 0 ? 0 : (state === 1 ? 1 : (state === 3 ? 2 : 3));
++        S[0] -= drain[0] * adv * drainPos[pc0] * (0.6 + 0.4 * po[0]);
++        S[1] -= drain[1] * adv * drainPos[pc1] * (0.6 + 0.4 * po[1]);
++        if (S[0] < 0.05) S[0] = 0.05; if (S[1] < 0.05) S[1] = 0.05;
++        if (state === 1) st[ctl * NS + I_CTRL] += adv; else if (state >= 2) st[top * NS + I_CTRL] += adv;
++        if (t + dt >= horizon) { t = horizon; if (t >= 300) break; continue; }
++        t += dt;
++        var uu = rng.u() * Rs, e = 0;
++        while (e < n - 1 && uu >= evR[e]) { uu -= evR[e]; e++; }
++        var et = evT[e], w = evW[e], x = evX[e];
++
++        if (et === E_STRIKE) {
++          i = w; j = 1 - i;
++          var pc = x, so = i * NS, hj = j === 0 ? h0 : h1, mobj = j === 0 ? mob0 : mob1, mobi = i === 0 ? mob0 : mob1;
++          var follow = pc === 2 && downed === j;
++          var ut = rng.u(), tg, o;
++          if (follow) { tg = ut < 0.92 ? 0 : 1; o = kdGnpO; }
++          else {
++            var mb = (i * 4 + pc) * 2;
++            tg = ut < mixC[mb] ? 0 : (ut < mixC[mb + 1] ? 1 : 2);
++            o = accO[(i * 4 + pc) * 3 + tg] * fAcc[i] * (1 - K.accSelfStam * (1 - S[i])) * (hj ? K.accHurt : 1) * (1 + K.accStam * (1 - S[j]));
++            if (pc === 0) o *= 1 + K.accMob * (1 - mobj);
++          }
++          st[so + I_SA]++; st[so + I_HA + 2 * tg]++; S[i] -= K.drainAtt;
++          st[so + (pc === 0 ? I_DA : (pc === 1 ? I_CA : I_GA))]++;
++          if (rng.u() >= o / (1 + o)) {
++            if (trace) { var em = evObj(t, "miss", SIDE[i], state, pos, downed >= 0, D, G, S); em.tg = tg; em.loc = LOCN[pc]; ev.push(em); }
++            continue;
++          }
++          st[so + I_SL]++; st[so + I_HL + 2 * tg]++;
++          st[so + (pc === 0 ? I_DL : (pc === 1 ? I_CL : I_GL))]++;
++          var kind = "hit", finHow = null;
++          if (tg === 0) {
++            D[j] += dw[i] * dmgPos[pc]; st[so + I_DMG] += dw[i];
++            if (pc <= 1) {
++              st[so + I_SHL]++;
++              var pk = kdB[i] * kdPos[pc] * chinM[j] * (1 + D[j] / K.kdDmg) * (hj ? K.kdHurt : 1) * (1 + K.kdStamDef * (1 - S[j])) *
++                Math.max(0.05, 1 - K.kdStamAtt * (1 - S[i])) * kdP * (0.75 + 0.25 * mobi);
++              var uk = rng.u();
++              if (uk < pk) kind = "kd";
++              else if (uk < pk * (1 + K.hurtRatio)) kind = "hurt";
++              else if (hj) { if (rng.u() < stkoB[i] * chinM[j] * (K.stkoBase + D[j] / 100)) { kind = "fin"; finHow = "TKO"; } }
++            } else if (pc === 2) {
++              if (follow) {
++                var ro = refO * chinM[j] * (1 + D[j] / K.refDmg) * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]));
++                if (rng.u() < ro / (1 + ro)) { kind = "fin"; finHow = "TKO"; }
++              } else if (rng.u() < gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / K.gnpDmg) * (hj ? K.gnpHurt : 1) * chinM[j] * fr * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]))) { kind = "fin"; finHow = "GNP"; }
++            }
++          } else if (tg === 1) {
++            S[j] -= K.bodyDrain * dw[i]; if (S[j] < 0.05) S[j] = 0.05;
++            if (pc <= 1) {
++              st[so + I_SBL]++;
++              if (rng.u() < kdB[i] * K.kdBodyRatio * kdPos[pc] * (1 + K.kdStamDef * (1 - S[j])) * kdP) kind = "kd";
++            }
++          } else {
++            G[j] += dw[i];
++            if (pc <= 1) st[so + I_SLL]++;
++            if (pc === 0 && G[j] > K.legTko0 && rng.u() < K.legTko * (G[j] - K.legTko0) / 10) { kind = "fin"; finHow = "LEG"; }
++          }
++          if (kind === "kd") {
++            st[so + I_KD]++; kdN[j]++; D[j] += K.dmgKD; chinM[j] *= K.kdRepeat;
++            var io = instO * (1 + D[j] / K.kdInstantDmg) * (1 - K.instStam * (1 - S[i]));
++            if (rng.u() < io / (1 + io)) { kind = "fin"; finHow = "KO"; }
++          }
++          if (kind === "fin") {
++            var locFin = follow ? kdLoc : pc;
++            var du = rng.u();
++            fin = { by: SIDE[i], how: finHow, t: t, loc: LOCN[locFin], tg: tg, pos: state >= 2 ? (follow ? "down" : POSN[pos]) : null, follow: follow,
++              detail: koDetail(finHow === "TKO" && follow ? "TKO" : finHow, tg, locFin === 1 ? 1 : (locFin === 0 ? 0 : 2), pos, du) };
++            if (trace) { var ef = evObj(t, "fin", SIDE[i], state, pos, downed >= 0, D, G, S); ef.tg = tg; ef.loc = LOCN[pc]; ef.how = finHow; ev.push(ef); }
++            break;
++          }
++          if (kind === "kd") {
++            hurtEnd[j] = Math.max(hurtEnd[j], t + K.hurtKdSecs);
++            var preState = state;
++            if (rng.u() < K.kdPounce * (0.7 + 0.3 * S[i])) { state = 2 + i; pos = 1; downed = j; kdLoc = pc; ctl = i; }
++            else { state = 0; ctl = -1; downed = -1; }
++            if (trace) {
++              var ek = evObj(t, "kd", SIDE[i], preState, pos, false, D, G, S); ek.tg = tg; ek.loc = LOCN[pc]; ek.to = state; ev.push(ek);
++              if (preState !== 0 && state === 0) ev.push(evObj(t, "reset", "", 0, 0, false, D, G, S));
++            }
++          } else {
++            if (kind === "hurt") { st[so + I_HURT]++; D[j] += K.dmgHurt; hurtEnd[j] = Math.max(hurtEnd[j], t + K.hurtSecs); }
++            if (trace) { var eh = evObj(t, kind, SIDE[i], state, pos, downed >= 0, D, G, S); eh.tg = tg; eh.loc = LOCN[pc]; ev.push(eh); }
++          }
++        } else if (et === E_CLINCH) {
++          state = 1; ctl = w;
++          if (trace) { var ec = evObj(t, "clinch", SIDE[w], 1, 0, false, D, G, S); ec.loc = "clinch"; ev.push(ec); }
++        } else if (et === E_SWAP) {
++          ctl = w;
++          if (trace) { var es = evObj(t, "clinch", SIDE[w], 1, 0, false, D, G, S); es.loc = "clinch"; es.swap = true; ev.push(es); }
++        } else if (et === E_BREAK) {
++          state = 0; ctl = -1;
++          if (trace) ev.push(evObj(t, "break", SIDE[w], 0, 0, false, D, G, S));
++        } else if (et === E_TD) {
++          i = w; j = 1 - i;
++          st[i * NS + I_TDA]++; S[i] -= K.drainTd; if (S[i] < 0.05) S[i] = 0.05;
++          var hj2 = j === 0 ? h0 : h1;
++          var ot = (x === 0 ? tdO[i] : tdOC[i] * (ctl === i ? 1 : 0.8)) * (1 + K.tdStam * (1 - S[j])) * (hj2 ? 1.5 : 1);
++          var fromState = state;
++          if (rng.u() < ot / (1 + ot)) {
++            st[i * NS + I_TDL]++;
++            var ul = rng.u(), tl = K.tdLand, acc = 0; pos = 4;
++            for (k = 0; k < 5; k++) { acc += tl[k]; if (ul < acc) { pos = k; break; } }
++            state = 2 + i; ctl = i; downed = -1;
++            if (trace) { var et1 = evObj(t, "td", SIDE[i], state, pos, false, D, G, S); et1.loc = LOCN[x]; et1.from = fromState; ev.push(et1); }
++          } else {
++            if (trace) { var et2 = evObj(t, "tdx", SIDE[i], state, pos, false, D, G, S); et2.loc = LOCN[x]; ev.push(et2); }
++            if (rng.u() < gillo[j] * subKs[j]) {
++              // standing guillotine on the stuffed shot
++              st[j * NS + I_SUB]++;
++              var gname = pickName(SUBN.stand, rng.u());
++              var og = subO[j] * subStandO * gRs[j] * subK[j] * (1 + K.subStam * (1 - S[i]));
++              if (rng.u() < og / (1 + og)) {
++                fin = { by: SIDE[j], how: "SUB", t: t, loc: LOCN[x], name: gname, detail: gname, pos: null };
++                if (trace) { var eg = evObj(t, "sub", SIDE[j], state, pos, false, D, G, S); eg.name = gname; eg.loc = LOCN[x]; ev.push(eg); }
++                break;
++              }
++              if (trace) { var eg2 = evObj(t, "subx", SIDE[j], state, pos, false, D, G, S); eg2.name = gname; eg2.loc = LOCN[x]; ev.push(eg2); }
++            } else if (x === 0 && rng.u() < K.failTdClinch) {
++              state = 1; ctl = i;
++              if (trace) { var ec2 = evObj(t, "clinch", SIDE[i], 1, 0, false, D, G, S); ec2.loc = "clinch"; ev.push(ec2); }
++            }
++          }
++        } else if (et === E_PASS) {
++          pos = x; st[w * NS + I_PASS]++;
++          if (trace) { var ep = evObj(t, "pass", SIDE[w], state, pos, false, D, G, S); ep.loc = "ground"; ev.push(ep); }
++        } else if (et === E_ESC) {
++          pos = x;
++          if (trace) { var ee = evObj(t, "esc", SIDE[w], state, pos, false, D, G, S); ee.loc = "ground"; ev.push(ee); }
++        } else if (et === E_SWEEP) {
++          st[w * NS + I_REV]++; state = 2 + w; ctl = w; pos = rng.u() < 0.6 ? 0 : 1;
++          if (trace) { var ew = evObj(t, "sweep", SIDE[w], state, pos, false, D, G, S); ew.loc = "ground"; ev.push(ew); }
++        } else if (et === E_UP) {
++          st[w * NS + I_UP]++;
++          if (rng.u() < K.standClinch) { state = 1; ctl = 1 - w; } else { state = 0; ctl = -1; }
++          if (trace) ev.push(evObj(t, "up", SIDE[w], state, 0, false, D, G, S));
++        } else if (et === E_SUB) {
++          i = w; j = 1 - i;
++          st[i * NS + I_SUB]++;
++          var fromTop = x === 2, hj3 = j === 0 ? h0 : h1;
++          var sname = pickName(fromTop ? SUBN[POSN[pos]] : SUBN.bottom, rng.u());
++          var os = subO[i] * (fromTop ? subOPos[top * 5 + pos] : subBotO) * gRs[i] * subK[i] * (1 + K.subStam * (1 - S[j])) * (hj3 ? K.subHurt : 1) * fr * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]));
++          if (rng.u() < os / (1 + os)) {
++            fin = { by: SIDE[i], how: "SUB", t: t, loc: "ground", name: sname, detail: sname, pos: POSN[pos] + (fromTop ? "" : " (bottom)") };
++            if (trace) { var eu = evObj(t, "sub", SIDE[i], state, pos, false, D, G, S); eu.name = sname; eu.loc = "ground"; ev.push(eu); }
++            break;
++          }
++          var uf = rng.u();
++          if (trace) { var ex = evObj(t, "subx", SIDE[i], state, pos, false, D, G, S); ex.name = sname; ex.loc = "ground"; ev.push(ex); }
++          if (fromTop) { if (uf < K.subFailLose) pos = pos >= 3 ? 1 : 0; }
++          else if (uf < 0.15 && pos < 2) pos = pos + 1;
++        } else if (et === E_RECOVER) {
++          downed = -1;
++          if (rng.u() < K.kdRecoverStand) { state = 0; ctl = -1; } else { pos = 0; }
++          if (trace) ev.push(evObj(t, "recover", SIDE[w], state, pos, false, D, G, S));
++        } else if (et === E_RESET) {
++          state = 0; ctl = -1; downed = -1;
++          if (trace) ev.push(evObj(t, "reset", "", 0, 0, false, D, G, S));
++        }
++      }
++
++      for (k = 0; k < 2 * NS; k++) tot[k] += st[k];
++      for (i = 0; i < 2; i++) if (st[i * NS + I_KD] > 0 && st[(1 - i) * NS + I_KD] === 0) { kdr++; if (fin && fin.by === SIDE[i] && fin.how !== "SUB") kdrf++; }
++      fight.kdr = kdr; fight.kdrf = kdrf;
++      var rec = null;
++      if (trace) {
++        var sA = statObj(st, 0), sB = statObj(st, 1);
++        var stv = { A: sA, B: sB,
++          hA: sA.sh_lnd, bA: sA.sb_lnd, lA: sA.sl_lnd, gA: sA.g_lnd, kdA: sA.kd, rkA: sA.hurt, tdA: sA.td_lnd, tdaA: sA.td_att, ctrlA: sA.ctrl, subA: sA.sub_att,
++          hB: sB.sh_lnd, bB: sB.sb_lnd, lB: sB.sl_lnd, gB: sB.g_lnd, kdB: sB.kd, rkB: sB.hurt, tdB: sB.td_lnd, tdaB: sB.td_att, ctrlB: sB.ctrl, subB: sB.sub_att };
++        rec = { r: r, ev: ev, st: stv, judges: null, fin: fin, stoppage: null,
++          endState: { s: state, pos: state >= 2 ? POSN[pos] : null, dA: +D[0].toFixed(1), dB: +D[1].toFixed(1), gA: +G[0].toFixed(1), gB: +G[1].toFixed(1), sA: +S[0].toFixed(3), sB: +S[1].toFixed(3) },
++          dHA: +D[0].toFixed(1), dHB: +D[1].toFixed(1), dLA: +G[0].toFixed(1), dLB: +G[1].toFixed(1), SA: +S[0].toFixed(3), SB: +S[1].toFixed(3) };
++        rounds.push(rec);
++      }
++      if (fin) {
++        fight.winner = fin.by; fight.method = fin.how; fight.detail = fin.detail; fight.round = r + 1; fight.t = fin.t; fight.fin = fin;
++        fight.totals = { A: statObj(tot, 0), B: statObj(tot, 1) };
++        return fight;
++      }
++
++      // ---- judges: EM round-winner weights (data fit), shared + individual noise, fight-level tastes, margin 10-8 rule
++      var a0 = 0, b0 = NS;
++      var js = trace ? [] : null;
++      n108 += judgeRound(J, m.judgePower, st[a0 + I_HL] - st[b0 + I_HL], st[a0 + I_BL] - st[b0 + I_BL], st[a0 + I_LL] - st[b0 + I_LL],
++        st[a0 + I_KD] - st[b0 + I_KD], st[a0 + I_TDL] - st[b0 + I_TDL], st[a0 + I_CTRL] - st[b0 + I_CTRL], st[a0 + I_SUB] - st[b0 + I_SUB],
++        st[a0 + I_HURT] - st[b0 + I_HURT], (st[a0 + I_DMG] - st[a0 + I_HL]) - (st[b0 + I_DMG] - st[b0 + I_HL]), tS, tG, tP, jF, rng, cards, js);
++      if (trace) rec.judges = js;
++
++      // ---- between rounds: recovery, doctor and corner stoppages
++      if (r < nR - 1) {
++        for (i = 0; i < 2; i++) { S[i] += K.recover * (1 - S[i]); D[i] *= 1 - K.dmgHeal; hurtEnd[i] = -1; }
++        var stop = [false, false], kindS = ["", ""];
++        for (i = 0; i < 2; i++) {
++          var pd = Math.min(K.docCap, K.doc * (D[i] / 100) * (D[i] / 100));
++          var pcn = K.corner * Math.max(0, kdN[i] - 1) + K.corner * Math.pow(D[i] / 120, 3);
++          var us = rng.u();
++          if (us < pd) { stop[i] = true; kindS[i] = "DOC"; } else if (us < pd + pcn) { stop[i] = true; kindS[i] = "CORNER"; }
++        }
++        var ut2 = rng.u();
++        if (stop[0] || stop[1]) {
++          var loser = (stop[0] && stop[1]) ? (ut2 < 0.5 ? 0 : 1) : (stop[0] ? 0 : 1);
++          var wn = SIDE[1 - loser];
++          if (trace) rec.stoppage = wn;
++          fight.winner = wn; fight.method = kindS[loser]; fight.detail = kindS[loser] === "DOC" ? "Doctor's Stoppage" : "Corner Stoppage";
++          fight.round = r + 1; fight.t = 300; fight.fin = { by: wn, how: kindS[loser], t: 300, loc: "between rounds", detail: fight.detail };
++          fight.n108 = n108; fight.totals = { A: statObj(tot, 0), B: statObj(tot, 1) };
++          return fight;
++        }
++      }
++    }
++    // ---- decision
++    var ja = 0, jb = 0;
++    for (var q = 0; q < 3; q++) { if (cards[q][0] > cards[q][1]) ja++; else if (cards[q][1] > cards[q][0]) jb++; }
++    var dr = 3 - ja - jb;
++    if (ja >= 2) { fight.winner = "A"; fight.method = ja === 3 ? "UD" : (jb === 1 ? "SD" : "MD"); }
++    else if (jb >= 2) { fight.winner = "B"; fight.method = jb === 3 ? "UD" : (ja === 1 ? "SD" : "MD"); }
++    else { fight.winner = "D"; fight.method = "DRAW"; }
++    var cardTxt = cards.map(function (c) { return c[0] + "-" + c[1]; }).join(", ");
++    fight.detail = fight.winner === "D" ? ((dr === 3 ? "Unanimous" : (dr === 2 ? "Majority" : "Split")) + " Draw (" + cardTxt + ")")
++      : ({ UD: "Unanimous", SD: "Split", MD: "Majority" }[fight.method] + " Decision (" + cardTxt + ")");
++    fight.round = nR; fight.t = 300; fight.n108 = n108;
++    fight.totals = { A: statObj(tot, 0), B: statObj(tot, 1) };
++    return fight;
++  }
++
++  // Outcome buckets: 0..6 = A KO/TKO, A sub, A dec, draw, B dec, B sub, B KO/TKO (KO/TKO includes GNP, LEG, CORNER, DOC)
++  function bucket(f) {
++    if (f.winner === "D") return 3;
++    var k = f.method === "SUB" ? 1 : ((f.method === "UD" || f.method === "SD" || f.method === "MD") ? 2 : 0);
++    return f.winner === "A" ? k : 6 - k;
++  }
++  function isDecision(f) { return f.method === "UD" || f.method === "SD" || f.method === "MD" || f.method === "DRAW"; }
++
++  // ------------------------------------------------------------------ Monte Carlo summary
++  function summarize(m, N, seed, onProgress) {
++    var rng = makeRng(seed == null ? 1 : seed), nR = m.rounds, i, k;
++    var bins = [0, 0, 0, 0, 0, 0, 0], finA = [], finB = [], finKO = [], finSUB = [];
++    for (k = 0; k < nR; k++) { finA.push(0); finB.push(0); finKO.push(0); finSUB.push(0); }
++    var methods = {}, dist = 0, distA = 0, distB = 0, dec = { UD: 0, SD: 0, MD: 0, DRAW: 0 }, n108 = 0, rndsJudged = 0, secs = 0;
++    var sumA = new Float64Array(NS), sumB = new Float64Array(NS);
++    var koLoc = { dist: 0, clinch: 0, ground: 0, "between rounds": 0 }, subNames = {}, koKind = { KO: 0, TKO_followup: 0, TKO_standing: 0, GNP: 0, LEG: 0, DOC: 0, CORNER: 0 }, kdr = 0, kdrf = 0;
++    var chunk = Math.max(1, Math.floor(N / 50));
++    for (i = 0; i < N; i++) {
++      var f = simulate(m, rng, false), b = bucket(f);
++      bins[b]++;
++      var key = f.winner + ":" + f.method; methods[key] = (methods[key] || 0) + 1;
++      var TA = f.totals.A, TB = f.totals.B;
++      for (k = 0; k < NS; k++) { sumA[k] += TA[STK[k]]; sumB[k] += TB[STK[k]]; }
++      if (isDecision(f)) {
++        dist++; dec[f.method]++; secs += nR * 300; rndsJudged += nR;
++        if (f.winner === "A") distA++; else if (f.winner === "B") distB++;
++      } else {
++        secs += (f.round - 1) * 300 + f.t; rndsJudged += f.method === "CORNER" || f.method === "DOC" ? f.round : f.round - 1;
++        if (f.winner === "A") finA[f.round - 1]++; else finB[f.round - 1]++;
++        if (f.method === "SUB") { finSUB[f.round - 1]++; subNames[f.fin.detail] = (subNames[f.fin.detail] || 0) + 1; }
++        else {
++          finKO[f.round - 1]++; koLoc[f.fin.loc] = (koLoc[f.fin.loc] || 0) + 1;
++          var kk = f.method === "TKO" ? (f.fin.follow ? "TKO_followup" : "TKO_standing") : f.method; koKind[kk] = (koKind[kk] || 0) + 1;
++        }
++      }
++      n108 += f.n108; kdr += f.kdr; kdrf += f.kdrf;
++      if (onProgress && i % chunk === 0) onProgress(i / N);
++    }
++    if (onProgress) onProgress(1);
++    var mins = secs / 60;
++    function avgOf(sum) {
++      var o = {}; for (k = 0; k < NS; k++) o[STK[k]] = sum[k] / N;
++      o.per15 = {}; for (k = 0; k < NS; k++) o.per15[STK[k]] = sum[k] / mins * 15;
++      o.acc = sum[I_SL] / Math.max(1, sum[I_SA]); o.accHead = sum[I_HL] / Math.max(1, sum[I_HA]);
++      o.accBody = sum[I_BL] / Math.max(1, sum[I_BA]); o.accLeg = sum[I_LL] / Math.max(1, sum[I_LA]);
++      o.accDist = sum[I_DL] / Math.max(1, sum[I_DA]); o.accClinch = sum[I_CL] / Math.max(1, sum[I_CA]); o.accGround = sum[I_GL] / Math.max(1, sum[I_GA]);
++      o.tdAcc = sum[I_TDL] / Math.max(1, sum[I_TDA]);
++      o.kdPer100Head = 100 * sum[I_KD] / Math.max(1, sum[I_HL]); o.kdPer100StandHead = 100 * sum[I_KD] / Math.max(1, sum[I_SHL]);
++      return o;
++    }
++    var avgA = avgOf(sumA), avgB = avgOf(sumB);
++    var pA = (bins[0] + bins[1] + bins[2]) / N, pB = (bins[4] + bins[5] + bins[6]) / N, pD = bins[3] / N;
++    var fins = N - dist;
++    return {
++      n: N, seed: seed, bins: bins.map(function (x) { return x / N; }), counts: bins,
++      pA: pA, pB: pB, pD: pD, se: Math.sqrt(pA * (1 - pA) / N),
++      finA: finA.map(function (x) { return x / N; }), finB: finB.map(function (x) { return x / N; }),
++      finKO: finKO.map(function (x) { return x / N; }), finSUB: finSUB.map(function (x) { return x / N; }),
++      dist: dist / N, distA: dist ? distA / dist : 0, distB: dist ? distB / dist : 0,
++      dec: { UD: dec.UD / Math.max(1, dist), SD: dec.SD / Math.max(1, dist), MD: dec.MD / Math.max(1, dist), DRAW: dec.DRAW / Math.max(1, dist) },
++      methods: methods, koLoc: koLoc, koKind: koKind, subNames: subNames, fins: fins / N, kdFin: kdrf / Math.max(1, kdr), kdRounds: kdr,
++      r108: n108 / Math.max(1, 3 * rndsJudged), avgMin: mins / N,
++      avg: { A: avgA, B: avgB },
++      kd15: (sumA[I_KD] + sumB[I_KD]) / 2 / mins * 15, ctrl15: (sumA[I_CTRL] + sumB[I_CTRL]) / 2 / mins * 15
++    };
++  }
++
++  // ------------------------------------------------------------------ explain: why the matchup looks the way it does
++  function explain(m) {
++    var P = m.P, L = m.L, R = m.R, out = { division: m.division, rounds: m.rounds, A: null, B: null, pair: null, text: "" };
++    var occ = m.occ, nm = [m.A.name, m.B.name], lines = [], i, j;
++    function f(x, d) { return x == null || !isFinite(x) ? "-" : (+x).toFixed(d == null ? 2 : d); }
++    function pct(x) { return x == null ? "-" : (100 * x).toFixed(1) + "%"; }
++    var standFrac = occ[0] + occ[1] + occ[2], topF = [occ[3], occ[4]];
++    lines.push(nm[0] + " vs " + nm[1] + " | " + m.division + " (" + (P.lbs || "?") + " lb), " + m.rounds + " rounds" + (m.title ? ", title" : "") + (m.date ? ", " + m.date : ""));
++    lines.push("Expected position time (fit): distance " + pct(occ[0]) + ", clinch " + pct(occ[1] + occ[2]) + " (" + nm[0] + " controls " + pct(occ[1] / Math.max(1e-9, occ[1] + occ[2])) + "), " +
++      nm[0] + " on top " + pct(occ[3]) + ", " + nm[1] + " on top " + pct(occ[4]) + "  [league: distance " + pct(L.dist) + ", clinch " + pct(L.clinch) + ", ground " + pct(L.ground) + "]");
++    var sides = [];
++    for (i = 0; i < 2; i++) {
++      j = 1 - i;
++      var o = {}, fc = m.fac[i], fo = m.fac[j];
++      o.name = nm[i]; o.age = m.ages[i]; o.home = m[i ? "B" : "A"].division; o.minutes = R[i].min;
++      o.attPerMin = { dist: m.dRate[i] * 60, clinch: m.cRate[i] * 60, groundTop: m.gRate[i] * 60, groundBottom: m.gBot[i] * 60 };
++      o.leagueAttPerMin = { dist: L.dAtt, clinch: P.c_att / m.clT, groundTop: L.gAtt };
++      var accD = [], accC = [], accG = [];
++      for (var t = 0; t < 3; t++) {
++        accD.push(prob(m.accO[(i * 4) * 3 + t])); accC.push(prob(m.accO[(i * 4 + 1) * 3 + t])); accG.push(prob(m.accO[(i * 4 + 2) * 3 + t]));
++      }
++      o.accuracy = { dist: accD, clinch: accC, ground: accG, careerShrunk: R[i].acc, oppAllowedShrunk: R[j].accAg };
++      o.targetMixDist = m.mixD[i];
++      // expected landed per 15 from occupancy and base rates (before pace, form and fatigue)
++      var dl = 0, da = m.dRate[i] * occ[0] * 900, cl = 0, ca = m.cRate[i] * (occ[1] + occ[2]) * 900, ga = m.gRate[i] * topF[i] * 900 + m.gBot[i] * topF[j] * 900;
++      var mx = m.mixD[i], gl = 0;
++      for (t = 0; t < 3; t++) { dl += da * mx[t] * accD[t]; cl += ca * m.p.clinchMix[t] * accC[t]; gl += ga * m.p.groundTopMix[t] * accG[t]; }
++      o.expectedPer15 = { distAtt: da, distLnd: dl, clinchAtt: ca, clinchLnd: cl, groundAtt: ga, groundLnd: gl, sigLnd: dl + cl + gl, sigAtt: da + ca + ga,
++        tdAtt: (m.tdD[i] * occ[0] + (i === 0 ? m.tdCC[0] * occ[1] + m.tdCU[0] * occ[2] : m.tdCC[1] * occ[2] + m.tdCU[1] * occ[1])) * 900,
++        ctrlSec: (topF[i] + occ[1 + i]) * 900 };
++      o.career = { slpm: R[i].sums.min > 0 ? (R[i].sums.d_lnd + R[i].sums.c_lnd + R[i].sums.g_lnd) / R[i].sums.min : null,
++        sapm: R[i].sums.min > 0 ? (R[i].sums.od_lnd + R[i].sums.oc_lnd + R[i].sums.og_lnd) / R[i].sums.min : null };
++      o.kd = { p0: m.kd[i] / (fc.pow * fo.chin), perHeadLanded: m.kd[i], powerRatio: fc.powRaw, oppChinRatio: fo.chinRaw, ageChinOpp: fo.ageChin, agePow: fc.agePow,
++        koLossChinOpp: fo.koChin, oppKoLosses: fo.koLosses, sizeChinOpp: fo.sizeChin, sizePow: fc.sizePow, knobPow: m.adj[i].pow, knobChinOpp: m.adj[j].chin,
++        damagePerHead: m.dw[i], instantKO: prob(m.instO) };
++      o.grappling = { tdAttPer15Stand: m.tdS[i] * 900, tdSuccess: m.pTd[i], tdSuccessClinch: prob(m.tdOC[i] * m.adj[j].tdDef), ctrlTargetPer15: m.ctrlT[i] * 15,
++        topSkill: R[i].topSkill, oppEscapeWeakness: R[j].escWeak, passEdge: m.gEdge[i], standUpMeanSecWhenUnder: 1 / Math.max(1e-9, m.up[i]),
++        sweepPerMinBottom: m.sw[i] * 60 };
++      o.subs = { attemptsPerGroundMin: m.threat[i], conversion: m.subConv[i], careerConvShrunk: R[i].subConv, oppDefFailShrunk: R[j].subDefFail, guillotinePerStuffedShot: m.gillo[i] };
++      o.cardio = { paceByRound: m.pace[i].slice(), cardioIndex: m.cardio[i], drainPerSec: m.drain[i], drainVsLeague: m.drain[i] / m.p.drain,
++        drainSchedule: Math.pow(3 / m.rounds, m.p.drainSchedExp), drainCardio: Math.pow(clip(m.cardio[i], 0.5, 1.6), -m.p.cardioExp) };
++      o.knobs = m.adj[i];
++      sides.push(o);
++      lines.push("");
++      lines.push("== " + nm[i] + " (" + (o.home || "?") + ", age " + f(o.age, 1) + ", " + f(o.minutes, 0) + " decayed UFC minutes) ==");
++      lines.push("  Attempts/min: distance " + f(o.attPerMin.dist) + " (league " + f(L.dAtt) + "), clinch " + f(o.attPerMin.clinch) + ", ground top " + f(o.attPerMin.groundTop) + " (league " + f(L.gAtt) + ")");
++      lines.push("  Accuracy at distance head/body/leg " + accD.map(pct).join(" / ") + "; clinch " + accC.map(pct).join(" / ") + "; ground " + accG.map(pct).join(" / "));
++      lines.push("  Distance target mix head/body/leg " + m.mixD[i].map(pct).join(" / "));
++      lines.push("  Expected per 15 (base): sig att " + f(o.expectedPer15.sigAtt, 1) + ", landed " + f(o.expectedPer15.sigLnd, 1) + " (dist " + f(dl, 1) + ", clinch " + f(cl, 1) + ", ground " + f(gl, 1) +
++        "); career landed/min " + f(o.career.slpm) + ", absorbed/min " + f(o.career.sapm));
++      lines.push("  KD per landed standing head strike " + f(100 * m.kd[i], 3) + "% = p0 " + f(100 * o.kd.p0, 3) + "% x power " + f(fc.powRaw) + " x opp chin " + f(fo.chinRaw) +
++        " x opp age " + f(fo.ageChin) + " x own age (power) " + f(fc.agePow) + " x opp KO losses (" + fo.koLosses + ") " + f(fo.koChin) + " x opp size " + f(fo.sizeChin) + " x own size (power) " + f(fc.sizePow) +
++        " x knobs " + f(m.adj[i].pow) + "/" + f(m.adj[j].chin) + "; damage/head " + f(m.dw[i]));
++      lines.push("  Takedowns: " + f(o.grappling.tdAttPer15Stand) + " att per 15 standing min, success " + pct(m.pTd[i]) + " (career " + pct(R[i].tdAcc) + " vs opp allows " + pct(R[j].tdAccAg) + ", league " + pct(P.td_acc) +
++        "); control target " + f(o.grappling.ctrlTargetPer15, 0) + " s/15 (league " + f(P.ctrl * 15, 0) + "), top skill " + f(R[i].topSkill) + " x opp escape " + f(R[j].escWeak) + " -> pass edge " + f(m.gEdge[i]));
++      lines.push("  When under: mean stand-up " + f(1 / m.up[i], 0) + " s, sweeps " + f(m.sw[i] * 60, 3) + "/min");
++      lines.push("  Submissions: " + f(m.threat[i], 3) + " attempts per ground-minute (league " + f(L.sub, 3) + "), conversion " + pct(m.subConv[i]) + " (shrunk own " + pct(R[i].subConv) + " vs opp " + pct(R[j].subDefFail) + ", league " + pct(P.sub_conv) + ")");
++      var schedF = Math.pow(3 / m.rounds, m.p.drainSchedExp), cardF = Math.pow(clip(m.cardio[i], 0.5, 1.6), -m.p.cardioExp);
++      lines.push("  Cardio: output by round " + m.pace[i].map(function (x) { return f(x); }).join(" ") + " (division curve x his late-round ratio); cardio index " + f(m.cardio[i]) +
++        "; stamina drain x" + f(m.drain[i] / m.p.drain) + " of the 3-round base (" + m.rounds + "-round pacing x" + f(schedF) + ", cardio x" + f(cardF) + ", knob x" + f(m.adj[i].cardio) + ")");
++    }
++    out.A = sides[0]; out.B = sides[1];
++    out.pair = { occupancy: occ, clinchTarget: m.clT, ctrlTargetPer15: [m.ctrlT[0] * 15, m.ctrlT[1] * 15], clinchEntryPerMinDist: m.clE * 60, judgePower: m.judgePower };
++    out.text = lines.join("\n");
++    return out;
++  }
++
++  // ------------------------------------------------------------------ manual profiles from ufcstats-style career rates
++  function manualProfile(rates, opts) {
++    opts = opts || {};
++    var r = rates || {}, division = opts.division || r.division || "Lightweight";
++    var P = priorFor(division, opts.priors);
++    var min = r.mins != null ? +r.mins : 60;
++    function g(k, d) { return r[k] != null && isFinite(r[k]) ? +r[k] : d; }
++    var slpm = g("slpm", P.slpm || (P.d_lnd + P.c_lnd + P.g_lnd)), sapm = g("sapm", slpm), acc = g("acc", P.acc_sig || 0.46), def = g("def", 1 - (P.acc_sig || 0.46));
++    var head = g("head", P.h_lnd / (P.h_lnd + P.b_lnd + P.l_lnd)), body = g("body", P.b_lnd / (P.h_lnd + P.b_lnd + P.l_lnd)), leg = g("leg", P.l_lnd / (P.h_lnd + P.b_lnd + P.l_lnd));
++    var hs = head + body + leg; head /= hs; body /= hs; leg /= hs;
++    var lp = P.d_lnd + P.c_lnd + P.g_lnd;
++    var dist = g("dist", P.d_lnd / lp), clinch = g("clinch", P.c_lnd / lp), ground = g("ground", P.g_lnd / lp);
++    var ps = dist + clinch + ground; dist /= ps; clinch /= ps; ground /= ps;
++    var S = {}, k;
++    for (k = 0; k < KEYS.length; k++) S[KEYS[k]] = 0;
++    S.min = min; S.n = min / (P.mpf || 10); S.rds = min / 4.6;
++    // split landed and attempts by target / position with league accuracies scaled on odds so totals match
++    function split(lnd, att, shares, accs) {
++      var lo = 0.05, hi = 20, c = 1, it, out = [0, 0, 0];
++      for (it = 0; it < 60; it++) {
++        c = Math.sqrt(lo * hi); var sa = 0;
++        for (var t = 0; t < 3; t++) sa += lnd * shares[t] / prob(odds(accs[t]) * c);
++        if (sa > att) lo = c; else hi = c;
++      }
++      for (var t2 = 0; t2 < 3; t2++) out[t2] = lnd * shares[t2] / prob(odds(accs[t2]) * c);
++      return out;
++    }
++    var sigL = slpm * min, sigA = sigL / clip(acc, 0.1, 0.95), oL = sapm * min, oA = oL / clip(1 - def, 0.1, 0.95);
++    var tA = split(sigL, sigA, [head, body, leg], [P.acc_h, P.acc_b, P.acc_l]), pA = split(sigL, sigA, [dist, clinch, ground], [P.acc_d, P.acc_c, P.acc_g]);
++    S.h_lnd = sigL * head; S.b_lnd = sigL * body; S.l_lnd = sigL * leg; S.h_att = tA[0]; S.b_att = tA[1]; S.l_att = tA[2];
++    S.d_lnd = sigL * dist; S.c_lnd = sigL * clinch; S.g_lnd = sigL * ground; S.d_att = pA[0]; S.c_att = pA[1]; S.g_att = pA[2];
++    var lh = P.h_lnd / (P.h_lnd + P.b_lnd + P.l_lnd), lb = P.b_lnd / (P.h_lnd + P.b_lnd + P.l_lnd), ll = 1 - lh - lb;
++    var oT = split(oL, oA, [lh, lb, ll], [P.acc_h, P.acc_b, P.acc_l]), oP = split(oL, oA, [P.d_lnd / lp, P.c_lnd / lp, P.g_lnd / lp], [P.acc_d, P.acc_c, P.acc_g]);
++    S.oh_lnd = oL * lh; S.ob_lnd = oL * lb; S.ol_lnd = oL * ll; S.oh_att = oT[0]; S.ob_att = oT[1]; S.ol_att = oT[2];
++    S.od_lnd = oL * P.d_lnd / lp; S.oc_lnd = oL * P.c_lnd / lp; S.og_lnd = oL * P.g_lnd / lp; S.od_att = oP[0]; S.oc_att = oP[1]; S.og_att = oP[2];
++    S.t_lnd = sigL * (P.t_lnd / lp); S.t_att = sigA * (P.t_att / (P.d_att + P.c_att + P.g_att)); S.ot_lnd = oL * (P.ot_lnd / lp); S.ot_att = oA * (P.ot_att / (P.d_att + P.c_att + P.g_att));
++    S.kd = g("kd15", P.kd15 || P.kd * 15) / 15 * min;
++    S.okd = r.okd15 != null ? +r.okd15 / 15 * min : P.kd_per_h * S.oh_lnd;
++    var td15 = g("td15", P.td15 || P.td_lnd * 15), tdAcc = clip(g("tdAcc", P.td_acc), 0.05, 0.95), tdDef = clip(g("tdDef", 1 - P.td_acc), 0, 0.97);
++    S.td_lnd = td15 / 15 * min; S.td_att = S.td_lnd / tdAcc;
++    S.otd_att = r.otdAtt15 != null ? +r.otdAtt15 / 15 * min : P.otd_att * min; S.otd_lnd = S.otd_att * (1 - tdDef);
++    S.ctrl = r.ctrl15 != null ? +r.ctrl15 / 15 * min : P.ctrl * min * clip(td15 / Math.max(0.05, P.td_lnd * 15), 0.15, 4);
++    S.octrl = r.octrl15 != null ? +r.octrl15 / 15 * min : P.ctrl * min * clip((1 - tdDef) / Math.max(0.05, P.td_acc), 0.15, 4);
++    S.sub_att = g("sub15", P.sub15 || P.sub_att * 15) / 15 * min; S.osub_att = P.osub_att * min;
++    S.rev = P.rev * min; S.orev = P.orev * min;
++    var rec = r.record || {};
++    S.ko_w = rec.ko_w || 0; S.ko_l = rec.ko_l || 0; S.sub_w = rec.sub_w || 0; S.sub_l = rec.sub_l || 0; S.dec_w = rec.dec_w || 0; S.dec_l = rec.dec_l || 0;
++    return { name: r.name || opts.name || "Manual fighter", slug: r.slug || opts.slug || null, nick: r.nick || null, division: division,
++      dob: r.dob || null, age: r.age != null ? +r.age : null, height_in: r.height_in || null, reach_in: r.reach_in || null, stance: r.stance || null,
++      record: r.record || null, ko_losses: r.ko_losses != null ? +r.ko_losses : (rec.ko_l || 0), kd_absorbed: null, n_fights: r.n_fights || null,
++      pace: r.pace || null, pace_w: r.pace_w || null, S: S, manual: true };
++  }
++
++  // ------------------------------------------------------------------ data registry
++  function loadDB(json) {
++    var d = typeof json === "string" ? JSON.parse(json) : json;
++    if (!d || !d.priors) throw new Error("FightEngine.loadDB: expected fighters.json with priors and fighters");
++    DB = { meta: d.meta || {}, priors: d.priors, fighters: d.fighters || {} };
++    for (var s in DB.fighters) if (!DB.fighters[s].slug) DB.fighters[s].slug = s;
++    return {
++      meta: DB.meta, priors: DB.priors, fighters: DB.fighters,
++      get: profile, profile: profile,
++      list: function () { return Object.keys(DB.fighters); },
++      find: function (q) {
++        q = String(q || "").toLowerCase(); var out = [];
++        for (var k in DB.fighters) if (k.indexOf(q) >= 0 || String(DB.fighters[k].name || "").toLowerCase().indexOf(q) >= 0) out.push(k);
++        return out;
++      }
++    };
++  }
++  function profile(slug) { return DB && DB.fighters[slug] ? DB.fighters[slug] : null; }
++
++  var api = {
++    VERSION: VERSION, KEYS: KEYS, STATS: STK,
++    loadDB: loadDB, profile: profile, matchup: matchup, matchupBase: matchupBase, simulate: simulate, bucket: bucket, makeRng: makeRng,
++    loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound,
++    summarize: summarize, explain: explain, manualProfile: manualProfile,
++    // helpers exposed for tests, calibration and the page
++    priorFor: priorFor, league: league, fighterRates: fighterRates, occupancy: occupancy, isDecision: isDecision,
++    clip: clip, log5: log5, odds: odds, prob: prob, params: getParams
++  };
++  return api;
++});
+--- /dev/null
++++ b/tests/test_dynamics.js
+@@ -0,0 +1,291 @@
++// Fight-dynamics component tests (params.components.dynamics; research/model_dynamics.md E1-E11).
++//
++//   node tests/test_dynamics.js [--quick]
++//
++// 1. Flag off reproduces the engine before the component bit for bit: tests/fixtures/engine3_pre_dynamics.js is a frozen
++//    copy of src/engine3.js from the commit the component was built on. Both engines get the same params (the frozen one
++//    ignores `components` / `dyn`) and the same seeds; every traced fight and every summary must be identical, with and
++//    without the learned stat-line rates. When the component is re-applied on top of a newer engine, refresh the fixture
++//    from that engine (cp src/engine3.js tests/fixtures/engine3_pre_dynamics.js before applying the patch).
++// 2. Flag on: determinism, trace parity, API and trace format unchanged.
++// 3. Focused behaviour: AR(1) persistence, knockdown hazard by round, knockdown momentum, grappling carry-over,
++//    mutual pace and the kPace prior, non-knockdown stoppage round decay.
++"use strict";
++const fs = require("fs");
++const path = require("path");
++const ROOT = path.join(__dirname, "..");
++const QUICK = process.argv.includes("--quick");
++
++const P = require(path.join(ROOT, "src/params3.js"));
++const MLR = require(path.join(ROOT, "src/ml/mlrates.js"));
++const E = require(path.join(ROOT, "src/engine3.js"));
++// the frozen engine finds params / MLRates on the global object (its relative requires do not resolve from fixtures/)
++globalThis.FightParams = P;
++globalThis.MLRates = MLR;
++const E0 = require(path.join(ROOT, "tests/fixtures/engine3_pre_dynamics.js"));
++delete globalThis.FightParams;
++delete globalThis.MLRates;
++
++const dbJson = JSON.parse(fs.readFileSync(path.join(ROOT, "data/derived/fighters.json"), "utf8"));
++E.loadDB(dbJson);
++E0.loadDB(dbJson);
++
++let fails = 0, passes = 0;
++function check(name, ok, info) {
++  if (ok) passes++; else fails++;
++  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${info ? "  (" + info + ")" : ""}`);
++}
++const OFF = { components: { dynamics: false } };
++const ON = { components: { dynamics: true } };
++function strip(f) { return JSON.stringify(f); }
++function mean(a) { return a.reduce((x, y) => x + y, 0) / Math.max(1, a.length); }
++function corr(x, y) {
++  const mx = mean(x), my = mean(y);
++  let sxy = 0, sxx = 0, syy = 0;
++  for (let i = 0; i < x.length; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; syy += (y[i] - my) ** 2; }
++  return sxy / Math.sqrt(sxx * syy);
++}
++
++console.log(`dynamics component tests: engine ${E.VERSION}, params ${P.version}, default components.dynamics = ${P.components && P.components.dynamics}`);
++
++// ---------------------------------------------------------------- 1. flag off == pre-component engine, bit for bit
++const slugs = Object.keys(dbJson.fighters).filter((s) => (dbJson.fighters[s].n_fights || dbJson.fighters[s].n || 0) >= 4).sort();
++const pairs = [["alexander-volkanovski", "justin-gaethje", { rounds: 5, title: true }],
++  ["alexander-volkanovski", "justin-gaethje", { rounds: 3 }]];
++for (let k = 0; k < (QUICK ? 4 : 10); k++) {
++  const a = slugs[(k * 97 + 13) % slugs.length], b = slugs[(k * 61 + 211) % slugs.length];
++  if (a !== b) pairs.push([a, b, { rounds: k % 3 === 0 ? 5 : 3, title: k % 3 === 0 }]);
++}
++const manA = E.manualProfile({ name: "Manual A", slpm: 5.2, sapm: 3.9, acc: 0.5, def: 0.58, td15: 1.8, tdAcc: 0.4, tdDef: 0.7, sub15: 0.6 }, { division: "Welterweight" });
++const manB = E.manualProfile({ name: "Manual B", slpm: 3.6, sapm: 3.2, acc: 0.44, def: 0.55, td15: 0.4, kd15: 0.9 }, { division: "Welterweight" });
++pairs.push([manA, manB, { rounds: 3, division: "Welterweight" }]);
++const SEEDS = QUICK ? 60 : 200;
++let mlModel = null;
++try { mlModel = JSON.parse(fs.readFileSync(path.join(ROOT, "data/derived/mlrates.json"), "utf8")); } catch (e) { mlModel = null; }
++for (const useML of [false, true]) {
++  if (useML && !mlModel) { check("ML model available for the flag-off parity check", false, "data/derived/mlrates.json missing"); continue; }
++  if (useML) { E.loadMLRates(mlModel); E0.loadMLRates(mlModel); }
++  let same = true, nf = 0, bad = "";
++  for (const [a, b, o] of pairs) {
++    const opts = Object.assign({ date: "2026-11-06", params: OFF }, o);
++    if (!useML) opts.ml = false;
++    const m1 = E.matchup(a, b, opts), m0 = E0.matchup(a, b, opts);
++    if (m1.dyn !== null) { same = false; bad = "m.dyn set with the flag off"; break; }
++    for (let s = 1; s <= SEEDS && same; s++) {
++      const tr = s % 2 === 0;
++      const f1 = strip(E.simulate(m1, E.makeRng(s * 7919), tr)), f0 = strip(E0.simulate(m0, E0.makeRng(s * 7919), tr));
++      nf++;
++      if (f1 !== f0) { same = false; bad = (a.slug || a) + " vs " + (b.slug || b) + " seed " + s; }
++    }
++    if (!same) break;
++    const s1 = E.summarize(m1, 600, 4242), s0 = E0.summarize(m0, 600, 4242);
++    if (JSON.stringify(s1) !== JSON.stringify(s0)) { same = false; bad = "summary " + (a.slug || a) + " vs " + (b.slug || b); break; }
++  }
++  check(`flag off reproduces the pre-dynamics engine bit for bit (${useML ? "learned rates" : "plain rates"})`, same,
++    same ? `${nf} fights over ${pairs.length} matchups, traced and untraced, plus summaries` : bad);
++}
++// a shared rng stream across many fights stays aligned too (draw order unchanged)
++{
++  const o = { rounds: 5, title: true, date: "2026-11-06", params: OFF };
++  const m1 = E.matchup("alexander-volkanovski", "justin-gaethje", o), m0 = E0.matchup("alexander-volkanovski", "justin-gaethje", o);
++  const r1 = E.makeRng(99), r0 = E0.makeRng(99);
++  let ok = true;
++  for (let i = 0; i < (QUICK ? 300 : 1500) && ok; i++) ok = strip(E.simulate(m1, r1, i % 3 === 0)) === strip(E0.simulate(m0, r0, i % 3 === 0));
++  check("flag off: a shared rng stream stays aligned with the pre-dynamics engine", ok);
++}
++E.loadMLRates(null); E0.loadMLRates(null);
++
++// ---------------------------------------------------------------- 2. flag on: determinism, trace parity, format
++const VG5 = { rounds: 5, title: true, date: "2026-11-06", params: ON };
++const mOn = E.matchup("alexander-volkanovski", "justin-gaethje", VG5);
++check("flag on builds the dynamics tables", !!mOn.dyn && mOn.dyn.pace[0].length === 5 && mOn.dyn.kdP.length === 5);
++check("flag on: same seed, same fight", strip(E.simulate(mOn, E.makeRng(5), true)) === strip(E.simulate(mOn, E.makeRng(5), true)));
++{
++  let ok = true, bad = -1;
++  for (let s = 1; s <= 300 && ok; s++) {
++    const a = E.simulate(mOn, E.makeRng(s), false), b = E.simulate(mOn, E.makeRng(s), true);
++    if (a.winner !== b.winner || a.method !== b.method || a.round !== b.round || a.t !== b.t || JSON.stringify(a.totals) !== JSON.stringify(b.totals)) { ok = false; bad = s; }
++  }
++  check("flag on: trace on/off gives the same fight (300 seeds)", ok, ok ? "" : "seed " + bad);
++}
++{
++  // the fight object, round record, stat line and, per event kind, the event fields, pooled over 200 traced fights each
++  // (event fields depend on the kind: a strike carries tg, a clinch does not, so compare kind by kind)
++  const mOff = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, VG5, { params: OFF }));
++  const keys = (o) => Object.keys(o).sort().join(",");
++  function shape(m) {
++    const top = new Set(), rec = new Set(), st = new Set(), ev = {};
++    for (let s = 1; s <= 200; s++) {
++      const f = E.simulate(m, E.makeRng(s * 31), true);
++      top.add(keys(f));
++      for (const r of f.rounds) {
++        rec.add(keys(r).replace(/(^|,)ded(?=,|$)/, ""));   // rec.ded only on rounds with a point deduction (v4.0.1)
++        st.add(keys(r.st.A)); st.add(keys(r.st.B));
++        for (const e of r.ev) (ev[e.k] = ev[e.k] || new Set()).add(keys(e));
++      }
++    }
++    const kinds = Object.keys(ev).sort();
++    return { top: [...top].sort().join("|"), rec: [...rec].sort().join("|"), st: [...st].sort().join("|"),
++      ev: kinds.map((k) => k + ":" + [...ev[k]].sort().join("/")).join(" "), kinds };
++  }
++  const a = shape(mOn), b = shape(mOff);
++  const common = a.kinds.filter((k) => b.kinds.includes(k));
++  const evSame = common.every((k) => a.ev.split(" ").find((x) => x.startsWith(k + ":")) === b.ev.split(" ").find((x) => x.startsWith(k + ":")));
++  check("flag on keeps the fight object and trace format", a.top === b.top && a.rec === b.rec && a.st === b.st && evSame && common.length >= 6,
++    `fight ${a.top === b.top}, round ${a.rec === b.rec}, stats ${a.st === b.st}, events ${evSame} over kinds ${common.join(" ")}`);
++}
++{
++  const sOn = E.summarize(mOn, 3000, 3), sOff = E.summarize(E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, VG5, { params: OFF })), 3000, 3);
++  check("flag on changes the simulation", JSON.stringify(sOn.bins) !== JSON.stringify(sOff.bins));
++  check("flag on: probabilities sum to 1", Math.abs(sOn.bins.reduce((x, y) => x + y, 0) - 1) < 1e-9);
++}
++
++// ---------------------------------------------------------------- 3. focused behaviour
++// round-level stats from traced fights: output persistence (log sig attempts per minute of full rounds)
++function roundStats(m, n, seed) {
++  const r1 = [], r2 = [], kdBy = [], shBy = [], reached = [], koIn = [];
++  for (let k = 0; k < m.rounds; k++) { kdBy.push(0); shBy.push(0); reached.push(0); koIn.push(0); }
++  const rng = E.makeRng(seed);
++  for (let i = 0; i < n; i++) {
++    const f = E.simulate(m, rng, true);
++    for (const rec of f.rounds) {
++      reached[rec.r]++;
++      for (const sd of ["A", "B"]) { kdBy[rec.r] += rec.st[sd].kd; shBy[rec.r] += rec.st[sd].sh_lnd; }
++      if (rec.fin && rec.fin.how !== "SUB") koIn[rec.r]++;
++    }
++    if (f.rounds.length >= 2 && f.rounds[0].fin == null && f.rounds[1].fin == null) {
++      r1.push(Math.log(f.rounds[0].st.A.sig_att + 0.5)); r2.push(Math.log(f.rounds[1].st.A.sig_att + 0.5));
++    }
++  }
++  return { c12: corr(r1, r2), kd: kdBy.map((x, k) => x / Math.max(1, shBy[k])), ko: koIn.map((x, k) => x / Math.max(1, reached[k])) };
++}
++{
++  const n = QUICK ? 2500 : 6000;
++  const o3 = { rounds: 3, date: "2026-11-06", division: "Lightweight" };
++  const a = "justin-gaethje", b = "alexander-volkanovski";
++  const sOn = roundStats(E.matchup(a, b, Object.assign({}, o3, { params: ON })), n, 21);
++  const noAR = { components: { dynamics: true }, dyn: { arPhi: 0 } };
++  const sNoAR = roundStats(E.matchup(a, b, Object.assign({}, o3, { params: noAR })), n, 21);
++  check("AR(1) round noise makes a man's output persist from round 1 to round 2", sOn.c12 > sNoAR.c12 + 0.05,
++    `corr R1-R2 ${sOn.c12.toFixed(3)} with arPhi ${P.dyn.arPhi} vs ${sNoAR.c12.toFixed(3)} with arPhi 0`);
++  const tab = P.dyn.kdRound3;
++  const rat = sOn.kd[2] / sOn.kd[0], want = tab[2] / tab[0];
++  check("knockdowns per standing head strike fall by round as the kdRound3 table says", Math.abs(Math.log(rat / want)) < 0.35,
++    `R3/R1 ${rat.toFixed(3)} vs table ${want.toFixed(3)} (hurts and selection add noise)`);
++  const flat = { components: { dynamics: true }, dyn: { kdRound3: [1, 1, 1] } };
++  const sFlat = roundStats(E.matchup(a, b, Object.assign({}, o3, { params: flat })), n, 21);
++  check("a flat kdRound3 table removes most of the decline", sFlat.kd[2] / sFlat.kd[0] > rat + 0.2,
++    `R3/R1 ${(sFlat.kd[2] / sFlat.kd[0]).toFixed(3)} flat vs ${rat.toFixed(3)}`);
++}
++// knockdown momentum: extreme multipliers to see the direction cleanly
++{
++  const o = { rounds: 3, date: "2026-11-06", division: "Lightweight" };
++  const strong = { components: { dynamics: true }, dyn: { momScorerOut: 0.5, momDroppedOut: 1.5, momScorerTd: 0.5, momDroppedTd: 1.5 } };
++  const none = { components: { dynamics: true }, dyn: { momScorerOut: 1, momDroppedOut: 1, momScorerTd: 1, momDroppedTd: 1, momScorerAcc: 1 } };
++  function momStat(params) {
++    const m = E.matchup("justin-gaethje", "alexander-volkanovski", Object.assign({}, o, { params }));
++    const rng = E.makeRng(77);
++    let sc = 0, dr = 0, n = 0;
++    for (let i = 0; i < (QUICK ? 6000 : 15000); i++) {
++      const f = E.simulate(m, rng, true);
++      if (f.rounds.length < 2 || f.rounds[0].fin || f.rounds[0].stoppage) continue;
++      const k = f.rounds[0].st;
++      if (k.A.kd > 0 && k.B.kd === 0) { const s2 = f.rounds[1].st; sc += s2.A.sig_att; dr += s2.B.sig_att; n++; }
++    }
++    return { ratio: sc / Math.max(1, dr), n };
++  }
++  const a = momStat(strong), b = momStat(none);
++  check("knockdown momentum: the scorer eases off and the dropped man does not slow next round", a.ratio < b.ratio * 0.6,
++    `R2 attempts scorer/dropped ${a.ratio.toFixed(2)} with strong momentum vs ${b.ratio.toFixed(2)} without (n ${a.n}, ${b.n})`);
++}
++// grappling carry-over: a man controlled earlier shoots less later
++{
++  const o = { rounds: 3, date: "2026-11-06", division: "Lightweight" };
++  function tdLate(params) {
++    const m = E.matchup("justin-gaethje", "alexander-volkanovski", Object.assign({}, o, { params }));
++    const rng = E.makeRng(5);
++    let att = 0, n = 0;
++    for (let i = 0; i < (QUICK ? 3000 : 8000); i++) {
++      const f = E.simulate(m, rng, true);
++      if (f.rounds.length < 2 || f.rounds[0].fin || f.rounds[0].stoppage) continue;
++      if (f.rounds[0].st.B.ctrl < 90) continue;          // B controlled A for 90+ s in round 1
++      att += f.rounds[1].st.A.td_att; n++;
++    }
++    return att / Math.max(1, n);
++  }
++  const strong = tdLate({ components: { dynamics: true }, dyn: { tdCtrlOpp: -1.0 } }), none = tdLate({ components: { dynamics: true }, dyn: { tdCtrlOpp: 0, tdTdl: 0 } });
++  check("grappling carry-over: takedown attempts fall after being controlled", strong < none * 0.6, `R2 TD attempts ${strong.toFixed(3)} vs ${none.toFixed(3)}`);
++  // takedown round curve: the marginal attempt rate rises by round (real 2019-2023: 3.58 / 3.75 / 4.30 per 15 min) instead of
++  // falling under the carry-over terms alone
++  function tdByRound(params) {
++    const m = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, o, { params }));
++    const rng = E.makeRng(9), att = [0, 0, 0], sec = [0, 0, 0];
++    for (let i = 0; i < (QUICK ? 2500 : 6000); i++) {
++      const f = E.simulate(m, rng, true), nr = f.rounds.length;
++      for (const rec of f.rounds) {
++        const s = rec.r === nr - 1 && f.fin && f.round === rec.r + 1 ? f.t : 300;
++        att[rec.r] += rec.st.A.td_att + rec.st.B.td_att; sec[rec.r] += s;
++      }
++    }
++    return att.map((x, k) => x / Math.max(1, sec[k]));
++  }
++  const cur = tdByRound(ON), flatTd = tdByRound({ components: { dynamics: true }, dyn: { tdRound3: [1, 1, 1] } });
++  check("takedown round curve: attempts per minute rise from round 1 to round 3 (they fall with a flat curve)",
++    cur[2] > cur[0] && flatTd[2] < flatTd[0], `R3/R1 ${(cur[2] / cur[0]).toFixed(3)} with tdRound3 ${P.dyn.tdRound3.join("/")} vs ${(flatTd[2] / flatTd[0]).toFixed(3)} flat`);
++}
++// pace tables: kPace prior and mutual pace
++{
++  const p45 = E.matchup("alexander-volkanovski", "justin-gaethje", VG5);
++  const p15 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, VG5, { params: { components: { dynamics: true }, dyn: { kPace: 15 } } }));
++  const dev = (R) => R.rho.reduce((x, y) => x + Math.abs(y - 1), 0);
++  check("kPace 45 shrinks each man's late-round ratio harder than 15", dev(p45.R[0]) < dev(p15.R[0]) && dev(p45.R[1]) < dev(p15.R[1]),
++    `sum |rho - 1|: ${dev(p45.R[0]).toFixed(3)} vs ${dev(p15.R[0]).toFixed(3)}`);
++  const solo = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, VG5, { params: { components: { dynamics: true }, dyn: { paceMutual: 0 } } }));
++  const late = (m, i) => m.dyn.pace[i][4] / m.dyn.pace[i][0];
++  const dirOpp = Math.sign(p45.R[1].rho[4] - 1);
++  check("mutual pace moves a man's late output with his opponent's cardio", dirOpp === 0 || Math.sign(late(p45, 0) - late(solo, 0)) === dirOpp,
++    `Volk R5/R1 ${late(p45, 0).toFixed(3)} with paceMutual 0.4 vs ${late(solo, 0).toFixed(3)} alone (Gaethje rho5 ${p45.R[1].rho[4].toFixed(3)})`);
++  check("non-knockdown stoppage hazards decay by round", p45.dyn.stkoR[4] < p45.dyn.stkoR[0] && p45.dyn.gnpR[2] < p45.dyn.gnpR[0]);
++  // knob stkoHurtGate (default off): the standing table becomes per hurt strike, so times the hurt gate (kdRound) it decays
++  // as exp(noKdRound r); off leaves the table exactly as before
++  const pg = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, VG5, { params: { components: { dynamics: true }, dyn: { stkoHurtGate: true } } }));
++  const gate = (m, r) => m.dyn.stkoR[r] * m.dyn.kdP[r] / m.dyn.kdP[0] / m.dyn.stkoR[0];
++  check("stkoHurtGate: off by default; on, the standing table x hurt gate decays as exp(noKdRound r)", P.dyn.stkoHurtGate === false &&
++    p45.dyn.stkoR.every((x, r) => x === P.dyn.stkoScale * Math.exp(P.dyn.noKdRound * r)) && Math.abs(gate(pg, 2) - Math.exp(2 * P.dyn.noKdRound)) < 1e-12 &&
++    Math.abs(gate(pg, 4) - Math.exp(4 * P.dyn.noKdRound)) < 1e-12, `gate on: R3/R1 ${gate(pg, 2).toFixed(3)} vs exp(2 noKdRound) ${Math.exp(2 * P.dyn.noKdRound).toFixed(3)}`);
++  check("knockdown conversion odds decay by round", p45.dyn.conv[4] < p45.dyn.conv[0]);
++}
++// verifier fix (E9): realised standing TKO per standing head strike absorbed (rounds without a knockdown) decays about as
++// exp(noKdRound r), not kdRound x exp(noKdRound r) as it did before stkoHurtGate
++{
++  function stkoByRound(gateOn, n) {
++    const m = E.matchup("alexander-volkanovski", "justin-gaethje", { rounds: 3, date: "2026-11-06", ml: false,
++      params: { components: { dynamics: true }, dyn: { stkoHurtGate: gateOn } } });
++    const rng = E.makeRng(gateOn ? 404 : 405), ev = [0, 0, 0], sh = [0, 0, 0];
++    for (let s = 0; s < n; s++) {
++      const f = E.simulate(m, rng, true);
++      for (const rr of f.rounds) {
++        if (rr.st.A.kd + rr.st.B.kd > 0) continue;
++        sh[rr.r] += rr.st.A.sh_lnd + rr.st.B.sh_lnd;
++        if (rr.fin && rr.fin.how === "TKO" && !rr.fin.follow) ev[rr.r]++;
++      }
++    }
++    const h = ev.map((x, r) => x / sh[r]);
++    return { r31: (h[2] + h[1]) / 2 / h[0], ev };
++  }
++  const n = QUICK ? 12000 : 30000, on = stkoByRound(true, n), off = stkoByRound(false, n);
++  const e9 = (Math.exp(P.dyn.noKdRound) + Math.exp(2 * P.dyn.noKdRound)) / 2;
++  check("stkoHurtGate on: standing TKO per strike absorbed decays by round about as E9 says (steeper with it off)", on.r31 > off.r31 + 0.12 && on.r31 > 0.55 && on.r31 < 1.25,
++    `mean(R2, R3) / R1: ${on.r31.toFixed(2)} with the gate vs ${off.r31.toFixed(2)} without (E9 ${e9.toFixed(2)}; events ${on.ev.join("/")} vs ${off.ev.join("/")})`);
++}
++// knobs still work with the flag on
++{
++  const base = E.summarize(E.matchup("alexander-volkanovski", "justin-gaethje", VG5), 4000, 8);
++  const chin = E.summarize(E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, VG5, { adjA: { chin: 1.6 } })), 4000, 8);
++  check("flag on: chin knob up on A -> more KO losses for A", chin.bins[6] > base.bins[6], `${(100 * base.bins[6]).toFixed(1)} -> ${(100 * chin.bins[6]).toFixed(1)}`);
++  const out = E.summarize(E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, VG5, { adjA: { out: 1.3 } })), 4000, 8);
++  check("flag on: output knob up on A -> more attempts by A", out.avg.A.sig_att > base.avg.A.sig_att, `${base.avg.A.sig_att.toFixed(1)} -> ${out.avg.A.sig_att.toFixed(1)}`);
++}
++
++console.log(`\n${passes} passed, ${fails} failed`);
++process.exit(fails ? 1 : 0);
+--- /dev/null
++++ b/tools/dynamics_ablation.py
+@@ -0,0 +1,259 @@
++#!/usr/bin/env python3
++"""dynamics_ablation.py: score a tools/dynamics_bt.js run (flag on vs flag off) on 2019-2023 backtest fights.
++
++Metrics (every one symmetric: the runner averages both corner orders; no intercepts, nothing fit here):
++  winner      log loss of P(winner) on fights with a winner (draws, NC, CNC dropped; p = pA / (pA + pB))
++  soft_close  cross-entropy of p against the closing line's no-vig power probability (data/derived/market.json
++              p_power_close), every train fight with a close; 3-4.6x less noisy than the outcome (research/model_market.md)
++  bin7        7-outcome log loss: A KO/TKO, A SUB, A DEC, draw, B DEC, B SUB, B KO/TKO (doctor stoppages are KO/TKO)
++  method      3-way log loss: KO/TKO, SUB, decision (incl. draw)
++  method_rd   (2R + 1)-way log loss: KO/TKO in round r, SUB in round r, decision
++  statline    Poisson deviance of each real fighter's fight totals (sig attempts / landed, head / body / leg landed,
++              knockdowns, takedown attempts / landed, submission attempts; control minutes as quasi-Poisson) against
++              exposure-matched predictions: sum over the rounds the real fight lasted of the simulated per-second rate in
++              that round (among simulations that reached it) x the real seconds
++  base rates  simulated vs real: outcome mix, KO/TKO and SUB hazard by format and round, minutes, stats per 15 min
++CIs: paired bootstrap over events (cluster = UFC event), 2,000 resamples, percentile 95%.
++
++Usage: python3 tools/dynamics_ablation.py <run.json> [--out report.json] [--on on --off off] [--boot 2000]
++Refuses any fight dated 2024-01-01 or later (hidden-data protocol) unless DYN_ALLOW_VALIDATION=1.
++"""
++import argparse
++import json
++import math
++import os
++import sys
++
++import numpy as np
++
++ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++
++
++def data_file(rel):
++    p = os.path.join(ROOT, rel)
++    return p if os.path.exists(p) else os.path.join("/home/user/XX", rel)
++
++
++KO_M = {"KO", "TKO", "DOC", "CORNER"}
++DEC_M = {"UD", "SD", "MD"}
++STATS = ["sig_att", "sig_lnd", "h_lnd", "b_lnd", "l_lnd", "kd", "td_att", "td_lnd", "sub_att"]
++
++
++def main():
++    ap = argparse.ArgumentParser()
++    ap.add_argument("run")
++    ap.add_argument("--out", default=None)
++    ap.add_argument("--on", default="on")
++    ap.add_argument("--off", default="off")
++    ap.add_argument("--boot", type=int, default=2000)
++    ap.add_argument("--seed", type=int, default=20261106)
++    a = ap.parse_args()
++
++    R = json.load(open(a.run))
++    bt = json.load(open(data_file("data/derived/backtest_dev.json")))
++    mk = json.load(open(data_file("data/derived/market.json")))["fights"]
++    btf = {f["id"]: f for f in bt["fights"]}
++    cols = R["meta"]["rt_columns"]
++    ci = {c: i for i, c in enumerate(cols)}
++    cfgs = [a.off, a.on]
++
++    rows = []
++    for fid, rec in R["fights"].items():
++        f = btf[fid]
++        if f["date"] >= "2024-01-01" and os.environ.get("DYN_ALLOW_VALIDATION") != "1":
++            sys.exit("refusing: validation-period fight in the run (hidden-data protocol)")
++        if any(c not in rec or rec[c].get("err") for c in cfgs):
++            continue
++        rows.append((fid, f, rec))
++    n = len(rows)
++    events = sorted({f["event"] for _, f, _ in rows})
++    eidx = {e: i for i, e in enumerate(events)}
++    ev = np.array([eidx[f["event"]] for _, f, _ in rows])
++    print(f"{n} fights, {len(events)} events, configs {cfgs}, sims/orientation {R['meta']['sims_per_orientation']}")
++
++    # ------------------------------------------------------------ per-fight metric columns (NaN = not applicable)
++    M = {}   # name -> {cfg: array}
++    def put(name, cfg, i, v):
++        M.setdefault(name, {c: np.full(n, np.nan) for c in cfgs})[cfg][i] = v
++
++    Nsim = {c: None for c in cfgs}
++    real = {k: np.full(n, np.nan) for k in ["ko", "sub", "dec", "mins", "five"]}
++    for i, (fid, f, rec) in enumerate(rows):
++        res = f["result"]; mth = res["method"]; win = res["winner"]; nR = rec["rounds"]
++        valid7 = mth in KO_M or mth == "SUB" or mth in DEC_M or mth == "DRAW"
++        real["five"][i] = 1.0 if nR == 5 else 0.0
++        if valid7:
++            real["ko"][i] = 1.0 if mth in KO_M else 0.0
++            real["sub"][i] = 1.0 if mth == "SUB" else 0.0
++            real["dec"][i] = 1.0 if (mth in DEC_M or mth == "DRAW") else 0.0
++            real["mins"][i] = res["fight_s"] / 60.0 if res.get("fight_s") else np.nan
++        q = (mk.get(fid) or {}).get("p_power_close")
++        for c in cfgs:
++            x = rec[c]; N = x["n"]
++            pA, pB = x["pA"], x["pB"]
++            # winner probability with a half-count floor (finite log loss for 0 / N)
++            p = (pA * N + 0.5) / ((pA + pB) * N + 1.0)
++            if win in ("A", "B") and mth not in ("NC", "CNC"):
++                put("winner", c, i, -math.log(p if win == "A" else 1 - p))
++            if q is not None and mth not in ("NC", "CNC"):
++                put("soft_close", c, i, -(q * math.log(p) + (1 - q) * math.log(1 - p)))
++            fl = 0.5 / N
++            bins = np.array(x["bins"]) + fl; bins /= bins.sum()
++            if valid7:
++                if mth == "DRAW":
++                    b = 3
++                else:
++                    k = 0 if mth in KO_M else (1 if mth == "SUB" else 2)
++                    b = k if win == "A" else 6 - k
++                put("bin7", c, i, -math.log(bins[b]))
++                pm = np.array([bins[0] + bins[6], bins[1] + bins[5], bins[2] + bins[3] + bins[4]])
++                put("method", c, i, -math.log(pm[0 if mth in KO_M else (1 if mth == "SUB" else 2)]))
++                vec = np.array(x["ko"] + x["sub"] + [x["dec"]]) + fl; vec /= vec.sum()
++                rr = int(res["round"]) - 1
++                kk = rr if mth in KO_M else (nR + rr if mth == "SUB" else 2 * nR)
++                if mth in KO_M or mth == "SUB":
++                    kk = min(kk, (nR + nR - 1) if mth == "SUB" else nR - 1)
++                put("method_rd", c, i, -math.log(vec[kk]))
++            # exposure-matched stat lines
++            act = f.get("actual")
++            if act and res.get("round") and res.get("time_s") is not None and mth not in ("NC", "CNC"):
++                rend = int(res["round"]); tend = float(res["time_s"])
++                dev = {st: 0.0 for st in STATS + ["ctrl"]}
++                for side, sk in ((0, "A"), (1, "B")):
++                    rt = x["rt"][side]
++                    for st in STATS + ["ctrl"]:
++                        mu, lastrate = 0.0, None
++                        for r in range(min(rend, nR)):
++                            row = rt[r]
++                            if row[ci["secs"]] > 0:
++                                lastrate = row[ci[st]] / row[ci["secs"]]
++                            if lastrate is not None:
++                                mu += lastrate * (300.0 if r < rend - 1 else tend)
++                        y = float(act[sk].get(st, 0) or 0)
++                        if st == "ctrl":
++                            y /= 60.0; mu /= 60.0
++                        mu = max(mu, 1e-6)
++                        dev[st] += 2 * ((y * math.log(y / mu) if y > 0 else 0.0) - (y - mu))
++                for st, d in dev.items():
++                    put("dev_" + st, c, i, d)
++                put("statline", c, i, sum(d for st, d in dev.items() if st != "ctrl"))
++    # ------------------------------------------------------------ paired event-cluster bootstrap
++    rng = np.random.default_rng(a.seed)
++    E = len(events)
++    W = rng.multinomial(E, np.ones(E) / E, size=a.boot).astype(float)   # B x E resample counts
++
++    def ev_sum(v):
++        s = np.zeros(E); np.add.at(s, ev, np.nan_to_num(v)); return s
++
++    def ev_cnt(v):
++        s = np.zeros(E); np.add.at(s, ev, (~np.isnan(v)).astype(float)); return s
++
++    out = {"meta": {"run": os.path.basename(a.run), "n_fights": n, "n_events": E, "boot": a.boot, "configs": cfgs,
++                    "sims_per_orientation": R["meta"]["sims_per_orientation"], "run_meta": R["meta"]}, "metrics": {}, "base_rates": {}}
++    print("\n=== flag-on vs flag-off (mean per fight; diff = on - off; paired event-cluster bootstrap 95% CI) ===")
++    order = ["winner", "soft_close", "bin7", "method", "method_rd", "statline"] + ["dev_" + s for s in STATS + ["ctrl"]]
++    for name in order:
++        if name not in M:
++            continue
++        v0, v1 = M[name][a.off], M[name][a.on]
++        ok = ~np.isnan(v0) & ~np.isnan(v1)
++        v0 = np.where(ok, v0, np.nan); v1 = np.where(ok, v1, np.nan)
++        c = ev_cnt(v0); s0 = ev_sum(v0); s1 = ev_sum(v1)
++        m0, m1 = s0.sum() / c.sum(), s1.sum() / c.sum()
++        bc = W @ c; b0 = (W @ s0) / bc; b1 = (W @ s1) / bc
++        d = b1 - b0
++        lo, hi = np.percentile(d, [2.5, 97.5])
++        out["metrics"][name] = {"n": int(c.sum()), "off": m0, "on": m1, "diff": m1 - m0, "ci95": [float(lo), float(hi)],
++                                "ci95_off": [float(x) for x in np.percentile(b0, [2.5, 97.5])],
++                                "ci95_on": [float(x) for x in np.percentile(b1, [2.5, 97.5])]}
++        print(f"{name:14s} n={int(c.sum()):5d}  off {m0:.5f}  on {m1:.5f}  diff {m1 - m0:+.5f} [{lo:+.5f}, {hi:+.5f}]")
++
++    # ------------------------------------------------------------ base-rate table
++    print("\n=== base rates: simulated vs real (2019-2023 backtest fights) ===")
++    valid = ~np.isnan(real["ko"])
++    fmt = {3: valid & (real["five"] == 0), 5: valid & (real["five"] == 1)}
++
++    def sim_col(cfg, fn):
++        return np.array([fn(rec[cfg], rec["rounds"]) for _, _, rec in rows], dtype=float)
++
++    def ratio_ci(num_by_cfg, den_by_cfg, real_num, real_den, label):
++        """mean ratio sum(num)/sum(den) per config and for the real fights; CIs for sim - real and on - off."""
++        res = {}
++        rs_n = ev_sum(real_num); rs_d = ev_sum(real_den)
++        rb = (W @ rs_n) / np.maximum(W @ rs_d, 1e-12)
++        res["real"] = float(rs_n.sum() / max(rs_d.sum(), 1e-12))
++        bb = {}
++        for c in cfgs:
++            sn = ev_sum(num_by_cfg[c]); sd = ev_sum(den_by_cfg[c])
++            res[c] = float(sn.sum() / max(sd.sum(), 1e-12))
++            bb[c] = (W @ sn) / np.maximum(W @ sd, 1e-12)
++            res[c + "_minus_real_ci95"] = [float(x) for x in np.percentile(bb[c] - rb, [2.5, 97.5])]
++        res["on_minus_off_ci95"] = [float(x) for x in np.percentile(bb[a.on] - bb[a.off], [2.5, 97.5])]
++        out["base_rates"][label] = res
++        print(f"{label:28s} real {res['real']:.4f}  off {res[a.off]:.4f} {fmtci(res[a.off + '_minus_real_ci95'])}  "
++              f"on {res[a.on]:.4f} {fmtci(res[a.on + '_minus_real_ci95'])}  on-off {fmtci(res['on_minus_off_ci95'])}")
++
++    def fmtci(c):
++        return f"[{c[0]:+.4f},{c[1]:+.4f}]"
++
++    one = valid.astype(float)
++    for lab, key, fn in (("P(KO/TKO)", "ko", lambda x, nR: sum(x["ko"])), ("P(SUB)", "sub", lambda x, nR: sum(x["sub"])),
++                         ("P(decision)", "dec", lambda x, nR: x["dec"])):
++        num = {c: np.where(valid, sim_col(c, fn), np.nan) for c in cfgs}
++        den = {c: np.where(valid, 1.0, np.nan) for c in cfgs}
++        ratio_ci(num, den, np.where(valid, real[key], np.nan), np.where(valid, one, np.nan), lab)
++    # hazards by format and round: P(round ends KO/TKO | round reached), same for SUB
++    for R_ in (3, 5):
++        sel = fmt[R_]
++        for r in range(R_):
++            for kind in ("ko", "sub"):
++                def reach(x, nR, r=r):
++                    return 1.0 - sum(x["ko"][:r]) - sum(x["sub"][:r])
++                num = {c: np.where(sel, sim_col(c, lambda x, nR, r=r, kind=kind: x[kind][r] if r < nR else 0.0), np.nan) for c in cfgs}
++                den = {c: np.where(sel, sim_col(c, reach), np.nan) for c in cfgs}
++                rnum = np.full(n, np.nan); rden = np.full(n, np.nan)
++                for i, (_, f, rec) in enumerate(rows):
++                    if not sel[i]:
++                        continue
++                    res_ = f["result"]; rr = int(res_["round"]) - 1; mth = res_["method"]
++                    rden[i] = 1.0 if rr >= r else 0.0
++                    hit = (mth in KO_M) if kind == "ko" else (mth == "SUB")
++                    rnum[i] = 1.0 if (rr == r and hit) else 0.0
++                ratio_ci(num, den, rnum, rden, f"{R_}rd R{r + 1} {kind.upper()} hazard")
++    # minutes and per-15 stats
++    num = {c: np.where(valid, sim_col(c, lambda x, nR: x["mins"]), np.nan) for c in cfgs}
++    den = {c: np.where(valid, 1.0, np.nan) for c in cfgs}
++    ratio_ci(num, den, real["mins"], np.where(np.isnan(real["mins"]), np.nan, 1.0), "minutes per fight")
++    for st in ["sig_lnd", "sig_att", "kd", "td_lnd", "ctrl", "sub_att"]:
++        def simst(x, nR, st=st):
++            return sum(x["rt"][s][r][ci[st]] for s in (0, 1) for r in range(nR)) / x["n"]
++        def simsec(x, nR):
++            return sum(x["rt"][0][r][ci["secs"]] for r in range(nR)) / x["n"] / 60.0
++        num = {c: np.where(valid, sim_col(c, simst) * 15, np.nan) for c in cfgs}
++        den = {c: np.where(valid, sim_col(c, simsec), np.nan) for c in cfgs}
++        rn = np.full(n, np.nan); rd = np.full(n, np.nan)
++        for i, (_, f, rec) in enumerate(rows):
++            act = f.get("actual")
++            if valid[i] and act and act.get("minutes"):
++                rn[i] = 15 * (float(act["A"].get(st, 0) or 0) + float(act["B"].get(st, 0) or 0))
++                rd[i] = float(act["minutes"])
++        ratio_ci(num, den, rn, rd, f"{st} per 15 (both)")
++    # knockdown conversion and non-KD stoppage rates (simulated only; targets from data/derived/dynamics.json)
++    dj = json.load(open(os.path.join(ROOT, "data", "derived", "dynamics.json")))
++    for c in cfgs:
++        kd = sum(sum(rec[c]["kd"]) for _, _, rec in rows); conv = sum(sum(rec[c]["kdConv"]) for _, _, rec in rows)
++        st = sum(rec[c]["stko"] for _, _, rec in rows); gt = sum(rec[c]["gtko"] for _, _, rec in rows)
++        es = sum(rec[c]["expSh"] for _, _, rec in rows); eg = sum(rec[c]["expG"] for _, _, rec in rows)
++        out["base_rates"]["sim_" + c + "_kd_conversion"] = conv / max(kd, 1)
++        out["base_rates"]["sim_" + c + "_stko_per_sh"] = st / max(es, 1)
++        out["base_rates"]["sim_" + c + "_gtko_per_g"] = gt / max(eg, 1)
++        print(f"sim {c}: KD->finish per KD {conv / max(kd, 1):.3f} (train data {dj['finish_hazard']['kd_conversion']['null']['rate_train']:.3f}); "
++              f"standing TKO no-KD per sh {st / max(es, 1):.6f} (data {dj['finish_hazard']['non_kd_stoppage']['rate_per_standing_head_st_train']:.6f}); "
++              f"ground TKO no-KD per g {gt / max(eg, 1):.5f} (data {dj['finish_hazard']['non_kd_stoppage']['rate_per_ground_strike_gt_train']:.5f})")
++    if a.out:
++        json.dump(out, open(a.out, "w"), indent=1)
++        print("wrote", a.out)
++
++
++if __name__ == "__main__":
++    main()
+--- /dev/null
++++ b/tools/dynamics_bt.js
+@@ -0,0 +1,206 @@
++#!/usr/bin/env node
++/* dynamics_bt.js: paired backtest runner for the fight-dynamics component (params.components.dynamics).
++
++   Runs src/engine3.js on walk-forward backtest snapshots from data/derived/backtest_dev.json in both corner orders,
++   with common random numbers across configurations (the seed depends only on the fight id and the orientation), and
++   writes per-fight symmetric outcome probabilities, the method x round distribution, per-round stat rates for each
++   real fighter (for exposure-matched stat-line predictions) and knockdown / stoppage counters. Scored by
++   tools/dynamics_ablation.py; also used by tools/dynamics_calibrate.js.
++
++   Leak-free inputs: frozen pre-fight profiles (backtest_dev.json), walk-forward division priors
++   (data/derived/mlcal_priors_asof.json: rates from the 5 years before Jan 1 of the fight's year), and out-of-fold
++   learned stat-line rates (data/derived/mlrates_oof.json, folds trained on 2010..year-1). No live roster values.
++
++   Hidden-data protocol (docs/BACKLOG.md): this tool refuses fights dated 2024-01-01 or later unless
++   DYN_ALLOW_VALIDATION=1 is set (reserved for the single v5 validation measurement), and never reads 2026 fights.
++
++   Usage:
++     node tools/dynamics_bt.js --out <file.json> [--from 2019-01-01] [--to 2023-12-31] [--sims 200]
++          [--part 0 --parts 1] [--cfg off='{"components":{"dynamics":false}}' --cfg on='{}'] [--max 0]
++          [--csv <file.csv> --csv-cfg on --csv-sims 10]   (dynamics_engine.js-style rows for tools/dynamics.py checks)
++     node tools/dynamics_bt.js --merge <out.json> <part files...>
++   Default configs: off = components.dynamics false, on = components.dynamics true (the params3.js dyn block). */
++"use strict";
++const fs = require("fs");
++const path = require("path");
++const crypto = require("crypto");
++const ROOT = path.resolve(__dirname, "..");
++const args = process.argv.slice(2);
++
++if (args[0] === "--merge") {
++  const out = args[1], parts = args.slice(2);
++  const res = { meta: null, fights: {} };
++  for (const f of parts) {
++    const j = JSON.parse(fs.readFileSync(f, "utf8"));
++    res.meta = res.meta || j.meta;
++    Object.assign(res.fights, j.fights);
++  }
++  res.meta.n = Object.keys(res.fights).length; res.meta.parts = parts.map((p) => path.basename(p));
++  fs.writeFileSync(out, JSON.stringify(res));
++  console.log("merged", parts.length, "parts,", res.meta.n, "fights ->", out);
++  process.exit(0);
++}
++
++function opt(k, d) { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; }
++function optAll(k) { const o = []; args.forEach((a, i) => { if (a === k) o.push(args[i + 1]); }); return o; }
++const OUT = opt("--out", null);
++const FROM = opt("--from", "2019-01-01"), TO = opt("--to", "2023-12-31");
++const SIMS = +opt("--sims", "200"), PART = +opt("--part", "0"), PARTS = +opt("--parts", "1"), MAX = +opt("--max", "0");
++const CSV = opt("--csv", null), CSV_CFG = opt("--csv-cfg", "on"), CSV_SIMS = +opt("--csv-sims", "10");
++const EDIR = path.resolve(opt("--engine-dir", path.join(ROOT, "src")));
++if (!OUT) { console.error("--out required"); process.exit(2); }
++if (TO >= "2024-01-01" && process.env.DYN_ALLOW_VALIDATION !== "1") {
++  console.error("refusing: fights from 2024-01-01 are validation data (docs/BACKLOG.md hidden-data protocol); tune on 2019-2023");
++  process.exit(2);
++}
++const HARD_TO = "2026-01-01";   // the vault is never read
++
++const E = require(path.join(EDIR, "engine3.js"));
++const FP = require(path.join(EDIR, "params3.js"));
++function dataFile(rel) {
++  const a = path.join(ROOT, rel);
++  return fs.existsSync(a) ? a : path.join("/home/user/XX", rel);    // large gitignored files live in the main checkout
++}
++const bt = JSON.parse(fs.readFileSync(dataFile("data/derived/backtest_dev.json"), "utf8"));
++const priorsAsof = JSON.parse(fs.readFileSync(dataFile("data/derived/mlcal_priors_asof.json"), "utf8"));
++const oof = JSON.parse(fs.readFileSync(dataFile("data/derived/mlrates_oof.json"), "utf8"));
++const TN = oof.meta.targets;
++const keys = bt.meta.keys;
++
++const cfgArgs = optAll("--cfg");
++const CFGS = [];
++if (cfgArgs.length) for (const c of cfgArgs) { const i = c.indexOf("="); CFGS.push([c.slice(0, i), JSON.parse(c.slice(i + 1) || "{}")]); }
++else { CFGS.push(["off", { components: { dynamics: false } }]); CFGS.push(["on", { components: { dynamics: true } }]); }
++
++function seedOf(id, k) { return parseInt(crypto.createHash("md5").update(id + ":" + k).digest("hex").slice(0, 8), 16); }
++function sha(file) { return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex").slice(0, 16); }
++const r5 = (x) => Math.round(x * 1e5) / 1e5;
++
++// per-round stat columns accumulated for each real fighter
++const RS = ["sig_att", "sig_lnd", "h_lnd", "b_lnd", "l_lnd", "kd", "td_att", "td_lnd", "ctrl", "sub_att", "sh_lnd", "g_lnd"];
++const NRS = RS.length;
++const STRIKE_FIN = { KO: 1, TKO: 1, GNP: 1, LEG: 1 };
++
++let fights = bt.fights.filter((f) => f.date >= FROM && f.date <= TO && f.date < HARD_TO);
++fights = fights.filter((f, i) => i % PARTS === PART);
++if (MAX > 0) fights = fights.slice(0, MAX);
++
++// --csv path: dynamics_engine.js-style rows for --csv-cfg; a path containing {cfg} writes one file per configuration
++const CSV_HEAD = "fid,sim,idx,rnd,R,rsec,winner,method,fin_round,division,sig_att,sig_lnd,h_att,h_lnd,d_att,d_lnd,c_att,c_lnd,g_att,g_lnd,kd,td_att,td_lnd,ctrl,sub_att,sh_lnd,b_lnd,l_lnd,hurt,dmg_end";
++const csvByCfg = {};
++if (CSV) for (const [c] of CFGS) if (CSV.includes("{cfg}") || c === CSV_CFG) csvByCfg[c] = [CSV_HEAD];
++const CSV_KEYS = ["sig_att", "sig_lnd", "h_att", "h_lnd", "d_att", "d_lnd", "c_att", "c_lnd", "g_att", "g_lnd", "kd", "td_att", "td_lnd", "ctrl", "sub_att", "sh_lnd", "b_lnd", "l_lnd", "hurt"];
++
++function optsFor(f, swap) {
++  const pri = priorsAsof[f.date.slice(0, 4)];
++  const generic = f.division === "Catch Weight" || f.division === "Open Weight" || (pri && !pri[f.division]);
++  const division = generic ? (f.prior_division || f.division) : f.division;
++  const o = { division, rounds: f.rounds || (f.title ? 5 : 3), title: !!f.title, date: f.date, priors: pri };
++  const ent = oof.fights[f.id];
++  if (ent && ent.A && ent.B) {
++    const a = {}, b = {};
++    TN.forEach((t, k) => { a[t] = ent.A[k]; b[t] = ent.B[k]; });
++    o.ml = swap ? { A: b, B: a } : { A: a, B: b };
++  } else o.ml = false;
++  return o;
++}
++
++const res = {};
++const t0 = Date.now();
++let nDone = 0, nErr = 0;
++for (const f of fights) {
++  const nR = f.rounds || (f.title ? 5 : 3);
++  const PA = Object.assign({ keys }, f.A), PB = Object.assign({ keys }, f.B);
++  const rec = { date: f.date, rounds: nR, ml: !!(oof.fights[f.id]) };
++  for (const [cname, cparams] of CFGS) {
++    const acc = {
++      pA: 0, pB: 0, pD: 0, bins: [0, 0, 0, 0, 0, 0, 0], ko: new Array(nR).fill(0), sub: new Array(nR).fill(0), dec: 0,
++      // rate tables per real side (0 = backtest A, 1 = backtest B) and round: [reached, secs, ...RS]
++      rt: [0, 1].map(() => Array.from({ length: nR }, () => new Array(2 + NRS).fill(0))),
++      kd: new Array(nR).fill(0), kdConv: new Array(nR).fill(0), kdRounds: new Array(nR).fill(0),
++      stko: 0, gtko: 0, expSh: 0, expG: 0, mins: 0, roundsReached: new Array(nR).fill(0), koEnd: new Array(nR).fill(0)
++    };
++    let ok = true;
++    for (const swap of [false, true]) {
++      let m;
++      try {
++        const o = optsFor(f, swap);
++        o.params = cparams;
++        m = swap ? E.matchup(PB, PA, o) : E.matchup(PA, PB, o);
++      } catch (e) { ok = false; nErr++; if (nErr < 4) console.error(String(e && e.stack || e)); break; }
++      const rng = E.makeRng(seedOf(f.id, swap ? 2 : 1));
++      for (let s = 0; s < SIMS; s++) {
++        const fight = E.simulate(m, rng, true);
++        // winner in backtest orientation
++        const wEng = fight.winner, wReal = wEng === "D" ? "D" : ((wEng === "A") !== swap ? "A" : "B");
++        if (wReal === "A") acc.pA++; else if (wReal === "B") acc.pB++; else acc.pD++;
++        const b = E.bucket(fight), bReal = swap ? 6 - b : b;
++        acc.bins[bReal]++;
++        const dec = E.isDecision(fight);
++        if (dec) acc.dec++; else if (fight.method === "SUB") acc.sub[fight.round - 1]++; else acc.ko[fight.round - 1]++;
++        acc.mins += dec ? nR * 5 : ((fight.round - 1) * 300 + fight.t) / 60;
++        const nr = fight.rounds.length;
++        for (const rr of fight.rounds) {
++          const r = rr.r, last = r === nr - 1;
++          const secs = last && fight.fin && fight.round === r + 1 && fight.method !== "DOC" && fight.method !== "CORNER" ? fight.t : 300;
++          acc.roundsReached[r]++;
++          for (let side = 0; side < 2; side++) {
++            const eng = (side === 0) !== swap ? "A" : "B", st = rr.st[eng];
++            const row = acc.rt[side][r];
++            row[0]++; row[1] += secs;
++            for (let k = 0; k < NRS; k++) row[2 + k] += st[RS[k]] || 0;
++          }
++          // knockdown conversion (per KD; the last KD of a round carries the finish) and non-KD stoppages
++          for (const eng of ["A", "B"]) {
++            const o2 = eng === "A" ? "B" : "A", kds = rr.st[eng].kd;
++            acc.expSh += rr.st[eng].sh_lnd; acc.expG += rr.st[eng].g_lnd;
++            if (kds > 0) {
++              acc.kd[r] += kds; acc.kdRounds[r]++;
++              if (rr.fin && rr.fin.by === eng && STRIKE_FIN[rr.fin.how]) acc.kdConv[r]++;
++            }
++            if (rr.fin && rr.fin.by === eng && rr.st[o2].kd === 0 && rr.st[eng].kd === 0) {
++              if (rr.fin.how === "TKO" && !rr.fin.follow) acc.stko++;
++              if (rr.fin.how === "GNP") acc.gtko++;
++            }
++          }
++          if (rr.fin && STRIKE_FIN[rr.fin.how]) acc.koEnd[r]++;
++        }
++        const csvLines = csvByCfg[cname];
++        if (csvLines && !swap && s < CSV_SIMS) {
++          for (const rr of fight.rounds) {
++            const last = rr.r === nr - 1;
++            const rsec = last && fight.fin && fight.round === rr.r + 1 ? fight.t : 300;
++            for (const [idx, side] of [[0, "A"], [1, "B"]]) {
++              const st = rr.st[side];
++              const row = [f.id, s, idx, rr.r + 1, nR, Math.round(rsec * 10) / 10, fight.winner, fight.method, fight.round, JSON.stringify(f.division)];
++              for (const k of CSV_KEYS) row.push(st[k] != null ? st[k] : 0);
++              row.push(idx === 0 ? rr.endState.dA : rr.endState.dB);
++              csvLines.push(row.join(","));
++            }
++          }
++        }
++      }
++    }
++    if (!ok) { rec[cname] = { err: true }; continue; }
++    const N = 2 * SIMS;
++    rec[cname] = {
++      pA: r5(acc.pA / N), pB: r5(acc.pB / N), pD: r5(acc.pD / N), bins: acc.bins.map((x) => r5(x / N)),
++      ko: acc.ko.map((x) => r5(x / N)), sub: acc.sub.map((x) => r5(x / N)), dec: r5(acc.dec / N), mins: r5(acc.mins / N),
++      rt: acc.rt.map((sd) => sd.map((row) => row.map((x) => r5(x)))), n: N,
++      kd: acc.kd, kdConv: acc.kdConv, kdRounds: acc.kdRounds, stko: acc.stko, gtko: acc.gtko, expSh: r5(acc.expSh), expG: r5(acc.expG),
++      reached: acc.roundsReached, koEnd: acc.koEnd
++    };
++  }
++  res[f.id] = rec;
++  if (++nDone % 50 === 0) console.error(`part ${PART}/${PARTS}: ${nDone}/${fights.length} (${((Date.now() - t0) / nDone).toFixed(0)} ms/fight)`);
++}
++const meta = {
++  tool: "tools/dynamics_bt.js", engine_version: E.VERSION, params_version: FP.version, sims_per_orientation: SIMS,
++  configs: CFGS, from: FROM, to: TO, engine3_sha256_16: sha(path.join(EDIR, "engine3.js")), params3_sha256_16: sha(path.join(EDIR, "params3.js")),
++  inputs: "backtest_dev.json frozen profiles; mlcal_priors_asof.json walk-forward priors; mlrates_oof.json out-of-fold learned rates",
++  orientation: "every number is in backtest order (A = first-named); averaged over the A-B and B-A runs with seeds md5(id:1), md5(id:2)",
++  rt_columns: ["reached", "secs"].concat(RS), built: new Date().toISOString(), errors: nErr
++};
++fs.writeFileSync(OUT, JSON.stringify({ meta, fights: res }));
++for (const c of Object.keys(csvByCfg)) fs.writeFileSync(CSV.replace("{cfg}", c), csvByCfg[c].join("\n") + "\n");
++console.log(`done ${nDone} fights (${nErr} errors) in ${((Date.now() - t0) / 1000).toFixed(0)} s -> ${OUT}`);
+--- /dev/null
++++ b/tools/dynamics_calibrate.js
+@@ -0,0 +1,172 @@
++#!/usr/bin/env node
++/* dynamics_calibrate.js: re-fit the level factors of the fight-dynamics component ([dyncal] in src/params3.js `dyn`)
++   on 2019-2023 backtest fights (train only; refuses later dates).
++
++   The dynamics recipe (research/model_dynamics.md E1-E11) replaces terms the walk-forward calibration had absorbed
++   (stamina / pace / damage on knockdowns, damage and stamina on finishes, 5-round caution on knockdowns, larger output
++   and accuracy form sds), so the realised levels move. This tool moment-matches them on the same leak-free inputs as
++   tools/dynamics_bt.js (frozen profiles, walk-forward priors, out-of-fold learned rates), with fixed seeds:
++     outLevel   sig attempts per fighter-minute          the flag-off engine on the same fights and seeds (--target-off,
++                                                          the default) or the backtest actuals (--target-real)
++     accLevel   sig accuracy                              same
++     tdLevel    takedown attempts per fighter-minute      same
++   Volume levels follow the flag-off engine by default so that an ablation measures the dynamics structure at equal
++   volume (the base engine's own level calibration is not credited to or blamed on the component).
++     kdLevel3/5 knockdowns per fight-minute, per format  backtest actuals of ALL 2019-2023 fights (3 rounds 0.611 per 15 min,
++                                                          754 KDs; 5 rounds 0.500, 135 KDs), not the stride subsample (noisy)
++                                                          and not the flag-off engine (0.640 / 0.379: its 5-round level is 24%
++                                                          low); the round shape comes from the kdRound tables (per standing
++                                                          head strike would overshoot: the engine lands ~4% more than real)
++     convLevel  knockdown -> finish conversion per KD     dynamics.json finish_hazard.kd_conversion rate_train (0.512)
++     stkoScale, standing / ground TKO without a KD:       one joint factor so the KO/TKO share matches the paired flag-off
++     gnpScale   the data ratio of the two hazards is kept    engine (= real 2019-2023: 0.317 vs 0.317); printed against the
++                                                          per-exposure rates in dynamics.json (0.000452 per standing head
++                                                          absorbed, 0.006737 per ground strike); with knockdowns and their
++                                                          conversion on data, the per-exposure rates overshoot the count
++                                                          because the engine lands more strikes than real
++   Usage: node tools/dynamics_calibrate.js [--iters 6] [--sims 24] [--stride 2] [--params '{"dyn":{...}}'] [--target-real]
++   Prints the fitted values as JSON (paste into params3.js `dyn`). */
++"use strict";
++const fs = require("fs");
++const path = require("path");
++const crypto = require("crypto");
++const ROOT = path.resolve(__dirname, "..");
++const args = process.argv.slice(2);
++function opt(k, d) { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; }
++const ITERS = +opt("--iters", "6"), SIMS = +opt("--sims", "24"), STRIDE = +opt("--stride", "2");
++const FROM = "2019-01-01", TO = "2023-12-31";
++const E = require(path.join(ROOT, "src/engine3.js"));
++const FP = require(path.join(ROOT, "src/params3.js"));
++function dataFile(rel) { const a = path.join(ROOT, rel); return fs.existsSync(a) ? a : path.join("/home/user/XX", rel); }
++const bt = JSON.parse(fs.readFileSync(dataFile("data/derived/backtest_dev.json"), "utf8"));
++const priorsAsof = JSON.parse(fs.readFileSync(dataFile("data/derived/mlcal_priors_asof.json"), "utf8"));
++const oof = JSON.parse(fs.readFileSync(dataFile("data/derived/mlrates_oof.json"), "utf8"));
++const dyn = JSON.parse(fs.readFileSync(path.join(ROOT, "data/derived/dynamics.json"), "utf8"));
++const TN = oof.meta.targets, keys = bt.meta.keys;
++const extra = JSON.parse(opt("--params", "{}"));
++
++const allTrain = bt.fights.filter((f) => f.date >= FROM && f.date <= TO && oof.fights[f.id]);
++const fights = bt.fights.filter((f, i) => f.date >= FROM && f.date <= TO && i % STRIDE === 0 && oof.fights[f.id]);
++// ---- targets
++let attS = 0, lndS = 0, minS = 0;
++const kdA = { 3: 0, 5: 0 }, kdM = { 3: 0, 5: 0 };
++for (const f of fights) {
++  const a = f.actual; if (!a || !a.A || !a.minutes) continue;
++  attS += a.A.sig_att + a.B.sig_att; lndS += a.A.sig_lnd + a.B.sig_lnd; minS += 2 * a.minutes;
++}
++for (const f of allTrain) {
++  const a = f.actual; if (!a || !a.A || !a.minutes) continue;
++  const R = f.rounds === 5 ? 5 : 3; kdA[R] += a.A.kd + a.B.kd; kdM[R] += a.minutes;
++}
++const TG = dyn.targets_by_round.train, FH = dyn.finish_hazard;
++const T = {
++  attPm: attS / minS, acc: lndS / attS, kdPm3: kdA[3] / kdM[3], kdPm5: kdA[5] / kdM[5],
++  kdCell: (R, r) => TG[R + "_" + (r + 1)].kd_per100_standing_head / 100,
++  conv: FH.kd_conversion.null.rate_train,
++  stko: FH.non_kd_stoppage.rate_per_standing_head_st_train, gtko: FH.non_kd_stoppage.rate_per_ground_strike_gt_train
++};
++function seedOf(id, k) { return parseInt(crypto.createHash("md5").update(id + ":" + k).digest("hex").slice(0, 8), 16); }
++function optsFor(f, swap, params) {
++  const pri = priorsAsof[f.date.slice(0, 4)];
++  const generic = f.division === "Catch Weight" || f.division === "Open Weight" || (pri && !pri[f.division]);
++  const division = generic ? (f.prior_division || f.division) : f.division;
++  const o = { division, rounds: f.rounds || (f.title ? 5 : 3), title: !!f.title, date: f.date, priors: pri, params };
++  const ent = oof.fights[f.id], a = {}, b = {};
++  TN.forEach((t, k) => { a[t] = ent.A[k]; b[t] = ent.B[k]; });
++  o.ml = swap ? { A: b, B: a } : { A: a, B: b };
++  return o;
++}
++function run(params) {
++  const g = { att: 0, lnd: 0, tda: 0, secs: 0, kd: { 3: [0, 0, 0], 5: [0, 0, 0, 0, 0] }, sh: { 3: [0, 0, 0], 5: [0, 0, 0, 0, 0] },
++    fsec: { 3: 0, 5: 0 }, kdN: 0, conv: 0, stko: 0, gtko: 0, expSh: 0, expG: 0, koR: { 3: [0, 0, 0], 5: [0, 0, 0, 0, 0] }, reach: { 3: [0, 0, 0], 5: [0, 0, 0, 0, 0] },
++    nF: 0, nKO: 0, nSUB: 0, nDEC: 0 };
++  for (const f of fights) {
++    const nR = f.rounds === 5 ? 5 : 3;
++    const PA = Object.assign({ keys }, f.A), PB = Object.assign({ keys }, f.B);
++    for (const swap of [false, true]) {
++      const o = optsFor(f, swap, params);
++      const m = swap ? E.matchup(PB, PA, o) : E.matchup(PA, PB, o);
++      const rng = E.makeRng(seedOf(f.id, swap ? 2 : 1));
++      for (let s = 0; s < SIMS; s++) {
++        const fight = E.simulate(m, rng, true), nr = fight.rounds.length;
++        g.nF++;
++        if (E.isDecision(fight)) g.nDEC++; else if (fight.method === "SUB") g.nSUB++; else g.nKO++;
++        for (const rr of fight.rounds) {
++          const r = rr.r, last = r === nr - 1;
++          const secs = last && fight.fin && fight.round === r + 1 ? fight.t : 300;
++          g.reach[nR][r]++; g.fsec[nR] += secs;
++          if (rr.fin && rr.fin.how !== "SUB") g.koR[nR][r]++;
++          for (const sd of ["A", "B"]) {
++            const st = rr.st[sd], o2 = sd === "A" ? "B" : "A";
++            g.att += st.sig_att; g.lnd += st.sig_lnd; g.tda += st.td_att; g.secs += secs;
++            g.kd[nR][r] += st.kd; g.sh[nR][r] += st.sh_lnd; g.expSh += st.sh_lnd; g.expG += st.g_lnd;
++            if (st.kd > 0) { g.kdN += st.kd; if (rr.fin && rr.fin.by === sd && rr.fin.how !== "SUB") g.conv++; }
++            if (rr.fin && rr.fin.by === sd && st.kd === 0 && rr.st[o2].kd === 0) {
++              if (rr.fin.how === "TKO" && !rr.fin.follow) g.stko++;
++              if (rr.fin.how === "GNP") g.gtko++;
++            }
++          }
++        }
++      }
++    }
++  }
++  const out = { attPm: g.att / (g.secs / 60), acc: g.lnd / g.att, tdPm: g.tda / (g.secs / 60), conv: g.conv / Math.max(1, g.kdN), stko: g.stko / g.expSh, gtko: g.gtko / g.expG,
++    ko: g.nKO / g.nF, sub: g.nSUB / g.nF, dec: g.nDEC / g.nF };
++  for (const R of [3, 5]) {
++    let s = 0, w = 0, t = 0;
++    for (let r = 0; r < R; r++) { s += g.kd[R][r]; w += g.sh[R][r]; t += g.sh[R][r] * T.kdCell(R, r); }
++    out["kd" + R] = s / Math.max(1, w); out["kdT" + R] = t / Math.max(1, w); out["kdPm" + R] = s / (g.fsec[R] / 60);
++    out["kdR" + R] = g.kd[R].map((x, r) => +(100 * x / Math.max(1, g.sh[R][r])).toFixed(3));
++    out["koR" + R] = g.koR[R].map((x, r) => +(x / Math.max(1, g.reach[R][r])).toFixed(4));
++  }
++  return out;
++}
++const odds = (p) => p / (1 - p);
++function show(lab, o) {
++  console.log(`${lab}: att/min ${o.attPm.toFixed(3)} (T ${T.attPm.toFixed(3)}) acc ${o.acc.toFixed(4)} (T ${T.acc.toFixed(4)}) ` +
++    `TDatt/min ${o.tdPm.toFixed(4)} (T ${T.tdPm != null ? T.tdPm.toFixed(4) : "-"}) ` +
++    `KD/100sh 3rd ${(100 * o.kd3).toFixed(3)} (data ${(100 * o.kdT3).toFixed(3)}) 5rd ${(100 * o.kd5).toFixed(3)} (data ${(100 * o.kdT5).toFixed(3)}) ` +
++    `KD/15 3rd ${(15 * o.kdPm3).toFixed(3)} (T ${(15 * T.kdPm3).toFixed(3)}) 5rd ${(15 * o.kdPm5).toFixed(3)} (T ${(15 * T.kdPm5).toFixed(3)}) ` +
++    `conv ${o.conv.toFixed(3)} (T ${T.conv.toFixed(3)}) stko ${(1e4 * o.stko).toFixed(2)}e-4 (T ${(1e4 * T.stko).toFixed(2)}) gtko ${(1e3 * o.gtko).toFixed(2)}e-3 (T ${(1e3 * T.gtko).toFixed(2)}) ` +
++    `| KO ${o.ko.toFixed(3)} (T ${T.ko != null ? T.ko.toFixed(3) : "-"}) SUB ${o.sub.toFixed(3)} DEC ${o.dec.toFixed(3)} | KD by rd 3: ${o.kdR3.join(" ")} 5: ${o.kdR5.join(" ")} | KO hazard 3: ${o.koR3.join(" ")} 5: ${o.koR5.join(" ")}`);
++}
++console.log(`dynamics_calibrate: ${fights.length} train fights (stride ${STRIDE}), ${SIMS} sims per orientation; params ${FP.version}`);
++// real outcome mix of the same fights (KO incl. doctor, SUB, decisions incl. draws; NC / DQ dropped)
++{
++  let ko = 0, sub = 0, dec = 0;
++  for (const f of fights) { const mth = f.result.method; if (mth === "KO" || mth === "DOC") ko++; else if (mth === "SUB") sub++; else if (["UD", "SD", "MD", "DRAW"].includes(mth)) dec++; }
++  const n = ko + sub + dec;
++  console.log(`real: KO ${(ko / n).toFixed(3)} SUB ${(sub / n).toFixed(3)} DEC ${(dec / n).toFixed(3)} | KD/100sh by rd 3: ${[0, 1, 2].map((r) => (100 * T.kdCell(3, r)).toFixed(3)).join(" ")} 5: ${[0, 1, 2, 3, 4].map((r) => (100 * T.kdCell(5, r)).toFixed(3)).join(" ")} | KO hazard 3: ${[1, 2, 3].map((r) => TG["3_" + r].p_round_ends_ko_tko.toFixed(4)).join(" ")} 5: ${[1, 2, 3, 4, 5].map((r) => TG["5_" + r].p_round_ends_ko_tko.toFixed(4)).join(" ")}`);
++}
++{
++  const off = run({ components: { dynamics: false } });
++  if (!args.includes("--target-real")) { T.attPm = off.attPm; T.acc = off.acc; T.tdPm = off.tdPm; T.ko = off.ko; }
++  else { let ta = 0, mm = 0; for (const f of fights) { const a = f.actual; if (a && a.A && a.minutes) { ta += a.A.td_att + a.B.td_att; mm += 2 * a.minutes; } } T.tdPm = ta / mm; }
++  show("flag off", off);
++}
++const L = Object.assign({}, FP.dyn, (extra.dyn || {}));
++const names = ["outLevel", "accLevel", "tdLevel", "kdLevel3", "kdLevel5", "convLevel", "stkoScale", "gnpScale"];
++if (L.tdLevel == null) L.tdLevel = 1;
++for (let it = 0; it < ITERS; it++) {
++  const params = { components: { dynamics: true }, dyn: {} };
++  for (const k of Object.keys(extra)) if (k !== "dyn") params[k] = extra[k];
++  for (const k of Object.keys(L)) params.dyn[k] = L[k];
++  const o = run(params);
++  show(`iter ${it}`, o);
++  console.log("   levels " + JSON.stringify(Object.fromEntries(names.map((k) => [k, +L[k].toFixed(4)]))));
++  if (it === ITERS - 1) break;
++  L.outLevel *= T.attPm / o.attPm;
++  L.accLevel *= odds(T.acc) / odds(o.acc);
++  L.tdLevel *= T.tdPm / o.tdPm;
++  L.kdLevel3 *= T.kdPm3 / o.kdPm3;
++  L.kdLevel5 *= Math.pow(T.kdPm5 / o.kdPm5, 0.8);              // fewer 5-round fights: damp
++  L.convLevel *= Math.pow(odds(T.conv) / odds(o.conv), 1.2);
++  if (T.ko != null) {
++    const fk = Math.pow(T.ko / o.ko, 2.5);                   // non-KD stoppages are ~1/3 of KO/TKOs
++    L.stkoScale *= fk; L.gnpScale *= fk;
++  } else {
++    L.stkoScale *= Math.pow(T.stko / Math.max(o.stko, 1e-9), 0.8);
++    L.gnpScale *= Math.pow(T.gtko / Math.max(o.gtko, 1e-9), 0.9);
++  }
++}
++console.log("FINAL " + JSON.stringify(Object.fromEntries(names.map((k) => [k, +L[k].toFixed(4)]))));
+--- /dev/null
++++ b/tools/dynamics_check_train.py
+@@ -0,0 +1,70 @@
++#!/usr/bin/env python3
++"""dynamics_check_train.py: the round-level acceptance check of research/model_dynamics.md (section 7) on TRAIN fights.
++
++tools/dynamics.py's engine check compares engine-simulated rounds with real rounds of the same matchups on the
++2024-2025 validation period. The hidden-data protocol keeps validation for version selection, so this wrapper runs
++the very same estimators (dynamic random-effects output / accuracy decomposition, knockdown frailty Poisson, round
++targets, late-round ratios, round correlations) on 2019-2023 fights only: the panel is cut to train rows before
++anything else, and the engine CSVs come from tools/dynamics_bt.js (--csv, train fights, out-of-fold learned rates).
++
++Usage: python3 tools/dynamics_check_train.py --out check.json label1=engine1.csv [label2=engine2.csv ...]
++"""
++import argparse
++import json
++import os
++import sys
++import time
++
++HERE = os.path.dirname(os.path.abspath(__file__))
++sys.path.insert(0, HERE)
++import dynamics as dy  # noqa: E402
++
++
++def summary(res):
++    out = {}
++    d = res["dynre"]["out"]
++    out["out_engine"] = d["engine"]["var_components_null"]; out["out_real"] = d["real"]["var_components_null"]
++    out["out_curve_engine"] = d["engine"]["round_curve"]; out["out_curve_real"] = d["real"]["round_curve"]
++    a = res["dynre"]["acc"]
++    out["acc_engine"] = a["engine"]["var_components_null"]; out["acc_real"] = a["real"]["var_components_null"]
++    out["round_corr"] = res["round_correlations"]
++    k = res["kd_hazard"]
++    out["kd_frailty_engine"] = k["engine"]["null"].get("frailty_var"); out["kd_frailty_real"] = k["real"]["null"].get("frailty_var")
++    out["kd_profile_engine"] = k["engine"]["null"].get("round_profile"); out["kd_profile_real"] = k["real"]["null"].get("round_profile")
++    tg = res["targets_by_round"]
++    out["ko_by_round"] = {c: {"engine": tg["engine"].get(c, {}).get("p_round_ends_ko_tko"), "real": tg["real"].get(c, {}).get("p_round_ends_ko_tko")}
++                          for c in sorted(tg["real"])}
++    out["att_pm_by_round"] = {c: {"engine": tg["engine"].get(c, {}).get("sig_att_pm"), "real": tg["real"].get(c, {}).get("sig_att_pm")}
++                              for c in sorted(tg["real"])}
++    out["kd100_by_round"] = {c: {"engine": tg["engine"].get(c, {}).get("kd_per100_standing_head"), "real": tg["real"].get(c, {}).get("kd_per100_standing_head")}
++                             for c in sorted(tg["real"])}
++    out["late_ratio"] = res["late_ratio"]
++    out["kd_skip_round"] = res.get("kd_skip_round")
++    return out
++
++
++def main():
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--out", required=True)
++    ap.add_argument("csvs", nargs="+")
++    a = ap.parse_args()
++    t0 = time.time()
++    F, S, notes = dy.build_panel()
++    S = S[S.period == "train"].copy()           # 2019-01-01..2023-12-31 only; nothing later is kept
++    S = dy.add_covariates(S)
++    print(f"train panel: {S.fid.nunique()} fights, {len(S)} fighter-rounds ({time.time() - t0:.0f}s)", flush=True)
++    J = {"meta": {"tool": "tools/dynamics_check_train.py", "period": dy.TRAIN, "note": "dynamics.py engine_check on train fights"}}
++    for spec in a.csvs:
++        lab, csv = spec.split("=", 1)
++        print(f"engine check {lab}: {csv}", flush=True)
++        res = dy.engine_check(S, csv, lab, real_period="train")   # real rows: 2019-2023 only
++        J[lab] = {"summary": summary(res), "full": res}
++        s = J[lab]["summary"]
++        print(json.dumps({k: s[k] for k in ("out_engine", "out_real", "acc_engine", "acc_real", "round_corr", "kd_frailty_engine",
++                                            "kd_frailty_real", "kd_profile_engine", "kd_profile_real", "kd_skip_round")}, indent=None, default=float), flush=True)
++        json.dump(J, open(a.out, "w"), indent=1, default=float)
++    print(f"wrote {a.out} ({time.time() - t0:.0f}s)")
++
++
++if __name__ == "__main__":
++    main()
+--- a/tools/README.md
++++ b/tools/README.md
+@@ -292,3 +292,24 @@
+   predictions, `page_model`) and `research/model_ml2.md`. Delete `out/ml2_cache/ratings_all.pkl` after ratings.json or
+   preufc.json changes (the table stage then reruns the rating systems, about 75 seconds), and
+   `out/ml2_cache/styles_block.pkl` after backtest.json or styles.json changes.
++
++## Fight-dynamics component (params.components.dynamics): calibration, acceptance check, ablation
++
++Train-only tools for the engine's dynamics component (research/model_dynamics.md E1-E11). All three refuse fights dated
++2024-01-01 or later unless `DYN_ALLOW_VALIDATION=1` (reserved for the v5 validation measurement) and never read 2026.
++
++```
++node tools/dynamics_calibrate.js [--iters 5] [--sims 16] [--stride 2]      # re-fit the [dyncal] level factors in params3.js dyn
++node tools/dynamics_bt.js --out run.json [--sims 150] [--part k --parts n] [--cfg name='{params}' ...] [--csv eng_{cfg}.csv]
++node tools/dynamics_bt.js --merge run.json part0.json part1.json ...
++python3 tools/dynamics_ablation.py run.json [--on on --off off]           # paired event-cluster bootstrap scores + base rates
++python3 tools/dynamics_check_train.py --out check.json on=eng_on.csv       # tools/dynamics.py engine check on 2019-2023 rounds
++```
++
++Inputs are leak-free: frozen pre-fight profiles (backtest_dev.json), walk-forward priors (mlcal_priors_asof.json) and
++out-of-fold learned rates (mlrates_oof.json). Large gitignored inputs are read from the main checkout when missing.
++`dynamics_calibrate.js` targets: volume, accuracy, takedown attempts and the KO/TKO share of the flag-off engine on the same
++fights and seeds (so an ablation measures structure at equal level), knockdowns per fight-minute of the 2019-2023 actuals by
++format, and the data's knockdown conversion (0.512). `dynamics_check_train.py` runs `tools/dynamics.py`'s
++`engine_check(..., real_period="train")` (output / accuracy dynamic-RE decomposition, knockdown frailty and round profile,
++round targets, round correlations, the skip-round knockdown-momentum contrast) against real 2019-2023 rounds only.

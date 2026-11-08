@@ -1,0 +1,714 @@
+{
+ "symmetry": {
+  "lr_max_abs(X + X_swapped)": 6.661338147750939e-16,
+  "gbm_max_abs(flip - built_from_swapped)": 6.661338147750939e-16,
+  "ok": true
+ },
+ "pre_means": {
+  "pre_wpct": 1.312565788713549,
+  "pre_logn": 2.416561904255175,
+  "pre_fin": 0.5904598228750425,
+  "pre_finl": 0.084861884178617,
+  "pre_streak": 1.6497571033825864,
+  "pre_feed": 2.426695119617225,
+  "pre_grad": 0.0011403827751196186,
+  "pre_oppufc": 0.2060669647493866,
+  "pre_netelo": 0.9971712918660288,
+  "pre_dwcs": 0.22488038277511962,
+  "pre_agedeb": 22.83412153110048
+ },
+ "base": {
+  "lam": 0.05,
+  "cv": 0.64569,
+  "blocks": [
+   0.64128,
+   0.64651,
+   0.65027,
+   0.64459
+  ],
+  "grid": {
+   "0.02": 0.64667,
+   "0.05": 0.64569,
+   "0.1": 0.64579,
+   "0.2": 0.64704
+  }
+ },
+ "forward": {
+  "path": [
+   {
+    "step": 1,
+    "add": "rat",
+    "tau": 8.0,
+    "cv": 0.63981,
+    "lam": 0.05
+   },
+   {
+    "step": 1,
+    "add": "mr",
+    "tau": 8.0,
+    "cv": 0.63917,
+    "lam": 0.05
+   },
+   {
+    "step": 1,
+    "add": "pre",
+    "tau": 2.0,
+    "cv": 0.64296,
+    "lam": 0.05
+   },
+   {
+    "step": 1,
+    "add": "pre",
+    "tau": 4.0,
+    "cv": 0.64281,
+    "lam": 0.1
+   },
+   {
+    "step": 1,
+    "add": "pre",
+    "tau": 8.0,
+    "cv": 0.64261,
+    "lam": 0.1
+   },
+   {
+    "step": 1,
+    "add": "pre",
+    "tau": 16.0,
+    "cv": 0.64251,
+    "lam": 0.1
+   },
+   {
+    "step": 1,
+    "add": "pre",
+    "tau": null,
+    "cv": 0.64262,
+    "lam": 0.1
+   },
+   {
+    "step": 1,
+    "add": "fw",
+    "tau": 8.0,
+    "cv": 0.64485,
+    "lam": 0.05
+   },
+   {
+    "step": 1,
+    "add": "exp",
+    "tau": 8.0,
+    "cv": 0.64557,
+    "lam": 0.05
+   },
+   {
+    "step": 2,
+    "add": "rat",
+    "tau": 8.0,
+    "cv": 0.63516,
+    "lam": 0.05
+   },
+   {
+    "step": 2,
+    "add": "pre",
+    "tau": 2.0,
+    "cv": 0.63715,
+    "lam": 0.05
+   },
+   {
+    "step": 2,
+    "add": "pre",
+    "tau": 4.0,
+    "cv": 0.63733,
+    "lam": 0.05
+   },
+   {
+    "step": 2,
+    "add": "pre",
+    "tau": 8.0,
+    "cv": 0.63736,
+    "lam": 0.05
+   },
+   {
+    "step": 2,
+    "add": "pre",
+    "tau": 16.0,
+    "cv": 0.63738,
+    "lam": 0.1
+   },
+   {
+    "step": 2,
+    "add": "pre",
+    "tau": null,
+    "cv": 0.63751,
+    "lam": 0.1
+   },
+   {
+    "step": 2,
+    "add": "fw",
+    "tau": 8.0,
+    "cv": 0.63877,
+    "lam": 0.05
+   },
+   {
+    "step": 2,
+    "add": "exp",
+    "tau": 8.0,
+    "cv": 0.63905,
+    "lam": 0.05
+   },
+   {
+    "step": 2,
+    "add": "gate",
+    "tau": 8.0,
+    "cv": 0.63808,
+    "lam": 0.05
+   },
+   {
+    "step": 3,
+    "add": "pre",
+    "tau": 2.0,
+    "cv": 0.63479,
+    "lam": 0.05
+   },
+   {
+    "step": 3,
+    "add": "pre",
+    "tau": 4.0,
+    "cv": 0.63521,
+    "lam": 0.1
+   },
+   {
+    "step": 3,
+    "add": "pre",
+    "tau": 8.0,
+    "cv": 0.63531,
+    "lam": 0.1
+   },
+   {
+    "step": 3,
+    "add": "pre",
+    "tau": 16.0,
+    "cv": 0.6353,
+    "lam": 0.1
+   },
+   {
+    "step": 3,
+    "add": "pre",
+    "tau": null,
+    "cv": 0.63535,
+    "lam": 0.1
+   },
+   {
+    "step": 3,
+    "add": "fw",
+    "tau": 8.0,
+    "cv": 0.63493,
+    "lam": 0.05
+   },
+   {
+    "step": 3,
+    "add": "exp",
+    "tau": 8.0,
+    "cv": 0.63509,
+    "lam": 0.05
+   },
+   {
+    "step": 3,
+    "add": "gate",
+    "tau": 8.0,
+    "cv": 0.63507,
+    "lam": 0.05
+   }
+  ],
+  "chosen": [
+   "mr",
+   "rat"
+  ],
+  "tau": 8.0,
+  "cv": 0.63516,
+  "lam": 0.05
+ },
+ "rating_sets": {
+  "whr_rounds only": 0.63564,
+  "whr_rounds+glicko2": 0.63523,
+  "four": 0.63516,
+  "all seven": 0.63468
+ },
+ "rat_sys": [
+  "whr_rounds",
+  "glicko2",
+  "elo_full",
+  "trueskill_mov"
+ ],
+ "backward": {
+  "path": [
+   {
+    "drop": "Elo",
+    "cv": 0.63559
+   },
+   {
+    "drop": "KD power/chin",
+    "cv": 0.63502
+   },
+   {
+    "drop": "accuracy/defence",
+    "cv": 0.63577
+   },
+   {
+    "drop": "age",
+    "cv": 0.6357
+   },
+   {
+    "drop": "experience",
+    "cv": 0.63583
+   },
+   {
+    "drop": "grappling",
+    "cv": 0.6373
+   },
+   {
+    "drop": "layoff/weight move",
+    "cv": 0.63475
+   },
+   {
+    "drop": "margin Elo",
+    "cv": 0.63603
+   },
+   {
+    "drop": "matchup shares",
+    "cv": 0.63476
+   },
+   {
+    "drop": "opponent quality",
+    "cv": 0.63413
+   },
+   {
+    "drop": "recent form",
+    "cv": 0.63573
+   },
+   {
+    "drop": "record/finishes",
+    "cv": 0.63514
+   },
+   {
+    "drop": "size/reach",
+    "cv": 0.6362
+   },
+   {
+    "drop": "stance",
+    "cv": 0.63526
+   },
+   {
+    "drop": "Elo",
+    "cv": 0.63446
+   },
+   {
+    "drop": "KD power/chin",
+    "cv": 0.63403
+   },
+   {
+    "drop": "accuracy/defence",
+    "cv": 0.63474
+   },
+   {
+    "drop": "age",
+    "cv": 0.63467
+   },
+   {
+    "drop": "experience",
+    "cv": 0.63467
+   },
+   {
+    "drop": "grappling",
+    "cv": 0.63628
+   },
+   {
+    "drop": "layoff/weight move",
+    "cv": 0.63368
+   },
+   {
+    "drop": "margin Elo",
+    "cv": 0.63503
+   },
+   {
+    "drop": "matchup shares",
+    "cv": 0.63381
+   },
+   {
+    "drop": "recent form",
+    "cv": 0.63451
+   },
+   {
+    "drop": "record/finishes",
+    "cv": 0.63418
+   },
+   {
+    "drop": "size/reach",
+    "cv": 0.63514
+   },
+   {
+    "drop": "stance",
+    "cv": 0.63416
+   }
+  ],
+  "dropped": [
+   "opponent quality"
+  ]
+ },
+ "train_variants": {
+  "all": 0.63413,
+  "both_exp": 0.63511,
+  "recency 8y": 0.63454,
+  "recency 4y": 0.63531,
+  "since 2013": 0.63834
+ },
+ "lr": {
+  "cols": [
+   "kd15",
+   "okd15",
+   "td15",
+   "tda15",
+   "otd15",
+   "otda15",
+   "ctrl",
+   "octrl",
+   "sub15",
+   "osub15",
+   "rev15",
+   "power",
+   "chin",
+   "acc",
+   "def",
+   "acc_head",
+   "def_head",
+   "acc_leg",
+   "acc_dist",
+   "def_dist",
+   "td_acc",
+   "td_def",
+   "td_diff",
+   "ctrl_diff",
+   "form_ctrl_diff",
+   "win_pct",
+   "win_dec",
+   "win_form",
+   "last3_win",
+   "last3_fin_l",
+   "last1_win",
+   "last1_ko_l",
+   "streak",
+   "ko_w_rate",
+   "sub_w_rate",
+   "dec_w_rate",
+   "ko_l_rate",
+   "sub_l_rate",
+   "dec_l_rate",
+   "finish_w_share",
+   "finished_share",
+   "ko_losses",
+   "kd_absorbed_c",
+   "sig_absorbed_c",
+   "log_n",
+   "log_mins_c",
+   "min_per_fight",
+   "n5",
+   "ntitle",
+   "ko_l_dec",
+   "years_ufc",
+   "wc_move",
+   "new_class",
+   "debut",
+   "elo",
+   "elo_sig",
+   "elo_judge",
+   "elo_chg3",
+   "age",
+   "height",
+   "reach",
+   "ape",
+   "age_debut",
+   "log_layoff",
+   "age30",
+   "age34",
+   "lay_long",
+   "sh_slpm",
+   "sh_head_pm",
+   "sh_kd15",
+   "sh_td15",
+   "sh_ctrl",
+   "sh_sub15",
+   "sh_ground_pm",
+   "st_south_vs_orth",
+   "st_switch",
+   "z_whr_rounds",
+   "z_glicko2",
+   "z_elo_full",
+   "z_trueskill_mov",
+   "z_mr"
+  ],
+  "blocks": [
+   "mr",
+   "rat"
+  ],
+  "tau": 8.0,
+  "rat_sys": [
+   "whr_rounds",
+   "glicko2",
+   "elo_full",
+   "trueskill_mov"
+  ],
+  "drop_groups": [
+   "opponent quality"
+  ],
+  "lam": 0.05,
+  "cv": 0.63413,
+  "cv_blocks": [
+   0.63291,
+   0.63608,
+   0.63814,
+   0.62965
+  ],
+  "grid": {
+   "0.01": 0.63632,
+   "0.02": 0.63501,
+   "0.03": 0.63447,
+   "0.05": 0.63413,
+   "0.07": 0.63418,
+   "0.1": 0.63453,
+   "0.15": 0.63536,
+   "0.2": 0.63627,
+   "0.3": 0.63801
+  },
+  "train_set": "all",
+  "rec": null,
+  "since": null
+ },
+ "lr_ablation_drop_one": {
+  "mr": 0.00487,
+  "rat": 0.00418
+ },
+ "trees": {
+  "search": [
+   {
+    "kind": "lgb",
+    "cfg": {
+     "num_leaves": 7,
+     "min_data_in_leaf": 160,
+     "feature_fraction": 0.6,
+     "bagging_fraction": 0.7,
+     "lambda_l2": 60.0
+    },
+    "mono": false,
+    "seed": 1,
+    "rounds": 275,
+    "cv": 0.63525,
+    "curve": {
+     "100": 0.63984,
+     "200": 0.63562,
+     "300": 0.63534,
+     "400": 0.63594,
+     "500": 0.63619,
+     "600": 0.63672,
+     "700": 0.63739,
+     "800": 0.63867
+    }
+   },
+   {
+    "kind": "lgb",
+    "cfg": {
+     "num_leaves": 5,
+     "min_data_in_leaf": 200,
+     "feature_fraction": 0.4,
+     "bagging_fraction": 0.8,
+     "lambda_l2": 30.0
+    },
+    "mono": false,
+    "seed": 1,
+    "rounds": 350,
+    "cv": 0.63338,
+    "curve": {
+     "100": 0.63973,
+     "200": 0.63502,
+     "300": 0.63367,
+     "400": 0.63348,
+     "500": 0.63404,
+     "600": 0.63497,
+     "700": 0.63542,
+     "800": 0.63648
+    }
+   },
+   {
+    "kind": "lgb",
+    "cfg": {
+     "num_leaves": 11,
+     "min_data_in_leaf": 240,
+     "feature_fraction": 0.5,
+     "bagging_fraction": 0.7,
+     "lambda_l2": 100.0
+    },
+    "mono": false,
+    "seed": 1,
+    "rounds": 350,
+    "cv": 0.6357,
+    "curve": {
+     "100": 0.64127,
+     "200": 0.63658,
+     "300": 0.63595,
+     "400": 0.63607,
+     "500": 0.63657,
+     "600": 0.63756,
+     "700": 0.63873,
+     "800": 0.63949
+    }
+   },
+   {
+    "kind": "lgb",
+    "cfg": {
+     "num_leaves": 4,
+     "min_data_in_leaf": 120,
+     "feature_fraction": 0.3,
+     "bagging_fraction": 0.8,
+     "lambda_l2": 10.0
+    },
+    "mono": false,
+    "seed": 1,
+    "rounds": 425,
+    "cv": 0.63376,
+    "curve": {
+     "100": 0.64041,
+     "200": 0.63574,
+     "300": 0.63427,
+     "400": 0.63386,
+     "500": 0.63382,
+     "600": 0.63458,
+     "700": 0.63504,
+     "800": 0.6355
+    }
+   },
+   {
+    "kind": "lgb",
+    "cfg": {
+     "num_leaves": 7,
+     "min_data_in_leaf": 320,
+     "feature_fraction": 0.3,
+     "bagging_fraction": 0.85,
+     "lambda_l2": 30.0
+    },
+    "mono": false,
+    "seed": 1,
+    "rounds": 300,
+    "cv": 0.63487,
+    "curve": {
+     "100": 0.63921,
+     "200": 0.63537,
+     "300": 0.63487,
+     "400": 0.63528,
+     "500": 0.63632,
+     "600": 0.63711,
+     "700": 0.63796,
+     "800": 0.63934
+    }
+   },
+   {
+    "kind": "xgb",
+    "cfg": {
+     "max_depth": 4,
+     "min_child_weight": 60,
+     "subsample": 0.9,
+     "colsample_bytree": 0.4,
+     "lambda": 50.0
+    },
+    "mono": false,
+    "seed": 1,
+    "rounds": 300,
+    "cv": 0.63386,
+    "curve": {
+     "100": 0.63846,
+     "200": 0.63442,
+     "300": 0.63386,
+     "400": 0.63415,
+     "500": 0.63479,
+     "600": 0.63642,
+     "700": 0.63734,
+     "800": 0.6385
+    }
+   },
+   {
+    "kind": "xgb",
+    "cfg": {
+     "max_depth": 3,
+     "min_child_weight": 40,
+     "subsample": 0.8,
+     "colsample_bytree": 0.3,
+     "lambda": 20.0
+    },
+    "mono": false,
+    "seed": 1,
+    "rounds": 375,
+    "cv": 0.63385,
+    "curve": {
+     "100": 0.63812,
+     "200": 0.63492,
+     "300": 0.63428,
+     "400": 0.63397,
+     "500": 0.63475,
+     "600": 0.63593,
+     "700": 0.63702,
+     "800": 0.63824
+    }
+   },
+   {
+    "kind": "xgb",
+    "cfg": {
+     "max_depth": 2,
+     "min_child_weight": 30,
+     "subsample": 0.8,
+     "colsample_bytree": 0.5,
+     "lambda": 10.0
+    },
+    "mono": false,
+    "seed": 1,
+    "rounds": 475,
+    "cv": 0.6331,
+    "curve": {
+     "100": 0.64028,
+     "200": 0.63618,
+     "300": 0.6348,
+     "400": 0.63352,
+     "500": 0.63331,
+     "600": 0.63362,
+     "700": 0.6341,
+     "800": 0.6344
+    }
+   }
+  ],
+  "lgb": {
+   "cfg": {
+    "num_leaves": 5,
+    "min_data_in_leaf": 200,
+    "feature_fraction": 0.4,
+    "bagging_fraction": 0.8,
+    "lambda_l2": 30.0
+   },
+   "mono": false,
+   "rounds": 350,
+   "cv": 0.63338,
+   "cv_no_mono": 0.63338,
+   "cv_mono": 0.63398,
+   "cv_seed2": 0.63401
+  },
+  "xgb": {
+   "cfg": {
+    "max_depth": 2,
+    "min_child_weight": 30,
+    "subsample": 0.8,
+    "colsample_bytree": 0.5,
+    "lambda": 10.0
+   },
+   "mono": false,
+   "rounds": 475,
+   "cv": 0.6331,
+   "cv_no_mono": 0.6331,
+   "cv_mono": 0.63394,
+   "cv_seed2": 0.63411
+  }
+ }
+}

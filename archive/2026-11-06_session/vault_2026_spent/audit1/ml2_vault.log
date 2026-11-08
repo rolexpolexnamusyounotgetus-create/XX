@@ -1,0 +1,81 @@
+  parsed 8974 fights, 2776 people, priors for 19 years (1.4s)
+  walk-forward table: 6296 fights 2008-01-19..2026-10-31 (1.7s)
+table (7709, 306), max date 2026-10-31 (3 s); market-rating check {'n': 3228, 'max_abs_diff': 9.385131879724451e-05, 'share_gt_1e-3': 0.0}
+pre-2026 design rows vs frozen table: max |diff| 0.172 over 7229 / 7229 rows
+production coefficients reproduced by a refit on pre-2026 rows: max |diff| 8.88e-16
+ML v2 static vs ml2.json 2024-25 ml2_lr: n 854 max |diff| 5.00e-05
+  lgb seed 1 done (5 s)
+  lgb seed 2 done (6 s)
+  lgb seed 3 done (7 s)
+  lgb seed 4 done (8 s)
+  lgb seed 5 done (9 s)
+lgb static retrain vs fit.pkl on 2024-25: n 1037 max |diff| 0.00e+00
+  xgb seed 1 done (10 s)
+  xgb seed 2 done (11 s)
+  xgb seed 3 done (12 s)
+xgb static retrain vs fit.pkl on 2024-25: n 1037 max |diff| 0.00e+00
+S (fit<2024) vs methodround.json S: 2024-25 n 865 max 1.98e-04; vault n 373 max 1.90e-04
+{
+ "market_rating_vs_market_json": {
+  "n": 3228,
+  "max_abs_diff": 9.385131879724451e-05,
+  "share_gt_1e-3": 0.0
+ },
+ "pre2026_design_max_abs_diff_vs_frozen_table": 0.17175548277995956,
+ "pre2026_rows_matched": [
+  7229,
+  7229
+ ],
+ "pre2026_design_cols_differing": {
+  "z_whr_rounds": [
+   0.12122061414059702,
+   5426
+  ],
+  "z_glicko2": [
+   0.17175548277995956,
+   4986
+  ],
+  "z_elo_full": [
+   0.09331393002774802,
+   4986
+  ],
+  "z_trueskill_mov": [
+   0.14258588027389618,
+   7041
+  ]
+ },
+ "prod_coef_refit_vs_ml2json_page_model_max_abs": 8.881784197001252e-16,
+ "static_vs_ml2json_valid_max_abs": [
+  854,
+  4.9987179365995615e-05
+ ],
+ "lgb_static_retrain_vs_fitpkl_2024_25_max_abs": [
+  1037,
+  0.0
+ ],
+ "xgb_static_retrain_vs_fitpkl_2024_25_max_abs": [
+  1037,
+  0.0
+ ],
+ "blend_static_vs_fitpkl_2024_25_max_abs": [
+  1037,
+  2.220446049250313e-16
+ ],
+ "S_refit_vs_methodround_json_S_2024_25_max_abs": [
+  865,
+  0.0001981095254187156
+ ],
+ "S_refit_vs_methodround_json_S_vault_max_abs": [
+  373,
+  0.00019002212962527729
+ ],
+ "vault_mr_vs_market_vault_max_abs": [
+  373,
+  9.40000000000385e-05
+ ],
+ "vault_whr_rounds_vs_ratings_vault_max_abs": [
+  373,
+  0.022212803477555554
+ ]
+}
+wrote /tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault/audit1/ml2_vault.json: 373 vault fights (14 s)

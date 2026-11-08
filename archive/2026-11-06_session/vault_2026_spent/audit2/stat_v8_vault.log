@@ -1,0 +1,4 @@
+stat_vault: tools/v10_stat_gate.js sha256 e04f8f60f7aacb70, 10 substitutions -> /tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault/audit2/gen/v10_stat_gate_vault_gen.js
+v10_stat_gate: 373 vault fights x 2 orders x 300 sims, arms cmp4, all, 3 workers, seed 10
+  200/373 fights, 9 s
+wrote ../../../tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault/audit2/stat_v8_vault.json (373 fights, 0 failed, 15 s); engine/params 8.0.0 | 8.0.0-selfcal-pre2024

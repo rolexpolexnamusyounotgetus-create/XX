@@ -1,0 +1,33 @@
+  parsed 8974 fights, 2776 people, priors for 19 years (1.4s)
+  walk-forward table: 6296 fights 2008-01-19..2026-10-31 (1.8s)
+tables: ML v2 (7709, 306) (max 2026-10-31), methodround (6296, 86) (max 2026-10-31) (2 s)
+lgb production refit: vs ml2_trees.json vectors max |diff| 1.39e-16 (10 s)
+xgb production refit: vs ml2_trees.json vectors max |diff| 6.23e-08 (15 s)
+{
+ "tree_train_rows": 7093,
+ "ml2_trees_n_train": 7093,
+ "vector_design_max_abs_g0": 6.661338147750939e-16,
+ "vector_design_max_abs_g1": 6.661338147750939e-16,
+ "lgb_vs_ml2_trees_vectors_max_abs": 1.3877787807814457e-16,
+ "xgb_vs_ml2_trees_vectors_max_abs": 6.230169635745852e-08,
+ "blend_w_vs_fitpkl_max_abs": 0.0,
+ "s2_refit_vs_js_model_c6_coef_max_abs": 1.249000902703301e-16,
+ "s2_refit_vs_js_model_c6_cols_equal": true,
+ "s2_refit_vs_js_model_hazard_coef_max_abs": 0.0,
+ "draw_c_methodround_vs_js_model": [
+  0.01457,
+  0.013798977853492335,
+  0.013798977853492335
+ ],
+ "S_fit2025_vs_methodround_json_S_refit_vault_max_abs": [
+  373,
+  0.0006499808588057744
+ ],
+ "s2_js_vs_js_model_vectors_max_abs": 3.3306690738754696e-16,
+ "s2_js_cells_vs_python_refit_vault_max_abs": [
+  373,
+  0.0006621499379895358
+ ],
+ "ml2_lr_prod_vs_audit1_max_abs": 4.966440871334576e-07
+}
+wrote /tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault/audit2/ml2s2_vault.json: 373 vault fights, 0 missing (18 s)

@@ -1,0 +1,21 @@
+evalv_vault: tools/evalv.js sha256 f4a78c13d689dba5, 17 substitutions -> /tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault/audit1/recompute/vroot/audit1/gen/evalv_vault_gen.js
+evalv v4 (engine 4.0.0, params 4.0.0-selfcal-pre2024) on vault: 373 fights x 2 orders x 300 sims, 3 workers, ML on (out-of-fold), DEV run (no history)
+  engine / params (all workers): 4.0.0 | 4.0.0-selfcal-pre2024
+
+v4 vault: 373 fights (369 decisive, 372 with an outcome), ML applied 100.0% of matchups
+  winLL        0.6429 [0.6175, 0.6687]
+  brier        0.2259 [0.2137, 0.2383]
+  acc          0.6396 [0.5938, 0.6852]
+  ece          0.0420 [0.0187, 0.0969]
+  calSlope     1.2183 [0.8419, 1.6539]
+  bin7         1.6292 [1.5415, 1.7296]
+  method       0.9781 [0.9201, 1.0355]
+  dev_sig_lnd  24.335 [21.426, 27.608]
+  dev_sig_att  47.935 [42.453, 53.780]
+  dev_td_lnd   1.865 [1.668, 2.088]
+  dev_ctrl     147.371 [134.928, 160.379]
+  dev_kd       0.739 [0.666, 0.815]
+  base rates (sim vs actual): finish 48.3 vs 55.6, KO 31.0 vs 38.4, SUB 17.3 vs 17.2, KD/100 head 0.783 vs 0.972, UD 78.9 vs 85.8, SD 20.7 vs 11.7, 10-8 2.99 vs 3.61
+  finish by round 3-rd sim 24.8/14.4/9.0 vs 31.2/15.5/8.2; 5-rd sim 12.6/12.2/10.0/9.1/5.2 vs 14.3/21.4/14.3/2.4/9.5
+  methodround: joint 2.2304 (S 2.1598, d +0.0706 [0.0221, 0.1141]); method3 0.9781 (S 0.9629, d +0.0152 [-0.0135, 0.0416]); finish 0.6657 (S 0.6623, d +0.0033 [-0.0200, 0.0259]); bin7 1.6292 (S 1.5882, d +0.0409 [-0.0039, 0.0847]); method_round 1.5659 (S 1.5344, d +0.0315 [0.0020, 0.0592]); round_given_fin 1.0594 (S 1.0272, d +0.0322 [0.0068, 0.0554]); ko_vs_sub 0.5615 (S 0.5402, d +0.0213 [-0.0006, 0.0436]); method_given_winner 0.9458 (S 0.9204, d +0.0254 [-0.0074, 0.0569]); winner 0.6429 (S 0.6356, d +0.0073 [-0.0065, 0.0213]); winner_brier 0.2259 (S 0.2225, d +0.0034 [-0.0031, 0.0101]); winner_acc 0.6382 (S 0.6463, d -0.0081 [-0.0413, 0.0268]); method3_brier 0.5943 (S 0.5823, d +0.0120 [-0.0080, 0.0308])
+wrote ../../../tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault/audit1/recompute/vroot/audit1/evalv/v4_vault.json (6 s wall)

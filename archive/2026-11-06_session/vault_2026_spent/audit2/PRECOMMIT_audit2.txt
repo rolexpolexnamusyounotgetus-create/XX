@@ -1,0 +1,9 @@
+VAULT AUDIT 2 precommit, written 2026-11-07T12:43:29Z before any audit-2 vault-derived number exists.
+Case: if_v4_stays (version_history.json vault_audits[1].case_that_applies; v10 entry not kept; no ratification by Kira recorded in docs/ before this time).
+Consequence: NO confirmatory primary. Pre-registered headline (descriptive): open-regime winner log loss of
+  (a) cmp4 (the v4 package: versions/v7 engine = v4 simulator, MoE expert stack by lineKind fit through 2025-12-31, methodround S/SM refit through 2025, pool w refit 2019-2025)
+  (b) the shipped forward-model package (fwd-4.4 = fwd-4.3 models: p_a with a line = ml2_stack_open, weights forward_models.json ml2_static (fit 2019-2023), ML v2 logistic production page_model (fit 2010-2025), line = multiplicative no-vig opener market_vault p_novig_open)
+  each vs the opener (p_novig_open), paired, decisive vault fights with an opener; 20,000 event-cluster resamples, seed 7, MC SE, normal bound.
+Side lines paired vs cmp4 (descriptive): v10 package (versions/v10-rejected), v7 package (props on/off; = v10's ml2stack winner + S2 + v4-simulator cells), v6 package (versions/v6-rejected), v8 engine vs v4 engine (summarize).
+Failure criteria reported without decision: (i) open winner CI upper > +0.002 (cmp4 - opener; each side line - cmp4); (ii) any stat-line deviance worse with CI excluding 0 (v10 / v8 engines vs v4, 10-stat harness and evalv's 5); (iii) mirrored calibration slope outside [0.8, 1.6].
+Flag: nothing in v10 was chosen because of audit 1; glove flag does not apply (v10 not kept).

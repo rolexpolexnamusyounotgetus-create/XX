@@ -1,0 +1,24 @@
+evalv_vault2 (dev2425): tools/evalv.js sha256 568682718bf9fef1, 6 substitutions -> /tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault/audit2/gen/evalv_dev2425_gen.js
+evalv v7cmp (engine 7.0.0, params 7.0.0-selfcal-pre2024) on val: 865 fights x 2 orders x 300 sims, 3 workers, ML on (out-of-fold), DEV run (no history)
+  400/865 fights, 5 s
+  800/865 fights, 9 s
+  engine / params (all workers): 7.0.0 | 7.0.0-selfcal-pre2024
+
+v7cmp val: 865 fights (853 decisive, 857 with an outcome), ML applied 100.0% of matchups
+  winLL        0.6324 [0.6165, 0.6474]
+  brier        0.2206 [0.2130, 0.2277]
+  acc          0.6571 [0.6224, 0.6924]
+  ece          0.0630 [0.0375, 0.0970]
+  calSlope     1.7173 [1.3925, 2.0936]
+  bin7         1.5712 [1.5277, 1.6201]
+  method       0.9399 [0.9103, 0.9702]
+  dev_sig_lnd  21.866 [20.272, 23.521]
+  dev_sig_att  43.422 [40.075, 46.940]
+  dev_td_lnd   1.806 [1.682, 1.949]
+  dev_ctrl     154.122 [144.187, 164.463]
+  dev_kd       0.652 [0.612, 0.697]
+  base rates (sim vs actual): finish 48.5 vs 46.0, KO 30.6 vs 29.1, SUB 17.9 vs 16.9, KD/100 head 0.746 vs 0.684, UD 79.4 vs 81.5, SD 20.1 vs 18.1, 10-8 3.38 vs 2.46
+  finish by round 3-rd sim 24.7/14.4/9.0 vs 23.7/13.7/7.8; 5-rd sim 14.5/12.4/10.1/9.2/5.4 vs 15.2/16.2/9.5/7.6/2.9
+  PIT coverage (in80 / >P90 / <P10): sig_lnd 0.856/0.050/0.095, sig_att 0.843/0.069/0.087, h_lnd 0.815/0.070/0.115, b_lnd 0.795/0.076/0.129, l_lnd 0.780/0.101/0.118, kd 0.817/0.083/0.100, td_lnd 0.716/0.148/0.136, td_att 0.668/0.174/0.158, ctrl 0.769/0.119/0.112, sub_att 0.802/0.098/0.100
+  methodround: joint 2.0707 (S 2.0418, d +0.0289 [0.0015, 0.0575]); method3 0.9399 (S 0.9360, d +0.0040 [-0.0091, 0.0167]); finish 0.6617 (S 0.6593, d +0.0024 [-0.0089, 0.0134]); bin7 1.5712 (S 1.5538, d +0.0174 [-0.0025, 0.0412]); method_round 1.4327 (S 1.4240, d +0.0087 [-0.0092, 0.0253]); round_given_fin 1.0625 (S 1.0601, d +0.0023 [-0.0172, 0.0205]); ko_vs_sub 0.6052 (S 0.6017, d +0.0035 [-0.0126, 0.0204]); method_given_winner 0.9107 (S 0.9073, d +0.0034 [-0.0109, 0.0181]); winner 0.6324 (S 0.6213, d +0.0111 [0.0024, 0.0198]); winner_brier 0.2206 (S 0.2154, d +0.0052 [0.0010, 0.0093]); winner_acc 0.6559 (S 0.6753, d -0.0193 [-0.0469, 0.0080]); method3_brier 0.5637 (S 0.5610, d +0.0027 [-0.0065, 0.0118])
+wrote ../../../tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault/audit2/evalv/v7cmp_val.json (12 s wall)

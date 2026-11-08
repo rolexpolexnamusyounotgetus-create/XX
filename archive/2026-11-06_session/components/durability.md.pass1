@@ -1,0 +1,582 @@
+# Component: durability (engine v5), `params.components.durability`
+
+Nov 6, 2026.
+
+- **Built:** worktree `/home/user/XX/.claude/worktrees/wf_0113c02d-461-1`, branch `comp/durability`.
+- **Verified independently:** worktree `/home/user/XX/.claude/worktrees/wf_0113c02d-461-3`, branch
+  `verify/durability`.
+- Nothing was pushed, and the main checkout was not edited.
+
+## Verifier's verdict: include in v5 (include = true)
+
+**Include it, flag on, `engineWeight` 0.5, absolute level, with `kdCal` 1.1640 (re-matched to the frozen v4).**
+
+Condition for the v5 measurement: `tools/evalv.js` must pass the walk-forward durability records. It does not do
+that today. `durability_evalv_v4main.patch` does it; it is also folded into `durability_v4main.patch`. Without it:
+
+- the validation run would go through a different code path from the one ablated on train;
+- that path uses coefficients fit through Oct 2026, which include 2024-2025 and the vault.
+
+### Why include
+
+- **Flag off is the engine before the change, bit for bit.** This holds in all three contexts:
+  - the builder's base (in-flight v4 sync `275b339`);
+  - frozen `versions/v4`;
+  - the main checkout as of 16:37 UTC (in-flight v4.0.1).
+- **Fresh-seed results on v4 final, with my own harness and scorer (2019-2023, 1,999 fights), all paired event-cluster
+  bootstrap 95% CIs:**
+
+  | Metric | on - off [95% CI] | Significant |
+  |---|---|---|
+  | Soft-label CE vs closing line | -0.0008 [-0.0015, -0.0001] | yes |
+  | 7-bin log loss | -0.0072 [-0.0129, -0.0014] | yes |
+  | Method log loss | -0.0040 [-0.0078, -0.0001] | yes |
+  | Sig-landed deviance | -0.133 [-0.259, -0.010] | yes |
+  | Head-landed deviance | -0.085 [-0.175, -0.003] | yes |
+  | Winner log loss | -0.0012 [-0.0035, +0.0010] | no |
+
+- Base rates stay put, now that `kdCal` is level-matched.
+- KD calibration by defender age band gets flatter: the O/E spread goes from 0.84-1.04 to 0.87-1.02. That is the
+  ROADMAP's v5 check.
+- **The gain is about how and when fights end, not who wins.** That is the simulator's job in the current
+  architecture (BACKLOG: the blend decides the winner).
+- **Caveat:** the gains are small. `engineWeight` and `kdCal` were set on these same train years, so treat the train
+  numbers as slightly optimistic. The single 2024-2025 measurement decides.
+
+### What I checked
+
+All checks ran on 2019-2023 or on code only. Nothing was evaluated on 2024+, and no 2026 fight was read. For 2024-2025
+I read only fight ids, dates and the records' `fit_through`, to check record coverage.
+
+| Check | Result |
+|---|---|
+| Base commit `853ce32` | Its engine does not load (`ReferenceError: matchup is not defined`), as the builder said. The effective pre-change engine is the v4 sync `275b339`. The builder's component commit `bc8e562` has exactly the tree I got by applying the patch to `853ce32` (`git diff bc8e562 9d4943e` is empty). |
+| Flag off = engine before the change | **0 differences.** Own checker (`/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vdur/check_off.js`): random cases x 2 ways of turning the flag off (`opts.params` and the global params object), comparing matchup tables (every field), 2 traced fights per case and Monte Carlo summaries as exact JSON. The cases mix roster pairs, plain tables, the learned-rate model, OOF backtest snapshots with as-of priors, knobs, 3 and 5 rounds and all divisions. 600 comparisons against `275b339`, 600 against `versions/v4` + component, and 300 against main (16:37) + `durability_v4main.patch`. The flag on changed 40 of 40 sampled tables each time. |
+| Equations and values vs research/model_durability.md sections 3 and 9, and `durability.json` `engine` | **All match.** Terms: const 0.07774; the division terms; five -0.11143; title -0.09636; defender age 0.06177 / hinge -0.0016; age unknown 0.79895; prior KDs -0.14251 / -0.08; KO losses 0.18908 / 0.0749; attacker age -0.00445 / -0.03589. Values: level 0.010274 (365-day scenario 0.011706), alphas 3 / 2.5, NORM live 0.9972 x 0.9752 and backtest 0.9882 x 1.0183. Volkanovski-Gaethje by hand from cov x re: 0.010274 x exp(0.07774 - 0.11143) x C x P gives 0.588 / 1.044 per 100 (research 0.588 / 1.044). Exponents 1, size 0 and the withdrawn terms neutral all follow the revised research (V4, V6). The knobs enter with total exponent 1: they are in both the durability term and `engRel`. |
+| Leakage, train ablation path | **Clean.** 1,999 of 1,999 train fights have a record with `fit_through` = Y-1 and OOF `cv<year>` rates. Priors are `mlcal_priors_asof[year]` and NORM is the backtest value. The record base, p / (C x P), agrees between the two directions to 7e-4 in log. The live `terms`, `level` and roster are never used on this path. `build_db.py`'s new recency fields use strictly earlier fights. `dur` goes only into live profiles, not into backtest sides. The train labels in `market.json` are identical in the worktree and main copies (the worktree copy also still holds 2026 rows, which no scorer reads). |
+| Leakage, other paths | **Two found.** (1) **`tools/evalv.js` passes no `opts.dur`.** The v5 validation run would use the computed fallback: live-fit terms (2008..2026-10) and the Oct 2026 level for every fight. All 865 validation fights have strict records (`fit_through` 2023-12-31). Wired in `durability_evalv_v4main.patch`. (2) **The live roster via `loadDurability`** would hand any backtest tool fighter effects fit on the fight's own outcome. Fixed in the engine with a date guard (below). |
+| Corner symmetry | Swapping corners swaps kd, gnp, stko and dw exactly, to 8.9e-16 in log, over 1,400 fuzz matchups. All my scoring is symmetric (both orders, no intercepts). |
+| NaN / infinite loops | Fuzz (`/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vdur/fuzz.js`): 500 random roster pairs x {3, 5 rounds} over 14 divisions (incl. Catch and Open Weight). Inputs vary at random: learned-rate model on/off, roster on/off, knobs 0.2-3.2, damaged profiles (no age, 40 KO losses, no stats, recency counts above career), zero or partial `opts.dur`, and random `params.durability` overrides (relative mode, exponents, size, caution5, withdrawn terms). Result: **no non-finite value, no throw, no stuck fight.** Slowest fight 416 ms on the loaded machine; 2,000 traced fights and 200 director scripts per run, on both contexts. Clean live pairs: kd on/off median x1.23 (p05 0.79, p95 1.92); the highest hazard was 0.078 per strike for heavy-hitter vs fragile-chin pairs. |
+| Trace / director | `simulate()` is untouched and the trace keys are unchanged. `tests/test_director3.js` passes with the flag on, on the worktree and on v4 final + component (`ENGINE_DIR`). |
+| Tests (worktree, final) | `test_durability.js` 34/34 (31 + 3 new). `test_engine3.js` 42/42. `test_director3.js` OK. `test_mlrates.js` 47/47. |
+| Speed (CPU time; load average ~45 on 4 cores) | `summarize` of 20,000 five-round fights (Volkanovski-Gaethje, learned rates, roster): v4 final 2.75 / 2.78 s; component flag off 2.83 / 2.92 s; flag on 2.85 / 2.38 s. That is 0.12-0.15 ms per fight in every case. `matchup()`: 3.4-3.9 ms either way. **No regression** (differences are within run-to-run noise). |
+
+### Fixes I made
+
+All fixes are on flag-on paths only; flag off is still bit-identical. They are commits `68255ac` and `e5a8581` on
+`verify/durability`.
+
+1. **Roster leak guard** (`src/engine3.js`, `loadDurability` / `durSide`).
+   - Before: the live roster (`durability.json` roster, fit through Oct 31, 2026) was used for any profile with a
+     slug, whatever the fight date.
+   - Now: `loadDurability` keeps `meta.snapshot`, and the roster applies only when `m.date >= snapshot`.
+   - Earlier fights must bring `opts.dur`. Without it they take the computed path and `m.dur.*.src` reads
+     "computed".
+   - Live use (the snapshot date or later) is unchanged.
+2. **Manual profiles without an age** (`durCovariates`).
+   - Before: `manualProfile()` fighters got the data's "age unknown" term: chin x2.22, which is x1.49 on the hazard
+     after the 0.5 blend. In the data that term describes obscure short-stint fighters.
+   - Now: a hand-made fighter sits at the reference age. Data profiles without a date of birth (8 roster fighters, 0
+     train sides) keep the term.
+3. **`kdCal` re-matched to the frozen v4: 1.18780096 -> 1.1639618** (`src/params3.js`).
+   - The builder matched `kdCal` to the in-flight engine (`kdScale` 1.246). v4 final has `kdScale` 1.391, and
+     `kdCal` multiplies it.
+   - With the builder's value, knockdowns per fight rose +0.0095 [+0.0049, +0.0141] over v4 final, from 0.465 to
+     0.474 against 0.445 actual. KO/TKO rose +0.0056 [+0.0034, +0.0079].
+   - Rule used: the builder's own, kdCal x KD_off / KD_on, on train. With 1.164: +0.0024 [-0.0021, +0.0071] and
+     +0.0025 respectively. The scores are unchanged or slightly better (table B).
+   - The static on/off ratio is 0.989 on v4.0.0 and on main's in-flight v4.0.1 (`kdScale` 1.386), so the value
+     carries over.
+   - On the old in-flight base this value runs about 2% below its matched level. That base is superseded.
+4. **`tests/test_durability.js`:** 3 new checks for fixes 1 and 2 (34 total).
+5. **`docs/ENGINE_V3_SPEC.md`:** documents the roster and manual-age rules, and that backtests and evalv must pass
+   records plus the train-only NORM.
+6. **`tools/evalv.js` wiring** (new, `durability_evalv_v4main.patch`, against main's current evalv.js). With the flag
+   on, each worker:
+   - reads `durability.json` `backtest[id]`;
+   - passes `opts.dur = { A, B, base }` in the simulation's corner order, with base the geometric mean of
+     `p_A / (C_B P_A)` and `p_B / (C_A P_B)`;
+   - passes the train-only NORM (`norm_*_backtest_2019_2023`) through `opts.params`;
+   - throws on a missing record or an unapplied base rather than falling back to the live fit.
+
+   Smoke-tested on the **train split only** (`--dev`, 1 sim per order, scratch tree, outputs in the scratchpad):
+   1,999 of 1,999 fights, no failures, on v4 final and on main's v4.0.1. Engines without the flag (v3, v4) are
+   unaffected.
+
+None of fixes 1, 2, 4 and 5 changes a train-ablation number: the ablation passes records, loads no roster, has no
+manual profiles, and every train side has an age.
+
+### Patches (all in `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/components/`)
+
+| File | What | Base |
+|---|---|---|
+| **`durability_v4main.patch`** (recommended) | The whole verified component, self-contained: 12 files, including the evalv wiring. Checked to apply to, and reproduce exactly from, one snapshot of main. Flag off is bit-identical there (300 comparisons) and the fuzz is clean. | Main checkout files as of 2026-11-06T16:37:46Z. md5 of that snapshot: engine3.js `798e1f62...`, params3.js `f7a04e5d...`, build_db.py `d1dd2425...`, test_engine3.js `7c061fb6...`, ENGINE_V3_SPEC.md `418703a1...`, evalv.js `50bc1add...` (full list in `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vdur/v4main_snapshot_md5.txt`). **Main is still moving (v4.0.1 in flight)**; rebuild with `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vdur/make_v4main.sh` if it no longer applies. |
+| `durability.patch` | The requested deliverable: diff of `verify/durability` HEAD `e5a8581` against the worktree start commit `853ce32a40216ecdc9ac8daa35de006932ae6665`. It includes the v4 base sync. | `853ce32` |
+| `durability_component_only.patch` | `275b339..e5a8581`: the component plus the verifier fixes, without the base sync. On current main the docs, test_engine3.js and engine API hunks reject; use `durability_v4main.patch` there. | `275b339` |
+| `durability_v4main_rejects.patch` | docs + `tests/test_engine3.js` (relative-mode `simAvg`), rebuilt against main's current files. Kept for the builder's apply recipe; `durability_v4main.patch` already contains it. | Main |
+| `durability_evalv_v4main.patch` | The evalv wiring alone. | Main `tools/evalv.js` |
+
+The builder's originals are kept as `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vdur/durability_builder_original.*` in the scratchpad.
+
+**After merging:**
+
+- Refresh the flag-off golden: `DUR_BASE_REV=<the pre-patch commit> node tests/test_durability.js --write-golden`.
+  Until then section 1 compares against `275b339` and fails for the wrong reason.
+- Rebuild `fighters.json` (`tools/build_db.py`) so live profiles carry `dur`.
+
+### Independent train ablation (fresh seeds, my own harness and scorer)
+
+**Setup**
+
+- 2019-01-01..2023-12-31: 1,999 backtest_dev fights in 211 events.
+- Both corner orders, 150 sims per order (300 per fight).
+- Common random numbers, seed tag `verify-durability-2026-11-06` (different from the builder's).
+- Learned rates: OOF. Durability: walk-forward records.
+- Harness: `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vdur/abl.js`; scorer: `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vdur/score.py`. Neither shares code with `tools/durability_ablation*`.
+- Probabilities are corner-symmetric, with a Monte Carlo floor of 0.5 / (2 x sims). The "evalv-style" 7-bin adds one
+  pseudo-simulation spread over the train outcome shares.
+- Soft-label CE is against `market.json` `p_power_close`.
+- CIs: paired event-cluster bootstrap, 2,000 resamples.
+- CPU: about 32 s per worker per run on 3 workers at nice 5.
+
+**A. The builder's context: in-flight v4 sync `275b339` + the component as delivered (`kdCal` 1.1878).** Replication.
+
+| Metric | n | off | on | on - off [95% CI] | builder's on - off |
+|---|---|---|---|---|---|
+| Winner log loss | 1952 | 0.6680 | 0.6666 | -0.0014 [-0.0037, +0.0009] | -0.0018 [-0.0037, +0.0004] |
+| Brier | 1952 | 0.2375 | 0.2368 | -0.0006 [-0.0017, +0.0004] | -0.0008 [-0.0018, +0.0002] |
+| **Soft-label CE vs closing line** | 1999 | 0.6724 | 0.6714 | **-0.0011 [-0.0017, -0.0005]** | -0.0012 [-0.0018, -0.0006] |
+| **7-bin log loss** | 1972 | 1.6650 | 1.6542 | **-0.0108 [-0.0165, -0.0051]** | -0.0055 [-0.0098, -0.0011] |
+| 7-bin, evalv-style smoothing | 1972 | 1.6688 | 1.6561 | -0.0128 [-0.0213, -0.0056] | |
+| **Method log loss** | 1972 | 0.9699 | 0.9654 | **-0.0045 [-0.0080, -0.0008]** | -0.0036 [-0.0072, -0.0002] |
+| **Round log loss** | 1972 | 1.2098 | 1.2042 | **-0.0056 [-0.0094, -0.0020]** | -0.0054 [-0.0088, -0.0022] |
+| Stat dev: sig landed | 1999 | 23.979 | 23.797 | -0.183 [-0.307, -0.063] | -0.174 [-0.290, -0.065] |
+| Stat dev: sig attempted | 1999 | 49.588 | 49.243 | -0.346 [-0.590, -0.099] | -0.314 [-0.553, -0.078] |
+| Stat dev: head landed | 1999 | 18.058 | 17.936 | -0.121 [-0.208, -0.036] | -0.113 [-0.194, -0.030] |
+| Stat dev: knockdowns | 1999 | 0.7192 | 0.7137 | -0.0055 [-0.0110, -0.0001] | -0.0021 [-0.0076, +0.0036] |
+| Stat dev: TD landed | 1999 | 1.7482 | 1.7438 | -0.0044 [-0.0087, -0.0006] | -0.0032 [-0.0071, +0.0003] |
+| Stat dev: TD attempts | 1999 | 3.2432 | 3.2364 | -0.0068 [-0.0152, +0.0024] | -0.0077 [-0.0160, +0.0003] |
+| Stat dev: sub attempts | 1999 | 0.9017 | 0.9010 | -0.0007 [-0.0034, +0.0019] | -0.0004 [-0.0028, +0.0018] |
+| Stat dev: control (min) | 1999 | 2.6156 | 2.6157 | +0.0001 [-0.0061, +0.0063] | -0.0010 [-0.0068, +0.0046] |
+
+- Everything replicates within Monte Carlo noise.
+- My 7-bin gain is larger; it depends on the floor and the sims per fight, and the sign is robust.
+- By year (on - off), winner log loss:
+  - 2019: -0.0010.
+  - 2020: -0.0029.
+  - **2021: +0.0052 [-0.0003, +0.0103]**, borderline (builder +0.0031).
+  - 2022: -0.0038.
+  - 2023: -0.0046.
+- Soft CE improves in every year except 2021 (+0.0003).
+- Base rates (actual / off / on):
+  - finish 0.492 / 0.479 / 0.482;
+  - KO/TKO 0.317 / 0.318 / 0.321;
+  - knockdowns per fight 0.445 / 0.455 / 0.459;
+  - knockdowns per fight, 5 rounds: 0.547 / 0.447 / 0.436.
+- KD O/E by defender age band:
+  - off: 0.92 / 0.86 / 1.05 / 0.97 / 1.06;
+  - on: 0.99 / 0.89 / 1.04 / 0.92 / 1.01.
+
+**B. The v5 target: frozen `versions/v4` (= main `src/` at 16:00 UTC) + the component.**
+
+- **Main columns:** the verified component (fixes + `kdCal` 1.164).
+- **"run 2" column:** the builder's `kdCal` 1.1878.
+- The flag-off baseline is v4 final. Both runs share seeds, so "off" is the same simulation.
+
+| Metric | n | off | on | on - off [95% CI] | run 2 (builder's kdCal): on - off [95% CI] |
+|---|---|---|---|---|---|
+| Winner log loss | 1952 | 0.6647 | 0.6636 | -0.0012 [-0.0035, +0.0010] | -0.0013 [-0.0035, +0.0010] |
+| Brier | 1952 | 0.2360 | 0.2355 | -0.0006 [-0.0016, +0.0005] | -0.0006 [-0.0017, +0.0005] |
+| Accuracy | 1952 | 0.6086 | 0.6014 | -0.0072 [-0.0182, +0.0036] | -0.0064 [-0.0170, +0.0041] |
+| **Soft-label CE vs closing line** | 1999 | 0.6715 | 0.6707 | **-0.0008 [-0.0015, -0.0001]** | -0.0008 [-0.0015, -0.0002] |
+| **7-bin log loss** | 1972 | 1.6672 | 1.6600 | **-0.0072 [-0.0129, -0.0014]** | -0.0066 [-0.0124, -0.0006] |
+| 7-bin, evalv-style smoothing | 1972 | 1.6940 | 1.6869 | -0.0071 [-0.0178, +0.0030] | -0.0046 [-0.0137, +0.0050] |
+| **Method log loss** | 1972 | 0.9725 | 0.9685 | **-0.0040 [-0.0078, -0.0001]** | -0.0042 [-0.0081, -0.0001] |
+| Round log loss | 1972 | 1.2057 | 1.2035 | -0.0022 [-0.0059, +0.0018] | -0.0024 [-0.0062, +0.0016] |
+| Stat dev: sig landed | 1999 | 23.785 | 23.652 | -0.133 [-0.259, -0.010] | -0.134 [-0.258, -0.009] |
+| Stat dev: sig attempted | 1999 | 49.429 | 49.181 | -0.248 [-0.513, +0.007] | -0.243 [-0.502, +0.014] |
+| Stat dev: head landed | 1999 | 17.838 | 17.753 | -0.085 [-0.175, -0.003] | -0.093 [-0.182, -0.008] |
+| Stat dev: knockdowns | 1999 | 0.7141 | 0.7102 | -0.0039 [-0.0094, +0.0017] | -0.0032 [-0.0084, +0.0023] |
+| Stat dev: TD landed | 1999 | 1.7435 | 1.7390 | -0.0045 [-0.0087, -0.0005] | -0.0041 [-0.0083, -0.0002] |
+| Stat dev: TD attempts | 1999 | 3.2374 | 3.2319 | -0.0055 [-0.0141, +0.0033] | -0.0047 [-0.0135, +0.0047] |
+| Stat dev: sub attempts | 1999 | 0.9026 | 0.9033 | +0.0006 [-0.0024, +0.0036] | +0.0007 [-0.0023, +0.0038] |
+| Stat dev: control (min) | 1999 | 2.6198 | 2.6174 | -0.0025 [-0.0093, +0.0045] | -0.0025 [-0.0095, +0.0046] |
+
+Base rates (simulated vs actual):
+
+| Base rate | n | actual | off | on | on - off [95% CI] | on - actual [95% CI] | run 2: on; on - off [95% CI] |
+|---|---|---|---|---|---|---|---|
+| finish | 1972 | 0.492 | 0.493 | 0.494 | +0.0018 [-0.0002, +0.0037] | +0.002 [-0.019, +0.024] | 0.497; +0.0045 [+0.0026, +0.0064] |
+| finish 3R | 1729 | 0.486 | 0.488 | 0.491 | +0.0023 [+0.0003, +0.0043] | +0.004 [-0.019, +0.028] | 0.493; +0.0050 [+0.0030, +0.0070] |
+| finish 5R | 243 | 0.535 | 0.523 | 0.521 | -0.0016 [-0.0064, +0.0033] | -0.014 [-0.077, +0.050] | 0.523; +0.0006 [-0.0041, +0.0056] |
+| KO/TKO | 1972 | 0.317 | 0.324 | 0.326 | +0.0025 [+0.0003, +0.0048] | +0.009 [-0.010, +0.028] | 0.329; +0.0056 [+0.0034, +0.0079] |
+| KO/TKO 5R | 243 | 0.395 | 0.383 | 0.381 | -0.0018 [-0.0072, +0.0039] | -0.014 [-0.076, +0.049] | 0.383; +0.0007 [-0.0048, +0.0064] |
+| SUB | 1972 | 0.175 | 0.169 | 0.168 | -0.0007 [-0.0012, -0.0002] | -0.007 [-0.025, +0.010] | 0.168; -0.0011 [-0.0016, -0.0006] |
+| R1 finish | 1972 | 0.235 | 0.239 | 0.240 | +0.0016 [+0.0001, +0.0030] | +0.005 [-0.013, +0.024] | 0.242; +0.0035 [+0.0020, +0.0049] |
+| draw | 1972 | 0.010 | 0.002 | 0.002 | +0.0000 [-0.0001, +0.0001] | -0.008 [-0.012, -0.004] | 0.002; -0.0000 |
+| knockdowns per fight | 1999 | 0.445 | 0.465 | 0.467 | +0.0024 [-0.0021, +0.0071] | +0.023 [-0.007, +0.051] | 0.474; **+0.0095 [+0.0049, +0.0141]** |
+| knockdowns per fight, 3R | 1752 | 0.430 | 0.466 | 0.470 | +0.0046 [-0.0003, +0.0096] | +0.040 [+0.010, +0.070] | 0.477; +0.0117 [+0.0068, +0.0168] |
+| knockdowns per fight, 5R | 247 | 0.547 | 0.459 | 0.446 | -0.0127 [-0.0212, -0.0043] | -0.100 [-0.192, -0.013] | 0.453; -0.0062 [-0.0147, +0.0024] |
+| sig landed per fight | 1999 | 92.00 | 93.50 | 93.30 | -0.195 [-0.467, +0.070] | +1.30 [-1.85, +4.20] | 92.93; -0.562 [-0.836, -0.299] |
+
+KD observed / expected by defender band (the ROADMAP v5 check: age band and weight move), off -> on (-> run 2):
+
+| Band | sides | KD | off | on | run 2 |
+|---|---|---|---|---|---|
+| age < 27 | 496 | 85 | 0.90 | 0.97 | 0.96 |
+| age 27-30 | 980 | 186 | 0.84 | 0.87 | 0.86 |
+| age 30-33 | 1130 | 271 | 1.03 | 1.02 | 1.00 |
+| age 33-36 | 845 | 192 | 0.96 | 0.91 | 0.90 |
+| age 36+ | 547 | 155 | 1.04 | 0.99 | 0.98 |
+| prior KO losses 0 | 2197 | 413 | 0.93 | 0.94 | 0.93 |
+| prior KO losses 1 | 1033 | 256 | 0.99 | 0.98 | 0.96 |
+| prior KO losses 2+ | 768 | 220 | 0.98 | 0.94 | 0.92 |
+| moved up a class | 263 | 48 | 0.80 | 0.82 | 0.81 |
+| same class | 3520 | 788 | 0.97 | 0.96 | 0.94 |
+| moved down | 209 | 53 | 1.02 | 1.03 | 1.01 |
+| all | 3998 | 889 | 0.96 | 0.95 | 0.94 |
+
+- The age bands get flatter: the spread goes from 0.84-1.04 to 0.87-1.02.
+- The 33-36 band moves down (0.96 -> 0.91), within its CI.
+- The weight-move bands do not change (size knob 0, as the research advises).
+
+By year (on - off): winner log loss / soft CE / 7-bin / method.
+
+| Year | Winner log loss | Soft CE | 7-bin | Method |
+|---|---|---|---|---|
+| 2019 | -0.0015 | -0.0008 | -0.0135 | -0.0093 |
+| 2020 | -0.0020 | -0.0002 | -0.0055 | -0.0062 |
+| 2021 | +0.0007 | +0.0004 | -0.0076 | -0.0034 |
+| 2022 | -0.0011 | -0.0019 | -0.0006 | +0.0016 |
+| 2023 | -0.0023 | -0.0015 | -0.0089 | -0.0035 |
+
+The 7-bin result improves in every year.
+
+**Volkanovski vs Gaethje** (5 rounds non-title, learned-rate model, roster loaded, 20,000 sims; from the speed runs):
+
+| Setting | Volkanovski wins | Volkanovski KO/TKO win | Gaethje KO/TKO win |
+|---|---|---|---|
+| v4 final | 68.0% | 19.0% | 12.6% |
+| v4 final + component (`kdCal` 1.164) | 67.6% | 19.7% | 14.5% |
+| Same, builder's `kdCal` 1.1878 | 67.6% | 20.3% | 14.9% |
+
+### Risks and interactions the verifier adds
+
+- **Validation wiring (blocking for the v5 measurement).** Apply `durability_v4main.patch`, or at least
+  `durability_evalv_v4main.patch`, before `tools/evalv.js --split val`, so the validated path is the ablated path.
+  Any other harness that scores backtests with the flag on (`tools/v4_levels.js`, `mlcal`, `calibrate.js`) must pass
+  `opts.dur` the same way. Otherwise it runs the computed fallback on live-fit terms. The roster guard now prevents
+  the worse, fighter-level leak.
+- **Live knockdown level.** At the live snapshot, the component raises the per-strike knockdown hazard of clean roster
+  pairs by a median of x1.2 (fuzz). Three things combine:
+  - the trailing 730-day level of 0.010274, the 2025-26 surge;
+  - the live constant +0.078, against +0.010 in the pre-2024 fit;
+  - kdCal x kdScale = 1.62.
+
+  On train the walk-forward base keeps the level matched; live, the level is a labeled knob (`durability.level`; the
+  365-day scenario is 0.011706). The 2024-2025 measurement tests the tracked level through the 2024 glove-trial dip,
+  because its records carry L730(t).
+- **5-round knockdowns.** Both the engine and the component under-produce them: 0.459 off and 0.446 on, against
+  0.547 actual. The durability five/title terms (x0.895 / x0.908) stack on the engine's walk-forward `caution5`
+  (0.6258) and `r1Caution5` (0.75), which were fit to finish rates. The 5-round finish and KO rates still match within
+  their CIs. Refit them jointly with the dynamics component's by-round KD hazards; `durability.caution5` is the knob.
+- **kdCal after future level changes.** Re-match with kdCal x KD_off / KD_on on train after any `kdScale`,
+  `kdInstant` or dynamics change. The static on/off ratio 0.989 is a quick proxy.
+- **The fallback path is not train-validated.** No profile without a record was in any ablation. Release needs the
+  `fighters.json` rebuild that adds `dur`.
+- **durability.json holds 373 backtest entries for 2026 (vault) fight ids.** They are pre-fight values only, with no
+  outcomes, and no harness reads them. The vault tooling should know they exist, and `durability.json` should be split
+  like `market.json` was.
+
+---
+
+# Builder's report (unchanged below; superseded where the verifier section above differs: `kdCal`, the patch files, the tests count)
+
+
+Nov 6, 2026. Worktree `/home/user/XX/.claude/worktrees/wf_0113c02d-461-1`, branch `comp/durability` (local, not pushed).
+
+## Commits, base and patches (builder's; see the verifier's patch list at the top for the current files)
+
+| Item | Value |
+|---|---|
+| Worktree start commit | `853ce32a40216ecdc9ac8daa35de006932ae6665` ("WIP autosave") |
+| Base-sync commit | `275b339` - the start commit's `src/engine3.js` was half-written (`matchup` undefined, the engine did not load). I copied the main checkout's in-flight v4 `src/engine3.js`, `src/params3.js` and `src/ml/mlrates.js` (state at 14:21-14:22 UTC). This commit is not part of the component. |
+| Component commit | `bc8e562` "Engine v5 component: durability" |
+| Patch, as requested (diff vs the start commit, includes the base sync) | `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/components/durability.patch` |
+| Component-only patch (diff `275b339..bc8e562`), use this one on top of v4 | `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/components/durability_component_only.patch` |
+| The two hunks that reject on the main checkout's current files, rewritten against them | `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/components/durability_v4main_rejects.patch` |
+
+**Applying the patch to the main checkout's current v4 files** (checked with `git apply --check` on copies of them):
+
+- `src/engine3.js`, `src/params3.js`, `tools/build_db.py`, the tests and the tools apply cleanly, with offsets.
+- Two hunks reject:
+  - `tests/test_engine3.js`: the API-surface line is already v4's. The `simAvg` relative-mode line has to go into v4's `simAvg`.
+  - `docs/ENGINE_V3_SPEC.md`: an end-of-file append.
+- `durability_v4main_rejects.patch` carries both hunks, rewritten against the current main files.
+- After applying, refresh the flag-off golden: `DUR_BASE_REV=<commit before the patch> node tests/test_durability.js --write-golden`.
+
+## What changed
+
+- **`src/engine3.js`**
+  - v4's `matchup()` is renamed `matchupML()`. A new `matchup()` calls it and, when `m.p.components.durability` is true, runs `applyDurability(m, profA, profB, opts)`.
+  - `applyDurability` rewrites only `m.kd`, `m.gnp`, `m.stko` and `m.dw` (and `m.finR`, only if the `caution5` override knob is set). It adds `m.dur` (inputs and factors).
+  - `simulate()`, the RNG draw order and the trace format are untouched.
+  - New API:
+    - `FightEngine.loadDurability(durability.json | {roster})` registers roster records by slug.
+    - `FightEngine.durabilityCovariates(prof, age)` is a test helper.
+  - `explain()` prints the durability decomposition.
+  - With the flag false, the result is the v4 engine bit for bit (tests below).
+- **`src/params3.js`**: `components: { durability: true }` and a `durability` block. Every value is labeled with its source (table below).
+- **`tools/build_db.py`**
+  - Walk-forward backtest sides and live profiles gain `ko_losses_365`, `kd_absorbed_365`, `layoff`, `last_ko_loss` and `ufc_years`, from strictly earlier fights.
+  - Live profiles also gain `dur` (`chin_re`, `pow_re`, `chin_cov`, `pow_cov`), taken from `data/derived/durability.json` roster when that file exists.
+  - I regenerated these in the worktree (`python3 tools/build_db.py`, 10 s). Checks:
+    - 1,229 of 1,229 profiles get `dur`.
+    - The recency fields match the durability roster for all 1,229 fighters: 0 mismatches in KO losses and 0 in knockdowns absorbed.
+    - Every old backtest field is identical to the main checkout's `backtest_dev.json` (5,728 of 5,728 sides).
+  - The regenerated `fighters.json` is **not committed**: it is a 2.3 MB single-line file and would conflict with other branches. A copy is at `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/components/durability_fighters_regenerated.json`.
+  - Rerun `tools/build_db.py` after `tools/durability.py` at release. Until then the live page uses the computed fallback below.
+  - The worktree's `backtest_dev.json` (gitignored) was rebuilt with the 2026 rows dropped unread. No vault file was written.
+- **`tests/test_durability.js`** (new, 31 checks) and **`tests/fixtures/durability_off_golden.json`** (flag-off digests from the base revision).
+- **`tests/test_engine3.js`**
+  - The API-surface check now uses v4's line: VERSION 4.0.0 plus the v4 functions. It already failed at the base-sync commit.
+  - The league-average self-calibration runs the component in relative mode (reason under Risks).
+- **`tools/durability_ablation.js`**, `_report.py`, `.sh`, `_reports.sh`: the train-only ablation harness.
+  - It refuses `--to` on or after 2024-01-01 without `--allow-validation`.
+  - It never reads 2026 fights.
+- **`docs/ENGINE_V3_SPEC.md`**: a new section, "Engine v5 component: durability".
+
+## Equations
+
+Knockdown hazard per landed standing head strike by i on j (absolute mode, the default):
+
+```
+m.kd[i]  = kdCal * kdScale * base_ij * relK_ij
+base_ij  = level * exp(const + div_d + five * [5 rounds] + title * [title])      (backtests: the record's walk-forward base)
+relK_ij  = (C_j * P_i * size * knobs)^(1 - w) * engRel_ij^w                   w = engineWeight = 0.5
+C_j      = chin_cov_j * chin_re_j        P_i = pow_cov_i * pow_re_i
+chin_cov = exp(0.06177 (age - 30) - 0.0016 max(0, age - 30) + 0.79895 [age unknown]
+               - 0.14251 KDabs_365d - 0.0800 KDabs_older + 0.18908 KOL_365d + 0.0749 KOL_older)
+pow_cov  = exp(-0.00445 (age - 30) - 0.03589 max(0, age - 30))
+chin_re  = (3 + KD absorbed) / (3 + expected)     pow_re = (2.5 + KD scored) / (2.5 + expected)    (walk-forward, no decay)
+engRel_ij = m.kd_v4[i] / (kd0 * kdScale * div.kd)   (the engine's own structure: v3 ratios, or the v4 learned rates)
+m.gnp[i] = gnpTko * sqrt(rel_ij) * div.ko,  m.stko[i] = stko * sqrt(rel_ij) * div.ko    (rel = relK with C x P / NORM)
+m.dw[i]  = ((P_i / normPow * knob)^(1 - w) * fac_v3.pow_i^w)^powDmgExp
+```
+
+- **Relative mode** (`level: null`): `base = kd0 * kdScale * div.kd * ctx`, with C x P divided by NORM and `kdCalRel` (1) in place of `kdCal * kdScale`.
+- **Inputs**, first found wins:
+  1. `opts.dur = {A, B, base}`, in the corner order of the call (backtests pass `durability.json` `backtest[fight_id]`).
+  2. `prof.dur` (fighters.json after a rebuild).
+  3. The roster registered with `loadDurability`.
+  4. Computed from the profile's age, KO losses and knockdowns absorbed (recency fields when present), with `chin_re` / `pow_re` from career sums (`fallbackEB`).
+
+## The computed task's term list versus the verified research
+
+The task text quoted the first version of `research/model_durability.md`. The verified revision (same date, Verification log V1-V7) changed several terms. I followed the revision and kept every withdrawn term as a labeled, neutral knob:
+
+| Task text | Verified research | In the engine |
+|---|---|---|
+| chin +6.0%/yr all ages | +6.0% (pre-2024) / +6.4% (live), no knee | `d_age_c` 0.06177, `d_age_h30` -0.0016 (live) |
+| per-UFC-year term +2.1%/yr | withdrawn (no out-of-sample value once age is in) | `withdrawn.ufcYear` 0 (knob) |
+| power age/tenure | -3.6%/yr past 30 pre-2024, -4.0% live; tenure withdrawn | `a_age_c` -0.00445, `a_age_h30` -0.03589 |
+| KO-loss recency x1.156 / x1.046 | x1.208 (365 d) / x1.078 (older) live, no cap; plus prior-KD covariates x0.867 / x0.923 | `d_kol_r`, `d_kol_o`, `d_okd_r`, `d_okd_o` |
+| last-fight KO loss x1.163 | withdrawn | `withdrawn.lastKO` null (knob) |
+| layoff >= 2 y x0.64 | withdrawn | `withdrawn.layoff24` null (knob) |
+| five-round x0.905, title x0.883 | x0.895, x0.908 (live, after fighter effects) | `five` -0.11143, `title` -0.09636 |
+| chin exponent 1.15 | withdrawn (validation slope 0.98 +- 0.10) | `chinExp` 1, `powExp` 1 |
+| fighter multipliers, prior strength 3 | Gamma(3, 3) chin, Gamma(2.5, 2.5) power | records; `alphaChin` 3, `alphaPow` 2.5 for the fallback |
+| no size tax, knobs kept | confirmed on 7,982 fights | `sizeChin` 0, `sizePow` 0 (knobs) |
+| division multipliers | FLY 1.17 ... LHW 1.40, women 0.33-0.57 | `div_*` terms (live) |
+| league KD level via params | 730-day level 0.010274; 365-day 0.011706 as a scenario | `level` 0.010274 |
+
+I did not evaluate the withdrawn terms. The only coefficients available for them come from fits that include 2019-2023 (`coef_pre2024.F36`) or 2024+, so any 2019-2023 score would be in-sample. The durability tool already rejected them on 2019-2023 using strict 2008-2018 fits.
+
+## Parameter values and sources
+
+| Parameter | Value | Source |
+|---|---|---|
+| `terms.*` | live Poisson fit 2008-01..2026-10 | `durability.json` `engine.terms_live` |
+| `level` | 0.010274 | `engine.level_now_trailing_730` (snapshot Oct 31, 2026); 0.011706 = `level_now_trailing_365` (scenario) |
+| `normChin`, `normPow` | 0.9972, 0.9752 live; 0.9882, 1.0183 in the 2019-2023 backtest | `engine.norm_*`, `engine.norm_*_backtest_2019_2023` |
+| `alphaChin`, `alphaPow` | 3, 2.5 | `meta.spec` (tuned on 2019-2023 in tools/durability.py) |
+| `engineWeight` | 0.5 | **train 2019-2023**, static KD deviance (table below) |
+| `kdCal` | 1.18780096 (x kdScale 1.246 = 1.48) | **train 2019-2023**: level-matched to the v4 engine's simulated knockdowns per fight (100 sims x 1,000 fights: 1.5 gave +1.6%). Final run: on 0.459 vs off 0.454 vs actual 0.445 per fight |
+| `fallbackEB`, `standShare` | true, 0.9 | research section 1 (90% of head strikes landed standing since 2019) |
+| `chinExp`, `powExp` | 1, 1 | research section 2 (validation slopes 0.98, 0.80; exponent 1.15 withdrawn) |
+| `sizeChin`, `sizePow` | 0, 0 | research section 7.2 |
+| `gnpCal`, `stkoCal`, `caution5` | 1, 1, null | neutral |
+
+**Choosing `engineWeight`** (train 2019-2023):
+
+- Data: 3,862 attacker-defender rows and 889 knockdowns.
+- Model: Poisson deviance of knockdowns on landed head strikes, with a free scale per model.
+- Inputs: the durability walk-forward `p`, the ML out-of-fold `kd_h`, and the engine's static `m.kd`. The script is in the scratchpad (`dur/static_kd.py`).
+- CIs: event bootstrap.
+
+| KD structure | Deviance | vs v4 engine [95% CI] |
+|---|---|---|
+| v3 engine (power/chin ratios) | 3272.2 | +10.4 |
+| v4 engine (ML rates applied) | 3261.8 | 0 |
+| ML `kd_h` (OOF) | 3252.6 | |
+| durability alone (w = 0) | 3246.7 | -15.0 [-57.4, +25.7] |
+| **durability^0.5 x v4^0.5 (w = 0.5)** | **3226.3** | **-35.5 [-57.5, -14.7]** (vs durability alone -20.4 [-42.0, +1.2]) |
+| durability^0.5 x v3^0.5 | 3234.5 | vs v3 -37.7 [-56.9, -18.5] |
+| free GLM exponents | 3218.2 | durability 0.505, ML 0.386 |
+
+The durability walk-forward base level also beat the engine's division level under the same structure: -11.2 [-28.4, +6.4]. That is why absolute mode is the default.
+
+## Train-only ablation (2019-01-01 .. 2023-12-31)
+
+**Setup**
+
+- 1,999 backtest_dev fights in 211 events.
+- Every fight is simulated in both corner orders, 250 simulations per orientation (500 per fight), with common random numbers: per-simulation seeds are identical across variants.
+- Inputs, all leak-free:
+  - frozen snapshots;
+  - walk-forward priors (`mlcal_priors_asof`);
+  - ML out-of-fold rates (`mlrates_oof.json`, so the baseline is the v4 engine with learned rates);
+  - strict walk-forward durability records (`fit_through` = Y-1).
+- CIs: paired event-cluster bootstrap, 2,000 resamples.
+- Run time: 21 minutes on 3 workers at nice 5.
+- Outputs: `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/dur/full1/` (`report_*.txt`, `report_*.json`, `part*.json`).
+
+**References on the same fights**
+
+- Closing line (no-vig, power): winner log loss 0.6232.
+- Pre-fight Elo: 0.6857.
+- Entropy of the closing line, the floor for the soft CE: 0.6268.
+
+**Main result: flag off (v4) vs flag on (v5 durability)**
+
+| Metric | n | off | on | on - off [95% CI] |
+|---|---|---|---|---|
+| Winner log loss (decisive) | 1955 | 0.6663 | 0.6645 | -0.0018 [-0.0037, +0.0004] |
+| Brier | 1955 | 0.2367 | 0.2358 | -0.0008 [-0.0018, +0.0002] |
+| **Soft-label CE vs closing line** | 1999 | 0.6719 | 0.6708 | **-0.0012 [-0.0018, -0.0006]** |
+| **7-bin log loss** | 1972 | 1.6571 | 1.6516 | **-0.0055 [-0.0098, -0.0011]** |
+| **Method log loss (KO/SUB/DEC)** | 1972 | 0.9681 | 0.9644 | **-0.0036 [-0.0072, -0.0002]** |
+| **Round log loss (R1..Rn / decision)** | 1972 | 1.2022 | 1.1968 | **-0.0054 [-0.0088, -0.0022]** |
+| Stat deviance: sig landed | 1999 | 23.8672 | 23.6933 | -0.1739 [-0.2899, -0.0645] |
+| Stat deviance: sig attempted | 1999 | 49.3721 | 49.0582 | -0.3138 [-0.5530, -0.0778] |
+| Stat deviance: head landed | 1999 | 17.9804 | 17.8674 | -0.1130 [-0.1939, -0.0295] |
+| Stat deviance: knockdowns | 1999 | 0.7185 | 0.7163 | -0.0021 [-0.0076, +0.0036] |
+| Stat deviance: TD landed | 1999 | 1.7436 | 1.7404 | -0.0032 [-0.0071, +0.0003] |
+| Stat deviance: TD attempts | 1999 | 3.2366 | 3.2289 | -0.0077 [-0.0160, +0.0003] |
+| Stat deviance: sub attempts | 1999 | 0.8984 | 0.8980 | -0.0004 [-0.0028, +0.0018] |
+| Stat deviance: control (min) | 1999 | 2.6102 | 2.6091 | -0.0010 [-0.0068, +0.0046] |
+
+Stat deviance is Poisson, per fight-side.
+
+**By year**, off -> on (difference in brackets):
+
+| Year | n | Winner log loss | Soft CE vs close | 7-bin |
+|---|---|---|---|---|
+| 2019 | 388 | 0.6593 -> 0.6595 (+0.0001) | 0.6751 -> 0.6738 (-0.0013) | 1.5976 -> 1.5885 (-0.0091) |
+| 2020 | 343 | 0.6755 -> 0.6708 (-0.0047) | 0.6755 -> 0.6748 (-0.0006) | 1.6395 -> 1.6329 (-0.0066) |
+| 2021 | 415 | 0.6474 -> 0.6505 (+0.0031) | 0.6734 -> 0.6735 (+0.0001) | 1.6363 -> 1.6330 (-0.0033) |
+| 2022 | 419 | 0.6708 -> 0.6657 (-0.0052) | 0.6706 -> 0.6688 (-0.0018) | 1.6822 -> 1.6797 (-0.0025) |
+| 2023 | 390 | 0.6803 -> 0.6778 (-0.0025) | 0.6657 -> 0.6636 (-0.0022) | 1.7265 -> 1.7201 (-0.0065) |
+
+**Base-rate table** (simulated vs actual):
+
+| Base rate | n | actual | off | on | on - off [95% CI] | on - actual [95% CI] |
+|---|---|---|---|---|---|---|
+| finish rate | 1972 | 0.492 | 0.480 | 0.483 | +0.003 [+0.001, +0.005] | -0.009 [-0.031, +0.012] |
+| finish rate, 3 rounds | 1729 | 0.486 | 0.475 | 0.479 | +0.004 [+0.002, +0.006] | -0.007 [-0.031, +0.016] |
+| finish rate, 5 rounds | 243 | 0.535 | 0.516 | 0.513 | -0.003 [-0.007, +0.002] | -0.022 [-0.082, +0.040] |
+| KO/TKO rate | 1972 | 0.317 | 0.318 | 0.322 | +0.004 [+0.002, +0.006] | +0.004 [-0.015, +0.022] |
+| KO/TKO rate, 5 rounds | 243 | 0.395 | 0.382 | 0.379 | -0.003 [-0.008, +0.003] | -0.016 [-0.080, +0.048] |
+| SUB rate | 1972 | 0.175 | 0.162 | 0.161 | -0.001 [-0.001, -0.000] | -0.014 [-0.031, +0.004] |
+| round-1 finish rate | 1972 | 0.235 | 0.229 | 0.231 | +0.002 [+0.001, +0.004] | -0.004 [-0.023, +0.015] |
+| draw rate | 1972 | 0.010 | 0.016 | 0.016 | -0.000 [-0.000, +0.000] | +0.006 [+0.001, +0.010] |
+| knockdowns per fight | 1999 | 0.445 | 0.454 | 0.459 | +0.004 [-0.000, +0.009] | +0.014 [-0.018, +0.043] |
+| knockdowns per fight, 5 rounds | 247 | 0.547 | 0.450 | 0.439 | -0.011 [-0.020, -0.002] | -0.108 [-0.197, -0.023] |
+| sig landed per fight (both) | 1999 | 91.998 | 98.207 | 97.840 | -0.367 [-0.637, -0.102] | +5.842 [+2.589, +8.881] |
+| minutes per fight | 1999 | 11.284 | 11.527 | 11.493 | -0.034 [-0.058, -0.011] | +0.208 [-0.066, +0.484] |
+
+**KD calibration by defender band** (ROADMAP v5 check). O/E is observed over simulated knockdowns; the unit is the defender's side of a fight.
+
+| Band | sides | KD | O/E off [95% CI] | O/E on [95% CI] |
+|---|---|---|---|---|
+| age < 27 | 496 | 85 | 0.93 [0.72, 1.15] | 1.00 [0.78, 1.23] |
+| age 27-30 | 980 | 186 | 0.86 [0.74, 0.98] | 0.89 [0.77, 1.01] |
+| age 30-33 | 1130 | 271 | 1.05 [0.92, 1.19] | 1.04 [0.91, 1.18] |
+| age 33-36 | 845 | 192 | 0.97 [0.84, 1.11] | 0.92 [0.79, 1.06] |
+| age 36+ | 547 | 155 | 1.06 [0.91, 1.22] | 1.00 [0.86, 1.15] |
+| prior KO losses 0 | 2197 | 413 | 0.95 [0.85, 1.05] | 0.96 [0.86, 1.07] |
+| prior KO losses 1 | 1033 | 256 | 1.02 [0.91, 1.14] | 1.00 [0.88, 1.12] |
+| prior KO losses 2+ | 768 | 220 | 1.00 [0.88, 1.11] | 0.95 [0.85, 1.06] |
+| all | 3998 | 889 | 0.98 [0.91, 1.05] | 0.97 [0.91, 1.04] |
+
+- The age bands get flatter: the spread goes from 0.86-1.06 to 0.89-1.04, and the young and old ends move toward 1.
+- The KO-loss bands stay flat.
+- Weight-move bands are not tabulated. The size knob is 0 and the research says to leave them alone.
+
+**Variants** (same run, same seeds; `on_w0` and `on_w1` are level-matched to off on the static mean hazard):
+
+| Variant vs | Winner log loss | Soft CE vs close | 7-bin | Method | Round | KD deviance |
+|---|---|---|---|---|---|---|
+| on_w0 (durability alone) - off | -0.0005 [-0.0042, +0.0035] | -0.0007 [-0.0018, +0.0004] | -0.0037 [-0.0112, +0.0034] | -0.0020 [-0.0076, +0.0032] | -0.0053 [-0.0104, -0.0003] | +0.0020 [-0.0075, +0.0117] |
+| on_w1 (level and context only) - off | -0.0004 [-0.0011, +0.0004] | -0.0000 [-0.0003, +0.0003] | -0.0012 [-0.0039, +0.0015] | -0.0015 [-0.0041, +0.0007] | -0.0017 [-0.0040, +0.0005] | +0.0024 [-0.0009, +0.0055] |
+| on (w 0.5) - on_w0 | -0.0013 [-0.0034, +0.0007] | -0.0005 [-0.0011, +0.0001] | -0.0018 [-0.0062, +0.0028] | -0.0017 [-0.0043, +0.0011] | -0.0001 [-0.0032, +0.0029] | -0.0042 [-0.0089, +0.0004] |
+| on (w 0.5) - on_w1 | -0.0014 [-0.0034, +0.0008] | -0.0012 [-0.0018, -0.0005] | -0.0043 [-0.0082, -0.0005] | -0.0021 [-0.0050, +0.0005] | -0.0036 [-0.0062, -0.0010] | -0.0045 [-0.0092, +0.0002] |
+
+Most of the gain comes from the fighter chin and power structure, not from the level or context terms (on vs on_w1). The blend beats durability alone on every metric (n.s. individually), which matches the static KD result.
+
+**Plain engine** (v3-style tables, no learned rates), 100 simulations per orientation, same protocol. The output is in `dur/noml/`.
+
+| Metric | off | on | on - off [95% CI] |
+|---|---|---|---|
+| Winner log loss | 0.6736 | 0.6728 | -0.0008 [-0.0033, +0.0016] |
+| Soft CE vs close | 0.6776 | 0.6753 | **-0.0023 [-0.0030, -0.0016]** |
+| 7-bin log loss | 1.6694 | 1.6617 | **-0.0077 [-0.0141, -0.0016]** |
+| Method log loss | 0.9698 | 0.9667 | -0.0031 [-0.0066, +0.0003] |
+| Round log loss | 1.2057 | 1.2033 | -0.0024 [-0.0060, +0.0015] |
+| KD deviance | 0.7239 | 0.7206 | -0.0033 [-0.0091, +0.0026] |
+
+**Volkanovski vs Gaethje** (fighters.json, ML model loaded, roster records, 5 rounds non-title, 20,000 simulations):
+
+| Setting | Volkanovski wins | Volkanovski KO/TKO loss | Gaethje KO/TKO loss |
+|---|---|---|---|
+| Flag off | 69.1% | 11.7% | 17.8% |
+| Flag on | 68.7% | 14.0% | 19.5% |
+| Flag on, 365-day level scenario | 67.3% | 15.3% | 20.3% |
+
+The research's per-fight KO/TKO-loss model (K5) gives 24.4% (Volkanovski) and 25.1% (Gaethje). The engine is still below that, because it under-produces knockdowns in 5-round fights (see Risks).
+
+## Recommendation
+
+Include it in v5, flag on, `engineWeight` 0.5, absolute level.
+
+- **What improves significantly on 2019-2023:**
+  - soft-label CE against the close (the low-noise development target);
+  - 7-bin, method and round log loss;
+  - strike stat-line deviance.
+- **What does not:** winner log loss, -0.0018 [-0.0037, +0.0004], and the KD-count deviance.
+- **Where the gain is:** the simulator is now worth more for how and when a fight ends (method and round) than for who wins. That is the simulator's job in the current architecture, where the blend decides the winner (docs/BACKLOG.md).
+- **Two values were set on these same years:** `engineWeight` (from static KD deviance) and `kdCal` (level matching). So these train numbers are slightly optimistic. The single v5 validation measurement on 2024-2025 should confirm them.
+- **Validation inputs:** use `durability.json` `backtest[fight_id]` records. Their 2024+ entries use the 2008-2023 fit (strict), so they are leak-free for validation.
+
+## Risks and interactions
+
+- **v4 learned rates.** v4's kd retarget is kept and blended (w = 0.5), not discarded. If v4-final changes `applyToMatchup`'s kd step or `m.kd` semantics, `engRel` changes with it.
+- **Knockdown level after merging.** `kdCal` is a multiplier on `kdScale`, so a v4 re-tune of `kdScale` (main already moved it 1.246 -> 1.236) carries over. But `kdCal` was level-matched to the v4 in-flight engine. Re-check knockdowns per fight on/off after merging, and with the dynamics component, which changes the in-fight knockdown modifiers. To re-match: `kdCal_new = kdCal x KD_off / KD_on` from one `tools/durability_ablation.sh` run.
+- **5-round fights.**
+  - Both variants under-produce knockdowns in 5-round fights: 0.44-0.45 per fight against 0.547 actual. The durability five/title terms lower them a little more (-0.011 [-0.020, -0.002]).
+  - The 5-round finish and KO rates still match within their CIs. That is why the Volkanovski-Gaethje per-fight KO risks sit below the research's K5 model.
+  - The joint fix is a train-only refit of `caution5` / `r1Caution5`. `durability.caution5` exists as an override knob, but I left it null.
+- **Dynamics component.** Its research says the knockdown hazard per head strike falls by round and does not rise with damage, and that `form.vol` should be about 0.48. Durability's research also says 0.48 versus the engine's 0.6. Both components touch knockdown hazards: dynamics the in-fight modifiers, durability the base hazard. Re-run the level match and `form.vol` together after merging both.
+- **League level.** 2025-26 runs hot: the 365-day level is 0.011706 against the default 0.010274. 2024 contains the glove-trial dip, which the walk-forward records track in validation. Live predictions depend on which level window is believed, so it stays a labeled knob.
+- **Priors-era self-calibration.** In absolute mode the knockdown level is the tracked league level, not the 2018-2026 priors' level. On the live 730-day level, league-average knockdowns per 100 head strikes came out 17-23% above the priors-era target, against a 15% tolerance. So `tests/test_engine3.js` runs its league-average table in relative mode. In relative mode it is within 2% in every division (8 of 8).
+- **Live data.** Without a rebuilt `fighters.json`, live profiles use the computed path. It treats all KO losses and knockdowns as older, and estimates fighter multipliers from career sums without opponent adjustment: Gaethje `chin_re` 0.49 against the roster's 0.58. Rebuild `fighters.json` (adds about 0.2 MB to the page data) or call `loadDurability`.
+- **Known research open items.**
+  - The 2024+ chin calibration slope is 1.32: weak chins are dropped even more than the model says.
+  - Debutants are under-predicted on both sides; pre-UFC priors are the natural fix.
+  - Fighter-effect intervals are wide (a factor of 3-4).
+- **Corner symmetry.** Every evaluation averages both orientations. The component swaps exactly under a corner swap (tested).
+- **Tests.**
+  - `tests/test_durability.js`: 31 of 31 pass. Its flag-off proof reads the base revision through `git show`, with the golden digest as a fallback.
+  - `tests/test_engine3.js`: 42 of 42 pass (34 of 34 with `--quick`).
+  - `tests/test_director3.js` and `tests/test_mlrates.js` (47 checks) pass with the flag on.
+  - Engine speed is unchanged; the extra matchup work is about 0.1 ms.

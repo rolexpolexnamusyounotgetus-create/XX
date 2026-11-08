@@ -1,0 +1,17 @@
+VAULT AUDIT 1 - pre-commitment written BEFORE any vault prediction or slope is computed (no vault outcome has been read yet;
+only file structure/keys and counts of result.method were listed).
+
+Rule 6.5.1(a): switch the production no-line stack to h 3, T 1 iff the mirrored calibration slope (no intercept) of the
+frozen production no-line stack on the vault has point < 1.15 AND its 95% event-cluster bootstrap CI includes 1.
+
+Column named for the rule (the rule text does not name one; research/model_calib.md section 4 item 6):
+PRIMARY = the forward ledger's production no-line column p_a_noline / stack_noline = data/derived/blindtest_stack.json
+`model` absent block (MoE: mkt_rating + engine_v4 + ml_lr + feat_lr + elo_sig + elo, hp h 1.5, temperature a = 1.1607),
+exactly as frozen (fit through 2025-12-13), experts built for 2026 by their frozen production procedures.
+Reason: it is the production no-line probability (data/predictions/README.md "No-line primary: p_a_noline"), and the only
+no-line stack that has both "h 1.5" and "its temperature", which is what the rule's switch (h 3, T 1) acts on.
+SECONDARY readings (reported, never decisive): ML v2 page production no-line stack (ml2.json page_model.stack noline,
+fit 2019-2025, h 1.5; the stack research/model_calib.md simulated) and moe_page.json's MoE no-line model.
+If the readings disagree, the PRIMARY decides the rule state and the disagreement is reported.
+Slope CI: 2,000 event-cluster resamples (evalv uses 400 for slopes; this audit uses 2,000 for every CI).
+2026-11-07T04:57:38Z

@@ -1,0 +1,1691 @@
+{
+ "meta": {
+  "built": "2026-11-06T11:04:03+00:00",
+  "styles_json_built": "2026-11-06T10:59:44+00:00",
+  "bootstrap": 1000
+ },
+ "checks": {
+  "join": {
+   "sides": 6474,
+   "mismatch": 0,
+   "opp_part_inconsistent": 0
+  },
+  "freeze": {
+   "consistent": 4934,
+   "looks_leaky": 0,
+   "other": 1
+  },
+  "feature_spotcheck_maxdiff": {
+   "d_rate": 0.0,
+   "td_int": 0.0,
+   "td_def": 6.6613e-16,
+   "kd_pow": 0.0,
+   "sh_l": 0.0
+  },
+  "zscore_max_rel_diff": 3.9434e-05
+ },
+ "reproduction": {
+  "dist_att": {
+   "status": "default_on",
+   "terms": [
+    "length_d",
+    "open",
+    "zy_kd_pow"
+   ],
+   "mine": {
+    "change": -420.35,
+    "pct": -1.9478,
+    "coef_per_sd": [
+     0.038549,
+     -0.032619,
+     -0.023806
+    ],
+    "z_cluster": [
+     8.9185,
+     -4.3224,
+     -3.389
+    ],
+    "ci": [
+     -750.87,
+     -82.711
+    ]
+   },
+   "json": {
+    "pct": -1.9478,
+    "ci": [
+     -757.67,
+     -72.891
+    ],
+    "coef_per_sd": [
+     0.038549,
+     -0.032619,
+     -0.023806
+    ],
+    "z": [
+     8.9241,
+     -4.3252,
+     -3.3911
+    ],
+    "cv_ci": [
+     -1400.7,
+     -520.33
+    ]
+   }
+  },
+  "td_att": {
+   "status": "default_on",
+   "terms": [
+    "zy_td_int",
+    "length_d",
+    "zy_vol",
+    "zy_td_def"
+   ],
+   "mine": {
+    "change": -83.135,
+    "pct": -0.9317,
+    "coef_per_sd": [
+     -0.076253,
+     -0.080837,
+     0.076694,
+     -0.093306
+    ],
+    "z_cluster": [
+     -3.2903,
+     -4.0219,
+     3.1485,
+     -4.2383
+    ],
+    "ci": [
+     -196.33,
+     32.892
+    ]
+   },
+   "json": {
+    "pct": -0.9317,
+    "ci": [
+     -195.41,
+     32.594
+    ],
+    "coef_per_sd": [
+     -0.076253,
+     -0.080837,
+     0.076694,
+     -0.093306
+    ],
+    "z": [
+     -3.2928,
+     -4.0249,
+     3.1509,
+     -4.2415
+    ],
+    "cv_ci": [
+     -400.17,
+     -104.46
+    ]
+   }
+  },
+  "ctrl": {
+   "status": "default_on",
+   "terms": [
+    "kick_y",
+    "zx_ctrl*zy_octrl",
+    "zy_td_int"
+   ],
+   "mine": {
+    "change": -4844.0,
+    "pct": -1.6786,
+    "coef_per_sd": [
+     0.06239,
+     -0.068645,
+     -0.049009
+    ],
+    "z_cluster": [
+     3.5499,
+     -3.371,
+     -2.769
+    ],
+    "ci": [
+     -7719.1,
+     -1949.6
+    ]
+   },
+   "json": {
+    "pct": -1.6786,
+    "ci": [
+     -7865.0,
+     -2034.7
+    ],
+    "coef_per_sd": [
+     0.06239,
+     -0.068645,
+     -0.049009
+    ],
+    "z": [
+     3.5522,
+     -3.3731,
+     -2.7707
+    ],
+    "cv_ci": [
+     -7005.2,
+     -61.422
+    ]
+   }
+  },
+  "ctrl_per_td": {
+   "status": "default_on",
+   "terms": [
+    "zy_td_def",
+    "zy_sub_int"
+   ],
+   "mine": {
+    "change": -1798.2,
+    "pct": -0.80821,
+    "coef_per_sd": [
+     -0.069025,
+     0.026359
+    ],
+    "z_cluster": [
+     -3.9426,
+     1.6642
+    ],
+    "ci": [
+     -3464.6,
+     -33.338
+    ]
+   },
+   "json": {
+    "pct": -0.80821,
+    "ci": [
+     -3446.1,
+     -107.7
+    ],
+    "coef_per_sd": [
+     -0.069025,
+     0.026359
+    ],
+    "z": [
+     -3.9446,
+     1.665
+    ],
+    "cv_ci": [
+     -4894.4,
+     -269.4
+    ]
+   }
+  },
+  "gnp_att": {
+   "status": "default_on",
+   "terms": [
+    "zy_sub_int",
+    "zy_kd_pow"
+   ],
+   "mine": {
+    "change": -193.57,
+    "pct": -0.76973,
+    "coef_per_sd": [
+     0.10412,
+     0.085885
+    ],
+    "z_cluster": [
+     4.2826,
+     3.5728
+    ],
+    "ci": [
+     -494.27,
+     108.14
+    ]
+   },
+   "json": {
+    "pct": -0.76973,
+    "ci": [
+     -493.2,
+     80.937
+    ],
+    "coef_per_sd": [
+     0.10412,
+     0.085885
+    ],
+    "z": [
+     4.2842,
+     3.5741
+    ],
+    "cv_ci": [
+     -718.11,
+     -93.472
+    ]
+   }
+  },
+  "leg_share": {
+   "status": "optional_off",
+   "terms": [
+    "length_d",
+    "zy_press",
+    "zy_td_int"
+   ],
+   "mine": {
+    "change": -131.89,
+    "pct": -1.0957,
+    "coef_per_sd": [
+     -0.049026,
+     0.040213,
+     -0.041703
+    ],
+    "z_cluster": [
+     -3.2734,
+     2.53,
+     -2.6129
+    ],
+    "ci": [
+     -240.28,
+     -24.077
+    ]
+   },
+   "json": {
+    "pct": -1.0957,
+    "ci": [
+     -247.12,
+     -19.64
+    ],
+    "coef_per_sd": [
+     -0.049026,
+     0.040213,
+     -0.041703
+    ],
+    "z": [
+     -3.2755,
+     2.5315,
+     -2.6146
+    ],
+    "cv_ci": [
+     -317.53,
+     24.529
+    ]
+   }
+  },
+  "body_share": {
+   "status": "optional_off",
+   "terms": [
+    "open"
+   ],
+   "mine": {
+    "change": -5.0863,
+    "pct": -0.050242,
+    "coef_per_sd": [
+     0.046644
+    ],
+    "z_cluster": [
+     4.0401
+    ],
+    "ci": [
+     -73.579,
+     59.113
+    ]
+   },
+   "json": {
+    "pct": -0.050242,
+    "ci": [
+     -72.056,
+     66.251
+    ],
+    "coef_per_sd": [
+     0.046644
+    ],
+    "z": [
+     4.0411
+    ],
+    "cv_ci": [
+     -191.07,
+     0.77914
+    ]
+   }
+  },
+  "kd": {
+   "status": "optional_off",
+   "terms": [
+    "zy_vol"
+   ],
+   "mine": {
+    "change": -3.8845,
+    "pct": -0.20484,
+    "coef_per_sd": [
+     -0.11855
+    ],
+    "z_cluster": [
+     -3.1668
+    ],
+    "ci": [
+     -16.383,
+     7.4078
+    ]
+   },
+   "json": {
+    "pct": -0.20484,
+    "ci": [
+     -15.645,
+     7.2406
+    ],
+    "coef_per_sd": [
+     -0.11855
+    ],
+    "z": [
+     -3.168
+    ],
+    "cv_ci": [
+     -25.455,
+     4.0014
+    ]
+   }
+  },
+  "sub_att": {
+   "status": "optional_off",
+   "terms": [
+    "zy_octrl"
+   ],
+   "mine": {
+    "change": -4.7226,
+    "pct": -0.20222,
+    "coef_per_sd": [
+     0.13235
+    ],
+    "z_cluster": [
+     3.1608
+    ],
+    "ci": [
+     -18.566,
+     10.191
+    ]
+   },
+   "json": {
+    "pct": -0.20222,
+    "ci": [
+     -19.154,
+     11.376
+    ],
+    "coef_per_sd": [
+     0.13235
+    ],
+    "z": [
+     3.162
+    ],
+    "cv_ci": [
+     -35.388,
+     6.2525
+    ]
+   }
+  }
+ },
+ "original_default_on": {
+  "dist_att": {
+   "terms": [
+    "zy_kd_pow",
+    "length_d",
+    "open"
+   ],
+   "reported_pct": -1.95,
+   "reported_ci": [
+    -758,
+    -73
+   ],
+   "mine": {
+    "change": -420.35,
+    "pct": -1.9478,
+    "coef_per_sd": [
+     -0.023806,
+     0.038549,
+     -0.032619
+    ],
+    "z_cluster": [
+     -3.389,
+     8.9185,
+     -4.3224
+    ],
+    "ci": [
+     -741.89,
+     -97.515
+    ]
+   }
+  },
+  "leg_share": {
+   "terms": [
+    "zy_td_int",
+    "length_d",
+    "zy_press"
+   ],
+   "reported_pct": -1.1,
+   "reported_ci": [
+    -244,
+    -18
+   ],
+   "mine": {
+    "change": -131.89,
+    "pct": -1.0957,
+    "coef_per_sd": [
+     -0.041703,
+     -0.049026,
+     0.040213
+    ],
+    "z_cluster": [
+     -2.6129,
+     -3.2734,
+     2.53
+    ],
+    "ci": [
+     -251.58,
+     -23.857
+    ]
+   }
+  },
+  "td_att": {
+   "terms": [
+    "zy_td_int",
+    "length_d",
+    "zy_td_def",
+    "kick_y"
+   ],
+   "reported_pct": -1.77,
+   "reported_ci": [
+    -264,
+    -56
+   ],
+   "mine": {
+    "change": -157.69,
+    "pct": -1.7672,
+    "coef_per_sd": [
+     -0.09801,
+     -0.079929,
+     -0.078596,
+     0.037965
+    ],
+    "z_cluster": [
+     -4.676,
+     -3.9735,
+     -3.626,
+     1.9187
+    ],
+    "ci": [
+     -260.44,
+     -50.708
+    ]
+   }
+  },
+  "ctrl": {
+   "terms": [
+    "kick_y",
+    "zx_ctrl*zy_octrl",
+    "zy_td_int",
+    "length_d"
+   ],
+   "reported_pct": -1.81,
+   "reported_ci": [
+    -8379,
+    -2158
+   ],
+   "mine": {
+    "change": -5228.0,
+    "pct": -1.8116,
+    "coef_per_sd": [
+     0.061877,
+     -0.069401,
+     -0.04443,
+     -0.045646
+    ],
+    "z_cluster": [
+     3.5215,
+     -3.3953,
+     -2.501,
+     -2.2872
+    ],
+    "ci": [
+     -8520.8,
+     -2217.6
+    ]
+   }
+  },
+  "ctrl_per_td": {
+   "terms": [
+    "zy_td_def"
+   ],
+   "reported_pct": -0.78,
+   "reported_ci": [
+    -3243,
+    -104
+   ],
+   "mine": {
+    "change": -1735.3,
+    "pct": -0.77993,
+    "coef_per_sd": [
+     -0.076691
+    ],
+    "z_cluster": [
+     -4.6731
+    ],
+    "ci": [
+     -3357.7,
+     -106.23
+    ]
+   }
+  }
+ },
+ "z_clustered": {
+  "dist_att/zy_kd_pow": {
+   "quasi_original": -4.63,
+   "clustered_statsmodels": -3.6064,
+   "clustered_styles_json": -3.608
+  },
+  "dist_att/open": {
+   "quasi_original": -5.76,
+   "clustered_statsmodels": -4.3363,
+   "clustered_styles_json": -4.338
+  },
+  "dist_att/length_d": {
+   "quasi_original": 7.17,
+   "clustered_statsmodels": 9.2786,
+   "clustered_styles_json": 9.282
+  },
+  "leg_share/zy_td_int": {
+   "quasi_original": -3.76,
+   "clustered_statsmodels": -3.1909,
+   "clustered_styles_json": -3.192
+  },
+  "leg_share/zy_press": {
+   "quasi_original": 3.79,
+   "clustered_statsmodels": 3.2735,
+   "clustered_styles_json": 3.275
+  },
+  "body_share/open": {
+   "quasi_original": 4.98,
+   "clustered_statsmodels": 4.0401,
+   "clustered_styles_json": 4.041
+  },
+  "td_att/zy_td_int": {
+   "quasi_original": -4.54,
+   "clustered_statsmodels": -4.7751,
+   "clustered_styles_json": -4.777
+  },
+  "ctrl/zx_ctrl*zy_octrl": {
+   "quasi_original": -3.6,
+   "clustered_statsmodels": -3.1863,
+   "clustered_styles_json": -3.187
+  },
+  "ctrl/length_d": {
+   "quasi_original": -3.04,
+   "clustered_statsmodels": -2.489,
+   "clustered_styles_json": -2.49
+  },
+  "ctrl_per_td/zy_td_def": {
+   "quasi_original": -4.62,
+   "clustered_statsmodels": -4.6731,
+   "clustered_styles_json": -4.675
+  },
+  "dist_acc/kick_x": {
+   "quasi_original": 4.27,
+   "clustered_statsmodels": 3.6582,
+   "clustered_styles_json": 3.66
+  }
+ },
+ "nested": {
+  "dist_att": {
+   "candidates": [
+    {
+     "term": "zy_kd_pow",
+     "z_cluster_2019_2021": -3.1249,
+     "val_2022_2023": {
+      "change": -29.646,
+      "pct": -0.1916,
+      "coef_per_sd": [
+       -0.030282
+      ],
+      "z_cluster": [
+       -3.1249
+      ],
+      "ci": [
+       -201.15,
+       154.18
+      ]
+     },
+     "verdict": "same sign"
+    },
+    {
+     "term": "open",
+     "z_cluster_2019_2021": -3.5562,
+     "val_2022_2023": {
+      "change": -85.386,
+      "pct": -0.55183,
+      "coef_per_sd": [
+       -0.0367
+      ],
+      "z_cluster": [
+       -3.5562
+      ],
+      "ci": [
+       -269.46,
+       104.58
+      ]
+     },
+     "verdict": "same sign"
+    },
+    {
+     "term": "length_d",
+     "z_cluster_2019_2021": 7.5174,
+     "val_2022_2023": {
+      "change": -206.37,
+      "pct": -1.3337,
+      "coef_per_sd": [
+       0.039484
+      ],
+      "z_cluster": [
+       7.5174
+      ],
+      "ci": [
+       -363.18,
+       -40.114
+      ]
+     },
+     "verdict": "confirmed"
+    }
+   ],
+   "block": {
+    "terms": [
+     "length_d",
+     "open",
+     "zy_kd_pow"
+    ],
+    "val_joint": {
+     "change": -292.86,
+     "pct": -1.8927,
+     "coef_per_sd": [
+      0.038196,
+      -0.037233,
+      -0.029743
+     ],
+     "z_cluster": [
+      7.23,
+      -3.641,
+      -3.1038
+     ],
+     "ci": [
+      -590.79,
+      17.952
+     ]
+    },
+    "on": false,
+    "test": {
+     "change": -420.35,
+     "pct": -1.9478,
+     "coef_per_sd": [
+      0.038549,
+      -0.032619,
+      -0.023806
+     ],
+     "z_cluster": [
+      8.9185,
+      -4.3224,
+      -3.389
+     ],
+     "ci": [
+      -783.22,
+      -81.261
+     ]
+    }
+   }
+  },
+  "dist_acc": {
+   "candidates": [],
+   "block": null
+  },
+  "leg_share": {
+   "candidates": [
+    {
+     "term": "zy_td_int",
+     "z_cluster_2019_2021": -3.5628,
+     "val_2022_2023": {
+      "change": 28.414,
+      "pct": 0.31664,
+      "coef_per_sd": [
+       -0.069233
+      ],
+      "z_cluster": [
+       -3.5628
+      ],
+      "ci": [
+       -78.449,
+       130.69
+      ]
+     },
+     "verdict": "fails"
+    },
+    {
+     "term": "zy_press",
+     "z_cluster_2019_2021": 3.0596,
+     "val_2022_2023": {
+      "change": -9.0037,
+      "pct": -0.10033,
+      "coef_per_sd": [
+       0.063057
+      ],
+      "z_cluster": [
+       3.0596
+      ],
+      "ci": [
+       -85.084,
+       74.863
+      ]
+     },
+     "verdict": "same sign"
+    },
+    {
+     "term": "open",
+     "z_cluster_2019_2021": -3.2166,
+     "val_2022_2023": {
+      "change": 58.367,
+      "pct": 0.65042,
+      "coef_per_sd": [
+       -0.070762
+      ],
+      "z_cluster": [
+       -3.2166
+      ],
+      "ci": [
+       -18.651,
+       140.93
+      ]
+     },
+     "verdict": "fails"
+    }
+   ],
+   "block": {
+    "terms": [
+     "zy_press"
+    ],
+    "val_joint": {
+     "change": -9.0037,
+     "pct": -0.10033,
+     "coef_per_sd": [
+      0.063057
+     ],
+     "z_cluster": [
+      3.0596
+     ],
+     "ci": [
+      -83.323,
+      71.065
+     ]
+    },
+    "on": false,
+    "test": {
+     "change": -3.5022,
+     "pct": -0.029095,
+     "coef_per_sd": [
+      0.051274
+     ],
+     "z_cluster": [
+      3.2735
+     ],
+     "ci": [
+      -76.541,
+      63.371
+     ]
+    }
+   }
+  },
+  "body_share": {
+   "candidates": [
+    {
+     "term": "open",
+     "z_cluster_2019_2021": 3.363,
+     "val_2022_2023": {
+      "change": -30.365,
+      "pct": -0.47216,
+      "coef_per_sd": [
+       0.050725
+      ],
+      "z_cluster": [
+       3.363
+      ],
+      "ci": [
+       -98.63,
+       32.079
+      ]
+     },
+     "verdict": "same sign"
+    }
+   ],
+   "block": {
+    "terms": [
+     "open"
+    ],
+    "val_joint": {
+     "change": -30.365,
+     "pct": -0.47216,
+     "coef_per_sd": [
+      0.050725
+     ],
+     "z_cluster": [
+      3.363
+     ],
+     "ci": [
+      -101.61,
+      39.863
+     ]
+    },
+    "on": false,
+    "test": {
+     "change": -5.0863,
+     "pct": -0.050242,
+     "coef_per_sd": [
+      0.046644
+     ],
+     "z_cluster": [
+      4.0401
+     ],
+     "ci": [
+      -74.785,
+      61.745
+     ]
+    }
+   }
+  },
+  "td_att": {
+   "candidates": [
+    {
+     "term": "zy_td_int",
+     "z_cluster_2019_2021": -3.5184,
+     "val_2022_2023": {
+      "change": -39.185,
+      "pct": -0.68552,
+      "coef_per_sd": [
+       -0.1006
+      ],
+      "z_cluster": [
+       -3.5184
+      ],
+      "ci": [
+       -98.211,
+       12.979
+      ]
+     },
+     "verdict": "same sign"
+    },
+    {
+     "term": "zy_vol",
+     "z_cluster_2019_2021": 3.3736,
+     "val_2022_2023": {
+      "change": -10.061,
+      "pct": -0.17602,
+      "coef_per_sd": [
+       0.10057
+      ],
+      "z_cluster": [
+       3.3736
+      ],
+      "ci": [
+       -58.681,
+       44.481
+      ]
+     },
+     "verdict": "same sign"
+    },
+    {
+     "term": "length_d",
+     "z_cluster_2019_2021": -4.2338,
+     "val_2022_2023": {
+      "change": -8.9627,
+      "pct": -0.1568,
+      "coef_per_sd": [
+       -0.10801
+      ],
+      "z_cluster": [
+       -4.2338
+      ],
+      "ci": [
+       -64.372,
+       50.074
+      ]
+     },
+     "verdict": "same sign"
+    }
+   ],
+   "block": {
+    "terms": [
+     "length_d",
+     "zy_td_int",
+     "zy_vol"
+    ],
+    "val_joint": {
+     "change": -40.997,
+     "pct": -0.71723,
+     "coef_per_sd": [
+      -0.096808,
+      -0.066761,
+      0.071252
+     ],
+     "z_cluster": [
+      -3.7134,
+      -2.0686,
+      2.1688
+     ],
+     "ci": [
+      -129.04,
+      44.047
+     ]
+    },
+    "on": false,
+    "test": {
+     "change": -78.523,
+     "pct": -0.88002,
+     "coef_per_sd": [
+      -0.080952,
+      -0.07197,
+      0.053346
+     ],
+     "z_cluster": [
+      -3.996,
+      -3.0646,
+      2.1977
+     ],
+     "ci": [
+      -172.0,
+      23.515
+     ]
+    }
+   }
+  },
+  "td_acc": {
+   "candidates": [
+    {
+     "term": "zy_ctrl",
+     "z_cluster_2019_2021": 3.1449,
+     "val_2022_2023": {
+      "change": 12.979,
+      "pct": 0.7225,
+      "coef_per_sd": [
+       0.10868
+      ],
+      "z_cluster": [
+       3.1449
+      ],
+      "ci": [
+       -4.5818,
+       31.753
+      ]
+     },
+     "verdict": "fails"
+    }
+   ],
+   "block": null
+  },
+  "ctrl": {
+   "candidates": [
+    {
+     "term": "zx_ctrl*zy_octrl",
+     "z_cluster_2019_2021": -3.8034,
+     "val_2022_2023": {
+      "change": 1474.8,
+      "pct": 0.7441,
+      "coef_per_sd": [
+       -0.10591
+      ],
+      "z_cluster": [
+       -3.8034
+      ],
+      "ci": [
+       -838.87,
+       3684.6
+      ]
+     },
+     "verdict": "fails"
+    },
+    {
+     "term": "kick_y",
+     "z_cluster_2019_2021": 3.9306,
+     "val_2022_2023": {
+      "change": 53.525,
+      "pct": 0.027006,
+      "coef_per_sd": [
+       0.083422
+      ],
+      "z_cluster": [
+       3.9306
+      ],
+      "ci": [
+       -1727.3,
+       2095.4
+      ]
+     },
+     "verdict": "fails"
+    }
+   ],
+   "block": null
+  },
+  "ctrl_per_td": {
+   "candidates": [
+    {
+     "term": "zy_td_def",
+     "z_cluster_2019_2021": -4.3047,
+     "val_2022_2023": {
+      "change": 299.19,
+      "pct": 0.203,
+      "coef_per_sd": [
+       -0.10097
+      ],
+      "z_cluster": [
+       -4.3047
+      ],
+      "ci": [
+       -1413.0,
+       2027.6
+      ]
+     },
+     "verdict": "fails"
+    }
+   ],
+   "block": null
+  },
+  "kd": {
+   "candidates": [
+    {
+     "term": "zy_vol",
+     "z_cluster_2019_2021": -3.2312,
+     "val_2022_2023": {
+      "change": 1.4965,
+      "pct": 0.10828,
+      "coef_per_sd": [
+       -0.15933
+      ],
+      "z_cluster": [
+       -3.2312
+      ],
+      "ci": [
+       -10.726,
+       13.567
+      ]
+     },
+     "verdict": "fails"
+    }
+   ],
+   "block": null
+  },
+  "sub_att": {
+   "candidates": [],
+   "block": null
+  },
+  "clinch_att": {
+   "candidates": [
+    {
+     "term": "zy_press",
+     "z_cluster_2019_2021": -3.5585,
+     "val_2022_2023": {
+      "change": 92.696,
+      "pct": 0.82054,
+      "coef_per_sd": [
+       -0.088091
+      ],
+      "z_cluster": [
+       -3.5585
+      ],
+      "ci": [
+       -23.119,
+       191.01
+      ]
+     },
+     "verdict": "fails"
+    }
+   ],
+   "block": null
+  },
+  "gnp_att": {
+   "candidates": [
+    {
+     "term": "zy_kd_pow",
+     "z_cluster_2019_2021": 3.7825,
+     "val_2022_2023": {
+      "change": 61.18,
+      "pct": 0.39197,
+      "coef_per_sd": [
+       0.11671
+      ],
+      "z_cluster": [
+       3.7825
+      ],
+      "ci": [
+       -117.56,
+       256.93
+      ]
+     },
+     "verdict": "fails"
+    }
+   ],
+   "block": null
+  }
+ },
+ "per_year": {
+  "dist_att": {
+   "2021": -300.85,
+   "2022": -168.6,
+   "2023": -139.33,
+   "2024": 4.9594,
+   "2025": -216.26,
+   "2026": -204.98
+  },
+  "td_att": {
+   "2021": -74.709,
+   "2022": -55.451,
+   "2023": 8.5584,
+   "2024": 3.0792,
+   "2025": -7.2143,
+   "2026": -81.509
+  },
+  "ctrl": {
+   "2021": -1542.7,
+   "2022": 391.6,
+   "2023": 617.54,
+   "2024": -1074.3,
+   "2025": -1858.0,
+   "2026": -1831.4
+  },
+  "ctrl_per_td": {
+   "2021": -918.85,
+   "2022": -227.09,
+   "2023": 263.72,
+   "2024": -755.37,
+   "2025": -834.36,
+   "2026": -192.77
+  },
+  "gnp_att": {
+   "2021": -57.239,
+   "2022": 20.133,
+   "2023": -127.69,
+   "2024": -239.09,
+   "2025": 1.5953,
+   "2026": 63.592
+  },
+  "leg_share": {
+   "2021": 2.6899,
+   "2022": 10.401,
+   "2023": -47.222,
+   "2024": -36.622,
+   "2025": -45.089,
+   "2026": -53.055
+  },
+  "body_share": {
+   "2021": -30.91,
+   "2022": -11.322,
+   "2023": -19.414,
+   "2024": -14.503,
+   "2025": 11.663,
+   "2026": -4.7241
+  },
+  "kd": {
+   "2021": -4.8421,
+   "2022": -0.16473,
+   "2023": 1.2887,
+   "2024": 0.91772,
+   "2025": -2.1084,
+   "2026": -2.7685
+  },
+  "sub_att": {
+   "2021": -3.9343,
+   "2022": -5.35,
+   "2023": 2.1226,
+   "2024": -7.7642,
+   "2025": -5.0389,
+   "2026": 9.4518
+  }
+ },
+ "hurt_check": {
+  "all minutes": {
+   "n_tune_rows": 3858,
+   "terms": [
+    "length_d",
+    "open",
+    "zy_kd_pow"
+   ],
+   "coef_per_sd": [
+    0.038646,
+    -0.032564,
+    -0.023926
+   ],
+   "z_cluster": [
+    8.9295,
+    -4.3098,
+    -3.4013
+   ]
+  },
+  "completed rounds only": {
+   "n_tune_rows": 3070,
+   "terms": [
+    "length_d",
+    "open",
+    "zy_kd_pow"
+   ],
+   "coef_per_sd": [
+    0.038536,
+    -0.033816,
+    -0.023962
+   ],
+   "z_cluster": [
+    8.4175,
+    -4.1672,
+    -3.1769
+   ]
+  },
+  "completed rounds before any knockdown": {
+   "n_tune_rows": 2748,
+   "terms": [
+    "length_d",
+    "open",
+    "zy_kd_pow"
+   ],
+   "coef_per_sd": [
+    0.037167,
+    -0.035834,
+    -0.024862
+   ],
+   "z_cluster": [
+    7.4562,
+    -4.2003,
+    -3.1247
+   ]
+  }
+ },
+ "composition": {
+  "dist_att": {
+   "terms": [
+    "length_d",
+    "open",
+    "zy_kd_pow"
+   ],
+   "free_coef_per_sd": [
+    0.038549,
+    -0.032619,
+    -0.023806
+   ],
+   "ab1_coef_per_sd": [
+    0.031583,
+    -0.030186,
+    -0.0099884
+   ],
+   "ab1_z": [
+    7.2657,
+    -3.8833,
+    -1.394
+   ],
+   "free_exponents": [
+    0.75766,
+    0.58329
+   ],
+   "json_ab1_coef_per_unit": [
+    0.052357,
+    -0.067632,
+    -0.0099884
+   ],
+   "mine_ab1_coef_per_unit": [
+    0.052357,
+    -0.067633,
+    -0.0099884
+   ]
+  },
+  "td_att": {
+   "terms": [
+    "zy_td_int",
+    "length_d",
+    "zy_vol",
+    "zy_td_def"
+   ],
+   "free_coef_per_sd": [
+    -0.076253,
+    -0.080837,
+    0.076694,
+    -0.093306
+   ],
+   "ab1_coef_per_sd": [
+    0.00065554,
+    -0.058288,
+    0.16794,
+    -0.074101
+   ],
+   "ab1_z": [
+    0.027256,
+    -2.8597,
+    6.9049,
+    -3.324
+   ],
+   "free_exponents": [
+    1.089,
+    0.40787
+   ],
+   "json_ab1_coef_per_unit": [
+    0.00065554,
+    -0.096627,
+    0.16794,
+    -0.074101
+   ],
+   "mine_ab1_coef_per_unit": [
+    0.00065554,
+    -0.096628,
+    0.16794,
+    -0.074101
+   ]
+  },
+  "ctrl": {
+   "terms": [
+    "kick_y",
+    "zx_ctrl*zy_octrl",
+    "zy_td_int"
+   ],
+   "free_coef_per_sd": [
+    0.06239,
+    -0.068645,
+    -0.049009
+   ],
+   "ab1_coef_per_sd": [
+    0.047307,
+    -0.17172,
+    -0.029805
+   ],
+   "ab1_z": [
+    2.5843,
+    -9.2423,
+    -1.6609
+   ],
+   "free_exponents": [
+    0.81947,
+    0.59099
+   ],
+   "json_ab1_coef_per_unit": [
+    0.043164,
+    -0.17082,
+    -0.029805
+   ],
+   "mine_ab1_coef_per_unit": [
+    0.043163,
+    -0.17083,
+    -0.029805
+   ]
+  },
+  "ctrl_per_td": {
+   "terms": [
+    "zy_td_def",
+    "zy_sub_int"
+   ],
+   "free_coef_per_sd": [
+    -0.069025,
+    0.026359
+   ],
+   "ab1_coef_per_sd": [
+    -0.1069,
+    0.0016536
+   ],
+   "ab1_z": [
+    -6.0109,
+    0.097975
+   ],
+   "free_exponents": [
+    0.3825,
+    0.60684
+   ],
+   "json_ab1_coef_per_unit": [
+    -0.1069,
+    0.0016536
+   ],
+   "mine_ab1_coef_per_unit": [
+    -0.1069,
+    0.0016536
+   ]
+  },
+  "gnp_att": {
+   "terms": [
+    "zy_sub_int",
+    "zy_kd_pow"
+   ],
+   "free_coef_per_sd": [
+    0.10412,
+    0.085885
+   ],
+   "ab1_coef_per_sd": [
+    0.10378,
+    0.074442
+   ],
+   "ab1_z": [
+    4.1742,
+    3.0812
+   ],
+   "free_exponents": [
+    0.60385
+   ],
+   "json_ab1_coef_per_unit": [
+    0.10378,
+    0.074442
+   ],
+   "mine_ab1_coef_per_unit": [
+    0.10378,
+    0.074442
+   ]
+  },
+  "leg_share": {
+   "terms": [
+    "length_d",
+    "zy_press",
+    "zy_td_int"
+   ],
+   "free_coef_per_sd": [
+    -0.049026,
+    0.040213,
+    -0.041703
+   ],
+   "ab1_coef_per_sd": [
+    -0.029154,
+    0.022834,
+    -0.020589
+   ],
+   "ab1_z": [
+    -1.8752,
+    1.3594,
+    -1.2244
+   ],
+   "free_exponents": [
+    0.93711,
+    0.49662
+   ],
+   "json_ab1_coef_per_unit": [
+    -0.048323,
+    0.022819,
+    -0.020606
+   ],
+   "mine_ab1_coef_per_unit": [
+    -0.048323,
+    0.02282,
+    -0.020606
+   ]
+  },
+  "body_share": {
+   "terms": [
+    "open"
+   ],
+   "free_coef_per_sd": [
+    0.046644
+   ],
+   "ab1_coef_per_sd": [
+    0.046424
+   ],
+   "ab1_z": [
+    4.007
+   ],
+   "free_exponents": [
+    0.88681
+   ],
+   "json_ab1_coef_per_unit": [
+    0.10402
+   ],
+   "mine_ab1_coef_per_unit": [
+    0.10402
+   ]
+  },
+  "kd": {
+   "terms": [
+    "zy_vol"
+   ],
+   "free_coef_per_sd": [
+    -0.11855
+   ],
+   "ab1_coef_per_sd": [
+    -0.078054
+   ],
+   "ab1_z": [
+    -1.8919
+   ],
+   "free_exponents": [
+    0.52661,
+    0.28147
+   ],
+   "json_ab1_coef_per_unit": [
+    -0.078054
+   ],
+   "mine_ab1_coef_per_unit": [
+    -0.078054
+   ]
+  },
+  "sub_att": {
+   "terms": [
+    "zy_octrl"
+   ],
+   "free_coef_per_sd": [
+    0.13235
+   ],
+   "ab1_coef_per_sd": [
+    -0.092323
+   ],
+   "ab1_z": [
+    -2.0921
+   ],
+   "free_exponents": [
+    0.59483,
+    0.33197
+   ],
+   "json_ab1_coef_per_unit": [
+    -0.092323
+   ],
+   "mine_ab1_coef_per_unit": [
+    -0.092323
+   ]
+  }
+ },
+ "winner": {
+  "n_decisive": 3178,
+  "n_test": 1223,
+  "a_win_rate": 0.56325,
+  "elo": {
+   "log_loss": 0.68066,
+   "accuracy": 0.54702
+  },
+  "skill_baseline": {
+   "log_loss": 0.62718,
+   "accuracy": 0.65904,
+   "C": 0.01,
+   "cv_tune": 0.65417,
+   "vs_elo": -0.053482,
+   "vs_elo_ci": [
+    -0.067668,
+    -0.038957
+   ]
+  },
+  "terms": {
+   "submission threat vs submission exposure": {
+    "dll": 0.0019706,
+    "ci": [
+     -0.0015359,
+     0.0056162
+    ]
+   },
+   "clinch fighter vs distance fighter": {
+    "dll": 0.0018186,
+    "ci": [
+     -0.0013682,
+     0.0050154
+    ]
+   },
+   "leg kicker vs opponent who gets leg-kicked": {
+    "dll": -0.00099497,
+    "ci": [
+     -0.0037639,
+     0.0016225
+    ]
+   }
+  },
+  "all_three": {
+   "log_loss": 0.62982,
+   "dll": 0.0026427,
+   "ci": [
+    -0.0028961,
+    0.0081393
+   ]
+  },
+  "drop_one_top": [
+   [
+    "age",
+    0.015171
+   ],
+   [
+    "elo",
+    0.0042246
+   ],
+   [
+    "sapm",
+    0.0029823
+   ],
+   [
+    "acc",
+    0.0017521
+   ]
+  ],
+  "json": {
+   "elo": 0.6805,
+   "skill": 0.6272,
+   "combined": 0.6307
+  }
+ },
+ "transmission": {
+  "none": null,
+  "tune_screened": {
+   "test_dll": -0.0006961,
+   "ci": [
+    -0.003178,
+    0.001854
+   ],
+   "median_abs_dp": 0.01447,
+   "p90_abs_dp": 0.03697,
+   "max_abs_dp": 0.087
+  },
+  "tier1": {
+   "test_dll": -0.00157,
+   "ci": [
+    -0.003843,
+    0.0008887
+   ],
+   "median_abs_dp": 0.01228,
+   "p90_abs_dp": 0.03481,
+   "max_abs_dp": 0.08025
+  },
+  "default_on": {
+   "test_dll": -0.001477,
+   "ci": [
+    -0.003953,
+    0.00113
+   ],
+   "median_abs_dp": 0.01451,
+   "p90_abs_dp": 0.03599,
+   "max_abs_dp": 0.07844
+  },
+  "all_recommended": {
+   "test_dll": -0.0007114,
+   "ci": [
+    -0.003202,
+    0.001861
+   ],
+   "median_abs_dp": 0.01445,
+   "p90_abs_dp": 0.03704,
+   "max_abs_dp": 0.0871
+  }
+ },
+ "log_md": "## Verification log\n\nAdversarial review of this analysis, Nov 6, 2026. The independent code is `tools/styles_verify.py` (statsmodels GLMs with fight-clustered covariance, scikit-learn logistic regression on corner-swapped data, its own design matrices, z constants and bootstraps); its output is `data/derived/styles_verify.json`. The sections above already reflect the fixes listed here.\n\n**Verdict.** The features and joins have no look-ahead leakage, and the headline numbers reproduce exactly. But the first version used the 2024+ test period to give rate-term verdicts, pick terms (including a 'judgment' term), and switch blocks on. It also overstated the z of symmetric terms. Both are fixed: all selection now uses 2019-2023 only. With clean selection, distance attempts (length, open stance, the opponent's power) and control per takedown (the opponent's takedown defense) keep held-out gains. The takedown-attempt block's held-out gain halves and its interval reaches zero. Leg share drops to optional, and ground-and-pound turns on. The winner-level null result stands. The modifier coefficients turned out to depend on the engine's composition exponents, so the recommendation now gives both coefficient sets.\n\n### Checks that passed\n\n| Check | Result |\n|---|---|\n| Fighter order (A/B vs per-fight vectors) | 6474 sides: sig. attempts, control and takedown attempts match the backtest's own `actual` in all but 0; opponent parts consistent in all but 0 fights |\n| Pre-fight freezing of S | 4934 consecutive appearances satisfy S(next) = (S + this fight) x decay; 0 look like the fight was already inside S |\n| Other walk-forward inputs (code reading of build_db.walk) | Elo is pre-fight; pace / cardio comes from the pre-fight accumulator; age is at the fight date; priors_asof uses fights before Jan 1 of the fight year; z constants, clusters, ridges and prior strengths are fit on 2019-2023 |\n| Feature formulas | my own arithmetic for d_rate, td_int, td_def, kd_pow, sh_l on 600 random sides: max difference 7e-16 |\n| z constants | recomputed from 2019-2023 sides: max difference 4e-05 sd |\n| Draws, no-contests, cards | excluded from winner models (3178 decisive of 3237); kept in rate models (their stats are real); judges' cards are not used, so the loser-first order cannot bite |\n| Rate blocks (fresh statsmodels refit) | every selected block's coefficients reproduce (max difference 5e-06 per sd) and so do the 2024+ deviance changes (max difference 3.1e-05 percentage points); the bootstrap CIs agree within resampling noise |\n| Winner level (fresh scikit-learn fit) | Elo 0.6807, skill baseline 0.6272 (LOYO-chosen C = 0.01) vs the report's 0.6805 / 0.6272; lift over Elo -0.0535, CI [-0.0677, -0.0390]. The three tune-screened interactions change 2024+ log loss by +0.0020, +0.0018, -0.0010; all three together by +0.0026 (CI [-0.0029, +0.0081]). The null result stands. Age carries most of the lift (dropping it costs +0.0152); it is computed from date of birth at the fight date |\n| Is 'less output against power' just being hurt or short fights? | No. The opponent's-power coefficient on distance attempts is -0.0239 per sd on all minutes, -0.0240 on completed rounds only, and -0.0249 (z -3.12) on completed rounds before any knockdown either way. It is pre-emptive caution, not the engine's hurt state counted twice |\n\n### Problems found and fixed\n\n1. **Selection on the test period (the main flaw).** Verdicts ('survives' = 2024+ CI below zero, 'supported' = negative 2024+ change and the test refit agrees) decided which terms went in. A tier-3 'judgment' term (the defender's kick share on takedown attempts, tune z 2.4 < 3) was added because its 2024+ CI was below zero. Blocks were switched on when their joint 2024+ CI was below zero. So the reported block gains were partly fit to the test set. The fix moves every decision onto 2019-2023: a fight-clustered z screen, then a leave-one-year-out out-of-fold deviance change with a fight-bootstrap CI for terms (CV-confirmed) and for blocks (on by default). The forward step is unchanged, there are no judgment terms, and 2024+ is scored once. Effect on the blocks (2024+ deviance change, my refit):\n\n| Rate | First version (test-selected) | 2024+ | After fix (tune-selected) | 2024+ | Status after fix |\n|---|---|---|---|---|---|\n| dist_att | zy_kd_pow, length_d, open | -1.95% [-742, -98] | length_d, open, zy_kd_pow | -1.95% [-751, -83] | on |\n| leg_share | zy_td_int, length_d, zy_press | -1.10% [-252, -24] | length_d, zy_press, zy_td_int | -1.10% [-240, -24] | optional (tune CV CI crosses zero) |\n| td_att | zy_td_int, length_d, zy_td_def, kick_y | -1.77% [-260, -51] | zy_td_int, length_d, zy_vol, zy_td_def | -0.93% [-196, +33] | on |\n| ctrl | kick_y, zx_ctrl*zy_octrl, zy_td_int, length_d | -1.81% [-8521, -2218] | kick_y, zx_ctrl*zy_octrl, zy_td_int | -1.68% [-7719, -1950] | check only (on by tune CV) |\n| ctrl_per_td | zy_td_def | -0.78% [-3358, -106] | zy_td_def, zy_sub_int | -0.81% [-3465, -33] | on |\n| gnp_att | optional: zy_sub_int, zy_kd_pow |  | zy_sub_int, zy_kd_pow | -0.77% [-494, +108] | on |\n| body_share | optional: open |  | open | -0.05% [-74, +59] | optional (tune CV CI crosses zero) |\n| kd | optional: none |  | zy_vol | -0.20% [-16, +7] | optional (tune CV CI crosses zero) |\n| sub_att | optional: none |  | zy_octrl | -0.20% [-19, +10] | optional (tune CV CI crosses zero) |\n\n2. **Mis-specified uncertainty.** The rate-model z treated the two sides of a fight as independent, with quasi-likelihood dispersion. Fight-clustered sandwich z (now used for the screen) against the first version's z: dist_att/zy_kd_pow -4.63 -> -3.61; dist_att/open -5.76 -> -4.34; dist_att/length_d +7.17 -> +9.28; leg_share/zy_td_int -3.76 -> -3.19; leg_share/zy_press +3.79 -> +3.27; body_share/open +4.98 -> +4.04; td_att/zy_td_int -4.54 -> -4.78; ctrl/zx_ctrl*zy_octrl -3.60 -> -3.19; ctrl/length_d -3.04 -> -2.49; ctrl_per_td/zy_td_def -4.62 -> -4.67; dist_acc/kick_x +4.27 -> +3.66. Symmetric opponent terms lose 15-35% of their z; antisymmetric physical terms gain. The numpy sandwich in `styles.py` matches statsmodels (max |z difference| 0.00).\n\n3. **'Close to orthogonal to the engine's exponents' was false.** The modifiers were fit next to free main-effect coefficients, which imply exponents well below the engine's default a = b = 1 for what the defender allows. Refitting the same terms with the main effects fixed at a = b = 1 (offset) changes them materially (coefficient per term sd, free -> a = b = 1): dist_att: length_d +0.039 -> +0.032, open -0.033 -> -0.030, zy_kd_pow -0.024 -> -0.010; td_att: zy_td_int -0.076 -> +0.001, length_d -0.081 -> -0.058, zy_vol +0.077 -> +0.168, zy_td_def -0.093 -> -0.074; ctrl: kick_y +0.062 -> +0.047, zx_ctrl*zy_octrl -0.069 -> -0.172, zy_td_int -0.049 -> -0.030; ctrl_per_td: zy_td_def -0.069 -> -0.107, zy_sub_int +0.026 -> +0.002; gnp_att: zy_sub_int +0.104 -> +0.104, zy_kd_pow +0.086 -> +0.074. Section 6 and section 9 now carry the implied exponents and both coefficient sets; `styles.py` and this check agree on the a = b = 1 values (max difference 1e-05 per unit).\n\n4. **Smaller items.** The module defaults K_TD = 8 and K_HEAD = 125 contradicted the comment saying they were the tuned values (4 and 60). `main()` re-tunes them, so results were unaffected, but `--no-shrink-tune` would have used the wrong values; they are corrected. Report claims that no style term touches knockdowns or submissions were softened: with clustered z, single terms clear the screen there, but no block passes the tune CV. The analyst's summary quoted scouting AUCs from an earlier run (e.g. leg-kicks 0.95 vs 0.94 in the report); the report's numbers are generated from the JSON.\n\n### What remains uncertain (stated, not fixable with this data)\n\n- **A stricter split confirms fewer single terms.** Screening on 2019-2021 and confirming on 2022-2023 (about 700 fights) confirms only dist_att/length_d; leg_share/zy_td_int, leg_share/open, td_acc/zy_ctrl, ctrl/zx_ctrl*zy_octrl, ctrl/kick_y, ctrl_per_td/zy_td_def, kd/zy_vol, clinch_att/zy_press, gnp_att/zy_kd_pow do not confirm there (deviance change >= 0 or the 2022-2023 refit flips sign), although several of them hold on 2024+. Single-term evidence is noisy from year to year; the block-level tune CV, which pools five years, is the steadier guide.\n- **Per-year forward chaining** (fit on all earlier years from 2019, score the next year; deviance change, negative = better): dist_att 21:-301 22:-169 23:-139 24:+5 25:-216 26:-205 (better in 5 of 6); td_att 21:-75 22:-55 23:+9 24:+3 25:-7 26:-82 (better in 4 of 6); ctrl 21:-1543 22:+392 23:+618 24:-1074 25:-1858 26:-1831 (better in 4 of 6); ctrl_per_td 21:-919 22:-227 23:+264 24:-755 25:-834 26:-193 (better in 5 of 6); gnp_att 21:-57 22:+20 23:-128 24:-239 25:+2 26:+64 (better in 3 of 6); leg_share 21:+3 22:+10 23:-47 24:-37 25:-45 26:-53 (better in 4 of 6); body_share 21:-31 22:-11 23:-19 24:-15 25:+12 26:-5 (better in 5 of 6); kd 21:-5 22:-0 23:+1 24:+1 25:-2 26:-3 (better in 4 of 6); sub_att 21:-4 22:-5 23:+2 24:-8 25:-5 26:+9 (better in 4 of 6).\n- **Terms that vanish or flip sign under a = b = 1** (per term sd, free -> a = b = 1): dist_att/zy_kd_pow (-0.024 -> -0.010); td_att/zy_td_int (-0.076 -> +0.001); ctrl/zy_td_int (-0.049 -> -0.030); ctrl_per_td/zy_sub_int (+0.026 -> +0.002); leg_share/length_d (-0.049 -> -0.029); leg_share/zy_press (+0.040 -> +0.023); leg_share/zy_td_int (-0.042 -> -0.021); kd/zy_vol (-0.119 -> -0.078); sub_att/zy_octrl (+0.132 -> -0.092). Under the engine's default composition these are not matchup effects but corrections for main effects that are too weak or too strong; leave them out (and keep the sub_att knob off) unless the engine adopts the fitted exponents.\n- **Winner-level transmission is still not significant.** Clean default-on modifiers through the expected-scorecard stand-in: -0.0015 log loss, CI [-0.0040, +0.0011]; every screened term: -0.0007, CI [-0.0032, +0.0019].\n- Stance, reach and height are the current tale of the tape applied to past fights, a mild look-ahead that matters mainly for the stance terms. Archetypes and scouting AUCs were checked by code reading only (k-means and standardisation fit on 2019-2023; scouting tags are hindsight and used descriptively); they do not feed the engine numbers."
+}
