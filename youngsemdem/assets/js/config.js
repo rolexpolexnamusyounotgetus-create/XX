@@ -272,11 +272,11 @@
 
     cal: {
       /** PRODID written into .ics files. */
-      prodId: '-//Young Seminole Democrats//youngsemdem site//EN',
+      prodId: '-//Young Democrats of Seminole County//youngsemdems site//EN',
       /** Event length used when an event has no end. */
       defaultDurationMin: 120,
       /** Calendar name shown by some apps (X-WR-CALNAME) for multi-event files. */
-      name: 'Young Seminole Democrats'
+      name: 'Young Democrats of Seminole County'
     },
 
     cards: {
@@ -284,6 +284,29 @@
       fonts: [],
       /** Draw a small DEMO mark on cards in demo mode. */
       demoWatermark: true
+    },
+
+    /**
+     * Member video clips (assets/js/clips.js). These are clips.js's own defaults, listed here so
+     * they can be swapped in one place; per-call options still win. Keep maxBytes and maxDuration
+     * in step with the upload function's VIDEO_MAX_BYTES / VIDEO_MAX_DURATION_SECONDS env vars.
+     */
+    clips: {
+      maxBytes: 157286400,    // 150 MB
+      maxDuration: 180,       // seconds
+      minDuration: 0.5,
+      captionMax: 300,
+      tagsMax: 8
+    },
+
+    /**
+     * Service worker (assets/js/sw-register.js, sw.js). Off on file:// and, by default, in demo
+     * mode (demo deploys change often). ?sw=0 in the URL unregisters it for debugging.
+     */
+    pwa: {
+      serviceWorker: true,
+      serviceWorkerInDemo: false,
+      swUrl: 'sw.js'
     },
 
     features: {

@@ -74,13 +74,17 @@ async function nodeTests() {
     const w = sandbox();
     const c = w.YSD_CONFIG;
     eq(c.demo, true, 'demo is true');
-    eq(c.org.ageCap, 40, 'org.ageCap 40');
-    eq(c.org.handle, 'youngsemdem', 'org.handle');
+    // Org identity (name, handle, ages) is the lead's call and changes with sign-off, so check the
+    // shape here, not the values (config.js now points at YDSC: youngsemdems, ages 14 to 39).
+    ok(Number.isInteger(c.org.ageCap) && c.org.ageCap >= 18 && c.org.ageCap <= 40, 'org.ageCap is an age cap', c.org.ageCap);
+    ok(Number.isInteger(c.org.minAge) && c.org.minAge >= 13 && c.org.minAge < c.org.ageCap, 'org.minAge >= 13 (COPPA) and below the cap', c.org.minAge);
+    ok(/^[a-z0-9_.]{3,30}$/i.test(c.org.handle), 'org.handle is a bare handle (no @)', c.org.handle);
     for (const k of ['name', 'short', 'handle', 'county', 'tagline']) ok(typeof c.org[k] === 'string' && c.org[k], 'org.' + k);
     eq(c.site.url, '', "site.url '' (use location)");
     ok(Array.isArray(c.site.locales), 'site.locales array');
     for (const k of ['register', 'checkRegistration', 'countyElections', 'voteByMail', 'pollingPlace', 'earlyVoting']) ok(/^https:\/\//.test(c.links.vote[k]), 'links.vote.' + k + ' is https');
-    for (const k of ['actblue', 'actionNetwork', 'mobilize']) eq(c.links[k], '', 'links.' + k + ' empty placeholder');
+    for (const k of ['actionNetwork', 'mobilize']) eq(c.links[k], '', 'links.' + k + ' empty placeholder');
+    ok(c.links.actblue === '' || /^https:\/\/secure\.actblue\.com\/donate\/[\w-]+$/.test(c.links.actblue), "links.actblue is '' or an ActBlue form URL", c.links.actblue);
     ok('formEndpoint' in c.integrations && 'videoUploadEndpoint' in c.integrations && 'analytics' in c.integrations, 'integrations keys');
     ok(typeof c.legal.paidFor === 'string' && /PLACEHOLDER/.test(c.legal.paidFor), 'legal.paidFor placeholder');
     ok('privacyEmail' in c.legal, 'legal.privacyEmail');
@@ -89,7 +93,7 @@ async function nodeTests() {
     ok(!('askEndpoint' in c.integrations) && !('ask' in c.features), 'no assistant config keys');
     const w2 = sandbox({ preConfig: { demo: false, site: { url: 'https://ysd.example' }, org: { tagline: 'T' } } });
     eq(w2.YSD_CONFIG.demo, false, 'pre-set YSD_CONFIG overrides demo');
-    eq(w2.YSD_CONFIG.org.name, 'Young Seminole Democrats', 'deep merge keeps defaults');
+    eq(w2.YSD_CONFIG.org.name, c.org.name, 'deep merge keeps defaults');
     eq(w2.YSD_CONFIG.org.tagline, 'T', 'deep merge applies override');
     eq(w2.YSD.cfg('a.b.c', 'fb'), 'fb', 'cfg fallback');
     w.YSD.counters.stopLive(); w2.YSD.counters.stopLive();
@@ -271,7 +275,9 @@ async function nodeTests() {
     ok(L.email.startsWith('mailto:?subject=') && L.email.includes('&body=Join%20us!%20'), 'mailto');
     eq(L.facebook, 'https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fysd.example%2F%3Fref%3DK', 'facebook sharer');
     eq(L.telegram, 'https://t.me/share/url?url=https%3A%2F%2Fysd.example%2F%3Fref%3DK&text=Join%20us!', 'telegram');
-    eq(sh.actblue(25), '', "actblue '' when not configured");
+    const w0 = sandbox({ href: 'https://ysd.example/?ref=PAL22', preConfig: { links: { actblue: '' } } });
+    eq(w0.YSD.share.actblue(25), '', "actblue '' when not configured");
+    w0.YSD.counters.stopLive();
     const w2 = sandbox({ href: 'https://ysd.example/?ref=PAL22&utm_source=ig', preConfig: { links: { actblue: 'https://secure.actblue.com/donate/example-form' } } });
     const ab = new URL(w2.YSD.share.actblue(10, { recurring: false }));
     eq(ab.searchParams.get('amount'), '10', 'actblue amount');

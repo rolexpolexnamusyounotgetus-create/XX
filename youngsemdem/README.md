@@ -60,8 +60,8 @@ CLI: `npx wrangler pages dev .` (Cloudflare) or `npx netlify-cli dev` (Netlify).
 
 ## Scripts
 
-Nothing to install: the tools need Python 3.11+, Node 18+ (22 tested), and Playwright for the
-browser checks (preinstalled globally here; otherwise run `npm i -g playwright` and then
+Nothing to install: the tools need Python 3.9+ (3.11+ for the tests, which use `tomllib`), Node
+18+ (22 tested), and Playwright for the browser checks (preinstalled globally here; otherwise run `npm i -g playwright` and then
 `npx playwright install chromium`). `npm run <name>` is a shortcut for each command.
 
 | npm script | Command | What it does |

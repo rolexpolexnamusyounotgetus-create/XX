@@ -669,7 +669,10 @@ test('sw: registers, network-first pages, offline fallbacks, SWR assets, never c
     await page.waitForFunction(() => window.YSD && YSD.sw && YSD.sw.status === 'disabled', null, { timeout: 5000 });
     assert.strictEqual(await page.evaluate(() => YSD.sw.reason), 'demo');
     await page.waitForFunction(() => navigator.serviceWorker.getRegistrations().then((r) => r.length === 0), null, { timeout: 5000, polling: 200 });
-    assert.deepStrictEqual(await page.evaluate(() => caches.keys().then((k) => k.filter((n) => n.startsWith('ysd-')))), [], 'caches cleared');
+    // unregister() resolves after the page-side cache cleanup; give it a moment, then expect none.
+    await page.waitForFunction(() => caches.keys().then((k) => !k.some((n) => n.startsWith('ysd-'))), null, { timeout: 5000, polling: 200 }).catch(() => {});
+    await page.waitForTimeout(300);
+    assert.deepStrictEqual(await page.evaluate(() => caches.keys().then((k) => k.filter((n) => n.startsWith('ysd-')))), [], 'caches cleared and not recreated');
     assert.deepStrictEqual(pageErrors, []);
     await ctx.close();
 

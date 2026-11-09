@@ -70,20 +70,21 @@ function pageKey(url) {
   return u.href;
 }
 
-function trim(cacheName, max) {
-  return caches.open(cacheName).then(function (cache) {
-    return cache.keys().then(function (keys) {
-      var extra = keys.length - max, jobs = [];
-      for (var i = 0; i < extra; i++) jobs.push(cache['delete'](keys[i]));
-      return Promise.all(jobs);
-    });
+/** Drop the oldest entries of an open cache. Works on the Cache object (never re-opens by name,
+ *  which would recreate a cache that CLEAR_CACHES just deleted). */
+function trim(cache, max) {
+  return cache.keys().then(function (keys) {
+    var extra = keys.length - max, jobs = [];
+    for (var i = 0; i < extra; i++) jobs.push(cache['delete'](keys[i]));
+    return Promise.all(jobs);
   })['catch'](noop);
 }
 
 function putPage(key, res) {
+  if (retired) return Promise.resolve();
   return caches.open(PAGES).then(function (cache) {
-    return cache.put(key, res);
-  }).then(function () { return trim(PAGES, MAX_PAGES); })['catch'](noop);
+    return cache.put(key, res).then(function () { return trim(cache, MAX_PAGES); });
+  })['catch'](noop);
 }
 
 /** Cached copy of a page: exact path, then dir/index.html, then pretty URL (/about -> about.html). */
@@ -126,6 +127,7 @@ function offlineResponse() {
 
 /** Cache offline.html if it exists. A missing file is fine (design team adds it later). */
 function cacheOfflinePage() {
+  if (retired) return Promise.resolve();
   return fetch(new Request(OFFLINE_URL, { cache: 'reload', credentials: 'same-origin' })).then(function (res) {
     if (!cacheable(res)) return;
     return caches.open(PAGES).then(function (cache) { return cache.put(OFFLINE_URL, res); });
@@ -170,9 +172,9 @@ function staleWhileRevalidate(event) {
   return caches.open(ASSETS).then(function (cache) {
     return cache.match(req).then(function (hit) {
       var network = fetch(req).then(function (res) {
-        if (cacheable(res)) {
+        if (cacheable(res) && !retired) {
           var copy = res.clone();
-          event.waitUntil(cache.put(req, copy).then(function () { return trim(ASSETS, MAX_ASSETS); })['catch'](noop));
+          event.waitUntil(cache.put(req, copy).then(function () { return trim(cache, MAX_ASSETS); })['catch'](noop));
         }
         return res;
       });

@@ -66,6 +66,20 @@ sub-folders:
 </nav>
 ```
 
+**`{{site}}`** becomes the absolute site URL with no trailing slash. It comes from `--site`, else
+the `SITE_URL` environment variable, else `site.url` in `assets/js/config.js`. **`{{path}}`**
+becomes the page's public path: `/` for `index.html`, `/about` for `about.html`, `/events/` for
+`events/index.html`. Put them in a head partial so every page gets an absolute canonical URL,
+which share crawlers need:
+
+```html
+<link rel="canonical" href="{{site}}{{path}}">
+<meta property="og:url" content="{{site}}{{path}}">
+```
+
+While the demo has no `site.url`, these come out relative (`/about`), and the sync prints a
+warning. After the real domain is set in config.js, run the sync again and every page is updated.
+
 **`aria-current="page"`** is added to the link that points at the page being written, and
 removed from every other link. Style the active link with CSS like
 `nav a[aria-current="page"] { ... }`. You don't need a class. The rules:
