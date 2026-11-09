@@ -292,6 +292,7 @@ window.YSD_DATA = window.YSD_DATA || {};
       "success.join.letter": {"en":"Your first Thursday Letter lands Thursday morning.","es":"Tu primera Carta del Jueves llega el jueves por la mañana.","placeholder":"chapter-confirm"},
       "success.join.signoff": {"en":"Now go drink some water.","es":"Ahora tómate un vaso de agua."},
       "success.join.invite": {"en":"Here's your invite link. Send it to one person you'd actually want at a meetup.","es":"Aquí está tu enlace de invitación. Mándaselo a una persona que de verdad quieras ver en una reunión."},
+      "success.join.supporter": {"en":"Members are {minAge} to {maxAge}, so you're on the list as a supporter. Everything on this site is still yours to use.","es":"Los miembros tienen de {minAge} a {maxAge} años, así que estás en la lista como simpatizante. Todo lo que hay en este sitio sigue siendo para ti.","source":"https://secure.actblue.com/donate/ydscdues","verified":"2026-11-09"},
       "success.join.demo": {"en":"DEMO: nothing left this browser. On the live site, this is where your welcome email would start.","es":"DEMO: nada salió de este navegador. En el sitio real, aquí empezaría tu correo de bienvenida.","demo":true},
       "success.rsvp.title": {"en":"Seat saved.","es":"Lugar reservado."},
       "success.rsvp.body": {"en":"Add it to your calendar so future you remembers too.","es":"Agrégalo a tu calendario para que tu yo del futuro también se acuerde."},

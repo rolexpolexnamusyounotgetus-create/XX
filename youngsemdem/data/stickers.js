@@ -108,7 +108,7 @@ window.YSD_DATA.stickers = {
         en: "Florida's minimum wage reached $15 an hour on Sep 30, 2026. From Sep 30, 2027, it rises with inflation every year.",
         es: "El salario mínimo de Florida llegó a $15 la hora el 30 de septiembre de 2026. Desde el 30 de septiembre de 2027 sube cada año con la inflación."
       },
-      source: { url: "https://www.flsenate.gov/Laws/Constitution", label: { en: "Florida Constitution, Art. X §24", es: "Constitución de Florida, art. X §24" } },
+      source: { url: "https://www.flsenate.gov/Laws/Constitution", label: { en: "Florida Constitution, Art. X §24", es: "Constitución de Florida, art. X §24 (en inglés)" } },
       verified: "2026-11-09", confidence: "high",
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#4FD6FF" stroke="#170B33" stroke-width="4"/><path d="M60 14V24M60 96V106M14 60H24M96 60H106M27 27L34 34M86 86L93 93M93 27L86 34M34 86L27 93" stroke="#FF8B3D" stroke-width="6" stroke-linecap="round"/><circle cx="60" cy="60" r="29" fill="#FFD23F" stroke="#170B33" stroke-width="3.5"/><path d="M36 55H84" stroke="#170B33" stroke-width="4" stroke-linecap="round"/><rect x="38" y="52" width="19" height="13" rx="6" fill="#170B33"/><rect x="63" y="52" width="19" height="13" rx="6" fill="#170B33"/><path d="M49 73Q60 82 71 73" fill="none" stroke="#170B33" stroke-width="3.5" stroke-linecap="round"/></svg>'
     },

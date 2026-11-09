@@ -336,7 +336,7 @@
       var h = el(level, { class: 'h3', tabindex: '-1', 'data-join-done-title': true, text: headingText(member, already) });
       done.appendChild(h);
       if (!already) done.appendChild(el('p', { class: 'lead', text: [T('success.join.letter'), T('success.join.signoff')].filter(Boolean).join(' ') }));
-      if (member.warnings && member.warnings.age === 'over_age_cap') done.appendChild(el('p', { class: 'notice notice--info', text: T('error.age.over_age_cap') }));
+      if (overAge(member)) done.appendChild(el('p', { class: 'notice notice--info', text: T('success.join.supporter') || T('error.age.over_age_cap') }));   // 40+: a supporter on the list, not a member
       if (cfg('demo', true) !== false && !already) done.appendChild(el('p', { class: 'small muted', text: T('success.join.demo') }));
       var row = el('div', { class: 'btn-row' });
       if (cardHref) row.appendChild(el('a', { class: 'btn btn--ink', href: cardHref, text: T('done.card') }));
@@ -536,7 +536,7 @@
       var h = paintDone(member, false);
       if (!compact) paintStep2(member);
       setState('done');
-      if (YSD.ui) YSD.ui.toast(T('toast.joined'), { tone: 'success' });
+      if (YSD.ui) YSD.ui.toast(overAge(member) ? (T('toast.subscribed') || T('toast.joined')) : T('toast.joined'), { tone: 'success' });   // 40+: "You're on the list", never "You're in"
       mountCard(cardHost, member);
       h.focus();
       emit('join-form-joined', { member: member, isNew: !!isNew, compact: compact });

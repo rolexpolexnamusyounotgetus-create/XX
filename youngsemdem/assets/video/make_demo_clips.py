@@ -6,6 +6,14 @@ Builds the short vertical DEMO creator clips in assets/video/ (720x1280 H.264 MP
 plus a JPEG poster per clip) from Unsplash photos, and writes data/clips.js with their metadata.
 
   python3 assets/video/make_demo_clips.py [--cache DIR] [--only ID] [--no-data]
+  python3 assets/video/make_demo_clips.py --posters-only [--only ID] [--no-data]
+
+--posters-only redraws only the JPEG posters (frame 0 of each clip, from the same photos, scrims and
+text) and never runs the video encoder or touches the MP4s. It checks each new poster against the
+MP4's own first frame and refuses one that does not match (pass --force to write it anyway). It
+then updates data/clips.js in place: posterBytes/posterWidth/posterHeight for every item, bytes
+and duration re-read from the MP4s, and burnedInText only where a spec sets it explicitly. Every
+other field in data/clips.js is kept as it is, including hand edits.
 
 How a clip is made
   - Each photo is downloaded from images.unsplash.com (the script checks for HTTP 200 and an image
@@ -15,6 +23,9 @@ How a clip is made
     no zoompan jitter), with a brand-neutral colour tint, legibility scrims, bold burned-in
     captions that pop in, a "@demo.handle" line and a DEMO tag so a clip can never pass as real.
   - Frames are piped to ffmpeg (libx264, CRF tuned per clip so each file stays under ~1.5 MB).
+  - The poster is frame 0, downscaled to 540x960 (pages show posters at 469x836 CSS px at most:
+    clips.html at desktop widths) and saved as a progressive JPEG of at most 60 KB: the highest
+    quality that fits, softening only the photo layer of busy photos so the type stays sharp.
 
 Facts burned into clips were checked on Mon Nov 9, 2026; sources are listed per clip in `facts`
 and copied into data/clips.js. Edit SPECS below (not data/clips.js) and re-run to change a clip.
@@ -22,6 +33,7 @@ and copied into data/clips.js. Edit SPECS below (not data/clips.js) and re-run t
 Requires: Python 3.9+, Pillow, ffmpeg on PATH, network access to images.unsplash.com.
 """
 import argparse
+import io
 import json
 import math
 import os
@@ -30,7 +42,7 @@ import sys
 import tempfile
 import urllib.request
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(os.path.dirname(HERE))          # youngsemdem/
@@ -38,6 +50,14 @@ DATA_FILE = os.path.join(SITE, 'data', 'clips.js')
 
 W, H, FPS = 720, 1280, 30
 MAX_BYTES = 1_500_000
+# Posters: pages show them at 469x836 CSS px at most (clips.html, 1440 px and up; 302x540 on a phone),
+# so 540x960 covers every layout at 1x and phones at about 1.8x. Progressive JPEG, best quality <= 60 KB.
+POSTER_W, POSTER_H = 540, 960
+POSTER_MAX_BYTES = 60_000           # 60 KB
+# Busy photos (water, grass) cost the most bytes. Rather than drop the JPEG quality (which blurs the
+# burned-in type), the photo layer alone gets a slight blur first; the title, captions and DEMO chrome
+# are composited on top unblurred. Tried in order: the first (blur, quality) that fits wins.
+POSTER_STEPS = [(blur, q) for blur in (0, 0.6, 0.9, 1.2) for q in range(88, 71, -2)] + [(1.2, q) for q in range(70, 59, -2)]
 FONT_DIRS = ['/usr/share/fonts/opentype/inter', '/usr/share/fonts/truetype/inter',
              os.path.expanduser('~/.fonts'), '/Library/Fonts', 'C:/Windows/Fonts']
 
@@ -123,6 +143,10 @@ SPECS = [
             ('That request ends\nDec 31, 2026', 5.0, 7.5, 'pop'),
             ('Ask again: voteseminole.gov\nShould last through 2028', 7.6, 10.0, 'light'),
         ],
+        # The last box holds two sentences on two rows: the transcript keeps them as two lines.
+        # (Other boxes wrap one sentence, so their rows are joined with a space.)
+        'burnedInText': ['Mail ballot PSA', 'Asked for a mail ballot before Nov 3?', 'That request ends Dec 31, 2026',
+                         'Ask again: voteseminole.gov', 'Should last through 2028'],
         'facts': [
             {'claim': 'One Florida vote-by-mail request covers elections "through the end of the calendar '
                       'year of the next regularly scheduled general election" (so requests made before the Nov 3, 2026 '
@@ -420,14 +444,14 @@ def faded(sprite, alpha, scale=1.0):
     return sprite
 
 
-def render_clip(spec, cache, outdir, crf=27):
+def build_scene(spec, cache):
+    """Everything a frame needs: photo segments, start times, chrome, title and caption sprites."""
     segs = []
     for sg in spec['segments']:
         img = Image.open(download(sg['photo'], cache))
         segs.append(Segment(img, sg['seconds'], sg['focus'], sg['zoom']))
     xfade = 0.5
     duration = sum(s.seconds for s in segs) - xfade * (len(segs) - 1)
-    nframes = int(round(duration * FPS))
     chrome = chrome_layer(spec['author']['handle'], spec['tint'])
     title = title_sprite(spec['title'])
     title_pos = ((W - title.size[0]) // 2, 108)
@@ -436,7 +460,68 @@ def render_clip(spec, cache, outdir, crf=27):
         sp = text_sprite(text, FONT_XBOLD, 40, style)
         cy = spec.get('linesY', 760)
         sprites.append((sp, a, min(b, duration), ((W - sp.size[0]) // 2, cy - sp.size[1] // 2)))
+    starts, acc = [], 0.0
+    for sg in segs:
+        starts.append(acc)
+        acc += sg.seconds - xfade
+    return {'segs': segs, 'xfade': xfade, 'duration': duration, 'chrome': chrome, 'title': title,
+            'title_pos': title_pos, 'sprites': sprites, 'starts': starts}
 
+
+def compose_frame(scene, t, photo_blur=0):
+    """One RGB frame at time t (seconds). photo_blur softens only the photo layer (posters)."""
+    segs, starts, xfade, duration = scene['segs'], scene['starts'], scene['xfade'], scene['duration']
+    # photo layer (with crossfade)
+    idx = max(i for i, st in enumerate(starts) if st <= t + 1e-9)
+    frame = segs[idx].frame(min(t - starts[idx], segs[idx].seconds))
+    # crossfade window: the first `xfade` seconds of every segment after the first
+    if idx > 0 and t - starts[idx] < xfade:
+        prev = segs[idx - 1].frame(min(t - starts[idx - 1], segs[idx - 1].seconds))
+        frame = Image.blend(prev, frame, ease_in_out((t - starts[idx]) / xfade))
+    if photo_blur:
+        frame = frame.filter(ImageFilter.GaussianBlur(photo_blur))
+    im = frame.convert('RGBA')
+    im.alpha_composite(scene['chrome'])
+    im.alpha_composite(scene['title'], dest=scene['title_pos'])
+    for sp, a, b, (x, y) in scene['sprites']:
+        if t < a or t > b:
+            continue
+        k_in = (t - a) / 0.28
+        k_out = (b - t) / 0.2 if b < duration - 0.01 else 1.0
+        alpha = max(0.0, min(1.0, k_in / 0.65, k_out))
+        scale = 0.86 + 0.14 * ease_out_back(k_in) if k_in < 1 else 1.0
+        s2 = faded(sp, alpha, scale)
+        dx = x + (sp.size[0] - s2.size[0]) // 2
+        dy = y + (sp.size[1] - s2.size[1]) // 2
+        im.alpha_composite(s2, dest=(max(0, dx), max(0, dy)))
+    return im.convert('RGB')
+
+
+def poster_image(rgb):
+    """Frame -> poster pixels: Lanczos down to POSTER_W x POSTER_H plus a light unsharp mask for crisp type."""
+    img = rgb.resize((POSTER_W, POSTER_H), Image.LANCZOS)
+    return img.filter(ImageFilter.UnsharpMask(radius=0.7, percent=35, threshold=3))
+
+
+def save_poster(scene, path):
+    """Frame 0 as a progressive JPEG of at most POSTER_MAX_BYTES (see POSTER_STEPS). Returns (blur, quality, bytes)."""
+    frames = {}
+    for blur, q in POSTER_STEPS:
+        if blur not in frames:
+            frames[blur] = poster_image(compose_frame(scene, 0.0, blur))
+        buf = io.BytesIO()
+        frames[blur].save(buf, 'JPEG', quality=q, optimize=True, progressive=True, subsampling='4:2:0')
+        data = buf.getvalue()
+        if len(data) <= POSTER_MAX_BYTES:
+            with open(path, 'wb') as f:
+                f.write(data)
+            return blur, q, len(data)
+    raise SystemExit('poster %s does not fit %d bytes' % (path, POSTER_MAX_BYTES))
+
+
+def render_clip(spec, cache, outdir, crf=27):
+    scene = build_scene(spec, cache)
+    nframes = int(round(scene['duration'] * FPS))
     mp4 = os.path.join(outdir, spec['file'] + '.mp4')
     poster = os.path.join(outdir, spec['file'] + '.jpg')
     cmd = ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
@@ -446,41 +531,37 @@ def render_clip(spec, cache, outdir, crf=27):
            '-movflags', '+faststart', '-an', '-metadata', 'title=%s (DEMO)' % spec['title'],
            '-metadata', 'comment=Young Seminole Democrats demo clip; photos under the Unsplash License', mp4]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    starts, acc = [], 0.0
-    for s in segs:
-        starts.append(acc)
-        acc += s.seconds - xfade
     for n in range(nframes):
-        t = n / FPS
-        # photo layer (with crossfade)
-        idx = max(i for i, st in enumerate(starts) if st <= t + 1e-9)
-        frame = segs[idx].frame(min(t - starts[idx], segs[idx].seconds))
-        # crossfade window: the first `xfade` seconds of every segment after the first
-        if idx > 0 and t - starts[idx] < xfade:
-            prev = segs[idx - 1].frame(min(t - starts[idx - 1], segs[idx - 1].seconds))
-            frame = Image.blend(prev, frame, ease_in_out((t - starts[idx]) / xfade))
-        im = frame.convert('RGBA')
-        im.alpha_composite(chrome)
-        im.alpha_composite(title, dest=title_pos)
-        for sp, a, b, (x, y) in sprites:
-            if t < a or t > b:
-                continue
-            k_in = (t - a) / 0.28
-            k_out = (b - t) / 0.2 if b < duration - 0.01 else 1.0
-            alpha = max(0.0, min(1.0, k_in / 0.65, k_out))
-            scale = 0.86 + 0.14 * ease_out_back(k_in) if k_in < 1 else 1.0
-            s2 = faded(sp, alpha, scale)
-            dx = x + (sp.size[0] - s2.size[0]) // 2
-            dy = y + (sp.size[1] - s2.size[1]) // 2
-            im.alpha_composite(s2, dest=(max(0, dx), max(0, dy)))
-        rgb = im.convert('RGB')
-        if n == 0:
-            rgb.save(poster, 'JPEG', quality=82, optimize=True, progressive=True)
-        proc.stdin.write(rgb.tobytes())
+        proc.stdin.write(compose_frame(scene, n / FPS).tobytes())
+    save_poster(scene, poster)
     proc.stdin.close()
     if proc.wait() != 0:
         raise SystemExit('ffmpeg failed for ' + spec['id'])
-    return mp4, poster, duration
+    return mp4, poster, scene['duration']
+
+
+def mp4_first_frame(mp4):
+    """The MP4's own first frame as an RGB image (ffmpeg decodes one frame; nothing is encoded)."""
+    out = subprocess.run(['ffmpeg', '-v', 'error', '-i', mp4, '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'],
+                         capture_output=True, check=True).stdout
+    return Image.frombytes('RGB', (W, H), out[:W * H * 3])
+
+
+def render_poster(spec, cache, outdir, force=False):
+    """Poster only: frame 0 from the spec, checked against the existing MP4's first frame."""
+    scene = build_scene(spec, cache)
+    rgb = compose_frame(scene, 0.0)
+    mp4 = os.path.join(outdir, spec['file'] + '.mp4')
+    if os.path.exists(mp4):
+        ref = mp4_first_frame(mp4).resize((POSTER_W, POSTER_H), Image.LANCZOS)
+        diff = sum(ImageStat.Stat(ImageChops.difference(rgb.resize((POSTER_W, POSTER_H), Image.LANCZOS), ref)).mean) / 3
+        if diff > 6 and not force:
+            raise SystemExit('%s: frame 0 differs from the MP4 (mean %.1f/255); SPECS changed since the clip was '
+                             'rendered. Re-render the clip, or pass --force.' % (spec['id'], diff))
+    else:
+        diff = None
+    blur, q, size = save_poster(scene, os.path.join(outdir, spec['file'] + '.jpg'))
+    return blur, q, size, diff
 
 
 def probe(path):
@@ -490,7 +571,58 @@ def probe(path):
     return json.loads(out)
 
 
-def write_data(entries):
+def burned_in(spec):
+    """Transcript lines: the spec's own list when it has one, else the title plus each box (rows joined)."""
+    if spec.get('burnedInText'):
+        return list(spec['burnedInText'])
+    return [spec['title']] + [l[0].replace('\n', ' ') for l in spec['lines']]
+
+
+def poster_facts(spec):
+    path = os.path.join(HERE, spec['file'] + '.jpg')
+    with Image.open(path) as im:
+        w, h = im.size
+    return {'posterBytes': os.path.getsize(path), 'posterWidth': w, 'posterHeight': h}
+
+
+def read_data():
+    """data/clips.js as a dict (the JSON after `window.YSD_DATA.clips = `)."""
+    with open(DATA_FILE, encoding='utf-8') as f:
+        src = f.read()
+    mark = 'window.YSD_DATA.clips = '
+    body = src[src.index(mark) + len(mark):].rstrip()
+    if body.endswith(';'):
+        body = body[:-1]
+    return json.loads(body)
+
+
+def merge_posters_into_data(specs):
+    """--posters-only: update poster facts, MP4 bytes/duration and explicit transcripts; keep every other field."""
+    data = read_data()
+    by_id = {s['id']: s for s in specs}
+    for it in data['items']:
+        spec = by_id.get(it['id'])
+        if not spec:
+            continue
+        before = dict(it)
+        it.update(poster_facts(spec))
+        mp4 = os.path.join(HERE, spec['file'] + '.mp4')
+        if os.path.exists(mp4):
+            info = probe(mp4)
+            it['bytes'] = int(info['format']['size'])
+            it['duration'] = round(float(info['format']['duration']), 2)
+        if spec.get('burnedInText'):
+            it['burnedInText'] = list(spec['burnedInText'])
+        changed = sorted(k for k in it if before.get(k) != it[k])
+        print('  %s: %s' % (it['id'], ', '.join(changed) if changed else 'no change'))
+    write_data(data['items'], data)
+
+
+def write_data(entries, existing=None):
+    if existing:   # keep the file's own top-level fields (a merge never resets them)
+        payload = dict(existing)
+        payload['items'] = entries
+        return dump_data(payload)
     payload = {
         'demo': True,
         'version': 1,
@@ -502,6 +634,10 @@ def write_data(entries):
         'license': 'Photos: Unsplash License (https://unsplash.com/license). Clips: derived works made for this demo.',
         'items': entries,
     }
+    return dump_data(payload)
+
+
+def dump_data(payload):
     body = json.dumps(payload, indent=2, ensure_ascii=False)
     header = (
         '/*!\n'
@@ -513,6 +649,13 @@ def write_data(entries):
         ' */\n'
     )
     js = header + 'window.YSD_DATA = window.YSD_DATA || {};\nwindow.YSD_DATA.clips = ' + body + ';\n'
+    try:
+        with open(DATA_FILE, encoding='utf-8') as f:
+            if f.read() == js:
+                print('unchanged', os.path.relpath(DATA_FILE, SITE))
+                return
+    except OSError:
+        pass
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
         f.write(js)
     print('wrote', os.path.relpath(DATA_FILE, SITE))
@@ -524,8 +667,20 @@ def main():
                     help='where downloaded photos are kept between runs')
     ap.add_argument('--only', help='render a single clip id')
     ap.add_argument('--no-data', action='store_true', help='do not rewrite data/clips.js')
+    ap.add_argument('--posters-only', action='store_true',
+                    help='redraw only the posters (no video encoding) and merge poster facts into data/clips.js')
+    ap.add_argument('--force', action='store_true', help='--posters-only: write a poster even if frame 0 differs from the MP4')
     args = ap.parse_args()
     os.makedirs(args.cache, exist_ok=True)
+    if args.posters_only:
+        todo = [sp for sp in SPECS if not args.only or args.only == sp['id']]
+        for spec in todo:
+            blur, q, size, diff = render_poster(spec, args.cache, HERE, args.force)
+            print('poster %s: %dx%d q%d photo blur %s, %d bytes%s' % (spec['file'], POSTER_W, POSTER_H, q, blur, size,
+                                                                     '' if diff is None else ' (frame 0 vs MP4: %.1f/255)' % diff))
+        if not args.no_data:
+            merge_posters_into_data(SPECS)
+        return
     entries = []
     for spec in SPECS:
         mp4 = os.path.join(HERE, spec['file'] + '.mp4')
@@ -573,6 +728,7 @@ def main():
             'orientation': 'vertical' if v['height'] > v['width'] else ('square' if v['height'] == v['width'] else 'horizontal'),
             'duration': dur,
             'bytes': int(info['format']['size']),
+            **poster_facts(spec),
             'audio': has_audio,
             'caption': spec['caption'],
             'author': spec['author'],
@@ -580,7 +736,7 @@ def main():
             'likes': spec['likes'],
             'views': spec['views'],
             'createdAt': spec['createdAt'],
-            'burnedInText': [spec['title']] + [l[0].replace('\n', ' ') for l in spec['lines']],
+            'burnedInText': burned_in(spec),
             'facts': spec['facts'],
             'photos': photos,
         })

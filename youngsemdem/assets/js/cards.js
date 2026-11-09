@@ -2,10 +2,13 @@
  * Young Seminole Democrats: share-card engine (canvas).  YSD.cards
  *
  *   register(name, drawFn, meta)        add a template. drawFn(ctx, data, env) may return a Promise.
- *                                       env = { width, height, scale, theme, h (helpers), canvas, demo, name }
- *                                       meta = { size: 'story'|'square'|'wide', fonts: [css font specs] }
+ *                                       env = { width, height, scale, theme, h (helpers), canvas, demo,
+ *                                               demoMark (true when the engine will draw its DEMO mark), name }
+ *                                       meta = { size: 'story'|'square'|'wide', fonts: [css font specs],
+ *                                                demoMark: false (the template draws its own DEMO mark) }
  *   render(name, data, opts)            -> Promise<HTMLCanvasElement>
- *                                       opts = { size | preset, width, height, theme: {overrides}, el }
+ *                                       opts = { size | preset, width, height, theme: {overrides}, el,
+ *                                                demoMark: false (skip the engine's DEMO mark for this render) }
  *   toBlob(canvas, type, quality)       -> Promise<Blob>  (rejects if the canvas is tainted)
  *   share(canvas, {title,text,url,filename,count}) -> Promise<'shared'|'downloaded'|'cancelled'|'failed'>
  *   download(canvasOrBlob, filename)    -> Promise<'downloaded'|'failed'>
@@ -315,8 +318,18 @@
     return api;
   }
 
+  /**
+   * Whether the engine draws its small DEMO mark: demo mode on, cards.demoWatermark not off, and neither
+   * the render call (opts.demoMark) nor the template (meta.demoMark) says it draws its own. opts wins
+   * over meta, so opts.demoMark: true forces the mark back on for one render.
+   */
+  function wantsMark(demo, meta, opts) {
+    if (!demo || cfg('cards.demoWatermark', true) === false) return false;
+    if (opts && opts.demoMark != null) return opts.demoMark !== false;
+    return !(meta && meta.demoMark === false);
+  }
   function demoMark(ctx, env) {
-    if (!env.demo || cfg('cards.demoWatermark', true) === false) return;
+    if (!env.demo || !env.demoMark) return;
     var s = env.scale;
     ctx.save();
     ctx.globalAlpha = 0.85;
@@ -343,6 +356,7 @@
         scale: Math.min(size.width, size.height) / 1080,
         theme: th, h: helpers, helpers: helpers, canvas: canvas, demo: isDemo()
       };
+      env.demoMark = wantsMark(env.demo, t.meta, opts);
       var fonts = [].concat(cfg('cards.fonts', []) || [], t.meta.fonts || [], opts.fonts || []);
       return waitForFonts(fonts, opts.fontTimeout || 2500).then(function () {
         return t.draw(ctx, data || {}, env);

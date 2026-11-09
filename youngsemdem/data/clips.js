@@ -43,7 +43,8 @@ window.YSD_DATA.clips = {
         "Mail ballot PSA",
         "Asked for a mail ballot before Nov 3?",
         "That request ends Dec 31, 2026",
-        "Ask again: voteseminole.gov Should last through 2028"
+        "Ask again: voteseminole.gov",
+        "Should last through 2028"
       ],
       "facts": [
         {
@@ -76,7 +77,10 @@ window.YSD_DATA.clips = {
           "licenseUrl": "https://unsplash.com/license",
           "description": "Three young people laughing at a cafe table with laptops."
         }
-      ]
+      ],
+      "posterBytes": 59029,
+      "posterWidth": 540,
+      "posterHeight": 960
     },
     {
       "id": "demo-sunrail-rally",
@@ -136,7 +140,10 @@ window.YSD_DATA.clips = {
           "licenseUrl": "https://unsplash.com/license",
           "description": "A diverse group of friends taking a selfie together in a sunny park."
         }
-      ]
+      ],
+      "posterBytes": 59050,
+      "posterWidth": 540,
+      "posterHeight": 960
     },
     {
       "id": "demo-first-time-voter",
@@ -190,7 +197,10 @@ window.YSD_DATA.clips = {
           "licenseUrl": "https://unsplash.com/license",
           "description": "A hand holding an \"I VOTED\" sticker; photographed in Sarasota, FL."
         }
-      ]
+      ],
+      "posterBytes": 59154,
+      "posterWidth": 540,
+      "posterHeight": 960
     },
     {
       "id": "demo-lake-monroe-canvass",
@@ -234,7 +244,10 @@ window.YSD_DATA.clips = {
           "licenseUrl": "https://unsplash.com/license",
           "description": "People watching the sunset over a calm lake from a waterfront path. Location not stated; stand-in, not Lake Monroe."
         }
-      ]
+      ],
+      "posterBytes": 59393,
+      "posterWidth": 540,
+      "posterHeight": 960
     },
     {
       "id": "demo-precinct-captain",
@@ -284,7 +297,10 @@ window.YSD_DATA.clips = {
           "licenseUrl": "https://unsplash.com/license",
           "description": "A quiet suburban street with houses, palm trees and lawns (tagged Florida)."
         }
-      ]
+      ],
+      "posterBytes": 58107,
+      "posterWidth": 540,
+      "posterHeight": 960
     },
     {
       "id": "demo-trivia-night-recap",
@@ -328,7 +344,10 @@ window.YSD_DATA.clips = {
           "licenseUrl": "https://unsplash.com/license",
           "description": "Friends laughing around a wooden table during a card game."
         }
-      ]
+      ],
+      "posterBytes": 57575,
+      "posterWidth": 540,
+      "posterHeight": 960
     }
   ]
 };

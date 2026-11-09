@@ -1,3 +1,12 @@
 {
-  "good.html": { "maxHeight": 4000, "positions": [ { "id": "B9", "label": "Invite card top", "selectors": ["[data-qa=\"invite\"]"], "maxTop": 1000 } ] }
+  "good.html": { "maxHeight": 4000, "positions": [ { "id": "B9", "label": "Invite card top", "selectors": ["[data-qa=\"invite\"]"], "maxTop": 1000 } ] },
+  "states.html": {
+    "scenarios": [
+      { "id": "panel", "label": "Plan panel open", "steps": [ { "click": "[data-open-panel]" }, { "waitFor": "[data-panel]" } ] },
+      { "id": "not-built", "label": "A hook the page does not have yet", "optional": true, "steps": [ { "click": "[data-not-built]" } ] }
+    ]
+  },
+  "defect-scenario.html": {
+    "scenarios": [ { "id": "panel", "label": "Plan panel open", "steps": [ { "click": "[data-open-panel]" }, { "waitFor": "[data-panel]" } ] } ]
+  }
 }

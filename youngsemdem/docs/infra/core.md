@@ -210,9 +210,11 @@ ICS details:
 
 ### YSD.cards
 
-- `register(name, drawFn(ctx, data, env), {size, fonts})`. `env` holds `{width, height, scale,
-  theme, h, canvas, demo, name}`; `scale` is `min(w, h) / 1080`. `drawFn` may return a Promise.
-- `render(name, data, {size: 'story' | 'square' | 'wide', width, height, theme, el, fonts}) -> Promise<HTMLCanvasElement>`
+- `register(name, drawFn(ctx, data, env), {size, fonts, demoMark})`. `env` holds `{width, height, scale,
+  theme, h, canvas, demo, demoMark, name}`; `scale` is `min(w, h) / 1080`. `drawFn` may return a Promise.
+  `env.demoMark` is true when the engine will draw its DEMO mark after `drawFn`, so a template can keep
+  that corner clear.
+- `render(name, data, {size: 'story' | 'square' | 'wide', width, height, theme, el, fonts, demoMark}) -> Promise<HTMLCanvasElement>`
 - `toBlob(canvas, type, quality) -> Promise<Blob>`
 - `share(canvas, {title, text, url, filename, count}) -> 'shared' | 'downloaded' | 'cancelled' | 'failed'`
 - `download(canvasOrBlob, filename)`
@@ -237,8 +239,16 @@ hex. The design team restyles cards from CSS without touching the engine.
 
 **Built-in templates.** `joined` takes `{name, refCode, url, headline, sub, sticker}`. `pledge`
 takes `{pledge, name, count, countLabel, headline, sticker}`. Both are neutral PLACEHOLDERS with
-placeholder copy; replace them or register new ones under the same names. In demo mode a small
-DEMO mark is drawn (`cards.demoWatermark`).
+placeholder copy; replace them or register new ones under the same names.
+
+**The DEMO mark.** In demo mode the engine draws a small DEMO mark in the bottom-right corner after the
+template. A template that draws its own DEMO mark turns the engine's off so the card never shows two:
+for every render with `register(name, draw, {demoMark: false})`, or for one call with
+`render(name, data, {demoMark: false})`. `opts.demoMark` wins over the template's `meta.demoMark`
+(`demoMark: true` forces the engine's mark back on), and `cards.demoWatermark: false` in config turns
+it off everywhere (tools/make_og.js does that for link previews, which carry their own DEMO tag).
+Turning the engine's mark off is only for templates that draw DEMO themselves: every card made in
+demo mode must still say DEMO.
 
 ### YSD.members
 

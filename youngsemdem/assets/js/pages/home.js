@@ -76,6 +76,8 @@
     slot.textContent = '';
     var phone = EV.render(next, { variant: 'compact', level: 2 });
     phone.classList.add('x-ticket__phone');
+    // The phone ticket's cover is about a third of the card wide, so it never needs the 92vw candidate.
+    var pim = phone.querySelector('img'); if (pim) pim.setAttribute('sizes', '(min-width: 1000px) 1px, 34vw');
     var desk = EV.render(next, { variant: 'hero', level: 2 });
     desk.classList.add('x-ticket__desk');
     slot.appendChild(phone);

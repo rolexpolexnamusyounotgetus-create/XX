@@ -13,7 +13,7 @@
 .p-about .x-ahero__h1 { font:800 clamp(56px, 13vw + 8px, 136px)/.86 var(--font-display-76);font-stretch:76%;letter-spacing:-.025em;color:var(--cream); }
 .p-about .x-ahero__l1, .p-about .x-ahero__l2 { display:block; }
 .p-about .x-ahero__l2 { position:relative;width:fit-content;color:var(--celery);isolation:isolate; }
-.p-about .x-ahero__l2::after { content:"";position:absolute;z-index:-1;left:-.04em;right:-.06em;bottom:.02em;height:.13em;background:var(--bubblegum);border-radius:var(--r-pill);rotate:-1.5deg;transform-origin:left; }
+.p-about .x-ahero__l2::after { content:"";position:absolute;z-index:-1;left:-.04em;right:-.06em;bottom:-.08em;height:.11em;background:var(--bubblegum);border-radius:var(--r-pill);rotate:-1.5deg;transform-origin:left; }
 .p-about .x-ahero__sub { max-width:38ch;color:var(--white); }
 @media (max-width: 479px) { .p-about .x-ahero .btn--lg { padding-inline:18px;font-size:18px; } }
 .p-about .btn, .p-notfound .btn { transition-property:transform, box-shadow; }

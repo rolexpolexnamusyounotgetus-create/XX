@@ -219,7 +219,13 @@ python3 tools/credits.py [--check] [--json] [--root DIR] [--out FILE]
   `credit`, `photographerHandle`, `page`, `license`, `licenseUrl`), from `data-credit`,
   `data-photographer`, `data-license` or `data-source` attributes in HTML, or from
   `/* credit: ... */` comments in CSS.
-- `--check` compares with the existing file, ignoring the date.
+- Font files (`fonts.gstatic.com`, or any `.woff`/`.woff2`/`.ttf`/`.otf` URL) are credited to their
+  family, not to a photographer: the family, `license`, `copyright` and `specimen` come from the
+  same object (`assets/fonts/fonts.json` records them for each self-hosted file), else the family is
+  guessed from the URL. They are listed under Fonts (Family, Source, Credit, License, Used in) and
+  never count as missing credits.
+- `--check` compares with the existing file, ignoring the date. Re-run it whenever a page adds or
+  removes remote media (the home page's photo, for example).
 
 ## Deploy files: decisions
 

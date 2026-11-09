@@ -9,6 +9,11 @@ window.YSD_DATA.banned = {
     { id: 'e', body: { en: 'Hi! Come! Now!', es: '¡Hola! ¡Ven! ¡Ya!' } }
   ],
   debrief: { tone: 'serious', body: { en: 'We lost the state. Get back up!', es: 'Perdimos el estado. ¡Arriba!' } },
+  // sources[].name is a proper title (skipped); the rest of a sources entry and a "sources" label are linted
+  facts: [{ claim: { en: 'Rent went up again.', es: 'La renta volvió a subir.' }, sources: [
+    { url: 'https://example.org/report', name: { en: 'Join the chat: a 2024 report', es: 'Únete al chat: informe de 2024' }, label: { en: 'Join the chat', es: 'Únete al chat' } }
+  ] }],
+  labels: { sources: { en: 'Sources to join the chat', es: 'Fuentes para unirte al chat' } },
   never: [{ en: 'slay', es: 'guerrero' }, { en: 'FINAL NOTICE', es: 'último aviso' }],
   source: 'https://example.org/trump-desantis-article',
   note: 'Editors only: Jolly and Donalds are named here on purpose; notes are skipped.'

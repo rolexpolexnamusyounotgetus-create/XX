@@ -540,7 +540,7 @@ async function main() {
       ok(r.sorted, "list({sort:'new'}) is newest first");
       ok(r.first.src.startsWith(base + '/assets/video/') && r.first.poster.startsWith(base + '/assets/video/'), 'clip src/poster resolve against the site root', r.first);
       ok(/^@demo\./.test(r.first.author.handle), 'demo creator handles are marked @demo.*', r.first.author);
-      ok(r.posters.every((p) => p[1] === 720 && p[2] === 1280), 'every poster loads (720x1280)', r.posters);
+      ok(r.posters.every((p) => p[1] === 540 && p[2] === 960), 'every poster loads (540x960, the size the pages show them at)', r.posters);
       eq(r.srcStatus, 200, 'clip video file is served');
       eq(r.get, 'demo-first-time-voter', 'clips.get(id)');
       ok(r.like[1] === r.like[0] + 1 && r.like[2] && r.like[3] && r.like[4], 'clips.like -> +1, liked, ysd:clip-liked', r.like);
@@ -677,7 +677,7 @@ async function main() {
       ok(icsProblems(r.ics).length === 0, 'ics validates on file://', icsProblems(r.ics));
       ok(r.card[0] === 1080 && r.card[1] === 1920 && r.card[2] > 20000, 'card renders and exports on file://', r.card);
       eq(r.clips, 6, 'demo clips list on file://');
-      eq(r.poster, 720, 'poster loads on file://');
+      eq(r.poster, 540, 'poster loads on file:// (540x960)');
       ok(r.feed[0] >= 0 && r.feed[1] === 2 && String(r.feed[2]).startsWith(rootUrl + 'assets/video/'), 'feed attaches on file://', r.feed);
       checkSink(s, 'file://');
       await c.close();

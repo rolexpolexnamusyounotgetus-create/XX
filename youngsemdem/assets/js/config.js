@@ -341,7 +341,7 @@
     cards: {
       /** Font specs to wait for before drawing (CSS font shorthand, e.g. '800 64px Inter'). */
       fonts: ['800 64px "Bricolage Grotesque"', '400 32px "Atkinson Hyperlegible Next"', '700 32px "Atkinson Hyperlegible Next"'],
-      /** Draw a small DEMO mark on cards in demo mode. */
+      /** Draw a small DEMO mark on cards in demo mode (a template that draws its own passes demoMark: false). */
       demoWatermark: true
     },
 
@@ -355,7 +355,10 @@
       maxDuration: 180,       // seconds
       minDuration: 0.5,
       captionMax: 300,
-      tagsMax: 8
+      tagsMax: 8,
+      /** Version stamped on each upload consent (data/legal.js snippets.uploadConsent) when a page
+       *  passes bare ids to YSD.clips.add({consents}). Bump it whenever that consent wording changes. */
+      consentVersion: 'clip-consent-2026-11-09-draft'
     },
 
     /**

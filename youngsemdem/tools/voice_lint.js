@@ -13,7 +13,9 @@
  *     Script, style and comments are skipped; partial interiors in pages are skipped (lint the
  *     partial itself). Language comes from <html lang> (es/ pages are Spanish).
  *   - data/*.js and data/pages/*.js: every en / es string (and clip captions), with its key path.
- *     Notes, sources, ids, urls and lists of words to avoid (never, avoid, banned...) are skipped.
+ *     Notes, source URLs, ids, urls and lists of words to avoid (never, avoid, banned...) are skipped,
+ *     and so are proper titles: sources[].name and sourceTitles (skipPaths in voice_rules.json). Other
+ *     copy under a "sources" key (a "Sources" label, a bilingual note) is linted.
  * What it checks: banned words (Native imagery, candidate names, slang costume, fossil talk, guilt
  *   and fake urgency, ableist and othering words, "Join the chat", "40 and under", wrong names,
  *   "era", "XP" and game words, "click here", AI features), mail-ballot overclaims ("every request
@@ -52,6 +54,9 @@ function loadRules(file) {
     });
   });
   raw.skip = new Set(raw.skipKeys || []);
+  // skipPaths: key paths skipped wherever they end a path ("sources[].name" = the name of any item in
+  // any sources array). Array indexes match "[]"; "*" matches one key.
+  raw.skipPathRes = (raw.skipPaths || []).map((pt) => new RegExp('(^|\\.)' + pt.split('.').map((seg) => seg.replace(/[.+?^${}()|\\]/g, '\\$&').replace(/\[\]/g, '\\[\\]').replace(/\*/g, '[^.\\[]+')).join('\\.') + '$'));
   return raw;
 }
 
@@ -282,6 +287,10 @@ function lintData(file, rules, opts) {
     const serious = ctx.serious || serTones.has(o.tone) || o.tone === 'serious';
     for (const k of Object.keys(o)) {
       if (keyPath.length && rules.skip.has(k)) continue; // top-level keys are namespaces, never skipped
+      if (keyPath.length && rules.skipPathRes && rules.skipPathRes.length) {
+        const norm = keyPath.concat(k).map((x) => /^\d+$/.test(x) ? '[]' : x).join('.').replace(/\.\[\]/g, '[]');
+        if (rules.skipPathRes.some((re) => re.test(norm))) continue;
+      }
       const v = o[k];
       const sub = Object.assign({}, ctx, { serious });
       if (keyPath.length && keyPath[keyPath.length - 1] === 'entries' || /^[a-z][a-zA-Z0-9]*(\.[A-Za-z0-9_-]+)+$/.test(k)) sub.entryKey = k;

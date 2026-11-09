@@ -669,6 +669,17 @@ async function browserTests() {
         const p2 = cu.getContext('2d').getImageData(10, 10, 1, 1).data;
         out.custom = [cu.width, cu.height, p2[0], p2[1], p2[2]];
         try { await Y.cards.render('nope'); out.unknown = 'resolved'; } catch (e) { out.unknown = 'rejected'; }
+        // DEMO mark: drawn by the engine unless the template (meta.demoMark) or the call (opts.demoMark) says it draws its own
+        out.envMark = [];
+        Y.cards.register('w-plain', (ctx, data, env) => { out.envMark.push('plain:' + env.demoMark); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, env.width, env.height); }, { size: 'square' });
+        Y.cards.register('w-own', (ctx, data, env) => { out.envMark.push('own:' + env.demoMark); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, env.width, env.height); }, { size: 'square', demoMark: false });
+        const dark = (cv) => { const s = cv.width / 1080, x = Math.round(cv.width - 200 * s), y = Math.round(cv.height - 110 * s); const d = cv.getContext('2d').getImageData(x, y, Math.round(180 * s), Math.round(100 * s)).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] < 600) n++; return n; };
+        out.marks = [
+          dark(await Y.cards.render('w-plain', {})),
+          dark(await Y.cards.render('w-plain', {}, { demoMark: false })),
+          dark(await Y.cards.render('w-own', {})),
+          dark(await Y.cards.render('w-own', {}, { demoMark: true }))
+        ];
         // helpers
         const t = document.createElement('canvas').getContext('2d');
         t.font = '40px sans-serif';
@@ -693,6 +704,11 @@ async function browserTests() {
       eq(String(r.theme.pop).toUpperCase(), '#C8F03C', 'theme falls back to config hex (config.theme.pop)');
       eq(r.custom.join(','), '600,315,255,0,0', 'custom template, size and theme override');
       eq(r.unknown, 'rejected', 'unknown template rejects');
+      ok(r.marks[0] > 200, 'engine DEMO mark drawn by default', r.marks);
+      eq(r.marks[1], 0, 'render(..., {demoMark: false}): no engine DEMO mark');
+      eq(r.marks[2], 0, 'register(..., {demoMark: false}): a template with its own mark gets no second one');
+      ok(r.marks[3] > 200, 'opts.demoMark: true overrides the template', r.marks);
+      eq(r.envMark.join(','), 'plain:true,plain:false,own:false,own:true', 'env.demoMark tells the template whether the engine draws the mark');
       ok(r.wrap[0] === 2 && r.wrap[1] === true && r.wrap[2] === '…', 'wrapText maxLines + ellipsis', r.wrap);
       ok(r.fit[1] && r.fit[2], 'fitText fits width', r.fit);
       eq(r.img, 4, 'loadImage (data: URL)');

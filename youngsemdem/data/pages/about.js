@@ -214,7 +214,7 @@ window.YSD_DATA.pages.notFound = {
   'toy.source': { en: 'Source: {label}', es: 'Fuente: {label}' },
   // Spanish source labels for data/stickers.js items (its source.label is English only); English pages use the file's label.
   'toy.src.train': { en: 'SunRail stations', es: 'estaciones de SunRail' },
-  'toy.src.sun': { en: 'Florida Constitution, Art. X §24', es: 'Constitución de Florida, art. X §24' },
+  'toy.src.sun': { en: 'Florida Constitution, Art. X §24', es: 'Constitución de Florida, art. X §24 (en inglés)' },
   'toy.src.heart': { en: 'Code of conduct', es: 'Código de conducta' },
   'toy.src.calendar': { en: 'Events', es: 'Eventos' },
   'toy.src.camera': { en: 'CDC: Disability Impacts All of Us', es: 'CDC: La discapacidad nos afecta a todos (en inglés)' },

@@ -37,7 +37,7 @@ window.YSD_DATA.pages.events = {
   'filter.spanish': { en: 'In Spanish', es: 'En español' },
   'filter.clear': { en: 'Clear filters', es: 'Quitar filtros' },
   /* ?series=<id> (quiz "Events made for you" links): a chip above the count shows the series and clears it */
-  'filter.seriesOnly': { en: 'Only showing', es: 'Solo se ve' },
+  'filter.seriesOnly': { en: 'Only showing', es: 'Mostrando solo' },
   'filter.seriesClear': { en: 'Clear the {series} filter and show every event', es: 'Quitar el filtro {series} y ver todos los eventos' },
   /* series labels: the same words as data/quiz.js eventSeries, so a quiz chip lands on a chip that matches */
   'series.sunset-walk': { en: 'Sunset walks', es: 'Caminatas al atardecer' },

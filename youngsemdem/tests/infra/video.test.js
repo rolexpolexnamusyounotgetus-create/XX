@@ -97,7 +97,7 @@ function jpegSize(buf) {
   while (p < buf.length) {
     if (buf[p] !== 0xff) { p++; continue; }
     const m = buf[p + 1];
-    if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return { height: buf.readUInt16BE(p + 5), width: buf.readUInt16BE(p + 7) };
+    if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return { height: buf.readUInt16BE(p + 5), width: buf.readUInt16BE(p + 7), progressive: m === 0xc2 };
     p += 2 + buf.readUInt16BE(p + 2);
   }
   return null;
@@ -388,7 +388,10 @@ window.__canLoad = function (src) { return new Promise(function (res) { var v = 
       });
       (it.facts || []).forEach((f) => ok(/^https:\/\//.test(f.source) && f.claim, n + ': fact has a source'));
       ok(Array.isArray(it.burnedInText) && it.burnedInText.length >= 2, n + ': burned-in text recorded');
+      ok(it.burnedInText.every((l) => !/\n/.test(l) && !/\.(gov|com|org)\s+[A-Z]/.test(l)), n + ': one on-screen sentence per transcript line', it.burnedInText);
     });
+    const mail = data.items.find((i) => i.id === 'demo-mail-ballot-renew');
+    eq(mail.burnedInText.slice(-2).join(' | '), 'Ask again: voteseminole.gov | Should last through 2028', 'mail-ballot: the last box is two transcript lines');
     const topics = data.items.map((i) => i.id).join(' ');
     ['mail-ballot', 'sunrail', 'first-time-voter', 'lake-monroe', 'precinct-captain', 'trivia'].forEach((t) => ok(topics.indexOf(t) >= 0, 'topic present: ' + t));
   });
@@ -409,8 +412,12 @@ window.__canLoad = function (src) { return new Promise(function (res) { var v = 
       eq(v.codec, 'avc1', n + ': H.264 (avc1)');
       eq(it.width + 'x' + it.height, v.width + 'x' + v.height, n + ': data dims match');
       eq(it.orientation, 'vertical', n + ': vertical');
-      const js = jpegSize(read(it.poster));
-      ok(js && js.width === v.width && js.height === v.height, n + ': poster JPEG matches video size', js);
+      // posters: pages show them at 469x836 CSS px at most, so 540x960 (the video's 9:16), progressive, <= 60 KB
+      const pbuf = read(it.poster), js = jpegSize(pbuf);
+      ok(js && js.width === 540 && js.height === 960 && Math.abs(js.width / js.height - v.width / v.height) < 0.002, n + ': poster 540x960, same aspect as the video', js);
+      ok(js && js.progressive, n + ': progressive JPEG');
+      ok(pbuf.length <= 60000, n + ': poster ' + pbuf.length + ' bytes <= 60 KB');
+      eq([it.posterBytes, it.posterWidth, it.posterHeight].join(','), [pbuf.length, js && js.width, js && js.height].join(','), n + ': poster bytes and size match data');
     });
   });
 
@@ -689,6 +696,67 @@ async function browserTests() {
       const up = state.uploads[state.uploads.length - 1];
       ok(up.method === 'PUT' && up.type === 'video/webm' && up.bytes > 1000, 'raw PUT with content type', up);
       await p4.close();
+    });
+
+    await section('browser: moderation fields ride on the record; demo never keeps the guardian contact', async () => {
+      const p6 = await open(ctx, 'demoEndpoint');
+      const before = state.creates.length;
+      const r = await p6.evaluate(async () => {
+        const c = await YSD.clips.add(await __makeWebm(160, 284, 700), { caption: 'teen clip', captionsConfirmed: true, containsMinors: 'yes',
+          guardianContact: 'mom@example.org', consents: ['rights', 'people', { id: 'rules', version: 'rules-v2' }, 'rights'] });
+        const got = await YSD.clips.get(c.id);
+        const raw = JSON.stringify(Object.assign({}, localStorage)) + JSON.stringify(got) + JSON.stringify(c);
+        let code = null;
+        try { await YSD.clips.upload(c.id, { force: true, poll: false }); } catch (e) { code = e.code; }
+        const plain = await YSD.clips.add(await __makeWebm(160, 284, 800), { caption: 'plain' });
+        return { c: { cc: c.captionsConfirmed, minors: c.containsMinors, need: c.needsGuardian, given: c.guardianContactProvided, consents: c.consents, has: 'guardianContact' in c },
+          got: { minors: got.containsMinors, consents: got.consents.length }, leaked: raw.indexOf('mom@example.org') >= 0, code,
+          plain: { cc: plain.captionsConfirmed, minors: plain.containsMinors, need: plain.needsGuardian, consents: plain.consents.length } };
+      });
+      ok(r.c.cc === true && r.c.minors === 'yes' && r.c.need === true && r.c.given === true && !r.c.has, 'record: captions confirmed, minors yes, needs a guardian, contact given but not kept', r.c);
+      eq(r.c.consents.map((x) => x.id + '@' + x.version).join(','), 'rights@clip-consent-2026-11-09-draft,people@clip-consent-2026-11-09-draft,rules@rules-v2', 'consents carry a version (config default or their own), deduped');
+      ok(r.c.consents.every((x) => !isNaN(Date.parse(x.at))), 'consents carry when they were given');
+      ok(r.got.minors === 'yes' && r.got.consents === 3, 'fields survive storage', r.got);
+      eq(r.leaked, false, 'the guardian contact is in no stored record, localStorage or clip object (demo)');
+      eq(r.code, 'guardian-required', 'demo held nothing: a forced upload of a clip that needs a guardian is refused, nothing sent');
+      ok(r.plain.cc === false && r.plain.minors === null && r.plain.need === false && r.plain.consents === 0, 'no moderation answers: neutral defaults', r.plain);
+      eq(state.creates.length, before, 'no create request in demo');
+      await p6.close();
+    });
+
+    await section('browser: production seam: create request carries moderation fields; the guardian contact is sent once, never stored', async () => {
+      const p7 = await open(ctx, 'prod');
+      const n0 = state.creates.length;
+      const r = await p7.evaluate(async () => {
+        const a = await YSD.clips.add(await __makeWebm(160, 284, 700), { caption: 'with a teen', captionsConfirmed: true, containsMinors: 'yes',
+          guardianContact: ' dad@example.org ', consents: ['rights', 'people', 'rules'], awaitUpload: true, poll: false });
+        const b = await YSD.clips.add(await __makeWebm(160, 284, 800), { caption: 'adults only', captionsConfirmed: true, containsMinors: 'no',
+          consents: [{ id: 'rights', version: 'v9' }], consentVersion: 'ignored-when-own', awaitUpload: true, poll: false });
+        const leaked = JSON.stringify(Object.assign({}, localStorage)).indexOf('dad@example.org') >= 0;
+        let code = null;
+        try { await YSD.clips.retry(a.id, { poll: false }); } catch (e) { code = e.code; }
+        const failed = await YSD.clips.get(a.id);
+        const again = await YSD.clips.retry(a.id, { poll: false, guardianContact: 'dad@example.org' });
+        let teen = null;
+        try { await YSD.clips.add(await __makeWebm(160, 284, 800), { containsMinors: true, awaitUpload: true, poll: false }); } catch (e) { teen = e.code; }
+        let young = null;
+        try { await YSD.clips.add(await __makeWebm(160, 284, 800), { containsMinors: 'no', guardianRequired: true, awaitUpload: true, poll: false }); } catch (e) { young = e.code; }
+        return { a: a.status, b: b.status, leaked, code, failedStatus: failed.status, failedError: failed.upload && failed.upload.error, again: again.status, teen, young,
+          failEvents: __events.filter((x) => x.name === 'clip-upload-failed' && x.code === 'guardian-required').length };
+      });
+      const cr = state.creates.slice(n0);
+      eq(cr.length, 3, 'three create requests: the teen clip, the adults clip, the retry with a guardian (refusals send nothing)');
+      ok(cr[0].captionsConfirmed === true && cr[0].containsMinors === 'yes' && cr[0].needsGuardian === true && cr[0].guardianContact === 'dad@example.org', 'create request: captions, minors, guardian contact (trimmed)', cr[0]);
+      eq(cr[0].consents.map((x) => x.id + '@' + x.version).join(','), 'rights@clip-consent-2026-11-09-draft,people@clip-consent-2026-11-09-draft,rules@clip-consent-2026-11-09-draft', 'create request: consents with version');
+      ok(cr[1].containsMinors === 'no' && cr[1].needsGuardian === false && !('guardianContact' in cr[1]) && cr[1].consents.length === 1 && cr[1].consents[0].version === 'v9', 'no minors: no guardian field; a consent keeps its own version', cr[1]);
+      eq(cr[2].guardianContact, 'dad@example.org', 'a retry carries the contact passed to it');
+      ok(r.a === 'processing' && r.b === 'processing' && r.again === 'processing', 'uploads go through', r);
+      eq(r.leaked, false, 'the guardian contact never reaches localStorage');
+      eq(r.code, 'guardian-required', 'sent once: after a successful create it is not kept for a retry');
+      ok(r.failedStatus === 'failed' && r.failedError === 'guardian-required' && r.failEvents >= 1, 'a refusal marks the clip failed and emits clip-upload-failed', r);
+      eq(r.teen, 'guardian-required', 'someone under 18 in the clip and no guardian contact: refused');
+      eq(r.young, 'guardian-required', 'a poster under 18 (guardianRequired) and no guardian contact: refused');
+      await p7.close();
     });
 
     await section('browser: works without store.js (own IndexedDB + localStorage fallbacks)', async () => {

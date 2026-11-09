@@ -10,7 +10,17 @@ nothing here is ever written to.
   4.5:1, an animation that runs under reduced motion, an unlabeled demo count, share links built
   from localhost and `location.origin`, and a request to a host that is not allowlisted.
   Defect pages carry `data-es="skip"` so they don't also fail the Spanish-twin gate.
-  `targets.json` adds a position and height target for `good.html`.
+  `targets.json` adds a position and height target for `good.html` and the scenarios below.
+  Newer checks: `sampled.html` passes with a marker swipe under h1 words, a caption over a sticker
+  button's SVG, a colour that fades in after load and a card whose background lags the theme switch
+  (qa.js must pixel-sample the first two and let the last two settle); `states.html` passes with a
+  bottom bar that shows only after a scroll (about 15% of the screen), an invite landing built from
+  block elements (B20 must read "Kira invited you to Trivia night") and a panel that a scenario opens.
+  Seeded defects: `defect-marker.html` (ink on a dark marker, about 2:1), `defect-sticky-bar.html`
+  (a bottom bar covering about 35% after a scroll), `defect-scenario.html` (11 px text and a 30 px
+  button only once the panel is open), `defect-source-path.html` (JS writes "data/civic.js" into the
+  page) and `es/defect-english.html` (JS writes an English sentence into a Spanish page; "My Voter
+  Record" and DEMO in a Spanish sentence must stay allowed).
 - `i18n/`: a small site for `make_es.js` (strings, page copy, partials with `-es` variants).
   `index.html` and `events.html` are fully keyed; `untranslated.html` has one English sentence
   with no `data-t`, so `make_es.js --check untranslated.html` must fail.

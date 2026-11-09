@@ -7,7 +7,6 @@
     "notes",
     "editorNote",
     "source",
-    "sources",
     "url",
     "urls",
     "href",
@@ -750,5 +749,8 @@
       "suggest": "Remove it."
     }
   ],
-  "skipKeysAbout": "sourceTitles are citation names for footnotes (news headlines), kept verbatim; everything else a page renders is linted, including facts[].claim."
+  "skipKeysAbout": "sourceTitles are citation names for footnotes (news headlines), kept verbatim; everything else a page renders is linted, including facts[].claim. skipPaths end a key path: sources[].name is the proper title of a citation (a bill, a report, a headline), kept verbatim; the rest of a sources entry and any copy under a \"sources\" key (labels.sources, newsletter \"sources\") is linted.",
+  "skipPaths": [
+    "sources[].name"
+  ]
 }

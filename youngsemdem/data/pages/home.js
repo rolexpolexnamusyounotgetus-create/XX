@@ -15,7 +15,9 @@
  *    54.08% to 44.59%), unofficial until certification due Mon, Nov 16 (F.S. 102.112); statewide the
  *    Republican won by about a point (AP via Florida Phoenix). No candidate names.
  *  - Scoreboard: 124,626 of 338,692 active Seminole voters are 18 to 40 (SOE District Demographic
- *    Analysis, Jul 1, 2026), NPA 34.3% of them; CIRCLE's early estimate of about 27% youth turnout.
+ *    Analysis, Jul 1, 2026), NPA 34.3% of them; about 54% for the Democrat in Seminole links WFTV's county
+ *    table (54.08% to 44.59%, unofficial; re-opened Nov 9, 2026); CIRCLE's early estimate of about 27%
+ *    youth turnout (CIRCLE 2026 hub, re-opened Nov 9, 2026).
  *  - Membership: 14 to 39; $20 a year, due in January; non-voting membership for anyone who can't pay
  *    (YDSC dues page on ActBlue). Tier copy matches data/pages/join.js (W6).
  *  - Letter teaser: subject and first two sentences of data/newsletter.js issue (W6).
@@ -38,6 +40,8 @@ window.YSD_DATA.pages.home = {
   'hero.l2hi': { en: 'group', es: 'trabajo' },
   'hero.l3': { en: 'project.', es: 'en equipo.' },
   'hero.photoAlt': { en: 'Three friends seen from behind, arms up, watching the sun set from a rooftop', es: 'Tres amigas vistas de espaldas, con los brazos en alto, mirando el atardecer desde una azotea' },
+  'sticker.sun': { en: 'Sticker: sun in sunglasses. Tap for a Seminole fact', es: 'Sticker: sol con lentes. Toca para ver un dato de Seminole' },
+  'sticker.celery': { en: 'Sticker: celery. Tap for a Seminole fact', es: 'Sticker: apio. Toca para ver un dato de Seminole' },
   'hero.rotorSr': {
     en: "We're the friend who always knows the deadline, has a plan for Thursday, saves you a seat, explains the acronyms and remembers your name.",
     es: 'Somos la gente que siempre sabe la fecha, tiene plan para el jueves, te guarda un lugar, te explica las siglas y se acuerda de tu nombre.'
@@ -60,8 +64,9 @@ window.YSD_DATA.pages.home = {
   'pins.eyebrow': { en: 'DO ONE THING', es: 'HAZ UNA COSA' },
   'pins.title': { en: 'The next thing to do', es: 'Lo próximo que puedes hacer' },
   'pins.strip': { en: 'The next thing to do: three cards', es: 'Lo próximo que puedes hacer: tres tarjetas' },
-  'mail.until': { en: 'until requests from before Nov 3 end on Thu, Dec 31', es: 'para que venzan las solicitudes hechas antes del 3 de noviembre, el jueves 31 de diciembre' },
-  'mail.tag': { en: 'Mail ballot', es: 'Voto por correo' },
+  'count.unit.one': { en: 'day left', es: 'día' },
+  'count.unit.other': { en: 'days left', es: 'días' },
+  'mail.until': { en: 'until requests from before Nov 3 end on Thu, Dec 31', es: 'hasta el jue. 31 de dic., cuando vencen las solicitudes de antes del 3 de nov.' },
   'mail.title': { en: 'Mail ballot? Renew it.', es: '¿Votas por correo? Renueva tu solicitud.' },
   'mail.body1': {
     en: 'Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set through 2028.',
@@ -73,7 +78,6 @@ window.YSD_DATA.pages.home = {
     en: 'Requests made before Nov 3, 2026 ended Dec 31, 2026. One new request covers every election through Dec 31, 2028.',
     es: 'Las solicitudes hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre de 2026. Una nueva te cubre en todas las elecciones hasta el 31 de diciembre de 2028.'
   },
-  'mail.when': { en: 'The reminder pops up Mon, Jan 4, 2027 at 10 am, when the office phones are open.', es: 'El recordatorio sale el lunes 4 de enero de 2027 a las 10 a. m., cuando la oficina atiende el teléfono.' },
   'mail.checked': { en: 'Links checked Nov 9, 2026', es: 'Enlaces revisados el 9 de noviembre de 2026' },
   'id.tag': { en: 'New rule · Jan 1, 2027', es: 'Regla nueva · 1 de enero de 2027' },
   'id.title': { en: 'Student ID? It stops counting at the polls.', es: '¿Identificación de estudiante? Deja de servir para votar.' },
@@ -91,7 +95,7 @@ window.YSD_DATA.pages.home = {
   // ---- 5. the Reel
   'reel.eyebrow': { en: 'CLIPS FROM THE GROUP · DEMO', es: 'CLIPS DEL GRUPO · DEMO' },
   'reel.title': { en: 'Why we show up.', es: 'Por qué participamos.' },
-  'reel.sub': { en: 'Short clips from people around Seminole. Captions on, always. Tap to play.', es: 'Clips cortos de gente de Seminole. Siempre con subtítulos. Toca para verlos.' },
+  'reel.sub': { en: 'Short clips from people around Seminole. Captions on, always.', es: 'Clips cortos de gente de Seminole. Siempre con subtítulos.' },
   'reel.prompt': { en: 'This week’s prompt', es: 'El tema de esta semana' },
   'reel.promptText': { en: '60 seconds on why you showed up.', es: '60 segundos sobre por qué participaste.' },
   'reel.fallback': { en: 'Watch the clips', es: 'Mira los clips' },
@@ -126,6 +130,7 @@ window.YSD_DATA.pages.home = {
   'quiz.t1': { en: 'The Hype Captain', es: 'La Chispa' },
   'quiz.t2': { en: 'The Spreadsheet Witch', es: 'Magia en Celdas' },
   'quiz.t3': { en: 'The Plus-One', es: 'Conoce a Medio Mundo' },
+  'quiz.start': { en: 'Start the quiz', es: 'Empieza el quiz' },
   'quiz.issue': { en: 'Or find your issue', es: 'O encuentra tu tema' },
   'quiz.note': { en: 'No sign-up, no wrong answers, nothing saved but your result.', es: 'Sin registrarte, sin respuestas incorrectas, y solo se guarda tu resultado.' },
 
@@ -139,12 +144,13 @@ window.YSD_DATA.pages.home = {
   'debrief.p2': { en: 'If you’re tired, that’s fair. One thing that helps right now: set your January mail-ballot reminder.', es: 'Si te sientes con cansancio, es válido. Una cosa que ayuda ahora mismo: pon tu recordatorio de enero para la boleta por correo.' },
   'debrief.sources': { en: 'Sources:', es: 'Fuentes:' },
   'debrief.src1': { en: 'Florida Phoenix, Nov 3', es: 'Florida Phoenix, 3 de nov.' },
-  'debrief.src2': { en: 'WFTV county results', es: 'Resultados por condado de WFTV' },
+  'debrief.src2': { en: 'WFTV county results', es: 'WFTV, por condado' },
   'debrief.src3': { en: 'F.S. 102.112 (certification)', es: 'F.S. 102.112 (certificación)' },
 
   // ---- 10. the real scoreboard
   'score.eyebrow': { en: 'REAL NUMBERS, SOURCED', es: 'CIFRAS REALES, CON FUENTE' },
   'score.title': { en: 'The real scoreboard: no demo numbers in this one', es: 'El marcador real: aquí no hay cifras DEMO' },
+  'score.strip': { en: 'Four sourced numbers', es: 'Cuatro cifras con fuente' },
   'score.s1n': { en: '1 in 3+', es: '1 de cada 3+' },
   'score.s1': { en: 'Seminole voters are 18 to 40 (the county’s own age band)', es: 'votantes de Seminole tienen de 18 a 40 años (el rango de edad del propio condado)' },
   'score.s1src': { en: 'SOE data, Jul 1, 2026', es: 'Datos del SOE, 1 de jul. de 2026' },
@@ -152,7 +158,7 @@ window.YSD_DATA.pages.home = {
   'score.s3n': { en: 'About 54%', es: 'Cerca de 54 %' },
   'score.s3': { en: 'Seminole picked the Democrat for governor', es: 'Seminole eligió al demócrata para gobernador' },
   'score.s3note': { en: 'Unofficial until the county certifies, due Nov 16.', es: 'No oficial hasta que el condado certifique, a más tardar el 16 de nov.' },
-  'score.s3src': { en: 'Florida Phoenix, Nov 3', es: 'Florida Phoenix, 3 de nov.' },
+  'score.s3src': { en: 'WFTV county results', es: 'WFTV, por condado' },
   'score.s4n': { en: 'About 27%', es: 'Cerca de 27 %' },
   'score.s4': { en: 'National youth turnout', es: 'Participación juvenil en el país' },
   'score.s4note': { en: 'An early CIRCLE estimate.', es: 'Un cálculo preliminar de CIRCLE.' },
@@ -184,7 +190,7 @@ window.YSD_DATA.pages.home = {
   // ---- 12. the Thursday Letter
   'letter.eyebrow': { en: 'THE THURSDAY LETTER', es: 'LA CARTA DEL JUEVES' },
   'letter.title': { en: 'One letter a week. Written by a person.', es: 'Una carta por semana. Escrita por una persona.' },
-  'letter.sub': { en: 'The deadline you need, the plan for this week, and a few good things. Never more than once a week.', es: 'La fecha que necesitas, el plan de la semana y algunas cosas buenas. Nunca más de una vez por semana.' },
+  'letter.sub': { en: 'The date you need, the plan for this week, a few good things. Never more than once a week.', es: 'La fecha que necesitas, el plan de la semana y algunas cosas buenas. Nunca más de una vez por semana.' },
   'letter.from': { en: 'Dani from Casselberry (DEMO writer)', es: 'Dani, de Casselberry (perfil DEMO)' },
   'letter.when': { en: 'Thu, 7 am', es: 'jue., 7 a. m.' },
   'letter.subject': { en: 'Asked for a mail ballot before Nov 3? That request ends Dec 31 (plus a sunset walk Saturday)', es: '¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre (y una caminata al atardecer el sábado)' },
@@ -193,14 +199,13 @@ window.YSD_DATA.pages.home = {
     es: 'Hola, soy Dani, de Casselberry (perfil DEMO). La noche de las elecciones, un muchacho que había votado por primera vez esa misma mañana me preguntó si podía ayudar en nuestra mesa de mensajes.'
   },
   'letter.cta': { en: 'Read the sample issue', es: 'Lee la edición de muestra' },
-  'letter.demo': { en: 'Sample issue', es: 'Edición de muestra' },
+  'letter.demo': { en: 'DEMO sample', es: 'Muestra DEMO' },
 
   // ---- share row
   'share.title': { en: 'Know one person who’d come?', es: '¿Conoces a alguien que vendría?' },
   'share.sub': { en: 'Three friends, not 300. Send them this page.', es: 'Tres personas, no trescientas. Mándales esta página.' },
 
   // ---- JS-rendered labels
-  'js.going': { en: '{n} going (DEMO)', es: '{n} van (DEMO)' },
   'js.reminderSaved': { en: 'Reminder file ready: Mon, Jan 4, 2027 at 10 am. Open it to add it to your calendar.', es: 'Recordatorio listo: lunes 4 de enero de 2027 a las 10 a. m. Ábrelo para agregarlo a tu calendario.' },
   'js.dropOpen': { en: 'January’s lineup is out (DEMO). Pick one and bring a friend.', es: 'Ya salió la programación de enero (DEMO). Elige uno y trae a alguien.' }
 };

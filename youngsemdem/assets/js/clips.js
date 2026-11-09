@@ -5,8 +5,12 @@
  *   - validate(file) checks type and size synchronously; check(file) adds duration/playability.
  *   - probe(file) reads duration, size, orientation and a JPEG poster frame with a hidden
  *     <video> + <canvas> (also fixes WebM files that report an Infinity duration).
- *   - add(file, {caption, author, tags}) stores the file in IndexedDB (YSD.db when loaded, an own
- *     fallback otherwise), the metadata in YSD.store, and returns the clip.
+ *   - add(file, {caption, author, tags, captionsConfirmed, containsMinors, guardianContact, consents})
+ *     stores the file in IndexedDB (YSD.db when loaded, an own fallback otherwise), the metadata in
+ *     YSD.store, and returns the clip. The moderation fields ride on the record (captionsConfirmed,
+ *     containsMinors 'yes'|'no', needsGuardian, guardianContactProvided, consents [{id, version, at}])
+ *     and in the upload's create request. The guardian contact itself is never stored: in demo it
+ *     is dropped at once; in production it is held in memory until the create request carries it.
  *   - list({sort}) merges demo clips (YSD_DATA.clips, hidden when YSD_CONFIG.demo is false),
  *     a production source (useSource) and this browser's clips; get, like, view, remove.
  *   - Object URLs are created lazily, cached per clip and revoked on remove/release.
@@ -86,6 +90,7 @@
     'missing': 'That video is no longer stored on this device.',
     'demo': 'Uploads are off in the demo. Your clip stays on this device.',
     'no-endpoint': 'Video uploads are not set up yet.',
+    'guardian-required': 'Add a parent or guardian email or phone to post a clip with someone under 18 in it.',
     'network': 'Upload failed: check your connection and try again.',
     'aborted': 'Upload cancelled.',
     'create-failed': 'We could not start the upload. Please try again.',
@@ -505,6 +510,10 @@
       c.poster = urls[urlKey(B_POSTERS, rec.id)] || pb.poster || null;
       c.hls = pb.hls || null; c.iframe = pb.iframe || null;
       c.name = rec.name || '';
+      // moderation fields (never the guardian contact: it is not stored)
+      c.captionsConfirmed = !!rec.captionsConfirmed; c.containsMinors = rec.containsMinors || null;
+      c.needsGuardian = !!rec.needsGuardian; c.guardianContactProvided = !!rec.guardianContactProvided;
+      c.consents = copy(rec.consents || []);
     } else {
       c.src = resolve(rec.src || rec.mp4 || null);
       c.poster = resolve(rec.poster || null);
@@ -667,9 +676,52 @@
     return st;
   }
 
+  // ------------------------------------------------------------------ moderation fields
+  // Captions confirmed, anyone under 18 in the clip (yes/no), the guardian contact and the consents with
+  // their version. The record keeps only whether a guardian contact was given; the contact itself lives
+  // in this map (memory, this page only, production only) until the create request sends it.
+  var guardianHeld = {};
+  function yesNo(v) {
+    if (v === true) return 'yes';
+    if (v === false) return 'no';
+    v = String(v == null ? '' : v).trim().toLowerCase();
+    return v === 'yes' || v === 'si' || v === 's\u00ed' || v === 'y' ? 'yes' : v === 'no' || v === 'n' ? 'no' : null;
+  }
+  /** Consent version used when a consent does not carry its own: opts.consentVersion, then clips.consentVersion. */
+  function consentVersion(opts) { return cleanText((opts && opts.consentVersion) || cfg('clips.consentVersion', '') || '', 80); }
+  /** ['rights', 'people'] or [{id, version, at}] -> [{id, version, at}] (deduped, ids cleaned). */
+  function normConsents(list, opts, at) {
+    var out = [], seen = {};
+    list = Array.isArray(list) ? list : list ? [list] : [];
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i], obj = c && typeof c === 'object';
+      var id = cleanText(obj ? c.id : c, 40).replace(/[^\w-]/g, '');
+      if (!id || seen[id]) continue;
+      seen[id] = 1;
+      out.push({ id: id, version: cleanText((obj && c.version) || consentVersion(opts), 80), at: (obj && c.at) || at });
+    }
+    return out;
+  }
+  function guardianOf(opts) { return cleanText(opts && opts.guardianContact != null ? opts.guardianContact : '', 254); }
+  /** The stored moderation fields for add(): never the guardian contact itself. */
+  function moderation(opts, at) {
+    var minors = yesNo(opts.containsMinors != null ? opts.containsMinors : opts.minors);
+    return {
+      captionsConfirmed: opts.captionsConfirmed === true,
+      containsMinors: minors,
+      needsGuardian: minors === 'yes' || opts.guardianRequired === true,
+      guardianContactProvided: !!guardianOf(opts),
+      consents: normConsents(opts.consents, opts, at)
+    };
+  }
+
   // ------------------------------------------------------------------ add / remove
   /**
    * Post a clip. opts: {caption, author ('@handle' or {handle, name}), tags (array or "a, b"),
+   * captionsConfirmed (true when the poster confirmed the clip has captions), containsMinors
+   * ('yes'|'no', or true/false), guardianRequired (true when the poster is under 18), guardianContact
+   * (sent only in production, never stored), consents (['rights', 'people', 'rules'] or
+   * [{id, version}]), consentVersion (default: config clips.consentVersion),
    * upload: false to skip the production upload, awaitUpload: true to resolve after it,
    * onProgress(p), signal (AbortSignal), plus any limits override}.
    * Resolves to the clip; rejects with Error{code, result} when validation fails.
@@ -683,15 +735,21 @@
         var e = mkErr(res.code, res.reason); e.result = res; throw e;
       }
       var meta = res.meta || {}, id = uid('clip');
+      var created = new Date().toISOString();
+      var mod = moderation(opts, created);
       var rec = {
         id: id, caption: cleanText(opts.caption, L.captionMax), author: normAuthor(opts.author),
-        tags: normTags(opts.tags, L.tagsMax), createdAt: new Date().toISOString(),
+        tags: normTags(opts.tags, L.tagsMax), createdAt: created,
         duration: isFinite(meta.duration) ? Math.round(meta.duration * 100) / 100 : 0,
         width: meta.width || 0, height: meta.height || 0, orientation: meta.orientation, aspect: meta.aspect,
         size: file.size, type: res.type || file.type || 'video/mp4', name: cleanText(file.name, 120),
         status: 'local', persisted: true, hasPoster: !!meta.poster, session: SESSION,
-        likes: 0, views: 0, upload: null, playback: null, demo: false
+        likes: 0, views: 0, upload: null, playback: null, demo: false,
+        captionsConfirmed: mod.captionsConfirmed, containsMinors: mod.containsMinors, needsGuardian: mod.needsGuardian,
+        guardianContactProvided: mod.guardianContactProvided, consents: mod.consents
       };
+      // the guardian contact never reaches storage; production holds it in memory for the create request
+      if (mod.guardianContactProvided && uploadEnabled() && opts.upload !== false) guardianHeld[id] = guardianOf(opts);
       return saveBlob(B_FILES, id, file).then(function (persisted) {
         rec.persisted = persisted;
         return meta.poster ? saveBlob(B_POSTERS, id, meta.poster)['catch'](noop) : null;
@@ -730,6 +788,7 @@
     }
     cancelUpload(id);
     release(id);
+    delete guardianHeld[id];
     S().update(K_LOCAL, function (arr) { return (Array.isArray(arr) ? arr : []).filter(function (r) { return r.id !== id; }); }, []);
     return Promise.all([D().del(B_FILES, id), D().del(B_POSTERS, id)]).then(function () { return true; }, function () { return true; }).then(function () {
       emit('clip-removed', { id: id, hidden: false });
@@ -800,10 +859,14 @@
 
   /**
    * Upload a stored clip to the production endpoint (also used as "retry").
-   * Protocol (see docs/infra/video.md): POST endpoint {action:'create', ...metadata} ->
-   * {ok, provider, id, uploadUrl, method:'POST'|'PUT', field?, headers?}; then the file goes
-   * straight to uploadUrl; then GET endpoint?id=&provider= is polled until state 'ready'.
-   * opts: {onProgress, signal, poll: false, pollInterval, pollTries, force (ignore demo mode)}.
+   * Protocol (see docs/infra/video.md): POST endpoint {action:'create', ...metadata, captionsConfirmed,
+   * containsMinors, needsGuardian, consents, guardianContact?} -> {ok, provider, id, uploadUrl,
+   * method:'POST'|'PUT', field?, headers?}; then the file goes straight to uploadUrl; then
+   * GET endpoint?id=&provider= is polled until state 'ready'.
+   * opts: {onProgress, signal, poll: false, pollInterval, pollTries, force (ignore demo mode),
+   * guardianContact (needed for a retry after a reload when the clip needs a guardian)}.
+   * A clip that needs a guardian (someone under 18 in it, or a poster under 18) is refused with
+   * code 'guardian-required' when no guardian contact is at hand: nothing is sent.
    */
   function upload(id, opts) {
     opts = opts || {};
@@ -814,6 +877,12 @@
     if (typeof w.fetch !== 'function' || !w.XMLHttpRequest) return Promise.reject(mkErr('network'));
     var rec = findLocal(id);
     if (!rec) return Promise.reject(mkErr('missing'));
+    var guardian = guardianOf(opts) || guardianHeld[id] || '';
+    if (rec.needsGuardian && !guardian) {
+      patchLocal(id, { status: 'failed', upload: { error: 'guardian-required', message: msg('guardian-required') } });
+      emit('clip-upload-failed', { id: id, code: 'guardian-required', message: msg('guardian-required') });
+      return Promise.reject(mkErr('guardian-required'));
+    }
     var ticketRef = null;
     patchLocal(id, { status: 'uploading', upload: { provider: null, id: null, error: null, startedAt: new Date().toISOString() } });
     emit('clip-upload-start', { id: id });
@@ -827,8 +896,12 @@
           action: 'create', clientId: id, filename: rec.name || '', size: blob.size || rec.size,
           type: blob.type || rec.type, duration: rec.duration, width: rec.width, height: rec.height,
           caption: rec.caption, tags: rec.tags, author: rec.author && rec.author.handle || '',
-          ref: me && me.refCode || ''
+          ref: me && me.refCode || '',
+          // moderation: a person reviews every clip; the guardian contact goes only in this request
+          captionsConfirmed: !!rec.captionsConfirmed, containsMinors: rec.containsMinors || '', needsGuardian: !!rec.needsGuardian,
+          consents: copy(rec.consents || [])
         }, extra && typeof extra === 'object' ? extra : null);
+        if (guardian) body.guardianContact = guardian;
         return w.fetch(ep, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body) });
       }).then(function (r) {
         return readJson(r).then(function (j) {
@@ -837,6 +910,7 @@
         });
       }, function (e) { if (e && e.code) throw e; throw mkErr('network'); }).then(function (ticket) {
         ticketRef = ticket;
+        delete guardianHeld[id];   // sent: the endpoint has it now
         patchLocal(id, { upload: { provider: ticket.provider || null, id: ticket.id || null } });
         return sendFile(id, ticket, blob, rec, opts);
       });

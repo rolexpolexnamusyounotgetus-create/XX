@@ -21,7 +21,7 @@
 .p-vote .x-hero__h1 { font:800 min(clamp(56px, 10vw + 18px, 132px), 21cqi)/.86 var(--font-display-76);font-stretch:76%;letter-spacing:-.025em;color:var(--cream); }
 .p-vote .x-hero__line { display:block;white-space:nowrap; }
 .p-vote .x-hero__hi { position:relative;width:fit-content;color:var(--celery);isolation:isolate; }
-.p-vote .x-hero__hi::after { content:"";position:absolute;z-index:-1;left:-.03em;right:-.05em;bottom:.02em;height:.13em;background:var(--bubblegum);border-radius:var(--r-pill);transform-origin:left;rotate:-1deg; }
+.p-vote .x-hero__hi::after { content:"";position:absolute;z-index:-1;left:-.03em;right:-.05em;bottom:-.08em;height:.11em;background:var(--bubblegum);border-radius:var(--r-pill);transform-origin:left;rotate:-1deg; }
 @media (prefers-reduced-motion: no-preference) { .p-vote .x-hero__hi::after { animation:swipe 600ms 300ms var(--ease-out) both; } }
 .p-vote .x-hero__sub { max-width:36ch;color:var(--white); }
 .p-vote .x-hero__phone { font-size:var(--fs-small);color:var(--text-muted);max-width:44ch; }

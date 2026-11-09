@@ -178,6 +178,7 @@ is read as New York time.
 ```js
 YSD.cards.register('my-card', (ctx, data, env) => { /* env: {width, height, scale, theme, h} */ }, {size: 'story'});
 const canvas = await YSD.cards.render('joined', {name, refCode, url}, {size: 'story'});  // or {width, height}
+// a template that draws its own DEMO mark: register(name, draw, {demoMark: false}) or render(..., {demoMark: false})
 await YSD.cards.share(canvas, {title, text, url, filename})  // 'shared'|'downloaded'|'cancelled'|'failed'
 await YSD.cards.toBlob(canvas)   YSD.cards.download(canvas, 'card.png')   YSD.cards.sizes
 // helpers (also on YSD.cards.h): roundRect, wrapText, fitText, font, gradient, sticker,
@@ -203,6 +204,8 @@ GPC are respected.
 ```js
 const v = YSD.clips.validate(file)            // sync {ok, reason (user-facing copy), code}
 const clip = await YSD.clips.add(file, {caption, author, tags})  // rejects Error{code, result}
+// moderation (video.md): {captionsConfirmed, containsMinors: 'yes'|'no', guardianRequired, guardianContact, consents: ['rights','people','rules']}
+// the guardian contact is never stored; production sends it once in the create request
 const clips = await YSD.clips.list({sort: 'new'|'top'|'trending'|'views'|'oldest', tag, mine, limit})
 await YSD.clips.get(id)    await YSD.clips.remove(id)    // demo/remote clips are hidden, not deleted
 YSD.clips.like(id) -> {id, liked, likes, views}          // sync; also unlike, toggleLike, liked(id)

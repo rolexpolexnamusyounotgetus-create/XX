@@ -304,11 +304,77 @@ test('qa: catches a request to a non-allowlisted host', () => {
   const r = row('defect-outside-host.html', 'B3');
   assert.strictEqual(r.score, 0); assert.ok(/example\.com/.test(r.result), r.result);
 });
+test('qa: pixel sampling runs on a marker swipe and a sticker button, after colours settle (sampled.html)', () => {
+  const pg = qaRun().report.pages.find((x) => x.page === 'sampled.html');
+  assert.deepStrictEqual(pg.gatesFailed, [], JSON.stringify(Object.values(pg.rows).filter((r) => r.score === 0), null, 1));
+  const r = row('sampled.html', 'B8');
+  const m = /(\d+) pixel-sampled \(1 marker\)/.exec(r.result);
+  assert.ok(m && +m[1] >= 2 && !/not sampled/.test(r.result), r.result);
+  const sampled = pg.v['390-light'].samples.sampled;
+  assert.ok(sampled.some((x) => /^marker span\.x-hi::after/.test(x.why) && /group project/.test(x.text) && x.ratio >= 3), 'marker sampled: ' + JSON.stringify(sampled));
+  assert.ok(sampled.some((x) => /^over svg/.test(x.why) && /Sun sticker/.test(x.text) && x.uniform), 'caption over the sticker button sampled: ' + JSON.stringify(sampled));
+  assert.strictEqual(pg.v['390-light'].samples.skipped.length, 0, 'nothing skipped');
+  assert.strictEqual(row('sampled.html', 'N5').score, 2, 'a marker and a caption on one flat sticker fill pass N5');
+  // the same page measured without letting colours settle reads the fade-in and the lagging card halfway
+  const d = copyFixture('qa');
+  copyFromSite(d, ['assets/js/config.js', 'assets/js/store.js', 'assets/js/share.js']);
+  const out = path.join(d, 'nosettle.json');
+  tool('qa.js', ['--root', d, '--pages', 'sampled.html', '--no-settle', '--widths', '390', '--no-perf', '--no-share', '--no-axe', '--out', out, '--quiet']);
+  const raw = JSON.parse(read(out)).pages[0].rows.B8;
+  assert.strictEqual(raw.score, 0, 'without settling: ' + raw.result);
+  assert.ok(/x-fade|x-theme/.test(details(raw)), details(raw));
+});
+test('qa: catches low contrast over a marker swipe; N5 still allows the marker', () => {
+  const r = row('defect-marker.html', 'B8');
+  assert.strictEqual(r.score, 0);
+  assert.ok(/pixel-sampled ([\d.]+):1 \(need 3\) marker span\.x-hi::after \(\d+% of the glyph pixels sit on it\): your people/.test(details(r)), details(r));
+  assert.strictEqual(row('defect-marker.html', 'N5').score, 2);
+});
+test('qa: B37 flags a source-file path that JS writes into the page', () => {
+  const r = row('defect-source-path.html', 'B37');
+  assert.strictEqual(r.score, 0);
+  assert.ok(/\+3\.5 s\].*source path "data\/civic\.js" in rendered text/.test(details(r)), details(r));
+  assert.strictEqual(row('good.html', 'B37').score, 2);
+});
+test('qa: B20 reads the invite landing with words apart', () => {
+  const r = row('states.html', 'B20');
+  assert.strictEqual(r.score, 2, r.result);
+  assert.ok(/landing shows "Kira invited you to Trivia night/.test(r.result), r.result);
+});
+test('qa: English rendered by JS on a Spanish page fails N8; proper names and DEMO are allowed', () => {
+  const r = row('es/defect-english.html', 'N8');
+  assert.strictEqual(r.score, 0);
+  assert.ok(/English left \(rendered by JS\): "Join free and bring a friend tonight"/.test(details(r)), details(r));
+  assert.ok(!/My Voter Record|DEMO/.test(details(r)), 'allowlisted names stay: ' + details(r));
+  assert.strictEqual(row('es/good.html', 'N8').score, 2);
+});
+test('qa: scenarios measure post-interaction states (overflow, text size, targets, contrast)', () => {
+  const r = row('defect-scenario.html', 'B31');
+  assert.strictEqual(r.score, 0);
+  assert.ok(/\[390-light@panel, 390-dark@panel\].*11 px text/.test(details(r)) && /@panel.*30 x 30 px target/.test(details(r)), details(r));
+  assert.ok(!/\[390-light\]|\[320-/.test(details(r)), 'only in the opened state');
+  assert.strictEqual(row('defect-scenario.html', 'SC').score, 0);
+  const ok = qaRun().report.pages.find((x) => x.page === 'states.html');
+  assert.strictEqual(row('states.html', 'SC').score, 2, row('states.html', 'SC').result);
+  assert.deepStrictEqual(ok.scenarios.map((x) => x.id + ':' + x.status), ['panel:ok', 'not-built:skipped']);
+  assert.ok(ok.v['390-dark@panel'] && ok.v['390-dark@panel'].texts > 0, 'measured in dark too');
+  assert.strictEqual(row('good.html', 'SC').score, 'n/a');
+});
+test('qa: a bottom bar hidden until scroll and under 25% passes B6; one covering 35% fails', () => {
+  const ok = row('states.html', 'B6');
+  assert.strictEqual(ok.score, 2, ok.result + details(ok));
+  assert.ok(/bottom bar hidden until scroll \(\d+% of the screen after\)/.test(ok.result), ok.result);
+  const bad = row('defect-sticky-bar.html', 'B6');
+  assert.strictEqual(bad.score, 0);
+  assert.ok(/bottom bar div\.x-bar covers 3\d% of the screen after a scroll \(max 25%\)/.test(details(bad)), details(bad));
+});
 test('qa: each defect page fails only where its defect is', () => {
   const expect = {
     'defect-small-text.html': ['B31', 'N4'], 'defect-small-target.html': ['B31', 'N4'], 'defect-overflow.html': ['B31', 'N4'],
     'defect-gradient.html': ['B8', 'N4', 'N5'], 'defect-animation.html': ['N4'], 'defect-demo-count.html': ['B30', 'N3'],
-    'defect-share-localhost.html': ['N10'], 'defect-outside-host.html': []
+    'defect-share-localhost.html': ['N10'], 'defect-outside-host.html': [],
+    'defect-marker.html': ['B8', 'N4'], 'defect-sticky-bar.html': ['B6'], 'defect-scenario.html': ['B31', 'N4'], 'defect-source-path.html': [],
+    'es/defect-english.html': ['N8'], 'sampled.html': [], 'states.html': []
   };
   for (const [p, gates] of Object.entries(expect)) {
     const pg = qaRun().report.pages.find((x) => x.page === p);
@@ -323,9 +389,28 @@ test('qa: unit helpers (contrast matches BRIEF 3.2, English detector)', () => {
   }
   assert.ok(qa.englishLeft('Join free and bring a friend'));
   assert.ok(qa.englishLeft('Menu'));
+  assert.ok(qa.englishLeft('Next question') && qa.englishLeft('Copied') && qa.englishLeft('Your result is ready'), 'JS-rendered UI words');
   assert.ok(!qa.englishLeft('Únete gratis y trae a alguien'));
   assert.ok(!qa.englishLeft('Young Democrats of Seminole County · DEMO'));
   assert.ok(!qa.englishLeft('Sanford, Lake Mary y Oviedo'));
+  assert.ok(!qa.englishLeft('Busca tu registro en My Voter Record') && !qa.englishLeft('Rock the Vote'), 'EN_ALLOW names');
+  assert.ok(qa.englishLeft('Join the crew') && !qa.englishLeft('Join the crew', ['Join the crew']), 'extra allowlist (--es-allow, targets esAllow)');
+  assert.ok(!qa.englishLeft('TEXAS es grande'), 'allowlisted words match whole words only');
+  assert.deepStrictEqual(qa.sourcePaths('Loaded from data/civic.js, see assets/img/ and home.css'), ['data/civic.js', 'assets/img/', 'home.css']);
+  assert.deepStrictEqual(qa.sourcePaths('See the .js file'), ['.js']);
+  assert.deepStrictEqual(qa.sourcePaths('voteseminole.gov/vote.html · 127.0.0.1:8000/join.html · https://x.org/a.js · Node.js · a@b.com'), []);
+  // targets: wildcard keys and es/ twins; scenarios for the post-interaction states the checkers asked for
+  const T = { '*': { budgetKB: 500 }, 'events/*.html': { scenarios: ['x'] }, 'join.html': { maxHeight: 1 } };
+  assert.deepStrictEqual(qa.targetsFor(T, 'es/events/trivia.html').scenarios, ['x']);
+  assert.strictEqual(qa.targetsFor(T, 'es/join.html').maxHeight, 1);
+  assert.ok(!qa.targetsFor(T, 'events.html').scenarios);
+  const ids = (p) => (qa.targetsFor(qa.DEFAULT_TARGETS, p).scenarios || []).map((x) => x.id);
+  assert.deepStrictEqual(ids('quiz.html'), ['quiz-done', 'maker']);
+  assert.deepStrictEqual(ids('es/events.html'), ['rsvp']);
+  assert.deepStrictEqual(ids('events/trivia-county-edition.html'), ['rsvp']);
+  assert.deepStrictEqual(ids('join.html'), ['joined']);
+  assert.ok(qa.targetsFor(qa.DEFAULT_TARGETS, 'index.html').scenarios[0].optional, 'home maker scenario waits for its hook');
+  assert.ok(/transition: none !important/.test(qa.SETTLE_CSS));
 });
 
 // ============================================================================================
@@ -362,13 +447,15 @@ test('voice_lint: every rule in voice_rules.json fires somewhere in the fixtures
   const missing = rules.filter((r) => !fired.has(r) && !optional.has(r));
   assert.deepStrictEqual(missing, [], 'rules with no fixture hit');
 });
-test('voice_lint: data files are linted by en/es leaf; word lists, notes and sources are skipped', () => {
+test('voice_lint: data files are linted by en/es leaf; word lists, notes, source URLs and sources[].name are skipped', () => {
   const { report } = voiceRun(['data/banned.js']);
   const where = report.issues.map((i) => i.where + ':' + i.rule);
   for (const w of ['banned.items.0.title.en:chat-labels', 'banned.items.0.title.es:chat-labels', 'banned.items.1.title.en:ages-40-and-under', 'banned.items.1.title.es:ages-40-and-under-es',
     'banned.items.2.body.en:mail-ballot-overclaim', 'banned.items.2.body.es:mail-ballot-overclaim-es', 'banned.items.3.body.en:game-costume', 'banned.items.4.body.en:exclamations',
-    'banned.debrief.body.en:serious-exclamation', 'banned.debrief.body.es:serious-exclamation']) assert.ok(where.indexOf(w) >= 0, w + ' in ' + where.join(', '));
-  assert.ok(!report.issues.some((i) => /\.never\.|\.note|\.source/.test(i.where)), 'skips never, note and source');
+    'banned.debrief.body.en:serious-exclamation', 'banned.debrief.body.es:serious-exclamation',
+    'banned.facts.0.sources.0.label.en:chat-labels', 'banned.labels.sources.en:chat-labels']) assert.ok(where.indexOf(w) >= 0, w + ' in ' + where.join(', '));
+  assert.ok(!report.issues.some((i) => /\.never\.|\.note|\.source(\.|$)/.test(i.where)), 'skips never, note and source');
+  assert.ok(!report.issues.some((i) => /\.sources\.\d+\.name\./.test(i.where)), 'skips sources[].name (proper titles): ' + where.join(', '));
 });
 test('voice_lint: the approved lines from BRIEF 2.7 pass', () => {
   const { code, report } = voiceRun(['clean.html']);

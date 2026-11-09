@@ -78,6 +78,7 @@ html[data-hand="on"] .p-newsletter .x-sign__name { font:400 clamp(28px, 2vw + 20
 .p-newsletter .x-one__top > .stack { min-width:0;flex:1 1 12rem; }
 .p-newsletter .x-one__ticket { flex:none;--rot:-3deg; }
 .p-newsletter .x-one__title { font:800 var(--fs-h3)/1 var(--font-display-84);font-stretch:84%; }
+.p-newsletter .x-one { overflow-x:clip; }   /* the envelope sticker's tap wiggle must not widen the page */
 .p-newsletter .x-one > .wrap { position:relative; }
 .p-newsletter .x-one__sticker { position:absolute;top:-8px;right:0;--sticker-size:84px; }
 @media (min-width: 900px) { .p-newsletter .x-one__sticker { top:auto;bottom:24px;right:8%;--sticker-size:180px; } }

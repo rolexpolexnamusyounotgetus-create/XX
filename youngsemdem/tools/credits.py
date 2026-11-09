@@ -14,6 +14,10 @@ any credit found next to it:
     data/clips.js records its Unsplash photos;
   - HTML: data-credit / data-photographer / data-license / data-source on the same tag;
   - CSS: a /* credit: ... */ comment on the same or the previous line.
+Font files (fonts.gstatic.com, or any .woff/.woff2/.ttf/.otf URL) are credited to their font family,
+not to a photographer: the family comes from a `family` key in the same object (assets/fonts/fonts.json
+records one per self-hosted file, with `license` and `copyright`), else from the URL. They are listed
+under Fonts with that license and copyright, never under Missing credits.
 
 Usage:
     python3 tools/credits.py            write CREDITS.md in the site root
@@ -183,6 +187,22 @@ def credit_near(path: Path, text: str, pos: int, line_no: int, lines: list[str])
     return info
 
 
+def font_meta(path: Path, text: str, pos: int) -> dict:
+    """family / license / copyright / specimen recorded in the same JS or JSON object as a font URL."""
+    if path.suffix.lower() not in (".js", ".mjs", ".json", ".webmanifest"):
+        return {}
+    pairs = top_level_pairs(enclosing_object(text, pos))
+    return {k: pairs[k] for k in ("family", "license", "copyright", "specimen") if pairs.get(k)}
+
+
+def family_from_url(url: str) -> str:
+    """Best guess at a family name from a font file URL (fonts.gstatic.com/s/<family>/...), else ''."""
+    parts = [p for p in urlparse(url).path.split("/") if p]
+    if len(parts) >= 3 and parts[0] == "s":
+        return parts[1]
+    return ""
+
+
 def google_families(url: str) -> list[str]:
     q = parse_qs(urlparse(url).query)
     fams = []
@@ -213,10 +233,26 @@ def scan(root: Path) -> dict:
             line_no = text.count("\n", 0, m.start()) + 1
             where = f"{rel}:{line_no}"
             if source == "Google Fonts" and what == "font":
+                meta = font_meta(path, text, m.start())
                 for fam in google_families(url) or ["(unnamed family)"]:
-                    f = fonts.setdefault(fam, {"family": fam, "source": "Google Fonts", "urls": set(), "used": set()})
+                    f = fonts.setdefault(fam, {"family": fam, "source": "Google Fonts", "urls": set(), "used": set(), "meta": {}})
                     f["urls"].add(url)
                     f["used"].add(where)
+                    for k, v in meta.items():
+                        if k != "family":
+                            f["meta"].setdefault(k, v)
+                continue
+            if what in ("font file", "font"):
+                # a font file belongs to its family (credited by license and copyright, not a photographer)
+                meta = font_meta(path, text, m.start())
+                fam = meta.get("family") or family_from_url(url) or "(unnamed family)"
+                f = fonts.setdefault(fam, {"family": fam, "source": source if source == "Google Fonts" else source,
+                                           "urls": set(), "used": set(), "meta": {}})
+                f["urls"].add(url.split("?")[0].split("#")[0])
+                f["used"].add(where)
+                for k, v in meta.items():
+                    if k != "family":
+                        f["meta"].setdefault(k, v)
                 continue
             key = url.split("?")[0].split("#")[0]
             a = assets.setdefault(key, {"url": key, "source": source, "kind": what, "variants": set(),
@@ -236,7 +272,7 @@ def scan(root: Path) -> dict:
     asset_list = []
     for a in sorted(assets.values(), key=lambda x: (x["source"], x["url"])):
         asset_list.append({**a, "variants": sorted(a["variants"]), "used": ordered_used(a["used"])})
-    font_list = [{**f, "urls": sorted(f["urls"]), "used": ordered_used(f["used"])}
+    font_list = [{**f, "urls": sorted(f["urls"]), "used": ordered_used(f["used"]), "meta": dict(sorted(f.get("meta", {}).items()))}
                  for f in sorted(fonts.values(), key=lambda x: x["family"].lower())]
     return {"assets": asset_list, "fonts": font_list}
 
@@ -282,9 +318,14 @@ def render(data: dict, today: str) -> str:
         out.append("None found.")
     out += ["", f"## Fonts ({len(fonts)})", ""]
     if fonts:
-        out += ["| Family | Source | Used in |", "|---|---|---|"]
+        out += ["| Family | Source | Credit | License | Used in |", "|---|---|---|---|---|"]
         for f in fonts:
-            out.append(f"| {md_escape(f['family'])} | {f['source']} | " + ", ".join(f"`{u}`" for u in f["used"]) + " |")
+            meta = f.get("meta", {})
+            who = meta.get("copyright", "")
+            if who and meta.get("specimen"):
+                who = f"[{who}]({meta['specimen']})"
+            out.append(f"| {md_escape(f['family'])} | {f['source']} | {md_escape(who) or '-'} | {md_escape(meta.get('license', '')) or '-'} | "
+                       + ", ".join(f"`{u}`" for u in f["used"]) + " |")
         out += ["", "Each Google Fonts family has its own license (most use the SIL Open Font License); check",
                 "the family's page on fonts.google.com before self-hosting."]
     else:

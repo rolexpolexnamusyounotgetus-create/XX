@@ -466,6 +466,13 @@ test('credits: finds remote media, credits next to them, fonts, usage lines; --c
     '] };'
   ].join('\n'));
   fs.writeFileSync(path.join(d, 'tests', 'x.js'), 'const u = "https://images.unsplash.com/photo-999-test";');
+  // self-hosted Google Fonts: the font files are credited to their family (license, copyright), not to a photographer
+  fs.mkdirSync(path.join(d, 'assets', 'fonts'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'assets', 'fonts', 'fonts.json'), JSON.stringify({ files: [
+    { family: 'Test Grotesk', cssUrl: 'https://fonts.googleapis.com/css2?family=Test%20Grotesk&display=swap', srcUrl: 'https://fonts.gstatic.com/s/testgrotesk/v1/abc.woff2',
+      license: 'SIL Open Font License 1.1', copyright: 'Copyright 2024 The Test Grotesk Authors', specimen: 'https://fonts.google.com/specimen/Test+Grotesk' },
+    { family: 'Kit Brush', srcUrl: 'https://fonts.gstatic.com/l/font?kit=XYZ&v=v1', license: 'SIL Open Font License 1.1' }
+  ] }, null, 2));
   let r = py('credits.py', ['--root', d]);
   assert.strictEqual(r.code, 0, r.out);
   const md = read(path.join(d, 'CREDITS.md'));
@@ -473,7 +480,10 @@ test('credits: finds remote media, credits next to them, fonts, usage lines; --c
   assert.ok(md.includes('photo-456-def') && md.includes('John Roe') && md.includes('`assets/css/site.css:3`'));
   assert.ok(md.includes('[Ann Lee](https://unsplash.com/photos/x-789)') && md.includes('`data/media.js:2`'));
   assert.ok(md.includes('rally.mp4') && /## Missing credits \(1\)[\s\S]*rally\.mp4/.test(md));
-  assert.ok(/\| Inter \| Google Fonts \| `index.html:1` \|/.test(md) && md.includes('| Space Grotesk |'));
+  assert.ok(/\| Inter \| Google Fonts \| - \| - \| `index.html:1` \|/.test(md) && md.includes('| Space Grotesk |'), md);
+  assert.ok(/\| Test Grotesk \| Google Fonts \| \[Copyright 2024 The Test Grotesk Authors\]\(https:\/\/fonts\.google\.com\/specimen\/Test\+Grotesk\) \| SIL Open Font License 1\.1 \| `assets\/fonts\/fonts\.json:\d+`, `assets\/fonts\/fonts\.json:\d+` \|/.test(md), 'font files credited to their family: ' + md);
+  assert.ok(/\| Kit Brush \| Google Fonts \| - \| SIL Open Font License 1\.1 \|/.test(md), 'a kit URL takes the family from its object');
+  assert.ok(!/## Photos and media[\s\S]*fonts\.gstatic\.com[\s\S]*## Fonts/.test(md) && !/## Missing credits[\s\S]*gstatic/.test(md), 'font files are not media and never missing credits');
   assert.ok(!md.includes('photo-999-test'), 'tests/ skipped');
   assert.ok(!md.includes('placeholder.png'), 'example.org skipped');
   assert.ok(!md.includes('unsplash.com/@janedoe'), 'profile links are not media');

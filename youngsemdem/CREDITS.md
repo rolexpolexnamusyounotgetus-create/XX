@@ -7,22 +7,30 @@ It lists every remote photo, video, audio and font URL found in the site's HTML,
 data files, with the credit recorded next to it and every place it is used. Before launch,
 self-host these files and keep the credits (DEPLOY.md, "Self-host fonts and photos").
 
-## Photos and media (8)
+## Photos and media (9)
 
 | # | Asset | Source | Credit | License | Used in |
 |---|---|---|---|---|---|
-| 1 | [photo-1522202176988-66273c2fd55f](https://images.unsplash.com/photo-1522202176988-66273c2fd55f) | Unsplash (photo) | [Brooke Cagle (@brookecagle)](https://unsplash.com/photos/three-people-sitting-in-front-of-table-laughing-together-g1Kr4Ozfoac) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:70`, `data/clips.js:71` |
-| 2 | [photo-1555636222-cae831e670b3](https://images.unsplash.com/photo-1555636222-cae831e670b3) | Unsplash (photo) | [FilterGrade (@filtergrade)](https://unsplash.com/photos/suburban-street-with-houses-and-palms-4T4AcGJvARQ) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:278`, `data/clips.js:279` |
-| 3 | [photo-1595265616362-0d9558d774db](https://images.unsplash.com/photo-1595265616362-0d9558d774db) | Unsplash (photo) | [Tiffany Tertipes (@tiffanytertipes)](https://unsplash.com/photos/purple-envelope-on-white-table-9A5uvtrO1Vw) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:60`, `data/clips.js:61` |
-| 4 | [photo-1646934280686-768a69c444eb](https://images.unsplash.com/photo-1646934280686-768a69c444eb) | Unsplash (photo) | [Jametlene Reskp (@reskp)](https://unsplash.com/photos/a-group-of-people-sitting-around-a-wooden-table-WciYmqSwNAA) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:322`, `data/clips.js:323` |
-| 5 | [photo-1676304437086-ad9db3b3df66](https://images.unsplash.com/photo-1676304437086-ad9db3b3df66) | Unsplash (photo) | [Komorebi Photo (@komophoto)](https://unsplash.com/photos/cs18eMhnmxI) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:120`, `data/clips.js:121` |
-| 6 | [photo-1758275557330-cfd545444dc3](https://images.unsplash.com/photo-1758275557330-cfd545444dc3) | Unsplash (photo) | Vitaly Gariev (@silverkblack) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:130`, `data/clips.js:131`, `data/clips.js:132` |
-| 7 | [photo-1783676056910-e5f3b27bdcbd](https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd) | Unsplash (photo) | [Richard Burlton (@richardworks)](https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:228`, `data/clips.js:229` |
-| 8 | [photo-1787091331480-c1e2b98e0140](https://images.unsplash.com/photo-1787091331480-c1e2b98e0140) | Unsplash (photo) | [Ashley Diane Worsham (@worsham)](https://unsplash.com/photos/hand-holding-i-voted-sticker-wL4VWySngoc) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:184`, `data/clips.js:185` |
+| 1 | [photo-1522202176988-66273c2fd55f](https://images.unsplash.com/photo-1522202176988-66273c2fd55f) | Unsplash (photo) | [Brooke Cagle (@brookecagle)](https://unsplash.com/photos/three-people-sitting-in-front-of-table-laughing-together-g1Kr4Ozfoac) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:71`, `data/clips.js:72` |
+| 2 | [photo-1529333166437-7750a6dd5a70](https://images.unsplash.com/photo-1529333166437-7750a6dd5a70) | Unsplash (photo) | [Simon Maage](https://unsplash.com/photos/photo-of-three-women-lifting-there-hands-tXiMrX3Gc-g) | - | `es/index.html:118`, `index.html:118` |
+| 3 | [photo-1555636222-cae831e670b3](https://images.unsplash.com/photo-1555636222-cae831e670b3) | Unsplash (photo) | [FilterGrade (@filtergrade)](https://unsplash.com/photos/suburban-street-with-houses-and-palms-4T4AcGJvARQ) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:291`, `data/clips.js:292`, `es/events/big-tree-long-game-picnic.html:161`, `es/events/karaoke-love-and-protest.html:160`, `es/events/new-member-mixer-2027.html:162`, `es/events/oviedo-2027-neighbor-shift.html:106`, `es/events/sunrail-social-lake-mary.html:161`, `events/big-tree-long-game-picnic.html:161`, `events/karaoke-love-and-protest.html:160`, `events/new-member-mixer-2027.html:162`, `events/oviedo-2027-neighbor-shift.html:106`, `events/sunrail-social-lake-mary.html:161` |
+| 4 | [photo-1595265616362-0d9558d774db](https://images.unsplash.com/photo-1595265616362-0d9558d774db) | Unsplash (photo) | [Tiffany Tertipes (@tiffanytertipes)](https://unsplash.com/photos/purple-envelope-on-white-table-9A5uvtrO1Vw) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:61`, `data/clips.js:62` |
+| 5 | [photo-1646934280686-768a69c444eb](https://images.unsplash.com/photo-1646934280686-768a69c444eb) | Unsplash (photo) | [Jametlene Reskp (@reskp)](https://unsplash.com/photos/a-group-of-people-sitting-around-a-wooden-table-WciYmqSwNAA) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:338`, `data/clips.js:339`, `es/events/sunset-walk-lake-monroe.html:160`, `es/events/trivia-county-edition.html:106`, `events/sunset-walk-lake-monroe.html:160`, `events/trivia-county-edition.html:106` |
+| 6 | [photo-1676304437086-ad9db3b3df66](https://images.unsplash.com/photo-1676304437086-ad9db3b3df66) | Unsplash (photo) | [Komorebi Photo (@komophoto)](https://unsplash.com/photos/cs18eMhnmxI) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:124`, `data/clips.js:125`, `es/events/new-member-mixer-2027.html:161`, `es/events/sunrail-social-lake-mary.html:106`, `es/events/taller-votar-2027.html:162`, `events/new-member-mixer-2027.html:161`, `events/sunrail-social-lake-mary.html:106`, `events/taller-votar-2027.html:162` |
+| 7 | [photo-1758275557330-cfd545444dc3](https://images.unsplash.com/photo-1758275557330-cfd545444dc3) | Unsplash (photo) | [Vitaly Gariev (@silverkblack)](https://unsplash.com/@silverkblack) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:134`, `data/clips.js:135` |
+| 8 | [photo-1783676056910-e5f3b27bdcbd](https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd) | Unsplash (photo) | [Richard Burlton (@richardworks)](https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo) | [Unsplash License](https://unsplash.com/license) | `about.html:195`, `data/clips.js:238`, `data/clips.js:239`, `es/about.html:195`, `es/events/sunset-walk-lake-monroe.html:106`, `events/sunset-walk-lake-monroe.html:106`, `styleguide.html:110`, `styleguide.html:946`, `styleguide.html:947`, `styleguide.html:948`, `styleguide.html:955`, `styleguide.html:956`, `styleguide.html:957`, `styleguide.html:964`, `styleguide.html:965`, `styleguide.html:966`, `styleguide.html:1011`, `styleguide.html:1025`, `styleguide.html:1068`, `styleguide.html:1082`, `styleguide.html:1125`, `styleguide.html:1139` |
+| 9 | [photo-1787091331480-c1e2b98e0140](https://images.unsplash.com/photo-1787091331480-c1e2b98e0140) | Unsplash (photo) | [Ashley Diane Worsham (@worsham)](https://unsplash.com/photos/hand-holding-i-voted-sticker-wL4VWySngoc) | [Unsplash License](https://unsplash.com/license) | `data/clips.js:191`, `data/clips.js:192` |
 
-## Fonts (0)
+## Fonts (3)
 
-None found.
+| Family | Source | Credit | License | Used in |
+|---|---|---|---|---|
+| Atkinson Hyperlegible Next | Google Fonts | [Copyright 2020-2024 The Atkinson Hyperlegible Next Project Authors (https://github.com/googlefonts/atkinson-hyperlegible-next)](https://fonts.google.com/specimen/Atkinson+Hyperlegible+Next) | SIL Open Font License 1.1 | `assets/fonts/fonts.json:35`, `assets/fonts/fonts.json:36` |
+| Bricolage Grotesque | Google Fonts | [Copyright 2022 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)](https://fonts.google.com/specimen/Bricolage+Grotesque) | SIL Open Font License 1.1 | `assets/fonts/fonts.json:17`, `assets/fonts/fonts.json:18` |
+| Caveat Brush | Google Fonts | [Copyright 2015 Google Inc. All Rights Reserved.](https://fonts.google.com/specimen/Caveat+Brush) | SIL Open Font License 1.1 | `assets/fonts/fonts.json:53`, `assets/fonts/fonts.json:54` |
+
+Each Google Fonts family has its own license (most use the SIL Open Font License); check
+the family's page on fonts.google.com before self-hosting.
 
 ## Missing credits (0)
 

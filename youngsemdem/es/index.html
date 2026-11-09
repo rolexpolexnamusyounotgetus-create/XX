@@ -1,0 +1,463 @@
+<!doctype html>
+<!--
+  Home (BRIEF §4.1, W1). Built from docs/TEMPLATE.html. Page copy: data/pages/home.js (static, read by
+  tools/make_es.js); runtime data: data/slices/home.js (regenerate with node tools/slice_data.js --rerun
+  data/slices/home.js). Behaviour: assets/js/pages/home.js, which renders the next DEMO event with W2's
+  eventcard.js (the ticket, the pinned hangout card and the invites share rsvp.js state) and lazy-loads
+  W4's reel.js, W5's maker.js/membercard.js and W6's joinform.js when their sections come near the
+  viewport, so the first view stays under the home budget. Facts: docs/research/00 rulings. No AI.
+-->
+<html lang="es" data-page="home">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title data-t="home:seo.title">La política local es un trabajo en equipo · Young Democrats of Seminole County</title>
+  <meta name="description" content="Los jóvenes demócratas del condado de Seminole: reuniones, ayuda para votar sin enredos en inglés y español, quizzes de temas locales y clips de gente de aquí." data-t-content="seo.home.description">
+  <meta property="og:title" content="La política local es un trabajo en equipo" data-t-content="seo.home.ogTitle">
+  <meta property="og:description" content="Los jóvenes demócratas del condado de Seminole, de 14 a 39 años. Reuniones, ayuda para votar que se entiende y un lugar guardado para ti." data-t-content="seo.home.ogDescription">
+  <meta property="og:image" content="../assets/img/og/es/home.png">
+  <meta property="og:image:alt" content="Tarjeta que dice: La política local es un trabajo en equipo. Young Democrats of Seminole County, de 14 a 39 años." data-t-content="home:og.alt">
+  <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+  <meta property="og:locale" content="es_US"><meta property="og:locale:alternate" content="en_US">
+  <meta name="ysd:og" content='{"template":"og-page","kicker":"DE 14 A 39 AÑOS · CONDADO DE SEMINOLE","title":"La política local es un trabajo en equipo","accent":"trabajo en equipo","color":"violet","sticker":"celery","keys":{"kicker":"home:og.kicker","title":"seo.home.ogTitle","accent":"home:og.accent"},"lang":"es"}'>
+  <!-- @head --><meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#6A2BFF">
+<script src="../assets/boot.js"></script>
+<link rel="canonical" href="/es/">
+<meta property="og:url" content="/es/">
+<meta property="og:site_name" content="Young Democrats of Seminole County">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/components.css">
+<link rel="stylesheet" href="../assets/css/utilities.css"><!-- /@head -->
+  <link rel="alternate" hreflang="en" href="../index.html">
+  <link rel="alternate" hreflang="es" href="index.html">
+  <link rel="alternate" hreflang="x-default" href="../index.html">
+  <link rel="stylesheet" href="../assets/css/rsvp.css">
+  <link rel="stylesheet" href="../assets/css/pages/home.css">
+</head>
+<body class="p-home">
+  <!-- @demo-banner-es --><a class="skip-link" href="#main">Saltar al contenido principal</a>
+<aside class="demo-banner" aria-label="Aviso DEMO">
+  <div class="wrap demo-banner__inner">
+    <span class="tag tag--demo">DEMO</span>
+    <p class="demo-banner__text"><span class="demo-banner__long">Vista previa DEMO para los Young Democrats of Seminole County, pendiente de la aprobación del capítulo. Todo lo marcado DEMO es inventado, y los formularios no envían nada. Borrador en español, pendiente de revisión.</span><span class="demo-banner__short">Vista previa DEMO. Borrador en español, pendiente de revisión.</span> <a href="../es/about.html#whats-real">¿Qué es real?</a></p>
+  </div>
+</aside><!-- /@demo-banner-es -->
+  <!-- @header-es --><header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand" href="../es/index.html" data-no-current>
+      <svg class="brand__mark" viewBox="0 0 64 56" aria-hidden="true" focusable="false"><path d="M15 41 13 54 31 41Z" fill="#C8F03C" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><rect x="2.5" y="3" width="59" height="39" rx="9" fill="#6A2BFF" stroke="currentColor" stroke-width="3"/><path fill="#C8F03C" d="M21.94 31.5V25.49L15.93 12.5H21.5L24.27 22.36H24.51L27.18 12.5H32.44L26.63 25.47V31.5ZM36.34 31.5V27.92H40.23Q41.33 27.92 42.06 27.27Q42.78 26.62 43.15 25.3Q43.52 23.98 43.52 22.02Q43.52 20.47 43.31 19.34Q43.1 18.22 42.67 17.49Q42.25 16.77 41.57 16.42Q40.88 16.08 39.94 16.08H36.34V12.5H39.87Q42.38 12.5 44.23 13.61Q46.08 14.72 47.07 16.84Q48.07 18.96 48.07 21.99Q48.07 24.45 47.55 26.13Q47.02 27.81 46.14 28.87Q45.26 29.92 44.23 30.5Q43.19 31.07 42.18 31.28Q41.17 31.5 40.37 31.5ZM34.14 31.5V12.5H38.63V31.5Z"/></svg>
+      <span class="brand__word" translate="no">Young Dems</span>
+      <span class="u-visually-hidden">Young Democrats of Seminole County, inicio</span>
+    </a>
+    <nav class="site-nav" aria-label="Menú principal">
+      <ul class="site-nav__list">
+        <li><a href="../es/events.html">Eventos</a></li>
+        <li><a href="../es/vote.html">Votar</a></li>
+        <li><a href="../es/clips.html">Clips</a></li>
+        <li><a href="../es/quiz.html">Quiz</a></li>
+        <li><a href="../es/issues.html">Temas</a></li>
+        <li><a href="../es/about.html">Quiénes somos</a></li>
+      </ul>
+    </nav>
+    <div class="site-header__actions">
+      <a class="lang-link" href="../index.html" hreflang="en" lang="en" data-lang-link>EN<span class="u-visually-hidden">: read this page in English</span></a>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Tema de color: Auto. Cambiar tema"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 3a9 9 0 0 1 0 18Z"/></svg><span class="theme-toggle__label" data-theme-label>Auto</span></button>
+      <a class="btn btn--primary btn--sm" href="../es/join.html#join-form" data-join-cta>Únete gratis</a>
+      <button class="menu-btn" type="button" data-menu-toggle aria-expanded="false" aria-controls="site-menu"><span class="menu-btn__bars" aria-hidden="true"></span><span class="u-visually-hidden">Menú</span></button>
+    </div>
+  </div>
+  <div class="menu" id="site-menu" hidden>
+    <div class="wrap menu__inner">
+      <nav aria-label="Menú">
+        <ul class="menu__list">
+          <li><a href="../es/index.html" aria-current="page">Inicio</a></li>
+          <li><a href="../es/events.html">Eventos</a></li>
+          <li><a href="../es/vote.html">Votar</a></li>
+          <li><a href="../es/clips.html">Clips</a></li>
+          <li><a href="../es/quiz.html">Quiz</a></li>
+          <li><a href="../es/issues.html">Temas</a></li>
+          <li><a href="../es/join.html">Únete</a></li>
+          <li><a href="../es/about.html">Quiénes somos</a></li>
+        </ul>
+        <ul class="menu__group">
+          <li><a href="../es/newsletter.html">La Carta del Jueves</a></li>
+          <li><a href="../es/post.html">Sube un clip</a></li>
+          <li><a href="../es/privacy.html">Privacidad</a></li>
+          <li><a href="../es/accessibility.html">Accesibilidad</a></li>
+          <li><a href="../es/teen-safety.html">Seguridad para adolescentes</a></li>
+          <li><a href="../es/content-policy.html">Reglas para clips</a></li>
+          <li><a href="../es/conduct.html">Código de conducta</a></li>
+        </ul>
+      </nav>
+      <div class="menu__row">
+        <a class="lang-link" href="../index.html" hreflang="en" lang="en" data-lang-link>EN<span class="u-visually-hidden">: read this page in English</span></a>
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Tema de color: Auto. Cambiar tema"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 3a9 9 0 0 1 0 18Z"/></svg><span class="theme-toggle__label" data-theme-label>Auto</span></button>
+      </div>
+    </div>
+  </div>
+</header><!-- /@header-es -->
+  <main id="main">
+    <div data-invite-landing hidden></div>
+
+    <!-- 1 + 2. Hero (flat ultraviolet) with the invite ticket -->
+    <section class="section section--violet x-hero" aria-labelledby="home-title">
+      <div class="wrap x-hero__grid">
+        <div class="x-hero__copy">
+          <p class="eyebrow eyebrow--pill x-hero__eyebrow" data-t="home:hero.eyebrow">YOUNG DEMOCRATS OF SEMINOLE COUNTY · DE 14 A 39 AÑOS</p>
+          <div class="x-hero__title">
+            <h1 class="h-hero kinetic x-hero__h1" id="home-title"><span class="kinetic__line" data-t="home:hero.l1">La política local</span> <span class="kinetic__line"><span data-t="home:hero.l2">es un</span> <span class="x-hi" data-t="home:hero.l2hi">trabajo</span></span> <span class="kinetic__line kinetic__hi" data-t="home:hero.l3">en equipo.</span></h1>
+            <figure class="x-polaroid">
+              <span class="photo photo--golden x-polaroid__photo"><img src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=320&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1000px) 340px, (min-width: 700px) 200px, 30vw" width="640" height="428" fetchpriority="high" decoding="async" alt="Tres amigas vistas de espaldas, con los brazos en alto, mirando el atardecer desde una azotea" data-t-alt="home:hero.photoAlt" data-photographer="Simon Maage" data-source="https://unsplash.com/photos/photo-of-three-women-lifting-there-hands-tXiMrX3Gc-g"></span>
+              <figcaption class="x-polaroid__cap"><span class="tag tag--stock" data-t="tag.stock">Foto de archivo · no son miembros</span></figcaption>
+            </figure>
+            <button class="sticker x-hero__sticker" type="button" data-sticker="sun" aria-label="Sticker: sol con lentes. Toca para ver un dato de Seminole" data-t-aria-label="home:sticker.sun"></button>
+          </div>
+          <p class="x-hero__rotor"><span class="u-visually-hidden" data-t="home:hero.rotorSr">Somos la gente que siempre sabe la fecha, tiene plan para el jueves, te guarda un lugar, te explica las siglas y se acuerda de tu nombre.</span><span aria-hidden="true"><span class="x-hero__lead" data-t="home:hero.rotorLead">Somos la gente que</span> <span class="rotor rotor--bubble" data-rotor><span class="rotor__item" data-t="home:hero.rotor1">siempre sabe la fecha.</span><span class="rotor__item" data-t="home:hero.rotor2">tiene plan para el jueves.</span><span class="rotor__item" data-t="home:hero.rotor3">te guarda un lugar.</span><span class="rotor__item" data-t="home:hero.rotor4">te explica las siglas.</span><span class="rotor__item" data-t="home:hero.rotor5">se acuerda de tu nombre.</span></span></span><button class="x-motion" type="button" data-motion-toggle aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg><span class="u-visually-hidden" data-motion-label data-t="cta.pauseMotion">Pausar movimiento</span></button></p>
+          <p class="x-hero__sub" data-t="home:hero.sub">Encuentros gratis, respuestas claras sobre cómo votar y un grupo de Sanford a Oviedo. Ven como eres. Trae a alguien.</p>
+          <div class="btn-row x-hero__ctas">
+            <a class="btn btn--primary btn--lg" href="#join" data-t="cta.join">Únete gratis</a>
+            <a class="btn btn--ghost btn--lg" href="#invites" data-t="cta.seeWhatsOn">Mira qué hay</a>
+          </div>
+          <p class="x-hero__note" data-t="home:hero.note">Los eventos son gratis y abiertos a todo el mundo, de cualquier partido o de ninguno.</p>
+        </div>
+        <div class="x-hero__art">
+          <button class="sticker sticker--lg x-hero__art-sticker" type="button" data-sticker="celery" aria-label="Sticker: apio. Toca para ver un dato de Seminole" data-t-aria-label="home:sticker.celery"></button>
+          <div class="x-ticket">
+            <p class="x-ticket__label" data-t="home:ticket.eyebrow">LO PRÓXIMO</p>
+            <div class="x-ticket__slot" data-x-ticket>
+              <div class="x-ticket__fallback">
+                <p data-t="home:ticket.fallback">Encuentros gratis por todo Seminole, cada una o dos semanas. Elige uno y trae a alguien.</p>
+                <a class="btn btn--ink btn--sm" href="events.html" data-t="cta.seeWhatsOn">Mira qué hay</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Pinned: the next thing to do (data/civic.js nextActions; required wording from ruling 00) -->
+    <section class="section x-pins" id="next" aria-labelledby="pins-title">
+      <div class="wrap">
+        <div class="x-head">
+          <p class="eyebrow" data-t="home:pins.eyebrow">HAZ UNA COSA</p>
+          <h2 class="x-head__title x-head__title--sm" id="pins-title" data-t="home:pins.title">Lo próximo que puedes hacer</h2>
+        </div>
+      </div>
+      <div class="wrap x-pins__wrap">
+        <div class="snap x-pins__strip" role="region" aria-label="Lo próximo que puedes hacer: tres tarjetas" data-t-aria-label="home:pins.strip" tabindex="0">
+          <article class="pin pin--deadline x-pin" id="mail-ballot" data-civic data-qa="mail-ballot" data-x-pin="na-renew-reminder-2026" data-show-until="2027-01-01T00:00:00-05:00">
+            <span class="sticker" data-sticker="envelope" aria-hidden="true"></span>
+            <p class="countdown x-pin__count" data-countdown="2026-12-31" data-countdown-unit-key="home:count.unit" data-countdown-hide data-mail-now><span class="countdown__n" data-countdown-n translate="no">52</span> <span class="countdown__unit" data-countdown-unit data-t="home:count.unit.other">días</span></p>
+            <p class="x-pin__until" data-mail-now data-t="home:mail.until">hasta el jue. 31 de dic., cuando vencen las solicitudes de antes del 3 de nov.</p>
+            <p class="pin__kicker"><span class="tag tag--real" data-t="tag.real">REAL</span></p>
+            <h3 class="pin__title" data-t="home:mail.title">¿Votas por correo? Renueva tu solicitud.</h3>
+            <p class="pin__body" data-mail-now><span data-t="home:mail.body1">¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Pídela otra vez y debería cubrirte hasta 2028.</span> <a href="https://voteseminole.gov/voters/my-voter-record/" data-cfg-href="links.vote.myVoterRecord" rel="noopener" data-t="home:mail.link">Revisa tu registro de votante</a> <span data-t="home:mail.body2">para confirmarlo.</span></p>
+            <p class="pin__body" data-mail-later hidden data-t="home:mail.after">Las solicitudes hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre de 2026. Una nueva te cubre en todas las elecciones hasta el 31 de diciembre de 2028.</p>
+            <div class="pin__actions">
+              <button class="btn btn--ink btn--sm u-js-only" type="button" data-x-remind data-mail-now data-t="cta.januaryReminder">Agrega el recordatorio de enero</button>
+              <a class="btn btn--ghost btn--sm" href="https://voteseminole.gov/how-to-vote/vote-by-mail/" data-cfg-href="links.vote.voteByMail" rel="noopener" data-t="cta.howToRenew">Cómo renovarla</a>
+            </div>
+            <p class="pin__fine"><a href="https://www.flsenate.gov/Laws/Statutes/2026/101.62" rel="noopener" translate="no">F.S. 101.62</a> · <span data-t="home:mail.checked">Enlaces revisados el 9 de noviembre de 2026</span></p>
+          </article>
+          <article class="pin pin--rule x-pin" data-civic data-tone="calm" data-x-pin="na-student-id-2026" data-show-until="2027-01-01T00:00:00-05:00">
+            <p class="pin__kicker"><span class="tag tag--outline" data-t="home:id.tag">Regla nueva · 1 de enero de 2027</span></p>
+            <h3 class="pin__title" data-t="home:id.title">¿Identificación de estudiante? Deja de servir para votar.</h3>
+            <p class="pin__body" data-t="nudge.studentId.text">Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir.</p>
+            <div class="pin__actions"><a class="btn btn--ink btn--sm" href="vote.html#what-id" data-t="home:id.cta">Qué identificación llevar</a></div>
+            <p class="pin__fine"><a href="https://flsenate.gov/Committees/BillSummaries/2026/html/991" rel="noopener" data-t="home:id.source">Resumen de la HB 991</a> · <span data-t="home:mail.checked">Enlaces revisados el 9 de noviembre de 2026</span></p>
+          </article>
+          <article class="pin pin--hangout x-pin" data-x-hangout>
+            <span class="sticker" data-sticker="calendar" aria-hidden="true"></span>
+            <p class="pin__kicker"><span class="tag" data-t="home:hangout.tag">Próximo encuentro</span></p>
+            <h3 class="pin__title" data-x-hangout-title data-t="home:hangout.title">Encuentros gratis por todo Seminole</h3>
+            <p class="pin__body" data-x-hangout-body data-t="home:hangout.body">Caminatas, trivia, noches de creadores y turnos de voluntariado. ¿Primera vez? Perfecto.</p>
+            <div class="pin__actions" data-x-hangout-actions><a class="btn btn--ink btn--sm" href="events.html" data-t="cta.seeWhatsOn">Mira qué hay</a></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. City ticker (after the pinned strip) with Pause motion -->
+    <div class="ticker x-ticker" data-ticker>
+      <div class="ticker__viewport">
+        <ul class="ticker__track" aria-label="Ciudades donde estamos" data-t-aria-label="home:ticker.label">
+          <li translate="no">Sanford</li><li translate="no">Lake Mary</li><li translate="no">Oviedo</li><li translate="no">Winter Springs</li><li translate="no">Altamonte Springs</li><li translate="no">Casselberry</li><li translate="no">Longwood</li><li translate="no">Geneva</li><li translate="no">Chuluota</li><li data-t="home:ticker.unincorporated">Seminole no incorporado</li>
+        </ul>
+      </div>
+      <button class="btn btn--sm ticker__pause" type="button" data-motion-toggle aria-pressed="false"><span data-motion-label data-t="cta.pauseMotion">Pausar movimiento</span></button>
+    </div>
+
+    <!-- 5. The Reel (W4 reel.js, lazy) -->
+    <section class="section section--night x-reel" id="reel" data-qa="reel" aria-labelledby="reel-title" data-x-lazy="reel">
+      <div class="wrap">
+        <div class="x-head x-head--row">
+          <div class="x-head__text">
+            <p class="eyebrow" data-t="home:reel.eyebrow">CLIPS DEL GRUPO · DEMO</p>
+            <h2 class="x-head__title" id="reel-title" data-t="home:reel.title">Por qué participamos.</h2>
+            <p class="x-head__sub"><span data-t="home:reel.sub">Clips cortos de gente de Seminole. Siempre con subtítulos.</span> <a class="link" href="clips.html" data-t="home:reel.more">Ver todos los clips</a></p>
+          </div>
+          <p class="x-prompt"><span class="x-prompt__k" data-t="home:reel.prompt">El tema de esta semana</span> <span class="x-prompt__t" data-x-prompt data-t="home:reel.promptText">60 segundos sobre por qué participaste.</span></p>
+        </div>
+      </div>
+      <div class="wrap x-reel__wrap">
+        <div class="snap x-reel__strip" data-reel role="region" aria-label="Clips del grupo" data-t-aria-label="home:reel.strip" tabindex="0">
+          <p class="x-fallback"><a class="btn btn--primary" href="clips.html" data-t="home:reel.fallback">Mira los clips</a></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. You're invited (W2 eventcard.js + rsvp.js) and the January drop -->
+    <section class="section x-invites" id="invites" aria-labelledby="invites-title">
+      <div class="wrap">
+        <div class="x-head x-head--row">
+          <div class="x-head__text">
+            <p class="eyebrow" data-t="home:invites.eyebrow">EVENTOS DEMO · TODOS GRATIS</p>
+            <h2 class="x-head__title" id="invites-title" data-t="home:invites.title">Te invitamos.</h2>
+            <p class="x-head__sub" data-t="home:invites.sub">Gratis, sin alcohol y pensados para quien va por primera vez. Cada uno trae una nota de accesibilidad.</p>
+          </div>
+          <span class="word-sticker word-sticker--celery x-hand" aria-hidden="true" data-t="home:invites.sticker">¿primera vez? perfecto</span>
+        </div>
+      </div>
+      <div class="wrap x-invites__wrap">
+        <div class="snap x-invites__strip" data-x-invites role="region" aria-label="Próximos eventos DEMO" data-t-aria-label="home:invites.strip" tabindex="0">
+          <p class="x-fallback"><a class="btn btn--ink" href="events.html" data-t="home:invites.fallback">Mira todos los eventos en la página de eventos.</a></p>
+        </div>
+      </div>
+      <div class="wrap">
+        <div class="x-drop" data-x-drop>
+          <span class="x-drop__ticket" aria-hidden="true"><span class="x-drop__m" data-t="home:drop.kicker">LO QUE SIGUE</span></span>
+          <div class="x-drop__copy">
+            <p class="x-drop__line" data-t="home:drop.line">La programación de enero sale el mar. 15 de dic. a las 12 p. m. (DEMO)</p>
+            <p class="x-drop__sub" data-t="home:drop.sub">Ponte un recordatorio en el calendario y entérate primero.</p>
+          </div>
+          <div class="x-drop__acts">
+            <button class="btn btn--violet u-js-only" type="button" data-x-notify data-t="cta.notifyMe">Avísame</button>
+            <a class="link x-more__link" href="events.html" data-t="home:invites.all">Ver todos los eventos</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Send it to the group chat (W5 maker.js + squad meter, lazy) -->
+    <section class="section section--sky x-maker" id="card" data-qa="maker" aria-labelledby="maker-title" data-x-lazy="maker">
+      <div class="wrap">
+        <div class="x-head">
+          <p class="eyebrow" data-t="home:maker.eyebrow">HAZ UNA TARJETA</p>
+          <h2 class="x-head__title" id="maker-title" data-t="cta.shareGroup">Mándalo al grupo</h2>
+          <p class="x-head__sub" data-t="home:maker.sub">Elige una tarjeta, pon tu nombre y mándasela a una persona a la que de verdad le escribirías. Tu nombre se queda en tu teléfono hasta que la compartas.</p>
+        </div>
+        <div class="x-maker__slot" data-x-maker>
+          <p class="x-fallback x-nojs"><span data-t="home:maker.fallback">El creador de tarjetas necesita JavaScript. Igual puedes compartir esta página.</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Quiz teaser -->
+    <section class="section x-quiz" id="quiz" aria-labelledby="quiz-title">
+      <div class="wrap">
+        <div class="x-quiz__card">
+          <div class="x-quiz__copy">
+            <p class="eyebrow" data-t="home:quiz.kicker">8 PREGUNTAS · 6 MODOS</p>
+            <h2 class="x-head__title" id="quiz-title" data-t="home:quiz.title">¿Cuál es tu modo de organizar?</h2>
+            <p class="x-quiz__body" data-t="home:quiz.body">Planes de viernes, tu papel en el chat, qué llevas a la comida compartida. Cada modo tiene su lugar en el equipo.</p>
+            <div class="btn-row">
+              <a class="btn btn--primary btn--lg" href="quiz.html#show-up" data-t="home:quiz.start">Empieza el quiz</a>
+              <a class="btn btn--ghost" href="quiz.html#issue" data-t="home:quiz.issue">O encuentra tu tema</a>
+            </div>
+            <p class="x-quiz__note" data-t="home:quiz.note">Sin registrarte, sin respuestas incorrectas, y solo se guarda tu resultado.</p>
+          </div>
+          <div class="x-quiz__types">
+            <p class="x-quiz__peek" data-t="home:quiz.peek">Podrías ser</p>
+            <ul class="x-quiz__list">
+              <li class="x-type x-type--celery"><span data-t="home:quiz.t1">La Chispa</span></li>
+              <li class="x-type x-type--violet"><span data-t="home:quiz.t2">Magia en Celdas</span></li>
+              <li class="x-type x-type--teal"><span data-t="home:quiz.t3">Conoce a Medio Mundo</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Nov 3, debriefed (serious template: no stickers, emoji, rotation or confetti; hides after Dec 31) -->
+    <section class="section band--serious x-debrief" id="debrief" data-tone="calm" aria-labelledby="debrief-title" data-show-until="2027-01-01T00:00:00-05:00">
+      <div class="wrap x-debrief__grid">
+        <div class="x-debrief__head">
+          <p class="eyebrow" data-t="home:debrief.eyebrow">RESULTADOS</p>
+          <h2 class="x-head__title" id="debrief-title" data-t="home:debrief.title">El 3 de noviembre, en resumen.</h2>
+        </div>
+        <div class="x-debrief__body">
+          <p class="x-debrief__lead" data-t="home:debrief.p1">Seminole eligió al demócrata para gobernador, más o menos 54 % a 45 % (no oficial hasta que el condado certifique, a más tardar el 16 de noviembre). En todo el estado, el republicano ganó por cerca de un punto.</p>
+          <p data-t="home:debrief.p2">Si te sientes con cansancio, es válido. Una cosa que ayuda ahora mismo: pon tu recordatorio de enero para la boleta por correo.</p>
+          <p class="btn-row"><button class="btn btn--ink u-js-only" type="button" data-x-remind data-t="cta.januaryReminder">Agrega el recordatorio de enero</button></p>
+          <p class="x-debrief__src"><span data-t="home:debrief.sources">Fuentes:</span> <a href="https://floridaphoenix.com/2026/11/03/donalds-defeats-jolly-becoming-floridas-first-black-governor/" rel="noopener" data-t="home:debrief.src1">Florida Phoenix, 3 de nov.</a> · <a href="https://www.wftv.com/news/local/florida-election-results-by-county-explore-governor-us-senate-races/M4I4A3YEGJH6BJ3TSVPISSSXHA/" rel="noopener" data-t="home:debrief.src2">WFTV, por condado</a> · <a href="https://www.flsenate.gov/Laws/Statutes/2025/102.112" rel="noopener" data-t="home:debrief.src3">F.S. 102.112 (certificación)</a></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. The real scoreboard (sourced numbers only) -->
+    <section class="section x-score" id="scoreboard" aria-labelledby="score-title">
+      <div class="wrap">
+        <div class="x-head">
+          <p class="eyebrow" data-t="home:score.eyebrow">CIFRAS REALES, CON FUENTE</p>
+          <h2 class="x-head__title" id="score-title" data-t="home:score.title">El marcador real: aquí no hay cifras DEMO</h2>
+        </div>
+        <div class="snap x-score__grid" role="region" aria-label="Cuatro cifras con fuente" data-t-aria-label="home:score.strip" tabindex="0">
+          <article class="stat stat--celery"><p class="stat__n" data-t="home:score.s1n">1 de cada 3+</p><p class="stat__label" data-t="home:score.s1">votantes de Seminole tienen de 18 a 40 años (el rango de edad del propio condado)</p><p class="stat__src"><a href="https://voteseminole.gov/wp-content/uploads/2026/07/District-Demographic-Analysis.pdf" rel="noopener" data-t="home:score.s1src">Datos del SOE, 1 de jul. de 2026</a></p></article>
+          <article class="stat stat--pink"><p class="stat__n" translate="no">34.3%</p><p class="stat__label" data-t="home:score.s2">El grupo más grande de ellos: sin partido</p><p class="stat__src"><a href="https://voteseminole.gov/wp-content/uploads/2026/07/District-Demographic-Analysis.pdf" rel="noopener" data-t="home:score.s1src">Datos del SOE, 1 de jul. de 2026</a></p></article>
+          <article class="stat stat--violet"><p class="stat__n" data-t="home:score.s3n">Cerca de 54 %</p><p class="stat__label" data-t="home:score.s3">Seminole eligió al demócrata para gobernador</p><p class="stat__note" data-t="home:score.s3note">No oficial hasta que el condado certifique, a más tardar el 16 de nov.</p><p class="stat__src"><a href="https://www.wftv.com/news/local/florida-election-results-by-county-explore-governor-us-senate-races/M4I4A3YEGJH6BJ3TSVPISSSXHA/" rel="noopener" data-t="home:score.s3src">WFTV, por condado</a></p></article>
+          <article class="stat x-stat--sky"><p class="stat__n" data-t="home:score.s4n">Cerca de 27 %</p><p class="stat__label" data-t="home:score.s4">Participación juvenil en el país</p><p class="stat__note" data-t="home:score.s4note">Un cálculo preliminar de CIRCLE.</p><p class="stat__src"><a href="https://circle.tufts.edu/2026-election" rel="noopener" data-t="home:score.s4src">CIRCLE 2026</a></p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Join: three tiers + the short join form (W6 joinform.js, lazy) + member card -->
+    <section class="section section--pink x-join" id="join" aria-labelledby="join-title" data-x-lazy="join">
+      <div class="wrap">
+        <div class="x-head">
+          <p class="eyebrow" data-t="home:join.eyebrow">MEMBRESÍA · DE 14 A 39 AÑOS</p>
+          <h2 class="x-head__title" id="join-title" data-t="home:join.title">$20 al año. O gratis.</h2>
+          <p class="x-head__sub" data-t="home:join.sub">Todo lo que hacemos es gratis. La cuota solo importa si quieres votar en las reuniones del capítulo.</p>
+        </div>
+      </div>
+      <div class="wrap x-join__grid">
+        <div class="x-join__form-card" id="join-form">
+          <span class="word-sticker word-sticker--sun x-hand x-join__sticker" aria-hidden="true" data-t="home:form.sticker">ven como eres</span>
+          <h3 class="x-join__h" data-t="home:form.title">Únete gratis</h3>
+          <p class="x-join__sub" data-t="home:form.sub">Tres preguntas rápidas. Sin cuota y sin presión.</p>
+          <form class="form x-join__form" name="join" data-join-form data-compact data-join-manual data-heading="3" data-card-href="#member-card"></form>
+          <p class="x-nojs" data-x-nojs><span data-t="home:form.fallback">El formulario rápido necesita JavaScript. La página para unirte funciona igual.</span> <a href="join.html" data-t="home:form.fallbackLink">Ir a la página para unirte</a></p>
+          <div class="x-join__card" id="member-card" data-x-card></div>
+        </div>
+        <div class="x-join__tiers">
+          <div class="snap x-tiers" role="region" aria-label="Tres formas de ser miembro" data-t-aria-label="home:join.tiers" tabindex="0">
+            <article class="tier"><h3 class="tier__name" data-t="home:tier1.name">Ven a lo que quieras</h3><p class="tier__price" translate="no">$0</p><p class="tier__what" data-t="home:tier1.what">Únete a la lista, ven a todos los eventos, haz tarjetas y sube clips.</p><p class="tier__cta"><a class="btn btn--primary btn--block" href="#join-form" data-t="cta.join">Únete gratis</a></p></article>
+            <article class="tier tier--sky"><h3 class="tier__name" data-t="home:tier2.name">Miembro con voto</h3><p class="tier__price"><span translate="no">$20</span><small data-t="home:tier2.per">al año, se paga en enero</small></p><p class="tier__what" data-t="home:tier2.what">Vota y presenta mociones en las reuniones del capítulo. Los miembros con voto viven en el condado de Seminole o estudian aquí.</p><p class="tier__cta"><a class="btn btn--ink btn--block" href="https://secure.actblue.com/donate/ydscdues" data-cfg-href="links.dues" rel="noopener" data-t="home:tier2.cta">Paga la cuota en ActBlue</a></p></article>
+            <article class="tier tier--violet"><h3 class="tier__name" data-t="home:tier3.name">Miembro sin voto</h3><p class="tier__price" translate="no">$0</p><p class="tier__what" data-t="home:tier3.what">Para quien cumple los requisitos pero no puede pagar la cuota, sea cual sea la razón: dinero o situación de ciudadanía.</p><p class="tier__cta"><a class="btn btn--block" href="#join-form" data-t="cta.join">Únete gratis</a></p></article>
+          </div>
+          <p class="x-join__source"><a href="https://secure.actblue.com/donate/ydscdues" data-cfg-href="links.dues" rel="noopener" data-t="home:tiers.source">Según la página de cuotas de YDSC en ActBlue, revisada el 9 de noviembre de 2026.</a></p>
+          <div class="x-chip">
+            <p class="x-chip__copy"><b data-t="home:chip.title">¿Te sobran $5?</b> <span data-t="home:chip.body">Eso es el café de una noche de voluntariado. ¿No los tienes? Ven de todos modos.</span></p>
+            <a class="btn btn--ink btn--sm" href="https://secure.actblue.com/donate/youngsemdems" data-x-chip rel="noopener" data-t="home:chip.cta">Aporta $5</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. The Thursday Letter -->
+    <section class="section x-letter" id="letter" aria-labelledby="letter-title">
+      <div class="wrap x-letter__grid">
+        <div class="x-head">
+          <p class="eyebrow" data-t="home:letter.eyebrow">LA CARTA DEL JUEVES</p>
+          <h2 class="x-head__title" id="letter-title" data-t="home:letter.title">Una carta por semana. Escrita por una persona.</h2>
+          <p class="x-head__sub" data-t="home:letter.sub">La fecha que necesitas, el plan de la semana y algunas cosas buenas. Nunca más de una vez por semana.</p>
+        </div>
+        <a class="x-mail" href="newsletter.html">
+          <span class="x-mail__top"><span class="x-mail__dot" aria-hidden="true"></span><span class="x-mail__from" data-t="home:letter.from">Dani, de Casselberry (perfil DEMO)</span><span class="x-mail__when" data-t="home:letter.when">jue., 7 a. m.</span></span>
+          <span class="x-mail__subject" data-t="home:letter.subject">¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre (y una caminata al atardecer el sábado)</span>
+          <span class="x-mail__preview" data-t="home:letter.preview">Hola, soy Dani, de Casselberry (perfil DEMO). La noche de las elecciones, un muchacho que había votado por primera vez esa misma mañana me preguntó si podía ayudar en nuestra mesa de mensajes.</span>
+          <span class="x-mail__foot"><span class="tag tag--demo" data-t="home:letter.demo">Muestra DEMO</span> <span class="x-mail__cta" data-t="home:letter.cta">Lee la edición de muestra</span></span>
+        </a>
+      </div>
+      <div class="wrap">
+        <div class="x-share">
+          <div>
+            <h3 class="x-share__title" data-t="home:share.title">¿Conoces a alguien que vendría?</h3>
+            <p class="x-share__sub" data-t="home:share.sub">Tres personas, no trescientas. Mándales esta página.</p>
+          </div>
+          <button class="btn btn--primary btn--lg" type="button" data-share><span data-t="cta.shareGroup">Mándalo al grupo</span></button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+  <!-- @footer-es --><footer class="site-footer" id="site-footer">
+  <div class="wrap">
+    <div class="site-footer__top">
+      <p class="site-footer__word" translate="no">Young Dems</p>
+      <p class="site-footer__motto"><span>La política local es un trabajo en equipo.</span> <span>Ven como eres. Trae a alguien.</span></p>
+      <div class="site-footer__stickers u-js-only">
+        <button class="sticker sticker--sm" type="button" data-sticker="train" style="--rot: -10deg" aria-label="Sticker: tren SunRail. Toca para ver un dato de Seminole"></button>
+        <button class="sticker sticker--sm" type="button" data-sticker="chicken" style="--rot: 8deg" aria-label="Sticker: gallina de Oviedo. Toca para ver un dato de Seminole"></button>
+        <button class="sticker sticker--sm" type="button" data-sticker="cypress" style="--rot: -4deg" aria-label="Sticker: ciprés joven. Toca para ver un dato de Seminole"></button>
+        <button class="sticker sticker--sm" type="button" data-sticker="gator" style="--rot: 12deg" aria-label="Sticker: caimán. Toca para ver un dato de Seminole"></button>
+      </div>
+    </div>
+    <nav class="site-footer__nav" aria-label="Enlaces del sitio">
+      <div>
+        <h2>Participa</h2>
+        <ul>
+          <li><a href="../es/join.html">Únete gratis</a></li>
+          <li><a href="../es/events.html">Eventos</a></li>
+          <li><a href="../es/clips.html">Clips</a></li>
+          <li><a href="../es/post.html">Sube un clip</a></li>
+          <li><a href="../es/quiz.html">Quiz</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Aprende</h2>
+        <ul>
+          <li><a href="../es/vote.html">Votar</a></li>
+          <li><a href="../es/issues.html">Temas</a></li>
+          <li><a href="../es/newsletter.html">La Carta del Jueves</a></li>
+          <li><a href="https://voteseminole.gov/" rel="noopener" data-cfg-href="links.vote.countyElections">Supervisor de Elecciones</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Quiénes somos</h2>
+        <ul>
+          <li><a href="../es/about.html">Quiénes somos</a></li>
+          <li><a href="../es/about.html#whats-real">¿Qué es real?</a></li>
+          <li><a href="https://semdems.com/" rel="noopener" data-cfg-href="links.countyParty" translate="no">Seminole County Democratic Party</a></li>
+        </ul>
+        <div data-social-group hidden>
+          <h2>Síguenos</h2>
+          <ul data-social></ul>
+        </div>
+      </div>
+      <div>
+        <h2>Políticas</h2>
+        <ul>
+          <li><a href="../es/privacy.html">Privacidad</a></li>
+          <li><a href="../es/accessibility.html">Accesibilidad</a></li>
+          <li><a href="../es/teen-safety.html">Seguridad para adolescentes</a></li>
+          <li><a href="../es/content-policy.html">Reglas para clips</a></li>
+          <li><a href="../es/conduct.html">Código de conducta</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="site-footer__legal">
+      <p><span>Pagado por [nombre y dirección del comité: pendiente]</span> <span class="tag tag--demo">DEMO</span></p>
+      <p>Ningún candidato aprobó este contenido. [Texto provisional: depende del estatus de comité del capítulo.]</p>
+      <p>Vista previa para los Young Democrats of Seminole County. El capítulo todavía no la aprueba. No es un sitio oficial de los Seminole County Democrats, de los Florida Young Democrats ni de ninguna organización del partido.</p>
+      <p>Las personas de las fotos de archivo no son miembros y no respaldan nada.</p>
+      <p><span>Hecho en el condado de Seminole.</span> <span data-year translate="no">2026</span></p>
+    </div>
+  </div>
+  <div class="toast-region" role="status" aria-live="polite" data-toast-region></div>
+</footer><!-- /@footer-es -->
+  <!-- @scripts --><script src="../assets/js/config.js"></script>
+<script src="../assets/js/store.js"></script>
+<script src="../data/counters.js"></script>
+<script src="../assets/js/share.js"></script>
+<script src="../assets/js/cal.js"></script>
+<script src="../assets/js/cards.js"></script>
+<script src="../assets/js/members.js"></script>
+<script src="../assets/js/track.js"></script>
+<script src="../data/slices/core.js"></script>
+<script src="../data/stickers.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/sw-register.js"></script><!-- /@scripts -->
+  <script src="../data/slices/home.js"></script>
+  <script src="../assets/js/eventcard.js"></script>
+  <script src="../assets/js/rsvp.js"></script>
+  <script src="../assets/js/pages/home.js"></script>
+</body>
+</html>

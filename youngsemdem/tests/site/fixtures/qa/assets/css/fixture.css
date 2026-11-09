@@ -31,3 +31,30 @@ a { color: inherit; }
 .x-grad { background: linear-gradient(90deg, #FFD23F, #C8F03C); color: #FFFFFF; padding: 16px; font-size: 17px; }
 .x-spin { display: inline-block; width: 48px; height: 48px; background: var(--celery); animation: x-spin 2s linear infinite; }
 @keyframes x-spin { to { transform: rotate(360deg); } }
+/* pixel sampling (sampled.html, defect-marker.html): a marker swipe and a sticker button under text */
+.x-hi { position: relative; z-index: 0; white-space: nowrap; }
+.x-hi::after { content: ""; position: absolute; z-index: -1; left: -.04em; right: -.06em; bottom: -.04em; height: .16em; background: var(--celery); border-radius: 999px; }
+.x-hi--dark::after { bottom: .06em; height: .5em; background: #4B12D6; }
+.x-stage { position: relative; min-height: 120px; margin: 16px 0; }
+.x-sticker { position: absolute; left: 0; top: 0; width: 100%; height: 120px; padding: 0; border: 0; background: none; cursor: pointer; }
+.x-sticker svg { display: block; width: 100%; height: 100%; }
+.x-caption { position: relative; z-index: 1; margin: 0; padding: 36px 24px; color: #170B33; font-weight: 700; pointer-events: none; }
+/* settle (sampled.html): a fade-in after load and a background that lags the theme switch by 2 s */
+.x-fade { color: #EDE6DA; }
+.x-fade[data-ready] { color: var(--text); }
+@media (prefers-reduced-motion: no-preference) { .x-fade { transition: color 1.6s linear; } }
+.x-theme { background: var(--surface); color: var(--text); padding: 16px; border-radius: 16px; transition: background-color 0s linear 2s; }
+/* bottom bars (states.html, defect-sticky-bar.html): hidden until the visitor scrolls */
+.x-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: #170B33; color: #FFF6EA; transform: translateY(110%); }
+.x-bar[data-shown] { transform: none; }
+.x-bar .btn--bar { background: var(--celery); color: #170B33; border-color: #170B33; box-shadow: none; }
+.x-bar--tall { height: 230px; align-items: flex-start; }
+.x-spacer p { max-width: 36rem; }
+/* invite landing (states.html) */
+.x-landing { background: var(--surface); border-bottom: 2px solid var(--edge); }
+.x-landing__inner { display: flex; gap: 12px; align-items: center; padding: 12px 16px; }
+.x-landing__inner p { margin: 0; }
+.x-avatar { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--celery); color: #170B33; font-weight: 800; }
+/* scenario panel (states.html, defect-scenario.html) */
+.x-panel { margin: 16px 0; padding: 16px; background: var(--surface); border: 2px solid var(--edge); border-radius: 16px; }
+.x-panel .x-tiny-btn { width: 30px; height: 30px; min-height: 0; padding: 0; }

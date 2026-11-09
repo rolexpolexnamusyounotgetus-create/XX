@@ -344,8 +344,11 @@ function qaCollect(o) {
     }
   }
   /** Painted ::before/::after boxes of el (absolutely positioned, with a fill), approximately placed. */
+  const pseudoCache = new Map();
   const pseudoBoxes = (el) => {
+    if (pseudoCache.has(el)) return pseudoCache.get(el);
     const out2 = [];
+    pseudoCache.set(el, out2);
     for (const pe of ['::before', '::after']) {
       const ps = getComputedStyle(el, pe);
       if (!ps || ps.content === 'none' || ps.content === 'normal' || ps.display === 'none' || ps.visibility !== 'visible' || parseFloat(ps.opacity) < 0.05) continue;
@@ -756,6 +759,8 @@ async function sampleTexts(page, texts, max) {
       const box = await page.evaluate((i) => {
         const el = document.querySelector('[data-qa-sample="' + i + '"]');
         if (!el) return { miss: 'element gone (re-rendered)' };
+        const shut = el.closest('details:not([open])');
+        if (shut && !el.closest('summary')) return { miss: 'inside a closed <details>' };
         el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' }); // 'instant' beats base.css scroll-behavior: smooth
         // fixed and sticky layers that do not hold the text (a bottom bar that shows on scroll, the
         // sticky header) could cover it in the shot: hide them while sampling
@@ -772,6 +777,7 @@ async function sampleTexts(page, texts, max) {
           r = r ? { l: Math.min(r.l, b.left), t: Math.min(r.t, b.top), r: Math.max(r.r, b.right), b: Math.max(r.b, b.bottom) } : { l: b.left, t: b.top, r: b.right, b: b.bottom };
         }
         if (!r) return { miss: 'no text box' };
+        if (r.r - r.l < 1 || r.b - r.t < 1) return { miss: 'zero-size text box (collapsed or clipped)' };
         return { x: Math.max(0, Math.floor(r.l) - 2), y: Math.max(0, Math.floor(r.t) - 2), w: Math.min(window.innerWidth, Math.ceil(r.r) + 2) - Math.max(0, Math.floor(r.l) - 2), h: Math.min(window.innerHeight, Math.ceil(r.b) + 2) - Math.max(0, Math.floor(r.t) - 2) };
       }, t.sample);
       if (!box || box.miss || box.w < 2 || box.h < 2) { skipped.push({ sel: t.sel, text: t.text, why: (box && box.miss) || 'off screen' }); continue; }
@@ -817,6 +823,7 @@ async function sampleTexts(page, texts, max) {
  */
 const SETTLE_CSS = '*, *::before, *::after { transition: none !important; animation-timeline: auto !important; }';
 async function settle(page, cap) {
+  if (settle.off) return null;
   return page.evaluate(async (o) => {
     if (!window.__qaSettle) {
       try { const sh = new CSSStyleSheet(); sh.replaceSync(o.css); document.adoptedStyleSheets = document.adoptedStyleSheets.concat([sh]); window.__qaSettle = sh; }
@@ -1135,7 +1142,17 @@ async function runSteps(page, steps, opts) {
     const st = steps[i];
     const tag = 'step ' + (i + 1) + ' ' + JSON.stringify(st).slice(0, 90);
     try {
-      if (st.click) {
+      // repeat first: a repeat step also carries `click`, and must not run as a single click
+      if (st.repeat) {
+        let done = false;
+        for (let k = 0; k < st.repeat && !done; k++) {
+          if (st.until && await page.locator(st.until).first().isVisible().catch(() => false)) { done = true; break; }
+          const el = await visibleIndex(st.click);
+          if (el) await el.click({ timeout: 3000 }).catch(() => {});
+          await sleep(st.wait || 300);
+        }
+        if (st.until && !done && !(await page.locator(st.until).first().isVisible().catch(() => false))) throw new Error(st.until + ' never showed after ' + st.repeat + ' clicks');
+      } else if (st.click) {
         const el = await visibleIndex(st.click);
         if (!el) throw new Error('nothing visible matches ' + st.click);
         await el.click({ timeout: 3000 });
@@ -1150,15 +1167,6 @@ async function runSteps(page, steps, opts) {
         if (!ok) throw new Error('no element matches ' + st.scrollTo);
       } else if (st.waitFor) {
         await page.waitForSelector(st.waitFor, { state: 'visible', timeout: st.timeout || 5000 });
-      } else if (st.repeat) {
-        let done = false;
-        for (let k = 0; k < st.repeat && !done; k++) {
-          if (st.until && await page.locator(st.until).first().isVisible().catch(() => false)) { done = true; break; }
-          const el = await visibleIndex(st.click);
-          if (el) await el.click({ timeout: 3000 }).catch(() => {});
-          await sleep(st.wait || 300);
-        }
-        if (st.until && !done && !(await page.locator(st.until).first().isVisible().catch(() => false))) throw new Error(st.until + ' never showed after ' + st.repeat + ' clicks');
       }
       if (st.wait && !st.repeat) await sleep(st.wait);
       else if (!st.wait) await sleep(120);
@@ -1212,7 +1220,8 @@ async function scenarioPass(browser, url, sc, opts, R) {
 
 function slimVariant(d) {
   const small = d.texts.filter((t) => t.fs < 11.95).map((t) => ({ sel: t.sel, text: t.text, fs: Math.round(t.fs * 10) / 10 }));
-  const low = d.texts.filter((t) => t.ratio != null && !t.disabled && !t.logo && t.ratio < (t.large ? 3 : 4.5)).map((t) => ({ sel: t.sel, text: t.text, ratio: Math.round(t.ratio * 100) / 100, need: t.large ? 3 : 4.5 }));
+  // text over a photo, video, sticker or painted layer is judged by its pixel sample, not against the ancestor fill it does not sit on
+  const low = d.texts.filter((t) => t.ratio != null && !t.overMedia && !t.disabled && !t.logo && t.ratio < (t.large ? 3 : 4.5)).map((t) => ({ sel: t.sel, text: t.text, ratio: Math.round(t.ratio * 100) / 100, need: t.large ? 3 : 4.5 }));
   const ns = d.texts.filter((t) => t.nonsolid || t.overMedia || t.marker).map((t) => ({ sel: t.sel, text: t.text, why: t.nonsolid ? (typeof t.nonsolid === 'string' ? t.nonsolid : 'background') + ' on ' + t.nonsolidAt : t.marker ? 'marker ' + t.marker : 'over ' + t.overMedia }));
   return { vw: d.vw, scrollW: d.scrollW, overflow: d.overflow, small, targets: d.targets, low, nonsolid: ns, texts: d.texts.length };
 }
@@ -1633,7 +1642,7 @@ function score(pageRel, R, opts, rules) {
 
 function parseArgs(argv) {
   const o = { root: ROOT, pages: [], all: false, widths: [320, 390, 1440], themes: ['light', 'dark'], axe: true, throttle: true, share: true, perf: true,
-    targetsFile: '', allowHosts: ['images.unsplash.com'], scenarios: true, esAllow: [], concurrency: 2, out: path.join(CACHE, 'qa_report.json'), json: false, quiet: false, timeout: 30000, maxSamples: 30, help: false };
+    targetsFile: '', allowHosts: ['images.unsplash.com'], scenarios: true, settle: true, esAllow: [], concurrency: 2, out: path.join(CACHE, 'qa_report.json'), json: false, quiet: false, timeout: 30000, maxSamples: 30, help: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const val = () => { if (i + 1 >= argv.length) throw new Error(a + ' needs a value'); return argv[++i]; };
@@ -1647,6 +1656,7 @@ function parseArgs(argv) {
     else if (a === '--no-perf') o.perf = false;
     else if (a === '--no-share') o.share = false;
     else if (a === '--no-scenarios') o.scenarios = false;
+    else if (a === '--no-settle') o.settle = false;   // diagnostic: measure colours without letting them settle
     else if (a === '--es-allow') o.esAllow = o.esAllow.concat(val().split(',').map((s) => s.trim()).filter(Boolean));
     else if (a === '--targets') o.targetsFile = path.resolve(val());
     else if (a === '--allow-hosts') o.allowHosts = val().split(',').map((s) => s.trim()).filter(Boolean);
@@ -1696,6 +1706,7 @@ async function checkPage(browser, base, pageRel, opts, axe, rules) {
 
 async function run(opts) {
   const root = opts.root;
+  settle.off = opts.settle === false;
   let targets = JSON.parse(JSON.stringify(DEFAULT_TARGETS));
   if (opts.targetsFile) {
     const t = JSON.parse(fs.readFileSync(opts.targetsFile, 'utf8'));

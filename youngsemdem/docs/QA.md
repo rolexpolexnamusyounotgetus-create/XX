@@ -120,8 +120,8 @@ node tools/make_og.js [page ...| --pages a,b] [--check] [--samples] [--absolutiz
 
 ```
 node tools/qa.js [--pages a.html,es/a.html | --all] [--widths 320,390,1440] [--themes light,dark] [--no-axe]
-  [--no-throttle] [--no-perf] [--no-share] [--targets FILE] [--allow-hosts a,b] [--concurrency N]
-  [--max-samples N] [--out FILE] [--json] [--quiet] [--root DIR]
+  [--no-throttle] [--no-perf] [--no-share] [--no-scenarios] [--targets FILE] [--allow-hosts a,b]
+  [--es-allow "A,B"] [--concurrency N] [--max-samples N] [--out FILE] [--json] [--quiet] [--root DIR]
 ```
 
 It serves the folder with `tools/check_site.js`'s server and `_headers` applied (so the production
@@ -133,13 +133,43 @@ CSP is on), blocks service workers, and opens each page in fresh contexts:
 | 320 and 1440 | Overflow, text size, targets, contrast in light and dark; at 1440 also axe, focus rings on the first six Tab stops, and the press state of `.btn--primary` (`:active` forced through DevTools) |
 | reduced motion | `prefers-reduced-motion: reduce`: running animations and playing video must be 0 |
 | 4g | LCP, CLS (largest session window) and TBT at 170 ms RTT, 9 Mbps (the bench's `4g`) |
+| scenarios | Post-interaction states from the targets (below): a fresh 390 px load, the scenario's steps, then overflow, text size, targets, contrast (computed and pixel-sampled), English left (es pages) and source paths, in light and dark. Findings show up under B8, B31, N4 and N5 tagged `390-light@<id>`; row SC sums them up |
 | share | `site.url` forced to `https://qa.invalid`; every share link (`sms:`, `mailto:` with a body, WhatsApp, X, Threads, Bluesky, Facebook, Telegram), `data-share-url`, Web Share payload and copied text after clicking each `[data-share]` must not point at localhost, 127.0.0.1, the page's own origin, `file://` or youngsemdems.com. Pages with `[data-invite-landing]` also get `?ref=QATEST7&from=Kira&e=<first data-rsvp>` and must show the landing with "Kira" and capture the ref |
 
-**Contrast.** Text on a flat fill is checked from computed colours (every text node, both themes,
-every width). Text on a gradient, an image or overlapping a photo, video or sticker with no solid panel
-between is pixel-sampled: qa.js screenshots the text box, hides the text, screenshots again, and
-measures the text colour against the background pixels under the glyphs (10th percentile). Up to 30
-such elements per width and theme (`--max-samples`).
+**Contrast.** Colours are read only after they settle: before measuring, qa.js adds a constructed
+stylesheet (allowed by the CSP) that turns CSS transitions off, so a theme switch or a fade-in is read at
+its end value, not halfway, and shows scroll-driven reveals in their end state; then it waits up to
+1.5 s for finite CSS animations to finish (infinite loops keep running for B28). Text on a flat fill is
+checked from computed colours (every text node, both themes, every width). Text on a gradient or an
+image, text over a photo, video, canvas, SVG sticker (sticker buttons included), a positioned layer
+painted with a gradient or image, or a painted `::before`/`::after` layer, with no solid panel between,
+is pixel-sampled: qa.js screenshots the text box (fixed and sticky layers that don't hold the text are
+hidden for the shot), hides the text, screenshots again, and measures the text colour against the
+background pixels under the glyphs (10th percentile). A marker swipe (a short painted pseudo-element
+under a few words) is sampled too: N5 allows it, B8 fails when the glyph pixels on it are below
+4.5:1 (3:1 large) and names the share of glyph pixels that sit on it. Up to 30 such elements per width
+and theme (`--max-samples`); B8 and N5 say how many were sampled and why any were not.
+`--no-settle` (diagnostic) measures without letting colours settle.
+
+**Bottom bars.** A fixed or sticky bar along the bottom edge is fine when it stays hidden on the first
+screen and covers under 25% of the screen once it shows after a scroll (qa.js scrolls 1.5 screens
+down to check). B6 notes it ("bottom bar hidden until scroll (11% of the screen after)"); one that
+shows before any scroll scores 1; one over 25% at any point is an overlay (B6 = 0). Hidden layers
+(opacity 0, `visibility: hidden`) never count as covering the first-screen actions.
+
+**Scenarios.** Targets can list post-interaction states for a page (`es/<page>` reuses them; a `*`
+in a key is a wildcard, `"events/*.html"`). Defaults: quiz.html answers the whole show-up quiz
+(`quiz-done`) and mounts the cover maker (`maker`); events.html and every `events/*.html` open the
+RSVP sheet (`rsvp`); join.html fills and sends the form (`joined`); index.html mounts the maker when
+the page has `data-qa="maker"` (`maker`, optional). Steps: `{click}`, `{fill, value}`, `{press}`,
+`{scrollTo}`, `{waitFor, timeout}`, `{wait}`, `{repeat, click, until, wait}`; any step can be
+`optional`, and an `optional` scenario is skipped quietly when its first step finds nothing:
+
+```json
+{"quiz.html": {"scenarios": [{"id": "quiz-done", "label": "Quiz answered", "steps": [
+  {"click": "[data-quiz-start=\"show-up\"]"},
+  {"repeat": 24, "click": "[data-quiz-player] [data-opt]", "until": "[data-quiz-result]:not([hidden])", "wait": 450}]}]}}
+```
 
 **Scores.** 2 meets the 6b threshold, 1 present but short of it, 0 failing, "review" when a person has
 to judge it (B5, B11 to B15, B17 to B19, B22, B23, B24's personality, B28's kinetic H1, B32, B34 to
@@ -157,7 +187,7 @@ and N8 to N10:
 | N4 | overflow at any width, text under 12 px, targets under 44 px, axe serious/critical, a contrast failure, or motion under reduced motion |
 | N5 | text straight on a gradient or background image, or over a photo/video/sticker with no solid panel and non-uniform pixels under it (a marker swipe under a few words is allowed; B8 checks its contrast) |
 | N6 | first view over budget, LCP/CLS/TBT over budget, ES modules, inline `<script>`, or a fetch of local JSON |
-| N8 | an English page with no `es/` twin, English left on a Spanish page, or the wrong `lang` |
+| N8 | an English page with no `es/` twin, English left on a Spanish page (rendered text after JS runs: the first view, 3.5 s later and every scenario state), or the wrong `lang` |
 | N9 | the footer lacks "Paid for by" / "Pagado por", a visible DEMO label or the not-official line; or no visible demo banner |
 | N10 | a share payload built from the origin, localhost or a hard-coded domain |
 | B1 | over 350 KB (home) or 500 KB, or over 30 requests |
@@ -167,6 +197,12 @@ and N8 to N10:
 | B30 | a `[data-demo]` element or a count ("23 going", "120 members") with no DEMO beside it; a view count; a number that changes on its own; no demo banner; a claim to avoid |
 | B31 | text under 12 px, targets under 44 px, overflow, axe serious/critical (390 and 1440, light and dark), zoom disabled, no skip link, broken `aria-invalid`; scores 1 for no status region, not exactly one h1, or no visible focus ring |
 | B33 | Native imagery words, candidate names, alcohol words (copy or alt text), a stock photo without its visible tag or its credit attributes |
+
+Not gates, but worth a look: B37 also flags source-file paths in rendered text ("data/civic.js",
+"assets/img/", "home.css", a bare ".js"; URLs with a host and `Node.js` are fine), including text JS
+writes after load; B20 reads the invite landing the way a person does (block boundaries become
+spaces, so "Kira invited you" and "to Trivia night" no longer run together); SC lists each scenario
+and whether it ran.
 
 **Targets.** Defaults live in `DEFAULT_TARGETS` at the top of `qa.js` (`es/<page>` uses the English
 page's entry). Home: 350 KB, mail-ballot card top at most 1,000 px and Reel top at most 1,688 px at
@@ -188,8 +224,9 @@ Default targets: every page (root, `es/`, `events/`, `quiz/`), `partials/*.html`
 `data/pages/*.js` (not `data/slices/`, not `styleguide.html`). HTML is linted by block (so "Join
 <b>the chat</b>" is one phrase), plus `alt`, `aria-label`, `title`, `placeholder`, button `value`,
 meta description, og/twitter text and the `ysd:og` text. Data files are linted per `en`/`es` string
-with its key path; editor fields (`note`, `source`, `sourceTitles`, `use`, ids, URLs) and lists of words
-to avoid (`never`, `avoid`, `banned`...) are skipped. Language comes from `<html lang>`, a `lang`
+with its key path; editor fields (`note`, `source`, `sourceTitles`, `use`, ids, URLs), proper titles
+(`sources[].name`, the `skipPaths` in `voice_rules.json`) and lists of words to avoid (`never`, `avoid`,
+`banned`...) are skipped. Other copy under a `sources` key (a "Sources" label, a bilingual note) is linted. Language comes from `<html lang>`, a `lang`
 attribute, or the `en`/`es` key.
 
 Rules are data in `tools/voice_rules.json` (id, severity, the gate it feeds, language, regex patterns,
@@ -215,17 +252,29 @@ Errors exit 1; warnings ("the base", "hurry", "7pm", "receipts page"...) are for
   page: 11 px text, a 40 px target, a 335 px block that overflows at 320, text on a gradient below
   4.5:1, an animation under reduced motion, an unlabeled demo count, a share link with localhost (and
   one built from `location.origin`) when `site.url` is set, and a request to a host that isn't allowlisted;
+  `sampled.html` proves pixel sampling runs (a marker swipe and a caption over a sticker button are
+  sampled and pass) and that colours settle first (a fade-in and a theme-lagging card fail with
+  `--no-settle` and pass without it); `states.html` passes with a bottom bar hidden until scroll, an
+  invite landing read with words apart, and a scenario panel; seeded defects: low contrast over a marker
+  (B8), a bottom bar covering 35% after a scroll (B6), 11 px text and a 30 px button only inside an
+  opened panel (B31 via a scenario), a source path written by JS (B37), and English written by JS on a
+  Spanish page (N8, with "My Voter Record" and DEMO allowed);
 - `voice_lint.js` flags every banned term in the EN, ES and data fixtures on its line, every rule fires
   somewhere, skip lists hold, and the brief's approved lines (2.7) pass with 0 errors and 0 warnings;
-  it also prints what `data/*.js` still has for owners (`W8_STRICT_DATA=1` makes that a failure).
+  `sources[].name` is skipped while a "Sources" label and the rest of a sources entry are linted; it
+  also prints what `data/*.js` still has for owners (`W8_STRICT_DATA=1` makes that a failure).
 
 ## Known limits
 
 - Pixel sampling needs the text to be on screen; elements inside closed dialogs or collapsed
   `<details>` are skipped (they are invisible until opened).
-- The English detector on Spanish pages is a stopword count: it catches sentences and common UI words
-  ("Join free", "Menu"), not single unusual English words. `make_es.js --check` is the exact test.
+- The English detector on Spanish pages is a stopword count over the rendered text (after JS runs, so
+  it also sees what scripts write): it catches sentences and common UI words ("Join free", "Menu",
+  "Next question", "Copied"), not single unusual English words. Proper names never count: make_es's
+  NEUTRAL list, `EN_ALLOW` in qa.js ("My Voter Record", "DEMO", "Young Democrats of Seminole
+  County"...), `esAllow` in the targets and `--es-allow "A,B"`, matched as whole words; `translate="no"`
+  and `lang="en"` text is skipped. `make_es.js --check` is the exact test for static text.
 - The demo-count check knows social-proof nouns (going, members, RSVPs, joined, views, likes...); a
   number in another shape needs `data-demo` to be checked.
-- Flows that need real data (RSVP sheet fields, the post flow) are W2's and W4's own tests; qa.js
-  scores them "review".
+- Scenarios measure layout, contrast and language in a state; they don't test the flow itself (RSVP
+  sheet fields, the post flow are W2's and W4's own tests).

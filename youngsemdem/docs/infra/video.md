@@ -18,7 +18,7 @@ There is no chat assistant, LLM call or "ask" endpoint in any of these files (Ki
 | `functions/api/video-upload.js` | Cloudflare Pages Function at `/api/video-upload` (ES module, `onRequest`) |
 | `netlify/functions/video-upload.js` | Netlify Function (CommonJS `exports.handler`); `netlify.toml` already rewrites `/api/*` to it |
 | `data/clips.js` | `window.YSD_DATA.clips`: the demo clips (flagged `demo: true`), with photo credits and fact sources. Generated; do not hand-edit |
-| `assets/video/*.mp4`, `*.jpg` | Six demo clips (720x1280 H.264, no audio track, 9-10 s, 0.6-1.3 MB) and their posters |
+| `assets/video/*.mp4`, `*.jpg` | Six demo clips (720x1280 H.264, no audio track, 9-10 s, 0.6-1.3 MB) and their posters (540x960 progressive JPEG, 60 KB or less) |
 | `assets/video/make_demo_clips.py` | Rebuilds the clips and `data/clips.js` from Unsplash photos (Pillow + ffmpeg) |
 | `tests/infra/video.test.js` | Node and Playwright tests |
 
@@ -67,10 +67,10 @@ Treat `caption`, `author` and `tags` as untrusted text: set them with `textConte
 - `add(file, opts) -> Promise<clip>`: validates (type, size, duration, playable), probes, stores the
   file and poster, saves metadata, fires `clip-added`. `opts`: `caption` (trimmed, max 300),
   `author` (`'@handle'`, `'handle'` or `{handle, name}`; default from `YSD.members.current()`),
-  `tags` (array or `"#a, b"`; lower-cased, deduped, max 8), `upload: false`, `awaitUpload: true`
-  (resolve after the production upload), `onProgress(p)`, `signal` (AbortSignal), and any limit
-  override (`maxBytes`, `maxDuration`, ...). Rejects with `Error{code, result}` (codes below) and
-  fires `clip-rejected`.
+  `tags` (array or `"#a, b"`; lower-cased, deduped, max 8), the moderation fields (below),
+  `upload: false`, `awaitUpload: true` (resolve after the production upload), `onProgress(p)`,
+  `signal` (AbortSignal), and any limit override (`maxBytes`, `maxDuration`, ...). Rejects with
+  `Error{code, result}` (codes below) and fires `clip-rejected`.
 - `list(opts) -> Promise<clip[]>`: this browser's clips + `useSource` clips + demo clips, deduped.
   `opts`: `sort` (`'new'` default, `'top'`, `'trending'`, `'views'`, `'oldest'`), `tag`,
   `author`, `orientation`, `mine: true`, `includeDemo` (default: `YSD_CONFIG.demo`; demo clips never
@@ -82,6 +82,38 @@ Treat `caption`, `author` and `tags` as untrusted text: set them with `textConte
 - `validate(file, opts) -> {ok, reason, code, type, size}` (synchronous): MIME type, or the file
   extension when the browser reports no MIME (common for `.mov`), size cap, and `opts.duration`
   if you pass one. `reason` is user-facing copy.
+
+### Moderation fields
+
+A person reviews every clip before it goes public (Clip Rules, Teen Safety Policy). The post form
+collects four answers and passes them to `add()`; they ride on the stored record and in the upload's
+create request:
+
+| `add()` option | Stored on the record (and on `clip` for your own clips) | Create request |
+|---|---|---|
+| `captionsConfirmed: true` (the poster ticked "my clip has captions") | `captionsConfirmed` (`false` when not given) | `captionsConfirmed` |
+| `containsMinors: 'yes' \| 'no'` (or `true`/`false`; anyone under 18 in the clip, the poster included) | `containsMinors` (`'yes'`, `'no'` or `null`) | `containsMinors` (`''` when not answered) |
+| `guardianRequired: true` (the poster is under 18) | `needsGuardian` (true when either says so) | `needsGuardian` |
+| `guardianContact: 'email or phone'` | only `guardianContactProvided: true`, **never the contact** | `guardianContact`, production only |
+| `consents: ['rights', 'people', 'rules']` or `[{id, version}]`, `consentVersion` | `consents: [{id, version, at}]` | `consents` |
+
+- **Consents** take ids from `data/legal.js` `snippets.uploadConsent`. A consent without its own
+  `version` gets `opts.consentVersion`, else config `clips.consentVersion`
+  (`'clip-consent-2026-11-09-draft'`; bump it whenever the consent wording changes). `at` is when the
+  clip was posted. Ids are deduped.
+- **The guardian contact is never stored on the device.** In demo mode it is dropped as soon as
+  `add()` reads it (nothing is uploaded anyway). In production it is held in memory for this page
+  only, sent once in the create request, and forgotten when the endpoint answers; `remove(id)` forgets
+  it too. A retry after a reload, or after a successful create, needs it again:
+  `upload(id, {guardianContact})`.
+- **A clip that needs a guardian is not uploaded without one.** When `needsGuardian` is true and no
+  contact is at hand, `upload()` (and `add()` with `awaitUpload`) rejects with `guardian-required`,
+  marks the clip `failed` (`upload.error: 'guardian-required'`) and fires `clip-upload-failed`; nothing
+  is sent. Ask for the contact and call `retry(id, {guardianContact})`.
+- **Server side.** The upload function ignores fields it does not know, so the guardian contact never
+  reaches provider metadata. Before launch the review step must store the moderation fields with the
+  upload and hold clips with `needsGuardian` until a moderator has guardian consent (see "Before
+  launch" below).
 
 ### Extras
 
@@ -114,8 +146,8 @@ Defaults: `maxBytes` 150 MB, `maxDuration` 180 s, `minDuration` 0.5 s, `captionM
 set to these defaults; keep `maxBytes`/`maxDuration` in step with the upload function's env vars).
 
 Result/error codes: `no-file`, `type`, `empty`, `size`, `duration`, `too-short`, `unplayable`,
-`timeout`, `missing`, `demo`, `no-endpoint`, `network`, `aborted`, `create-failed`,
-`upload-failed`, `interrupted`, `processing-failed`. Copy for each lives in `YSD.clips.messages`.
+`timeout`, `missing`, `demo`, `no-endpoint`, `guardian-required`, `network`, `aborted`,
+`create-failed`, `upload-failed`, `interrupted`, `processing-failed`. Copy for each lives in `YSD.clips.messages`.
 
 In demo mode a file the browser cannot play (for example HEVC `.mov` on desktop Chrome) is
 rejected as `unplayable`, since it could not be shown. In production it is accepted (the provider
@@ -206,7 +238,8 @@ Minimal page:
    `demo: false` and `integrations.videoUploadEndpoint: '/api/video-upload'`.
 2. `YSD.clips.add(file)` stores locally, then `POST /api/video-upload` with JSON
    `{action:'create', clientId, filename, size, type, duration, width, height, caption, tags,
-   author, ref, ...beforeUpload()}`. The function re-checks type, size and duration, verifies
+   author, ref, captionsConfirmed, containsMinors, needsGuardian, consents, guardianContact?,
+   ...beforeUpload()}` (`guardianContact` only when the clip has one; see "Moderation fields"). The function re-checks type, size and duration, verifies
    Turnstile if configured, and asks the provider for a one-time URL:
    `{ok:true, provider, id, uploadUrl, method:'POST'|'PUT', field?, headers?, maxBytes,
    maxDurationSeconds, expiresAt}` or `{ok:false, error, message}` with a 4xx/5xx status.
@@ -248,7 +281,11 @@ Before launch:
   come from a reviewed list, plugged in with
   `YSD.clips.useSource(() => fetch('/api/clips').then(r => r.json()))` (items shaped like
   `data/clips.js` items: `id`, `src` or `hls`, `poster`, `caption`, `author`, `tags`, `likes`, ...).
-  That endpoint and the review step are not built.
+  That endpoint and the review step are not built. The create request already carries the
+  moderation fields (`captionsConfirmed`, `containsMinors`, `needsGuardian`, `consents` with
+  versions, `guardianContact`); the review step must store them with the upload (the guardian
+  contact only there, never in provider metadata) and hold `needsGuardian` clips until a moderator
+  has guardian consent.
 - **Abuse.** The create endpoint is public. Turn on Turnstile (`TURNSTILE_SECRET_KEY` plus a
   `beforeUpload` hook that returns the widget token) and a host rate-limit rule on
   `/api/video-upload`. Mux has no duration cap at upload time: check `duration` in review.
@@ -289,11 +326,27 @@ images.unsplash.com):
 ```sh
 python3 assets/video/make_demo_clips.py --cache /tmp/ysd-photos      # all clips + data/clips.js
 python3 assets/video/make_demo_clips.py --only demo-sunrail-rally     # one clip
+python3 assets/video/make_demo_clips.py --posters-only                # posters only; the MP4s are not touched
 ```
 
 Edit `SPECS` in the script, not `data/clips.js`. Each clip is rendered frame by frame (Ken Burns
 with sub-pixel sampling, a tint, scrims and pop-in captions), then encoded with libx264 (CRF 27
 with `+faststart`, no audio track; the CRF goes up if a file passes 1.5 MB).
+
+**Posters** are frame 0 at 540x960: the pages show them at 469x836 CSS px at most (clips.html at
+desktop widths; 302x540 on a 390 px phone; 360x640 in the style guide), so 540 px covers every
+layout at 1x. Each is a progressive JPEG at the highest quality that fits in 60 KB; for busy photos
+(the lake, the street) only the photo layer is softened a little first, so the burned-in type stays
+sharp. `--posters-only` redraws just the posters: it never runs the video encoder, refuses a poster
+whose frame 0 no longer matches the MP4's first frame (the SPECS changed since the render; `--force`
+overrides), and merges into `data/clips.js` in place: `posterBytes`, `posterWidth`, `posterHeight`,
+`bytes` and `duration` re-read from the files, and `burnedInText` only for a spec that sets it. Every
+other field, hand edits included, stays as it is.
+
+**Transcripts.** `burnedInText` is the title plus one line per caption box, with the box's rows
+joined by a space (one sentence wrapped over two rows). A box that holds two sentences sets the
+spec's own `burnedInText` (the mail-ballot clip: "Ask again: voteseminole.gov" and "Should last
+through 2028" are two lines).
 
 ## Tests
 
@@ -304,7 +357,8 @@ node tests/infra/video.test.js --node   # Node checks only
 
 Node part: required files present; no assistant/LLM references and no credentials in browser code;
 `data/clips.js` flags, handles, credits and sources; each MP4 parsed (H.264, 720x1280, 6-12 s, no
-audio track, moov before mdat, at most ~1.5 MB, metadata matches) and each poster's JPEG size;
+audio track, moov before mdat, at most ~1.5 MB, metadata matches); each poster 540x960, progressive,
+at most 60 KB and matching `posterBytes`/`posterWidth`/`posterHeight`; one sentence per transcript line;
 clips.js and feed.js loading in a bare VM with and without config/store; the Cloudflare and Netlify
 handlers against mocked provider APIs (create, limits, Turnstile, origins/CORS, status mapping,
 provider errors that never leak tokens, Mux auth and body). It also checks that the two function
