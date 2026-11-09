@@ -70,7 +70,7 @@
   }
   function fire(key, value, oldValue, source) {
     var info = { key: key, oldValue: oldValue, source: source };
-    var lists = [listeners[key] || [], listeners['*'] || []];
+    var lists = key === '*' ? [listeners['*'] || []] : [listeners[key] || [], listeners['*'] || []];
     for (var l = 0; l < lists.length; l++) {
       var arr = lists[l].slice();
       for (var i = 0; i < arr.length; i++) {
@@ -202,6 +202,7 @@
       w.addEventListener('storage', function (e) {
         try {
           if (ls && e.storageArea && e.storageArea !== ls) return;
+          // key null = another tab called localStorage.clear(): '*' listeners get key '*'.
           if (e.key === null) { fire('*', undefined, undefined, 'remote'); return; }
           if (e.key.indexOf(PREFIX) !== 0) return;
           var key = e.key.slice(PREFIX.length);
@@ -313,10 +314,20 @@
     bucket = String(bucket);
     return openDb().then(function (db) {
       if (!db) return [];
+      if (typeof IDBIndex !== 'undefined' && IDBIndex.prototype && IDBIndex.prototype.getAll) {
+        return tx(db, 'readonly', function (os) { return os.index('bucket').getAll(bucket); })
+          .then(function (r) { return r || []; }, function () { return []; });
+      }
+      // Old engines without getAll: walk a cursor.
+      var acc = [];
       return tx(db, 'readonly', function (os) {
-        var idx = os.index('bucket');
-        return idx.getAll ? idx.getAll(bucket) : null;
-      }).then(function (r) { return r || []; }, function () { return []; });
+        var req = os.index('bucket').openCursor(bucket);
+        req.onsuccess = function () {
+          var c = req.result;
+          if (c) { acc.push(c.value); c['continue'](); }
+        };
+        return null;
+      }).then(function () { return acc; }, function () { return acc; });
     }).then(function (recs) {
       var byId = {}, i;
       for (i = 0; i < recs.length; i++) byId[recs[i].id] = recs[i];

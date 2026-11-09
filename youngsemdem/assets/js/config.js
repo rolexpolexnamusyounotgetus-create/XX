@@ -16,10 +16,19 @@
  *  - demo === true keeps all state in the browser (localStorage + IndexedDB) and makes no network
  *    calls for joins, counters or uploads. Demo-only numbers and people are flagged demo:true.
  *
+ * There is deliberately NO chat assistant, LLM integration or "ask" endpoint on this site (cut by
+ * Kira, Nov 2026). Do not add one here.
+ *
  * Helpers defined at the bottom (the only code in this file):
- *  YSD.cfg(path, fallback)  read a dotted path, e.g. YSD.cfg('integrations.askEndpoint', '')
+ *  YSD.cfg(path, fallback)  read a dotted path, e.g. YSD.cfg('integrations.formEndpoint', '')
  *  YSD.emit(name, detail)   dispatch a 'ysd:<name>' CustomEvent on document (design hooks)
  *  YSD.debug                true when the URL has ?debug=1 (sticky for the tab session)
+ *  YSD.log(...)             console.log that is silent unless YSD.debug
+ *  YSD.track(...)           queue stub until assets/js/track.js loads and replays the queue
+ *  YSD.root                 the site root URL (folder holding assets/), with trailing slash,
+ *                           derived from this script's own src so it works on file://, localhost
+ *                           and any sub-path deploy; YSD.share.url() resolves paths against it
+ *                           (or against site.url when that is set).
  */
 (function (w) {
   'use strict';
@@ -86,12 +95,14 @@
        * confirmed against the official site that links to it). Re-check before each election.
        */
       vote: {
-        // Florida Online Voter Registration System (Florida Dept. of State). Register, update
-        // address/party, or check "Am I already registered?". Linked from dos.fl.gov and
-        // voteseminole.gov/voters/register-to-vote/. Checked 2026-11-09.
+        // Florida Online Voter Registration System (Florida Dept. of State; relaunched 2023 per
+        // the DOS press release). Register or update address/party. Checked 2026-11-09: this exact
+        // URL is the link on voteseminole.gov/voters/register-to-vote/. The site blocks non-browser
+        // clients (scripts get a 404), so check it in a real browser.
         register: 'https://registertovoteflorida.gov/home',
-        // Florida Division of Elections statewide voter status lookup. Checked 2026-11-09
-        // (the old registration.elections.myflorida.com/CheckVoterStatus 301-redirects here).
+        // Florida Division of Elections statewide voter status lookup ("State of Florida Voter
+        // Lookup"). Checked 2026-11-09: dos.fl.gov/elections links the old
+        // registration.elections.myflorida.com/CheckVoterStatus, which 301-redirects here.
         checkRegistration: 'https://registration.dos.fl.gov/CheckVoterStatus',
         // Florida Division of Elections home. Checked 2026-11-09.
         stateElections: 'https://dos.fl.gov/elections/',
@@ -113,7 +124,8 @@
         // Seminole SOE upcoming elections list (as of 2026-11-09 it still lists the
         // Nov 3, 2026 general; no 2027/2028 dates posted yet). Checked 2026-11-09.
         upcomingElections: 'https://voteseminole.gov/elections/upcoming-elections/',
-        // Seminole SOE office phone, as listed on voteseminole.gov. Checked 2026-11-09.
+        // Seminole SOE office phone, as listed on voteseminole.gov (407-708-7705 there is the
+        // fax). Checked 2026-11-09.
         countyPhone: '407-585-8683'
       },
       /** Party-controlled links: EMPTY PLACEHOLDERS until the party provides them. */
@@ -136,18 +148,19 @@
       /** Netlify Forms needs the form name in the body when formEncoding is 'form'. */
       formName: 'join',
       /**
-       * Action Network via YOUR serverless proxy (the proxy holds the OSDI API key; the
-       * browser never does). endpoint receives the Action Network "person signup helper" body:
-       * { person: { given_name, family_name, email_addresses, phone_numbers, postal_addresses },
-       *   add_tags }. tags are added to every join.
+       * Action Network via YOUR serverless proxy (the proxy adds the OSDI-API-Token header from a
+       * server env var; the browser never sees the key) that forwards to
+       * https://actionnetwork.org/api/v2/people/ (the "person signup helper"). The browser POSTs:
+       * { person: { given_name, family_name, email_addresses: [{address, status}],
+       *   phone_numbers: [{number, status}], postal_addresses: [{postal_code, region, country}],
+       *   custom_fields: { ysd_ref_code, ysd_referred_by } }, add_tags }. Used only when
+       * formEndpoint is ''. tags are added to every join.
        */
       actionNetwork: { endpoint: '', tags: ['youngsemdem-site'] },
       /** Squad lookup: GET <squadEndpoint>?ref=CODE -> { squad: [{ name, joinedAt }] }. */
       squadEndpoint: '',
       /** Counters: GET -> { name: value, ... }; POST { name, n } increments. '' = local only. */
       countersEndpoint: '',
-      /** AI assistant streaming endpoint (functions/api/ask.js). '' = offline scripted mode. */
-      askEndpoint: '',
       /** Video upload endpoint (functions/api/video-upload.js). '' = local-only clips. */
       videoUploadEndpoint: '',
       analytics: {
@@ -158,7 +171,10 @@
         plausibleSrc: 'https://plausible.io/js/script.js',
         /** Cloudflare Web Analytics beacon token (public token, page views only). */
         cloudflareToken: '',
-        /** Custom collector: receives JSON { event, props, path, ts } via sendBeacon. */
+        /**
+         * Custom collector: receives { event, props, path, ts, ref } as JSON text (sent with
+         * navigator.sendBeacon as text/plain so no CORS preflight is needed; parse the body).
+         */
         endpoint: '',
         /** Skip analytics for visitors sending Global Privacy Control or Do Not Track. */
         respectDoNotTrack: true
@@ -202,8 +218,47 @@
       refParam: 'ref',
       /** Days a captured ref counts for attribution. */
       attributionDays: 30,
-      /** Default hashtags for share text (no '#'). */
-      hashtags: ['YoungSemDem']
+      /** Default hashtags for share text (no '#'); only the X link uses them. PLACEHOLDER. */
+      hashtags: ['YoungSemDem'],
+      /**
+       * Remove ?ref= and utm_* from the address bar after capture (after the page 'load' event, so
+       * analytics still sees the UTM tags). Off by default.
+       */
+      cleanUrl: false,
+      /** ActBlue refcode used when no referral code applies (letters, digits, underscore). */
+      actblueRefcode: 'ysd_site'
+    },
+
+    members: {
+      /**
+       * Referral code style. 'name': up to refNameMax letters of the first name + refRandom
+       * characters (e.g. KIRA7QX). 'random': 6 random characters (e.g. B7KQ2M). Random characters
+       * come from an alphabet with no vowels and no look-alikes (0/O, 1/I/L), so codes stay
+       * readable and cannot spell words.
+       */
+      refCodeStyle: 'name',
+      refNameMax: 5,
+      refRandom: 3,
+      /** Join form rules. minAge is a hard floor; the age cap only warns unless enforceAgeCap. */
+      enforceAgeCap: false,
+      /** 5-digit ZIPs counted as "in county" for a soft warning. [] = no check (PLACEHOLDER). */
+      countyZips: [],
+      /**
+       * After a successful production submit, drop email/phone/ZIP from the copy kept in this
+       * browser (the server has them). Demo mode always keeps them locally (nothing is sent).
+       */
+      keepContactLocally: false,
+      /** Demo only: how many simulated squad members can appear after joining (flagged demo). */
+      demoSquadMax: 6
+    },
+
+    cal: {
+      /** PRODID written into .ics files. */
+      prodId: '-//Young Seminole Democrats//youngsemdem site//EN',
+      /** Event length used when an event has no end. */
+      defaultDurationMin: 120,
+      /** Calendar name shown by some apps (X-WR-CALNAME) for multi-event files. */
+      name: 'Young Seminole Democrats'
     },
 
     cards: {
@@ -217,7 +272,6 @@
       referrals: true,
       squad: true,
       cards: true,
-      ask: true,
       clips: true,
       calendar: true,
       /** Demo-only: simulated squad members appear over time after joining (flagged demo). */
@@ -243,9 +297,26 @@
 
   // ---- tiny bootstrap shared by every module ----
   var YSD = w.YSD = w.YSD || {};
-  YSD.version = YSD.version || '0.1.0';
+  YSD.version = YSD.version || '0.2.0';
 
-  /** Read a dotted config path with a fallback: YSD.cfg('integrations.askEndpoint', ''). */
+  /** Site root (folder that holds assets/), from this script's src; see header. */
+  YSD.root = (function () {
+    var re = /^(.*\/)assets\/js\/config\.js(?:[?#].*)?$/, src = '', m;
+    try {
+      var d = w.document;
+      if (d && d.currentScript && d.currentScript.src) src = d.currentScript.src;
+      if (!re.test(src) && d && d.getElementsByTagName) {
+        var ss = d.getElementsByTagName('script');
+        for (var i = ss.length - 1; i >= 0; i--) if (re.test(ss[i].src || '')) { src = ss[i].src; break; }
+      }
+      m = re.exec(src);
+      if (m) return m[1];
+    } catch (e) {}
+    try { return new w.URL('.', w.location.href).href; } catch (e) {}
+    return '';
+  })();
+
+  /** Read a dotted config path with a fallback: YSD.cfg('integrations.formEndpoint', ''). */
   YSD.cfg = function (path, fallback) {
     var cur = w.YSD_CONFIG, parts = String(path || '').split('.');
     for (var i = 0; i < parts.length; i++) {
@@ -278,6 +349,18 @@
       return (m ? m[1] : w.sessionStorage.getItem('ysd:debug')) === '1';
     } catch (e) { return !!(m && m[1] === '1'); }
   })();
+
+  /**
+   * Analytics queue stub: modules may call YSD.track() before assets/js/track.js loads (or when a
+   * page does not include it). Calls are queued here and replayed by track.js.
+   */
+  if (typeof YSD.track !== 'function') {
+    YSD.track = function () {
+      var q = YSD.track.q = YSD.track.q || [];
+      if (q.length < 100) q.push([].slice.call(arguments));
+      return false;
+    };
+  }
 
   /** Console logger that is silent unless YSD.debug. */
   YSD.log = function () {
