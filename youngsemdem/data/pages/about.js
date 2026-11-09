@@ -18,6 +18,8 @@
  *     from data/events.js and data/newsletter.js, used here only as examples of DEMO content
  * Everything else on the page (team, crews, counts) is DEMO and says so.
  * Crew names are DEMO ideas (BRIEF 4.9), shown as invitations and never ranked.
+ * Checker, Nov 9: 'do.sub' no longer calls the three jobs the chapter's own words (the bodies add detail);
+ * 404 source labels get Spanish values; an eighth open crew card invites people to start one.
  */
 window.YSD_DATA = window.YSD_DATA || {};
 window.YSD_DATA.pages = window.YSD_DATA.pages || {};
@@ -51,7 +53,7 @@ window.YSD_DATA.pages.about = {
   // ---- what we do
   'do.eyebrow': { en: 'WHAT WE DO', es: 'QUÉ HACEMOS' },
   'do.title': { en: 'Three jobs. All local.', es: 'Tres tareas. Todas locales.' },
-  'do.sub': { en: "Here's what YDSC is for, in the chapter's own words (paraphrased from its ActBlue page).", es: 'Esto es lo que hace YDSC, en palabras del propio capítulo (resumidas de su página de ActBlue).' },
+  'do.sub': { en: "The chapter's ActBlue page names three goals. Here's each one, and what it looks like here.", es: 'La página de ActBlue del capítulo nombra tres metas. Aquí va cada una y cómo se ve en este sitio.' },
   'do.1.title': { en: 'Get young people voting', es: 'Que la gente joven vote' },
   'do.1.body': { en: 'Straight answers on registering, mail ballots and what changes in 2027, with official links only.', es: 'Respuestas claras sobre cómo inscribirte, la boleta por correo y lo que cambia en 2027, solo con enlaces oficiales.' },
   'do.2.title': { en: "Speak up on what we're living", es: 'Alzar la voz sobre lo que vivimos' },
@@ -175,6 +177,11 @@ window.YSD_DATA.pages.about = {
   'crew.altamonte.idea': { en: "Board games and a what's-on-the-ballot explainer night.", es: 'Juegos de mesa y una noche para explicar qué hay en la boleta.' },
   'crew.cassel.where': { en: 'Casselberry', es: 'Casselberry' },
   'crew.cassel.idea': { en: 'Trivia teams of four. Bring the friend who knows too much.', es: 'Equipos de trivia de cuatro. Trae a la persona que se sabe todo.' },
+  'crew.yours.tag': { en: 'OPEN SPOT', es: 'LUGAR LIBRE' },
+  'crew.yours.name': { en: 'Your crew here', es: 'Tu grupo aquí' },
+  'crew.yours.where': { en: 'Anywhere in Seminole County', es: 'En cualquier parte del condado de Seminole' },
+  'crew.yours.idea': { en: "Don't see your corner? Pitch a crew for your neighborhood, your school or your bus stop. We'll help you plan the first hangout.", es: '¿No ves tu rincón? Propón un grupo para tu barrio, tu escuela o tu parada de bus. Te ayudamos a planear el primer encuentro.' },
+  'crew.yours.cta': { en: 'Pitch a crew', es: 'Propón un grupo' },
 
   // ---- house rules
   'rules.eyebrow': { en: 'HOUSE RULES', es: 'REGLAS DE LA CASA' },
@@ -205,6 +212,17 @@ window.YSD_DATA.pages.notFound = {
   'toy.done': { en: 'All 10. You know Seminole better than most of us.', es: 'Los 10. Conoces Seminole mejor que casi todos nosotros.' },
   'toy.again': { en: 'Peel them all off', es: 'Despegarlos todos' },
   'toy.source': { en: 'Source: {label}', es: 'Fuente: {label}' },
+  // Spanish source labels for data/stickers.js items (its source.label is English only); English pages use the file's label.
+  'toy.src.train': { en: 'SunRail stations', es: 'estaciones de SunRail' },
+  'toy.src.sun': { en: 'Florida Constitution, Art. X §24', es: 'Constitución de Florida, art. X §24' },
+  'toy.src.heart': { en: 'Code of conduct', es: 'Código de conducta' },
+  'toy.src.calendar': { en: 'Events', es: 'Eventos' },
+  'toy.src.camera': { en: 'CDC: Disability Impacts All of Us', es: 'CDC: La discapacidad nos afecta a todos (en inglés)' },
+  'toy.src.gator': { en: 'Wikipedia: Lake Jesup', es: 'Wikipedia: lago Jesup (en inglés)' },
+  'toy.src.chicken': { en: 'Wikipedia: Oviedo', es: 'Wikipedia: Oviedo (en inglés)' },
+  'toy.src.cypress': { en: 'Wikipedia: The Senator', es: 'Wikipedia: The Senator (en inglés)' },
+  'toy.src.celery': { en: 'UCF RICHES', es: 'UCF RICHES (en inglés)' },
+  'toy.src.envelope': { en: 'F.S. 101.62', es: 'Ley de Florida 101.62 (en inglés)' },
   'toy.lid': { en: 'A laptop lid covered in the stickers you found', es: 'La tapa de una laptop cubierta con los stickers que encontraste' },
   'go.home': { en: 'Start from the top.', es: 'Empieza desde el principio.' },
   'go.events': { en: 'Free hangouts all over Seminole.', es: 'Planes gratis por todo Seminole.' },

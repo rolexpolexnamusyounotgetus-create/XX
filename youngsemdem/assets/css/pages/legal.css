@@ -26,9 +26,12 @@
 
 .p-legal .x-lwrap { display:grid;grid-template-columns:minmax(0, 1fr);gap:clamp(32px, 5vw, 56px);padding-block:clamp(28px, 4vw, 48px) clamp(56px, 8vw, 104px); }
 /* Layout-shift guard: the policy text renders from data/legal.js, so until assets/js/pages/legal.js has
-   filled it, the block below the title band stays tall enough to keep the footer below the fold. Nothing
-   is ever hidden while waiting for JS (BRIEF 3.5): without JS or if the script fails, it all shows. */
-html.js .p-legal .x-lwrap[data-legal-pending] { min-height:110vh; }
+   filled it (a few ms after the scripts load) the block below the title band stays invisible and tall
+   enough to keep the footer below the fold (without it CLS is 0.24 on 4G). It never applies without JS,
+   and if the script fails the 2.5 s timer shows it anyway. The timer is a visibility flip, not motion, so
+   it is !important to survive base.css's reduced-motion "animation:none !important" (checker, Nov 9). */
+html.js .p-legal .x-lwrap[data-legal-pending] { visibility:hidden;min-height:110vh;animation:x-unhide 0s 2.5s forwards !important; }
+@keyframes x-unhide { to { visibility:visible; } }
 .p-legal .btn { transition-property:transform, box-shadow; }
 .p-legal .x-draft { max-width:var(--prose); }
 .p-legal .x-noscript { padding:var(--sp-4);border:1px dashed var(--control);border-radius:var(--r-md); }

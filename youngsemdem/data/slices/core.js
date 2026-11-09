@@ -400,7 +400,7 @@ window.YSD_DATA = window.YSD_DATA || {};
       "tag.new": {"en":"NEW","es":"NUEVO"},
       "tag.stock": {"en":"Stock photo · not members","es":"Foto de archivo · no son miembros"},
       "tag.checked": {"en":"Links checked {date}","es":"Enlaces revisados el {date}"},
-      "tag.realDeadline": {"en":"Real deadline","es":"Fecha real"}
+      "tag.realDeadline": {"en":"Real date","es":"Fecha real"}
     }
   }
 });

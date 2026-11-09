@@ -82,7 +82,7 @@ window.YSD_DATA.pages.legal = {
   'device.none': { en: 'Nothing', es: 'Nada' },
   'device.yes': { en: 'Saved', es: 'Guardado' },
   'device.n': { en: '{n} saved', es: '{n} guardados' },
-  'device.keeps': { en: 'Forgetting keeps only your light or dark theme setting.', es: 'Al olvidarte solo se queda tu ajuste de tema claro u oscuro.' },
+  'device.keeps': { en: 'Forgetting keeps only your theme and motion settings.', es: 'Al olvidarte solo se quedan tus ajustes de tema y de movimiento.' },
   'forget.button': { en: 'Forget me on this device', es: 'Olvidarme en este dispositivo' },
   'forget.yes': { en: 'Yes, forget me', es: 'Sí, olvídame' },
   'forget.no': { en: 'Keep it', es: 'Mejor no' },

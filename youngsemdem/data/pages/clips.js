@@ -163,6 +163,8 @@ window.YSD_DATA.pages.clips = {
   'post.back': { en: 'Back to the reel', es: 'Volver a los clips' },
   'post.doneTitle': { en: 'Clip sent.', es: 'Clip enviado.' },
   'post.tooYoung': { en: 'Thanks for wanting to make something. You need to be at least 14 to post a clip. We didn’t save anything you typed.', es: 'Gracias por querer crear algo. Necesitas tener al menos 14 años para subir un clip. No guardamos nada de lo que escribiste.' },
+  'post.hero.altA': { en: 'Poster of a DEMO clip, Trivia night recap: a guy laughing over a card game.', es: 'Portada de un clip DEMO, resumen de la noche de trivia: un chico riéndose en un juego de cartas.' },
+  'post.hero.altB': { en: 'Poster of a DEMO clip, SunRail to the rally: train tracks at sunset.', es: 'Portada de un clip DEMO, en SunRail al mitin: vías del tren al atardecer.' },
   'post.side.title': { en: 'What makes a good one', es: 'Qué hace que un clip funcione' },
   'post.side.1': { en: 'Open with the moment: where were you, who was there?', es: 'Empieza con el momento: ¿dónde estabas y quién estaba contigo?' },
   'post.side.2': { en: 'Film vertical, face the light, say your first name only.', es: 'Graba en vertical, de frente a la luz, y di solo tu nombre de pila.' },

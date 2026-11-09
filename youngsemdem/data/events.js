@@ -279,7 +279,7 @@ window.YSD_DATA.events = {
   ],
 
   schedule: {
-    note: "Demo schedule chosen to avoid the holidays above, the Seminole County Democrats' monthly meeting (second Thursday, 6:30 pm social, 7 pm meeting, Altamonte Springs) and their holiday party (Fri, Dec 11), per the Florida Democrats events calendar (checked Nov 9, 2026).",
+    note: "Demo schedule chosen to avoid the holidays above, the Seminole County Democrats' monthly meeting (second Thursday, 6:30 pm social, 7 pm meeting, Altamonte Springs) and their holiday party (Fri, Dec 11), per the Florida Democrats events calendar (checked Nov 9, 2026). The holiday party is NOT listed: it is ticketed, at a private home, and serves beverages, which doesn't fit a 14-and-up site's host rules (lead, Nov 9; the chapter can decide).",
     source: "https://events.floridadems.org/org/seminole-county-democrats",
     verified: "2026-11-09",
     /* The January drop (BRIEF 4.3, 5.4): events that start after `cutoff` stay hidden on the events
@@ -333,23 +333,6 @@ window.YSD_DATA.events = {
       },
       url: "https://events.floridadems.org/org/seminole-county-democrats",
       source: "https://events.floridadems.org/org/seminole-county-democrats",
-      verified: "2026-11-09",
-      confidence: "high"
-    },
-    {
-      id: "semdems-holiday-party-2026",
-      real: true,
-      host: { en: "Seminole County Democrats", es: "Seminole County Democrats" },
-      title: { en: "SemDems annual holiday party", es: "Fiesta anual de fin de año de SemDems" },
-      start: "2026-12-11T18:00:00-05:00",
-      end: "2026-12-11T21:00:00-05:00",
-      city: "longwood",
-      detail: {
-        en: "Their party, their rules: it's ticketed, at a private home in Longwood, and the address comes with your ticket.",
-        es: "Es su fiesta y sus reglas: hay que comprar boleto, es en una casa particular en Longwood y la dirección llega con el boleto."
-      },
-      url: "https://events.floridadems.org/event/50836/semdems-annual-holiday-party",
-      source: "https://events.floridadems.org/event/50836/semdems-annual-holiday-party",
       verified: "2026-11-09",
       confidence: "high"
     }
@@ -926,7 +909,7 @@ window.YSD_DATA.events = {
         es: "Una hora y media para ponerte al día, en español: cómo renovar tu solicitud de boleta por correo (las hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre), qué identificación llevar ahora que Florida ya no acepta la de estudiante para votar y qué significa la nueva verificación de ciudadanía cuando te inscribes o actualizas tus datos. Usamos las páginas oficiales en español cuando existen. Aquí no hay preguntas tontas, y puedes venir con tu familia."
       },
       notice: {
-        en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.",
+        en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go.",
         es: "Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir."
       },
       start: "2027-01-09T11:00:00-05:00",

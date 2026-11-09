@@ -1132,7 +1132,7 @@ window.YSD_DATA.strings = {
 
     // ---- Student ID change (required copy shape from docs/research/00; serious)
     "share.studentId.sms": {
-      en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go. More: {link}",
+      en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go. More: {link}",
       es: "Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir. Más información: {link}",
       tone: "serious", source: "https://flsenate.gov/Committees/BillSummaries/2026/html/991",
       sources: ["https://flsenate.gov/Session/Bill/2026/991", "https://www.democracydocket.com/wp-content/uploads/2026/10/2026-10-16-Complaint.pdf"],
@@ -1140,21 +1140,21 @@ window.YSD_DATA.strings = {
       note: "Required wording (docs/research/00). If a court blocks the student-ID ban, rewrite every share.studentId and nudge.studentId entry the same day."
     },
     "share.studentId.whatsapp": {
-      en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.\n\nPassing it on in case you've been using a student ID to vote. Details and official links: {link}",
+      en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go.\n\nPassing it on in case you've been using a student ID to vote. Details and official links: {link}",
       es: "Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir.\n\nTe lo paso por si has votado con tu identificación de estudiante. Detalles y enlaces oficiales: {link}",
       tone: "serious", source: "https://flsenate.gov/Committees/BillSummaries/2026/html/991",
       sources: ["https://www.democracydocket.com/wp-content/uploads/2026/10/2026-10-16-Complaint.pdf"],
       verified: "2026-11-09", confidence: "high", recheck: "2026-12-15", expires: "2028-11-08T00:00:00-05:00"
     },
     "share.studentId.igStory": {
-      en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a license, state ID or passport, and check voteseminole.gov first.\n{link}",
+      en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a license, state ID, or passport, and check voteseminole.gov first.\n{link}",
       es: "Desde el 1 de enero de 2027, Florida no acepta la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva licencia, ID estatal o pasaporte, y revisa voteseminole.gov antes.\n{link}",
       tone: "serious", source: "https://flsenate.gov/Committees/BillSummaries/2026/html/991",
       sources: ["https://www.democracydocket.com/wp-content/uploads/2026/10/2026-10-16-Complaint.pdf"],
       verified: "2026-11-09", confidence: "high", recheck: "2026-12-15", expires: "2028-11-08T00:00:00-05:00", max: 210
     },
     "share.studentId.short": {
-      en: "From Jan 1, 2027, Florida stops taking student IDs at the polls (it's being challenged in court). Bring a license, state ID or passport; check voteseminole.gov. {link}",
+      en: "From Jan 1, 2027, Florida stops taking student IDs at the polls (it's being challenged in court). Bring a license, state ID, or passport; check voteseminole.gov. {link}",
       es: "Desde el 1 de enero de 2027, Florida no acepta ID de estudiante para votar (la medida está impugnada). Lleva licencia, ID estatal o pasaporte; revisa voteseminole.gov. {link}",
       tone: "serious", source: "https://flsenate.gov/Committees/BillSummaries/2026/html/991",
       sources: ["https://www.democracydocket.com/wp-content/uploads/2026/10/2026-10-16-Complaint.pdf"],
@@ -1172,7 +1172,7 @@ window.YSD_DATA.strings = {
       showFrom: "2027-01-01T00:00:00-05:00", expires: "2028-11-08T00:00:00-05:00", recheck: "2026-12-15"
     },
     "share.studentId.email.body": {
-      en: "Hi,\n\nStarting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.\n\nIf you don't have one of those yet, it's worth sorting out well before your next election. Details and official links: {link}",
+      en: "Hi,\n\nStarting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go.\n\nIf you don't have one of those yet, it's worth sorting out well before your next election. Details and official links: {link}",
       es: "Hola:\n\nDesde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir.\n\nSi todavía no tienes ninguno de esos documentos, vale la pena resolverlo con tiempo antes de tu próxima elección. Detalles y enlaces oficiales: {link}",
       tone: "serious", source: "https://flsenate.gov/Committees/BillSummaries/2026/html/991",
       sources: ["https://flsenate.gov/Session/Bill/2026/991", "https://www.democracydocket.com/wp-content/uploads/2026/10/2026-10-16-Complaint.pdf"],
@@ -1544,7 +1544,7 @@ window.YSD_DATA.strings = {
     },
     "nudge.studentId.eyebrow": { en: "NEW IN 2027", es: "NUEVO EN 2027", tone: "serious", expires: "2028-11-08T00:00:00-05:00" },
     "nudge.studentId.text": {
-      en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.",
+      en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go.",
       es: "Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir.",
       tone: "serious", source: "https://flsenate.gov/Committees/BillSummaries/2026/html/991",
       sources: ["https://flsenate.gov/Session/Bill/2026/991", "https://www.democracydocket.com/wp-content/uploads/2026/10/2026-10-16-Complaint.pdf"],
@@ -1701,7 +1701,7 @@ window.YSD_DATA.strings = {
     "tag.new": { en: "NEW", es: "NUEVO" },
     "tag.stock": { en: "Stock photo · not members", es: "Foto de archivo · no son miembros", note: "Required on every stock photo (BRIEF §3.6)." },
     "tag.checked": { en: "Links checked {date}", es: "Enlaces revisados el {date}", note: "{date} per format.dateYear without the weekday, e.g. \"Nov 9, 2026\"." },
-    "tag.realDeadline": { en: "Real deadline", es: "Fecha real" },
+    "tag.realDeadline": { en: "Real date", es: "Fecha real" },
 
     // ========================================================================= A11Y STATEMENT
     "a11yStatement.title": { en: "Accessibility", es: "Accesibilidad" },

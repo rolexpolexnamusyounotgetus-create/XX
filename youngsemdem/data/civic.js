@@ -313,7 +313,7 @@ window.YSD_DATA.civic = {
       label: { en: "Seminole's register-to-vote page", es: "Página de inscripción del condado de Seminole" }
     },
     registrationFormPdf: {
-      key: null,
+      key: "links.vote.registrationFormPdf",
       url: "https://voteseminole.gov/wp-content/uploads/2026/02/1s-2040-form-ds-de-39-eng-nonfillable-20240424.pdf",
       urlEs: "https://voteseminole.gov/wp-content/uploads/2026/03/1s-2040-form-ds-de-39-spn-nonfillable-revised-20240424-202419.pdf",
       label: { en: "Paper registration form (PDF)", es: "Formulario de inscripción en papel (PDF)" }
@@ -341,7 +341,7 @@ window.YSD_DATA.civic = {
       note: "The 'Request Ballot' button on the SOE vote-by-mail page. Loads with a browser user agent (checked 2026-11-09); bare scripts may get a 403. Config key: links.vote.mailBallotRequest."
     },
     mailBallotFormPdf: {
-      key: null,
+      key: "links.vote.mailBallotFormPdf",
       url: "https://voteseminole.gov/wp-content/uploads/2025/09/ds-de-160-statewide-vote-by-mail-request-adoption-1.pdf",
       urlEs: "https://voteseminole.gov/wp-content/uploads/2026/03/ds-de-160-statewide-vote-by-mail-request-adoption-spanish_-04172024.pdf",
       label: { en: "Paper mail-ballot request form (PDF)", es: "Formulario en papel para pedir la boleta por correo (PDF)" }
@@ -353,7 +353,7 @@ window.YSD_DATA.civic = {
       note: "TrackMyMailBallot (BallotTrax), linked from the SOE vote-by-mail page. Config key: links.vote.trackBallot."
     },
     mailCureFormPdf: {
-      key: null,
+      key: "links.vote.mailCureFormPdf",
       url: "https://voteseminole.gov/wp-content/uploads/2026/03/VOTE-BY-MAIL-CURE-AFFIDAVIT-dsde-139-eng-07-2019.pdf",
       urlEs: "https://voteseminole.gov/wp-content/uploads/2026/03/VOTE-BY-MAIL-CURE-AFFIDAVIT-dsde139_spa.pdf",
       label: { en: "Mail-ballot signature fix form (PDF)", es: "Formulario para corregir la firma de la boleta por correo (PDF)" }
@@ -386,12 +386,12 @@ window.YSD_DATA.civic = {
       note: "Config key: links.vote.whatToExpect."
     },
     voterRights: {
-      key: null,
+      key: "links.vote.voterRights",
       url: "https://voteseminole.gov/voters/voter-guide-rights-responsibilities/",
       label: { en: "Voter Bill of Rights", es: "Derechos del votante" }
     },
     soeFaq: {
-      key: null,
+      key: "links.vote.soeFaq",
       url: "https://voteseminole.gov/faqs/",
       label: { en: "Elections office FAQ", es: "Preguntas frecuentes de la oficina electoral" }
     },
@@ -406,24 +406,24 @@ window.YSD_DATA.civic = {
       label: { en: "Florida Division of Elections", es: "División de Elecciones de Florida" }
     },
     stateContact: {
-      key: null,
+      key: "links.vote.stateContact",
       url: "https://dos.fl.gov/elections/contacts/contact-us/",
       label: { en: "Division of Elections contacts", es: "Contactos de la División de Elecciones" },
       note: "Loads with a browser user agent (checked 2026-11-09); bare scripts may be blocked."
     },
     electionProtection: {
-      key: null,
+      key: "links.vote.electionProtection",
       url: "https://866ourvote.org/",
       label: { en: "866-OUR-VOTE (Election Protection)", es: "888-VE-Y-VOTA (Protección Electoral, en español)" },
       note: "Nonpartisan; administered by the Lawyers' Committee for Civil Rights Under Law."
     },
     oviedoElections: {
-      key: null,
+      key: "links.vote.oviedoElections",
       url: "https://cityofoviedo.net/724/Elections",
       label: { en: "City of Oviedo elections", es: "Elecciones de la Ciudad de Oviedo" }
     },
     hb991: {
-      key: null,
+      key: "links.vote.hb991",
       url: "https://flsenate.gov/Session/Bill/2026/991",
       label: { en: "HB 991 (2026) on the Florida Senate site", es: "HB 991 (2026) en el sitio del Senado de Florida" }
     },

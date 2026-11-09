@@ -495,7 +495,7 @@ window.YSD_DATA.legal = {
           id: "conduct-who",
           heading: { en: "Who does this cover?", es: "¿A quién aplica?" },
           body: [
-            { p: { en: "Everyone in a {orgShort} space: members, guests, volunteers, organizers and officers. That means events, meetings and calls, and every online space we run, like group chats, comments, clips and texts. It also covers how you treat people while you're with us somewhere else, like a rally or a door you're knocking on.", es: "A todas las personas en un espacio de {orgShort}: miembros, invitados, voluntarios, organizadores y la directiva. Eso incluye eventos, reuniones y llamadas, y cada espacio en línea que manejamos, como chats de grupo, comentarios, clips y mensajes de texto. También aplica a cómo tratas a la gente cuando estás con nosotros en otro lugar, como una marcha o una puerta que tocas." } }
+            { p: { en: "Everyone in a {orgShort} space: members, guests, volunteers, organizers and officers. That means events, meetings and calls, and every online space we run, like comments, clips, texts and any group chat we set up. It also covers how you treat people while you're with us somewhere else, like a rally or a door you're knocking on.", es: "A todas las personas en un espacio de {orgShort}: miembros, invitados, voluntarios, organizadores y la directiva. Eso incluye eventos, reuniones y llamadas, y cada espacio en línea que manejamos, como comentarios, clips, mensajes de texto y cualquier chat de grupo que abramos. También aplica a cómo tratas a la gente cuando estás con nosotros en otro lugar, como una marcha o una puerta que tocas." } }
           ]
         },
         {

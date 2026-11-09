@@ -149,6 +149,17 @@
         // through the end of the calendar year of the next regularly scheduled general election).
         // Checked 2026-11-09: 200.
         stateVoteByMail: 'https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/',
+        // Added Nov 9, 2026 for the vote hub (data/civic.js links). URLs as checked by the content
+        // checkers on 2026-11-09 against the official sites; re-check before each election.
+        registrationFormPdf: 'https://voteseminole.gov/wp-content/uploads/2026/02/1s-2040-form-ds-de-39-eng-nonfillable-20240424.pdf',
+        mailBallotFormPdf: 'https://voteseminole.gov/wp-content/uploads/2025/09/ds-de-160-statewide-vote-by-mail-request-adoption-1.pdf',
+        mailCureFormPdf: 'https://voteseminole.gov/wp-content/uploads/2026/03/VOTE-BY-MAIL-CURE-AFFIDAVIT-dsde-139-eng-07-2019.pdf',
+        voterRights: 'https://voteseminole.gov/voters/voter-guide-rights-responsibilities/',
+        soeFaq: 'https://voteseminole.gov/faqs/',
+        stateContact: 'https://dos.fl.gov/elections/contacts/contact-us/',
+        electionProtection: 'https://866ourvote.org/',
+        oviedoElections: 'https://cityofoviedo.net/724/Elections',
+        hb991: 'https://flsenate.gov/Session/Bill/2026/991',
         // Seminole SOE "Find My Polling Location" map (linked from the voter record page).
         // Checked 2026-11-09.
         pollingPlace: 'https://voteseminole.dolphmap.com/',

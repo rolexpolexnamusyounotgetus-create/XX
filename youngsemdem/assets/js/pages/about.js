@@ -226,7 +226,9 @@
       bubble.appendChild(name);
       bubble.appendChild(d.createTextNode(' ' + factOf(s) + ' '));
       if (s.source && s.source.url) {
-        var a = el('a', 'x-bubble__src', t('notFound:toy.source', { label: s.source.label || s.source.url }));
+        // data/stickers.js labels are English only: Spanish pages take theirs from data/pages/about.js
+        var label = (lang !== 'en' && t('notFound:toy.src.' + s.id)) || s.source.label || s.source.url;
+        var a = el('a', 'x-bubble__src', t('notFound:toy.source', { label: label }));
         a.href = s.source.url;
         if (/^https?:/.test(s.source.url)) a.rel = 'noopener';
         bubble.appendChild(a);

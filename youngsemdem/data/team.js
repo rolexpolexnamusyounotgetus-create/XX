@@ -2,7 +2,8 @@
  * data/team.js: the chapter team page for the Young Democrats of Seminole County (YDSC), EN + ES.
  *
  * DEMO DATA (demo:true). Nov 9, 2026 (W7): the treasurer no longer promises a public receipts page
- * (BRIEF 4.9: only if the chapter agrees to publish one).
+ * (BRIEF 4.9: only if the chapter agrees to publish one). Checker, Nov 9: the president's bio no longer
+ * implies a chapter group chat (BRIEF 9), and demoNote no longer repeats the DEMO tag it sits beside.
  * Every name here is an obvious placeholder ("Your President Here"). No real
  * officer is named, on purpose: real names, photos and pronouns go in only with each person's
  * consent, after the chapter signs off. The role list itself is a DEMO structure: YDSC's bylaws and
@@ -95,8 +96,8 @@ window.YSD_DATA.team = {
       name: { en: "Your President Here", es: "Aquí va quien preside" },
       pronouns: null,
       bio: {
-        en: "Runs the meetings, keeps them under an hour, and answers the group chat at reasonable hours.",
-        es: "Dirige las reuniones, hace que duren menos de una hora y contesta el chat del grupo a horas razonables."
+        en: "Runs the meetings, keeps them under an hour, and answers messages at reasonable hours.",
+        es: "Dirige las reuniones, hace que duren menos de una hora y contesta los mensajes a horas razonables."
       },
       does: [
         { en: "Leads general meetings and sets the agenda with the board", es: "Dirige las reuniones generales y arma la agenda con la directiva" },
@@ -271,8 +272,8 @@ window.YSD_DATA.team = {
       note: "links.contact is empty in config today; send people to the join form (members.js) until the chapter sets a contact."
     },
     demoNote: {
-      en: "DEMO copy. The chapter's bylaws decide how officer elections work.",
-      es: "Texto DEMO. Los estatutos del grupo deciden cómo funcionan las elecciones de la directiva."
+      en: "Example copy. The chapter's bylaws decide how officer elections work.",
+      es: "Texto de ejemplo. Los estatutos del grupo deciden cómo funcionan las elecciones de la directiva."
     }
   },
 

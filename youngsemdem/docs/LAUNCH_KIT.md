@@ -226,7 +226,7 @@ How to read each day:
 **Day 8 · Wed, Dec 9 · Student IDs (calm)**
 - **Video:** V02.
 - **Stories:** one calm frame with the required wording and a link to `vote#what-id`. No other stickers.
-- **Text (required wording):** "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go. Details: {url}" **[student-id] [student-id-lawsuit]**
+- **Text (required wording):** "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go. Details: {url}" **[student-id] [student-id-lawsuit]**
 - **CTA:** `vote#what-id` · `2026-12-idrule`
 
 **Day 9 · Thu, Dec 10 · Be the friend who knows** · Thursday Letter
@@ -331,7 +331,7 @@ How to read each day:
 **Day 21 · Tue, Dec 22 · Home from college (calm)**
 - **Video:** V02, the "home-from-college" variant.
 - **Stories:** a calm frame with the required wording. Link to `vote#what-id`.
-- **Text:** "Home from college for break? Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go. {url}" **[student-id] [student-id-lawsuit]**
+- **Text:** "Home from college for break? Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go. {url}" **[student-id] [student-id-lawsuit]**
 - **CTA:** `vote#what-id` · `2026-12-idrule`
 
 **Day 22 · Wed, Dec 23 · Trivia, part 2**
@@ -388,7 +388,7 @@ How to read each day:
 - **Thursday Letter:** "Tonight it runs out. Tomorrow you renew."
 - **Stories:**
   1. Countdown to midnight, then "Tomorrow morning: renew," with a link.
-  2. A calm frame: "Starting tomorrow, Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go."
+  2. A calm frame: "Starting tomorrow, Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go."
 - **Text:** "Tonight, mail-ballot requests from before Nov 3 run out, ours included. Tomorrow is renew day: one request covers every election through 2028. Set an alarm for the morning, and happy new year: {url}" **[mail-expiry] [mail-covers-2028]**
 - **CTA:** `vote#renew-mail-ballot` · `2026-12-renew`
 
@@ -404,7 +404,7 @@ Before anything posts, open the official request page and check that it takes 20
 - **If it doesn't:**
   - **Stories only.**
   - **Text:** "Renew day, almost: the elections office hasn't confirmed its online form is taking 2027-28 requests yet. We'll post when it does. The official page: {url}"
-- **Second post (calm):** "Starting today, Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go. {url}" **[student-id] [student-id-lawsuit]**. Before it posts, re-check the court case.
+- **Second post (calm):** "Starting today, Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go. {url}" **[student-id] [student-id-lawsuit]**. Before it posts, re-check the court case.
 
 **Sat, Jan 2**
 - **Text:** "Did you renew? If you vote by mail, one request now covers every election through 2028. Here's the official link again: {url}"
@@ -471,7 +471,7 @@ Platform sound effects (a ding, a whoosh) are fine with any preset.
 | Time | Say | On screen |
 |---|---|---|
 | 1.5 to 6 s | "It's being challenged in court." | "Being challenged in court" |
-| 6 to 13 s | "Bring a driver's license, state ID or passport." Place sample cards marked "SAMPLE." | "Driver's license · state ID · passport" |
+| 6 to 13 s | "Bring a driver's license, state ID, or passport." Place sample cards marked "SAMPLE." | "Driver's license · state ID · passport" |
 | 13 to 18 s | "And check voteseminole.gov before you go." | "voteseminole.gov" |
 | 18 to 20 s | "Details in bio." | "Details in bio" |
 
@@ -646,7 +646,7 @@ Platform sound effects (a ding, a whoosh) are fine with any preset.
 | 2 | NOV 3 | Seminole voted blue for governor. | About 54% to 45% here, in unofficial returns. Statewide went the other way, by less than 2 points, so the next one is wide open. | Unofficial until certified. Florida Division of Elections via WFTV. | Violet fill, paper type, your own county outline (no candidates) |
 | 3 | UNDER 40 IN SEMINOLE | The biggest group isn't a party. | Among active voters 18 to 40, no-party voters are about 34%, Democrats about 33% and Republicans about 27%. You don't need a party to come hang out. | Seminole Supervisor of Elections, July 1, 2026; percentages computed by us. | Three bars, the no-party bar in celery |
 | 4 | HEADS UP | Asked before Nov 3? Your mail-ballot request runs out Dec 31. | It happens every two years. In January, renew online or at 407-585-8683, and one request covers you through 2028. | Fla. Stat. 101.62; voteseminole.gov | Sky fill, the stk01 calendar page |
-| 5 | NEW IN 2027 | Student IDs stop counting at the polls. | Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go. | HB 991 (2026); voteseminole.gov | Calm: paper fill, ink type, no stickers |
+| 5 | NEW IN 2027 | Student IDs stop counting at the polls. | Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go. | HB 991 (2026); voteseminole.gov | Calm: paper fill, ink type, no stickers |
 | 6 | WHAT WE DO | Low-key, on purpose. | Trivia nights · Sunset walks on Lake Monroe · Creator nights · Text-a-friend nights · Karaoke. Free, alcohol-free, open to anyone 14 and up. | DEMO lineup while the site is in demo. "Free, alcohol-free, 14 and up" is draft policy until the chapter confirms it. | Bubblegum fill, five small stickers |
 | 7 | TAKE THE QUIZ | What's your organizer era? | Hype Captain · Group-Chat General · Spreadsheet Witch · Door-Knock Natural · Creator · Plus-One. Eight questions. Link in bio. | none | Six mini result cards fanned out |
 | 8 | BRING THREE | Three friends. Not 300. | Send your link to three people you actually talk to. When they join, you get a badge. At three: the full sticker pack and a shoutout if you want one. Nothing to buy. | Dec 7 to 31 | Three pinky-promise hands (stk04) |
@@ -661,7 +661,7 @@ Platform sound effects (a ding, a whoosh) are fine with any preset.
 2. "Purple slide: Seminole voted blue for governor on Nov 3, about 54% to 45% in unofficial returns, while the state went the other way by less than 2 points."
 3. "Bar chart: among Seminole voters aged 18 to 40, no party 34%, Democrats 33%, Republicans 27%. You don't need a party to come hang out."
 4. "Blue slide with a calendar page: your mail-ballot request runs out Dec 31 if you asked before Nov 3. In January, renew online or at 407-585-8683; one request covers you through 2028."
-5. "Plain slide: Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go."
+5. "Plain slide: Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go."
 6. "Pink slide listing demo events: trivia nights, sunset walks on Lake Monroe, creator nights, text-a-friend nights, karaoke. Free, alcohol-free, open to anyone 14 and up."
 7. "Six quiz result cards: Hype Captain, Group-Chat General, Spreadsheet Witch, Door-Knock Natural, Creator, Plus-One."
 8. "Two hands making a pinky promise: Bring Three. Send your link to three friends; one joins for a badge, three for the sticker pack and a shoutout."
@@ -741,7 +741,7 @@ The Spanish versions, links, UTM codes, the dated `after` text and editor notes 
 | ID | When | Tone | English text |
 |---|---|---|---|
 | gc01 | The main one: requests from before Nov 3 run out Dec 31 | calm | "Heads up: if you asked for a mail ballot before Nov 3, that request runs out Dec 31 (mine too). Renew in January and one request covers you through 2028. I set a Jan 1 reminder. Set yours: {url}" |
-| gc02 | Student IDs, required wording | calm | "Passing this along: Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go. More here: {url}" |
+| gc02 | Student IDs, required wording | calm | "Passing this along: Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go. More here: {url}" |
 | gc03 | The family chat (EN or ES; Spanish first on es/ pages) | calm | "Family, quick heads-up: if you vote by mail in Florida and asked for your ballot before Nov 3, that request runs out Dec 31. In January, renew online or call your county elections office (Seminole: 407-585-8683). One request covers you through 2028. Details: {url}" |
 | gc04 | Invite one friend to one event | bright | "{event}, {when}, in {city}. First time? Perfect, that's the point. Come with me? {url}" (add "(DEMO event)" in front while events are demo) |
 | gc05 | Share a quiz result | bright | "Took a quiz on what kind of organizer I'd be and got {result}. It knows me too well. What do you get? {url}" |
