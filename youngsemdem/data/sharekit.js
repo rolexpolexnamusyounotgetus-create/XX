@@ -317,6 +317,7 @@ window.YSD_DATA.sharekit = {
       event: { en: "Event", es: "Evento" },
       photo: { en: "Add a photo (optional)", es: "Agrega una foto (opcional)" },
       photoHint: { en: "It stays on your phone. We never upload or save it.", es: "Se queda en tu teléfono. Nunca la subimos ni la guardamos." },
+      photoPick: { en: "Choose a photo", es: "Elegir una foto" },
       photoRemove: { en: "Remove photo", es: "Quitar la foto" },
       message: { en: "Your message", es: "Tu mensaje" },
       messageHint: { en: "Written to sound like you. Change any word before you send.", es: "Escrito para que suene a ti. Cambia lo que quieras antes de enviarlo." },
@@ -347,19 +348,17 @@ window.YSD_DATA.sharekit = {
     },
     getLink: {
       title: { en: "Want credit when friends join?", es: "¿Quieres que cuente cuando alguien se una?" },
-      body: { en: "Get your own link. Free, two fields, and nothing is sent in the demo.", es: "Consigue tu propio enlace. Es gratis, son dos datos y en la demo no se envía nada." },
+      body: { en: "Get your own link. Free, three quick questions, and nothing is sent in the demo.", es: "Consigue tu propio enlace. Es gratis, son tres preguntas rápidas y en la demo no se envía nada." },
       open: { en: "Get your link", es: "Consigue tu enlace" },
       contact: { en: "Email or mobile", es: "Correo o celular" },
       contactHint: { en: "For your invite and one reminder. Nothing else unless you ask.", es: "Para tu invitación y un recordatorio. Nada más, a menos que lo pidas." },
       age: { en: "How old are you?", es: "¿Cuántos años tienes?" },
-      ageTeen: { en: "14 to 17", es: "De 14 a 17" },
-      ageAdult: { en: "18 to 39", es: "De 18 a 39" },
       teenNote: { en: "Under 18? Your link uses a random code, never your name.", es: "¿Menor de 18? Tu enlace usa un código al azar, nunca tu nombre." },
       submit: { en: "Get my link", es: "Quiero mi enlace" },
       done: { en: "You're in. Your link is on the card now.", es: "Ya estás dentro. Tu enlace ya está en la tarjeta." },
       privacy: { en: "We never sell or share your info. DEMO: nothing leaves this browser.", es: "Nunca vendemos ni compartimos tus datos. DEMO: nada sale de este navegador." },
       contactError: { en: "That email or number doesn't look right. Try once more?", es: "Ese correo o número no se ve bien. ¿Lo intentas otra vez?" },
-      ageError: { en: "Pick an age range so we can keep your link safe.", es: "Escoge un rango de edad para que tu enlace sea seguro." }
+      ageError: { en: "Type your age in numbers so we can keep your link safe.", es: "Escribe tu edad en números para que tu enlace sea seguro." }
     },
     messages: {
       cover: {
@@ -367,8 +366,8 @@ window.YSD_DATA.sharekit = {
         es: "Me puse en la portada de los Young Dems. Te toca, y luego vienes conmigo al próximo plan: {url}"
       },
       membercard: {
-        en: "Got my Young Dems member card. It's free if you're 14 to 39 in Seminole. Join me: {url}",
-        es: "Ya tengo mi tarjeta de miembro de los Young Dems. Es gratis si tienes de 14 a 39 años y vives en Seminole. Únete conmigo: {url}"
+        en: "Got my Young Dems member card. Joining is free if you're 14 to 39. Join me: {url}",
+        es: "Ya tengo mi tarjeta de miembro de los Young Dems. Unirse es gratis si tienes de 14 a 39 años. Únete conmigo: {url}"
       },
       rewind: {
         en: "My 2026 with the Young Dems, in three cards. Make yours, then come with me in 2027: {url}",

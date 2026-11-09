@@ -358,6 +358,8 @@
     ctx.fillStyle = wd.fg; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
     ctx.fillText(label, x, y + 22); track(ctx, 0);
     var by = y + 40, bh = 52, tot = 0, i;
+    // a segment in the card's own colour would vanish into the background: paint it cream instead
+    function seg(c) { return String(c).toLowerCase() === String(wd.bg).toLowerCase() ? C.cream : c; }
     for (i = 0; i < items.length; i++) tot += items[i].pct;
     if (!tot) return 0;
     ctx.save();
@@ -365,7 +367,7 @@
     var cx = x;
     for (i = 0; i < items.length; i++) {
       var sw = width * items[i].pct / tot;
-      ctx.fillStyle = items[i].color; ctx.fillRect(cx, by, sw + 1, bh);
+      ctx.fillStyle = seg(items[i].color); ctx.fillRect(cx, by, sw + 1, bh);
       if (i) { ctx.fillStyle = C.night; ctx.fillRect(cx - 2, by, 4, bh); }
       cx += sw;
     }
@@ -376,7 +378,7 @@
     for (i = 0; i < Math.min(3, items.length); i++) {
       var t = items[i].pct + '% ' + items[i].label, tw = textW(ctx, t) + 52;
       if (lx + tw > x + width) break;
-      ctx.fillStyle = items[i].color; ctx.beginPath(); ctx.arc(lx + 14, ly - 9, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = seg(items[i].color); ctx.beginPath(); ctx.arc(lx + 14, ly - 9, 14, 0, Math.PI * 2); ctx.fill();
       ctx.lineWidth = 3; ctx.strokeStyle = C.night; ctx.stroke();
       ctx.fillStyle = wd.fg; ctx.fillText(t, lx + 38, ly);
       lx += tw + 18;
@@ -473,12 +475,14 @@
       if (items.length > 1 && tall) { bottom -= 170; mixStrip(ctx, env, wd, K('quizShowUp.mix', L), items, pad, bottom + 20, W - pad * 2); bottom -= 30; }
       // fact block: panel with stat or the subline, and its source
       var panelW = W - pad * 2 - (serious ? 0 : (tall ? 0 : 170)), px = pad, inner = panelW - 64;
-      var statTxt = fact && fact.stat ? fact.stat.value : '', statLbl = fact && fact.stat ? pick(fact.stat.label, L) : '';
-      var src = fact && fact.sourceName ? K('quizIssue.source', L, { source: String(fact.sourceName).split(',')[0] }) : '';
+      var statTxt = fact && fact.stat ? ((L === 'es' && fact.stat.valueEs) || fact.stat.value) : '', statLbl = fact && fact.stat ? pick(fact.stat.label, L) : '';
+      var src = fact && fact.sourceName ? K('quizIssue.source', L, { source: String(fact.sourceName).split(/[,:]/)[0].trim() }) : '';
       var sf = statTxt ? fit(ctx, statTxt, inner, { max: tall ? 150 : 120, min: 60, maxLines: 1, lh: 0.95, family: fam(env, 'display'), stretch: 'condensed' }) : null;
       var lf = fit(ctx, statTxt ? statLbl : sub, inner, { max: 38, min: 26, maxLines: 3, lh: 1.2, weight: 700, family: fam(env, 'body') });
       var srcF = src ? fit(ctx, src, inner, { max: 24, min: 18, maxLines: 2, lh: 1.25, weight: 600, family: fam(env, 'body') }) : null;
       var ph = 48 + (sf ? sf.height + 6 : 0) + lf.height + (srcF ? srcF.height + 14 : 0);
+      // never let the fact panel slide over the link panel: drop the source line first (it is on the result page)
+      if (srcF && y + 40 + ph > bottom) { ph -= srcF.height + 14; srcF = null; }
       var py = Math.max(y + 40, bottom - ph);
       ctx.fillStyle = C.night; rr(ctx, px + 9, py + 9, panelW, ph, 26); ctx.fill();
       ctx.fillStyle = C.cream; rr(ctx, px, py, panelW, ph, 26); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = C.night; ctx.stroke();

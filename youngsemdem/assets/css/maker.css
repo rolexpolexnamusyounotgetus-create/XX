@@ -18,6 +18,7 @@
 }
 .maker__frame[data-size="story"] { aspect-ratio:9 / 16;width:min(100%, 360px, calc(72vh * 9 / 16)); }
 .maker:hover .maker__frame { rotate:0deg; }
+.maker[data-template="psa-id"] .maker__frame { rotate:none; }
 .maker__canvas { display:block;width:100%;height:100%; }
 .maker__loading { display:grid;place-items:center;height:100%;margin:0;padding:var(--sp-5);text-align:center;color:var(--text-muted);font-weight:700; }
 .maker[data-state="loading"] .maker__frame::after {
@@ -49,7 +50,10 @@
 .maker__sticker:hover { transform:rotate(-8deg) scale(1.06); }
 .maker__sticker:has(> input:checked) { box-shadow:0 0 0 3px var(--bg), 0 0 0 6px var(--edge);transform:rotate(-6deg); }
 .maker__sticker:has(> input:focus-visible) { outline:3px solid var(--focus);outline-offset:4px; }
-.maker__file { padding:var(--sp-2) 0;min-height:44px; }
+.maker__file { position:absolute;width:1px;height:1px;margin:0;padding:0;opacity:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+.maker__file:focus-visible + .maker__file-btn { outline:3px solid var(--focus);outline-offset:2px; }
+.maker__file-btn { cursor:pointer; }
+.maker__field .cluster { position:relative; }
 .maker__size { margin:0; }
 .maker__actions { display:grid;gap:var(--sp-3); }
 .maker__share { flex:1 1 auto; }

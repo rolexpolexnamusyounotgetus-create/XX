@@ -71,13 +71,15 @@ function page(kind, id, L) {
     const it = byId(I.items, id), res = Q.issueFinder.results[id];
     name = pick(it.title, L); slug = res.slug; color = it.color; calm = it.tone === 'serious'; sticker = calm ? '' : (ISSUE_ART[id] || '');
     lead = pick(it.hook, L);
-    sub = pick(res.card.subline, L).replace(/\s*(Find your issue\.|Encuentra tu tema\.)\s*$/, '');
+    // dated lines (voting: the student-ID rule from Jan 1, 2027) switch when the pages are regenerated after the date
+    const after = res.card.sublineAfter && Date.now() >= Date.parse(res.card.sublineAfter.date + 'T00:00:00-05:00');
+    sub = pick(after ? res.card.sublineAfter : res.card.subline, L).replace(/\s*(Find your issue\.|Encuentra tu tema\.)\s*$/, '');
     kicker = pick(Q.issueFinder.copy.matchLabel, L).toUpperCase();
     eyebrow = p('r.eyebrowIssue', L);
     const facts = (it.facts || []).slice(0, 3).map((f) => '<li class="x-fact">' +
-      (f.stat ? '<p class="x-fact__stat"><b>' + esc(f.stat.value) + '</b> <span>' + esc(pick(f.stat.label, L)) + '</span></p>' : '') +
+      (f.stat ? '<p class="x-fact__stat"><b>' + esc((L === 'es' && f.stat.valueEs) || f.stat.value) + '</b> <span>' + esc(pick(f.stat.label, L)) + '</span></p>' : '') +
       '<p class="x-fact__text">' + esc(pick(f.text, L)) + '</p>' +
-      (f.source ? '<p class="x-fact__src"><a class="link link--out" href="' + esc(f.source) + '" rel="noopener"><span>' + esc(pick(Q.ui.source, L) + ':') + '</span>&nbsp;<span lang="en" translate="no">' + esc(String(f.sourceName || '').split(',')[0]) + '</span></a></p>' : '') +
+      (f.source ? '<p class="x-fact__src"><a class="link link--out" href="' + esc(f.source) + '" rel="noopener"><span>' + esc(pick(Q.ui.source, L) + ':') + '</span>&nbsp;<span lang="en" translate="no">' + esc(String(f.sourceName || '').split(/[,:]/)[0].trim()) + '</span></a></p>' : '') +
       '</li>').join('');
     sections.push(['x-facts', pick(Q.issueFinder.copy.factsTitle, L), '<ul class="x-facts" data-real>' + facts + '</ul>']);
     sections.push(['x-acts', pick(Q.issueFinder.copy.actionsTitle, L), actions([it.action].concat(it.moreActions || []), L, pg)]);
@@ -148,7 +150,7 @@ function page(kind, id, L) {
       '        </div>',
       '      </div>',
       '    </section>',
-      '    <section class="section" aria-label="' + esc(name) + '">',
+      '    <section class="section">',
       '      <div class="wrap x-rbody">',
       sections.filter((s) => s[2]).map((s) => '        <section aria-labelledby="' + s[0] + '"><h2 id="' + s[0] + '">' + esc(s[1]) + '</h2>' + s[2] + '</section>').join('\n'),
       '      </div>',

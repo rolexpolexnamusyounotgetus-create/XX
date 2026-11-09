@@ -35,6 +35,12 @@
 .p-quiz .x-deck__mix > i:last-child { border-right:0;flex:1; }
 .p-quiz .x-deck__sticker { position:absolute;right:-12px;bottom:-16px;--sticker-size:46px;--rot:12deg; }
 @media (max-width: 599px) { .p-quiz .x-deck__line { display:none; } }
+/* phones: bigger, overlapping cards read as a hand of real result cards, not three thumbnails */
+@media (max-width: 959.98px) {
+  .p-quiz .x-deck { gap:0;padding-inline:4px; }
+  .p-quiz .x-deck__card { flex:0 0 37%;max-width:220px;margin-inline:-2.5%;padding:14px 14px 16px; }
+  .p-quiz .x-deck__name { font-size:clamp(20px, 4.6vw + 4px, 34px); }
+}
 @media (min-width: 960px) {
   .p-quiz .x-deck { display:block;height:470px;max-width:480px; }
   .p-quiz .x-deck__card { position:absolute;top:40px;left:50%;width:250px;max-width:none;padding:18px 18px 20px;gap:10px;border-radius:24px;box-shadow:10px 10px 0 var(--night); }
@@ -228,3 +234,12 @@
 .p-quiz .x-rhero { background:var(--c);color:var(--fg); }
 /* Chips here never animate their fill: a background-color transition made theme switches sample mid-fade. */
 .p-quiz .chip { transition:transform var(--dur-1) var(--ease-pop); }
+/* Long buttons wrap instead of pushing the result past 320 px; serious results never tilt. */
+.p-quiz .x-result { grid-template-columns:minmax(0, 1fr); }
+@media (max-width: 959.98px) { .p-quiz .x-result__grid { grid-template-columns:minmax(0, 1fr); } }
+.p-quiz .x-result .btn { white-space:normal;text-wrap:balance; }
+.p-quiz .x-result[data-tone="calm"] .maker__frame { rotate:none; }
+.p-quiz .x-player__note { margin:0;padding:var(--sp-3) var(--sp-4);border:var(--bw) solid var(--edge);border-radius:var(--r-md);background:var(--surface);font-weight:700; }
+/* On phones the sticker sits above the name (it never reaches the name line), so the name gets the full width. */
+.p-quiz .x-result__hero > * { min-width:0; }
+@media (max-width: 759.98px) { .p-quiz .x-result__name { padding-right:0; } }

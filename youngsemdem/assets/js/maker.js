@@ -197,12 +197,15 @@
     controls.appendChild(h('div', { cls: 'maker__pair maker__pair--looks' }, [swField, stField]));
     // photo (cover)
     var photoId = id + '-photo';
+    // The native file control prints the browser's own "Choose File" (English on a Spanish page in many
+    // browsers); keep it focusable but hidden, and show a brand button label for it.
     var photoIn = h('input', { id: photoId, type: 'file', accept: 'image/*', cls: 'maker__file', 'aria-describedby': id + '-photo-hint' });
+    var photoPick = h('label', { 'for': photoId, cls: 'btn btn--ghost btn--sm maker__file-btn', text: M('labels.photoPick') || M('labels.photo') });
     var photoRm = h('button', { type: 'button', cls: 'btn btn--quiet btn--sm', hidden: true, 'data-maker-photo-remove': '', text: M('labels.photoRemove') });
     var photoField = h('div', { cls: 'field maker__field', 'data-field': 'photo' }, [
       h('label', { cls: 'field__label', 'for': photoId, text: M('labels.photo') }),
       h('p', { cls: 'field__hint', id: id + '-photo-hint', text: M('labels.photoHint') }),
-      h('div', { cls: 'cluster cluster--sm' }, [photoIn, photoRm])
+      h('div', { cls: 'cluster cluster--sm' }, [photoIn, photoPick, photoRm])
     ]);
     controls.appendChild(photoField);
     // slide (rewind)
@@ -417,10 +420,14 @@
     }
 
     // ------------------------------------------------ get your link (a ref is minted only by joining)
+    var linkState = '';
     function paintLinkBox() {
-      linkBox.textContent = '';
       var isMember = false;
       try { isMember = !!(YSD.members && YSD.members.isMember()); } catch (e) {}
+      // Re-renders (name, size, colour...) must not wipe a half-filled join form: rebuild only on a state change.
+      if (linkState === (isMember ? 'member' : 'ask')) return;
+      linkState = isMember ? 'member' : 'ask';
+      linkBox.textContent = '';
       if (isMember) {
         linkBox.setAttribute('data-state', 'done');
         linkBox.appendChild(h('p', { cls: 'maker__link-done', text: M('getLink.done') }));
@@ -464,15 +471,12 @@
       }
       form.appendChild(field('firstName', M('labels.firstName'), 'text', 'given-name', '', true));
       form.appendChild(field('contact', M('getLink.contact'), 'text', 'email', M('getLink.contactHint'), true));
-      var ageSet = h('fieldset', { cls: 'field field--choice' }, [h('legend', { cls: 'field__label', text: M('getLink.age') })]);
-      var ageRow = h('div', { cls: 'chip-row' });
-      [['teen', M('getLink.ageTeen')], ['adult', M('getLink.ageAdult')]].forEach(function (a) {
-        ageRow.appendChild(h('label', { cls: 'chip' }, [h('input', { type: 'radio', name: 'ageBand', value: a[0], required: true }), a[1]]));
-      });
-      ageSet.appendChild(ageRow);
-      ageSet.appendChild(h('p', { cls: 'field__hint', text: M('getLink.teenNote') }));
-      ageSet.appendChild(h('p', { cls: 'field__error', id: fid + 'age-e' }));
-      form.appendChild(ageSet);
+      // A neutral age screen (docs/legal/MINORS_POLICY.md, FTC COPPA FAQ H.3): a free-entry number, never a
+      // list of allowed ages. Under 14 stores nothing; under 18 gets a random-style code from members.js.
+      var ageField = field('age', M('getLink.age'), 'text', 'off', M('getLink.teenNote'), true);
+      var ageIn = ageField.querySelector('input');
+      ageIn.setAttribute('inputmode', 'numeric'); ageIn.setAttribute('maxlength', '3'); ageIn.setAttribute('pattern', '[0-9]*');
+      form.appendChild(ageField);
       form.appendChild(h('input', { type: 'text', name: '_hp', tabindex: '-1', autocomplete: 'off', 'aria-hidden': 'true', cls: 'u-visually-hidden' }));
       form.appendChild(h('p', { cls: 'field__hint maker__privacy', text: M('getLink.privacy') }));
       form.appendChild(h('div', { cls: 'btn-row' }, [h('button', { type: 'submit', cls: 'btn btn--violet', text: M('getLink.submit') })]));
@@ -481,22 +485,29 @@
         e.preventDefault();
         var els = form.elements;
         var first = String(els.firstName.value || '').trim(), contact = String(els.contact.value || '').trim();
-        var band = form.querySelector('input[name="ageBand"]:checked');
+        var ageRaw = String(els.age.value || '').trim();
         var profile = { firstName: first, _hp: els._hp.value };
         if (contact.indexOf('@') >= 0) profile.email = contact; else profile.phone = contact;
-        // The band is the only age we ask for. Under 18 = a stand-in age below 18, so members.js gives a
-        // random-style code (a teen's name never appears in a link). Adults leave age unknown.
-        if (band && band.value === 'teen') profile.age = 17;
+        if (/^\d{1,3}$/.test(ageRaw)) profile.age = parseInt(ageRaw, 10);
         var v = YSD.members.validate(profile), errs = {};
+        if (v.errors.age === 'too_young') {
+          // Too young to join: say so kindly, clear what was typed and store nothing.
+          box.textContent = '';
+          var young = h('p', { cls: 'notice notice--info', tabindex: '-1', text: (YSD.t ? YSD.t('error.age.too_young', { minAge: YSD.cfg ? YSD.cfg('org.minAge', 14) : 14 }) : '') });
+          box.appendChild(young);
+          var opener = linkBox.querySelector('[aria-expanded]'); if (opener) { opener.setAttribute('aria-expanded', 'true'); opener.disabled = true; }
+          young.focus();
+          return;
+        }
         if (v.errors.firstName) errs.firstName = M('errors.firstName');
         if (v.errors.email || v.errors.phone || !contact) errs.contact = M('getLink.contactError');
-        if (!band) errs.age = M('getLink.ageError');
+        if (profile.age == null) errs.age = M('getLink.ageError');
         ['firstName', 'contact', 'age'].forEach(function (k) {
-          var err = d.getElementById(fid + k + '-e'), input = k === 'age' ? null : els[k];
+          var err = d.getElementById(fid + k + '-e'), input = els[k];
           if (err) err.textContent = errs[k] || '';
           if (input) { if (errs[k]) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid'); }
         });
-        var firstBad = errs.firstName ? els.firstName : errs.contact ? els.contact : errs.age ? form.querySelector('input[name="ageBand"]') : null;
+        var firstBad = errs.firstName ? els.firstName : errs.contact ? els.contact : errs.age ? els.age : null;
         if (firstBad) { firstBad.focus(); return; }
         try { YSD.members.join(profile); } catch (x) { toast(M('toast.failed'), 'error'); return; }
         if (!st.name && first && NAME_RE.test(first) && first.length <= 20) { st.name = first; nameIn.value = first; }

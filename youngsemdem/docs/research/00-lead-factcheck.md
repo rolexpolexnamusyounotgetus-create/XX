@@ -9,7 +9,7 @@ Checked by the lead on Mon Nov 9, 2026, after reports 01-06 landed. These ruling
 - **The AI assistant is cut.** No chatbot, no "Ask" helper, no LLM features on the site. This overrides report 06's suggestion of an opt-in Claude module.
 
 ## Election results: usable, with "unofficial" until certified
-- **Seminole County went for the Democrat for governor.** David Jolly took about 54.1% to Byron Donalds' 44.5% in Seminole, per unofficial returns. Statewide, Donalds won about 50.0% to 48.7% (AP). Copy may say "Seminole voted blue for governor on Nov 3" and should mark the figures unofficial until certified.
+- **Seminole County went for the Democrat for governor.** David Jolly took about 54.1% to Byron Donalds' 44.6% in Seminole (WFTV: 54.08% to 44.59%), per unofficial returns. Round to "about 54% to 45%" in copy. Statewide, Donalds won about 50.0% to 48.7% (AP). Copy may say "Seminole voted blue for governor on Nov 3" and should mark the figures unofficial until certified.
   - [Florida Phoenix, Nov 3, 2026](https://floridaphoenix.com/2026/11/03/donalds-defeats-jolly-becoming-floridas-first-black-governor/)
   - [WFTV county results](https://www.wftv.com/news/local/florida-election-results-by-county-explore-governor-us-senate-races/M4I4A3YEGJH6BJ3TSVPISSSXHA/)
   - [Seminole SOE unofficial summary](https://voteseminole.gov/wp-content/uploads/2026/11/Unofficial1.pdf). This PDF covers only part of the vote count, so don't quote its percentages.

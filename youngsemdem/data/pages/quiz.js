@@ -40,6 +40,7 @@ window.YSD_DATA.pages.quiz = {
   'player.skip': { en: 'Skip this one', es: 'Saltar esta' },
   'player.quit': { en: 'Start over', es: 'Empezar de nuevo' },
   'player.picked': { en: 'Picked', es: 'Elegida' },
+  'player.needOne': { en: 'Pick at least one answer so we can match you. Skip the rest if you like.', es: 'Elige al menos una respuesta para encontrar tu resultado. Las demás las puedes saltar.' },
 
   'result.cardTitle': { en: 'Your card', es: 'Tu tarjeta' },
   'result.cardSub': { en: 'Send it to one person you’d actually text.', es: 'Mándasela a una persona a quien de verdad le escribirías.' },
@@ -55,7 +56,7 @@ window.YSD_DATA.pages.quiz = {
   'types.sub': { en: 'No ranking, no best type. A crew needs all six.', es: 'No hay ranking ni modo mejor. Un equipo necesita los seis.' },
   'issues.eyebrow': { en: 'THE NINE ISSUES', es: 'LOS NUEVE TEMAS' },
   'issues.title': { en: '9 issues. One is yours.', es: '9 temas. Uno es el tuyo.' },
-  'issues.sub': { en: 'Each one comes with Seminole numbers, sources linked, and three things you can do this month.', es: 'Cada uno trae datos de Seminole con sus fuentes y tres cosas que puedes hacer este mes.' },
+  'issues.sub': { en: 'Each one comes with local facts, sources linked, and three things you can do this month.', es: 'Cada uno trae datos locales con sus fuentes y tres cosas que puedes hacer este mes.' },
   'issues.all': { en: 'See all 9 issues', es: 'Mira los 9 temas' },
 
   'cover.eyebrow': { en: 'ME, ON THE COVER', es: 'YO, EN LA PORTADA' },

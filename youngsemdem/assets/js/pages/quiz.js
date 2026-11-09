@@ -19,6 +19,8 @@
   function fill(s, v) { return String(s == null ? '' : s).replace(/\{(\w+)\}/g, function (m, k) { return v && v[k] != null ? String(v[k]) : m; }); }
   function longest(s) { return String(s || '').split(/\s+/).reduce(function (m, w) { return Math.max(m, w.length); }, 0); }
   function cap(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
+  function statVal(st) { return (L === 'es' && st.valueEs) || st.value; }
+  function srcName(f) { return String(f.sourceName || '').split(/[,:]/)[0].trim(); }
   function $(s, r) { return (r || d).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || d).querySelectorAll(s)); }
   function byId(a, id) { for (var i = 0; i < (a || []).length; i++) if (a[i] && a[i].id === id) return a[i]; return null; }
@@ -182,7 +184,13 @@
   // ---------------------------------------------------------------- finish + result
   function finish() {
     var quiz = QUIZ[st.id], r = ysdScoreQuiz(quiz, st.answers);
-    if (!r.match) { start(st.id, st.mode); return; }
+    if (!r.match) {
+      start(st.id, st.mode);
+      var note = h('p', { cls: 'x-player__note', text: t('player.needOne') });
+      player.insertBefore(note, $('.x-q', player));
+      if (YSD.ui && YSD.ui.toast) YSD.ui.toast(t('player.needOne'));
+      return;
+    }
     st.result = r; st.rank = 0;
     try { if (YSD.store) YSD.store.set('quiz:' + quiz.id + ':result', { resultId: r.match, undertone: r.undertone, ts: Date.now() }); } catch (e) {}
     track('quiz_complete', { quiz: quiz.id, result: r.match });
@@ -267,9 +275,9 @@
       var it = issueItem(id), fl = h('ul', { cls: 'x-facts', 'data-real': '' });
       (it.facts || []).slice(0, 3).forEach(function (f) {
         var li = h('li', { cls: 'x-fact' });
-        if (f.stat) li.appendChild(h('p', { cls: 'x-fact__stat' }, [h('b', { text: f.stat.value }), ' ', h('span', { text: pick(f.stat.label) })]));
+        if (f.stat) li.appendChild(h('p', { cls: 'x-fact__stat' }, [h('b', { text: statVal(f.stat) }), ' ', h('span', { text: pick(f.stat.label) })]));
         li.appendChild(h('p', { cls: 'x-fact__text', text: pick(f.text) }));
-        if (f.source) li.appendChild(h('p', { cls: 'x-fact__src' }, [h('a', { cls: 'link link--out', href: f.source, rel: 'noopener' }, [h('span', { text: pick(Q.ui.source) + ':' }), '\u00a0', h('span', { lang: 'en', translate: 'no', text: String(f.sourceName || '').split(',')[0] })])]));
+        if (f.source) li.appendChild(h('p', { cls: 'x-fact__src' }, [h('a', { cls: 'link link--out', href: f.source, rel: 'noopener' }, [h('span', { text: pick(Q.ui.source) + ':' }), '\u00a0', h('span', { lang: 'en', translate: 'no', text: srcName(f) })])]));
         fl.appendChild(li);
       });
       info.appendChild(h('section', { 'aria-labelledby': 'x-facts' }, [h('h3', { id: 'x-facts', text: pick(copy.factsTitle) }), fl]));
@@ -327,14 +335,24 @@
   }
   function nextEvent(series) {
     var E = DATA.events, now = Date.now(), best = null;
+    // the January drop (data/events.js schedule.drop): events after the cutoff stay unannounced until it opens
+    var dr = E && E.schedule && E.schedule.drop, closed = !!(dr && now < Date.parse(dr.opensAt) && !/[?&]drop=open(&|$)/.test(String(w.location.search)));
     ((E && E.items) || []).forEach(function (e) {
       if (series.indexOf(e.series) < 0 || e.status === 'cancelled' || Date.parse(e.start) < now) return;
+      if (closed && Date.parse(e.start) > Date.parse(dr.cutoff)) return;
       if (!best || Date.parse(e.start) < Date.parse(best.start)) best = e;
     });
     return best;
   }
 
   // ---------------------------------------------------------------- galleries, peeks, deck
+  // "Rent and housing" under "Rent + housing" says nothing new: compare the words that matter.
+  function sameWords(a, b) {
+    var stop = { and: 1, the: 1, y: 1, de: 1, la: 1, el: 1, los: 1, las: 1, '+': 1 };
+    function words(x) { return String(x || '').toLowerCase().replace(/[^\p{L}\p{N}+ ]/gu, ' ').split(/\s+/).filter(function (w) { return w && !stop[w]; }); }
+    var bw = words(b);
+    return words(a).every(function (w) { return bw.indexOf(w) >= 0; });
+  }
   function typeCard(r) {
     var dark = !!DARK[r.color];
     return h('li', {}, [h('a', { cls: 'x-type', href: resultPath('show-up', r.id), style: { '--c': colorVar(r.color), '--fg': dark ? 'var(--cream)' : 'var(--night)' } }, [
@@ -353,7 +371,7 @@
         var res = Q.issueFinder.results[it.id]; if (!res) return;
         ig.appendChild(h('li', {}, [h('a', { cls: 'x-issue', href: resultPath('issue', it.id), style: { '--c': colorVar(it.color, 'issue'), '--fg': DARK[it.color] ? 'var(--cream)' : 'var(--night)' } }, [
           h('span', { cls: 'x-issue__short', text: cap(pick(it.short)) }),
-          h('span', { cls: 'x-issue__title', text: pick(it.title) })
+          sameWords(pick(it.title), pick(it.short)) ? null : h('span', { cls: 'x-issue__title', text: pick(it.title) })
         ])]));
       });
     }
@@ -384,7 +402,13 @@
     if (el.hasAttribute('data-opt')) { answer(el.getAttribute('data-opt')); return; }
     if (el.hasAttribute('data-quiz-back')) { back(); return; }
     if (el.hasAttribute('data-quiz-skip')) { skip(); return; }
-    if (el.hasAttribute('data-quiz-quit')) { player.hidden = true; resultEl.hidden = true; intro(true); var s = $('#show-up'); if (s) s.scrollIntoView({ block: 'start' }); return; }
+    if (el.hasAttribute('data-quiz-quit')) {
+      player.hidden = true; resultEl.hidden = true; intro(true);
+      var s = $('#' + (st.id === 'issue' ? 'issue' : 'show-up')) || $('#show-up'), sb = s && $('[data-quiz-start]', s);
+      if (s) s.scrollIntoView({ block: 'start' });
+      if (sb) sb.focus({ preventScroll: true });
+      return;
+    }
     if (el.hasAttribute('data-quiz-next')) { st.rank = (st.rank + 1) % st.result.ranked.length; if (!(st.result.fit[st.result.ranked[st.rank]] > 0)) st.rank = 0; paintResult(false); }
   });
 
