@@ -1,4 +1,4 @@
-# netlify.toml: Netlify settings for the Young Seminole Democrats site.
+# netlify.toml: Netlify settings for the Young Democrats of Seminole County site.
 # Cloudflare Pages ignores this file; shared rules live in _headers and _redirects.
 #
 # Git deploys from the monorepo: in Netlify > Site configuration > Build & deploy, set

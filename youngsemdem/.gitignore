@@ -1,0 +1,33 @@
+# Young Seminole Democrats site: generated and local-only files.
+
+# Node (Playwright is preinstalled globally; nothing is required locally)
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Tool output
+tools/check_report.json
+tools/.cache/
+test-results/
+playwright-report/
+__pycache__/
+*.pyc
+
+# Local config override (assets/js/config.js documents it). Production values go in config.js.
+assets/js/config.local.js
+
+# Secrets for local function runs: never commit
+.env
+.env.*
+.dev.vars
+
+# Host CLIs
+.netlify/
+.wrangler/
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/

@@ -1,0 +1,27 @@
+{
+  "name": "youngsemdem",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Young Seminole Democrats demo site: plain static HTML, CSS and vanilla JS (no build step).",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "serve": "python3 -m http.server 8000",
+    "check": "node tools/check_site.js",
+    "check:strict": "node tools/check_site.js --strict",
+    "sync": "python3 tools/sync_partials.py",
+    "sync:check": "python3 tools/sync_partials.py --check",
+    "csp": "node tools/csp.js --write",
+    "csp:check": "node tools/csp.js --check",
+    "sitemap": "python3 tools/make_sitemap.py",
+    "credits": "python3 tools/credits.py",
+    "credits:check": "python3 tools/credits.py --check",
+    "manifest": "node tools/manifest.js --write",
+    "manifest:check": "node tools/manifest.js --check",
+    "preflight": "python3 tools/sync_partials.py --check && node tools/csp.js --check && node tools/manifest.js --check && node tools/check_site.js",
+    "test": "node tests/infra/core.test.js && node tests/infra/video.test.js && node tests/infra/tooling.test.js",
+    "test:tooling": "node tests/infra/tooling.test.js"
+  }
+}

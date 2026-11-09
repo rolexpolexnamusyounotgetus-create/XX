@@ -1,5 +1,5 @@
 /*!
- * Young Seminole Democrats: service worker (tooling workstream; docs/infra/tooling.md).
+ * Young Democrats of Seminole County: service worker (tooling workstream; docs/infra/tooling.md).
  *
  * Registered by assets/js/sw-register.js (only on http/https, never on file://, and not in demo
  * mode unless YSD_CONFIG.pwa.serviceWorkerInDemo is true).
@@ -36,6 +36,7 @@ var CROSS_ORIGIN_OK = ['https://fonts.googleapis.com', 'https://fonts.gstatic.co
 var ASSET_EXT = /\.(?:js|mjs|css|json|webmanifest|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf)$/i;
 var MEDIA_EXT = /\.(?:mp4|m4v|mov|webm|ogv|ogg|mp3|m4a|wav|aac|m3u8|mpd|ts)$/i;
 var offlineTried = false;
+var retired = false;   // set by CLEAR_CACHES: the page is unregistering this worker
 
 function noop() {}
 
@@ -202,7 +203,7 @@ self.addEventListener('activate', function (event) {
 
 self.addEventListener('fetch', function (event) {
   var req = event.request;
-  if (req.method !== 'GET') return;
+  if (retired || req.method !== 'GET') return;
   var url;
   try { url = new URL(req.url); } catch (e) { return; }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
@@ -229,6 +230,7 @@ self.addEventListener('message', function (event) {
   var data = event.data || {};
   if (data.type === 'SKIP_WAITING') self.skipWaiting();
   else if (data.type === 'CLEAR_CACHES') {
+    retired = true;
     event.waitUntil(caches.keys().then(function (names) {
       return Promise.all(names.filter(function (n) { return n.indexOf(PREFIX) === 0; }).map(function (n) { return caches['delete'](n); }));
     }).then(function () {

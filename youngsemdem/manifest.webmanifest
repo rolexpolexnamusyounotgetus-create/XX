@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Young Seminole Democrats",
-  "short_name": "YSD",
-  "description": "Democrats 40 and under in Seminole County, Florida.",
+  "name": "Young Democrats of Seminole County",
+  "short_name": "Young Dems",
+  "description": "The Young Democrats of Seminole County, Florida: ages 14 to 39.",
   "lang": "en",
   "dir": "ltr",
   "start_url": "./",

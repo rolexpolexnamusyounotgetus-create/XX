@@ -1,5 +1,5 @@
 /*!
- * Young Seminole Democrats: service worker registration (YSD.sw). Tooling workstream;
+ * Young Democrats of Seminole County: service worker registration (YSD.sw). Tooling workstream;
  * API in docs/infra/tooling.md.
  *
  * Load after assets/js/config.js (optional: works without it). Registers <site root>/sw.js on
@@ -152,6 +152,15 @@
     });
   }
 
+  /** Delete this site's caches from the page too (requests made while unregistering refill them). */
+  function deletePageCaches() {
+    var c = w.caches;
+    if (!c || typeof c.keys !== 'function') return Promise.resolve();
+    return c.keys().then(function (names) {
+      return Promise.all(names.filter(function (n) { return n.indexOf('ysd-') === 0; }).map(function (n) { return c['delete'](n); }));
+    })['catch'](function () {});
+  }
+
   /** Remove registrations of this site's sw.js only (other apps on the origin are left alone). */
   function unregister() {
     if (!('serviceWorker' in nav) || !protocolOk() || typeof nav.serviceWorker.getRegistrations !== 'function') return Promise.resolve(0);
@@ -163,9 +172,10 @@
       return Promise.all(mine.map(function (r) {
         return clearCaches(r).then(function () { return r.unregister(); });
       })).then(function () {
-        if (mine.length) log('unregistered', mine.length);
+        if (!mine.length) return 0;
+        log('unregistered', mine.length);
         api.registration = null;
-        return mine.length;
+        return deletePageCaches().then(function () { return mine.length; });
       });
     })['catch'](function () { return 0; });
   }

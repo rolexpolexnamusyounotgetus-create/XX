@@ -1,4 +1,4 @@
-# robots.txt: Young Seminole Democrats site.
+# robots.txt: Young Democrats of Seminole County site.
 #
 # The DEMO is kept out of search results with an "X-Robots-Tag: noindex" header (see _headers),
 # not with "Disallow: /" here: a crawler must be able to fetch a page to see noindex, and

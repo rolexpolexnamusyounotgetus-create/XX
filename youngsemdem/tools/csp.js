@@ -15,14 +15,19 @@
  *     chosen by integrations.videoProvider or --video (default: both, since the provider is a
  *     server env var the browser config does not know).
  *   - analytics script and beacon hosts for provider 'plausible' or 'cloudflare'.
- *   - YSD_CONFIG.csp, if present: { 'directive-name': ['source', ...] } extra sources.
- *   - --add "directive source [source...]" on the command line (repeatable).
+ *   - Cloudflare Turnstile (challenges.cloudflare.com) when integrations.turnstileSiteKey (or
+ *     integrations.turnstile.siteKey) is set.
+ *   - YSD_CONFIG.csp, if present: { 'directive-name': ['source', ...] } extra sources, plus
+ *     csp.remove: { 'directive-name': ['source', ...] } to drop base sources (for example the
+ *     Google Fonts and Unsplash hosts once fonts and photos are self-hosted).
+ *   - --add "directive source [source...]" and --remove "directive source [source...]" on the
+ *     command line (repeatable).
  *
  * CLI:
  *   node tools/csp.js            print the policy
  *   node tools/csp.js --write    rewrite the Content-Security-Policy line in _headers
  *   node tools/csp.js --check    exit 1 if _headers differs from the generated policy
- *   options: --root DIR, --headers FILE, --video cloudflare|mux|both|none, --add "..."
+ *   options: --root DIR, --headers FILE, --video cloudflare|mux|both|none, --add "...", --remove "..."
  *
  * Module: const { buildPolicy, serialize, syncHeaders } = require('./csp');
  *
@@ -128,14 +133,28 @@ function buildPolicy(conf, opts) {
     add(policy, 'connect-src', 'https://cloudflareinsights.com');
   }
 
+  // Cloudflare Turnstile widget (anti-abuse on uploads/joins), if a site key is configured.
+  if (cfg(conf, 'integrations.turnstileSiteKey', '') || cfg(conf, 'integrations.turnstile.siteKey', '')) {
+    add(policy, 'script-src', 'https://challenges.cloudflare.com');
+    add(policy, 'frame-src', 'https://challenges.cloudflare.com');
+  }
+
   const extra = cfg(conf, 'csp', null);
   if (extra && typeof extra === 'object') {
-    for (const d of Object.keys(extra)) add(policy, d, extra[d]);
+    for (const d of Object.keys(extra)) if (d !== 'remove') add(policy, d, extra[d]);
   }
-  for (const line of opts.add || []) {
+  const parse = (flag, line) => {
     const parts = String(line).trim().split(/\s+/);
-    if (parts.length < 2) throw new Error('--add needs "directive source [source...]", got "' + line + '"');
-    add(policy, parts[0], parts.slice(1));
+    if (parts.length < 2) throw new Error(flag + ' needs "directive source [source...]", got "' + line + '"');
+    return parts;
+  };
+  for (const line of opts.add || []) { const p = parse('--add', line); add(policy, p[0], p.slice(1)); }
+  const removals = [];
+  const rm = extra && extra.remove && typeof extra.remove === 'object' ? extra.remove : {};
+  for (const d of Object.keys(rm)) removals.push([d].concat(rm[d]));
+  for (const line of opts.remove || []) removals.push(parse('--remove', line));
+  for (const [d, ...srcs] of removals) {
+    if (policy[d]) policy[d] = policy[d].filter((x) => srcs.indexOf(x) < 0);
   }
   return policy;
 }
@@ -165,7 +184,7 @@ function syncHeaders(text, csp) {
 
 function main(argv) {
   let root = ROOT, headersFile = '', mode = 'print', video = '';
-  const adds = [];
+  const adds = [], removes = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--root') root = path.resolve(argv[++i]);
@@ -174,8 +193,9 @@ function main(argv) {
     else if (a === '--check') mode = 'check';
     else if (a === '--video') video = argv[++i];
     else if (a === '--add') adds.push(argv[++i]);
+    else if (a === '--remove') removes.push(argv[++i]);
     else if (a === '-h' || a === '--help') {
-      process.stdout.write('usage: node tools/csp.js [--write|--check] [--root DIR] [--headers FILE] [--video cloudflare|mux|both|none] [--add "directive source..."]\n');
+      process.stdout.write('usage: node tools/csp.js [--write|--check] [--root DIR] [--headers FILE] [--video cloudflare|mux|both|none] [--add "directive source..."] [--remove "directive source..."]\n');
       return 0;
     } else { process.stderr.write('csp: unknown argument ' + a + '\n'); return 2; }
   }
@@ -183,7 +203,7 @@ function main(argv) {
   let conf;
   try { conf = readConfig(root) || {}; } catch (e) { process.stderr.write('csp: config error: ' + e.message + '\n'); return 2; }
   let csp;
-  try { csp = serialize(buildPolicy(conf, { video, add: adds })); } catch (e) { process.stderr.write('csp: ' + e.message + '\n'); return 2; }
+  try { csp = serialize(buildPolicy(conf, { video, add: adds, remove: removes })); } catch (e) { process.stderr.write('csp: ' + e.message + '\n'); return 2; }
   if (mode === 'print') { process.stdout.write(csp + '\n'); return 0; }
   if (!fs.existsSync(headersFile)) { process.stderr.write('csp: ' + headersFile + ' not found\n'); return 2; }
   const res = syncHeaders(fs.readFileSync(headersFile, 'utf8'), csp);
