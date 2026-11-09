@@ -1,8 +1,8 @@
 /**
  * Young Seminole Democrats: production video upload endpoint (Netlify Function, CommonJS).
- * Netlify path: /.netlify/functions/video-upload. Map /api/video-upload to it with a redirect:
- *   [[redirects]] from = "/api/video-upload"  to = "/.netlify/functions/video-upload"  status = 200
- * (or point YSD_CONFIG.integrations.videoUploadEndpoint at /.netlify/functions/video-upload).
+ * Netlify path: /.netlify/functions/video-upload. netlify.toml rewrites /api/* to
+ * /.netlify/functions/:splat, so YSD_CONFIG.integrations.videoUploadEndpoint = '/api/video-upload'
+ * works on both hosts.
  *
  * Same protocol, environment variables and core code as functions/api/video-upload.js (the
  * Cloudflare Pages twin): see that file's header and docs/infra/video.md. Set the variables in
