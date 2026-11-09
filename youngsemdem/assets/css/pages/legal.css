@@ -111,6 +111,12 @@ html.js .p-legal .x-lwrap[data-legal-pending] { visibility:hidden;min-height:110
 .p-legal .x-device__confirm-text { line-height:1.5; }
 .p-legal .x-device__confirm-text:focus { outline:3px solid var(--focus);outline-offset:3px;border-radius:4px; }
 .p-legal .x-device__keeps { font-size:var(--fs-small);color:var(--text-muted); }
+/* Desktop: the panel spans the column, words on the left and the live list on the right (no half-empty row) */
+@media (min-width: 1024px) {
+  .p-legal .x-device { max-width:none;grid-template-columns:minmax(0, 1fr) minmax(0, 1.15fr);grid-template-rows:auto auto auto auto 1fr;grid-template-areas:"eye list" "title list" "sub list" "act list" "keeps list";column-gap:var(--sp-8);align-items:start; }
+  .p-legal .x-device__eyebrow { grid-area:eye; } .p-legal .x-device__title { grid-area:title; } .p-legal .x-device__sub { grid-area:sub; }
+  .p-legal .x-device__list { grid-area:list;margin-block:0; } .p-legal .x-device__actions { grid-area:act; } .p-legal .x-device__keeps { grid-area:keeps; }
+}
 
 /* ---- sources */
 .p-legal .x-sources { margin-top:var(--sp-4);border:1px solid var(--line);border-radius:var(--r-md); }

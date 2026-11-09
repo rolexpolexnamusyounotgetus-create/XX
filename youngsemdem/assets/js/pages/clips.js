@@ -166,8 +166,17 @@
     var replay = e.type === 'keydown' && /^(j|J|k|K|l|L|m|M|ArrowDown|ArrowUp)$/.test(e.key) && !e.altKey && !e.ctrlKey && !e.metaKey &&
       !(e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable], dialog')) ? e : null;
     attachFeed().then(function (f) {
-      // The first j/k press only loaded feed.js: replay it so the feed moves on the first try.
-      if (f && replay) (replay.target || d).dispatchEvent(new KeyboardEvent('keydown', { key: replay.key, code: replay.code, bubbles: true, cancelable: true }));
+      // The first j/k press only loaded feed.js: replay it so the feed moves on the first try, once the
+      // feed knows which clip is in view (its first "change"), or after 600 ms if none is.
+      if (!f || !replay) return;
+      var sent = false, off = null;
+      function send() {
+        if (sent) return; sent = true; if (off) setTimeout(off, 0);
+        (replay.target || d).dispatchEvent(new KeyboardEvent('keydown', { key: replay.key, code: replay.code, bubbles: true, cancelable: true }));
+      }
+      if (f.index >= 0) return send();
+      off = f.on('change', send);
+      setTimeout(send, 600);
     });
   }
   function stopIntent() {

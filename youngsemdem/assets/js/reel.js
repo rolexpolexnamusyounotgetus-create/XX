@@ -362,7 +362,8 @@
     var page = (lang() === 'es' ? 'es/' : '') + 'clips.html#clip-' + clip.id;
     var url = YSD.share && YSD.share.url ? YSD.share.url(page) : String(w.location.href).split('#')[0] + '#clip-' + clip.id;
     var text = core('share.clip.sms', label('reel.shareText') + ' {link}', { link: '' }).replace(/\s+$/, '');
-    if (clip.demo) text += ' (' + core('demo.badgeClip', label('demo.clip')) + ')';
+    // the link follows the text, so the DEMO label goes before a trailing colon: "Worth a minute (DEMO clip): <link>"
+    if (clip.demo) { var colon = /:$/.test(text); text = text.replace(/:$/, '') + ' (' + core('demo.badgeClip', label('demo.clip')) + ')' + (colon ? ':' : ''); }
     var title = info(clip).title;
     var p = YSD.share && YSD.share.native ? YSD.share.native({ title: title, text: text, url: url, channel: 'share' }) : Promise.resolve('failed');
     return p.then(function (res) {
