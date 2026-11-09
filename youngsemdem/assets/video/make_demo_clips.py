@@ -68,7 +68,7 @@ PHOTOS = {
     'park': {
         # Replaced the rooftop-party selfie (1758272134088, drink in hand), banned by docs/BRIEF.md 0.
         'id': '1758275557330-cfd545444dc3',
-        'page': 'https://images.unsplash.com/photo-1758275557330-cfd545444dc3',
+        'page': 'https://unsplash.com/@silverkblack',  # photographer profile; the photo page slug is unconfirmed
         'photographer': 'Vitaly Gariev', 'handle': '@silverkblack',
         'description': 'A diverse group of friends taking a selfie together in a sunny park.',
     },

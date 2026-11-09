@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-page="styleguide">
+<html lang="en" data-page="styleguide" data-es="none">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -13,6 +13,7 @@
   <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
   <!-- @head --><meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#6A2BFF">
+<script src="assets/boot.js"></script>
 <link rel="canonical" href="/styleguide">
 <meta property="og:url" content="/styleguide">
 <meta property="og:site_name" content="Young Democrats of Seminole County">
@@ -22,23 +23,20 @@
 <link rel="icon" href="assets/icons/icon-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="preload" href="assets/fonts/bricolage-800-wdth.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/fonts/atkinson-next-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/tokens.css">
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/components.css">
-<link rel="stylesheet" href="assets/css/utilities.css">
-<script src="assets/boot.js"></script><!-- /@head -->
+<link rel="stylesheet" href="assets/css/utilities.css"><!-- /@head -->
   <link rel="stylesheet" href="assets/css/pages/styleguide.css">
 </head>
 <body class="p-styleguide">
   <!-- @demo-banner --><a class="skip-link" href="#main" data-t="a11y.skip">Skip to main content</a>
-<div class="demo-banner" role="note" aria-label="Demo notice" data-t-aria-label="demo.badge">
+<aside class="demo-banner" aria-label="DEMO notice" data-t-aria-label="demo.noticeLabel">
   <div class="wrap demo-banner__inner">
     <span class="tag tag--demo">DEMO</span>
     <p class="demo-banner__text"><span class="demo-banner__long" data-t="demo.banner">DEMO preview for the Young Democrats of Seminole County, pending the chapter's sign-off. Anything marked DEMO is made up, and forms don't send anything.</span><span class="demo-banner__short" data-t="demo.bannerShort">DEMO preview. Forms don't send anything.</span> <a href="about.html#whats-real" data-t="demo.bannerMore">What's real?</a></p>
   </div>
-</div><!-- /@demo-banner -->
+</aside><!-- /@demo-banner -->
   <!-- @header --><header class="site-header">
   <div class="wrap site-header__inner">
     <a class="brand" href="index.html" data-no-current>
@@ -100,14 +98,13 @@
         <p class="eyebrow eyebrow--pill">Young Democrats of Seminole County · style guide</p>
         <h1 class="h-hero kinetic" id="sg-title"><span class="kinetic__line">Saved Seat.</span> <span class="kinetic__line kinetic__hi">Style guide.</span></h1>
         <p class="sg-hero__rotor"><span class="u-visually-hidden">We're the friend who always knows the deadline, has a plan for Thursday, saves you a seat, explains the acronyms and remembers your name.</span><span aria-hidden="true">We're the friend who <span class="rotor rotor--bubble" data-rotor><span class="rotor__item">always knows the deadline.</span><span class="rotor__item">has a plan for Thursday.</span><span class="rotor__item">saves you a seat.</span><span class="rotor__item">explains the acronyms.</span><span class="rotor__item">remembers your name.</span></span></span></p>
-        <p class="lead">Every component in light and dark, with copy-paste markup. Quiet chrome, loud content: borders and hard shadows only on things you can tap or collect. Page builders copy from here, and add page-only styles under .p-&lt;page&gt;.</p>
+        <p class="lead">Every component, light and dark, with copy-paste markup. Quiet chrome, loud content.</p>
         <div class="btn-row"><a class="btn btn--primary btn--lg" href="#buttons">See the buttons</a><a class="btn btn--ghost btn--lg" href="#invite">See the invite</a></div>
-        <p class="small">Tokens: assets/css/tokens.css · Behaviour: assets/js/ui.js · Every DEMO label stays.</p>
+        <p class="small">Tokens: assets/css/tokens.css · Behaviour: assets/js/ui.js · Page-only styles go under .p-&lt;page&gt;. Every DEMO label stays.</p>
       </div>
       <div class="sg-hero__art">
         <span class="sticker sticker--lg" data-sticker="celery" aria-hidden="true"></span>
         <span class="sticker" data-sticker="gator" aria-hidden="true"></span>
-        <span class="word-sticker word-sticker--celery" aria-hidden="true">first time? perfect</span>
         <article class="invite invite--hero" style="--duo: var(--sky)">
           <div class="invite__cover">
             <figure class="photo photo--golden"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="eager" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock photo__tag">Stock photo · not members</span></figure>
@@ -279,68 +276,68 @@
   <table class="sg-table">
     <thead><tr><th scope="col">Pair</th><th scope="col">Ratio</th><th scope="col">Brief</th><th scope="col">Needs</th><th scope="col">Use</th></tr></thead>
     <tbody>
-      <tr><td><span class="sg-dot" style="background:#FFF6EA"></span><span class="sg-dot" style="background:#170B33"></span>ink on cream</td><td>17.33</td><td>17.33</td><td>AA</td><td>body text</td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFFFFF"></span><span class="sg-dot" style="background:#170B33"></span>ink on white</td><td>18.54</td><td>18.55</td><td>AA</td><td>cards, inputs</td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFF6EA"></span><span class="sg-dot" style="background:#574D70"></span>muted on cream</td><td>7.26</td><td>7.27</td><td>AA</td><td>hints, meta</td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFFFFF"></span><span class="sg-dot" style="background:#574D70"></span>muted on white</td><td>7.77</td><td>7.78</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#F3EADB"></span><span class="sg-dot" style="background:#574D70"></span>muted on surface-2</td><td>6.51</td><td>6.52</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFF6EA"></span><span class="sg-dot" style="background:#4B12D6"></span>link on cream</td><td>8.32</td><td>8.33</td><td>AA</td><td>links</td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFFFFF"></span><span class="sg-dot" style="background:#4B12D6"></span>link on white</td><td>8.91</td><td>8.91</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#6A2BFF"></span><span class="sg-dot" style="background:#FFFFFF"></span>white on violet</td><td>6.17</td><td>6.17</td><td>AA</td><td>hero sub, white buttons</td></tr>
-      <tr><td><span class="sg-dot" style="background:#6A2BFF"></span><span class="sg-dot" style="background:#FFF6EA"></span>cream on violet</td><td>5.76</td><td>5.77</td><td>AA</td><td>hero H1 line 1</td></tr>
-      <tr><td><span class="sg-dot" style="background:#6A2BFF"></span><span class="sg-dot" style="background:#C8F03C"></span>celery on violet</td><td>4.69</td><td>4.7</td><td>3:1</td><td>hero H1 line 2 (large)</td></tr>
-      <tr><td><span class="sg-dot" style="background:#C8F03C"></span><span class="sg-dot" style="background:#170B33"></span>ink on celery</td><td>14.11</td><td>14.12</td><td>AA</td><td>fills</td></tr>
-      <tr><td><span class="sg-dot" style="background:#4FD6FF"></span><span class="sg-dot" style="background:#170B33"></span>ink on sky</td><td>10.94</td><td>10.95</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#FF7AC6"></span><span class="sg-dot" style="background:#170B33"></span>ink on bubblegum</td><td>7.81</td><td>7.82</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#FF8B3D"></span><span class="sg-dot" style="background:#170B33"></span>ink on tangerine</td><td>7.96</td><td>7.96</td><td>AA</td><td>DEMO tags</td></tr>
-      <tr><td><span class="sg-dot" style="background:#FF4FA3"></span><span class="sg-dot" style="background:#170B33"></span>ink on hotpink</td><td>6.09</td><td>6.09</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#FF6B1A"></span><span class="sg-dot" style="background:#170B33"></span>ink on orange</td><td>6.50</td><td>6.51</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#00B3A6"></span><span class="sg-dot" style="background:#170B33"></span>ink on teal</td><td>7.06</td><td>7.07</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#7EE081"></span><span class="sg-dot" style="background:#170B33"></span>ink on mint</td><td>11.36</td><td>11.37</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFD23F"></span><span class="sg-dot" style="background:#170B33"></span>ink on sun</td><td>12.84</td><td>12.85</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#4B12D6"></span><span class="sg-dot" style="background:#FFFFFF"></span>white on violet-deep</td><td>8.91</td><td>8.91</td><td>AA</td><td>issue chips</td></tr>
-      <tr><td><span class="sg-dot" style="background:#4B12D6"></span><span class="sg-dot" style="background:#C8F03C"></span>celery on violet-deep</td><td>6.78</td><td>6.78</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#2236C9"></span><span class="sg-dot" style="background:#FFF6EA"></span>cream on lake</td><td>8.04</td><td>8.04</td><td>AA</td><td>serious band</td></tr>
-      <tr><td><span class="sg-dot" style="background:#170B33"></span><span class="sg-dot" style="background:#FFF6EA"></span>cream on night</td><td>17.33</td><td>17.33</td><td>AA</td><td>dark blocks</td></tr>
-      <tr><td><span class="sg-dot" style="background:#170B33"></span><span class="sg-dot" style="background:#C8F03C"></span>celery on night</td><td>14.11</td><td>14.12</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFF6EA"></span><span class="sg-dot" style="background:#B3261E"></span>error on cream</td><td>6.10</td><td>6.11</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFF6EA"></span><span class="sg-dot" style="background:#1E6B3A"></span>success on cream</td><td>6.09</td><td>6.1</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFFFFF"></span><span class="sg-dot" style="background:#6E6488"></span>placeholder on white</td><td>5.46</td><td>5.47</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#120826"></span><span class="sg-dot" style="background:#FFF6EA"></span>dark: text on bg</td><td>18.02</td><td>18.03</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#1E1240"></span><span class="sg-dot" style="background:#FFF6EA"></span>dark: text on surface</td><td>16.14</td><td>16.14</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#2A1B55"></span><span class="sg-dot" style="background:#FFF6EA"></span>dark: text on surface-2</td><td>14.15</td><td>14.15</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#120826"></span><span class="sg-dot" style="background:#CDC4EA"></span>dark: muted on bg</td><td>11.64</td><td>11.65</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#1E1240"></span><span class="sg-dot" style="background:#CDC4EA"></span>dark: muted on surface</td><td>10.42</td><td>10.43</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#2A1B55"></span><span class="sg-dot" style="background:#CDC4EA"></span>dark: muted on surface-2</td><td>9.14</td><td>9.15</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#120826"></span><span class="sg-dot" style="background:#C8F03C"></span>dark: celery link on bg</td><td>14.68</td><td>14.69</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#1E1240"></span><span class="sg-dot" style="background:#C8F03C"></span>dark: celery link on surface</td><td>13.14</td><td>13.15</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#120826"></span><span class="sg-dot" style="background:#FFB4A8"></span>dark: error on bg</td><td>11.34</td><td>11.34</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#120826"></span><span class="sg-dot" style="background:#8DE0A6"></span>dark: success on bg</td><td>12.26</td><td>12.26</td><td>AA</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#1E1240"></span><span class="sg-dot" style="background:#FFB4A8"></span>dark: error on surface</td><td>10.15</td><td></td><td>AA</td><td>field errors in dark cards</td></tr>
-      <tr><td><span class="sg-dot" style="background:#1E1240"></span><span class="sg-dot" style="background:#A79FC2"></span>dark: placeholder on surface</td><td>6.89</td><td></td><td>AA</td><td>inputs in dark</td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFFFFF"></span><span class="sg-dot" style="background:#6E6488"></span>control border on white (UI 3:1)</td><td>5.46</td><td></td><td>3:1</td><td>input borders</td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFF6EA"></span><span class="sg-dot" style="background:#6E6488"></span>control border on cream (UI 3:1)</td><td>5.10</td><td></td><td>3:1</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#1E1240"></span><span class="sg-dot" style="background:#A79FC2"></span>dark: control border on surface (UI 3:1)</td><td>6.89</td><td></td><td>3:1</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#120826"></span><span class="sg-dot" style="background:#A79FC2"></span>dark: control border on bg (UI 3:1)</td><td>7.70</td><td></td><td>3:1</td><td></td></tr>
-      <tr><td><span class="sg-dot" style="background:#6A2BFF"></span><span class="sg-dot" style="background:#E9E2FF"></span>muted on violet (#E9E2FF)</td><td>4.93</td><td></td><td>AA</td><td>section--violet sub copy</td></tr>
-      <tr><td><span class="sg-dot" style="background:#C8F03C"></span><span class="sg-dot" style="background:#2F3A0E"></span>muted on celery (#2F3A0E)</td><td>9.22</td><td></td><td>AA</td><td>section--celery sub copy</td></tr>
-      <tr><td><span class="sg-dot" style="background:#FF7AC6"></span><span class="sg-dot" style="background:#3A1530"></span>muted on bubblegum (#3A1530)</td><td>6.65</td><td></td><td>AA</td><td>section--pink sub copy</td></tr>
-      <tr><td><span class="sg-dot" style="background:#4FD6FF"></span><span class="sg-dot" style="background:#0F3240"></span>muted on sky (#0F3240)</td><td>7.99</td><td></td><td>AA</td><td>section--sky sub copy</td></tr>
-      <tr><td><span class="sg-dot" style="background:#2236C9"></span><span class="sg-dot" style="background:#E3E7FF"></span>muted on lake (#E3E7FF)</td><td>7.02</td><td></td><td>AA</td><td>serious band meta</td></tr>
-      <tr><td><span class="sg-dot" style="background:#FF8B3D"></span><span class="sg-dot" style="background:#2B1D45"></span>muted on tangerine (#2B1D45)</td><td>6.60</td><td></td><td>AA</td><td>deadline pin fine print</td></tr>
-      <tr><td><span class="sg-dot" style="background:#C8F03C"></span><span class="sg-dot" style="background:#2B1D45"></span>muted on celery (#2B1D45)</td><td>11.71</td><td></td><td>AA</td><td>hangout pin fine print</td></tr>
-      <tr><td><span class="sg-dot" style="background:#170B33"></span><span class="sg-dot" style="background:#D9D1F2"></span>footer muted on night (#D9D1F2)</td><td>12.67</td><td></td><td>AA</td><td>footer legal (light theme)</td></tr>
-      <tr><td><span class="sg-dot" style="background:#0B0519"></span><span class="sg-dot" style="background:#D9D1F2"></span>footer muted on dark island (#D9D1F2)</td><td>13.66</td><td></td><td>AA</td><td>footer legal (dark theme)</td></tr>
-      <tr><td><span class="sg-dot" style="background:#0B0519"></span><span class="sg-dot" style="background:#FFF6EA"></span>cream on dark island</td><td>18.68</td><td></td><td>AA</td><td>footer links</td></tr>
-      <tr><td><span class="sg-dot" style="background:#0B0519"></span><span class="sg-dot" style="background:#C8F03C"></span>celery on dark island</td><td>15.22</td><td></td><td>AA</td><td>footer headings</td></tr>
-      <tr><td><span class="sg-dot" style="background:#170B33"></span><span class="sg-dot" style="background:#C8F03C"></span>celery on banner night</td><td>14.11</td><td></td><td>AA</td><td>demo banner link</td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFF6EA"></span><span class="sg-dot" style="background:#170B33"></span>dark: inverse text on inverse bg</td><td>17.33</td><td></td><td>AA</td><td>toasts, ink buttons (dark)</td></tr>
-      <tr><td><span class="sg-dot" style="background:#6A2BFF"></span><span class="sg-dot" style="background:#C8F03C"></span>focus celery on violet (UI 3:1)</td><td>4.69</td><td></td><td>3:1</td><td>focus ring on violet</td></tr>
-      <tr><td><span class="sg-dot" style="background:#2236C9"></span><span class="sg-dot" style="background:#FFF6EA"></span>focus cream on lake (UI 3:1)</td><td>8.04</td><td></td><td>3:1</td><td>focus ring on serious band</td></tr>
-      <tr><td><span class="sg-dot" style="background:#C8F03C"></span><span class="sg-dot" style="background:#170B33"></span>focus night on celery (UI 3:1)</td><td>14.11</td><td></td><td>3:1</td><td>focus ring on bright fills</td></tr>
-      <tr><td><span class="sg-dot" style="background:#FFF6EA"></span><span class="sg-dot" style="background:#4B12D6"></span>focus link on cream (UI 3:1)</td><td>8.32</td><td></td><td>3:1</td><td>focus ring, light</td></tr>
-      <tr><td><span class="sg-dot" style="background:#120826"></span><span class="sg-dot" style="background:#C8F03C"></span>dark: focus celery on bg (UI 3:1)</td><td>14.68</td><td></td><td>3:1</td><td>focus ring, dark</td></tr>
-      <tr><td><span class="sg-dot" style="background:#6A2BFF"></span><span class="sg-dot" style="background:#FFFFFF"></span>white on violet (chip pressed)</td><td>6.17</td><td></td><td>AA</td><td>pressed chips</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFF6EA"></span><span class="sg-dot" style="--c: #170B33"></span>ink on cream</td><td>17.33</td><td>17.33</td><td>AA</td><td>body text</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFFFFF"></span><span class="sg-dot" style="--c: #170B33"></span>ink on white</td><td>18.54</td><td>18.55</td><td>AA</td><td>cards, inputs</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFF6EA"></span><span class="sg-dot" style="--c: #574D70"></span>muted on cream</td><td>7.26</td><td>7.27</td><td>AA</td><td>hints, meta</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFFFFF"></span><span class="sg-dot" style="--c: #574D70"></span>muted on white</td><td>7.77</td><td>7.78</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #F3EADB"></span><span class="sg-dot" style="--c: #574D70"></span>muted on surface-2</td><td>6.51</td><td>6.52</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFF6EA"></span><span class="sg-dot" style="--c: #4B12D6"></span>link on cream</td><td>8.32</td><td>8.33</td><td>AA</td><td>links</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFFFFF"></span><span class="sg-dot" style="--c: #4B12D6"></span>link on white</td><td>8.91</td><td>8.91</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #6A2BFF"></span><span class="sg-dot" style="--c: #FFFFFF"></span>white on violet</td><td>6.17</td><td>6.17</td><td>AA</td><td>hero sub, white buttons</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #6A2BFF"></span><span class="sg-dot" style="--c: #FFF6EA"></span>cream on violet</td><td>5.76</td><td>5.77</td><td>AA</td><td>hero H1 line 1</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #6A2BFF"></span><span class="sg-dot" style="--c: #C8F03C"></span>celery on violet</td><td>4.69</td><td>4.7</td><td>3:1</td><td>hero H1 line 2 (large)</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #C8F03C"></span><span class="sg-dot" style="--c: #170B33"></span>ink on celery</td><td>14.11</td><td>14.12</td><td>AA</td><td>fills</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #4FD6FF"></span><span class="sg-dot" style="--c: #170B33"></span>ink on sky</td><td>10.94</td><td>10.95</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FF7AC6"></span><span class="sg-dot" style="--c: #170B33"></span>ink on bubblegum</td><td>7.81</td><td>7.82</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FF8B3D"></span><span class="sg-dot" style="--c: #170B33"></span>ink on tangerine</td><td>7.96</td><td>7.96</td><td>AA</td><td>DEMO tags</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FF4FA3"></span><span class="sg-dot" style="--c: #170B33"></span>ink on hotpink</td><td>6.09</td><td>6.09</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FF6B1A"></span><span class="sg-dot" style="--c: #170B33"></span>ink on orange</td><td>6.50</td><td>6.51</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #00B3A6"></span><span class="sg-dot" style="--c: #170B33"></span>ink on teal</td><td>7.06</td><td>7.07</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #7EE081"></span><span class="sg-dot" style="--c: #170B33"></span>ink on mint</td><td>11.36</td><td>11.37</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFD23F"></span><span class="sg-dot" style="--c: #170B33"></span>ink on sun</td><td>12.84</td><td>12.85</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #4B12D6"></span><span class="sg-dot" style="--c: #FFFFFF"></span>white on violet-deep</td><td>8.91</td><td>8.91</td><td>AA</td><td>issue chips</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #4B12D6"></span><span class="sg-dot" style="--c: #C8F03C"></span>celery on violet-deep</td><td>6.78</td><td>6.78</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #2236C9"></span><span class="sg-dot" style="--c: #FFF6EA"></span>cream on lake</td><td>8.04</td><td>8.04</td><td>AA</td><td>serious band</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #170B33"></span><span class="sg-dot" style="--c: #FFF6EA"></span>cream on night</td><td>17.33</td><td>17.33</td><td>AA</td><td>dark blocks</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #170B33"></span><span class="sg-dot" style="--c: #C8F03C"></span>celery on night</td><td>14.11</td><td>14.12</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFF6EA"></span><span class="sg-dot" style="--c: #B3261E"></span>error on cream</td><td>6.10</td><td>6.11</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFF6EA"></span><span class="sg-dot" style="--c: #1E6B3A"></span>success on cream</td><td>6.09</td><td>6.1</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFFFFF"></span><span class="sg-dot" style="--c: #6E6488"></span>placeholder on white</td><td>5.46</td><td>5.47</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #120826"></span><span class="sg-dot" style="--c: #FFF6EA"></span>dark: text on bg</td><td>18.02</td><td>18.03</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #1E1240"></span><span class="sg-dot" style="--c: #FFF6EA"></span>dark: text on surface</td><td>16.14</td><td>16.14</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #2A1B55"></span><span class="sg-dot" style="--c: #FFF6EA"></span>dark: text on surface-2</td><td>14.15</td><td>14.15</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #120826"></span><span class="sg-dot" style="--c: #CDC4EA"></span>dark: muted on bg</td><td>11.64</td><td>11.65</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #1E1240"></span><span class="sg-dot" style="--c: #CDC4EA"></span>dark: muted on surface</td><td>10.42</td><td>10.43</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #2A1B55"></span><span class="sg-dot" style="--c: #CDC4EA"></span>dark: muted on surface-2</td><td>9.14</td><td>9.15</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #120826"></span><span class="sg-dot" style="--c: #C8F03C"></span>dark: celery link on bg</td><td>14.68</td><td>14.69</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #1E1240"></span><span class="sg-dot" style="--c: #C8F03C"></span>dark: celery link on surface</td><td>13.14</td><td>13.15</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #120826"></span><span class="sg-dot" style="--c: #FFB4A8"></span>dark: error on bg</td><td>11.34</td><td>11.34</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #120826"></span><span class="sg-dot" style="--c: #8DE0A6"></span>dark: success on bg</td><td>12.26</td><td>12.26</td><td>AA</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #1E1240"></span><span class="sg-dot" style="--c: #FFB4A8"></span>dark: error on surface</td><td>10.15</td><td></td><td>AA</td><td>field errors in dark cards</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #1E1240"></span><span class="sg-dot" style="--c: #A79FC2"></span>dark: placeholder on surface</td><td>6.89</td><td></td><td>AA</td><td>inputs in dark</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFFFFF"></span><span class="sg-dot" style="--c: #6E6488"></span>control border on white (UI 3:1)</td><td>5.46</td><td></td><td>3:1</td><td>input borders</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFF6EA"></span><span class="sg-dot" style="--c: #6E6488"></span>control border on cream (UI 3:1)</td><td>5.10</td><td></td><td>3:1</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #1E1240"></span><span class="sg-dot" style="--c: #A79FC2"></span>dark: control border on surface (UI 3:1)</td><td>6.89</td><td></td><td>3:1</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #120826"></span><span class="sg-dot" style="--c: #A79FC2"></span>dark: control border on bg (UI 3:1)</td><td>7.70</td><td></td><td>3:1</td><td></td></tr>
+      <tr><td><span class="sg-dot" style="--c: #6A2BFF"></span><span class="sg-dot" style="--c: #E9E2FF"></span>muted on violet (#E9E2FF)</td><td>4.93</td><td></td><td>AA</td><td>section--violet sub copy</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #C8F03C"></span><span class="sg-dot" style="--c: #2F3A0E"></span>muted on celery (#2F3A0E)</td><td>9.22</td><td></td><td>AA</td><td>section--celery sub copy</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FF7AC6"></span><span class="sg-dot" style="--c: #3A1530"></span>muted on bubblegum (#3A1530)</td><td>6.65</td><td></td><td>AA</td><td>section--pink sub copy</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #4FD6FF"></span><span class="sg-dot" style="--c: #0F3240"></span>muted on sky (#0F3240)</td><td>7.99</td><td></td><td>AA</td><td>section--sky sub copy</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #2236C9"></span><span class="sg-dot" style="--c: #E3E7FF"></span>muted on lake (#E3E7FF)</td><td>7.02</td><td></td><td>AA</td><td>serious band meta</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FF8B3D"></span><span class="sg-dot" style="--c: #2B1D45"></span>muted on tangerine (#2B1D45)</td><td>6.60</td><td></td><td>AA</td><td>deadline pin fine print</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #C8F03C"></span><span class="sg-dot" style="--c: #2B1D45"></span>muted on celery (#2B1D45)</td><td>11.71</td><td></td><td>AA</td><td>hangout pin fine print</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #170B33"></span><span class="sg-dot" style="--c: #D9D1F2"></span>footer muted on night (#D9D1F2)</td><td>12.67</td><td></td><td>AA</td><td>footer legal (light theme)</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #0B0519"></span><span class="sg-dot" style="--c: #D9D1F2"></span>footer muted on dark island (#D9D1F2)</td><td>13.66</td><td></td><td>AA</td><td>footer legal (dark theme)</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #0B0519"></span><span class="sg-dot" style="--c: #FFF6EA"></span>cream on dark island</td><td>18.68</td><td></td><td>AA</td><td>footer links</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #0B0519"></span><span class="sg-dot" style="--c: #C8F03C"></span>celery on dark island</td><td>15.22</td><td></td><td>AA</td><td>footer headings</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #170B33"></span><span class="sg-dot" style="--c: #C8F03C"></span>celery on banner night</td><td>14.11</td><td></td><td>AA</td><td>demo banner link</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFF6EA"></span><span class="sg-dot" style="--c: #170B33"></span>dark: inverse text on inverse bg</td><td>17.33</td><td></td><td>AA</td><td>toasts, ink buttons (dark)</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #6A2BFF"></span><span class="sg-dot" style="--c: #C8F03C"></span>focus celery on violet (UI 3:1)</td><td>4.69</td><td></td><td>3:1</td><td>focus ring on violet</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #2236C9"></span><span class="sg-dot" style="--c: #FFF6EA"></span>focus cream on lake (UI 3:1)</td><td>8.04</td><td></td><td>3:1</td><td>focus ring on serious band</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #C8F03C"></span><span class="sg-dot" style="--c: #170B33"></span>focus night on celery (UI 3:1)</td><td>14.11</td><td></td><td>3:1</td><td>focus ring on bright fills</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #FFF6EA"></span><span class="sg-dot" style="--c: #4B12D6"></span>focus link on cream (UI 3:1)</td><td>8.32</td><td></td><td>3:1</td><td>focus ring, light</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #120826"></span><span class="sg-dot" style="--c: #C8F03C"></span>dark: focus celery on bg (UI 3:1)</td><td>14.68</td><td></td><td>3:1</td><td>focus ring, dark</td></tr>
+      <tr><td><span class="sg-dot" style="--c: #6A2BFF"></span><span class="sg-dot" style="--c: #FFFFFF"></span>white on violet (chip pressed)</td><td>6.17</td><td></td><td>AA</td><td>pressed chips</td></tr>
     </tbody>
   </table>
 </div>
@@ -370,7 +367,7 @@
   <p>Body copy is 17 px with a 1.55 line height and stops at 68 characters. Times read "7 pm", dates read "Thu, Nov 19".</p>
   <p class="small muted">Small, 15 px: hints, sources and fine print. Links checked Nov 9, 2026.</p>
   <p class="eyebrow">Eyebrow · 13 px · letter-spaced</p>
-  <p class="u-hand" style="font-size: 30px">see you Thursday</p>
+  <p class="u-hand sg-hand">see you Thursday</p>
 </div>
 </div>
 <div class="sg-specimen theme-dark">
@@ -385,7 +382,7 @@
   <p>Body copy is 17 px with a 1.55 line height and stops at 68 characters. Times read "7 pm", dates read "Thu, Nov 19".</p>
   <p class="small muted">Small, 15 px: hints, sources and fine print. Links checked Nov 9, 2026.</p>
   <p class="eyebrow">Eyebrow · 13 px · letter-spaced</p>
-  <p class="u-hand" style="font-size: 30px">see you Thursday</p>
+  <p class="u-hand sg-hand">see you Thursday</p>
 </div>
 </div>
 </div>
@@ -400,7 +397,7 @@
   &lt;p&gt;Body copy is 17 px with a 1.55 line height and stops at 68 characters. Times read &quot;7 pm&quot;, dates read &quot;Thu, Nov 19&quot;.&lt;/p&gt;
   &lt;p class=&quot;small muted&quot;&gt;Small, 15 px: hints, sources and fine print. Links checked Nov 9, 2026.&lt;/p&gt;
   &lt;p class=&quot;eyebrow&quot;&gt;Eyebrow · 13 px · letter-spaced&lt;/p&gt;
-  &lt;p class=&quot;u-hand&quot; style=&quot;font-size: 30px&quot;&gt;see you Thursday&lt;/p&gt;
+  &lt;p class=&quot;u-hand sg-hand&quot;&gt;see you Thursday&lt;/p&gt;
 &lt;/div&gt;</code></pre></details>
   </div>
   </section>
@@ -415,8 +412,8 @@
 <div class="sg-specimen theme-light">
 <p class="sg-label">Light</p>
 <div class="btn-row">
-  <a class="btn btn--primary" href="#join">Join free</a>
-  <a class="btn btn--ghost" href="#events">See what's on</a>
+  <a class="btn btn--primary" href="join.html">Join free</a>
+  <a class="btn btn--ghost" href="events.html">See what's on</a>
 </div>
 <div class="btn-row">
   <button class="btn btn--violet" type="button">I'm in</button>
@@ -436,8 +433,8 @@
 <div class="sg-specimen theme-dark">
 <p class="sg-label">Dark</p>
 <div class="btn-row">
-  <a class="btn btn--primary" href="#join">Join free</a>
-  <a class="btn btn--ghost" href="#events">See what's on</a>
+  <a class="btn btn--primary" href="join.html">Join free</a>
+  <a class="btn btn--ghost" href="events.html">See what's on</a>
 </div>
 <div class="btn-row">
   <button class="btn btn--violet" type="button">I'm in</button>
@@ -457,8 +454,8 @@
 </div>
 
 <details class="sg-code"><summary>Markup</summary><pre><code>&lt;div class=&quot;btn-row&quot;&gt;
-  &lt;a class=&quot;btn btn--primary&quot; href=&quot;#join&quot;&gt;Join free&lt;/a&gt;
-  &lt;a class=&quot;btn btn--ghost&quot; href=&quot;#events&quot;&gt;See what&#x27;s on&lt;/a&gt;
+  &lt;a class=&quot;btn btn--primary&quot; href=&quot;join.html&quot;&gt;Join free&lt;/a&gt;
+  &lt;a class=&quot;btn btn--ghost&quot; href=&quot;events.html&quot;&gt;See what&#x27;s on&lt;/a&gt;
 &lt;/div&gt;
 &lt;div class=&quot;btn-row&quot;&gt;
   &lt;button class=&quot;btn btn--violet&quot; type=&quot;button&quot;&gt;I&#x27;m in&lt;/button&gt;
@@ -678,7 +675,7 @@
 <div class="sg-pair">
 <div class="sg-specimen theme-light">
 <p class="sg-label">Light</p>
-<form class="form" novalidate data-sg-form aria-labelledby="rsvp-title-l">
+<form class="form" novalidate data-sg-form>
   <h3 class="h4" id="rsvp-title-l">Save my seat</h3>
   <div class="form__summary" hidden>
     <p class="form__summary-title" data-summary-title>1 thing needs a fix before this can send.</p>
@@ -710,7 +707,7 @@
     <input id="show-l" name="showName" type="checkbox">
     <label class="field__label" for="show-l">Show my first name on the "who's going" list</label>
   </div>
-  <p class="consent">We never sell your info. DEMO: nothing you type leaves this browser. <a href="privacy.html">Privacy</a></p>
+  <p class="consent"><span>We never sell your info. DEMO: nothing you type leaves this browser. Read the <a href="privacy.html">privacy policy</a>.</span></p>
   <div class="btn-row"><button class="btn btn--primary" type="submit">Save my seat</button></div>
 </form>
 <div class="field">
@@ -732,7 +729,7 @@
 </div>
 <div class="sg-specimen theme-dark">
 <p class="sg-label">Dark</p>
-<form class="form" novalidate data-sg-form aria-labelledby="rsvp-title-d">
+<form class="form" novalidate data-sg-form>
   <h3 class="h4" id="rsvp-title-d">Save my seat</h3>
   <div class="form__summary" hidden>
     <p class="form__summary-title" data-summary-title>1 thing needs a fix before this can send.</p>
@@ -764,7 +761,7 @@
     <input id="show-d" name="showName" type="checkbox">
     <label class="field__label" for="show-d">Show my first name on the "who's going" list</label>
   </div>
-  <p class="consent">We never sell your info. DEMO: nothing you type leaves this browser. <a href="privacy.html">Privacy</a></p>
+  <p class="consent"><span>We never sell your info. DEMO: nothing you type leaves this browser. Read the <a href="privacy.html">privacy policy</a>.</span></p>
   <div class="btn-row"><button class="btn btn--primary" type="submit">Save my seat</button></div>
 </form>
 <div class="field">
@@ -786,7 +783,7 @@
 </div>
 </div>
 
-<details class="sg-code"><summary>Markup</summary><pre><code>&lt;form class=&quot;form&quot; novalidate data-sg-form aria-labelledby=&quot;rsvp-title&quot;&gt;
+<details class="sg-code"><summary>Markup</summary><pre><code>&lt;form class=&quot;form&quot; novalidate data-sg-form&gt;
   &lt;h3 class=&quot;h4&quot; id=&quot;rsvp-title&quot;&gt;Save my seat&lt;/h3&gt;
   &lt;div class=&quot;form__summary&quot; hidden&gt;
     &lt;p class=&quot;form__summary-title&quot; data-summary-title&gt;1 thing needs a fix before this can send.&lt;/p&gt;
@@ -818,7 +815,7 @@
     &lt;input id=&quot;show&quot; name=&quot;showName&quot; type=&quot;checkbox&quot;&gt;
     &lt;label class=&quot;field__label&quot; for=&quot;show&quot;&gt;Show my first name on the &quot;who&#x27;s going&quot; list&lt;/label&gt;
   &lt;/div&gt;
-  &lt;p class=&quot;consent&quot;&gt;We never sell your info. DEMO: nothing you type leaves this browser. &lt;a href=&quot;privacy.html&quot;&gt;Privacy&lt;/a&gt;&lt;/p&gt;
+  &lt;p class=&quot;consent&quot;&gt;&lt;span&gt;We never sell your info. DEMO: nothing you type leaves this browser. Read the &lt;a href=&quot;privacy.html&quot;&gt;privacy policy&lt;/a&gt;.&lt;/span&gt;&lt;/p&gt;
   &lt;div class=&quot;btn-row&quot;&gt;&lt;button class=&quot;btn btn--primary&quot; type=&quot;submit&quot;&gt;Save my seat&lt;/button&gt;&lt;/div&gt;
 &lt;/form&gt;
 &lt;div class=&quot;field&quot;&gt;
@@ -946,27 +943,27 @@
 <div class="sg-specimen theme-light">
 <p class="sg-label">Light</p>
 <div class="grid grid--3">
-  <figure class="photo" style="aspect-ratio: 4 / 3"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="lazy" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock">Stock photo · not members</span></figure>
-  <figure class="photo photo--golden" style="aspect-ratio: 4 / 3"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="lazy" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock">Stock photo · not members</span></figure>
-  <figure class="photo photo--duo" style="aspect-ratio: 4 / 3; --duo: var(--bubblegum)"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="lazy" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock">Stock photo · not members</span></figure>
+  <figure class="photo sg-photo"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="lazy" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock">Stock photo · not members</span></figure>
+  <figure class="photo photo--golden sg-photo"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="lazy" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock">Stock photo · not members</span></figure>
+  <figure class="photo photo--duo sg-photo" style="--duo: var(--bubblegum)"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="lazy" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock">Stock photo · not members</span></figure>
 </div>
 <p class="sg-note">Raw · golden-hour · duotone (bubblegum). Photo: Richard Burlton on Unsplash.</p>
 </div>
 <div class="sg-specimen theme-dark">
 <p class="sg-label">Dark</p>
 <div class="grid grid--3">
-  <figure class="photo" style="aspect-ratio: 4 / 3"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="lazy" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock">Stock photo · not members</span></figure>
-  <figure class="photo photo--golden" style="aspect-ratio: 4 / 3"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="lazy" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock">Stock photo · not members</span></figure>
-  <figure class="photo photo--duo" style="aspect-ratio: 4 / 3; --duo: var(--bubblegum)"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="lazy" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock">Stock photo · not members</span></figure>
+  <figure class="photo sg-photo"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="lazy" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock">Stock photo · not members</span></figure>
+  <figure class="photo photo--golden sg-photo"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="lazy" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock">Stock photo · not members</span></figure>
+  <figure class="photo photo--duo sg-photo" style="--duo: var(--bubblegum)"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1100px) 40vw, 92vw" width="640" height="427" loading="lazy" alt="Two people watching the sunset over a calm lake from a waterfront path" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock">Stock photo · not members</span></figure>
 </div>
 <p class="sg-note">Raw · golden-hour · duotone (bubblegum). Photo: Richard Burlton on Unsplash.</p>
 </div>
 </div>
 
 <details class="sg-code"><summary>Markup</summary><pre><code>&lt;div class=&quot;grid grid--3&quot;&gt;
-  &lt;figure class=&quot;photo&quot; style=&quot;aspect-ratio: 4 / 3&quot;&gt;&lt;img src=&quot;https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop&quot; srcset=&quot;https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 960w&quot; sizes=&quot;(min-width: 1100px) 40vw, 92vw&quot; width=&quot;640&quot; height=&quot;427&quot; loading=&quot;lazy&quot; alt=&quot;Two people watching the sunset over a calm lake from a waterfront path&quot; data-photographer=&quot;Richard Burlton&quot; data-source=&quot;https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo&quot;&gt;&lt;span class=&quot;tag tag--stock&quot;&gt;Stock photo · not members&lt;/span&gt;&lt;/figure&gt;
-  &lt;figure class=&quot;photo photo--golden&quot; style=&quot;aspect-ratio: 4 / 3&quot;&gt;&lt;img src=&quot;https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop&quot; srcset=&quot;https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 960w&quot; sizes=&quot;(min-width: 1100px) 40vw, 92vw&quot; width=&quot;640&quot; height=&quot;427&quot; loading=&quot;lazy&quot; alt=&quot;Two people watching the sunset over a calm lake from a waterfront path&quot; data-photographer=&quot;Richard Burlton&quot; data-source=&quot;https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo&quot;&gt;&lt;span class=&quot;tag tag--stock&quot;&gt;Stock photo · not members&lt;/span&gt;&lt;/figure&gt;
-  &lt;figure class=&quot;photo photo--duo&quot; style=&quot;aspect-ratio: 4 / 3; --duo: var(--bubblegum)&quot;&gt;&lt;img src=&quot;https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop&quot; srcset=&quot;https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 960w&quot; sizes=&quot;(min-width: 1100px) 40vw, 92vw&quot; width=&quot;640&quot; height=&quot;427&quot; loading=&quot;lazy&quot; alt=&quot;Two people watching the sunset over a calm lake from a waterfront path&quot; data-photographer=&quot;Richard Burlton&quot; data-source=&quot;https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo&quot;&gt;&lt;span class=&quot;tag tag--stock&quot;&gt;Stock photo · not members&lt;/span&gt;&lt;/figure&gt;
+  &lt;figure class=&quot;photo sg-photo&quot;&gt;&lt;img src=&quot;https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop&quot; srcset=&quot;https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 960w&quot; sizes=&quot;(min-width: 1100px) 40vw, 92vw&quot; width=&quot;640&quot; height=&quot;427&quot; loading=&quot;lazy&quot; alt=&quot;Two people watching the sunset over a calm lake from a waterfront path&quot; data-photographer=&quot;Richard Burlton&quot; data-source=&quot;https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo&quot;&gt;&lt;span class=&quot;tag tag--stock&quot;&gt;Stock photo · not members&lt;/span&gt;&lt;/figure&gt;
+  &lt;figure class=&quot;photo photo--golden sg-photo&quot;&gt;&lt;img src=&quot;https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop&quot; srcset=&quot;https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 960w&quot; sizes=&quot;(min-width: 1100px) 40vw, 92vw&quot; width=&quot;640&quot; height=&quot;427&quot; loading=&quot;lazy&quot; alt=&quot;Two people watching the sunset over a calm lake from a waterfront path&quot; data-photographer=&quot;Richard Burlton&quot; data-source=&quot;https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo&quot;&gt;&lt;span class=&quot;tag tag--stock&quot;&gt;Stock photo · not members&lt;/span&gt;&lt;/figure&gt;
+  &lt;figure class=&quot;photo photo--duo sg-photo&quot; style=&quot;--duo: var(--bubblegum)&quot;&gt;&lt;img src=&quot;https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop&quot; srcset=&quot;https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;amp;q=60&amp;amp;auto=format&amp;amp;fit=crop 960w&quot; sizes=&quot;(min-width: 1100px) 40vw, 92vw&quot; width=&quot;640&quot; height=&quot;427&quot; loading=&quot;lazy&quot; alt=&quot;Two people watching the sunset over a calm lake from a waterfront path&quot; data-photographer=&quot;Richard Burlton&quot; data-source=&quot;https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo&quot;&gt;&lt;span class=&quot;tag tag--stock&quot;&gt;Stock photo · not members&lt;/span&gt;&lt;/figure&gt;
 &lt;/div&gt;
 &lt;p class=&quot;sg-note&quot;&gt;Raw · golden-hour · duotone (bubblegum). Photo: Richard Burlton on Unsplash.&lt;/p&gt;</code></pre></details>
   </div>
@@ -1329,8 +1326,8 @@
   <div class="wrap">
     <div class="sg-section__head">
       <h2 id="stories-title">Stories: vertical clips</h2>
-      <p class="lead">Poster first, captions burned in, DEMO clip label and @demo handle, one action chip per clip, no view counts. W4&#x27;s reel.js adds playback (YSD.feed writes data-feed-state and --ysd-feed-progress).</p>
-      <p class="sg-classes"><code>.story</code><code>.story__frame</code><code>.story__bars</code><code>.story__top</code><code>.story__play</code><code>.story__mute</code><code>.story__cap</code><code>.story__handle</code><code>.story__action</code><code>.story--post</code><code>.story__plus</code><code>.story__post-title</code></p>
+      <p class="lead">Poster first, captions burned in, the DEMO clip tag beside the @demo handle under the frame (never on the poster, where it hides burned-in titles), one action chip per clip, no view counts. W4&#x27;s reel.js adds playback (YSD.feed writes data-feed-state and --ysd-feed-progress).</p>
+      <p class="sg-classes"><code>.story</code><code>.story__frame</code><code>.story__bars</code><code>.story__play</code><code>.story__mute</code><code>.story__cap</code><code>.story__meta</code><code>.story__handle</code><code>.story__action</code><code>.story--post</code><code>.story__plus</code><code>.story__post-title</code></p>
     </div>
 <div class="sg-pair">
 <div class="sg-specimen theme-light">
@@ -1340,22 +1337,20 @@
     <div class="story__frame">
       <img src="assets/video/mail-ballot-renew.jpg" alt="" width="360" height="640" loading="lazy">
       <div class="story__bars" aria-hidden="true"><i></i><i></i><i></i></div>
-      <div class="story__top"><span class="tag tag--demo">DEMO clip</span></div>
       <button class="story__play" type="button" aria-label="Play: mail-ballot PSA"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg></button>
       <p class="story__cap">Asked for a mail ballot before Nov 3? That request ends Dec 31.</p>
     </div>
-    <p class="story__handle">@demo.maria</p>
+    <div class="story__meta"><p class="story__handle">@demo.maria</p><span class="tag tag--demo">DEMO clip</span></div>
     <a class="chip story__action" href="vote.html#renew-mail-ballot">How to renew</a>
   </article>
   <article class="story">
     <div class="story__frame">
       <img src="assets/video/trivia-night-recap.jpg" alt="" width="360" height="640" loading="lazy">
       <div class="story__bars" aria-hidden="true"><i></i><i></i></div>
-      <div class="story__top"><span class="tag tag--demo">DEMO clip</span></div>
       <button class="story__play" type="button" aria-label="Play: trivia night recap"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg></button>
       <p class="story__cap">New friends, questionable team names, zero regrets.</p>
     </div>
-    <p class="story__handle">@demo.sam</p>
+    <div class="story__meta"><p class="story__handle">@demo.sam</p><span class="tag tag--demo">DEMO clip</span></div>
     <a class="chip story__action" href="events.html">See the next one</a>
   </article>
   <article class="story story--post">
@@ -1370,22 +1365,20 @@
     <div class="story__frame">
       <img src="assets/video/mail-ballot-renew.jpg" alt="" width="360" height="640" loading="lazy">
       <div class="story__bars" aria-hidden="true"><i></i><i></i><i></i></div>
-      <div class="story__top"><span class="tag tag--demo">DEMO clip</span></div>
       <button class="story__play" type="button" aria-label="Play: mail-ballot PSA"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg></button>
       <p class="story__cap">Asked for a mail ballot before Nov 3? That request ends Dec 31.</p>
     </div>
-    <p class="story__handle">@demo.maria</p>
+    <div class="story__meta"><p class="story__handle">@demo.maria</p><span class="tag tag--demo">DEMO clip</span></div>
     <a class="chip story__action" href="vote.html#renew-mail-ballot">How to renew</a>
   </article>
   <article class="story">
     <div class="story__frame">
       <img src="assets/video/trivia-night-recap.jpg" alt="" width="360" height="640" loading="lazy">
       <div class="story__bars" aria-hidden="true"><i></i><i></i></div>
-      <div class="story__top"><span class="tag tag--demo">DEMO clip</span></div>
       <button class="story__play" type="button" aria-label="Play: trivia night recap"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg></button>
       <p class="story__cap">New friends, questionable team names, zero regrets.</p>
     </div>
-    <p class="story__handle">@demo.sam</p>
+    <div class="story__meta"><p class="story__handle">@demo.sam</p><span class="tag tag--demo">DEMO clip</span></div>
     <a class="chip story__action" href="events.html">See the next one</a>
   </article>
   <article class="story story--post">
@@ -1400,22 +1393,20 @@
     &lt;div class=&quot;story__frame&quot;&gt;
       &lt;img src=&quot;assets/video/mail-ballot-renew.jpg&quot; alt=&quot;&quot; width=&quot;360&quot; height=&quot;640&quot; loading=&quot;lazy&quot;&gt;
       &lt;div class=&quot;story__bars&quot; aria-hidden=&quot;true&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;
-      &lt;div class=&quot;story__top&quot;&gt;&lt;span class=&quot;tag tag--demo&quot;&gt;DEMO clip&lt;/span&gt;&lt;/div&gt;
       &lt;button class=&quot;story__play&quot; type=&quot;button&quot; aria-label=&quot;Play: mail-ballot PSA&quot;&gt;&lt;svg viewBox=&quot;0 0 24 24&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;&lt;path d=&quot;M8 5v14l11-7z&quot;/&gt;&lt;/svg&gt;&lt;/button&gt;
       &lt;p class=&quot;story__cap&quot;&gt;Asked for a mail ballot before Nov 3? That request ends Dec 31.&lt;/p&gt;
     &lt;/div&gt;
-    &lt;p class=&quot;story__handle&quot;&gt;@demo.maria&lt;/p&gt;
+    &lt;div class=&quot;story__meta&quot;&gt;&lt;p class=&quot;story__handle&quot;&gt;@demo.maria&lt;/p&gt;&lt;span class=&quot;tag tag--demo&quot;&gt;DEMO clip&lt;/span&gt;&lt;/div&gt;
     &lt;a class=&quot;chip story__action&quot; href=&quot;vote.html#renew-mail-ballot&quot;&gt;How to renew&lt;/a&gt;
   &lt;/article&gt;
   &lt;article class=&quot;story&quot;&gt;
     &lt;div class=&quot;story__frame&quot;&gt;
       &lt;img src=&quot;assets/video/trivia-night-recap.jpg&quot; alt=&quot;&quot; width=&quot;360&quot; height=&quot;640&quot; loading=&quot;lazy&quot;&gt;
       &lt;div class=&quot;story__bars&quot; aria-hidden=&quot;true&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;
-      &lt;div class=&quot;story__top&quot;&gt;&lt;span class=&quot;tag tag--demo&quot;&gt;DEMO clip&lt;/span&gt;&lt;/div&gt;
       &lt;button class=&quot;story__play&quot; type=&quot;button&quot; aria-label=&quot;Play: trivia night recap&quot;&gt;&lt;svg viewBox=&quot;0 0 24 24&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;&lt;path d=&quot;M8 5v14l11-7z&quot;/&gt;&lt;/svg&gt;&lt;/button&gt;
       &lt;p class=&quot;story__cap&quot;&gt;New friends, questionable team names, zero regrets.&lt;/p&gt;
     &lt;/div&gt;
-    &lt;p class=&quot;story__handle&quot;&gt;@demo.sam&lt;/p&gt;
+    &lt;div class=&quot;story__meta&quot;&gt;&lt;p class=&quot;story__handle&quot;&gt;@demo.sam&lt;/p&gt;&lt;span class=&quot;tag tag--demo&quot;&gt;DEMO clip&lt;/span&gt;&lt;/div&gt;
     &lt;a class=&quot;chip story__action&quot; href=&quot;events.html&quot;&gt;See the next one&lt;/a&gt;
   &lt;/article&gt;
   &lt;article class=&quot;story story--post&quot;&gt;
@@ -1447,10 +1438,10 @@
     <p class="step__meta">Source: Seminole County Supervisor of Elections · Checked Nov 9, 2026</p>
   </div>
 </div>
-<section class="issue" style="--issue: var(--issue-sky)" aria-labelledby="issue-transit-l">
+<div class="issue" style="--issue: var(--issue-sky)">
   <h3 class="issue__title" id="issue-transit-l">Transit</h3>
   <ul class="issue__facts"><li>SunRail stops at four Seminole stations: Altamonte Springs, Longwood, Lake Mary and Sanford. <a href="https://sunrail.com/stations/" rel="noopener">SunRail</a></li></ul>
-</section>
+</div>
 <div class="team-card"><span class="avatar avatar--lg" style="--avatar: var(--sun)" aria-hidden="true">?</span><div><p class="team-card__name">Your President Here</p><p class="team-card__role">Chapter president · <span class="tag tag--demo">DEMO</span></p></div></div>
 <div class="notice notice--info"><p class="notice__title">Spanish draft</p><p>Every Spanish page is a draft until a fluent reviewer signs off.</p></div>
 <div class="notice notice--warn"><p class="notice__title">Recheck after Nov 16</p><p>County certification may change the Nov 3 figures.</p></div>
@@ -1471,10 +1462,10 @@
     <p class="step__meta">Source: Seminole County Supervisor of Elections · Checked Nov 9, 2026</p>
   </div>
 </div>
-<section class="issue" style="--issue: var(--issue-sky)" aria-labelledby="issue-transit-d">
+<div class="issue" style="--issue: var(--issue-sky)">
   <h3 class="issue__title" id="issue-transit-d">Transit</h3>
   <ul class="issue__facts"><li>SunRail stops at four Seminole stations: Altamonte Springs, Longwood, Lake Mary and Sanford. <a href="https://sunrail.com/stations/" rel="noopener">SunRail</a></li></ul>
-</section>
+</div>
 <div class="team-card"><span class="avatar avatar--lg" style="--avatar: var(--sun)" aria-hidden="true">?</span><div><p class="team-card__name">Your President Here</p><p class="team-card__role">Chapter president · <span class="tag tag--demo">DEMO</span></p></div></div>
 <div class="notice notice--info"><p class="notice__title">Spanish draft</p><p>Every Spanish page is a draft until a fluent reviewer signs off.</p></div>
 <div class="notice notice--warn"><p class="notice__title">Recheck after Nov 16</p><p>County certification may change the Nov 3 figures.</p></div>
@@ -1495,10 +1486,10 @@
     &lt;p class=&quot;step__meta&quot;&gt;Source: Seminole County Supervisor of Elections · Checked Nov 9, 2026&lt;/p&gt;
   &lt;/div&gt;
 &lt;/div&gt;
-&lt;section class=&quot;issue&quot; style=&quot;--issue: var(--issue-sky)&quot; aria-labelledby=&quot;issue-transit&quot;&gt;
+&lt;div class=&quot;issue&quot; style=&quot;--issue: var(--issue-sky)&quot;&gt;
   &lt;h3 class=&quot;issue__title&quot; id=&quot;issue-transit&quot;&gt;Transit&lt;/h3&gt;
   &lt;ul class=&quot;issue__facts&quot;&gt;&lt;li&gt;SunRail stops at four Seminole stations: Altamonte Springs, Longwood, Lake Mary and Sanford. &lt;a href=&quot;https://sunrail.com/stations/&quot; rel=&quot;noopener&quot;&gt;SunRail&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;
-&lt;/section&gt;
+&lt;/div&gt;
 &lt;div class=&quot;team-card&quot;&gt;&lt;span class=&quot;avatar avatar--lg&quot; style=&quot;--avatar: var(--sun)&quot; aria-hidden=&quot;true&quot;&gt;?&lt;/span&gt;&lt;div&gt;&lt;p class=&quot;team-card__name&quot;&gt;Your President Here&lt;/p&gt;&lt;p class=&quot;team-card__role&quot;&gt;Chapter president · &lt;span class=&quot;tag tag--demo&quot;&gt;DEMO&lt;/span&gt;&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;div class=&quot;notice notice--info&quot;&gt;&lt;p class=&quot;notice__title&quot;&gt;Spanish draft&lt;/p&gt;&lt;p&gt;Every Spanish page is a draft until a fluent reviewer signs off.&lt;/p&gt;&lt;/div&gt;
 &lt;div class=&quot;notice notice--warn&quot;&gt;&lt;p class=&quot;notice__title&quot;&gt;Recheck after Nov 16&lt;/p&gt;&lt;p&gt;County certification may change the Nov 3 figures.&lt;/p&gt;&lt;/div&gt;
@@ -1530,7 +1521,7 @@
   <div class="sheet__body">
     <div class="field"><label class="field__label" for="sh-first-l">First name (or what you go by)</label><input id="sh-first-l" name="firstName" type="text" autocomplete="given-name"></div>
     <div class="field"><label class="field__label" for="sh-contact-l">Email or mobile</label><p class="field__hint" id="sh-contact-l-hint">For your invite and one reminder. Nothing else unless you ask.</p><input id="sh-contact-l" name="email" type="text" inputmode="email" autocomplete="email" aria-describedby="sh-contact-l-hint"></div>
-    <p class="consent">We never sell your info. DEMO: nothing leaves this browser.</p>
+    <p class="consent"><span>We never sell your info. DEMO: nothing leaves this browser.</span></p>
   </div>
   <div class="sheet__foot"><button class="btn btn--primary" type="button" data-sheet-close>Save my seat</button><button class="btn btn--quiet" type="button" data-sheet-close>Not now</button></div>
 </dialog>
@@ -1552,7 +1543,7 @@
   <div class="sheet__body">
     <div class="field"><label class="field__label" for="sh-first-d">First name (or what you go by)</label><input id="sh-first-d" name="firstName" type="text" autocomplete="given-name"></div>
     <div class="field"><label class="field__label" for="sh-contact-d">Email or mobile</label><p class="field__hint" id="sh-contact-d-hint">For your invite and one reminder. Nothing else unless you ask.</p><input id="sh-contact-d" name="email" type="text" inputmode="email" autocomplete="email" aria-describedby="sh-contact-d-hint"></div>
-    <p class="consent">We never sell your info. DEMO: nothing leaves this browser.</p>
+    <p class="consent"><span>We never sell your info. DEMO: nothing leaves this browser.</span></p>
   </div>
   <div class="sheet__foot"><button class="btn btn--primary" type="button" data-sheet-close>Save my seat</button><button class="btn btn--quiet" type="button" data-sheet-close>Not now</button></div>
 </dialog>
@@ -1574,7 +1565,7 @@
   &lt;div class=&quot;sheet__body&quot;&gt;
     &lt;div class=&quot;field&quot;&gt;&lt;label class=&quot;field__label&quot; for=&quot;sh-first&quot;&gt;First name (or what you go by)&lt;/label&gt;&lt;input id=&quot;sh-first&quot; name=&quot;firstName&quot; type=&quot;text&quot; autocomplete=&quot;given-name&quot;&gt;&lt;/div&gt;
     &lt;div class=&quot;field&quot;&gt;&lt;label class=&quot;field__label&quot; for=&quot;sh-contact&quot;&gt;Email or mobile&lt;/label&gt;&lt;p class=&quot;field__hint&quot; id=&quot;sh-contact-hint&quot;&gt;For your invite and one reminder. Nothing else unless you ask.&lt;/p&gt;&lt;input id=&quot;sh-contact&quot; name=&quot;email&quot; type=&quot;text&quot; inputmode=&quot;email&quot; autocomplete=&quot;email&quot; aria-describedby=&quot;sh-contact-hint&quot;&gt;&lt;/div&gt;
-    &lt;p class=&quot;consent&quot;&gt;We never sell your info. DEMO: nothing leaves this browser.&lt;/p&gt;
+    &lt;p class=&quot;consent&quot;&gt;&lt;span&gt;We never sell your info. DEMO: nothing leaves this browser.&lt;/span&gt;&lt;/p&gt;
   &lt;/div&gt;
   &lt;div class=&quot;sheet__foot&quot;&gt;&lt;button class=&quot;btn btn--primary&quot; type=&quot;button&quot; data-sheet-close&gt;Save my seat&lt;/button&gt;&lt;button class=&quot;btn btn--quiet&quot; type=&quot;button&quot; data-sheet-close&gt;Not now&lt;/button&gt;&lt;/div&gt;
 &lt;/dialog&gt;</code></pre></details>
@@ -1643,13 +1634,13 @@
 <p class="sg-label">Light</p>
 <div class="grid grid--4 sg-grid-demo"><div>grid</div><div>grid</div><div>grid</div><div>grid</div></div>
 <div class="cluster sg-grid-demo"><div>cluster</div><div>wraps</div><div>and aligns</div></div>
-<div class="snap sg-snap-demo" tabindex="0" role="region" aria-label="Snap strip demo"><div>snap 1</div><div>snap 2</div><div>snap 3</div><div>snap 4</div></div>
+<div class="snap sg-snap-demo" tabindex="0" role="region" aria-label="Snap strip demo (light)"><div>snap 1</div><div>snap 2</div><div>snap 3</div><div>snap 4</div></div>
 </div>
 <div class="sg-specimen theme-dark">
 <p class="sg-label">Dark</p>
 <div class="grid grid--4 sg-grid-demo"><div>grid</div><div>grid</div><div>grid</div><div>grid</div></div>
 <div class="cluster sg-grid-demo"><div>cluster</div><div>wraps</div><div>and aligns</div></div>
-<div class="snap sg-snap-demo" tabindex="0" role="region" aria-label="Snap strip demo"><div>snap 1</div><div>snap 2</div><div>snap 3</div><div>snap 4</div></div>
+<div class="snap sg-snap-demo" tabindex="0" role="region" aria-label="Snap strip demo (dark)"><div>snap 1</div><div>snap 2</div><div>snap 3</div><div>snap 4</div></div>
 </div>
 </div>
 

@@ -381,8 +381,8 @@ window.__canLoad = function (src) { return new Promise(function (res) { var v = 
       ok(Array.isArray(it.photos) && it.photos.length >= 1, n + ': photo credits');
       (it.photos || []).forEach((p) => {
         ok(/^https:\/\/images\.unsplash\.com\/photo-\d+-[0-9a-f]+$/.test(p.url), n + ': unsplash image url ' + p.url);
-        // credit link: the Unsplash photo page, or the image URL itself when the page slug can't be confirmed
-        ok(/^https:\/\/unsplash\.com\/photos\//.test(p.page) || p.page === p.url, n + ': unsplash page url');
+        // credit link: the Unsplash photo page, or the photographer's profile when the photo slug can't be confirmed
+        ok(/^https:\/\/unsplash\.com\/(photos\/|@)/.test(p.page), n + ': unsplash page url (photo page or photographer profile)');
         eq(p.license, 'Unsplash License', n + ': license');
         ok(p.photographer && p.description, n + ': photographer + description');
       });

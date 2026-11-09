@@ -28,7 +28,7 @@
  * Score per 6b item: 2 meets the threshold, 1 present but short of it, 0 failing, "review" when only a
  * person can judge it. N1..N10 are the non-negotiables, all GATEs except N7 (review).
  * Options: --root DIR  --pages a,b | page ...  --all  --widths 320,390,1440  --themes light,dark
- *          --no-axe  --no-throttle  --no-share  --targets FILE (JSON, merged over the defaults below)
+ *          --no-axe  --no-throttle  --no-perf  --no-share  --targets FILE (JSON, merged over the defaults below)
  *          --allow-hosts a,b  --concurrency N  --out FILE  --json  --quiet  --timeout MS  --max-samples N
  * Writes tools/.cache/qa_report.json. Exit codes: 0 every GATE passes, 1 a GATE fails, 2 bad input or crash.
  */
@@ -586,7 +586,7 @@ async function sampleTexts(page, texts, max) {
       const box = await page.evaluate((i) => {
         const el = document.querySelector('[data-qa-sample="' + i + '"]');
         if (!el) return null;
-        el.scrollIntoView({ block: 'center', inline: 'nearest' });
+        el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' }); // 'instant' beats base.css scroll-behavior: smooth
         const range = document.createRange();
         let r = null;
         for (const n of el.childNodes) {
@@ -623,7 +623,7 @@ async function sampleTexts(page, texts, max) {
       out.push({ sel: t.sel, text: t.text, ratio: Math.round(p10 * 100) / 100, need: t.large ? 3 : 4.5, uniform: far <= 0.08, spread: Math.round(far * 100), why: t.nonsolid ? (typeof t.nonsolid === 'string' ? t.nonsolid : 'background') + ' on ' + t.nonsolidAt : 'over ' + t.overMedia });
     } catch (e) { /* element moved or detached; skip */ }
   }
-  await page.evaluate(() => { for (const el of document.querySelectorAll('[data-qa-sample]')) el.removeAttribute('data-qa-sample'); window.scrollTo(0, 0); }).catch(() => {});
+  await page.evaluate(() => { for (const el of document.querySelectorAll('[data-qa-sample]')) el.removeAttribute('data-qa-sample'); window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); }).catch(() => {});
   return { sampled: out, candidates: texts.filter((t) => t.sample != null).length };
 }
 
@@ -745,7 +745,7 @@ async function mainPass(browser, url, pageRel, opts, axe, R) {
   R.ticks = (after.numbers || []).filter((x) => !a0.has(x) && (before.numbers || []).some((y) => y.split('|')[0] === x.split('|')[0])).slice(0, 5);
   // first screen at 390 x 664
   await page.setViewportSize({ width: 390, height: 664 });
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }));
   await sleep(300);
   R.firstScreen = await page.evaluate(qaFirstScreen);
   await ctx.close();
@@ -773,7 +773,7 @@ async function widthPass(browser, url, w, opts, axe, R) {
   if (w >= 1024) {
     // focus rings on the first keyboard stops
     R.focus = [];
-    await page.evaluate(() => { window.scrollTo(0, 0); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); });
+    await page.evaluate(() => { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); });
     for (let i = 0; i < 6; i++) {
       await page.keyboard.press('Tab');
       const f = await page.evaluate(qaFocusState).catch(() => null);
@@ -921,6 +921,8 @@ function score(pageRel, R, opts, rules) {
   const tg = targetsFor(opts.targets, pageRel);
   const isEs = pageRel.startsWith('es/');
   const rows = {};
+  R.hosts = R.hosts || { allowed: [], blocked: [], csp: [] };
+  R.axe = R.axe || {};
   const set = (id, s, result, details) => { rows[id] = { id, gate: GATES.has(id), score: s, result, details: details || [] }; };
   const V = R.v || {};
   const variants = Object.keys(V);

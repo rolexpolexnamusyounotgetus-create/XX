@@ -2,14 +2,14 @@
   "id": "./",
   "name": "Young Democrats of Seminole County",
   "short_name": "Young Dems",
-  "description": "The Young Democrats of Seminole County, Florida: ages 14 to 39.",
+  "description": "Young Democrats in Seminole County, FL, ages 14 to 39: free hangouts, straight answers about voting, and a crew that saves you a seat.",
   "lang": "en",
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#101114",
-  "theme_color": "#2f5bea",
+  "background_color": "#FFF6EA",
+  "theme_color": "#6A2BFF",
   "icons": [
     {
       "src": "assets/icons/icon-192.png",

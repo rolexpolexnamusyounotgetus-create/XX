@@ -22,8 +22,13 @@
     "credits:check": "python3 tools/credits.py --check",
     "manifest": "node tools/manifest.js --write",
     "manifest:check": "node tools/manifest.js --check",
-    "preflight": "python3 tools/sync_partials.py --check && node tools/csp.js --check && node tools/manifest.js --check && node tools/check_site.js",
+    "qa": "node tools/qa.js --all",
+    "voice": "node tools/voice_lint.js",
+    "es": "node tools/make_es.js --all",
+    "og": "node tools/make_og.js",
+    "preflight": "npm run sync:check && npm run check && npm run qa && npm run voice && npm run es -- --check && npm test",
     "test": "node tests/infra/core.test.js && node tests/infra/video.test.js && node tests/infra/tooling.test.js && node tests/infra/integration.test.js",
-    "test:tooling": "node tests/infra/tooling.test.js"
+    "test:tooling": "node tests/infra/tooling.test.js",
+    "test:site": "node tests/site/w8.test.js"
   }
 }

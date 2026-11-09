@@ -27,6 +27,7 @@ import datetime as dt
 import hashlib
 import json
 import re
+import string
 import sys
 import urllib.parse
 import urllib.request
@@ -39,8 +40,9 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
 API = "https://fonts.googleapis.com/css2"
 OFL_URL = "https://openfontlicense.org/open-font-license-official-text/"
 
-# Printable ASCII plus the Latin-1 letters and marks Spanish needs, and typographic quotes.
-HAND_TEXT = "".join(chr(c) for c in range(0x20, 0x7F)) + "¡¿ÁÉÍÓÚÜÑáéíóúüñ·’‘“”–—…"
+# Letters, digits, the punctuation a handwritten note uses, and the Spanish letters and marks. Brush glyphs are
+# heavy (about 650 bytes each), so symbols like # $ % @ are left out: 58 KB instead of 63 KB for full ASCII.
+HAND_TEXT = "".join(sorted(set(string.ascii_letters + string.digits + " .,!?'’-:¿¡áéíóúüñÁÉÍÓÚÜÑ&+()")))
 
 FONTS = [
     {
@@ -140,7 +142,7 @@ def fetch(dry: bool) -> int:
             "family": font["family"],
             "role": font["role"],
             "axes": font["axes"],
-            "subset": font["subset"] if font["subset"] != "text" else "text= (" + str(len(font["text"])) + " characters: printable ASCII + Spanish letters, ¡ ¿, quotes, dashes)",
+            "subset": font["subset"] if font["subset"] != "text" else "text= (" + str(len(font["text"])) + " characters: letters, digits, note punctuation, Spanish letters, ¡ ¿)",
             "preload": font["preload"],
             "bytes": len(data),
             "sha256": sha256(data),

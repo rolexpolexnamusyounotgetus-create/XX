@@ -730,7 +730,8 @@
         "\\(coming\\)"
       ],
       "message": "Builder leftovers (BRIEF 6b B37).",
-      "suggest": "Fill or remove it."
+      "suggest": "Fill or remove it.",
+      "scope": "data"
     },
     {
       "id": "ai-features",

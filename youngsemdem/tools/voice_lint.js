@@ -39,11 +39,16 @@ const RULES_FILE = path.join(__dirname, 'voice_rules.json');
 
 function loadRules(file) {
   const raw = JSON.parse(fs.readFileSync(file || RULES_FILE, 'utf8'));
+  // JavaScript's \b only knows ASCII letters, so "aquí" or "Último" never match \b...\b. Rules are
+  // written with \b; here it becomes a Unicode word boundary.
+  const UB = '(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))';
+  const uni = (src) => src.replace(/(^|[^\\])\\b/g, (m, pre) => pre + UB);
   raw.rules = (raw.rules || []).map((r) => {
-    const flags = (r.flags || 'iu').replace('g', '') + 'g';
+    const base = (r.flags || 'iu').replace('g', '');
+    const fl = base.indexOf('u') >= 0 ? base : base + 'u';
     return Object.assign({}, r, {
-      res: (r.patterns || []).map((p) => new RegExp(p, flags)),
-      allowRes: (r.allow || []).map((p) => new RegExp(p, (r.flags || 'iu').replace('g', '')))
+      res: (r.patterns || []).map((p) => new RegExp(uni(p), fl + 'g')),
+      allowRes: (r.allow || []).map((p) => new RegExp(uni(p), fl))
     });
   });
   raw.skip = new Set(raw.skipKeys || []);
@@ -79,6 +84,7 @@ function lintText(text, ctx, rules) {
   for (const r of rules.rules) {
     if (r.lang && r.lang !== 'any' && r.lang !== lang) continue;
     if (r.scope === 'html' && ctx.scope !== 'html') continue;
+    if (r.scope === 'data' && ctx.scope !== 'data') continue;
     if (ctx.only && ctx.only.indexOf(r.id) < 0) continue;
     const spans = [];
     for (const re of r.res) {
@@ -97,7 +103,7 @@ function lintText(text, ctx, rules) {
   }
   const only = (id) => !ctx.only || ctx.only.indexOf(id) >= 0;
   const bangs = (t.match(/!/g) || []).length;
-  if (ctx.serious && bangs && only('serious-exclamation')) out.push({ rule: 'serious-exclamation', severity: 'error', gate: 'B26', message: 'No exclamation marks in serious copy (BRIEF 2.5).', suggest: 'Facts first, one honest feeling, one action.', match: '!', excerpt: excerpt(t, t.indexOf('!'), 1) });
+  if (ctx.countBangs !== false && ctx.serious && bangs && only('serious-exclamation')) out.push({ rule: 'serious-exclamation', severity: 'error', gate: 'B26', message: 'No exclamation marks in serious copy (BRIEF 2.5).', suggest: 'Facts first, one honest feeling, one action.', match: '!', excerpt: excerpt(t, t.indexOf('!'), 1) });
   else if (ctx.countBangs !== false && bangs > (ctx.exclamationLimit || rules.exclamationsPerBlock || 1) && only('exclamations')) out.push({ rule: 'exclamations', severity: 'error', gate: 'B26', message: bangs + ' exclamation marks in one block; at most ' + (ctx.exclamationLimit || rules.exclamationsPerBlock || 1) + ' per screen (BRIEF 2.3).', suggest: 'Keep the one that matters.', match: '!', excerpt: excerpt(t, t.indexOf('!'), 1) });
   const em = emojiList(t);
   if (em.length && only('emoji')) {
@@ -275,7 +281,7 @@ function lintData(file, rules, opts) {
     if (typeof o !== 'object') return;
     const serious = ctx.serious || serTones.has(o.tone) || o.tone === 'serious';
     for (const k of Object.keys(o)) {
-      if (rules.skip.has(k)) continue;
+      if (keyPath.length && rules.skip.has(k)) continue; // top-level keys are namespaces, never skipped
       const v = o[k];
       const sub = Object.assign({}, ctx, { serious });
       if (keyPath.length && keyPath[keyPath.length - 1] === 'entries' || /^[a-z][a-zA-Z0-9]*(\.[A-Za-z0-9_-]+)+$/.test(k)) sub.entryKey = k;

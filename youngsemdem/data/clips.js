@@ -129,7 +129,7 @@ window.YSD_DATA.clips = {
         {
           "url": "https://images.unsplash.com/photo-1758275557330-cfd545444dc3",
           "downloadUrl": "https://images.unsplash.com/photo-1758275557330-cfd545444dc3?w=2400&q=85&fm=jpg",
-          "page": "https://images.unsplash.com/photo-1758275557330-cfd545444dc3",
+          "page": "https://unsplash.com/@silverkblack",
           "photographer": "Vitaly Gariev",
           "photographerHandle": "@silverkblack",
           "license": "Unsplash License",

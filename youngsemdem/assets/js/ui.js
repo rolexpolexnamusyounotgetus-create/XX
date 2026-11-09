@@ -125,10 +125,10 @@
     o.ampm = /p/i.test(o.dayPeriod || '') ? 'pm' : 'am';
     return o;
   }
-  function pattern(key, fallback) { var s = t(key); return s || fallback; }
+  function pattern(key, fallback, L) { var s = t(key, null, L); return s || fallback; }
   function fmtTime(iso, opts) {
     var L = (opts && opts.lang) || YSD.lang, p = parts(iso, L);
-    var ampm = pattern('format.ampm.' + p.ampm, L === 'es' ? (p.ampm === 'pm' ? 'p. m.' : 'a. m.') : p.ampm);
+    var ampm = pattern('format.ampm.' + p.ampm, L === 'es' ? (p.ampm === 'pm' ? 'p. m.' : 'a. m.') : p.ampm, L);
     var hm = p.hour + (p.minute && p.minute !== '00' ? ':' + p.minute : '');
     return opts && opts.bare ? hm : hm + ' ' + ampm;
   }
@@ -137,7 +137,7 @@
     var L = opts.lang || YSD.lang, p = parts(iso, L);
     var key = opts.year ? 'format.dateYear' : 'format.date';
     var fb = L === 'es' ? (opts.year ? '{weekday} {day} de {month} de {year}' : '{weekday} {day} de {month}') : (opts.year ? '{weekday}, {month} {day}, {year}' : '{weekday}, {month} {day}');
-    var pat = pattern(key, fb);
+    var pat = pattern(key, fb, L);
     if (opts.weekday === false) pat = pat.replace(/\{weekday\},?\s*/, '');
     var s = pat.replace('{weekday}', p.weekday).replace('{month}', p.month).replace('{day}', p.day).replace('{year}', p.year);
     if (opts.time) s += ' · ' + fmtTime(iso, { lang: L });
@@ -148,7 +148,7 @@
     if (!end) return fmtDate(start, { time: !/^\d{4}-\d{2}-\d{2}$/.test(String(start)), lang: L });
     var a = parts(start, L), b = parts(end, L);
     var sameDay = a.year === b.year && a.month === b.month && a.day === b.day;
-    var range = pattern('format.timeRange', L === 'es' ? 'de {start} a {end}' : '{start} to {end}');
+    var range = pattern('format.timeRange', L === 'es' ? 'de {start} a {end}' : '{start} to {end}', L);
     if (!sameDay) return fmtDate(start, { time: true, lang: L }) + ' – ' + fmtDate(end, { time: true, lang: L });
     var s = a.ampm === b.ampm ? fmtTime(start, { lang: L, bare: true }) : fmtTime(start, { lang: L });
     return fmtDate(start, { lang: L }) + ' · ' + range.replace('{start}', s).replace('{end}', fmtTime(end, { lang: L }));
@@ -406,6 +406,7 @@
   };
   ui.langHref = function (lang) {
     var to = lang || (YSD.lang === 'es' ? 'en' : 'es');
+    if (html.getAttribute('data-es') === 'none') return (YSD.root || '') + (to === 'es' ? 'es/index.html' : 'index.html'); // page has no twin
     var root = YSD.root || '', here = String(w.location.href).split('#')[0].split('?')[0];
     var rel = root && here.indexOf(root) === 0 ? here.slice(root.length) : '';
     if (rel === '' || /\/$/.test(rel)) rel += 'index.html';

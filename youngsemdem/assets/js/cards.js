@@ -275,6 +275,9 @@
     var fonts = null;
     try { fonts = w.document && w.document.fonts; } catch (e) {}
     if (!fonts || typeof fonts.load !== 'function') return Promise.resolve(false);
+    // On file:// Chrome blocks web-font loads (CORS) and boot.js switches to the fallback faces,
+    // so waiting would only log errors: draw with whatever is available.
+    try { if (w.location && w.location.protocol === 'file:') return Promise.resolve(false); } catch (e) {}
     specs = (specs || []).filter(function (x) { return x; });
     var work = Promise.all(specs.map(function (s) { return fonts.load(s).then(null, function () { return null; }); }))
       .then(function () { return fonts.ready; })

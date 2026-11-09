@@ -260,8 +260,8 @@
       muted: '#574D70',
       ink: '#170B33',
       paper: '#FFF6EA',
-      fontDisplay: '"Bricolage Grotesque", "Bricolage Fallback", system-ui, sans-serif',
-      fontBody: '"Atkinson Hyperlegible Next", "Atkinson Fallback", system-ui, sans-serif'
+      fontDisplay: '"Bricolage Grotesque", "Bricolage fb", system-ui, sans-serif',
+      fontBody: '"Atkinson Hyperlegible Next", "Atkinson fb", system-ui, sans-serif'
     },
 
     share: {

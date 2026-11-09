@@ -780,13 +780,19 @@ function parseArgs(argv) {
   return o;
 }
 
+/** True for pages that have no Spanish twin by design (styleguide.html, or data-es="skip" / ysd:es skip). */
+function optedOut(root, rel) {
+  if (SKIP_PAGES.has(rel)) return true;
+  let head = '';
+  try { head = fs.readFileSync(path.join(root, rel), 'utf8').slice(0, 4000); } catch (e) { return false; }
+  return /<html[^>]*\sdata-es\s*=\s*["']?skip/i.test(head) || /<meta[^>]+name=["']ysd:es["'][^>]+content=["']skip/i.test(head);
+}
+
 function allPages(root) {
   let files = [];
   try { files = fs.readdirSync(root).filter((f) => /\.html$/i.test(f) && fs.statSync(path.join(root, f)).isFile()); } catch (e) { files = []; }
-  return files.filter((f) => !SKIP_PAGES.has(f) && !f.startsWith('_')).filter((f) => {
-    const head = fs.readFileSync(path.join(root, f), 'utf8').slice(0, 4000);
-    return !/<html[^>]*\sdata-es\s*=\s*["']?skip/i.test(head) && !/<meta[^>]+name=["']ysd:es["'][^>]+content=["']skip/i.test(head);
-  }).sort((a, b) => (a === 'index.html' ? -1 : b === 'index.html' ? 1 : a.localeCompare(b)));
+  return files.filter((f) => !f.startsWith('_') && !optedOut(root, f))
+    .sort((a, b) => (a === 'index.html' ? -1 : b === 'index.html' ? 1 : a.localeCompare(b)));
 }
 
 function run(opts) {
@@ -808,6 +814,7 @@ function run(opts) {
     report.pages.push(pr);
     if (rel.startsWith('es/')) { pr.status = 'error'; pr.issues.push({ kind: 'bad-input', severity: 'error', text: 'pass the English page, not ' + rel }); continue; }
     if (!fs.existsSync(path.join(root, rel))) { pr.status = 'error'; pr.issues.push({ kind: 'bad-input', severity: 'error', text: rel + ' not found' }); continue; }
+    if (optedOut(root, rel)) { pr.status = 'skip'; continue; }
     let b;
     try { b = buildPage(root, rel, ctx); } catch (e) { pr.status = 'error'; pr.issues.push({ kind: 'crash', severity: 'error', text: String(e && e.stack || e).split('\n').slice(0, 3).join(' | ') }); continue; }
     pr.issues.push(...b.issues);
@@ -850,6 +857,7 @@ function printReport(report, opts) {
   const L = [];
   for (const n of report.notes) L.push('note: ' + n);
   for (const p of report.pages) {
+    if (p.status === 'skip') { L.push(`skip ${p.page}: no Spanish twin by design (styleguide.html or data-es="skip")`); continue; }
     const untr = p.issues.filter((i) => /^untranslated/.test(i.kind)).length;
     const miss = p.issues.filter((i) => i.kind === 'missing-key' || i.kind === 'missing-es').length;
     const mark = p.status === 'ok' ? 'ok  ' : p.status === 'warning' ? 'warn' : 'FAIL';

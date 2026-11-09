@@ -1,12 +1,7 @@
-/* =====================================================================================
-   YDSC · tokens.css (F0 foundation; owner: lead after F0 merges)
-   "Saved Seat": Concept A's Celery City Pop palette, Bricolage + Atkinson, refactored
-   into tokens. BRIEF §3.2 to §3.5. Every colour is a custom property. Bright colours are
-   fills under ink text, never text on cream. Dark mode is designed (not inverted) and is
-   defined twice: under the OS media query and under [data-theme="dark"] (boot.js sets it
-   before first paint from ysd:prefs:theme). .theme-light / .theme-dark force a theme on a
-   subtree; bright and cream sections are light islands, night sections dark islands.
-   ===================================================================================== */
+/* YDSC · tokens.css (F0; lead after merge). BRIEF §3.2-3.5. Bright colours are fills under ink, never text
+   on cream. Dark mode is designed and defined twice: the OS media query and [data-theme="dark"] (boot.js sets
+   it before paint). .theme-light/.theme-dark force a theme on a subtree; bright and cream sections are light
+   islands, night sections dark islands. */
 
 /* ---------- Fonts: self-hosted WOFF2 (tools/fetch_fonts.py; assets/fonts/fonts.json) ---------- */
 @font-face {
@@ -14,17 +9,13 @@
   src: url("../fonts/bricolage-800-wdth.woff2") format("woff2");
   font-weight: 100 900; /* one weight (800) ships; the range stops synthetic bold at 900 */
   font-stretch: 75% 100%;
-  font-style: normal;
   font-display: swap;
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: "Atkinson Hyperlegible Next";
   src: url("../fonts/atkinson-next-var.woff2") format("woff2");
   font-weight: 400 800;
-  font-style: normal;
   font-display: swap;
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: "Caveat Brush";
@@ -34,23 +25,18 @@
 }
 
 /* ---------- Metric-matched fallbacks (graft from Concept C; no font gate) ----------
-   Measured Mon, Nov 9, 2026 in Playwright Chromium: the same 226 headline strings and 240 body
-   strings (EN + ES, from data/strings.js) rendered in the web font and in Liberation Sans, which
-   is metric-compatible with Arial, Helvetica and Arimo; size-adjust = web width / fallback width.
-   ascent/descent-override = the web font's typo metrics (Bricolage 930/-270, Atkinson 984/-316,
-   UPM 1000) divided by size-adjust. The display fallback cannot follow font-stretch, so there
-   is one face per width step:
-     wdth 76 (hero, h1, stat) 81.5% · wdth 78 (h2) 83.3% · wdth 84 (h3) 88.7% · wdth 88 (h4) 92.3%
-     Atkinson 400 vs Arial 98.4% · 700 vs Arial Bold 98.8% · 800 vs Arial Bold 102.1%
-   Arial Narrow is left out on purpose: one face can only carry one size-adjust, and Arial
-   Narrow (not on iOS or Android) would need a different one. */
-@font-face { font-family: "Bricolage fb 76"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Helvetica-Bold"), local("Liberation Sans Bold"), local("LiberationSans-Bold"), local("Arimo Bold"), local("Arimo-Bold"); font-weight: 100 900; size-adjust: 81.5%; ascent-override: 114.1%; descent-override: 33.1%; line-gap-override: 0%; }
-@font-face { font-family: "Bricolage fb"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Helvetica-Bold"), local("Liberation Sans Bold"), local("LiberationSans-Bold"), local("Arimo Bold"), local("Arimo-Bold"); font-weight: 100 900; size-adjust: 83.3%; ascent-override: 111.6%; descent-override: 32.4%; line-gap-override: 0%; }
-@font-face { font-family: "Bricolage fb 84"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Helvetica-Bold"), local("Liberation Sans Bold"), local("LiberationSans-Bold"), local("Arimo Bold"), local("Arimo-Bold"); font-weight: 100 900; size-adjust: 88.7%; ascent-override: 104.8%; descent-override: 30.4%; line-gap-override: 0%; }
-@font-face { font-family: "Bricolage fb 88"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Helvetica-Bold"), local("Liberation Sans Bold"), local("LiberationSans-Bold"), local("Arimo Bold"), local("Arimo-Bold"); font-weight: 100 900; size-adjust: 92.3%; ascent-override: 100.8%; descent-override: 29.3%; line-gap-override: 0%; }
-@font-face { font-family: "Atkinson fb"; src: local("Arial"), local("ArialMT"), local("Helvetica"), local("Liberation Sans"), local("LiberationSans"), local("Arimo"); font-weight: 400; size-adjust: 98.4%; ascent-override: 100%; descent-override: 32.1%; line-gap-override: 0%; }
-@font-face { font-family: "Atkinson fb"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Helvetica-Bold"), local("Liberation Sans Bold"), local("LiberationSans-Bold"), local("Arimo Bold"), local("Arimo-Bold"); font-weight: 700; size-adjust: 98.8%; ascent-override: 99.6%; descent-override: 32%; line-gap-override: 0%; }
-@font-face { font-family: "Atkinson fb"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Helvetica-Bold"), local("Liberation Sans Bold"), local("LiberationSans-Bold"), local("Arimo Bold"), local("Arimo-Bold"); font-weight: 800; size-adjust: 102.1%; ascent-override: 96.4%; descent-override: 30.9%; line-gap-override: 0%; }
+   Measured Nov 9, 2026 in Playwright Chromium: 226 headlines + 240 body strings (EN + ES, data/strings.js) in the
+   web font vs Liberation Sans (metric twin of Arial, Helvetica, Arimo); size-adjust = web width / fallback width;
+   ascent/descent-override = typo metrics (Bricolage 930/-270, Atkinson 984/-316) / size-adjust. The display
+   fallback can't follow font-stretch, so one face per width: wdth 76 (hero, h1, stat) 81.5% · 78 (h2) 83.3% ·
+   84-88 (h3, h4, UI) 88.7% (h4 at 88 measured 92.3%). Atkinson: 400 98.4% · 700 98.8% · 800 102.1%.
+   No Arial Narrow: one face carries one size-adjust, and Narrow is missing on iOS and Android. */
+@font-face { font-family: "Bricolage fb 76"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Liberation Sans Bold"), local("Arimo Bold"); font-weight: 100 900; size-adjust: 81.5%; ascent-override: 114.1%; descent-override: 33.1%; line-gap-override: 0%; }
+@font-face { font-family: "Bricolage fb"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Liberation Sans Bold"), local("Arimo Bold"); font-weight: 100 900; size-adjust: 83.3%; ascent-override: 111.6%; descent-override: 32.4%; line-gap-override: 0%; }
+@font-face { font-family: "Bricolage fb 84"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Liberation Sans Bold"), local("Arimo Bold"); font-weight: 100 900; size-adjust: 88.7%; ascent-override: 104.8%; descent-override: 30.4%; line-gap-override: 0%; }
+@font-face { font-family: "Atkinson fb"; src: local("Arial"), local("ArialMT"), local("Helvetica"), local("Liberation Sans"), local("Arimo"); font-weight: 400; size-adjust: 98.4%; ascent-override: 100%; descent-override: 32.1%; line-gap-override: 0%; }
+@font-face { font-family: "Atkinson fb"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Liberation Sans Bold"), local("Arimo Bold"); font-weight: 700; size-adjust: 98.8%; ascent-override: 99.6%; descent-override: 32%; line-gap-override: 0%; }
+@font-face { font-family: "Atkinson fb"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Liberation Sans Bold"), local("Arimo Bold"); font-weight: 800; size-adjust: 102.1%; ascent-override: 96.4%; descent-override: 30.9%; line-gap-override: 0%; }
 
 /* ---------- Constants (same in both themes) ---------- */
 :root {
@@ -94,7 +80,7 @@
   --font-display: "Bricolage Grotesque", "Bricolage fb", "Arial Narrow", sans-serif;
   --font-display-76: "Bricolage Grotesque", "Bricolage fb 76", "Arial Narrow", sans-serif;
   --font-display-84: "Bricolage Grotesque", "Bricolage fb 84", sans-serif;
-  --font-display-88: "Bricolage Grotesque", "Bricolage fb 88", sans-serif;
+  --font-display-88: "Bricolage Grotesque", "Bricolage fb 84", sans-serif;
   --font-body: "Atkinson Hyperlegible Next", "Atkinson fb", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-hand: "Caveat Brush", "Bradley Hand", "Segoe Print", "Atkinson Hyperlegible Next", "Atkinson fb", sans-serif; /* never a generic serif cursive */
   --fs-tag: 13px;
@@ -139,25 +125,13 @@
 
 /* ---------- Semantic tokens: light (default, and every light island) ---------- */
 :root, .theme-light, .section--cream, .section--celery, .section--pink, .section--sky {
-  --bg: #FFF6EA;
-  --surface: #FFFFFF;
-  --surface-2: #F3EADB;
-  --text: #170B33;
-  --text-muted: #574D70;
-  --link: #4B12D6;
-  --focus: #4B12D6;
-  --edge: #170B33;
-  --line: #E4D9C6;
-  --shadow: #170B33;
-  --error: #B3261E;
-  --success: #1E6B3A;
-  --placeholder: #6E6488;
+  --bg:#FFF6EA; --surface:#FFFFFF; --surface-2:#F3EADB; --text:#170B33;
+  --text-muted:#574D70; --link:#4B12D6; --focus:#4B12D6; --edge:#170B33;
+  --line:#E4D9C6; --shadow:#170B33; --error:#B3261E; --success:#1E6B3A;
+  --placeholder:#6E6488;
   --control: #6E6488;      /* input borders: 5.47:1 on white (WCAG 1.4.11 needs 3:1) */
-  --inverse-bg: #170B33;
-  --inverse-text: #FFF6EA;
-  --island-night: #170B33;
-  --overlay: rgba(23, 11, 51, .62);
-  --sheen: .34;
+  --inverse-bg:#170B33; --inverse-text:#FFF6EA; --island-night:#170B33; --overlay:rgba(23, 11, 51, .62);
+  --sheen:.34;
   --accent-ui: #6A2BFF;    /* checkbox, radio and range accents */
   color-scheme: light;
 }
@@ -165,51 +139,21 @@
 /* ---------- Semantic tokens: dark (OS preference, unless the visitor chose light) ---------- */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #120826;
-    --surface: #1E1240;
-    --surface-2: #2A1B55;
-    --text: #FFF6EA;
-    --text-muted: #CDC4EA;
-    --link: #C8F03C;
-    --focus: #C8F03C;
-    --edge: #FFF6EA;
-    --line: #3A2A6B;
-    --shadow: #6A2BFF;
-    --error: #FFB4A8;
-    --success: #8DE0A6;
-    --placeholder: #A79FC2;
-    --control: #A79FC2;
-    --inverse-bg: #FFF6EA;
-    --inverse-text: #170B33;
-    --island-night: #0B0519;
-    --overlay: rgba(4, 2, 12, .72);
-    --sheen: .17;
-    --accent-ui: #C8F03C;
+    --bg:#120826; --surface:#1E1240; --surface-2:#2A1B55; --text:#FFF6EA;
+    --text-muted:#CDC4EA; --link:#C8F03C; --focus:#C8F03C; --edge:#FFF6EA;
+    --line:#3A2A6B; --shadow:#6A2BFF; --error:#FFB4A8; --success:#8DE0A6;
+    --placeholder:#A79FC2; --control:#A79FC2; --inverse-bg:#FFF6EA; --inverse-text:#170B33;
+    --island-night:#0B0519; --overlay:rgba(4, 2, 12, .72); --sheen:.17; --accent-ui:#C8F03C;
     color-scheme: dark;
   }
 }
 /* ---------- Semantic tokens: dark (toggle, and every dark island) ---------- */
 :root[data-theme="dark"], .theme-dark, .section--night {
-  --bg: #120826;
-  --surface: #1E1240;
-  --surface-2: #2A1B55;
-  --text: #FFF6EA;
-  --text-muted: #CDC4EA;
-  --link: #C8F03C;
-  --focus: #C8F03C;
-  --edge: #FFF6EA;
-  --line: #3A2A6B;
-  --shadow: #6A2BFF;
-  --error: #FFB4A8;
-  --success: #8DE0A6;
-  --placeholder: #A79FC2;
-  --control: #A79FC2;
-  --inverse-bg: #FFF6EA;
-  --inverse-text: #170B33;
-  --island-night: #0B0519;
-  --overlay: rgba(4, 2, 12, .72);
-  --sheen: .17;
-  --accent-ui: #C8F03C;
+  --bg:#120826; --surface:#1E1240; --surface-2:#2A1B55; --text:#FFF6EA;
+  --text-muted:#CDC4EA; --link:#C8F03C; --focus:#C8F03C; --edge:#FFF6EA;
+  --line:#3A2A6B; --shadow:#6A2BFF; --error:#FFB4A8; --success:#8DE0A6;
+  --placeholder:#A79FC2; --control:#A79FC2; --inverse-bg:#FFF6EA; --inverse-text:#170B33;
+  --island-night:#0B0519; --overlay:rgba(4, 2, 12, .72); --sheen:.17; --accent-ui:#C8F03C;
   color-scheme: dark;
 }
 .theme-light, .theme-dark { background: var(--bg); color: var(--text); }

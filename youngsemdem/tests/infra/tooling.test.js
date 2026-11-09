@@ -111,8 +111,10 @@ test('_headers: security headers, CSP sources, no overlapping duplicates, host l
   const dir = {};
   csp.split(';').forEach((d) => { const p = d.trim().split(/\s+/); if (p[0]) dir[p[0]] = p.slice(1); });
   assert.deepStrictEqual(dir['default-src'], ["'self'"]);
-  assert.ok(dir['style-src'].includes('https://fonts.googleapis.com'));
-  assert.ok(dir['font-src'].includes('https://fonts.gstatic.com'));
+  // fonts are self-hosted (assets/fonts/), so the base policy no longer allows Google Fonts hosts
+  assert.ok(!dir['style-src'].includes('https://fonts.googleapis.com'));
+  assert.ok(!dir['font-src'].includes('https://fonts.gstatic.com'));
+  assert.ok(dir['font-src'].includes("'self'"));
   for (const d of ['img-src', 'media-src']) {
     assert.ok(dir[d].includes('blob:') && dir[d].includes('data:'), d + ' allows blob: and data:');
   }

@@ -144,7 +144,7 @@
  * Copy seo.* into each page's static <head> (link-preview crawlers don't run JavaScript):
  * <title>, <meta name="description">, og:title, og:description, plus og:locale en_US (es_US on
  * Spanish pages, with og:locale:alternate for the other) and twitter:card summary_large_image.
- * og:title leaves out the site name (Apple TN3156); <title> keeps "| YDSC". Mark 404 noindex.
+ * og:title leaves out the site name (Apple TN3156); <title> ends " · Young Democrats of Seminole County" (BRIEF §1.3, §4.0). Mark 404 noindex.
  * Pages: home, join, events, eventInvite (single-event page, template), vote, feed (the clips wall),
  * post (upload), issues, quiz, quizResult (template), newsletter, about, privacy, accessibility,
  * notFound. Image alt text (og:image:alt) belongs with each image, so the design team writes it.
@@ -368,6 +368,7 @@ window.YSD_DATA.strings = {
       demo: true,
       note: "Top of every page while YSD_CONFIG.demo is true. Dismissing collapses it to demo.bannerShort; it never disappears."
     },
+    "demo.noticeLabel": { en: "DEMO notice", es: "Aviso DEMO", demo: true, note: "aria-label of the demo banner landmark." },
     "demo.bannerShort": { en: "DEMO preview. Forms don't send anything.", es: "Vista previa DEMO. Los formularios no envían nada.", demo: true },
     "demo.bannerMore": { en: "What's real?", es: "¿Qué es real?", note: "Links to about.html#whats-real (BRIEF §4.0)." },
     "demo.bannerDismiss": { en: "Got it", es: "Entendido" },
@@ -1052,15 +1053,15 @@ window.YSD_DATA.strings = {
 
     // ---- Mail-ballot heads-up (until Jan 1, 2027). Same facts and advice as data/civic.js changes[mail-ballot-expiry].
     "share.mailBallot.sms": {
-      en: "Heads up from a friend: if you asked for a mail ballot before Nov 3, that request ends Dec 31. Renew it once and you're covered through 2028. How: {link}",
-      es: "Aviso entre amigos: si pediste la boleta por correo antes del 3 de noviembre, esa solicitud vence el 31 de diciembre. Renuévala una vez y te cubre hasta finales de 2028. Cómo hacerlo: {link}",
+      en: "Heads up from a friend: if you asked for a mail ballot before Nov 3, that request ends Dec 31. Ask again and you should be set through 2028. How: {link}",
+      es: "Aviso entre amigos: si pediste la boleta por correo antes del 3 de noviembre, esa solicitud vence el 31 de diciembre. Pídela de nuevo y debería cubrirte hasta finales de 2028. Cómo hacerlo: {link}",
       source: "https://www.flsenate.gov/Laws/Statutes/2026/101.62", sources: ["https://voteseminole.gov/how-to-vote/vote-by-mail/"],
       verified: "2026-11-09", confidence: "high", expires: "2027-01-01T00:00:00-05:00", next: "share.mailBallot2027.sms",
       note: "F.S. 101.62(1)(a), 2026 statutes: one request covers all elections through the end of the calendar year of the next regularly scheduled general election. That election was Nov 3, 2026, so requests made before it end Dec 31, 2026, and one made after it should run through Dec 31, 2028 (med for that reading: Seminole's vote-by-mail page hasn't said how it handles post-election requests, so the longer texts say to check My Voter Record in January). Not \"2025 or 2026\": requests made after Nov 5, 2024 also end Dec 31, 2026, and ones made after Nov 3, 2026 don't."
     },
     "share.mailBallot.whatsapp": {
-      en: "Heads up: a Florida mail-ballot request lasts through the end of the next general election year. That election was Nov 3, so if you asked before then, yours ends Dec 31. Renew it once and you're covered for every election through 2028, including a 2027 city election if your city has one. Steps and the official link: {link}",
-      es: "Ojo: en Florida, la solicitud de boleta por correo dura hasta el final del año de las siguientes elecciones generales. Esas elecciones fueron el 3 de noviembre, así que si la pediste antes, la tuya vence el 31 de diciembre. Renuévala una vez y te cubre en todas las elecciones hasta finales de 2028, incluida una elección municipal en 2027 si tu ciudad tiene una. Los pasos y el enlace oficial: {link}",
+      en: "Heads up: a Florida mail-ballot request lasts through the end of the next general election year. That election was Nov 3, so if you asked before then, yours ends Dec 31. Ask again and you should be set for every election through 2028, including a 2027 city election if your city has one. Check My Voter Record to be sure. Steps and the official link: {link}",
+      es: "Ojo: en Florida, la solicitud de boleta por correo dura hasta el final del año de las siguientes elecciones generales. Esas elecciones fueron el 3 de noviembre, así que si la pediste antes, la tuya vence el 31 de diciembre. Pídela de nuevo y debería cubrirte en todas las elecciones hasta finales de 2028, incluida una elección municipal en 2027 si tu ciudad tiene una. Revisa My Voter Record para confirmarlo. Los pasos y el enlace oficial: {link}",
       source: "https://www.flsenate.gov/Laws/Statutes/2026/101.62", sources: ["https://voteseminole.gov/how-to-vote/vote-by-mail/"],
       verified: "2026-11-09", confidence: "high", expires: "2027-01-01T00:00:00-05:00", next: "share.mailBallot2027.whatsapp"
     },
@@ -1071,8 +1072,8 @@ window.YSD_DATA.strings = {
       verified: "2026-11-09", confidence: "high", expires: "2027-01-01T00:00:00-05:00", next: "share.mailBallot2027.igStory"
     },
     "share.mailBallot.short": {
-      en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Renew it once and you're covered through 2028. {link}",
-      es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Renuévala una vez y te cubre hasta finales de 2028. {link}",
+      en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set through 2028. Check My Voter Record to be sure. {link}",
+      es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Pídela de nuevo y debería cubrirte hasta finales de 2028. Revisa My Voter Record para confirmarlo. {link}",
       source: "https://www.flsenate.gov/Laws/Statutes/2026/101.62", sources: ["https://voteseminole.gov/how-to-vote/vote-by-mail/"],
       verified: "2026-11-09", confidence: "high", expires: "2027-01-01T00:00:00-05:00", next: "share.mailBallot2027.short"
     },
@@ -1356,7 +1357,7 @@ window.YSD_DATA.strings = {
     // ==================================================================================== SEO
     // ---- home
     "seo.home.title": {
-      en: "Young Democrats of Seminole County | Ages 14 to 39", es: "Young Democrats of Seminole County | De 14 a 39 años",
+      en: "Young Democrats of Seminole County · Ages 14 to 39", es: "Young Democrats of Seminole County · De 14 a 39 años",
       source: "https://secure.actblue.com/donate/ydscdues", verified: "2026-11-09", confidence: "high"
     },
     "seo.home.description": {
@@ -1370,7 +1371,7 @@ window.YSD_DATA.strings = {
       source: "https://secure.actblue.com/donate/ydscdues", verified: "2026-11-09", confidence: "high"
     },
     // ---- join
-    "seo.join.title": { en: "Join the Young Dems | YDSC", es: "Únete a los Young Dems | YDSC" },
+    "seo.join.title": { en: "Join the Young Dems · Young Democrats of Seminole County", es: "Únete a los Young Dems · Young Democrats of Seminole County" },
     "seo.join.description": {
       en: "Join the Young Democrats of Seminole County, ages 14 to 39. A first name and an email or phone gets you started. Dues are $20 a year, with a free option.",
       es: "Únete a los Young Democrats of Seminole County (de 14 a 39 años). Basta tu nombre y un correo o celular. La cuota es de $20 al año, con opción gratis.",
@@ -1383,7 +1384,7 @@ window.YSD_DATA.strings = {
       es: "Únete a los jóvenes demócratas del condado de Seminole. Toma menos de un minuto y nadie espera que lo sepas todo el primer día."
     },
     // ---- events
-    "seo.events.title": { en: "Events in Seminole County | YDSC", es: "Eventos en el condado de Seminole | YDSC" },
+    "seo.events.title": { en: "Events in Seminole County · Young Democrats of Seminole County", es: "Eventos en el condado de Seminole · Young Democrats of Seminole County" },
     "seo.events.description": {
       en: "Meetups, volunteer shifts and hangouts with the Young Democrats of Seminole County. Times, places, access notes and a quick RSVP, no account needed.",
       es: "Reuniones, voluntariado y encuentros con los Young Democrats of Seminole County. Horarios, lugares, accesibilidad y confirmación rápida, sin crear cuenta."
@@ -1394,7 +1395,7 @@ window.YSD_DATA.strings = {
       es: "Elige una noche, guarda tu lugar y trae a alguien. Cada evento dice la hora, el lugar y cómo es el acceso."
     },
     // ---- event invite (template: event, date, time, place)
-    "seo.eventInvite.title": { en: "{event}, {date} | YDSC", es: "{event}, {date} | YDSC" },
+    "seo.eventInvite.title": { en: "{event}, {date} · Young Democrats of Seminole County", es: "{event}, {date} · Young Democrats of Seminole County" },
     "seo.eventInvite.description": {
       en: "{event} with the Young Democrats of Seminole County: {date}, {time}, {place}. Quick RSVP, no account needed. Bring a friend.",
       es: "{event} con los Young Democrats of Seminole County: {date}, {time}, {place}. Confirma rápido, sin crear cuenta, y trae a alguien."
@@ -1402,7 +1403,7 @@ window.YSD_DATA.strings = {
     "seo.eventInvite.ogTitle": { en: "You're invited: {event}", es: "Te invitamos: {event}" },
     "seo.eventInvite.ogDescription": { en: "{date}, {time}, {place}. First time? Perfect.", es: "{date}, {time}, {place}. ¿Primera vez? Perfecto." },
     // ---- vote
-    "seo.vote.title": { en: "Vote in Seminole County: what changed | YDSC", es: "Votar en el condado de Seminole: qué cambió | YDSC" },
+    "seo.vote.title": { en: "Vote in Seminole County: what changed · Young Democrats of Seminole County", es: "Votar en el condado de Seminole: qué cambió · Young Democrats of Seminole County" },
     "seo.vote.description": {
       en: "Plain-words voting help for Seminole County: mail ballots, voter ID, registration and the next election dates, with official links.",
       es: "Ayuda para votar en el condado de Seminole, sin enredos: boleta por correo, identificación, inscripción y próximas fechas, con enlaces oficiales."
@@ -1422,7 +1423,7 @@ window.YSD_DATA.strings = {
       verified: "2026-11-09", confidence: "high", showFrom: "2027-01-01T00:00:00-05:00", expires: "2028-11-08T00:00:00-05:00", recheck: "2026-12-15"
     },
     // ---- feed
-    "seo.feed.title": { en: "Clips from Seminole | YDSC", es: "Clips desde Seminole | YDSC" },
+    "seo.feed.title": { en: "Clips from Seminole · Young Democrats of Seminole County", es: "Clips desde Seminole · Young Democrats of Seminole County" },
     "seo.feed.description": {
       en: "Short videos from people around Seminole County on why they show up, plus how to post your own. A real person reviews every clip.",
       es: "Videos cortos de gente del condado de Seminole sobre por qué participa, y cómo subir el tuyo. Una persona revisa cada clip.",
@@ -1431,7 +1432,7 @@ window.YSD_DATA.strings = {
     "seo.feed.ogTitle": { en: "Why we show up", es: "Por qué participamos" },
     "seo.feed.ogDescription": { en: "Short clips from people around Seminole County. Sound optional.", es: "Clips cortos de gente del condado de Seminole. El sonido es opcional." },
     // ---- post (upload)
-    "seo.post.title": { en: "Post a clip | YDSC", es: "Sube un clip | YDSC" },
+    "seo.post.title": { en: "Post a clip · Young Democrats of Seminole County", es: "Sube un clip · Young Democrats of Seminole County" },
     "seo.post.description": {
       en: "Got something to say about Seminole? Post a short vertical clip. A real person reviews every clip before it goes public.",
       es: "¿Tienes algo que decir sobre Seminole? Sube un clip corto y vertical. Una persona revisa cada clip antes de publicarlo.",
@@ -1440,7 +1441,7 @@ window.YSD_DATA.strings = {
     "seo.post.ogTitle": { en: "Got a minute and something to say?", es: "¿Tienes un minuto y algo que decir?" },
     "seo.post.ogDescription": { en: "Film it vertical, keep it kind, send it in.", es: "Grábalo en vertical, que sea respetuoso, y mándalo." },
     // ---- issues
-    "seo.issues.title": { en: "Local issues in Seminole County | YDSC", es: "Temas locales del condado de Seminole | YDSC" },
+    "seo.issues.title": { en: "Local issues in Seminole County · Young Democrats of Seminole County", es: "Temas locales del condado de Seminole · Young Democrats of Seminole County" },
     "seo.issues.description": {
       en: "Rent, storms and insurance, reproductive and LGBTQ+ freedom, schools, wages, SunRail, clean water and voting rights: Seminole numbers and one thing to do.",
       es: "Alquiler, tormentas y seguros, libertad reproductiva y LGBTQ+, escuelas, sueldos, SunRail, agua limpia y derecho al voto: datos de Seminole y algo que hacer.",
@@ -1449,7 +1450,7 @@ window.YSD_DATA.strings = {
     "seo.issues.ogTitle": { en: "The Seminole numbers behind the headlines", es: "Los datos de Seminole detrás de los titulares" },
     "seo.issues.ogDescription": { en: "Nine local issues, sourced, each with one thing you can actually do.", es: "Nueve temas locales, con fuentes, cada uno con algo que de verdad puedes hacer." },
     // ---- quiz
-    "seo.quiz.title": { en: "Quizzes: find your issue, find your type | YDSC", es: "Quizzes: encuentra tu tema y tu modo | YDSC" },
+    "seo.quiz.title": { en: "Quizzes: find your issue, find your type · Young Democrats of Seminole County", es: "Quizzes: encuentra tu tema y tu modo · Young Democrats of Seminole County" },
     "seo.quiz.description": {
       en: "Two quick quizzes from the Young Democrats of Seminole County: the local issue that's yours, and the way you like to organize. Shareable results.",
       es: "Dos quizzes rápidos de los Young Democrats of Seminole County: el tema local que es tuyo y tu modo de organizar. Resultados para compartir."
@@ -1457,12 +1458,12 @@ window.YSD_DATA.strings = {
     "seo.quiz.ogTitle": { en: "Which Seminole issue is yours?", es: "¿Cuál tema de Seminole es el tuyo?" },
     "seo.quiz.ogDescription": { en: "Seven everyday questions, one match, and three things you can do about it.", es: "Siete preguntas de la vida diaria, un resultado y tres cosas que puedes hacer al respecto." },
     // ---- quiz result (template: match; for pre-rendered /quiz/<slug>/<result>.html pages)
-    "seo.quizResult.title": { en: "{match}: a Seminole quiz result | YDSC", es: "{match}: un resultado del quiz de Seminole | YDSC" },
+    "seo.quizResult.title": { en: "{match}: a Seminole quiz result · Young Democrats of Seminole County", es: "{match}: un resultado del quiz de Seminole · Young Democrats of Seminole County" },
     "seo.quizResult.description": { en: "A one-minute quiz from the Young Democrats of Seminole County. See the result, then take it yourself.", es: "Un quiz de un minuto de los Young Democrats of Seminole County. Mira el resultado y luego hazlo tú." },
     "seo.quizResult.ogTitle": { en: "I got {match}. What's yours?", es: "Me salió {match}. ¿Y a ti?" },
     "seo.quizResult.ogDescription": { en: "One minute, everyday questions, one match. Take the quiz.", es: "Un minuto, preguntas de la vida diaria, un resultado. Haz el quiz." },
     // ---- newsletter
-    "seo.newsletter.title": { en: "The Thursday Letter: weekly email | YDSC", es: "La Carta del Jueves: correo semanal | YDSC", placeholder: "chapter-confirm" },
+    "seo.newsletter.title": { en: "The Thursday Letter: weekly email · Young Democrats of Seminole County", es: "La Carta del Jueves: correo semanal · Young Democrats of Seminole County", placeholder: "chapter-confirm" },
     "seo.newsletter.description": {
       en: "One short email a week from the Young Democrats of Seminole County: what's on, one thing to do, a few local picks. No guilt, unsubscribe anytime.",
       es: "Un correo corto a la semana de los Young Democrats of Seminole County: qué hay, una cosa para hacer y recomendaciones locales. Te das de baja cuando quieras.",
@@ -1484,7 +1485,7 @@ window.YSD_DATA.strings = {
       es: "Los jóvenes demócratas del condado de Seminole: cómo trabajamos, quién puede unirse y cómo empezar sin un gran compromiso."
     },
     // ---- privacy
-    "seo.privacy.title": { en: "Privacy | YDSC", es: "Privacidad | YDSC" },
+    "seo.privacy.title": { en: "Privacy · Young Democrats of Seminole County", es: "Privacidad · Young Democrats of Seminole County" },
     "seo.privacy.description": {
       en: "What the Young Democrats of Seminole County collect, why, who sees it, and how to delete it.",
       es: "Qué datos recopilan los Young Democrats of Seminole County, para qué, quién los ve y cómo borrarlos.",
@@ -1497,7 +1498,7 @@ window.YSD_DATA.strings = {
       placeholder: "legal-review", note: "Draft policy commitment from data/legal.js; counsel signs off."
     },
     // ---- accessibility
-    "seo.accessibility.title": { en: "Accessibility | YDSC", es: "Accesibilidad | YDSC" },
+    "seo.accessibility.title": { en: "Accessibility · Young Democrats of Seminole County", es: "Accesibilidad · Young Democrats of Seminole County" },
     "seo.accessibility.description": {
       en: "Our accessibility goal (WCAG 2.2 AA), what doesn't work yet, and how to get help fast.",
       es: "Nuestra meta de accesibilidad (WCAG 2.2 AA), lo que todavía no funciona bien y cómo pedir ayuda rápido.",
@@ -1506,7 +1507,7 @@ window.YSD_DATA.strings = {
     "seo.accessibility.ogTitle": { en: "Our goal: a site everyone can use", es: "Nuestra meta: un sitio que todos puedan usar" },
     "seo.accessibility.ogDescription": { en: "What works, what doesn't yet, and how to reach a person fast.", es: "Lo que funciona, lo que todavía no y cómo hablar rápido con una persona." },
     // ---- 404
-    "seo.notFound.title": { en: "Page not found | YDSC", es: "Página no encontrada | YDSC" },
+    "seo.notFound.title": { en: "Page not found · Young Democrats of Seminole County", es: "Página no encontrada · Young Democrats of Seminole County" },
     "seo.notFound.description": {
       en: "This page doesn't exist or has moved. Head back to the Young Democrats of Seminole County home page.",
       es: "Esta página no existe o cambió de dirección. Vuelve a la página de inicio de los Young Democrats of Seminole County."

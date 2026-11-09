@@ -627,8 +627,8 @@ window.YSD_DATA.civic = {
       kind: "expiry",
       title: { en: "Mail-ballot requests from before Nov 3 run out", es: "Vencen las solicitudes de boleta por correo de antes del 3 de noviembre" },
       short: {
-        en: "Asked for a mail ballot before the Nov 3 election? That request ends Dec 31. Renew it once and you're set through 2028.",
-        es: "¿Pediste la boleta por correo antes de las elecciones del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Renuévala una vez y te sirve hasta finales de 2028."
+        en: "Asked for a mail ballot before the Nov 3 election? That request ends Dec 31. Ask again and you should be set through 2028. Check My Voter Record to be sure.",
+        es: "¿Pediste la boleta por correo antes de las elecciones del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Pídela de nuevo y debería valer hasta 2028. Revisa My Voter Record para confirmarlo."
       },
       detail: {
         en: "One request lasts from the day you make it through the end of the year of the next regular general election. That election was Nov 3, 2026, so requests made before it end Dec 31, 2026.",
@@ -1302,15 +1302,15 @@ window.YSD_DATA.civic = {
       eyebrow: { en: "HEADS UP", es: "OJO" },
       title: { en: "Mail-ballot requests from before Nov 3 run out Dec 31", es: "Las solicitudes de boleta por correo hechas antes del 3 de noviembre vencen el 31 de diciembre" },
       short: {
-        en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Renew it once and you're covered through 2028.",
-        es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Renuévala una vez y te cubre hasta finales de 2028."
+        en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set through 2028. Check My Voter Record to be sure.",
+        es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Pídela de nuevo y debería valer hasta 2028. Revisa My Voter Record para confirmarlo."
       },
       phases: [
         {
           until: "2027-01-01T00:00:00-05:00",
           short: {
-            en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Renew it once and you're covered through 2028.",
-            es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Renuévala una vez y te cubre hasta finales de 2028."
+            en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set through 2028. Check My Voter Record to be sure.",
+            es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Pídela de nuevo y debería valer hasta 2028. Revisa My Voter Record para confirmarlo."
           }
         },
         {
@@ -2319,8 +2319,8 @@ window.YSD_DATA.civic = {
       id: "faq-mail-expire",
       q: { en: "I already asked for a mail ballot. Am I set for 2027?", es: "Ya pedí la boleta por correo. ¿Me sirve para 2027?" },
       a: {
-        en: "Depends on when you asked. Before the Nov 3, 2026 election: no, that request ends Dec 31, 2026, so renew it once and you're covered through Dec 31, 2028. After Nov 3: under the state's rule it should already run through 2028, but check My Voter Record in January to be sure.",
-        es: "Depende de cuándo la pediste. Antes de las elecciones del 3 de noviembre de 2026: no, esa solicitud vence el 31 de diciembre de 2026; renuévala una vez y te cubre hasta el 31 de diciembre de 2028. Después del 3 de noviembre: según la regla del estado ya debería servir hasta finales de 2028, pero revisa My Voter Record en enero para confirmarlo."
+        en: "Depends on when you asked. Before the Nov 3, 2026 election: no, that request ends Dec 31, 2026, so renew it in January and you're covered through Dec 31, 2028. After Nov 3: under the state's rule it should already run through 2028, but check My Voter Record in January to be sure.",
+        es: "Depende de cuándo la pediste. Antes de las elecciones del 3 de noviembre de 2026: no, esa solicitud vence el 31 de diciembre de 2026; si la renuevas en enero, te cubre hasta el 31 de diciembre de 2028. Después del 3 de noviembre: según la regla del estado ya debería servir hasta finales de 2028, pero revisa My Voter Record en enero para confirmarlo."
       },
       linkIds: ["voteByMail", "mailBallotRequest", "myVoterRecord"],
       tags: ["vote-by-mail", "2027"],
