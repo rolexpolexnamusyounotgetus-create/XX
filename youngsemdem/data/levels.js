@@ -14,6 +14,10 @@
  *  - Self-reported actions (mail-ballot renewal, registration check, membership choice) are honor
  *    system: never ask for voter data, ID numbers or screenshots.
  *  - Money never unlocks anything: the membership badge counts voting and non-voting the same.
+ *  - Physical perks (stickers) attach only to organizing actions: showing up, volunteering, bringing
+ *    friends. Civic steps (the mail-ballot reminder and renewal, a voting plan, a registration check)
+ *    earn XP and badges only, never anything of value (52 U.S.C. 10307(c); docs/research/00). So the
+ *    one physical level perk is Seed's sticker at your first event; the other perks are privileges.
  *
  * Load: classic script, after assets/js/config.js. No modules, no fetches. Node check:
  *   node -e "global.window={};require('./data/levels.js');console.log(Object.keys(window.YSD_DATA))"
@@ -21,6 +25,8 @@
  * CONVENTIONS (same as data/civic.js): bilingual text is { en, es }; ISO 8601 dates with the
  * America/New_York offset; placeholders {n}, {name}, {level}, {badge}, {url}. facts[] / basis[]
  * entries carry source + verified + confidence (editors only; do not render confidence).
+ * {url} is the share link. {link} is the site's canonical name for it, and YSD.fill(text, { link })
+ * in assets/js/config.js fills both {link} and {url}, so these templates work as they are.
  *
  * TOP LEVEL (window.YSD_DATA.levels)
  *   version, demo, verified, timezone, note{}, labels{}, demoMode{}, rules[], storage{},
@@ -62,7 +68,8 @@
  *   log[{ action, xp, ref?, demo? }] } (xp must equal the sum of log xp)
  *
  * Mail-ballot wording follows data/civic.js and events.js: requests made before the Nov 3, 2026
- * election end Dec 31, 2026; Spanish "solicitud de boleta por correo".
+ * election end Dec 31, 2026; one made after Nov 3 should run through 2028 (check My Voter Record);
+ * Spanish "solicitud de boleta por correo".
  *
  * Interop: events.js items list xpActions[] and badgeIds[]; team.js tokens{} defines the colour tokens.
  */
@@ -91,10 +98,10 @@ window.YSD_DATA.levels = {
     perWeek: { en: "up to {n} a week", es: "hasta {n} por semana" },
     honorSystem: { en: "Honor system", es: "Confiamos en tu palabra" },
     iDidIt: { en: "I did it", es: "Ya lo hice" },
-    iWasThere: { en: "I was there (demo)", es: "Estuve ahí (demo)" },
+    iWasThere: { en: "I was there (DEMO)", es: "Estuve ahí (DEMO)" },
     shareBadge: { en: "Share this badge", es: "Compartir esta insignia" },
-    resetDemo: { en: "Reset demo progress", es: "Reiniciar el progreso de muestra" },
-    perkDemo: { en: "Example perk (demo)", es: "Beneficio de ejemplo (demo)" }
+    resetDemo: { en: "Reset DEMO progress", es: "Reiniciar el progreso DEMO" },
+    perkDemo: { en: "Example perk (DEMO)", es: "Beneficio de ejemplo (DEMO)" }
   },
 
   demoMode: {
@@ -105,20 +112,20 @@ window.YSD_DATA.levels = {
         es: "Mientras el sitio está en modo demo, todo esto se guarda solo en este navegador. No se envía nada a ningún lado."
       },
       {
-        en: "Event check-ins are simulated: after an event starts, its page shows an \"I was there (demo)\" button. On the real site, check-in is a QR code at the door.",
-        es: "Los registros de asistencia son simulados: cuando empieza un evento, su página muestra un botón «Estuve ahí (demo)». En el sitio real, te registras con un código QR en la entrada."
+        en: "Event check-ins are simulated: after an event starts, its page shows an \"I was there (DEMO)\" button. On the real site, check-in is a QR code at the door.",
+        es: "Los registros de asistencia son simulados: cuando empieza un evento, su página muestra un botón «Estuve ahí (DEMO)». En el sitio real, te registras con un código QR en la entrada."
       },
       {
-        en: "Simulated friends in your demo squad count toward the friend badges, so you can see how they work. Anything they unlock is labeled DEMO.",
-        es: "Las amistades simuladas de tu grupo de muestra cuentan para las insignias de invitar, así ves cómo funcionan. Todo lo que desbloqueen dice DEMO."
+        en: "Simulated friends in your DEMO squad count toward the friend badges, so you can see how they work. Anything they unlock is labeled DEMO.",
+        es: "Las amistades simuladas de tu grupo DEMO cuentan para las insignias de invitar, así ves cómo funcionan. Todo lo que desbloqueen dice DEMO."
       },
       {
         en: "Perks are examples. The chapter hasn't approved them yet.",
         es: "Los beneficios son ejemplos. El grupo todavía no los ha aprobado."
       },
       {
-        en: "You can reset your demo progress anytime.",
-        es: "Puedes reiniciar tu progreso de muestra cuando quieras."
+        en: "You can reset your DEMO progress anytime.",
+        es: "Puedes reiniciar tu progreso DEMO cuando quieras."
       }
     ]
   },
@@ -166,7 +173,7 @@ window.YSD_DATA.levels = {
         en: "You showed up. Honestly, that's the hard part.",
         es: "Llegaste. La verdad, eso es lo más difícil."
       },
-      perk: { en: "First pick from the sticker sheet", es: "Escoges primero de la hoja de stickers" },
+      perk: { en: "Pick a song for the playlist at your next event", es: "Escoges una canción para la playlist de tu próximo evento" },
       token: "--sky"
     },
     {
@@ -232,12 +239,12 @@ window.YSD_DATA.levels = {
     {
       id: "join",
       label: { en: "Join", es: "Unirte" },
-      how: { en: "Join the Young Dems list.", es: "Únete a la lista de Young Dems." },
+      how: { en: "Join the Young Dems list.", es: "Únete a la lista de los Young Dems." },
       xp: 50,
       limit: { count: 1, per: "lifetime" },
       verify: "automatic",
       hook: "YSD.members.join() / document event ysd:joined (first join only)",
-      demoHow: { en: "Join with the demo form. Nothing is sent.", es: "Únete con el formulario de muestra. No se envía nada." }
+      demoHow: { en: "Join with the DEMO form. Nothing is sent.", es: "Únete con el formulario DEMO. No se envía nada." }
     },
     {
       id: "rsvp",
@@ -247,7 +254,7 @@ window.YSD_DATA.levels = {
       limit: { count: 1, per: "event" },
       verify: "automatic",
       hook: "events page RSVP submit (ref = event id); also bump YSD.counters 'rsvps'",
-      demoHow: { en: "RSVP to any demo event.", es: "Confirma en cualquier evento de muestra." }
+      demoHow: { en: "RSVP to any DEMO event.", es: "Confirma en cualquier evento DEMO." }
     },
     {
       id: "attend",
@@ -256,8 +263,8 @@ window.YSD_DATA.levels = {
       xp: 40,
       limit: { count: 1, per: "event" },
       verify: "check-in",
-      hook: "QR check-in at the door (production); 'I was there (demo)' button after the event's start (demo). ref = event id",
-      demoHow: { en: "After a demo event's start time, tap \"I was there (demo)\" on its page.", es: "Cuando empiece un evento de muestra, toca «Estuve ahí (demo)» en su página." }
+      hook: "QR check-in at the door (production); 'I was there (DEMO)' button after the event's start (demo). ref = event id",
+      demoHow: { en: "After a DEMO event's start time, tap \"I was there (DEMO)\" on its page.", es: "Cuando empiece un evento DEMO, toca «Estuve ahí (DEMO)» en su página." }
     },
     {
       id: "bring-friend",
@@ -267,7 +274,7 @@ window.YSD_DATA.levels = {
       limit: { count: 1, per: "friend" },
       verify: "automatic",
       hook: "YSD.members.onSquad((squad, added) => ...) : one log entry per added member id; set demo:true when member.simulated",
-      demoHow: { en: "Simulated demo friends show up in your squad over time and count here, labeled DEMO.", es: "Con el tiempo aparecen amistades simuladas en tu grupo de muestra y cuentan aquí, marcadas como DEMO." }
+      demoHow: { en: "Simulated DEMO friends show up in your squad over time and count here, labeled DEMO.", es: "Con el tiempo aparecen amistades simuladas en tu grupo DEMO y cuentan aquí, marcadas como DEMO." }
     },
     {
       id: "set-renewal-reminder",
@@ -362,8 +369,8 @@ window.YSD_DATA.levels = {
       xp: 80,
       limit: { count: 1, per: "shift" },
       verify: "check-in",
-      hook: "shift lead checks you in at the end (production); 'I was there (demo)' on events whose xpActions include volunteer-shift (demo)",
-      demoHow: { en: "Tap \"I was there (demo)\" on a text bank or door-knocking event.", es: "Toca «Estuve ahí (demo)» en una jornada de mensajes o de visitas a vecinos." }
+      hook: "shift lead checks you in at the end (production); 'I was there (DEMO)' on events whose xpActions include volunteer-shift (demo)",
+      demoHow: { en: "Tap \"I was there (DEMO)\" on a text bank or door-knocking event.", es: "Toca «Estuve ahí (DEMO)» en una jornada de mensajes o de visitas a vecinos." }
     }
   ],
 
@@ -379,7 +386,7 @@ window.YSD_DATA.levels = {
       share: {
         text: {
           en: "Went to my first Young Dems thing. Low-key, good people. Next one's with me: {url}",
-          es: "Fui a mi primer evento de Young Dems. Tranquilo y con gente buena. Al próximo vienes conmigo: {url}"
+          es: "Fui a mi primer evento de los Young Dems. Tranquilo y con gente buena. Al próximo vienes conmigo: {url}"
         }
       }
     },
@@ -394,7 +401,7 @@ window.YSD_DATA.levels = {
       share: {
         text: {
           en: "A friend joined Young Dems because I asked. You're next, obviously: {url}",
-          es: "Alguien se unió a Young Dems por invitación mía. Obvio, sigues tú: {url}"
+          es: "Alguien se unió a los Young Dems por invitación mía. Obvio, sigues tú: {url}"
         }
       }
     },
@@ -409,7 +416,7 @@ window.YSD_DATA.levels = {
       share: {
         text: {
           en: "Three of my friends joined Young Dems through my link. Make it four? {url}",
-          es: "Tres amistades se unieron a Young Dems con mi enlace. ¿Hacemos cuatro? {url}"
+          es: "Tres amistades se unieron a los Young Dems con mi enlace. ¿Hacemos cuatro? {url}"
         }
       }
     },
@@ -441,8 +448,8 @@ window.YSD_DATA.levels = {
       icon: "envelope with a check",
       share: {
         text: {
-          en: "Renewed my mail-ballot request: it covers me through 2028. The old ones ran out Dec 31. Renew yours: {url}",
-          es: "Ya renové mi solicitud de boleta por correo: me cubre hasta finales de 2028. Las anteriores vencieron el 31 de diciembre. Renueva la tuya: {url}"
+          en: "Renewed my mail-ballot request: it covers me through 2028. Requests made before Nov 3, 2026 ran out Dec 31. Renew yours: {url}",
+          es: "Ya renové mi solicitud de boleta por correo: me cubre hasta finales de 2028. Las hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre. Renueva la tuya: {url}"
         },
         urlKey: "links.vote.voteByMail",
         url: "https://voteseminole.gov/how-to-vote/vote-by-mail/"
@@ -474,7 +481,7 @@ window.YSD_DATA.levels = {
       share: {
         text: {
           en: "Watched the sun go down over Lake Monroe with the Young Dems. Next walk, you're coming: {url}",
-          es: "Vi el atardecer sobre el lago Monroe con Young Dems. A la próxima caminata vienes: {url}"
+          es: "Vi el atardecer sobre el lago Monroe con los Young Dems. A la próxima caminata vienes: {url}"
         }
       }
     },
@@ -489,7 +496,7 @@ window.YSD_DATA.levels = {
       share: {
         text: {
           en: "Took SunRail to a Young Dems meetup. Next time, ride with me: {url}",
-          es: "Fui en SunRail a un encuentro de Young Dems. La próxima, vamos juntos en el tren: {url}"
+          es: "Fui en SunRail a un encuentro de los Young Dems. La próxima, vamos juntos en el tren: {url}"
         }
       }
     },
@@ -519,7 +526,7 @@ window.YSD_DATA.levels = {
       share: {
         text: {
           en: "Sang at Young Dems karaoke. No recordings exist, and that's final. Next one: {url}",
-          es: "Canté en el karaoke de Young Dems. No hay grabaciones y punto. El próximo: {url}"
+          es: "Canté en el karaoke de los Young Dems. No hay grabaciones y punto. El próximo: {url}"
         }
       }
     },
@@ -534,7 +541,7 @@ window.YSD_DATA.levels = {
       share: {
         text: {
           en: "My 60-second video is up on the Young Dems site. Watch it, then make yours: {url}",
-          es: "Mi video de 60 segundos ya está en el sitio de Young Dems. Míralo y luego haz el tuyo: {url}"
+          es: "Mi video de 60 segundos ya está en el sitio de los Young Dems. Míralo y luego haz el tuyo: {url}"
         }
       }
     },
@@ -549,7 +556,7 @@ window.YSD_DATA.levels = {
       share: {
         text: {
           en: "Did my first volunteer shift with the Young Dems. Two hours, good people, real snacks. Come to the next one: {url}",
-          es: "Hice mi primer turno de voluntariado con Young Dems. Dos horas, gente buena y algo rico para picar. Ven al próximo: {url}"
+          es: "Hice mi primer turno de voluntariado con los Young Dems. Dos horas, gente buena y algo rico para picar. Ven al próximo: {url}"
         }
       }
     },
@@ -564,7 +571,7 @@ window.YSD_DATA.levels = {
       share: {
         text: {
           en: "Went to a Spanish-language event with the Young Dems. Know someone who'd want the next one? {url}",
-          es: "Fui a un evento en español con Young Dems. ¿Conoces a alguien a quien le sirva el próximo? {url}"
+          es: "Fui a un evento en español con los Young Dems. ¿Conoces a alguien a quien le sirva el próximo? {url}"
         }
       }
     },
@@ -579,7 +586,7 @@ window.YSD_DATA.levels = {
       share: {
         text: {
           en: "Three Seminole cities, three Young Dems events. Pick the next city: {url}",
-          es: "Tres ciudades de Seminole, tres eventos de Young Dems. Escoge la próxima ciudad: {url}"
+          es: "Tres ciudades de Seminole, tres eventos de los Young Dems. Escoge la próxima ciudad: {url}"
         }
       }
     },
@@ -594,7 +601,7 @@ window.YSD_DATA.levels = {
       share: {
         text: {
           en: "I'm officially a Young Dem for 2027. Ages 14 to 39, come join: {url}",
-          es: "Ya soy oficialmente de Young Dems en 2027. Si tienes de 14 a 39 años, únete: {url}"
+          es: "Ya soy oficialmente de los Young Dems en 2027. Si tienes de 14 a 39 años, únete: {url}"
         }
       },
       facts: [
@@ -621,7 +628,7 @@ window.YSD_DATA.levels = {
       share: {
         text: {
           en: "Ten weeks of showing up with the Young Dems, at my own pace. Here's to the long game: {url}",
-          es: "Diez semanas participando con Young Dems, a mi ritmo. Por lo que se construye a largo plazo: {url}"
+          es: "Diez semanas participando con los Young Dems, a mi ritmo. Por lo que se construye a largo plazo: {url}"
         }
       }
     }
@@ -706,7 +713,7 @@ window.YSD_DATA.levels = {
   demoProfile: {
     demo: true,
     note: "For screenshots and the empty-state preview only. Label it DEMO wherever it renders.",
-    name: { en: "Demo member", es: "Miembro de muestra" },
+    name: { en: "DEMO member", es: "Miembro DEMO" },
     city: "oviedo",
     xp: 360,
     level: "sapling",

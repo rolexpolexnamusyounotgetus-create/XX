@@ -24,12 +24,12 @@ window.YSD_DATA.clips = {
       "height": 1280,
       "orientation": "vertical",
       "duration": 9.9,
-      "bytes": 926709,
+      "bytes": 902788,
       "audio": false,
-      "caption": "PSA: Florida mail ballot requests run out after every general election year. Requested in 2025 or 2026? Yours ends Dec 31. Renew before your next election.",
+      "caption": "PSA: Asked for a Florida mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set through 2028. Check My Voter Record to be sure.",
       "author": {
         "handle": "@demo.maria",
-        "name": "Maria (demo creator)"
+        "name": "Maria (DEMO creator)"
       },
       "tags": [
         "vote-by-mail",
@@ -41,13 +41,13 @@ window.YSD_DATA.clips = {
       "createdAt": "2026-11-06T18:20:00-05:00",
       "burnedInText": [
         "Mail ballot PSA",
-        "Florida mail ballot requests expire after each general election year",
-        "Requested in 2025 or 2026? Yours ends Dec 31, 2026",
-        "Renew: voteseminole.gov or call 407-585-8683"
+        "Asked for a mail ballot before Nov 3?",
+        "That request ends Dec 31, 2026",
+        "Ask again: voteseminole.gov Should last through 2028"
       ],
       "facts": [
         {
-          "claim": "One Florida vote-by-mail request covers elections \"through the end of the calendar year of the next regularly scheduled general election\" (so 2025-26 requests end Dec 31, 2026).",
+          "claim": "One Florida vote-by-mail request covers elections \"through the end of the calendar year of the next regularly scheduled general election\" (so requests made before the Nov 3, 2026 general election end Dec 31, 2026, and one made after it should run through Dec 31, 2028).",
           "source": "https://www.flsenate.gov/Laws/Statutes/2025/101.62"
         },
         {
@@ -93,7 +93,7 @@ window.YSD_DATA.clips = {
       "caption": "Took SunRail to the rally. No parking, no stress. Who is riding next time?",
       "author": {
         "handle": "@demo.jordan",
-        "name": "Jordan (demo creator)"
+        "name": "Jordan (DEMO creator)"
       },
       "tags": [
         "sunrail",
@@ -153,7 +153,7 @@ window.YSD_DATA.clips = {
       "caption": "POV: you just voted for the first time and the sticker hits different.",
       "author": {
         "handle": "@demo.ava",
-        "name": "Ava (demo creator)"
+        "name": "Ava (DEMO creator)"
       },
       "tags": [
         "first-time-voter",
@@ -207,7 +207,7 @@ window.YSD_DATA.clips = {
       "caption": "Sunset canvass by Lake Monroe. Knocked doors, met neighbors, caught the sky.",
       "author": {
         "handle": "@demo.luis",
-        "name": "Luis (demo creator)"
+        "name": "Luis (DEMO creator)"
       },
       "tags": [
         "canvass",
@@ -251,7 +251,7 @@ window.YSD_DATA.clips = {
       "caption": "What is a precinct captain? Your neighborhood Dem who organizes, informs and gets out the vote.",
       "author": {
         "handle": "@demo.priya",
-        "name": "Priya (demo creator)"
+        "name": "Priya (DEMO creator)"
       },
       "tags": [
         "precinct-captain",
@@ -301,7 +301,7 @@ window.YSD_DATA.clips = {
       "caption": "Trivia night recap: new friends, questionable team names, zero regrets.",
       "author": {
         "handle": "@demo.sam",
-        "name": "Sam (demo creator)"
+        "name": "Sam (DEMO creator)"
       },
       "tags": [
         "trivia",

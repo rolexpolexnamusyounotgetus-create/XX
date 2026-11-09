@@ -14,6 +14,8 @@
  * CONVENTIONS
  *  - Bilingual text is { en, es }. The Spanish is written for neutral Latin American readers, not
  *    translated word for word; it carries the same facts and links. Placeholders look like {name}.
+ *    {url} is the share link; {link} is the site's canonical name for it, and YSD.fill(text, { link })
+ *    in assets/js/config.js fills both {link} and {url}.
  *    Spanish terms, as Florida's official Spanish forms and pages use them: "voto por correo" (the
  *    method and the SOE page), "boleta por correo" (the ballot), "solicitud de boleta por correo" (the
  *    request), "inscribirse / inscripción" (registering), "registro de votante" (the voter record),
@@ -332,10 +334,10 @@ window.YSD_DATA.civic = {
       label: { en: "Seminole's vote-by-mail page", es: "Página de voto por correo de Seminole" }
     },
     mailBallotRequest: {
-      key: null,
+      key: "links.vote.mailBallotRequest",
       url: "https://seminole.electionsfl.org/vrservices/mbrs",
       label: { en: "Request a mail ballot online", es: "Pedir la boleta por correo en línea" },
-      note: "The 'Request Ballot' button on the SOE vote-by-mail page. Loads with a browser user agent (checked 2026-11-09); bare scripts may get a 403. Proposed config key: links.vote.mailBallotRequest."
+      note: "The 'Request Ballot' button on the SOE vote-by-mail page. Loads with a browser user agent (checked 2026-11-09); bare scripts may get a 403. Config key: links.vote.mailBallotRequest."
     },
     mailBallotFormPdf: {
       key: null,
@@ -344,10 +346,10 @@ window.YSD_DATA.civic = {
       label: { en: "Paper mail-ballot request form (PDF)", es: "Formulario en papel para pedir la boleta por correo (PDF)" }
     },
     trackBallot: {
-      key: null,
+      key: "links.vote.trackBallot",
       url: "https://voteseminole.ballottrax.net/voter/",
       label: { en: "Track my mail ballot", es: "Rastrear mi boleta por correo" },
-      note: "TrackMyMailBallot (BallotTrax), linked from the SOE vote-by-mail page. Proposed config key: links.vote.trackBallot."
+      note: "TrackMyMailBallot (BallotTrax), linked from the SOE vote-by-mail page. Config key: links.vote.trackBallot."
     },
     mailCureFormPdf: {
       key: null,
@@ -371,16 +373,16 @@ window.YSD_DATA.civic = {
       label: { en: "Upcoming elections (official)", es: "Próximas elecciones (oficial)" }
     },
     electionReady: {
-      key: null,
+      key: "links.vote.electionReady",
       url: "https://voteseminole.gov/voters/are-you-election-ready/",
       label: { en: "What ID to bring (official)", es: "Qué identificación llevar (oficial)" },
-      note: "SOE 'Are you Election Ready?' page: ID, polling place, mail ballot return. Its ID list is the pre-2027 list until the SOE updates it. Proposed config key: links.vote.electionReady."
+      note: "SOE 'Are you Election Ready?' page: ID, polling place, mail ballot return. Its ID list is the pre-2027 list until the SOE updates it. Config key: links.vote.electionReady."
     },
     whatToExpect: {
-      key: null,
+      key: "links.vote.whatToExpect",
       url: "https://voteseminole.gov/how-to-vote/what-to-expect-at-the-polls/",
       label: { en: "What to expect at the polls", es: "Qué esperar al votar en persona" },
-      note: "Proposed config key: links.vote.whatToExpect."
+      note: "Config key: links.vote.whatToExpect."
     },
     voterRights: {
       key: null,
@@ -425,7 +427,7 @@ window.YSD_DATA.civic = {
       label: { en: "HB 991 (2026) on the Florida Senate site", es: "HB 991 (2026) en el sitio del Senado de Florida" }
     },
     stateVoteByMail: {
-      key: null,
+      key: "links.vote.stateVoteByMail",
       url: "https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/",
       label: { en: "Florida's vote-by-mail rules (state)", es: "Reglas del voto por correo en Florida (estado)" },
       note: "Division of Elections page; states that a request covers elections from the date it was submitted through the end of the calendar year of the next general election. Has a Spanish page selector."
@@ -623,7 +625,7 @@ window.YSD_DATA.civic = {
     {
       id: "mail-requests-expire-2026",
       kind: "expiry",
-      title: { en: "Mail-ballot requests run out", es: "Vencen las solicitudes de boleta por correo" },
+      title: { en: "Mail-ballot requests from before Nov 3 run out", es: "Vencen las solicitudes de boleta por correo de antes del 3 de noviembre" },
       short: {
         en: "Asked for a mail ballot before the Nov 3 election? That request ends Dec 31. Renew it once and you're set through 2028.",
         es: "¿Pediste la boleta por correo antes de las elecciones del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Renuévala una vez y te sirve hasta finales de 2028."
@@ -1379,8 +1381,8 @@ window.YSD_DATA.civic = {
         },
         {
           claim: {
-            en: "As of Nov 9, 2026, Seminole's vote-by-mail page hasn't said how it treats requests made after the Nov 3 election; it still reads that requests received now apply to the Nov 3 General Election.",
-            es: "Al 9 de noviembre de 2026, la página de voto por correo de Seminole no ha dicho cómo trata las solicitudes hechas después de las elecciones del 3 de noviembre; todavía dice que las solicitudes recibidas ahora se aplican a las elecciones generales del 3 de noviembre."
+            en: "As of Nov 9, 2026, Seminole's elections office hasn't said how it handles requests made Nov 4 to Dec 31, 2026.",
+            es: "Al 9 de noviembre de 2026, la oficina electoral de Seminole no ha dicho cómo maneja las solicitudes hechas entre el 4 de noviembre y el 31 de diciembre de 2026."
           },
           source: "https://voteseminole.gov/how-to-vote/vote-by-mail/",
           verified: "2026-11-09",

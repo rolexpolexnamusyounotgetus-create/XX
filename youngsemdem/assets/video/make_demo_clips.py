@@ -106,9 +106,9 @@ SPECS = [
     {
         'id': 'demo-mail-ballot-renew',
         'file': 'mail-ballot-renew',
-        'author': {'handle': '@demo.maria', 'name': 'Maria (demo creator)'},
-        'caption': 'PSA: Florida mail ballot requests run out after every general election year. '
-                   'Requested in 2025 or 2026? Yours ends Dec 31. Renew before your next election.',
+        'author': {'handle': '@demo.maria', 'name': 'Maria (DEMO creator)'},
+        'caption': 'PSA: Asked for a Florida mail ballot before Nov 3? That request ends Dec 31. '
+                   'Ask again and you should be set through 2028. Check My Voter Record to be sure.',
         'tags': ['vote-by-mail', 'explainer', 'psa'],
         'likes': 412, 'views': 3870, 'createdAt': '2026-11-06T18:20:00-05:00',
         'tint': (106, 92, 214, 34),
@@ -118,13 +118,14 @@ SPECS = [
             {'photo': 'laptops', 'seconds': 5.2, 'focus': [(0.52, 0.42), (0.66, 0.40)], 'zoom': (1.08, 1.0)},
         ],
         'lines': [
-            ('Florida mail ballot requests expire after each general election year', 0.7, 4.9, 'light'),
-            ('Requested in 2025 or 2026?\nYours ends Dec 31, 2026', 5.0, 7.5, 'pop'),
-            ('Renew: voteseminole.gov\nor call 407-585-8683', 7.6, 10.0, 'light'),
+            ('Asked for a mail ballot\nbefore Nov 3?', 0.7, 4.9, 'light'),
+            ('That request ends\nDec 31, 2026', 5.0, 7.5, 'pop'),
+            ('Ask again: voteseminole.gov\nShould last through 2028', 7.6, 10.0, 'light'),
         ],
         'facts': [
             {'claim': 'One Florida vote-by-mail request covers elections "through the end of the calendar '
-                      'year of the next regularly scheduled general election" (so 2025-26 requests end Dec 31, 2026).',
+                      'year of the next regularly scheduled general election" (so requests made before the Nov 3, 2026 '
+                      'general election end Dec 31, 2026, and one made after it should run through Dec 31, 2028).',
              'source': 'https://www.flsenate.gov/Laws/Statutes/2025/101.62'},
             {'claim': 'Seminole voters request/renew online or by phone at 407-585-8683.',
              'source': 'https://voteseminole.gov/how-to-vote/vote-by-mail/'},
@@ -133,7 +134,7 @@ SPECS = [
     {
         'id': 'demo-sunrail-rally',
         'file': 'sunrail-rally',
-        'author': {'handle': '@demo.jordan', 'name': 'Jordan (demo creator)'},
+        'author': {'handle': '@demo.jordan', 'name': 'Jordan (DEMO creator)'},
         'caption': 'Took SunRail to the rally. No parking, no stress. Who is riding next time?',
         'tags': ['sunrail', 'rally', 'transit', 'squad'],
         'likes': 287, 'views': 2410, 'createdAt': '2026-11-01T12:05:00-04:00',
@@ -155,7 +156,7 @@ SPECS = [
     {
         'id': 'demo-first-time-voter',
         'file': 'first-time-voter',
-        'author': {'handle': '@demo.ava', 'name': 'Ava (demo creator)'},
+        'author': {'handle': '@demo.ava', 'name': 'Ava (DEMO creator)'},
         'caption': 'POV: you just voted for the first time and the sticker hits different.',
         'tags': ['first-time-voter', 'pov', 'how-to-vote'],
         'likes': 655, 'views': 5120, 'createdAt': '2026-11-03T16:42:00-05:00',
@@ -180,7 +181,7 @@ SPECS = [
     {
         'id': 'demo-lake-monroe-canvass',
         'file': 'lake-monroe-canvass',
-        'author': {'handle': '@demo.luis', 'name': 'Luis (demo creator)'},
+        'author': {'handle': '@demo.luis', 'name': 'Luis (DEMO creator)'},
         'caption': 'Sunset canvass by Lake Monroe. Knocked doors, met neighbors, caught the sky.',
         'tags': ['canvass', 'sanford', 'volunteer'],
         'likes': 198, 'views': 1640, 'createdAt': '2026-10-29T19:10:00-04:00',
@@ -198,7 +199,7 @@ SPECS = [
     {
         'id': 'demo-precinct-captain',
         'file': 'precinct-captain',
-        'author': {'handle': '@demo.priya', 'name': 'Priya (demo creator)'},
+        'author': {'handle': '@demo.priya', 'name': 'Priya (DEMO creator)'},
         'caption': 'What is a precinct captain? Your neighborhood Dem who organizes, informs and gets out the vote.',
         'tags': ['precinct-captain', 'explainer', 'organizing'],
         'likes': 341, 'views': 2980, 'createdAt': '2026-11-07T10:30:00-05:00',
@@ -222,7 +223,7 @@ SPECS = [
     {
         'id': 'demo-trivia-night-recap',
         'file': 'trivia-night-recap',
-        'author': {'handle': '@demo.sam', 'name': 'Sam (demo creator)'},
+        'author': {'handle': '@demo.sam', 'name': 'Sam (DEMO creator)'},
         'caption': 'Trivia night recap: new friends, questionable team names, zero regrets.',
         'tags': ['trivia', 'social', 'meetup'],
         'likes': 233, 'views': 1990, 'createdAt': '2026-11-08T21:15:00-05:00',

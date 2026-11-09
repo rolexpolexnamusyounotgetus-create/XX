@@ -77,7 +77,8 @@ upload code paths make no network calls (`assets/js/members.js` `submit()`, `ass
 The site also attaches a few things automatically:
 
 - **Your referral code** (for example `KIRA7QX`: up to five letters of your first name plus random
-  characters) so you can invite friends.
+  characters) so you can invite friends. If you're under 18, your code is random characters only, with
+  no part of your name.
 - **Who referred you**, if you arrived through a friend's link in the last 30 days.
 - **The page you joined from** and any campaign tags in the link (`utm_source`, `utm_medium`,
   `utm_campaign` and similar), so we know which posts and flyers work.

@@ -48,7 +48,7 @@ async function section(name, fn) {
 
 // Documented public API (docs/infra/README.md). 'fn' = function, else the typeof value.
 const API = {
-  'YSD_CONFIG': 'object', 'YSD.cfg': 'fn', 'YSD.emit': 'fn', 'YSD.log': 'fn', 'YSD.root': 'string', 'YSD.debug': 'boolean', 'YSD.uid': 'fn',
+  'YSD_CONFIG': 'object', 'YSD.cfg': 'fn', 'YSD.emit': 'fn', 'YSD.fill': 'fn', 'YSD.log': 'fn', 'YSD.root': 'string', 'YSD.debug': 'boolean', 'YSD.uid': 'fn',
   'YSD.store': ['get', 'set', 'update', 'remove', 'list', 'push', 'on', 'useAdapter', 'keys', 'clear'],
   'YSD.store.backend': 'string', 'YSD.store.persistent': 'boolean',
   'YSD.db': ['put', 'get', 'all', 'del', 'keys', 'clear', 'ready'], 'YSD.db.backend': 'string',

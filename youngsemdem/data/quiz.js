@@ -406,7 +406,7 @@ window.YSD_DATA.quiz = {
         slug: 'voting-rights',
         card: {
           headline: { en: 'My Seminole issue: voting rights.', es: 'Mi tema en Seminole: el derecho al voto.' },
-          subline: { en: 'Mail ballot requests run out Dec 31. Find your issue.', es: 'Las solicitudes de boleta por correo vencen el 31 de diciembre. Encuentra tu tema.' },
+          subline: { en: 'Mail ballot requests from before Nov 3 run out Dec 31. Find your issue.', es: 'Las solicitudes de boleta por correo de antes del 3 de noviembre vencen el 31 de diciembre. Encuentra tu tema.' },
           sublineAfter: {
             date: '2027-01-01',
             en: 'Student IDs no longer count at the polls. Find your issue.',
@@ -602,7 +602,7 @@ window.YSD_DATA.quiz = {
         actions: [
           {
             type: 'share',
-            label: { en: 'Text 3 friends about the Dec 31 deadline', es: 'Avísales a 3 amistades de la fecha del 31 de diciembre' },
+            label: { en: 'Text 3 friends about Dec 31', es: 'Avísales a 3 amistades del 31 de diciembre' },
             labelAfter: {
               date: '2027-01-01',
               en: 'Text 3 friends to renew their mail ballot request',

@@ -33,7 +33,7 @@
 
 1. **Dec 31 is when old requests run out, not a deadline to renew.** Every Florida mail-ballot request made before the Nov 3 election ends Dec 31, 2026 **[mail-expiry]**.
    - Say "requests from before Nov 3," never "every request." Under the state rule, a request made after Nov 3 should already run through 2028.
-   - Seminole hasn't said how it's handling those, and its page still says new requests apply to the Nov 3 election **[mail-renew-jan1]**.
+   - Seminole hasn't said how it's handling requests made Nov 4 to Dec 31 **[mail-renew-jan1]**, so anyone who renews before Jan 1 should check My Voter Record in January.
    - So the December ask is **"set a Jan 1 reminder"** (or "renew in January"), and Jan 1 is **renew day**. Never say people *can't* renew before Jan 1.
    - If the elections office confirms before Dec 31 that Nov-Dec requests count for 2027-28, switch every reminder line to "renew now." The `after`, `variants` and `requires` fields in `data/sharekit.js` are built for that switch.
 2. **One action per post.** Through Dec 31 the lead action is the Jan 1 reminder (`vote.html#renew-mail-ballot`). The second is the student-ID change, which uses the calm template and the required wording **[student-id]**.
@@ -352,9 +352,9 @@ How to read each day:
 - **Text:** "Happy holidays from the Young Dems. Felices fiestas." No link.
 
 **Day 25 · Sat, Dec 26 · Next Thursday** **[locked]**
-- **Video:** V05 again, captioned "Old requests run out Thu, Dec 31."
-- **Stories:** two countdown stickers: "Old requests run out: Dec 31" and "Renew day: Jan 1."
-- **Text:** "Mail-ballot requests from before Nov 3 run out Thursday night, Dec 31. Friday, Jan 1, is renew day: one request covers you through 2028. Reminder and official link: {url}" **[mail-expiry] [mail-covers-2028]**
+- **Video:** V05 again, captioned "Requests from before Nov 3 run out Thu, Dec 31."
+- **Stories:** two countdown stickers: "Pre-Nov 3 requests run out: Dec 31" and "Renew day: Jan 1."
+- **Text:** "Mail-ballot requests from before Nov 3 run out Thursday night, Dec 31. Friday, Jan 1, is renew day: one request should cover you through 2028 (check My Voter Record). Reminder and official link: {url}" **[mail-expiry] [mail-covers-2028]**
 - **CTA:** `vote#renew-mail-ballot` · `2026-12-renew`
 
 **Day 26 · Sun, Dec 27 · Bring Three: last week**
@@ -645,7 +645,7 @@ Platform sound effects (a ding, a whoosh) are fine with any preset.
 | 1 | YOUNG DEMS | Hi, Seminole. | We're the Young Democrats of Seminole County: Democrats under 40, ages 14 to 39. | none | Celery fill, giant ink type, the stk06 "First time? Perfect." sticker slapped on a corner |
 | 2 | NOV 3 | Seminole voted blue for governor. | About 54% to 45% here, in unofficial returns. Statewide went the other way, by less than 2 points, so the next one is wide open. | Unofficial until certified. Florida Division of Elections via WFTV. | Violet fill, paper type, your own county outline (no candidates) |
 | 3 | UNDER 40 IN SEMINOLE | The biggest group isn't a party. | Among active voters 18 to 40, no-party voters are about 34%, Democrats about 33% and Republicans about 27%. You don't need a party to come hang out. | Seminole Supervisor of Elections, July 1, 2026; percentages computed by us. | Three bars, the no-party bar in celery |
-| 4 | HEADS UP | Your mail-ballot request runs out Dec 31. | If you asked before Nov 3, it does (it happens every two years). In January, renew online or at 407-585-8683, and one request covers you through 2028. | Fla. Stat. 101.62; voteseminole.gov | Sky fill, the stk01 calendar page |
+| 4 | HEADS UP | Asked before Nov 3? Your mail-ballot request runs out Dec 31. | It happens every two years. In January, renew online or at 407-585-8683, and one request covers you through 2028. | Fla. Stat. 101.62; voteseminole.gov | Sky fill, the stk01 calendar page |
 | 5 | NEW IN 2027 | Student IDs stop counting at the polls. | Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go. | HB 991 (2026); voteseminole.gov | Calm: paper fill, ink type, no stickers |
 | 6 | WHAT WE DO | Low-key, on purpose. | Trivia nights · Sunset walks on Lake Monroe · Creator nights · Text-a-friend nights · Karaoke. Free, alcohol-free, open to anyone 14 and up. | DEMO lineup while the site is in demo. "Free, alcohol-free, 14 and up" is draft policy until the chapter confirms it. | Bubblegum fill, five small stickers |
 | 7 | TAKE THE QUIZ | What's your organizer era? | Hype Captain · Group-Chat General · Spreadsheet Witch · Door-Knock Natural · Creator · Plus-One. Eight questions. Link in bio. | none | Six mini result cards fanned out |
@@ -729,7 +729,8 @@ The full text is in `referral.rules`:
 
 - **No rewards for registering or voting.** Federal law bars paying or offering to pay for registering or voting in elections with federal candidates **[usc-10307c]**.
 - **No registration drives.** Florida regulates third-party voter registration (F.S. 97.0575; see the note at the top of `data/quiz.js`). The challenge never involves collecting forms; people use official sites themselves.
-- **Ask counsel about `data/levels.js`.** It gives XP, a "Renew-Ready" badge for setting the reminder and a "Renewed" badge for renewing a mail-ballot request. The rewards have no money value and run on the honor system, but counsel should review them, plus any "Renewed through 2028" sticker (stk01).
+- **Ask counsel about `data/levels.js`.** It gives XP, a "Renew-Ready" badge for setting the reminder and a "Renewed" badge for renewing a mail-ballot request. The badges have no money value and run on the honor system, but counsel should review them.
+- **Nothing of value for civic steps.** No stickers, merch, raffles or prizes for registering, renewing or voting, or for a friend doing so, so there is no "Renewed through 2028" sticker (stk01). Physical rewards (the printed sticker sheet, the welcome sticker) go only to organizing actions: showing up, volunteering, bringing friends in (docs/research/00).
 
 ---
 
@@ -894,7 +895,7 @@ Formats: 1080 x 1920 for Stories and Reels, 1080 x 1350 for the feed carousel, a
 | 10 | Theme-park and hospitality worker creators | Wages and cost of living | A V11-style "one thing you'd fix" |
 | 11 | Young-parent creators | Pre-registration at 16; the family chat | Share gc08 and gc03 |
 | 12 | Local musicians, DJs, karaoke hosts | Events (DEMO) | Host a karaoke night (no song names in our posts) |
-| 13 | Local TV news in the Orlando market (English) | A practical story: requests run out Dec 31, and the student-ID change, for young voters | A segment or a quote from a chapter spokesperson the chapter picks |
+| 13 | Local TV news in the Orlando market (English) | A practical story: mail-ballot requests made before Nov 3 run out Dec 31, and the student-ID change, for young voters | A segment or a quote from a chapter spokesperson the chapter picks |
 | 14 | Public radio and nonprofit newsrooms (regional and statewide) | HB 991 explained for young voters, with Spanish | An explainer quote; link to `vote#what-id` |
 | 15 | Spanish-language TV, radio and digital outlets in Central Florida | Two changes for 2027, in Spanish (V12) | A Spanish-language interview with a fluent member |
 | 16 | Campus media at UCF and Seminole State | Student IDs; Bring Three on campus | A story or a reshare |
@@ -1024,7 +1025,7 @@ The Spanish is written for neutral Latin American readers (Puerto Rican, Cuban, 
 | 1 | YOUNG DEMS | Hola, Seminole. | Somos los Young Democrats of Seminole County: demócratas menores de 40, de 14 a 39 años. | — |
 | 2 | 3 DE NOV. | Seminole votó azul para gobernador. | Cerca de 54% frente a 45% aquí, según resultados extraoficiales. En el estado ganó el otro partido por menos de 2 puntos, así que la próxima está abierta. | Extraoficial hasta la certificación. División de Elecciones de Florida, vía WFTV. |
 | 3 | MENORES DE 40 EN SEMINOLE | El grupo más grande no es un partido. | Entre los votantes activos de 18 a 40 años, los que no tienen partido son cerca del 34%, los demócratas cerca del 33% y los republicanos cerca del 27%. No necesitas partido para venir a pasarla bien. | Supervisor de Elecciones de Seminole, 1 de julio de 2026; porcentajes calculados por nosotros. |
-| 4 | OJO | Tu solicitud de boleta por correo vence el 31 de diciembre. | Si la pediste antes del 3 de noviembre, vence ese día (pasa cada dos años). En enero, renuévala en línea o al 407-585-8683, y una sola solicitud te cubre hasta finales de 2028. | Ley de Florida 101.62; voteseminole.gov |
+| 4 | OJO | ¿La pediste antes del 3 de noviembre? Tu solicitud de boleta por correo vence el 31 de diciembre. | Pasa cada dos años. En enero, renuévala en línea o al 407-585-8683, y una sola solicitud te cubre hasta finales de 2028. | Ley de Florida 101.62; voteseminole.gov |
 | 5 | NUEVO EN 2027 | La identificación de estudiante deja de servir para votar. | Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir. | HB 991 (2026); voteseminole.gov |
 | 6 | LO QUE HACEMOS | Sin presión, a propósito. | Noches de trivia · Caminatas al atardecer en el lago Monroe · Noches de creadores · Noches de mensajes · Karaoke. Gratis, sin alcohol y para cualquier persona desde los 14 años. | Programación DEMO mientras el sitio esté en modo demo. "Gratis, sin alcohol, desde los 14" es política en borrador hasta que el capítulo la confirme. |
 | 7 | HAZ EL QUIZ | ¿Cuál es tu modo de organizar? | La Chispa · Modo Admin · Magia en Celdas · Toc, Toc · Luces, Cámara, Acción · Conoce a Medio Mundo. Ocho preguntas. Enlace en el perfil. | — |
@@ -1055,8 +1056,8 @@ Every fact below was checked on Mon, Nov 9, 2026. "Via" means the fact was also 
 
 | ID | Claim (short) | Source | Confidence |
 |---|---|---|---|
-| mail-expiry | A request lasts from the day it's made through the end of the year of the next general election; every request made before Nov 3, 2026 ends Dec 31, 2026 | [Fla. Stat. 101.62](https://www.flsenate.gov/Laws/Statutes/2026/101.62); [Division of Elections](https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/) | high |
-| mail-renew-jan1 | Renew online, by phone or on a form. A request made after Nov 3 should already run through 2028 (state rule), but Seminole's page still says new requests apply to Nov 3; a request on or after Jan 1, 2027 is the sure one | [voteseminole.gov vote by mail](https://voteseminole.gov/how-to-vote/vote-by-mail/); [Division of Elections](https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/); via `data/civic.js` | med |
+| mail-expiry | A request lasts from the day it's made through the end of the year of the next general election; requests made before Nov 3, 2026 end Dec 31, 2026, and one made after should run through Dec 31, 2028 | [Fla. Stat. 101.62](https://www.flsenate.gov/Laws/Statutes/2026/101.62); [Division of Elections](https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/) | high |
+| mail-renew-jan1 | Renew online, by phone or on a form. A request made after Nov 3 should already run through 2028 (state rule), but Seminole hasn't said how it handles requests made Nov 4 to Dec 31; a request on or after Jan 1, 2027 is the sure one (earlier renewers check My Voter Record) | [voteseminole.gov vote by mail](https://voteseminole.gov/how-to-vote/vote-by-mail/); [Division of Elections](https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/); via `data/civic.js` | med |
 | mail-covers-2028 | A 2027 request covers elections through Dec 31, 2028 | [Fla. Stat. 101.62](https://www.flsenate.gov/Laws/Statutes/2026/101.62) (applied to Nov 7, 2028) | high |
 | mail-phone | Request by phone at 407-585-8683 | [voteseminole.gov vote by mail](https://voteseminole.gov/how-to-vote/vote-by-mail/) | high |
 | student-id | HB 991 removes student IDs from accepted voter ID, effective Jan 1, 2027 | [Senate bill summary](https://flsenate.gov/Committees/BillSummaries/2026/html/991); [bill page](https://flsenate.gov/Session/Bill/2026/991) | high |
@@ -1111,7 +1112,7 @@ Background research cited (for the "why," never as public copy): report 04 (Sche
    - human review of every clip (gc09);
    - the shoutout rules.
 7. **Rewind numbers.** Real 2026 counts are needed from the chapter by Dec 7, or cards 6 and 7 stay DEMO or get swapped out.
-8. **Referral codes for teens.** Config `members.refCodeStyle: 'name'` builds codes from the first name (e.g. KIRA7QX), which puts a teen's first name in every link they share. Consider the `'random'` style for members under 18. That's a core and members.js decision, not this kit's.
+8. **Referral codes for teens.** Done: members under 18 always get random-style codes (assets/js/members.js), so a teen's first name never appears in a shared link. Adults get name-based codes (e.g. KIRA7QX) per `members.refCodeStyle`.
 9. **`data/levels.js` XP for renewing a mail ballot.** Counsel should review it against vote-incentive rules **[usc-10307c]**. It has no money value, but it's worth a look.
 
 **Things to recheck before they're used**

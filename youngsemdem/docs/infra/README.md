@@ -13,7 +13,7 @@ no LLM call and no "ask" endpoint (Kira cut it), and the test suites fail if one
 
 | File | Global | What it does | Doc |
 |---|---|---|---|
-| `assets/js/config.js` | `YSD_CONFIG`, `YSD.cfg/emit/log/debug/root/track` (queue stub) | Every swappable value, plus bootstrap helpers | core |
+| `assets/js/config.js` | `YSD_CONFIG`, `YSD.cfg/emit/fill/log/debug/root/track` (queue stub) | Every swappable value, plus bootstrap helpers | core |
 | `assets/js/store.js` | `YSD.store`, `YSD.db`, `YSD.counters`, `YSD.uid` | localStorage key/value store, IndexedDB blob store, social-proof counters | core |
 | `data/counters.js` | `YSD_DATA.counters` | Demo counter baselines (made-up numbers, flagged `demo: true`) | core |
 | `assets/js/share.js` | `YSD.share` | `?ref=`/`utm_*` capture, share URLs, Web Share with copy fallback, network links, ActBlue | core |
@@ -85,13 +85,27 @@ checks it under the production CSP and from `file://`.
 ```js
 YSD.cfg('integrations.formEndpoint', '')   // dotted read with fallback
 YSD.emit('name', detail)                    // CustomEvent 'ysd:name' on document
+YSD.fill(template, vars)                    // fill share-text placeholders (below)
 YSD.root                                    // site root URL, trailing slash
 YSD.debug / YSD.log(...)                    // ?debug=1 turns logging on for the tab
 ```
 
+`YSD.fill(template, vars)` fills the `{placeholders}` in data-file copy. `{link}` is the canonical
+name for the share link; `{url}` (still used by `data/civic.js`, `events.js`, `levels.js` and
+`sharekit.js`) gets the same value, `vars.link || vars.url`. Every other `{key}` comes from `vars`.
+A placeholder with no value (`undefined` or `null`) stays in the text, so you can spot an unfilled
+template and skip it. It returns plain text: render it with `textContent`.
+
+```js
+const link = YSD.share.url('vote.html#renew-mail-ballot');
+YSD.fill(badge.share.text[lang], { link });              // '... Set yours: https://…?ref=KIRA7QX'
+YSD.fill(strings['share.pledge.sms'][lang], { link });   // {link} templates work the same way
+YSD.fill(levels.labels.toNext[lang], { n: 40, level: 'Sprout' });
+```
+
 Config blocks: `demo`, `org`, `site`, `social`, `links` (`links.vote.*` are verified official
-voting links), `integrations`, `legal`, `theme`, `share`, `members`, `cal`, `cards`, `clips`,
-`pwa`, `features`. To override, set `window.YSD_CONFIG = {...}` in a file loaded before `config.js`
+voting links), `integrations`, `legal`, `sharekit` (`confirmed` launch-kit switches), `theme`,
+`share`, `members`, `cal`, `cards`, `clips`, `pwa`, `features`. To override, set `window.YSD_CONFIG = {...}` in a file loaded before `config.js`
 (it is deep-merged).
 
 ### YSD.store, YSD.db, YSD.counters (store.js)
@@ -141,7 +155,9 @@ YSD.members.onSquad((squad, added) => {}) -> off      YSD.members.forget()
 ```
 
 `join()` throws an Error with `code: 'YSD_INVALID'` and `.errors` when the profile is invalid, so
-call `validate()` first. A filled honeypot field (`_hp` or `bot-field`) returns a fake member and
+call `validate()` first. Members under 18 (by `age` or `birthYear`) always get a random-style
+refCode such as `B7KQ2M`, whatever `members.refCodeStyle` says, so a teen's first name never
+appears in links they share. A filled honeypot field (`_hp` or `bot-field`) returns a fake member and
 stores nothing.
 
 ### YSD.cal (cal.js)
@@ -261,8 +277,8 @@ Choose new key names outside these.
 4. **Video:** set the provider env vars plus `integrations.videoUploadEndpoint: '/api/video-upload'`.
    Moderation, Turnstile and rate limits are still to do ([video.md](video.md)).
 5. **Analytics:** `integrations.analytics`, then `node tools/csp.js --write`.
-6. **Party copy and links:** `legal.paidFor`, `legal.privacyEmail`, social URLs, and confirmed
-   ActBlue/Mobilize links.
+6. **Party copy and links:** `legal.paidFor`, `legal.privacyEmail`, `legal.smsNumber`,
+   `legal.mailingAddress`, social URLs, and confirmed ActBlue/Mobilize links.
 7. **Launch gate:** delete the `X-Robots-Tag: noindex` line in `_headers`, then run
    `npm run check:strict` ([tooling.md](tooling.md), `DEPLOY.md`).
 

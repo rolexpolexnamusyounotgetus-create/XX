@@ -119,16 +119,17 @@
  *
  * ======================================================================================= SHARE TEXTS
  * Fill {link} with YSD.share.url(path), which adds the visitor's referral code and utm tags.
- * (data/events.js, data/levels.js and data/sharekit.js call the same placeholder {url}; until the lead
- * picks one name, fill both: vars.link = vars.url = YSD.share.url(path).)
+ * {link} is the canonical name (docs/research/00 Conventions). data/civic.js, events.js, levels.js and
+ * sharekit.js still say {url}; YSD.fill(text, { link }) in assets/js/config.js fills both, so any
+ * template works: YSD.fill(entry[lang], { link: YSD.share.url(path), event, date }).
  * In sms, whatsapp, igStory and short, {link} is always the last thing in the text.
- *  - Channel links: strip the trailing {link} and pass the link on its own:
+ *  - Channel links: strip the trailing {link} (or {url}) and pass the link on its own:
  *    YSD.share.links(textWithoutLink, link). SMS, WhatsApp and Bluesky get "text link" back (the same
  *    message); X and Threads carry the link in their url field; Facebook and Telegram need it there, or
  *    they share the site root and drop the referral code. Email: YSD.share.links(filledBody, link,
  *    { subject: filledSubject }).email (the body already holds the link; share.js won't add it twice).
  *  - Native share sheet: YSD.share.native({ title: <seo ogTitle>, text: textWithoutLink, url: link }),
- *    where textWithoutLink = text.replace(/\s*\{link\}\s*$/, '') (iMessage then shows the preview).
+ *    where textWithoutLink = text.replace(/\s*\{(?:link|url)\}\s*$/, '') (iMessage then shows the preview).
  *  - Instagram has no web share intent: copy the igStory text with YSD.share.copy(), offer the card
  *    image (YSD.cards), and show shareSheet.igHint.
  *  - The user can always edit the text before it sends. Never auto-send anything.
@@ -192,8 +193,8 @@ window.YSD_DATA.strings = {
     duesAmount: { from: "org.dues.amount", fallback: { en: "20", es: "20" } },
     soePhone: { from: "links.vote.countyPhone", fallback: { en: "407-585-8683", es: "407-585-8683" } },
     privacyEmail: { from: "legal.privacyEmail", fallback: { en: "[privacy email, set before launch]", es: "[correo de privacidad, se configura antes del lanzamiento]" } },
-    smsNumber: { from: "legal.smsNumber", suggested: true, fallback: { en: "[texting number, set before launch]", es: "[número de mensajes, se configura antes del lanzamiento]" } },
-    mailingAddress: { from: "legal.mailingAddress", suggested: true, fallback: { en: "[mailing address, set before launch]", es: "[dirección postal, se configura antes del lanzamiento]" } }
+    smsNumber: { from: "legal.smsNumber", fallback: { en: "[texting number, set before launch]", es: "[número de mensajes, se configura antes del lanzamiento]" } },
+    mailingAddress: { from: "legal.mailingAddress", fallback: { en: "[mailing address, set before launch]", es: "[dirección postal, se configura antes del lanzamiento]" } }
   },
 
   vars: {
@@ -301,7 +302,7 @@ window.YSD_DATA.strings = {
     "nav.countyParty": {
       en: "Seminole County Democratic Party", es: "Seminole County Democratic Party",
       source: "https://semdems.com/", verified: "2026-11-09", confidence: "high", max: 34,
-      note: "Proper name, as the party's own site titles itself (over the nav limit on purpose; footer use). config.js has no links.countyParty yet (suggested: https://semdems.com/); render the link only once it's set. A link, not an endorsement."
+      note: "Proper name, as the party's own site titles itself (over the nav limit on purpose; footer use). Link it with YSD.cfg('links.countyParty') (https://semdems.com/, checked 2026-11-09); render the link only while it's set. A link, not an endorsement."
     },
     "nav.elections": { en: "Supervisor of Elections", es: "Supervisor de Elecciones", note: "Footer link to links.vote.countyElections." },
 
@@ -367,8 +368,8 @@ window.YSD_DATA.strings = {
     "demo.counters": { en: "DEMO numbers, made up so the preview looks alive.", es: "Números DEMO, inventados para que la vista previa se vea con vida.", demo: true },
     "demo.watermark": { en: "DEMO · not a real member card", es: "DEMO · no es una tarjeta de miembro real", demo: true },
     "demo.formNotice": {
-      en: "Demo preview: forms here don't send anything. Everything stays in your browser.",
-      es: "Vista previa de demostración: los formularios no envían nada. Todo se queda en tu navegador.",
+      en: "DEMO preview: forms here don't send anything. Everything stays in your browser.",
+      es: "Vista previa DEMO: los formularios no envían nada. Todo se queda en tu navegador.",
       demo: true, mirror: "legal.snippets.demoNotice"
     },
 
@@ -561,8 +562,8 @@ window.YSD_DATA.strings = {
       mirror: "legal.snippets.joinNotice", placeholder: "legal-review"
     },
     "form.consent.email": {
-      en: "Email me club news and event invites. Unsubscribe anytime.",
-      es: "Envíenme por correo noticias del club e invitaciones a eventos. Puedo darme de baja cuando quiera.",
+      en: "Email me {orgShort} news and event invites. Unsubscribe anytime.",
+      es: "Envíenme por correo noticias de {orgShort} e invitaciones a eventos. Puedo darme de baja cuando quiera.",
       mirror: "legal.snippets.emailConsent", placeholder: "legal-review",
       note: "Checkbox label. Every email needs a one-click unsubscribe and a postal address ({mailingAddress}) per report 06 7.3."
     },
@@ -750,9 +751,9 @@ window.YSD_DATA.strings = {
     "shareSheet.saveImage": { en: "Save image", es: "Guardar imagen" },
     "shareSheet.igHint": { en: "We copied the text. Paste it on your story, then add a link sticker with your link.", es: "Copiamos el texto. Pégalo en tu historia y agrega el sticker de enlace con tu link." },
     "shareSheet.refNote": {
-      en: "Your link carries your invite code (like MAYA7QX, made from your first name), so we can count who you brought. Your email and phone number never go with it.",
-      es: "Tu enlace lleva tu código de invitación (como MAYA7QX, hecho con tu nombre) para contar a quién trajiste. Tu correo y tu teléfono nunca van con él.",
-      note: "True to assets/js/share.js and members.js makeRefCode: up to 5 letters of the first name plus 3 random characters (6 random when the name is too short or members.refCodeStyle is 'random'). The example uses Maya, the voice guide's demo name, not a real person's."
+      en: "Your link carries your invite code (like MAYA7QX, made from your first name, or random letters if you're under 18), so we can count who you brought. Your email and phone number never go with it.",
+      es: "Tu enlace lleva tu código de invitación (como MAYA7QX, hecho con tu nombre, o con letras al azar si tienes menos de 18 años) para contar a quién trajiste. Tu correo y tu teléfono nunca van con él.",
+      note: "True to assets/js/share.js and members.js makeRefCode: up to 5 letters of the first name plus 3 random characters (6 random when the name is too short, when members.refCodeStyle is 'random', or always for members under 18). The example uses Maya, the voice guide's demo name, not a real person's."
     },
 
     // ============================================================================ SHARE: PAGES

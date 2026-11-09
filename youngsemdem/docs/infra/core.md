@@ -54,10 +54,11 @@ example in a `config.local.js` or an inline script. The override is deep-merged 
 | `links.vote` | Official voting links, verified on the web (see below) |
 | `links` | `actblue` and `dues` (YDSC's public ActBlue pages; the chapter confirms before launch), `countyParty` (semdems.com); `actionNetwork`, `mobilize`, `volunteer`, `contact`: empty placeholders |
 | `integrations` | `formEndpoint`, `formEncoding` (`json` or `form`), `formName`, `actionNetwork {endpoint, tags}`, `squadEndpoint`, `countersEndpoint`, `videoUploadEndpoint`, `analytics {provider, plausibleDomain, plausibleSrc, cloudflareToken, endpoint, respectDoNotTrack}` |
-| `legal` | `paidFor` (PLACEHOLDER, Fla. Stat. 106.143 wording to come from the party), `privacyEmail`, `cardFooter` |
+| `legal` | `paidFor` (PLACEHOLDER, Fla. Stat. 106.143 wording to come from the party), `privacyEmail`, `smsNumber` and `mailingAddress` (`''` until set; data/legal.js and data/strings.js show a placeholder), `cardFooter` |
+| `sharekit` | `confirmed: {}`: launch-kit switches. A data/sharekit.js item with `requires: '<id>'` renders only when `confirmed['<id>'] === true` (e.g. `'soe-2027-requests-open'`) |
 | `theme` | Fallback colours and fonts (PLACEHOLDER hexes): `bg fg brand accent pop muted ink paper fontDisplay fontBody` |
 | `share` | `utm` defaults, `refParam: 'ref'`, `attributionDays: 30`, `hashtags`, `cleanUrl: false`, `actblueRefcode` |
-| `members` | `refCodeStyle` (`name` or `random`), `refNameMax`, `refRandom`, `enforceAgeCap`, `countyZips` (`[]` = no check), `keepContactLocally`, `demoSquadMax` |
+| `members` | `refCodeStyle` (`name` or `random`; members under 18 always get `random`), `refNameMax`, `refRandom`, `enforceAgeCap`, `countyZips` (`[]` = no check), `keepContactLocally`, `demoSquadMax` |
 | `cal` | `prodId`, `defaultDurationMin: 120`, `name` |
 | `cards` | `fonts` (CSS font specs to wait for), `demoWatermark` |
 | `clips` | Video limits read by clips.js: `maxBytes` (150 MB), `maxDuration` (180 s), `minDuration`, `captionMax`, `tagsMax` |
@@ -75,6 +76,11 @@ example in a `config.local.js` or an inline script. The override is deep-merged 
 | `countyRegister` | https://voteseminole.gov/voters/register-to-vote/ | 200 |
 | `myVoterRecord` | https://voteseminole.gov/voters/my-voter-record/ | 200 |
 | `voteByMail` | https://voteseminole.gov/how-to-vote/vote-by-mail/ | 200 |
+| `mailBallotRequest` | https://seminole.electionsfl.org/vrservices/mbrs | 200; the "Request Ballot" button on the vote-by-mail page. A JavaScript form: test it in a browser |
+| `trackBallot` | https://voteseminole.ballottrax.net/voter/ | 200; TrackMyMailBallot (BallotTrax), linked from the vote-by-mail page. A JavaScript app |
+| `electionReady` | https://voteseminole.gov/voters/are-you-election-ready/ | 200, "Are you Election Ready?". Its ID list is the pre-2027 one until the SOE updates it |
+| `whatToExpect` | https://voteseminole.gov/how-to-vote/what-to-expect-at-the-polls/ | 200, "What to Expect at the Polls" |
+| `stateVoteByMail` | https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/ | 200, Division of Elections; states the request-lifetime rule |
 | `pollingPlace` | https://voteseminole.dolphmap.com/ | 200; linked from My Voter Record |
 | `earlyVoting` | https://voteseminole.gov/how-to-vote/early-voting/ | 200 |
 | `upcomingElections` | https://voteseminole.gov/elections/upcoming-elections/ | 200 |
@@ -84,6 +90,9 @@ example in a `config.local.js` or an inline script. The override is deep-merged 
 
 - `YSD.cfg(path, fallback)`: reads a dotted path.
 - `YSD.emit(name, detail)`: dispatches a `ysd:<name>` CustomEvent on `document`.
+- `YSD.fill(template, vars)`: fills share-text placeholders. `{link}` and `{url}` both get
+  `vars.link || vars.url`; any other `{key}` comes from `vars`; a placeholder with no value is left
+  as-is. See [README.md](README.md#config-helpers-configjs).
 - `YSD.log(...)`: logs only when `YSD.debug` is on.
 - `YSD.debug`: true after `?debug=1`; it stays on for the tab session, and `?debug=0` turns it off.
 - `YSD.root`: the site root URL with a trailing slash, taken from config.js's own `src`. It is
@@ -255,7 +264,9 @@ DEMO mark is drawn (`cards.demoWatermark`).
 - `submit(member) -> Promise`, `retry()`, `makeRefCode(profile)`, `forget()`, `shareUrl(path, params)`
 
 **RefCodes.** Up to 5 ASCII letters of the first name plus 3 characters, for example `KIRA7QX`.
-With the `random` style it is 6 characters, for example `B7KQ2M`. The random characters exclude
+With the `random` style it is 6 characters, for example `B7KQ2M`. Members under 18 (by `age` or
+`birthYear`) always get the random style, whatever `refCodeStyle` says, so a teen's first name
+never appears in links they share. The random characters exclude
 vowels, so codes cannot spell words, and look-alikes (0/O, 1/I/L).
 
 **Demo squad growth.** Simulated members appear about 45 seconds, 2.5 minutes, 10 minutes, 40

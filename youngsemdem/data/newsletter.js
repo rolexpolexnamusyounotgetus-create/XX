@@ -43,7 +43,7 @@
  *   id, number, demo, date (send time), subject{}, preheader{}, tone ('calm' for the letter: the
  *   week after an election)
  *   letter      { byline{ name, city, label{} }, paragraphs[] ({en,es}), wordCount{ en, es },
- *                 ritual{}, signature{} }  (render byline label "demo writer" visibly)
+ *                 ritual{}, signature{} }  (render byline label "DEMO writer" visibly)
  *   inside[]    { en, es, section }  "what's inside" bullets, each pointing at a section id
  *   oneThing    { title{}, body{}, deadline (ISO, all-day: the local midnight that starts the last
  *                 day, same convention as civic.js allDay; show the date only), deadlineAllDay: true,
@@ -51,13 +51,14 @@
  *                 factIds[] }
  *   picks[]     { id, kind 'place'|'book'|'podcast'|'show', title{}, creator{}?, detail{}?, reason{},
  *                 event? (events.js id), link?{ url, label{} }, factIds[] }  (free and nearby first)
- *   spotlight   { demo, name, city, label{} (render it: carries "demo member"), headline{},
+ *   spotlight   { demo, name, city, label{} (render it: carries "DEMO member"), headline{},
  *                 body{} (80-120 words), event? (events.js id), consentNote (editors only) }
- *   askGroupChat { demo, label{} (render it: "Demo question"), q{}, a{}, factIds[] }
+ *   askGroupChat { demo, label{} (render it: "DEMO question"), q{}, a{}, factIds[] }
  *   footer      { forward{}, languageSwitch{}, unsubscribe{}, why{}, demoNote{}, paidForKey }
  *   facts[]     { id, claim{}, source, sources?[], verified, confidence, computed?, note? }
  *
- * ARCHIVE ITEM  { id, number, demo, date, title{}, blurb{}, tone, facts[]? }
+ * ARCHIVE ITEM  { id, number, demo, date, title{}, blurb{}, tone, facts[]? }  (demo: true = render
+ *                 labels.demoIssue, "DEMO issue" / "Edición DEMO", on the item)
  */
 window.YSD_DATA = window.YSD_DATA || {};
 window.YSD_DATA.newsletter = {
@@ -68,7 +69,7 @@ window.YSD_DATA.newsletter = {
   name: { en: "The Thursday Letter", es: "La Carta del Jueves" },
   tagline: {
     en: "One letter a week from the Young Dems: the deadline you need, the plan for this week, and a few good things.",
-    es: "Una carta por semana de Young Dems: la fecha que necesitas, el plan de la semana y algunas cosas buenas."
+    es: "Una carta por semana de los Young Dems: la fecha que necesitas, el plan de la semana y algunas cosas buenas."
   },
   cadence: {
     day: "thursday",
@@ -81,7 +82,7 @@ window.YSD_DATA.newsletter = {
   },
   signoff: {
     ritual: { en: "See you Thursday.", es: "Nos vemos el jueves." },
-    template: { en: "{name}, for the Young Dems xo", es: "Un abrazo, {name}, de parte de Young Dems" },
+    template: { en: "{name}, for the Young Dems xo", es: "Un abrazo, {name}, de parte de los Young Dems" },
     note: "Recommended option (a) from docs/research/05 section 7, with the casual name 'Young Dems' (docs/research/00). Keep it identical every week."
   },
 
@@ -97,9 +98,9 @@ window.YSD_DATA.newsletter = {
 
   labels: {
     demo: { en: "DEMO", es: "DEMO" },
-    demoIssue: { en: "Demo issue", es: "Edición de muestra" },
-    demoWriter: { en: "demo writer", es: "perfil de muestra" },
-    demoMember: { en: "demo member", es: "miembro de muestra" },
+    demoIssue: { en: "DEMO issue", es: "Edición DEMO" },
+    demoWriter: { en: "DEMO writer", es: "perfil DEMO" },
+    demoMember: { en: "DEMO member", es: "miembro DEMO" },
     archive: { en: "Past letters", es: "Cartas anteriores" },
     readIssue: { en: "Read this letter", es: "Leer esta carta" },
     issueNumber: { en: "No. {n}", es: "N.º {n}" },
@@ -124,7 +125,7 @@ window.YSD_DATA.newsletter = {
       en: "That email's missing an @. Happens to everyone. Try once more?",
       es: "A ese email le falta la @. Nos pasa a todos. ¿Lo intentas otra vez?"
     },
-    demoNote: { en: "Demo: no emails are sent.", es: "Demo: no se envían correos." }
+    demoNote: { en: "DEMO: no emails are sent.", es: "DEMO: no se envían correos." }
   },
 
   issue: {
@@ -134,8 +135,8 @@ window.YSD_DATA.newsletter = {
     date: "2026-11-12T07:00:00-05:00",
     tone: "calm",
     subject: {
-      en: "Your mail-ballot request runs out Dec 31 (plus a sunset walk Saturday)",
-      es: "Tu solicitud de boleta por correo vence el 31 de diciembre (y una caminata al atardecer el sábado)"
+      en: "Mail-ballot requests from before Nov 3 run out Dec 31 (plus a sunset walk Saturday)",
+      es: "Las solicitudes de boleta por correo de antes del 3 de noviembre vencen el 31 de diciembre (y una caminata al atardecer el sábado)"
     },
     preheader: {
       en: "One reminder to set, five picks for a slow weekend, and a first-time voter who stayed to help.",
@@ -146,12 +147,12 @@ window.YSD_DATA.newsletter = {
       byline: {
         name: "Dani",
         city: "casselberry",
-        label: { en: "Dani from Casselberry (demo writer)", es: "Dani, de Casselberry (perfil de muestra)" }
+        label: { en: "Dani from Casselberry (DEMO writer)", es: "Dani, de Casselberry (perfil DEMO)" }
       },
       paragraphs: [
         {
-          en: "Hi, it's Dani from Casselberry (demo writer). On election night I was at our text-bank table, refilling the chip bowl and answering a \"where do I vote?\" text, when a guy about my age asked if he could help. He'd voted for the first time that morning. He stayed until the polls closed at 7, sending strangers the official link like he'd been doing it for years.",
-          es: "Hola, soy Dani, de Casselberry (perfil de muestra). La noche de las elecciones estaba en nuestra mesa de mensajes, rellenando el plato de papitas y contestando un «¿dónde voto?», cuando un muchacho más o menos de mi edad me preguntó si podía ayudar. Había votado por primera vez esa misma mañana. Se quedó hasta que cerraron las urnas a las 7, mandándoles el enlace oficial a desconocidos como si llevara años haciéndolo."
+          en: "Hi, it's Dani from Casselberry (DEMO writer). On election night I was at our text-bank table, refilling the chip bowl and answering a \"where do I vote?\" text, when a guy about my age asked if he could help. He'd voted for the first time that morning. He stayed until the polls closed at 7, sending strangers the official link like he'd been doing it for years.",
+          es: "Hola, soy Dani, de Casselberry (perfil DEMO). La noche de las elecciones estaba en nuestra mesa de mensajes, rellenando el plato de papitas y contestando un «¿dónde voto?», cuando un muchacho más o menos de mi edad me preguntó si podía ayudar. Había votado por primera vez esa misma mañana. Se quedó hasta que cerraron las urnas a las 7, mandándoles el enlace oficial a desconocidos como si llevara años haciéndolo."
         },
         {
           en: "By the unofficial count, Seminole voted blue for governor, about 54% to 45%, while the state went the other way by about a point. The county files its official results by Mon, Nov 16. I'm proud of this county and tired at the same time. If you're somewhere else entirely, that makes sense too.",
@@ -162,8 +163,8 @@ window.YSD_DATA.newsletter = {
           es: "Así que esta semana es para respirar, y para una tarea pequeña y nada glamorosa. Si pediste la boleta por correo antes del 3 de noviembre, esa solicitud vence el 31 de diciembre. Ponte ya un recordatorio para el 1 de enero y renovarla te va a tomar muy poco. (Los detalles, más abajo.)"
         },
         {
-          en: "Also inside: a sunset walk on Lake Monroe Saturday, five picks for a slow weekend, and Marisol (demo member), who rewrote our text-bank script on her first night.",
-          es: "Además: una caminata al atardecer en el lago Monroe el sábado, cinco recomendaciones para un fin de semana tranquilo y Marisol (miembro de muestra), que reescribió nuestro guion de mensajes en su primera noche."
+          en: "Also inside: a sunset walk on Lake Monroe Saturday, five picks for a slow weekend, and Marisol (DEMO member), who rewrote our text-bank script on her first night.",
+          es: "Además: una caminata al atardecer en el lago Monroe el sábado, cinco recomendaciones para un fin de semana tranquilo y Marisol (miembro DEMO), que reescribió nuestro guion de mensajes en su primera noche."
         },
         {
           en: "I hope you find something here that feels like yours.",
@@ -172,22 +173,22 @@ window.YSD_DATA.newsletter = {
       ],
       wordCount: { en: 200, es: 233 },
       ritual: { en: "See you Thursday.", es: "Nos vemos el jueves." },
-      signature: { en: "Dani, for the Young Dems xo", es: "Un abrazo, Dani, de parte de Young Dems" },
+      signature: { en: "Dani, for the Young Dems xo", es: "Un abrazo, Dani, de parte de los Young Dems" },
       factIds: ["seminole-governor-unofficial", "official-returns-nov-16", "mail-requests-expire-2026"]
     },
 
     inside: [
       { en: "One Thing: set your Jan 1 mail-ballot renewal reminder", es: "Una sola cosa: pon tu recordatorio del 1 de enero para renovar la boleta por correo", section: "oneThing" },
       { en: "The Picks: two outdoor spots, a book, a podcast in Spanish and a show", es: "Recomendados: dos lugares al aire libre, un libro, un pódcast en español y una serie", section: "picks" },
-      { en: "Spotlight: Marisol (demo member), who rewrote our text-bank script", es: "En primer plano: Marisol (miembro de muestra), que reescribió nuestro guion de mensajes", section: "spotlight" },
+      { en: "Spotlight: Marisol (DEMO member), who rewrote our text-bank script", es: "En primer plano: Marisol (miembro DEMO), que reescribió nuestro guion de mensajes", section: "spotlight" },
       { en: "Ask the Group Chat: \"I'm NPA. Is this group even for me?\"", es: "Pregúntale al chat: «Me inscribí sin partido. ¿Este grupo es para mí?»", section: "askGroupChat" }
     ],
 
     oneThing: {
       title: { en: "Set your Jan 1 renewal reminder", es: "Pon tu recordatorio para renovar el 1 de enero" },
       body: {
-        en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Starting Jan 1, one new request covers every election through 2028. Set the reminder now, then renew online or at 407-585-8683 with your Florida license or ID number, or the last 4 of your Social Security number.",
-        es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Desde el 1 de enero, una sola solicitud nueva te cubre en todas las elecciones hasta 2028. Ponte el recordatorio ahora y luego renuévala en línea o al 407-585-8683 con el número de tu licencia o identificación de Florida, o los últimos 4 dígitos de tu Seguro Social."
+        en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Starting Jan 1, one new request covers every election through 2028. Set the reminder now, then renew online or at 407-585-8683 with your Florida license or ID number, or the last 4 of your Social Security number. Renewing sooner? Check My Voter Record in January to be sure.",
+        es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Desde el 1 de enero, una sola solicitud nueva te cubre en todas las elecciones hasta 2028. Ponte el recordatorio ahora y luego renuévala en línea o al 407-585-8683 con el número de tu licencia o identificación de Florida, o los últimos 4 dígitos de tu Seguro Social. ¿La renuevas antes? Revisa My Voter Record en enero para confirmarlo."
       },
       deadline: "2026-12-31T00:00:00-05:00",
       deadlineAllDay: true,
@@ -215,8 +216,8 @@ window.YSD_DATA.newsletter = {
         kind: "place",
         title: { en: "The Riverwalk in Sanford, about 20 minutes before sunset", es: "El Riverwalk de Sanford, unos 20 minutos antes del atardecer" },
         reason: {
-          en: "It's free, it's right on Lake Monroe, and on Saturday the sun sets around 5:32 pm. We'll be the group by Veterans Memorial Park with the celery-green sign (demo).",
-          es: "Es gratis, está justo a orillas del lago Monroe y el sábado el sol se pone a eso de las 5:32 p. m. Somos el grupo junto a Veterans Memorial Park con el letrero verde apio (demo)."
+          en: "It's free, it's right on Lake Monroe, and on Saturday the sun sets around 5:32 pm. We'll be the group by Veterans Memorial Park with the celery-green sign (DEMO).",
+          es: "Es gratis, está justo a orillas del lago Monroe y el sábado el sol se pone a eso de las 5:32 p. m. Somos el grupo junto a Veterans Memorial Park con el letrero verde apio (DEMO)."
         },
         event: "sunset-walk-lake-monroe",
         factIds: ["sunset-2026-11-14", "veterans-park-lake-monroe"]
@@ -273,11 +274,11 @@ window.YSD_DATA.newsletter = {
       demo: true,
       name: "Marisol",
       city: "sanford",
-      label: { en: "Marisol from Sanford (demo member)", es: "Marisol, de Sanford (miembro de muestra)" },
+      label: { en: "Marisol from Sanford (DEMO member)", es: "Marisol, de Sanford (miembro DEMO)" },
       headline: { en: "She made our script sound like a person", es: "Hizo que nuestro guion sonara como una persona" },
       body: {
-        en: "Marisol (demo member), a nursing student from Sanford, had never sent a political text in her life when a friend talked her into a text bank in October with a promise of snacks. By the end of the night she'd rewritten our opening line so it sounded like a neighbor, not a robot, and we've used her version ever since. Her favorite reply came from a woman who wrote back to ask where to check her registration. On Tue, Dec 1, Marisol is training the next group of first-timers in Lake Mary, in English and Spanish. Bring questions. She likes them.",
-        es: "Marisol (miembro de muestra), estudiante de enfermería de Sanford, nunca había mandado un mensaje político en su vida cuando una amiga la convenció de ir a una jornada de mensajes en octubre con la promesa de que habría algo para picar. Al final de la noche ya había reescrito nuestra primera línea para que sonara como una vecina y no como un robot, y desde entonces usamos su versión. Su respuesta favorita fue la de una señora que le escribió para preguntar dónde revisar su registro. El martes 1 de diciembre, Marisol va a entrenar en Lake Mary al próximo grupo de principiantes, en inglés y en español. Trae tus preguntas. Le encantan."
+        en: "Marisol (DEMO member), a nursing student from Sanford, had never sent a political text in her life when a friend talked her into a text bank in October with a promise of snacks. By the end of the night she'd rewritten our opening line so it sounded like a neighbor, not a robot, and we've used her version ever since. Her favorite reply came from a woman who wrote back to ask where to check her registration. On Tue, Dec 1, Marisol is training the next group of first-timers in Lake Mary, in English and Spanish. Bring questions. She likes them.",
+        es: "Marisol (miembro DEMO), estudiante de enfermería de Sanford, nunca había mandado un mensaje político en su vida cuando una amiga la convenció de ir a una jornada de mensajes en octubre con la promesa de que habría algo para picar. Al final de la noche ya había reescrito nuestra primera línea para que sonara como una vecina y no como un robot, y desde entonces usamos su versión. Su respuesta favorita fue la de una señora que le escribió para preguntar dónde revisar su registro. El martes 1 de diciembre, Marisol va a entrenar en Lake Mary al próximo grupo de principiantes, en inglés y en español. Trae tus preguntas. Le encantan."
       },
       event: "text-bank-dec-31-heads-up",
       consentNote: "Demo person. A real spotlight runs only with the member's written consent (and a guardian's for anyone under 18)."
@@ -285,7 +286,7 @@ window.YSD_DATA.newsletter = {
 
     askGroupChat: {
       demo: true,
-      label: { en: "Demo question", es: "Pregunta de muestra" },
+      label: { en: "DEMO question", es: "Pregunta DEMO" },
       q: {
         en: "I'm registered NPA. Is this group even for me?",
         es: "Me inscribí sin partido (NPA). ¿Este grupo es para mí?"
@@ -309,9 +310,9 @@ window.YSD_DATA.newsletter = {
       },
       why: {
         en: "You're getting this because you joined the Young Dems list. One letter a week, on Thursdays, never more.",
-        es: "Te llega esta carta porque te uniste a la lista de Young Dems. Una carta por semana, los jueves, nunca más."
+        es: "Te llega esta carta porque te uniste a la lista de los Young Dems. Una carta por semana, los jueves, nunca más."
       },
-      demoNote: { en: "Demo issue: nothing is emailed, and the people in it are made up.", es: "Edición de muestra: no se envía por correo y las personas que aparecen son inventadas." },
+      demoNote: { en: "DEMO issue: nothing is emailed, and the people in it are made up.", es: "Edición DEMO: no se envía por correo y las personas que aparecen son inventadas." },
       paidForKey: "legal.paidFor"
     },
 

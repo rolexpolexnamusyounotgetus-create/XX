@@ -34,7 +34,7 @@
  *                 'organizing' | 'membership' | 'spanish-outreach' (events.js host.team uses these)
  *   order         display order
  *   seat          'officer' | 'chair'
- *   demo          true
+ *   demo          true (render labels.demo, "DEMO" in both languages, on the card)
  *   status        'placeholder' (render labels.placeholder) | 'filled' | 'open'
  *   title{}       the role name
  *   name{}        PLACEHOLDER display name. Never replace with a real name without consent.
@@ -51,8 +51,8 @@ window.YSD_DATA.team = {
   verified: "2026-11-09",
 
   note: {
-    en: "Demo team page. Every name below is a placeholder until the chapter's real board says yes to being listed.",
-    es: "Página de equipo de muestra. Todos los nombres de abajo son de relleno hasta que la directiva real del grupo acepte aparecer."
+    en: "DEMO team page. Every name below is a placeholder until the chapter's real board says yes to being listed.",
+    es: "Página de equipo DEMO. Todos los nombres de abajo son de relleno hasta que la directiva real del grupo acepte aparecer."
   },
 
   labels: {
@@ -269,8 +269,8 @@ window.YSD_DATA.team = {
       note: "links.contact is empty in config today; send people to the join form (members.js) until the chapter sets a contact."
     },
     demoNote: {
-      en: "Demo copy. The chapter's bylaws decide how officer elections work.",
-      es: "Texto de muestra. Los estatutos del grupo deciden cómo funcionan las elecciones de la directiva."
+      en: "DEMO copy. The chapter's bylaws decide how officer elections work.",
+      es: "Texto DEMO. Los estatutos del grupo deciden cómo funcionan las elecciones de la directiva."
     }
   },
 

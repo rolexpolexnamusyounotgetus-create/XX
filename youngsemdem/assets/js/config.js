@@ -22,6 +22,8 @@
  * Helpers defined at the bottom (the only code in this file):
  *  YSD.cfg(path, fallback)  read a dotted path, e.g. YSD.cfg('integrations.formEndpoint', '')
  *  YSD.emit(name, detail)   dispatch a 'ysd:<name>' CustomEvent on document (design hooks)
+ *  YSD.fill(template, vars) fill share-text placeholders: {link} and {url} both get
+ *                           vars.link || vars.url; any other {key} comes from vars
  *  YSD.debug                true when the URL has ?debug=1 (sticky for the tab session)
  *  YSD.log(...)             console.log that is silent unless YSD.debug
  *  YSD.track(...)           queue stub until assets/js/track.js loads and replays the queue
@@ -131,6 +133,22 @@
         myVoterRecord: 'https://voteseminole.gov/voters/my-voter-record/',
         // Seminole SOE vote-by-mail page (links the online request form). Checked 2026-11-09.
         voteByMail: 'https://voteseminole.gov/how-to-vote/vote-by-mail/',
+        // Seminole's online mail-ballot request form (the "Request Ballot" button on the
+        // vote-by-mail page above). Checked 2026-11-09: 200, linked from that page. The form runs
+        // in JavaScript, so test a request in a real browser.
+        mailBallotRequest: 'https://seminole.electionsfl.org/vrservices/mbrs',
+        // TrackMyMailBallot (BallotTrax) for Seminole: mail-ballot status alerts. Checked
+        // 2026-11-09: 200, linked from the vote-by-mail page. A JavaScript app (browser only).
+        trackBallot: 'https://voteseminole.ballottrax.net/voter/',
+        // Seminole SOE "Are you Election Ready?" (ID to bring, polling place, mail-ballot return).
+        // Checked 2026-11-09: 200. Its ID list is still the pre-2027 one; recheck after Jan 1, 2027.
+        electionReady: 'https://voteseminole.gov/voters/are-you-election-ready/',
+        // Seminole SOE "What to Expect at the Polls". Checked 2026-11-09: 200.
+        whatToExpect: 'https://voteseminole.gov/how-to-vote/what-to-expect-at-the-polls/',
+        // Florida Division of Elections vote-by-mail page (states that a request covers elections
+        // through the end of the calendar year of the next regularly scheduled general election).
+        // Checked 2026-11-09: 200.
+        stateVoteByMail: 'https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/',
         // Seminole SOE "Find My Polling Location" map (linked from the voter record page).
         // Checked 2026-11-09.
         pollingPlace: 'https://voteseminole.dolphmap.com/',
@@ -207,8 +225,22 @@
        */
       paidFor: '[PLACEHOLDER] Paid political advertisement paid for by [committee name], [address]. Final wording to be supplied by the party.',
       privacyEmail: '',
+      /** Texting number shown in SMS consent copy (data/legal.js, data/strings.js). '' = not set yet. */
+      smsNumber: '',
+      /** Mailing address for privacy requests and the disclaimer (data/legal.js). '' = not set yet. */
+      mailingAddress: '',
       /** Small line drawn on share cards ('' = none). */
       cardFooter: ''
+    },
+
+    /**
+     * Launch-kit switches (data/sharekit.js). An item with `requires: '<id>'` renders only when
+     * confirmed['<id>'] === true; an editor sets each one after checking it on the official site.
+     * Example: 'soe-2027-requests-open': true once Seminole's online request form is confirmed to
+     * record requests for the 2027-28 elections. Empty = nothing confirmed yet.
+     */
+    sharekit: {
+      confirmed: {}
     },
 
     /**
@@ -252,7 +284,8 @@
        * Referral code style. 'name': up to refNameMax letters of the first name + refRandom
        * characters (e.g. KIRA7QX). 'random': 6 random characters (e.g. B7KQ2M). Random characters
        * come from an alphabet with no vowels and no look-alikes (0/O, 1/I/L), so codes stay
-       * readable and cannot spell words.
+       * readable and cannot spell words. Members under 18 always get 'random' (members.js), so a
+       * teen's first name never appears in links they share.
        */
       refCodeStyle: 'name',
       refNameMax: 5,
@@ -378,6 +411,20 @@
       else if (d.createEvent) { ev = d.createEvent('CustomEvent'); ev.initCustomEvent('ysd:' + name, false, false, detail); }
       if (ev) d.dispatchEvent(ev);
     } catch (e) { /* hooks must never break the page */ }
+  };
+
+  /**
+   * Fill share-text placeholders: YSD.fill('Join me: {link}', { link: url }). {link} is canonical;
+   * {url} (the older name in some data files) gets the same value, vars.link || vars.url. Any other
+   * {key} is replaced from vars. A placeholder with no value (undefined or null) is left as-is, so
+   * callers can spot an unfilled template and skip it.
+   */
+  YSD.fill = function (template, vars) {
+    var v = vars || {}, link = v.link || v.url;
+    return String(template == null ? '' : template).replace(/\{(\w+)\}/g, function (m, k) {
+      var val = k === 'link' || k === 'url' ? link : (Object.prototype.hasOwnProperty.call(v, k) ? v[k] : undefined);
+      return val == null ? m : String(val);
+    });
   };
 
   /** ?debug=1 turns on console logging for the tab session; ?debug=0 turns it off. */

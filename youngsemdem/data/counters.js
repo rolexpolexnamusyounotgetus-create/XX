@@ -4,7 +4,8 @@
  * EVERY NUMBER HERE IS MADE UP FOR THE DEMO. None of them is a real count of anything. They exist
  * so the demo's social-proof widgets look alive. demo:true at the top marks the whole file as demo;
  * YSD.counters ignores demo baselines entirely when YSD_CONFIG.demo is false, so these can never
- * appear on the production site.
+ * appear on the production site. Pages show every one of these numbers with a visible DEMO label in
+ * both languages: data/strings.js demo.badgeNumber ("DEMO number" / "Número DEMO") or demo.counters.
  *
  * Going live with REAL numbers: set demo:false on an item (or on the whole file) and put the real,
  * verified count in `base`; perDay growth is never applied to real items. Better still, wire

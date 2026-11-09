@@ -79,8 +79,8 @@ window.YSD_DATA.legal = {
     orgShort: { from: "org.short", fallback: { en: "YDSC", es: "YDSC" } },
     minAge: { from: "org.minAge", fallback: { en: "14", es: "14" } },
     privacyEmail: { from: "legal.privacyEmail", fallback: { en: "[privacy email, set before launch]", es: "[correo de privacidad, se configura antes del lanzamiento]" } },
-    mailingAddress: { from: "legal.mailingAddress", suggested: true, fallback: { en: "[mailing address, set before launch]", es: "[dirección postal, se configura antes del lanzamiento]" } },
-    smsNumber: { from: "legal.smsNumber", suggested: true, fallback: { en: "[texting number, set before launch]", es: "[número de mensajes, se configura antes del lanzamiento]" } },
+    mailingAddress: { from: "legal.mailingAddress", fallback: { en: "[mailing address, set before launch]", es: "[dirección postal, se configura antes del lanzamiento]" } },
+    smsNumber: { from: "legal.smsNumber", fallback: { en: "[texting number, set before launch]", es: "[número de mensajes, se configura antes del lanzamiento]" } },
     dmcaAgent: { from: "legal.dmcaAgent", suggested: true, fallback: { en: "[copyright agent, registered before uploads go live]", es: "[agente de derechos de autor, se registra antes de abrir las subidas]" } },
     soePhone: { from: "links.vote.countyPhone", fallback: { en: "407-585-8683", es: "407-585-8683" } }
   },
@@ -144,7 +144,7 @@ window.YSD_DATA.legal = {
           body: [
             { list: [
               { en: "Join form: first name (required), last name, email or mobile number (one of the two), ZIP code, age, interests, and whether you want emails or texts. We use them to welcome you, invite you to things you care about, and follow our teen safety rules.", es: "Formulario para unirte: nombre (obligatorio), apellido, correo o celular (uno de los dos), código postal, edad, intereses y si quieres correos o mensajes de texto. Los usamos para darte la bienvenida, invitarte a lo que te interesa y seguir nuestras reglas de seguridad para adolescentes." },
-              { en: "Added automatically: your invite code (like KIRA7QX: up to five letters of your first name plus random characters), who invited you, the page you joined from, campaign tags in the link (utm_*), and when you joined.", es: "Se agrega solo: tu código de invitación (como KIRA7QX: hasta cinco letras de tu nombre más caracteres al azar), quién te invitó, la página desde la que te uniste, las etiquetas de campaña del enlace (utm_*) y la fecha." },
+              { en: "Added automatically: your invite code (like KIRA7QX: up to five letters of your first name plus random characters; members under 18 get random characters only), who invited you, the page you joined from, campaign tags in the link (utm_*), and when you joined.", es: "Se agrega solo: tu código de invitación (como KIRA7QX: hasta cinco letras de tu nombre más caracteres al azar; si tienes menos de 18 años, solo caracteres al azar), quién te invitó, la página desde la que te uniste, las etiquetas de campaña del enlace (utm_*) y la fecha." },
               { en: "Texts: if you tick the box, a consent record with your number, the time, the exact words you agreed to, the page and your IP address.", es: "Mensajes de texto: si marcas la casilla, un registro de tu consentimiento con tu número, la hora, el texto exacto que aceptaste, la página y tu dirección IP." },
               { en: "Clips: the video, a still frame, your caption, tags and handle, the clip's length and size, and your answers to the consent questions.", es: "Clips: el video, una imagen fija, tu descripción, etiquetas y usuario, la duración y el tamaño del clip, y tus respuestas a las preguntas de consentimiento." },
               { en: "Browsing: our host handles your IP address to deliver pages, like every website. No ad pixels, no social media trackers, no fingerprinting.", es: "Navegación: nuestro proveedor de hosting usa tu dirección IP para mostrarte las páginas, como cualquier sitio web. Sin píxeles de anuncios, sin rastreadores de redes sociales y sin huellas digitales del navegador." }
@@ -552,8 +552,8 @@ window.YSD_DATA.legal = {
   snippets: {
     /** Footer line under the policy links while demo is on. */
     demoNotice: {
-      en: "Demo preview: forms here don't send anything. Everything stays in your browser.",
-      es: "Vista previa de demostración: los formularios no envían nada. Todo se queda en tu navegador."
+      en: "DEMO preview: forms here don't send anything. Everything stays in your browser.",
+      es: "Vista previa DEMO: los formularios no envían nada. Todo se queda en tu navegador."
     },
 
     /** Join form. Show joinNotice under the submit button, linked to the privacy page. */
@@ -578,8 +578,8 @@ window.YSD_DATA.legal = {
       es: "Solo lo usamos para pedir su permiso antes de que salgas en una foto o clip, o antes de un evento fuera del local."
     },
     emailConsent: {
-      en: "Email me club news and event invites. Unsubscribe anytime.",
-      es: "Envíenme por correo noticias del club e invitaciones a eventos. Puedo darme de baja cuando quiera."
+      en: "Email me {orgShort} news and event invites. Unsubscribe anytime.",
+      es: "Envíenme por correo noticias de {orgShort} e invitaciones a eventos. Puedo darme de baja cuando quiera."
     },
     /**
      * SMS opt-in checkbox: UNCHECKED by default, never required. Store `version` and the exact

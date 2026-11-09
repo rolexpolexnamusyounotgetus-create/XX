@@ -15,7 +15,8 @@
  * next regular general election (F.S. 101.62(1)(a)). That election was Nov 3, 2026, so requests made
  * BEFORE it end Dec 31, 2026. Say "asked for a mail ballot before Nov 3", not "every request on
  * file": the statute reads as if a request made after Nov 3 would run through 2028, and the
- * Supervisor of Elections hasn't posted how it handles those. Our advice stays "ask again from Jan 1".
+ * Supervisor of Elections hasn't posted how it handles those. Our advice stays "ask again from Jan 1";
+ * anyone who asks sooner should check My Voter Record in January.
  *
  * SPANISH TERMS (same as data/civic.js, issues.js, strings.js): "boleta por correo" for the mail
  * ballot and "solicitud de boleta por correo" for the request (Florida's Spanish form DS-DE 160 says
@@ -42,6 +43,8 @@
  * CONVENTIONS (same as data/civic.js)
  *  - Bilingual text is { en, es }. Spanish is written for neutral Latin American readers, not
  *    translated word for word. Placeholders: {url} (share link), {n} (a number), {date}, {city}.
+ *    {link} is the site's canonical name for the share link; YSD.fill(text, { link }) in
+ *    assets/js/config.js fills both {link} and {url}, so these templates work as they are.
  *  - start/end are ISO 8601 with the America/New_York offset. All events fall between Nov 1, 2026
  *    and Mar 14, 2027, so every offset is EST (-05:00).
  *  - when{} is a ready-made display label ("Sat, Nov 14, 4:45 to 6:15 pm"). Format from start/end
@@ -93,7 +96,7 @@
  *   facts[]       { id, claim{}, source, sources?[], verified, confidence, computed? }
  *
  * CALENDAR: build the YSD.cal event per language like this:
- *   { id: e.id, title: e.title[lang] + ' (demo)', start: e.start, end: e.end,
+ *   { id: e.id, title: e.title[lang] + ' (DEMO)', start: e.start, end: e.end,
  *     location: e.place.name[lang] + ', ' + events.cities[e.city][lang],
  *     address: e.place.address || '', description: e.calDescription[lang], url: <event page URL> }
  */
@@ -105,15 +108,15 @@ window.YSD_DATA.events = {
   timezone: "America/New_York",
 
   note: {
-    en: "These are demo events for a preview of the site. None of them is scheduled yet, and the counts are made up.",
-    es: "Estos son eventos de muestra para una vista previa del sitio. Ninguno está programado todavía y las cifras son inventadas."
+    en: "These are DEMO events for a preview of the site. None of them is scheduled yet, and the counts are made up.",
+    es: "Estos son eventos DEMO para una vista previa del sitio. Ninguno está programado todavía y las cifras son inventadas."
   },
 
   labels: {
     demo: { en: "DEMO", es: "DEMO" },
-    demoEvent: { en: "Demo event", es: "Evento de muestra" },
+    demoEvent: { en: "DEMO event", es: "Evento DEMO" },
     demoHost: { en: "DEMO host", es: "Equipo anfitrión (DEMO)" },
-    demoVenue: { en: "Demo venue", es: "Lugar de muestra" },
+    demoVenue: { en: "DEMO venue", es: "Lugar DEMO" },
     going: { en: "{n} going (DEMO)", es: "{n} van (DEMO)" },
     spotsLeft: { en: "{n} spots left", es: "Quedan {n} lugares" },
     full: { en: "Full. Want a spot if one opens?", es: "Está lleno. ¿Quieres un lugar si se libera uno?" },
@@ -190,8 +193,8 @@ window.YSD_DATA.events = {
       es: "Solo usaremos estos datos para mandarte información de este evento. Puedes pedirnos que los borremos cuando quieras."
     },
     demoNote: {
-      en: "Demo: nothing you type here leaves your browser.",
-      es: "Demo: nada de lo que escribas aquí sale de tu navegador."
+      en: "DEMO: nothing you type here leaves your browser.",
+      es: "DEMO: nada de lo que escribas aquí sale de tu navegador."
     }
   },
 
@@ -269,8 +272,8 @@ window.YSD_DATA.events = {
         address: null,
         mapQuery: "Veterans Memorial Park, Sanford, FL",
         directions: {
-          en: "Meet at the park on the lakefront, then we walk the Riverwalk from there. Look for the celery-green sign (demo).",
-          es: "Nos vemos en el parque, frente al lago, y desde ahí caminamos por el Riverwalk. Busca el letrero verde apio (demo)."
+          en: "Meet at the park on the lakefront, then we walk the Riverwalk from there. Look for the celery-green sign (DEMO).",
+          es: "Nos vemos en el parque, frente al lago, y desde ahí caminamos por el Riverwalk. Busca el letrero verde apio (DEMO)."
         },
         remote: false,
         source: "https://sanfordfl.gov/?p=70776",
@@ -311,8 +314,8 @@ window.YSD_DATA.events = {
         es: "Trae a esa persona con la que llevas toda la semana escribiéndote sobre las elecciones. Es más fácil hablar caminando."
       },
       calDescription: {
-        en: "Demo event. Slow walk on the Sanford Riverwalk at sunset (about 5:32 pm), plus a no-pressure talk about Nov 3 and 2027. Free, 14 and up, alcohol-free.",
-        es: "Evento de muestra. Caminata tranquila por el Riverwalk de Sanford al atardecer (cerca de las 5:32 p. m.) y una conversación sin presión sobre el 3 de noviembre y 2027. Gratis, desde 14 años, sin alcohol."
+        en: "DEMO event. Slow walk on the Sanford Riverwalk at sunset (about 5:32 pm), plus a no-pressure talk about Nov 3 and 2027. Free, 14 and up, alcohol-free.",
+        es: "Evento DEMO. Caminata tranquila por el Riverwalk de Sanford al atardecer (cerca de las 5:32 p. m.) y una conversación sin presión sobre el 3 de noviembre y 2027. Gratis, desde 14 años, sin alcohol."
       },
       links: [],
       xpActions: ["rsvp", "attend"],
@@ -365,7 +368,7 @@ window.YSD_DATA.events = {
       city: "casselberry",
       place: {
         kind: "generic",
-        name: { en: "A board-game café in Casselberry (demo venue)", es: "Un café de juegos de mesa en Casselberry (lugar de muestra)" },
+        name: { en: "A board-game café in Casselberry (DEMO venue)", es: "Un café de juegos de mesa en Casselberry (lugar DEMO)" },
         address: null,
         mapQuery: null,
         remote: false
@@ -404,8 +407,8 @@ window.YSD_DATA.events = {
         es: "Trae a quien siempre gana en la trivia y a quien se sabe todos los atajos de la 17-92."
       },
       calDescription: {
-        en: "Demo event. Seminole County trivia, teams of up to 6, solo players welcome. Free, 14 and up, alcohol-free.",
-        es: "Evento de muestra. Trivia sobre el condado de Seminole, equipos de hasta 6, también si vienes sin equipo. Gratis, desde 14 años, sin alcohol."
+        en: "DEMO event. Seminole County trivia, teams of up to 6, solo players welcome. Free, 14 and up, alcohol-free.",
+        es: "Evento DEMO. Trivia sobre el condado de Seminole, equipos de hasta 6, también si vienes sin equipo. Gratis, desde 14 años, sin alcohol."
       },
       links: [],
       xpActions: ["rsvp", "attend"],
@@ -489,7 +492,7 @@ window.YSD_DATA.events = {
       city: "lake-mary",
       place: {
         kind: "generic",
-        name: { en: "A coworking room in Lake Mary (demo venue), or from your couch", es: "Una sala de coworking en Lake Mary (lugar de muestra), o desde tu sofá" },
+        name: { en: "A coworking room in Lake Mary (DEMO venue), or from your couch", es: "Una sala de coworking en Lake Mary (lugar DEMO), o desde tu sofá" },
         address: null,
         mapQuery: null,
         remote: true
@@ -523,8 +526,8 @@ window.YSD_DATA.events = {
       share: {
         title: { en: "Text bank: the Dec 31 heads-up", es: "Jornada de mensajes: el aviso del 31 de diciembre" },
         text: {
-          en: "Text bank Tue Dec 1, 6:30 pm: two hours giving Seminole voters a heads-up that their mail-ballot request runs out Dec 31. In Lake Mary or from your couch. Join me? {url}",
-          es: "Jornada de mensajes el mar. 1 de dic., 6:30 p. m.: dos horas avisándoles a votantes de Seminole que su solicitud de boleta por correo vence el 31 de diciembre. En Lake Mary o desde tu sofá. ¿Te sumas? {url}"
+          en: "Text bank Tue Dec 1, 6:30 pm: two hours giving Seminole voters a heads-up that mail-ballot requests made before Nov 3 run out Dec 31. In Lake Mary or from your couch. Join me? {url}",
+          es: "Jornada de mensajes el mar. 1 de dic., 6:30 p. m.: dos horas avisándoles a votantes de Seminole que las solicitudes de boleta por correo hechas antes del 3 de noviembre vencen el 31 de diciembre. En Lake Mary o desde tu sofá. ¿Te sumas? {url}"
         }
       },
       bringFriend: {
@@ -532,8 +535,8 @@ window.YSD_DATA.events = {
         es: "Mandar mensajes es mejor en compañía. Trae a alguien y se reparten la lista y la comida."
       },
       calDescription: {
-        en: "Demo event. Text bank about Florida's Dec 31 mail-ballot request expiry (requests made before Nov 3, 2026). 15-minute training, in person in Lake Mary or remote. Free.",
-        es: "Evento de muestra. Jornada de mensajes sobre el vencimiento, el 31 de diciembre, de las solicitudes de boleta por correo hechas antes del 3 de noviembre de 2026. Entrenamiento de 15 minutos, en persona en Lake Mary o a distancia. Gratis."
+        en: "DEMO event. Text bank about Florida's Dec 31 mail-ballot request expiry (requests made before Nov 3, 2026). 15-minute training, in person in Lake Mary or remote. Free.",
+        es: "Evento DEMO. Jornada de mensajes sobre el vencimiento, el 31 de diciembre, de las solicitudes de boleta por correo hechas antes del 3 de noviembre de 2026. Entrenamiento de 15 minutos, en persona en Lake Mary o a distancia. Gratis."
       },
       links: [
         { linkId: "voteByMail", key: "links.vote.voteByMail", url: "https://voteseminole.gov/how-to-vote/vote-by-mail/", label: { en: "Seminole's vote-by-mail page", es: "Página de voto por correo de Seminole" } }
@@ -591,7 +594,7 @@ window.YSD_DATA.events = {
       city: "altamonte-springs",
       place: {
         kind: "generic",
-        name: { en: "A coworking space in Uptown Altamonte (demo venue)", es: "Un espacio de coworking en Uptown Altamonte (lugar de muestra)" },
+        name: { en: "A coworking space in Uptown Altamonte (DEMO venue)", es: "Un espacio de coworking en Uptown Altamonte (lugar DEMO)" },
         address: null,
         mapQuery: null,
         remote: false
@@ -631,8 +634,8 @@ window.YSD_DATA.events = {
         es: "Trae a quien te graba siempre. O a esa persona que siempre dice «espera, hazlo otra vez»."
       },
       calDescription: {
-        en: "Demo event. Film a 60-second vertical video with help, ring lights and tripods. Free, 14 and up, alcohol-free.",
-        es: "Evento de muestra. Graba un video vertical de 60 segundos con ayuda, aros de luz y trípodes. Gratis, desde 14 años, sin alcohol."
+        en: "DEMO event. Film a 60-second vertical video with help, ring lights and tripods. Free, 14 and up, alcohol-free.",
+        es: "Evento DEMO. Graba un video vertical de 60 segundos con ayuda, aros de luz y trípodes. Gratis, desde 14 años, sin alcohol."
       },
       links: [],
       xpActions: ["rsvp", "attend", "post-clip"],
@@ -671,8 +674,8 @@ window.YSD_DATA.events = {
         address: null,
         mapQuery: "Central Winds Park, Winter Springs, FL",
         directions: {
-          en: "At one of the park's picnic pavilions. We'll post which one here; look for the celery-green balloons (demo).",
-          es: "En uno de los pabellones de picnic del parque. Aquí publicamos cuál; busca los globos verde apio (demo)."
+          en: "At one of the park's picnic pavilions. We'll post which one here; look for the celery-green balloons (DEMO).",
+          es: "En uno de los pabellones de picnic del parque. Aquí publicamos cuál; busca los globos verde apio (DEMO)."
         },
         remote: false,
         source: "https://www.winterspringsfl.org/parksrec/park/central-winds-park",
@@ -714,8 +717,8 @@ window.YSD_DATA.events = {
         es: "Trae a quien votó por correo este año. Su solicitud también vence el 31 de diciembre."
       },
       calDescription: {
-        en: "Demo event. Get ready to renew your Florida mail-ballot request (requests made before Nov 3 end Dec 31, 2026; ask again from Jan 1). Snacks and music. Free.",
-        es: "Evento de muestra. Prepárate para renovar tu solicitud de boleta por correo en Florida (las hechas antes del 3 de noviembre vencen el 31 de diciembre de 2026; pídela otra vez desde el 1 de enero). Comida y música. Gratis."
+        en: "DEMO event. Get ready to renew your Florida mail-ballot request (requests made before Nov 3 end Dec 31, 2026; ask again from Jan 1). Snacks and music. Free.",
+        es: "Evento DEMO. Prepárate para renovar tu solicitud de boleta por correo en Florida (las hechas antes del 3 de noviembre vencen el 31 de diciembre de 2026; pídela otra vez desde el 1 de enero). Comida y música. Gratis."
       },
       links: [
         { linkId: "voteByMail", key: "links.vote.voteByMail", url: "https://voteseminole.gov/how-to-vote/vote-by-mail/", label: { en: "Seminole's vote-by-mail page", es: "Página de voto por correo de Seminole" } },
@@ -747,8 +750,8 @@ window.YSD_DATA.events = {
         {
           id: "renew-from-jan-1",
           claim: {
-            en: "Our guidance, matching data/civic.js: ask for a new request starting Jan 1, 2027. The statute reads as if a request made after Nov 3, 2026 would last through 2028, but the Supervisor of Elections hasn't posted how it handles requests made in Nov-Dec 2026, so call 407-585-8683 before relying on one.",
-            es: "Nuestra recomendación, igual que en data/civic.js: pide la nueva solicitud desde el 1 de enero de 2027. Según la ley, una solicitud hecha después del 3 de noviembre de 2026 duraría hasta 2028, pero la oficina del Supervisor de Elecciones no ha publicado cómo maneja las solicitudes de noviembre y diciembre de 2026, así que llama al 407-585-8683 antes de contar con una."
+            en: "Our guidance, matching data/civic.js: ask for a new request starting Jan 1, 2027. The statute reads as if a request made after Nov 3, 2026 would last through 2028, but the Supervisor of Elections hasn't posted how it handles requests made in Nov-Dec 2026, so check My Voter Record in January (or call 407-585-8683) before relying on one.",
+            es: "Nuestra recomendación, igual que en data/civic.js: pide la nueva solicitud desde el 1 de enero de 2027. Según la ley, una solicitud hecha después del 3 de noviembre de 2026 duraría hasta 2028, pero la oficina del Supervisor de Elecciones no ha publicado cómo maneja las solicitudes de noviembre y diciembre de 2026, así que revisa My Voter Record en enero (o llama al 407-585-8683) antes de contar con una."
           },
           source: "https://voteseminole.gov/how-to-vote/vote-by-mail/",
           verified: "2026-11-09",
@@ -770,8 +773,8 @@ window.YSD_DATA.events = {
         es: "En español, en palabras sencillas y con tiempo para todas tus preguntas."
       },
       description: {
-        en: "An hour and a half, in Spanish, to catch up on what's new: renewing your mail-ballot request (the old ones ended Dec 31), which ID to bring now that Florida no longer takes student IDs at the polls, and what the new citizenship check means when you register or update your record. We use the official Spanish-language pages wherever they exist. No question is too basic, and families are welcome.",
-        es: "Una hora y media para ponerte al día, en español: cómo renovar tu solicitud de boleta por correo (las anteriores vencieron el 31 de diciembre), qué identificación llevar ahora que Florida ya no acepta la de estudiante para votar y qué significa la nueva verificación de ciudadanía cuando te inscribes o actualizas tus datos. Usamos las páginas oficiales en español cuando existen. Aquí no hay preguntas tontas, y puedes venir con tu familia."
+        en: "An hour and a half, in Spanish, to catch up on what's new: renewing your mail-ballot request (requests made before Nov 3, 2026 ended Dec 31), which ID to bring now that Florida no longer takes student IDs at the polls, and what the new citizenship check means when you register or update your record. We use the official Spanish-language pages wherever they exist. No question is too basic, and families are welcome.",
+        es: "Una hora y media para ponerte al día, en español: cómo renovar tu solicitud de boleta por correo (las hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre), qué identificación llevar ahora que Florida ya no acepta la de estudiante para votar y qué significa la nueva verificación de ciudadanía cuando te inscribes o actualizas tus datos. Usamos las páginas oficiales en español cuando existen. Aquí no hay preguntas tontas, y puedes venir con tu familia."
       },
       notice: {
         en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.",
@@ -784,7 +787,7 @@ window.YSD_DATA.events = {
       city: "casselberry",
       place: {
         kind: "generic",
-        name: { en: "A community room in Casselberry (demo venue)", es: "Un salón comunitario en Casselberry (lugar de muestra)" },
+        name: { en: "A community room in Casselberry (DEMO venue)", es: "Un salón comunitario en Casselberry (lugar DEMO)" },
         address: null,
         mapQuery: null,
         remote: false
@@ -828,8 +831,8 @@ window.YSD_DATA.events = {
         es: "Trae a tu mamá, a tu abuelo, a quien vive contigo: a cualquiera que prefiera escuchar esto en español."
       },
       calDescription: {
-        en: "Demo event. Spanish-language workshop on 2027 voting changes in Florida: mail-ballot renewal, ID at the polls, the citizenship check when you register or update your record. Free.",
-        es: "Evento de muestra. Taller en español sobre los cambios de 2027 para votar en Florida: renovación de la solicitud de boleta por correo, identificación para votar y verificación de ciudadanía al inscribirte o actualizar tus datos. Gratis."
+        en: "DEMO event. Spanish-language workshop on 2027 voting changes in Florida: mail-ballot renewal, ID at the polls, the citizenship check when you register or update your record. Free.",
+        es: "Evento DEMO. Taller en español sobre los cambios de 2027 para votar en Florida: renovación de la solicitud de boleta por correo, identificación para votar y verificación de ciudadanía al inscribirte o actualizar tus datos. Gratis."
       },
       links: [
         { linkId: "voteByMail", key: "links.vote.voteByMail", url: "https://voteseminole.gov/how-to-vote/vote-by-mail/", label: { en: "Seminole's vote-by-mail page", es: "Página de voto por correo de Seminole" } },
@@ -893,8 +896,8 @@ window.YSD_DATA.events = {
       tone: "fun",
       title: { en: "New year, new faces: member mixer", es: "Año nuevo, caras nuevas: encuentro de miembros" },
       tagline: {
-        en: "Meet the people, find your thing, ask anything. Pizza's on us (demo).",
-        es: "Conoce a la gente, encuentra lo tuyo y pregunta lo que quieras. La pizza va por nuestra cuenta (demo)."
+        en: "Meet the people, find your thing, ask anything. Pizza's on us (DEMO).",
+        es: "Conoce a la gente, encuentra lo tuyo y pregunta lo que quieras. La pizza va por nuestra cuenta (DEMO)."
       },
       description: {
         en: "January is dues month, so this is our big hello. Meet the people who run things, try a few ways to plug in (events, issues, making videos, Spanish-language outreach), and ask whatever you want. Dues are $20 a year, paid in January. Can't pay because of money or citizenship status? Non-voting membership is there for you, and nobody asks for money at the door. There's a renewal table too: renew your mail-ballot request on your own phone, on the official site, with someone there to help.",
@@ -907,7 +910,7 @@ window.YSD_DATA.events = {
       city: "longwood",
       place: {
         kind: "generic",
-        name: { en: "A pizza place near the Longwood SunRail station (demo venue)", es: "Una pizzería cerca de la estación de SunRail de Longwood (lugar de muestra)" },
+        name: { en: "A pizza place near the Longwood SunRail station (DEMO venue)", es: "Una pizzería cerca de la estación de SunRail de Longwood (lugar DEMO)" },
         address: null,
         mapQuery: null,
         remote: false
@@ -920,8 +923,8 @@ window.YSD_DATA.events = {
         { en: "Your Florida license or ID number, if you want to renew your mail-ballot request at the table", es: "El número de tu licencia o identificación de Florida, si quieres renovar tu solicitud de boleta por correo en la mesa" }
       ],
       accessibility: {
-        en: "Name tags with optional pronouns. A quieter table for smaller conversations. Vegetarian and gluten-free pizza (demo).",
-        es: "Etiquetas con tu nombre y pronombres opcionales. Una mesa más tranquila para conversaciones pequeñas. Pizza vegetariana y sin gluten (demo)."
+        en: "Name tags with optional pronouns. A quieter table for smaller conversations. Vegetarian and gluten-free pizza (DEMO).",
+        es: "Etiquetas con tu nombre y pronombres opcionales. Una mesa más tranquila para conversaciones pequeñas. Pizza vegetariana y sin gluten (DEMO)."
       },
       ages: { min: 14, label: { en: "14 to 39 for membership; everyone 14 and up can come", es: "De 14 a 39 años para ser miembro; puede venir cualquier persona de 14 en adelante" }, guardian: true },
       alcoholFree: true,
@@ -935,10 +938,10 @@ window.YSD_DATA.events = {
         token: "--violet"
       },
       share: {
-        title: { en: "Young Dems new-member mixer", es: "Encuentro de miembros nuevos de Young Dems" },
+        title: { en: "Young Dems new-member mixer", es: "Encuentro de miembros nuevos de los Young Dems" },
         text: {
           en: "Young Dems new-member mixer, Wed Jan 13, 7 pm in Longwood. Pizza, people and zero pressure. I'll go if you go. {url}",
-          es: "Encuentro de miembros nuevos de Young Dems, miér. 13 de enero, 7 p. m., en Longwood. Pizza, gente buena y cero presión. Voy si tú vas. {url}"
+          es: "Encuentro de miembros nuevos de los Young Dems, miér. 13 de enero, 7 p. m., en Longwood. Pizza, gente buena y cero presión. Voy si tú vas. {url}"
         }
       },
       bringFriend: {
@@ -946,8 +949,8 @@ window.YSD_DATA.events = {
         es: "Trae a esa persona que siempre dice que quiere «involucrarse más». Esta es la forma más fácil."
       },
       calDescription: {
-        en: "Demo event. Young Dems new-member mixer: meet people, find a way to plug in, renew your mail-ballot request at the table. Free, alcohol-free.",
-        es: "Evento de muestra. Encuentro de miembros nuevos de Young Dems: conoce gente, encuentra cómo participar y renueva tu solicitud de boleta por correo en la mesa. Gratis, sin alcohol."
+        en: "DEMO event. Young Dems new-member mixer: meet people, find a way to plug in, renew your mail-ballot request at the table. Free, alcohol-free.",
+        es: "Evento DEMO. Encuentro de miembros nuevos de los Young Dems: conoce gente, encuentra cómo participar y renueva tu solicitud de boleta por correo en la mesa. Gratis, sin alcohol."
       },
       links: [
         { linkId: null, key: "links.dues", url: "https://secure.actblue.com/donate/ydscdues", label: { en: "Membership and dues", es: "Membresía y cuotas" } },
@@ -1016,10 +1019,10 @@ window.YSD_DATA.events = {
         address: "2200 W. Lake Mary Blvd., Lake Mary, FL 32746",
         mapQuery: "Lake Mary SunRail station, 2200 W Lake Mary Blvd, Lake Mary, FL 32746",
         directions: {
-          en: "Meet on the platform. Look for the celery-green tote bags (demo).",
-          es: "Nos vemos en el andén. Busca las bolsas verde apio (demo)."
+          en: "Meet on the platform. Look for the celery-green tote bags (DEMO).",
+          es: "Nos vemos en el andén. Busca las bolsas verde apio (DEMO)."
         },
-        then: { en: "Then a taco spot within walking distance (demo venue)", es: "Después, una taquería a la que se llega caminando (lugar de muestra)" },
+        then: { en: "Then a taco spot within walking distance (DEMO venue)", es: "Después, una taquería a la que se llega caminando (lugar DEMO)" },
         remote: false,
         source: "https://sunrail.com/stations/",
         verified: "2026-11-09"
@@ -1058,8 +1061,8 @@ window.YSD_DATA.events = {
         es: "Trae a quien viaja contigo al trabajo, o a esa persona que nunca se ha subido a SunRail. Hoy es el día."
       },
       calDescription: {
-        en: "Demo event. Meet on the Lake Mary SunRail platform (2200 W. Lake Mary Blvd.), then walk to tacos and talk transit. Free; food and fare on your own.",
-        es: "Evento de muestra. Nos vemos en el andén de SunRail de Lake Mary (2200 W. Lake Mary Blvd.) y caminamos a comer tacos y hablar de transporte. Gratis; comida y pasaje por tu cuenta."
+        en: "DEMO event. Meet on the Lake Mary SunRail platform (2200 W. Lake Mary Blvd.), then walk to tacos and talk transit. Free; food and fare on your own.",
+        es: "Evento DEMO. Nos vemos en el andén de SunRail de Lake Mary (2200 W. Lake Mary Blvd.) y caminamos a comer tacos y hablar de transporte. Gratis; comida y pasaje por tu cuenta."
       },
       links: [
         { linkId: null, key: null, url: "https://sunrail.com/stations/", label: { en: "SunRail stations and schedules", es: "Estaciones y horarios de SunRail" } }
@@ -1131,8 +1134,8 @@ window.YSD_DATA.events = {
         address: "299 Center Lake Lane, Oviedo, FL 32765",
         mapQuery: "Center Lake Park, 299 Center Lake Lane, Oviedo, FL 32765",
         directions: {
-          en: "Meet near the playground. Look for the celery-green clipboards (demo).",
-          es: "Nos vemos cerca del área de juegos. Busca las tablillas verde apio (demo)."
+          en: "Meet near the playground. Look for the celery-green clipboards (DEMO).",
+          es: "Nos vemos cerca del área de juegos. Busca las tablillas verde apio (DEMO)."
         },
         remote: false,
         source: "https://cityofoviedo.net/1230/Parks-and-Facilities",
@@ -1173,8 +1176,8 @@ window.YSD_DATA.events = {
         es: "Aquí todo el mundo va en pareja, así que trae a la tuya."
       },
       calDescription: {
-        en: "Demo event. Door-knocking in pairs in Oviedo ahead of the Nov 2, 2027 city election: mail-ballot renewal and registration check-ins. Meet at Center Lake Park, 299 Center Lake Lane. Free. Under 18: guardian's OK needed.",
-        es: "Evento de muestra. Visitas en pareja en Oviedo antes de la elección municipal del 2 de noviembre de 2027: renovación de la solicitud de boleta por correo y revisión de la inscripción. Nos vemos en Center Lake Park, 299 Center Lake Lane. Gratis. Menores de 18: con permiso del tutor."
+        en: "DEMO event. Door-knocking in pairs in Oviedo ahead of the Nov 2, 2027 city election: mail-ballot renewal and registration check-ins. Meet at Center Lake Park, 299 Center Lake Lane. Free. Under 18: guardian's OK needed.",
+        es: "Evento DEMO. Visitas en pareja en Oviedo antes de la elección municipal del 2 de noviembre de 2027: renovación de la solicitud de boleta por correo y revisión de la inscripción. Nos vemos en Center Lake Park, 299 Center Lake Lane. Gratis. Menores de 18: con permiso del tutor."
       },
       links: [
         { linkId: "oviedoElections", key: null, url: "https://cityofoviedo.net/724/Elections", label: { en: "City of Oviedo elections", es: "Elecciones de la Ciudad de Oviedo" } },
@@ -1251,7 +1254,7 @@ window.YSD_DATA.events = {
       city: "sanford",
       place: {
         kind: "generic",
-        name: { en: "A karaoke room in downtown Sanford (demo venue)", es: "Un salón de karaoke en el centro de Sanford (lugar de muestra)" },
+        name: { en: "A karaoke room in downtown Sanford (DEMO venue)", es: "Un salón de karaoke en el centro de Sanford (lugar DEMO)" },
         address: null,
         mapQuery: null,
         remote: false
@@ -1290,8 +1293,8 @@ window.YSD_DATA.events = {
         es: "Trae a tu pareja de dueto. ¿Todavía no tienes? A las 9 p. m. ya vas a tener."
       },
       calDescription: {
-        en: "Demo event. Karaoke night in downtown Sanford: love songs, protest songs, songs in Spanish. Free, 14 and up, alcohol-free.",
-        es: "Evento de muestra. Noche de karaoke en el centro de Sanford: canciones de amor, de protesta y en español. Gratis, desde 14 años, sin alcohol."
+        en: "DEMO event. Karaoke night in downtown Sanford: love songs, protest songs, songs in Spanish. Free, 14 and up, alcohol-free.",
+        es: "Evento DEMO. Noche de karaoke en el centro de Sanford: canciones de amor, de protesta y en español. Gratis, desde 14 años, sin alcohol."
       },
       links: [],
       xpActions: ["rsvp", "attend"],
@@ -1312,8 +1315,8 @@ window.YSD_DATA.events = {
         es: "Algo para picar, diseño de stickers y unos árboles muy, muy viejos. Buen lugar para planear 2027."
       },
       description: {
-        en: "Big Tree Park is where The Senator, a bald cypress about 3,500 years old, stood until it burned in 2012. A clone called The Phoenix grows there now, and Lady Liberty, about 2,000 years old, still stands nearby. It's a good place to talk about the long game. Bring a blanket. We'll bring snacks, markers and blank sticker sheets so you can design a sticker for our 2027 season, and members vote on the winner (demo).",
-        es: "En Big Tree Park estuvo The Senator, un ciprés calvo de unos 3,500 años, hasta que se quemó en 2012. Hoy crece ahí un clon llamado The Phoenix, y cerca sigue en pie Lady Liberty, de unos 2,000 años. Es buen lugar para hablar de lo que se construye a largo plazo. Trae una manta; nosotros llevamos algo para picar, marcadores y hojas de stickers en blanco para que diseñes un sticker para nuestra temporada 2027, y los miembros votan por el ganador (demo)."
+        en: "Big Tree Park is where The Senator, a bald cypress about 3,500 years old, stood until it burned in 2012. A clone called The Phoenix grows there now, and Lady Liberty, about 2,000 years old, still stands nearby. It's a good place to talk about the long game. Bring a blanket. We'll bring snacks, markers and blank sticker sheets so you can design a sticker for our 2027 season, and members vote on the winner (DEMO).",
+        es: "En Big Tree Park estuvo The Senator, un ciprés calvo de unos 3,500 años, hasta que se quemó en 2012. Hoy crece ahí un clon llamado The Phoenix, y cerca sigue en pie Lady Liberty, de unos 2,000 años. Es buen lugar para hablar de lo que se construye a largo plazo. Trae una manta; nosotros llevamos algo para picar, marcadores y hojas de stickers en blanco para que diseñes un sticker para nuestra temporada 2027, y los miembros votan por el ganador (DEMO)."
       },
       start: "2027-02-20T10:00:00-05:00",
       end: "2027-02-20T12:00:00-05:00",
@@ -1326,8 +1329,8 @@ window.YSD_DATA.events = {
         address: "761 General Hutchison Pkwy., Longwood, FL 32750",
         mapQuery: "Big Tree Park, 761 General Hutchison Parkway, Longwood, FL 32750",
         directions: {
-          en: "We'll set up close to the parking area so it's a short walk. Look for the celery-green blanket (demo).",
-          es: "Nos ponemos cerca del estacionamiento para que la caminata sea corta. Busca la manta verde apio (demo)."
+          en: "We'll set up close to the parking area so it's a short walk. Look for the celery-green blanket (DEMO).",
+          es: "Nos ponemos cerca del estacionamiento para que la caminata sea corta. Busca la manta verde apio (DEMO)."
         },
         remote: false,
         source: "https://www.seminolecountyfl.gov/locations/big-tree-park.stml",
@@ -1369,8 +1372,8 @@ window.YSD_DATA.events = {
         es: "Trae a esa persona que dibuja en todo. Necesitamos su sticker."
       },
       calDescription: {
-        en: "Demo event. Picnic and sticker design at Big Tree Park, 761 General Hutchison Pkwy., Longwood. Free, kids welcome.",
-        es: "Evento de muestra. Picnic y diseño de stickers en Big Tree Park, 761 General Hutchison Pkwy., Longwood. Gratis, niños bienvenidos."
+        en: "DEMO event. Picnic and sticker design at Big Tree Park, 761 General Hutchison Pkwy., Longwood. Free, kids welcome.",
+        es: "Evento DEMO. Picnic y diseño de stickers en Big Tree Park, 761 General Hutchison Pkwy., Longwood. Gratis, niños bienvenidos."
       },
       links: [],
       xpActions: ["rsvp", "attend"],

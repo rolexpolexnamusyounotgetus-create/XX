@@ -31,8 +31,10 @@
  *    (the request), "boleta por correo" (the ballot), "voto por correo" (the method), "inscribirse"
  *    (register), "identificación de estudiante", "Supervisor de Elecciones" / "la oficina electoral".
  *    The club is "los Young Dems" with the article, as in data/strings.js.
- *  - Placeholders: {url} (the final share link, always last), {result} (quiz result name in the
- *    reader's language), {event} {when} {city} (from a data/events.js item: title, when, cities[city]),
+ *  - Placeholders: {url} (the final share link, always last; {link} is the site's canonical name for
+ *    it, and YSD.fill(text, { link }) in assets/js/config.js fills both {link} and {url}), {result}
+ *    (quiz result name in the reader's language), {event} {when} {city} (from a data/events.js item:
+ *    title, when, cities[city]),
  *    {name} (first name), {n} (a number). Fill every placeholder or don't render the template.
  *  - Text is plain (render with textContent). No emoji in this file: social posts may add at most one
  *    at the end of a line (docs/research/05 section 6), never on tone:'calm' items.
@@ -48,7 +50,8 @@
  *    'soe-2027-requests-open': an editor has checked that Seminole's online request form records new
  *    requests for the 2027-28 elections, on Jan 1 or when the Supervisor of Elections posts it).
  *    Pages: render items with `requires` only when YSD_CONFIG.sharekit?.confirmed?.[requires] === true
- *    (suggested config key; core may add it). Until then, skip them.
+ *    (assets/js/config.js defines sharekit.confirmed, empty until an editor sets a flag). Until then,
+ *    skip them.
  *
  * LINKS AND ATTRIBUTION (matches assets/js/share.js and assets/js/config.js `share`)
  *  - Every item has link { page, hash?, query? }. page is a key of pages{}; Spanish pages live under
@@ -184,7 +187,7 @@ window.YSD_DATA.sharekit = {
     scriptCta: { en: "End on", es: "Termina con" },
     referralTitle: { en: "Bring Three", es: "Trae a tres" },
     demo: { en: "DEMO", es: "DEMO" },
-    demoEvent: { en: "Demo event", es: "Evento de muestra" },
+    demoEvent: { en: "DEMO event", es: "Evento DEMO" },
     sources: { en: "Where these facts come from", es: "De dónde salen estos datos" },
     lastChecked: { en: "Last checked {date}", es: "Revisado por última vez el {date}" },
     expected: { en: "Expected, not yet posted by the elections office.", es: "Previsto; la oficina electoral todavía no lo ha publicado." },
@@ -483,7 +486,7 @@ window.YSD_DATA.sharekit = {
       set: "pack",
       factIds: ["mail-expiry", "mail-renew-jan1"],
       season: { from: "2026-12-02T00:00:00-05:00", until: "2027-03-01T00:00:00-05:00" },
-      safety: "Time-bound: retire after Feb 2027. A 'Renewed through 2028' version would reward renewing a mail ballot: only with counsel's OK (see referral.legal), only for people who say they did it, and never ask for proof."
+      safety: "Time-bound: retire after Feb 2027. A reminder, not a reward: never make a 'Renewed through 2028' version or hand stickers, merch or prizes to people for renewing, registering or voting (docs/research/00; 52 U.S.C. 10307(c)). Physical rewards go only to organizing actions."
     },
     {
       id: "stk02",
@@ -658,7 +661,7 @@ window.YSD_DATA.sharekit = {
           showFrom: "2026-12-31T00:00:00-05:00",
           showUntil: "2027-01-01T00:00:00-05:00",
           line: { en: "Tonight, mail-ballot requests from before Nov 3 run out.", es: "Esta noche vencen las solicitudes de boleta por correo hechas antes del 3 de noviembre." },
-          onScreen: { en: "Tonight: old requests run out. Tomorrow: renew.", es: "Esta noche vencen. Mañana: renueva." }
+          onScreen: { en: "Tonight: requests from before Nov 3 run out. Tomorrow: renew.", es: "Esta noche vencen las de antes del 3 de nov. Mañana: renueva." }
         },
         {
           id: "renew-day",
@@ -674,7 +677,7 @@ window.YSD_DATA.sharekit = {
           showUntil: "2027-03-01T00:00:00-05:00",
           requires: "soe-2027-requests-open",
           line: { en: "New year, new mail-ballot request.", es: "Año nuevo, solicitud nueva." },
-          onScreen: { en: "Old requests ended Dec 31. Renew once, covered through 2028.", es: "Las anteriores vencieron el 31 de dic. Renueva una vez y te cubre hasta 2028." }
+          onScreen: { en: "Requests from before Nov 3 ended Dec 31. Renew once, covered through 2028.", es: "Las de antes del 3 de nov. vencieron el 31 de dic. Renueva una vez y te cubre hasta 2028." }
         }
       ],
       safety: { en: "Don't show your real ballot, voter record or address on camera.", es: "No muestres en cámara tu boleta real, tu registro de votante ni tu dirección." }
@@ -816,7 +819,7 @@ window.YSD_DATA.sharekit = {
       link: { page: "events" },
       utm: { campaign: "2026-12-launch", content: "v06" },
       factIds: ["celery-city", "senator-tree", "sunrail-stations", "i-voted-sticker"],
-      safety: { en: "Part 2 (day 22) swaps in the 2026 'I Voted' sticker question. Don't name the student designer. Link the events page, not a trivia filter: the only demo trivia night (Nov 19) is over before launch.", es: "La parte 2 (día 22) usa la pregunta del sticker 'I Voted' de 2026. No nombres a la estudiante que lo diseñó. Enlaza la página de eventos, no un filtro de trivia: la única noche de trivia de muestra (19 de noviembre) termina antes del lanzamiento." }
+      safety: { en: "Part 2 (day 22) swaps in the 2026 'I Voted' sticker question. Don't name the student designer. Link the events page, not a trivia filter: the only DEMO trivia night (Nov 19) is over before launch.", es: "La parte 2 (día 22) usa la pregunta del sticker 'I Voted' de 2026. No nombres a la estudiante que lo diseñó. Enlaza la página de eventos, no un filtro de trivia: la única noche de trivia DEMO (19 de noviembre) termina antes del lanzamiento." }
     },
     {
       id: "v07",
@@ -863,7 +866,7 @@ window.YSD_DATA.sharekit = {
       },
       caption: {
         en: "Send your Young Dems link to three people you actually talk to. One joins: a badge. Three join: the full sticker pack and a shoutout if you want one. Ends Dec 31, 11:59 pm.",
-        es: "Manda tu enlace de Young Dems a tres personas con las que de verdad hablas. Se une una: una insignia. Se unen tres: el paquete completo de stickers y una mención si la quieres. Termina el 31 de diciembre a las 11:59 p. m."
+        es: "Manda tu enlace de los Young Dems a tres personas con las que de verdad hablas. Se une una: una insignia. Se unen tres: el paquete completo de stickers y una mención si la quieres. Termina el 31 de diciembre a las 11:59 p. m."
       },
       link: { page: "join", hash: "bring-three" },
       utm: { campaign: "2026-12-bring3", content: "v08" },
@@ -1085,15 +1088,15 @@ window.YSD_DATA.sharekit = {
         factIds: []
       }
     ],
-    legal: "Editors: rewards are tied to joining the club only. Federal law bars paying, or offering to pay, for registering to vote or for voting in elections with federal candidates (52 U.S.C. 10307(c)), and Florida regulates third-party voter registration (F.S. 97.0575), so this challenge never touches registration or voting, and nobody collects forms. The join-only rule is scoped to this challenge on purpose: data/levels.js does award XP, a 'Renew-Ready' badge (for setting the reminder) and a 'Renewed' badge (for renewing a mail-ballot request; non-monetary, honor system), and counsel should review those, plus any 'Renewed through 2028' sticker (stk01 safety), before launch."
+    legal: "Editors: rewards are tied to joining the club only. Federal law bars paying, or offering to pay, for registering to vote or for voting in elections with federal candidates (52 U.S.C. 10307(c)), and Florida regulates third-party voter registration (F.S. 97.0575), so this challenge never touches registration or voting, and nobody collects forms. The join-only rule is scoped to this challenge on purpose: data/levels.js does award XP, a 'Renew-Ready' badge (for setting the reminder) and a 'Renewed' badge (for renewing a mail-ballot request; non-monetary, honor system), and counsel should review those before launch. Per docs/research/00, nothing of value (stickers, merch, raffles, prizes) ever goes to anyone for registering, renewing or voting, or for a friend doing so: there is no 'Renewed through 2028' sticker (stk01 safety), and physical rewards attach only to organizing actions like this one."
   },
 
   // ------------------------------------------------------------------------------------ FACTS
   facts: {
     "mail-expiry": {
       claim: {
-        en: "A Florida mail-ballot request covers all elections from the day it's made through the end of the calendar year of the next regularly scheduled general election. That election was Nov 3, 2026, so every request made before it ends Dec 31, 2026.",
-        es: "Una solicitud de boleta por correo en Florida cubre todas las elecciones desde el día en que se hace hasta el final del año de la siguiente elección general ordinaria. Esa elección fue el 3 de noviembre de 2026, así que todas las solicitudes hechas antes vencen el 31 de diciembre de 2026."
+        en: "A Florida mail-ballot request covers all elections from the day it's made through the end of the calendar year of the next regularly scheduled general election. That election was Nov 3, 2026, so requests made before it end Dec 31, 2026, and one made after it should run through Dec 31, 2028.",
+        es: "Una solicitud de boleta por correo en Florida cubre todas las elecciones desde el día en que se hace hasta el final del año de la siguiente elección general ordinaria. Esa elección fue el 3 de noviembre de 2026, así que las solicitudes hechas antes vencen el 31 de diciembre de 2026, y una hecha después debería servir hasta el 31 de diciembre de 2028."
       },
       source: "https://www.flsenate.gov/Laws/Statutes/2026/101.62",
       sources: ["https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/"],
@@ -1105,8 +1108,8 @@ window.YSD_DATA.sharekit = {
     },
     "mail-renew-jan1": {
       claim: {
-        en: "Seminole voters can renew a mail-ballot request online, by phone or on a signed form. Under the state rule, a request made after Nov 3, 2026 should already run through 2028, but as of Nov 9 Seminole's vote-by-mail page still says new requests apply to the Nov 3 election. A request made on or after Jan 1, 2027 covers 2027-28 for sure, so the safe ask is a Jan 1 reminder; anyone who renews earlier should check My Voter Record in January.",
-        es: "Los votantes de Seminole pueden renovar su solicitud de boleta por correo en línea, por teléfono o con un formulario firmado. Según la regla del estado, una solicitud hecha después del 3 de noviembre de 2026 ya debería servir hasta 2028, pero al 9 de noviembre la página de voto por correo de Seminole todavía dice que las solicitudes nuevas se aplican a las elecciones del 3 de noviembre. Una solicitud hecha a partir del 1 de enero de 2027 cubre 2027-28 con seguridad, así que lo prudente es un recordatorio para el 1 de enero; quien renueve antes debe revisar My Voter Record en enero."
+        en: "Seminole voters can renew a mail-ballot request online, by phone or on a signed form. Under the state rule, a request made after Nov 3, 2026 should already run through 2028, but as of Nov 9 Seminole's elections office hasn't said how it handles requests made Nov 4 to Dec 31, 2026. A request made on or after Jan 1, 2027 covers 2027-28 for sure, so the safe ask is a Jan 1 reminder; anyone who renews earlier should check My Voter Record in January.",
+        es: "Los votantes de Seminole pueden renovar su solicitud de boleta por correo en línea, por teléfono o con un formulario firmado. Según la regla del estado, una solicitud hecha después del 3 de noviembre de 2026 ya debería servir hasta 2028, pero al 9 de noviembre la oficina electoral de Seminole no ha dicho cómo maneja las solicitudes hechas entre el 4 de noviembre y el 31 de diciembre de 2026. Una solicitud hecha a partir del 1 de enero de 2027 cubre 2027-28 con seguridad, así que lo prudente es un recordatorio para el 1 de enero; quien renueve antes debe revisar My Voter Record en enero."
       },
       source: "https://voteseminole.gov/how-to-vote/vote-by-mail/",
       sources: ["https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/", "https://www.flsenate.gov/Laws/Statutes/2026/101.62", "https://voteseminole.gov/voters/my-voter-record/"],

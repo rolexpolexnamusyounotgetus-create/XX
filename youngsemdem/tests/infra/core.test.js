@@ -99,6 +99,22 @@ async function nodeTests() {
     w.YSD.counters.stopLive(); w2.YSD.counters.stopLive();
   });
 
+  await section('node: YSD.fill fills {link}, {url} and other placeholders', async () => {
+    const w = sandbox();
+    const f = w.YSD.fill;
+    eq(typeof f, 'function', 'YSD.fill exists');
+    eq(f('Join me: {link}', { link: 'https://a.example/?ref=X' }), 'Join me: https://a.example/?ref=X', '{link} filled');
+    eq(f('Set yours: {url}', { link: 'L' }), 'Set yours: L', '{url} gets vars.link');
+    eq(f('{link} / {url}', { url: 'U' }), 'U / U', '{link} falls back to vars.url');
+    eq(f('{link}', { link: 'L', url: 'U' }), 'L', 'vars.link wins over vars.url');
+    eq(f('{name} got {n} XP. {link}', { name: 'Maya', n: 0, link: 'L' }), 'Maya got 0 XP. L', 'other keys filled (0 kept)');
+    eq(f('Hi {name} from {city}', { name: 'Ana' }), 'Hi Ana from {city}', 'missing value left as-is');
+    eq(f('{constructor} {toString}', {}), '{constructor} {toString}', 'prototype keys ignored');
+    eq(f(null, { link: 'L' }), '', 'null template gives an empty string');
+    eq(f('Plain {link}'), 'Plain {link}', 'no vars leaves the template unchanged');
+    w.YSD.counters.stopLive();
+  });
+
   await section('node: store API (memory backend)', async () => {
     const w = sandbox();
     const s = w.YSD.store;
@@ -327,6 +343,25 @@ async function nodeTests() {
       const c = M.makeRefCode({});
       if (!/^[BCDFGHJKMNPQRSTVWXZ2-9]{6}$/.test(c)) { ok(false, 'random refCode format', c); break; }
     }
+    // members under 18 get the random style even with refCodeStyle 'name' (no teen first names in links)
+    eq(w.YSD_CONFIG.members.refCodeStyle, 'name', "refCodeStyle is 'name' for the teen checks");
+    for (let i = 0; i < 50; i++) {
+      const t = M.makeRefCode({ firstName: 'Kira', age: 16 });
+      if (!/^[BCDFGHJKMNPQRSTVWXZ2-9]{6}$/.test(t)) { ok(false, 'under-18 refCode is random style', t); break; }
+    }
+    ok(/^[BCDFGHJKMNPQRSTVWXZ2-9]{6}$/.test(M.makeRefCode({ firstName: 'Kira', age: '17' })), 'string age 17 is random style too');
+    ok(/^KIRA[BCDFGHJKMNPQRSTVWXZ2-9]{3}$/.test(M.makeRefCode({ firstName: 'Kira', age: 18 })), '18 keeps the name style');
+    ok(/^KIRA[BCDFGHJKMNPQRSTVWXZ2-9]{3}$/.test(M.makeRefCode({ firstName: 'Kira' })), 'unknown age keeps the name style');
+    const tw = sandbox();
+    const teen = tw.YSD.members.join({ firstName: 'Kira', email: 'teen@example.com', age: 15 });
+    ok(/^[BCDFGHJKMNPQRSTVWXZ2-9]{6}$/.test(teen.refCode), 'teen join (age 15) gets a random refCode', teen.refCode);
+    const tw2 = sandbox();
+    const teen2 = tw2.YSD.members.join({ firstName: 'Kira', email: 'teen2@example.com', birthYear: new Date().getFullYear() - 16 });
+    ok(/^[BCDFGHJKMNPQRSTVWXZ2-9]{6}$/.test(teen2.refCode), 'teen join (birthYear) gets a random refCode', teen2.refCode);
+    const tw3 = sandbox({ preConfig: { members: { refCodeStyle: 'name' } } });
+    const adult = tw3.YSD.members.join({ firstName: 'Kira', email: 'adult@example.com', age: 22 });
+    ok(/^KIRA[BCDFGHJKMNPQRSTVWXZ2-9]{3}$/.test(adult.refCode), 'adult join keeps the name style', adult.refCode);
+    [tw, tw2, tw3].forEach((x) => x.YSD.counters.stopLive());
     // squad: simulated growth, flagged demo
     const j = M.current().joinedAt;
     eq(M.squad({ now: j }).length, 0, 'no squad at join time');

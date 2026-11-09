@@ -24,13 +24,19 @@
  *                            vote.html hashes are the step ids in data/civic.js (civic.steps[].id),
  *                            plus 'dates' for the election-dates list, so render each step with
  *                            id="<step.id>". issues.html hashes are the issue ids below.
- *   colors: { token: { hex, role, onColor } }  colour tokens used below. Map each to a CSS custom
- *                            property, e.g. var(--<token>). onColor = the token for text on that fill.
- *                            celery, violet, violet-deep, sky, bubblegum, orange and teal are the
- *                            tokens in data/team.js; pink and lime come from report 03 palette 2
- *                            ("Springs & Citrus") and are NOT in team.js yet: define them in the
- *                            stylesheet with the hex given here (ink on pink 5.47:1, ink on lime
- *                            14.52:1, both pass AA). The order below keeps similar hues apart.
+ *   colors: { token: { role, onColor } }  colour token NAMES used below. This file defines no
+ *                            colours: the site stylesheet defines each token as a CSS custom
+ *                            property, var(--<token>), and pages use that. onColor = the token for
+ *                            text on that fill. Token names a stylesheet must define for this file:
+ *                              fills: orange, pink, violet, bubblegum, violet-deep, lime, sky, teal,
+ *                                     celery
+ *                              text:  ink, paper
+ *                            data/team.js tokens{} has fallback values for orange, violet,
+ *                            violet-deep, bubblegum, sky, teal, celery and ink. pink, lime and paper
+ *                            are not defined anywhere yet; report 03 palette 2 ("Springs & Citrus")
+ *                            proposes pink and lime, and with its values ink on pink is 5.47:1 and
+ *                            ink on lime 14.52:1 (both pass AA). Recheck contrast once the
+ *                            stylesheet sets them. The order below keeps similar hues apart.
  *   context: {               shared facts for the issues page header
  *     youngVoters: Fact,     why the page talks to independents
  *     ydsc: { text, source, sourceName, verified, demo:false }   what YDSC says it exists to do
@@ -129,15 +135,15 @@ window.YSD_DATA.issues = {
   },
 
   colors: {
-    orange:        { hex: '#FF6B1A', role: 'issue fill (housing)', onColor: 'ink' },
-    pink:          { hex: '#FF3E8A', role: 'issue fill (heat and insurance); not in team.js yet', onColor: 'ink' },
-    violet:        { hex: '#6A2BFF', role: 'issue fill (reproductive freedom)', onColor: 'paper' },
-    bubblegum:     { hex: '#FF7AC6', role: 'issue fill (LGBTQ+ freedom)', onColor: 'ink' },
-    'violet-deep': { hex: '#4B12D6', role: 'issue fill (schools and reading)', onColor: 'paper' },
-    lime:          { hex: '#D7F25C', role: 'issue fill (wages); not in team.js yet', onColor: 'ink' },
-    sky:           { hex: '#4FD6FF', role: 'issue fill (transit)', onColor: 'ink' },
-    teal:          { hex: '#00B3A6', role: 'issue fill (water)', onColor: 'ink' },
-    celery:        { hex: '#C8F03C', role: 'issue fill (voting)', onColor: 'ink' }
+    orange:        { role: 'issue fill (housing)', onColor: 'ink' },
+    pink:          { role: 'issue fill (heat and insurance); no stylesheet defines it yet', onColor: 'ink' },
+    violet:        { role: 'issue fill (reproductive freedom)', onColor: 'paper' },
+    bubblegum:     { role: 'issue fill (LGBTQ+ freedom)', onColor: 'ink' },
+    'violet-deep': { role: 'issue fill (schools and reading)', onColor: 'paper' },
+    lime:          { role: 'issue fill (wages); no stylesheet defines it yet', onColor: 'ink' },
+    sky:           { role: 'issue fill (transit)', onColor: 'ink' },
+    teal:          { role: 'issue fill (water)', onColor: 'ink' },
+    celery:        { role: 'issue fill (voting)', onColor: 'ink' }
   },
 
   context: {
@@ -959,22 +965,22 @@ window.YSD_DATA.issues = {
       title: { en: 'Voting rights', es: 'Derecho al voto' },
       short: { en: 'voting rights', es: 'el derecho al voto' },
       hook: {
-        en: 'Two dates to know: your mail ballot request runs out Dec 31, and student IDs stop counting at the polls Jan 1.',
-        es: 'Dos fechas para tener en cuenta: tu solicitud de boleta por correo vence el 31 de diciembre, y desde el 1 de enero la identificación de estudiante deja de servir para votar en persona.'
+        en: 'Two dates to know: mail ballot requests made before Nov 3 run out Dec 31, and student IDs stop counting at the polls Jan 1.',
+        es: 'Dos fechas para tener en cuenta: las solicitudes de boleta por correo hechas antes del 3 de noviembre vencen el 31 de diciembre, y desde el 1 de enero la identificación de estudiante deja de servir para votar en persona.'
       },
       hookAfter: {
         date: '2027-01-01',
-        en: 'New year, new rules: old mail ballot requests ran out Dec 31, and student IDs no longer count at the polls. Sort both before the next election.',
-        es: 'Año nuevo, reglas nuevas: las solicitudes de boleta por correo anteriores vencieron el 31 de diciembre, y la identificación de estudiante ya no sirve para votar en persona. Resuelve las dos cosas antes de la próxima elección.'
+        en: 'New year, new rules: mail ballot requests made before Nov 3, 2026 ran out Dec 31, and student IDs no longer count at the polls. Sort both before the next election.',
+        es: 'Año nuevo, reglas nuevas: las solicitudes de boleta por correo hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre, y la identificación de estudiante ya no sirve para votar en persona. Resuelve las dos cosas antes de la próxima elección.'
       },
       facts: [
         {
           id: 'mail-ballot-expires',
           text: {
-            en: 'Every Florida mail ballot request on file runs out Dec 31, 2026. To vote by mail in the 2027 city elections or in 2028, request again.',
-            es: 'Todas las solicitudes de boleta por correo en Florida vencen el 31 de diciembre de 2026. Para votar por correo en las elecciones municipales de 2027 o en 2028, hay que pedir la boleta de nuevo.'
+            en: 'Florida mail ballot requests made before Nov 3, 2026 run out Dec 31, 2026. If yours is one, request again to vote by mail in the 2027 city elections or in 2028. A request made after Nov 3 should last through 2028; check My Voter Record to be sure.',
+            es: 'Las solicitudes de boleta por correo en Florida hechas antes del 3 de noviembre de 2026 vencen el 31 de diciembre de 2026. Si la tuya es una de ellas, pide la boleta de nuevo para votar por correo en las elecciones municipales de 2027 o en 2028. Una solicitud hecha después del 3 de noviembre debería durar hasta 2028; revisa My Voter Record para confirmarlo.'
           },
-          stat: { value: 'Dec 31', label: { en: 'mail ballot requests run out (2026)', es: 'vencen las solicitudes de boleta por correo (2026)' } },
+          stat: { value: 'Dec 31', label: { en: 'requests from before Nov 3 run out (2026)', es: 'vencen las solicitudes de antes del 3 de noviembre (2026)' } },
           source: 'https://www.flsenate.gov/Laws/Statutes/2025/101.62',
           sourceName: 'Florida Statutes s. 101.62(1)(a): a request covers elections through the end of the calendar year of the next regularly scheduled general election',
           sources: [
@@ -984,7 +990,7 @@ window.YSD_DATA.issues = {
           asOf: '2026-11-09',
           confidence: 'high',
           staleAfter: '2026-12-31',
-          note: 'Lead ruling (docs/research/00). Statute text re-read Nov 9, 2026: "One request is deemed sufficient to receive a vote-by-mail ballot for all elections through the end of the calendar year of the next regularly scheduled general election." When Seminole starts accepting 2027-28 requests is not confirmed: ask the SOE (407-585-8683) before giving a start date. data/civic.js tells people to renew from Jan 1, 2027.'
+          note: 'Lead ruling (docs/research/00, corrected Nov 9: requests made before Nov 3, 2026 end Dec 31, 2026; one made after should run through 2028). Statute text re-read Nov 9, 2026: "One request is deemed sufficient to receive a vote-by-mail ballot for all elections through the end of the calendar year of the next regularly scheduled general election." When Seminole starts accepting 2027-28 requests is not confirmed: ask the SOE (407-585-8683) before giving a start date. data/civic.js tells people to renew from Jan 1, 2027.'
         },
         {
           id: 'student-id',
@@ -1059,13 +1065,13 @@ window.YSD_DATA.issues = {
       share: {
         title: { en: 'Two voting changes', es: 'Dos cambios para votar' },
         text: {
-          en: 'Heads up: every Florida mail ballot request runs out Dec 31, so request again for 2027-28. And from Jan 1, student IDs won’t count at the polls (it’s being challenged in court). Bring a driver’s license, state ID or passport.',
-          es: 'Ojo: las solicitudes de boleta por correo en Florida vencen el 31 de diciembre, así que pide la boleta de nuevo para 2027-28. Y desde el 1 de enero, la identificación de estudiante deja de servir para votar en persona (hay una demanda en contra). Lleva licencia de conducir, identificación estatal o pasaporte.'
+          en: 'Heads up: Florida mail ballot requests made before Nov 3 run out Dec 31, so if you asked before then, request again for 2027-28. And from Jan 1, student IDs won’t count at the polls (it’s being challenged in court). Bring a driver’s license, state ID or passport.',
+          es: 'Ojo: las solicitudes de boleta por correo en Florida hechas antes del 3 de noviembre vencen el 31 de diciembre, así que si la pediste antes, pide la boleta de nuevo para 2027-28. Y desde el 1 de enero, la identificación de estudiante deja de servir para votar en persona (hay una demanda en contra). Lleva licencia de conducir, identificación estatal o pasaporte.'
         },
         textAfter: {
           date: '2027-01-01',
-          en: 'Heads up: old Florida mail ballot requests ran out Dec 31, so request again before the next election. And student IDs no longer count at the polls. Bring a driver’s license, state ID or passport.',
-          es: 'Ojo: las solicitudes de boleta por correo anteriores en Florida vencieron el 31 de diciembre, así que hay que pedir la boleta otra vez antes de la próxima elección. Y la identificación de estudiante ya no sirve para votar en persona. Lleva licencia de conducir, identificación estatal o pasaporte.'
+          en: 'Heads up: Florida mail ballot requests made before Nov 3, 2026 ran out Dec 31, so request again before the next election. And student IDs no longer count at the polls. Bring a driver’s license, state ID or passport.',
+          es: 'Ojo: las solicitudes de boleta por correo en Florida hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre, así que hay que pedir la boleta otra vez antes de la próxima elección. Y la identificación de estudiante ya no sirve para votar en persona. Lleva licencia de conducir, identificación estatal o pasaporte.'
         },
         page: 'issues',
         hash: 'voting'

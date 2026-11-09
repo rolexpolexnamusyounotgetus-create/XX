@@ -14,7 +14,7 @@
  *   onSquad(cb)            -> unsubscribe; cb(squad, added) when the squad grows
  *   submit(member)         -> Promise; the production seam (formEndpoint, else Action Network proxy)
  *   retry()                -> re-send an unsynced join (runs on load and on 'online')
- *   makeRefCode(profile)   -> a new readable code
+ *   makeRefCode(profile)   -> a new readable code (always the random style when profile.age < 18)
  *   forget()               -> remove my member data, squad cache and captured ref from this browser
  *
  * Demo mode (YSD_CONFIG.demo): nothing leaves the browser; simulated squad members appear on a
@@ -78,9 +78,20 @@
     if (Array.isArray(j)) for (var i = 0; i < j.length; i++) if (j[i] && j[i].refCode) out[j[i].refCode] = 1;
     return out;
   }
-  /** Readable referral code, e.g. KIRA7QX ('name' style) or B7KQ2M ('random'). */
+  /** Known to be under 18 (age, or birthYear). Unknown age is not treated as a minor. */
+  function isMinor(profile) {
+    if (!profile) return false;
+    var age = profile.age != null && profile.age !== '' ? parseInt(profile.age, 10) : NaN;
+    if (isNaN(age) && profile.birthYear) age = new Date().getFullYear() - parseInt(profile.birthYear, 10);
+    return !isNaN(age) && age < 18;
+  }
+  /**
+   * Readable referral code, e.g. KIRA7QX ('name' style) or B7KQ2M ('random'). Members under 18
+   * always get the random style, whatever members.refCodeStyle says, so a teen's first name never
+   * appears in links they share.
+   */
   function makeRefCode(profile) {
-    var style = cfg('members.refCodeStyle', 'name');
+    var style = isMinor(profile) ? 'random' : cfg('members.refCodeStyle', 'name');
     var prefix = style === 'name' ? asciiLetters(profile && (profile.firstName || profile.name)).slice(0, +cfg('members.refNameMax', 5) || 5) : '';
     if (prefix.length < 2) prefix = '';
     var n = prefix ? Math.max(2, +cfg('members.refRandom', 3) || 3) : 6;
