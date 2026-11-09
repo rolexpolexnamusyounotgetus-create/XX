@@ -110,7 +110,8 @@ Treat `caption`, `author` and `tags` as untrusted text: set them with `textConte
 Defaults: `maxBytes` 150 MB, `maxDuration` 180 s, `minDuration` 0.5 s, `captionMax` 300,
 `tagsMax` 8, `probeTimeout` 15 s, `pollInterval` 5 s, `pollTries` 60. Types: mp4, mov
 (quicktime), webm, m4v, 3gp/3g2, ogv, mkv. Override per call, or site-wide with an optional
-`YSD_CONFIG.clips = { maxBytes, maxDuration, ... }` block (not in config.js today; core may add it).
+`YSD_CONFIG.clips = { maxBytes, maxDuration, minDuration, captionMax, tagsMax }` block (in config.js,
+set to these defaults; keep `maxBytes`/`maxDuration` in step with the upload function's env vars).
 
 Result/error codes: `no-file`, `type`, `empty`, `size`, `duration`, `too-short`, `unplayable`,
 `timeout`, `missing`, `demo`, `no-endpoint`, `network`, `aborted`, `create-failed`,

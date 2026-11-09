@@ -69,7 +69,7 @@ Events, dispatched on `document` through `YSD.emit` (or a CustomEvent if config.
 | `ysd:sw-controller` | `{}` | A new worker took control of the page |
 | `ysd:network` | `{online}` | The browser went online or offline |
 
-Config keys read (not yet in `config.js`; core may add them, and the defaults apply until then):
+Config keys read (the `pwa` block in `config.js`; the same values are the built-in defaults):
 `pwa.serviceWorker` (default `true`), `pwa.serviceWorkerInDemo` (default `false`), `pwa.swUrl`
 (default `'sw.js'`).
 

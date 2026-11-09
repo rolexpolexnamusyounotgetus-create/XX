@@ -86,7 +86,7 @@
       description: 'The Young Democrats of Seminole County, Florida: ages 14 to 39.',
       /** Absolute or root-relative default share image ('' = none yet). */
       ogImage: '',
-      /** Hostname used in calendar UIDs when site.url is '' and the page runs from file://. */
+      /** Domain used in calendar UIDs while site.url is '' (any host, file:// too), so UIDs stay stable across preview hosts. */
       uidDomain: 'youngsemdems'
     },
 
@@ -237,7 +237,7 @@
       /** Days a captured ref counts for attribution. */
       attributionDays: 30,
       /** Default hashtags for share text (no '#'); only the X link uses them. PLACEHOLDER. */
-      hashtags: ['YoungSemDem'],
+      hashtags: ['YoungDemsSeminole'],
       /**
        * Remove ?ref= and utm_* from the address bar after capture (after the page 'load' event, so
        * analytics still sees the UTM tags). Off by default.

@@ -48,11 +48,11 @@ example in a `config.local.js` or an inline script. The override is deep-merged 
 | Key | Contents |
 |---|---|
 | `demo` | `true`: all state stays in the browser; no joins, counters or uploads are sent. Demo-only data is flagged `demo: true`. |
-| `org` | `name`, `short`, `handle` (`youngsemdem`), `county`, `state`, `stateCode`, `ageCap: 40`, `minAge: 13` (placeholder floor, COPPA), `tagline` (PLACEHOLDER), `timezone` |
-| `site` | `url` (`''` = use where the files are; set this to the real origin in production), `lang`, `locales`, `defaultLocale`, `title`, `description`, `ogImage`, `uidDomain` |
+| `org` | `name` (Young Democrats of Seminole County), `short` (YDSC), `nickname`, `handle` (`youngsemdems`), `parent`, `county`, `state`, `stateCode`, `ageCap: 39` and `minAge: 14` (YDSC's dues page: 14 to under 40), `dues`, `tagline` (PLACEHOLDER), `timezone`. Set by the lead on Nov 9, 2026; tests check the shape, not these values. |
+| `site` | `url` (`''` = use where the files are; set this to the real origin in production), `lang`, `locales`, `defaultLocale`, `title`, `description`, `ogImage`, `uidDomain` (calendar UID domain while `url` is `''`) |
 | `social` | `{instagram, tiktok, x, threads, bluesky, facebook, youtube}: {handle, url}`. Handles are PLACEHOLDERS. `url: ''` means do not render a link. |
 | `links.vote` | Official voting links, verified on the web (see below) |
-| `links` | `actblue`, `actionNetwork`, `mobilize`, `volunteer`, `countyParty`, `contact`: empty placeholders |
+| `links` | `actblue` and `dues` (YDSC's public ActBlue pages; the chapter confirms before launch), `countyParty` (semdems.com); `actionNetwork`, `mobilize`, `volunteer`, `contact`: empty placeholders |
 | `integrations` | `formEndpoint`, `formEncoding` (`json` or `form`), `formName`, `actionNetwork {endpoint, tags}`, `squadEndpoint`, `countersEndpoint`, `videoUploadEndpoint`, `analytics {provider, plausibleDomain, plausibleSrc, cloudflareToken, endpoint, respectDoNotTrack}` |
 | `legal` | `paidFor` (PLACEHOLDER, Fla. Stat. 106.143 wording to come from the party), `privacyEmail`, `cardFooter` |
 | `theme` | Fallback colours and fonts (PLACEHOLDER hexes): `bg fg brand accent pop muted ink paper fontDisplay fontBody` |
@@ -60,6 +60,8 @@ example in a `config.local.js` or an inline script. The override is deep-merged 
 | `members` | `refCodeStyle` (`name` or `random`), `refNameMax`, `refRandom`, `enforceAgeCap`, `countyZips` (`[]` = no check), `keepContactLocally`, `demoSquadMax` |
 | `cal` | `prodId`, `defaultDurationMin: 120`, `name` |
 | `cards` | `fonts` (CSS font specs to wait for), `demoWatermark` |
+| `clips` | Video limits read by clips.js: `maxBytes` (150 MB), `maxDuration` (180 s), `minDuration`, `captionMax`, `tagsMax` |
+| `pwa` | Service worker switches read by sw-register.js: `serviceWorker: true`, `serviceWorkerInDemo: false`, `swUrl: 'sw.js'` |
 | `features` | `referrals`, `squad`, `cards`, `clips`, `calendar`, `demoSquadGrowth`, `demoLiveCounters` |
 
 ### Official voting links (checked Mon Nov 9, 2026)
@@ -193,7 +195,8 @@ ICS details:
 - TEXT escaping of `\ ; , newline`.
 - Lines fold at 75 octets without splitting UTF-8 sequences.
 - `DTSTART;TZID=America/New_York` with a VTIMEZONE built on the US rules in force since 2007.
-- `UID` is `<id>@<site host | uidDomain>`, or a stable hash of title and start when there is no id.
+- `UID` is `<id>@<domain>`: the `site.url` host when set, else `site.uidDomain`, else the page host. With
+  no id, a stable hash of title and start replaces `<id>`.
 - `DTSTAMP`, `STATUS`, `SEQUENCE`, and an optional `VALARM`.
 
 ### YSD.cards

@@ -389,7 +389,7 @@
   }
   /** Save a canvas or Blob as a PNG file. */
   function download(src, filename) {
-    filename = filename || 'youngsemdem-card.png';
+    filename = filename || 'ydsc-card.png';
     var p = src && typeof src.getContext === 'function' ? toBlob(src) : Promise.resolve(src);
     return p.then(function (blob) { return blob && saveBlob(blob, filename) ? 'downloaded' : 'failed'; }, function () { return 'failed'; });
   }
@@ -403,7 +403,7 @@
    */
   function share(canvas, opts) {
     opts = opts || {};
-    var filename = opts.filename || 'youngsemdem-card.png';
+    var filename = opts.filename || 'ydsc-card.png';
     function done(result) {
       try { if ((result === 'shared' || result === 'downloaded') && opts.count !== false && YSD.counters) YSD.counters.bump('cards'); } catch (e) {}
       emit('card-share', { result: result, filename: filename });

@@ -21,7 +21,7 @@
     "manifest": "node tools/manifest.js --write",
     "manifest:check": "node tools/manifest.js --check",
     "preflight": "python3 tools/sync_partials.py --check && node tools/csp.js --check && node tools/manifest.js --check && node tools/check_site.js",
-    "test": "node tests/infra/core.test.js && node tests/infra/video.test.js && node tests/infra/tooling.test.js",
+    "test": "node tests/infra/core.test.js && node tests/infra/video.test.js && node tests/infra/tooling.test.js && node tests/infra/integration.test.js",
     "test:tooling": "node tests/infra/tooling.test.js"
   }
 }

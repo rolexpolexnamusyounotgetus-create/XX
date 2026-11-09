@@ -268,7 +268,7 @@ async function nodeTests() {
     const L = sh.links('Join us!', 'https://ysd.example/?ref=K');
     for (const k of ['sms', 'whatsapp', 'x', 'threads', 'bluesky', 'facebook', 'email', 'telegram']) ok(typeof L[k] === 'string' && L[k].length > 10, 'links.' + k);
     ok(L.x.startsWith('https://x.com/intent/tweet?text=Join%20us!&url=https%3A%2F%2Fysd.example%2F%3Fref%3DK'), 'x intent', L.x);
-    ok(L.x.includes('&hashtags=YoungSemDem'), 'x hashtags');
+    ok(L.x.includes('&hashtags=YoungDemsSeminole'), 'x hashtags');
     eq(L.bluesky, 'https://bsky.app/intent/compose?text=Join%20us!%20https%3A%2F%2Fysd.example%2F%3Fref%3DK', 'bluesky intent');
     ok(L.threads.startsWith('https://www.threads.com/intent/post?text='), 'threads intent');
     ok(L.sms.startsWith('sms:?&body='), 'sms body');

@@ -262,8 +262,8 @@ git-ignored, so it never deploys from Git. Put production values in `config.js` 
    npm run check:strict
    ```
 
-**Service worker settings** (read by `assets/js/sw-register.js`; add a `pwa` block to `config.js`
-or `config.local.js` to change them):
+**Service worker settings** (read by `assets/js/sw-register.js`; change them in the `pwa` block of
+`config.js`, or override it in `config.local.js`):
 
 | Key | Default | Meaning |
 |---|---|---|
