@@ -1,0 +1,70 @@
+# _headers: response headers for Netlify and Cloudflare Pages (both read this file; same syntax).
+#
+# Rules
+#  - A request matching several blocks gets the headers of all of them, and a header set twice is
+#    joined with a comma on both hosts. So each header appears in only ONE block for any path:
+#    /* carries the security headers only; cache headers live on non-overlapping folders.
+#  - Netlify reads netlify.toml [[headers]] too; we keep every header here instead (one source).
+#  - Neither host applies these to Functions responses (/api/*): the functions set their own.
+#  - Limits (Cloudflare): 100 rules, 2,000 characters per line.
+#  - The Content-Security-Policy line is GENERATED: run `node tools/csp.js --write` after changing
+#    endpoints or analytics in assets/js/config.js (`--check` reports drift). Hand edits are lost.
+#  - tools/check_site.js applies this file to its local server, so CSP mistakes show up as
+#    console errors there before they reach production.
+#  - Comments go on their own unindented lines (Cloudflare does not document indented comments).
+#
+# DEMO: the "X-Robots-Tag: noindex" line in the /* block keeps the demo out of search results
+# while link previews still work. Delete that one line at launch (DEPLOY.md, launch checklist);
+# tools/check_site.js --strict fails while it is there.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://images.unsplash.com; media-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; frame-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=(self), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Strict-Transport-Security: max-age=31536000
+  X-Robots-Tag: noindex
+
+# Never index build, test and server-source folders (they are deployed but not linked).
+/tools/*
+  X-Robots-Tag: noindex, nofollow
+/tests/*
+  X-Robots-Tag: noindex, nofollow
+/docs/*
+  X-Robots-Tag: noindex, nofollow
+/partials/*
+  X-Robots-Tag: noindex, nofollow
+/functions/*
+  X-Robots-Tag: noindex, nofollow
+/netlify/*
+  X-Robots-Tag: noindex, nofollow
+
+# Cache. File names are not fingerprinted (no build step), so code and data revalidate on every
+# load (cheap: both hosts answer 304 from the ETag). Media, icons and fonts may be reused for a
+# while: rename the file (or add ?v=2 to its URL) when replacing one.
+/assets/js/*
+  Cache-Control: public, max-age=0, must-revalidate
+/assets/css/*
+  Cache-Control: public, max-age=0, must-revalidate
+/data/*
+  Cache-Control: public, max-age=0, must-revalidate
+/assets/img/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/assets/images/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/assets/icons/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/assets/video/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/assets/fonts/*
+  Cache-Control: public, max-age=2592000
+  Access-Control-Allow-Origin: *
+
+# The service worker script must never be served stale (browsers also revalidate it themselves).
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Content-Type: application/manifest+json; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate

@@ -1,0 +1,29 @@
+# _redirects: read by BOTH Netlify and Cloudflare Pages. Use only what both support:
+# plain 301/302/303/307/308 redirects and 200 rewrites to relative paths.
+# Not allowed here: "!" force flags, 404 rules, query-parameter matching (Cloudflare has none of
+# them). Netlify-only rules (the /api/* rewrite to Netlify Functions, hiding internal folders)
+# live in netlify.toml, which Cloudflare ignores.
+#
+# Note the hosts differ: Cloudflare always applies a matching rule, Netlify skips a non-forced
+# rule when a file exists at that path. So never add a rule whose path a real page could take.
+# Rules are read top to bottom; the first match wins.
+#
+# Format: <from> <to> [status]   (Cloudflare limits: 2,000 static + 100 dynamic rules)
+
+# Short links to official voting sites, safe to print on flyers and stickers:
+#   <site>/go/register, /go/check, /go/vote-by-mail, ...
+# Values are copied from assets/js/config.js links.vote (each checked on Nov 9, 2026).
+# tests/infra/tooling.test.js fails if these drift from config.js.
+/go/register         https://registertovoteflorida.gov/home                302
+/go/check            https://registration.dos.fl.gov/CheckVoterStatus      302
+/go/vote-by-mail     https://voteseminole.gov/how-to-vote/vote-by-mail/    302
+/go/polling-place    https://voteseminole.dolphmap.com/                    302
+/go/early-voting     https://voteseminole.gov/how-to-vote/early-voting/    302
+/go/my-voter-record  https://voteseminole.gov/voters/my-voter-record/      302
+/go/elections        https://voteseminole.gov/elections/upcoming-elections/ 302
+/go/soe              https://voteseminole.gov/                             302
+
+# Party-controlled short links: uncomment once the party supplies the real URLs (and set the same
+# values in assets/js/config.js links.*):
+# /go/donate         https://secure.actblue.com/donate/<form>               302
+# /go/events         https://www.mobilize.us/<org>/                         302

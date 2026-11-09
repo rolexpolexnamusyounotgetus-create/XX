@@ -1,0 +1,84 @@
+# netlify.toml: Netlify settings for the Young Seminole Democrats site.
+# Cloudflare Pages ignores this file; shared rules live in _headers and _redirects.
+#
+# Git deploys from the monorepo: in Netlify > Site configuration > Build & deploy, set
+# Base directory = youngsemdem (this file must sit in the base directory). No build command:
+# the folder is published as is. Drag-and-drop deploys (Netlify Drop) publish the files but do
+# not deploy functions; use Git or `netlify deploy` for /api/*. See DEPLOY.md.
+
+[build]
+  # Relative to the base directory (youngsemdem/): publish the folder itself.
+  publish = "."
+  # Netlify Functions source (CommonJS, no dependencies). Cloudflare uses functions/ instead.
+  functions = "netlify/functions"
+
+# Headers: deliberately NOT set here. Netlify reads both _headers and [[headers]] in this file
+# and does not document how a header defined in both combines, so _headers is the single source
+# (Cloudflare Pages reads the same file). Functions set their own response headers.
+
+# ---- Redirects (Netlify runs every _redirects rule first, then these, top to bottom) ----
+
+# Same URLs as Cloudflare Pages Functions: functions/api/video-upload.js answers
+# /api/video-upload there; this maps /api/<name> to netlify/functions/<name>.js here, so
+# YSD_CONFIG.integrations.videoUploadEndpoint = '/api/video-upload' works on both hosts.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
+
+# Internal folders are deployed (publish = ".") but never linked: answer 404 for them.
+# Netlify serves /404.html for these when that page exists (the design team owns it), and its
+# own "Page not found" otherwise. Unknown paths elsewhere get /404.html automatically.
+[[redirects]]
+  from = "/tools/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/tests/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/partials/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/netlify/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/functions/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/docs/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/node_modules/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package.json"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Dev server (`netlify dev`): serve the folder as is, no framework detection.
+[dev]
+  framework = "#static"
+  publish = "."

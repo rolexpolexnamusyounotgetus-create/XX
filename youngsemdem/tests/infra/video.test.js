@@ -413,6 +413,27 @@ window.__canLoad = function (src) { return new Promise(function (res) { var v = 
     });
   });
 
+  await section('node sandbox: clips.js/feed.js load with or without optional modules', async () => {
+    function sandbox(files) {
+      const win = { console: { log() {}, warn() {}, error() {} }, setTimeout: () => 0, clearTimeout() {}, Date, Math, JSON, URL, Promise, location: { search: '', href: 'https://example.test/' } };
+      win.window = win;
+      const ctx = vm.createContext(win);
+      files.forEach((f) => vm.runInContext(read(f).toString('utf8'), ctx, { filename: f }));
+      return win;
+    }
+    const full = sandbox(['assets/js/config.js', 'assets/js/store.js', 'data/clips.js', 'assets/js/clips.js', 'assets/js/feed.js']);
+    ok(full.YSD.clips && full.YSD.feed, 'modules attach to window.YSD');
+    const st = full.YSD.clips.like('demo-sunrail-rally');
+    ok(st.liked && st.likes === 288, 'like() before any list() uses the demo baseline', st);
+    eq(full.YSD.clips.stats('demo-precinct-captain').likes, 341, 'stats() baseline');
+    eq(full.YSD.clips.validate({ name: 'a.mp4', type: 'video/mp4', size: 151 * 1024 * 1024 }).code, 'size', 'validate() without a DOM');
+    const bare = sandbox(['assets/js/clips.js', 'assets/js/feed.js']);
+    ok(bare.YSD.clips && typeof bare.YSD.clips.list === 'function', 'clips.js loads without config/store/data');
+    const lst = await bare.YSD.clips.list();
+    ok(Array.isArray(lst) && lst.length === 0, 'list() is empty without data', lst);
+    eq(bare.YSD.clips.toggleLike('x').liked, true, 'likes work on the fallback store');
+  });
+
   await section('functions: Cloudflare and Netlify files share one core', async () => {
     const cut = (s) => s.slice(s.indexOf('// ==== BEGIN SHARED CORE'), s.indexOf('// ==== END SHARED CORE ===='));
     const a = cut(read('functions/api/video-upload.js').toString('utf8')), b = cut(read('netlify/functions/video-upload.js').toString('utf8'));

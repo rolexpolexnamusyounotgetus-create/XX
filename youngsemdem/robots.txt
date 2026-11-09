@@ -1,0 +1,18 @@
+# robots.txt: Young Seminole Democrats site.
+#
+# The DEMO is kept out of search results with an "X-Robots-Tag: noindex" header (see _headers),
+# not with "Disallow: /" here: a crawler must be able to fetch a page to see noindex, and
+# link-preview bots need to fetch pages to build share cards.
+#
+# At launch: delete the noindex line in _headers, then run
+#   python3 tools/make_sitemap.py --base https://<real-domain> --robots
+# which writes sitemap.xml and adds the "Sitemap:" line below.
+
+User-agent: *
+Disallow: /api/
+Disallow: /tools/
+Disallow: /tests/
+Disallow: /docs/
+Disallow: /partials/
+Disallow: /functions/
+Disallow: /netlify/

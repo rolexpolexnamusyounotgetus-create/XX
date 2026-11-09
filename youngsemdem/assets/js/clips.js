@@ -126,7 +126,8 @@
   function resolve(path) {
     if (!path || typeof path !== 'string') return path || null;
     if (/^(?:[a-z][a-z0-9+.\-]*:|\/\/|\/|#)/i.test(path)) return path;   // absolute, blob:, data:, root-relative
-    return siteBase ? siteBase + path : path;
+    var base = siteBase || (typeof YSD.root === 'string' ? YSD.root : '');
+    return base ? base + path : path;
   }
 
   // ------------------------------------------------------------------ storage (YSD.store / YSD.db or fallbacks)

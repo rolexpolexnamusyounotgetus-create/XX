@@ -1,5 +1,5 @@
 /*!
- * Young Seminole Democrats (youngsemdem): site configuration.
+ * Young Democrats of Seminole County (YDSC; site handle youngsemdems): site configuration.
  *
  * Every swappable value lives here. Pages load this file FIRST, then assets/js/store.js, then the
  * rest. To override values without editing this file (for a staging deploy, a local test, a real
@@ -41,22 +41,37 @@
     demo: true,
 
     org: {
-      name: 'Young Seminole Democrats',
-      short: 'YSD',
-      handle: 'youngsemdem',
+      /**
+       * The real, chartered chapter: Young Democrats of Seminole County (YDSC). Confirmed by Kira
+       * on Nov 9, 2026 as the org this site is for (she is getting sign-off). ActBlue slug and
+       * the youngsemdems.com domain both use "youngsemdems". See docs/research/02.
+       */
+      name: 'Young Democrats of Seminole County',
+      short: 'YDSC',
+      /** Casual display name for headlines and stickers. */
+      nickname: 'Young Dems',
+      /** Matches the ActBlue slug and youngsemdems.com; social handles are NOT verified. */
+      handle: 'youngsemdems',
+      /** Parent party (Seminole County Democratic Executive Committee). */
+      parent: 'Seminole County Democrats',
       county: 'Seminole County',
       state: 'Florida',
       stateCode: 'FL',
-      /** Membership is Democrats aged 40 and under. Pages use this for copy and soft checks. */
-      ageCap: 40,
       /**
-       * Youngest age the join form accepts. 13 is a placeholder floor because US COPPA rules
-       * cover collecting data from children under 13; the party should confirm its own policy.
+       * Oldest member age, inclusive. YDSC's dues page says members are 14 to under 40, so 39.
+       * (Kira's brief said "40 and under"; the chapter's own rule wins. Confirm against bylaws.)
+       */
+      ageCap: 39,
+      /**
+       * Youngest member age. YDSC's dues page says 14 (also above the COPPA under-13 line).
+       * Members under 18 need the minors policy (photos, video uploads, SMS) before launch.
        * (Florida lets 16- and 17-year-olds PRE-register to vote; see links.vote.register.)
        */
-      minAge: 13,
+      minAge: 14,
+      /** Dues per YDSC's ActBlue dues page: $20 a year, paid in January; hardship = non-voting member. */
+      dues: { amount: 20, period: 'year', due: 'January', hardshipPath: true },
       /** PLACEHOLDER tagline: the research/design workflow will supply real copy. */
-      tagline: 'Seminole County Democrats, 40 and under.',
+      tagline: 'Young Democrats in Seminole County, 14 to 39.',
       timezone: 'America/New_York'
     },
 
@@ -67,12 +82,12 @@
       locales: ['en', 'es'],
       defaultLocale: 'en',
       /** Default share title/description (PLACEHOLDER copy). */
-      title: 'Young Seminole Democrats',
-      description: 'Democrats 40 and under in Seminole County, Florida.',
+      title: 'Young Democrats of Seminole County',
+      description: 'The Young Democrats of Seminole County, Florida: ages 14 to 39.',
       /** Absolute or root-relative default share image ('' = none yet). */
       ogImage: '',
       /** Hostname used in calendar UIDs when site.url is '' and the page runs from file://. */
-      uidDomain: 'youngsemdem'
+      uidDomain: 'youngsemdems'
     },
 
     /**
@@ -80,13 +95,13 @@
      * group. url '' means "not live": pages must not render a link until a real url is set.
      */
     social: {
-      instagram: { handle: 'youngsemdem', url: '' },
-      tiktok: { handle: 'youngsemdem', url: '' },
-      x: { handle: 'youngsemdem', url: '' },
-      threads: { handle: 'youngsemdem', url: '' },
-      bluesky: { handle: 'youngsemdem', url: '' },
-      facebook: { handle: 'youngsemdem', url: '' },
-      youtube: { handle: 'youngsemdem', url: '' }
+      instagram: { handle: 'youngsemdems', url: '' },
+      tiktok: { handle: 'youngsemdems', url: '' },
+      x: { handle: 'youngsemdems', url: '' },
+      threads: { handle: 'youngsemdems', url: '' },
+      bluesky: { handle: 'youngsemdems', url: '' },
+      facebook: { handle: 'youngsemdems', url: '' },
+      youtube: { handle: 'youngsemdems', url: '' }
     },
 
     links: {
@@ -129,11 +144,14 @@
         countyPhone: '407-585-8683'
       },
       /** Party-controlled links: EMPTY PLACEHOLDERS until the party provides them. */
-      actblue: '',          // ActBlue contribution form URL, e.g. https://secure.actblue.com/donate/<form>
+      // YDSC's public ActBlue pages (cited in docs/research/02; ActBlue blocks scripted checks,
+      // so confirm in a browser). The chapter should confirm before launch.
+      actblue: 'https://secure.actblue.com/donate/youngsemdems',
+      dues: 'https://secure.actblue.com/donate/ydscdues',
       actionNetwork: '',    // Hosted Action Network form/page URL (fallback link for joins)
       mobilize: '',         // Mobilize organization or event-feed URL
       volunteer: '',        // Volunteer sign-up page if separate from the join form
-      countyParty: '',      // Seminole County Democratic Party site (party to confirm the URL)
+      countyParty: 'https://semdems.com/', // Seminole County Democrats (checked 2026-11-09)
       contact: ''           // mailto: or contact page
     },
 
@@ -156,7 +174,7 @@
        *   custom_fields: { ysd_ref_code, ysd_referred_by } }, add_tags }. Used only when
        * formEndpoint is ''. tags are added to every join.
        */
-      actionNetwork: { endpoint: '', tags: ['youngsemdem-site'] },
+      actionNetwork: { endpoint: '', tags: ['youngsemdems-site'] },
       /** Squad lookup: GET <squadEndpoint>?ref=CODE -> { squad: [{ name, joinedAt }] }. */
       squadEndpoint: '',
       /** Counters: GET -> { name: value, ... }; POST { name, n } increments. '' = local only. */
@@ -213,7 +231,7 @@
 
     share: {
       /** Default utm values added by YSD.share.url(). */
-      utm: { utm_source: 'share', utm_medium: 'social', utm_campaign: 'youngsemdem' },
+      utm: { utm_source: 'share', utm_medium: 'social', utm_campaign: 'youngsemdems' },
       /** Query parameter that carries a referral code. */
       refParam: 'ref',
       /** Days a captured ref counts for attribution. */
