@@ -21,9 +21,16 @@
  *                            Spanish href = esPrefix + pages[key]. If es/ pages don't exist, use the
  *                            EN page with ?lang=es instead; the hashes are the same.
  *   anchors: { pageKey: [hash, ...] }  every hash this file links to, so page builders create them.
- *   colors: { token: { role, onColor } }  colour tokens used below (report 03 "Celery City Pop" plus
- *                            its issue colours). Map each to a CSS custom property, e.g.
- *                            var(--ysd-<token>). onColor = the token to use for text on that fill.
+ *                            vote.html hashes are the step ids in data/civic.js (civic.steps[].id),
+ *                            plus 'dates' for the election-dates list, so render each step with
+ *                            id="<step.id>". issues.html hashes are the issue ids below.
+ *   colors: { token: { hex, role, onColor } }  colour tokens used below. Map each to a CSS custom
+ *                            property, e.g. var(--<token>). onColor = the token for text on that fill.
+ *                            celery, violet, violet-deep, sky, bubblegum, orange and teal are the
+ *                            tokens in data/team.js; pink and lime come from report 03 palette 2
+ *                            ("Springs & Citrus") and are NOT in team.js yet: define them in the
+ *                            stylesheet with the hex given here (ink on pink 5.47:1, ink on lime
+ *                            14.52:1, both pass AA). The order below keeps similar hues apart.
  *   context: {               shared facts for the issues page header
  *     youngVoters: Fact,     why the page talks to independents
  *     ydsc: { text, source, sourceName, verified, demo:false }   what YDSC says it exists to do
@@ -46,9 +53,11 @@
  *                 when YSD_CONFIG.demo === false.
  *   action        Action  the one concrete next step (links into the site)
  *   moreActions   [Action, ...]  up to 2 more (the Issue Finder shows 3 actions per result)
- *   eventTags     [tag, ...]  filter for events data (events.html?tag=<tag>)
- *   share         { title {en,es}, text {en,es}, page, hash }  group-chat text; the share module
- *                 appends the URL: YSD.share.native({ title, text, url: YSD.share.url(href) })
+ *   eventSeries   [series, ...]  data/events.js `series` ids that fit this issue (may be empty). Use
+ *                 them to pick related event cards; events.html?series=<id> filters to one.
+ *   share         { title {en,es}, text {en,es}, textAfter? {date,en,es}, page, hash }  group-chat
+ *                 text, no URL inside; the share module appends it:
+ *                 YSD.share.native({ title, text, url: YSD.share.url(href) })
  * }
  *
  * Fact = {
@@ -72,16 +81,27 @@
  * Action = {
  *   type          'event' | 'vote' | 'share' | 'join' | 'clip' | 'quiz'
  *   label         {en, es}  button text, verb first, sentence case
- *   page          key in pages;  hash? (no '#');  query? ('tag=housing', no '?')
+ *   labelAfter?   { date: 'YYYY-MM-DD', en, es }  replaces label on/after that date
+ *   page          key in pages;  hash? (no '#');  query? (no '?')
+ *                 Events queries use data/events.js fields: 'series=<series>' (one repeatable
+ *                 format, e.g. series=sunrail) or 'kind=<kind>' (social | learn | volunteer |
+ *                 create). No query = all events.
  *   official?     dotted path in YSD_CONFIG for the official link to show next to the button,
  *                 e.g. 'links.vote.voteByMail' (read it with YSD.cfg(path))
  *   demo?         true when the destination is demo content (show the DEMO label)
  * }
  *
+ * Spanish terms (same as data/civic.js and data/strings.js): "boleta por correo" for the mail
+ * ballot and "solicitud de boleta por correo" for the request (Florida's Spanish form DS-DE 160
+ * says "boleta de voto por correo"; we drop "de voto" for length); "voto por correo" only as the
+ * name of the program or page; "inscripción" for voter registration; "identificación" for ID.
+ *
  * Dates: calendar dates are 'YYYY-MM-DD' (no time, so no offset). Any date-time added later must
  * be ISO 8601 with the America/New_York offset, e.g. '2026-11-12T19:00:00-05:00'.
  *
- * Checked: Mon, Nov 9, 2026. Re-check every fact before launch and after each legislative session.
+ * Checked: Mon, Nov 9, 2026 (content pass, then an independent re-check of every number and date
+ * against the source files: SOE PDFs, Census Reporter API, NWS, OIR, EDR, MIT, bill texts).
+ * Re-check every fact before launch and after each legislative session.
  * Corrections vs report 01: HB 1069 (2023) is Ch. 2023-105 per its Senate bill page, not 2023-245.
  */
 window.YSD_DATA = window.YSD_DATA || {};
@@ -104,20 +124,20 @@ window.YSD_DATA.issues = {
   esPrefix: 'es/',
   anchors: {
     issues: ['housing', 'heat', 'repro', 'lgbtq', 'schools', 'wages', 'transit', 'water', 'voting'],
-    vote: ['mail-ballot', 'voter-id', 'register', 'check', 'dates'],
+    vote: ['register', 'check-registration', 'renew-mail-ballot', 'what-id', 'dates'],
     join: ['volunteer']
   },
 
   colors: {
-    orange:        { role: 'issue fill (housing)', onColor: 'ink' },
-    pink:          { role: 'issue fill (heat and insurance)', onColor: 'ink' },
-    violet:        { role: 'issue fill (reproductive freedom)', onColor: 'paper' },
-    bubblegum:     { role: 'issue fill (LGBTQ+ freedom)', onColor: 'ink' },
-    'violet-deep': { role: 'issue fill (schools and reading)', onColor: 'paper' },
-    lime:          { role: 'issue fill (wages)', onColor: 'ink' },
-    sky:           { role: 'issue fill (transit)', onColor: 'ink' },
-    teal:          { role: 'issue fill (water)', onColor: 'ink' },
-    celery:        { role: 'issue fill (voting)', onColor: 'ink' }
+    orange:        { hex: '#FF6B1A', role: 'issue fill (housing)', onColor: 'ink' },
+    pink:          { hex: '#FF3E8A', role: 'issue fill (heat and insurance); not in team.js yet', onColor: 'ink' },
+    violet:        { hex: '#6A2BFF', role: 'issue fill (reproductive freedom)', onColor: 'paper' },
+    bubblegum:     { hex: '#FF7AC6', role: 'issue fill (LGBTQ+ freedom)', onColor: 'ink' },
+    'violet-deep': { hex: '#4B12D6', role: 'issue fill (schools and reading)', onColor: 'paper' },
+    lime:          { hex: '#D7F25C', role: 'issue fill (wages); not in team.js yet', onColor: 'ink' },
+    sky:           { hex: '#4FD6FF', role: 'issue fill (transit)', onColor: 'ink' },
+    teal:          { hex: '#00B3A6', role: 'issue fill (water)', onColor: 'ink' },
+    celery:        { hex: '#C8F03C', role: 'issue fill (voting)', onColor: 'ink' }
   },
 
   context: {
@@ -225,22 +245,21 @@ window.YSD_DATA.issues = {
         }
       ],
       action: {
-        type: 'event',
-        label: { en: 'Find a renters’ night', es: 'Busca una noche para inquilinos' },
-        page: 'events',
-        query: 'tag=housing',
-        demo: true
+        type: 'share',
+        label: { en: 'Send this to a friend who rents', es: 'Mándaselo a alguien que alquila' },
+        page: 'issues',
+        hash: 'housing'
       },
       moreActions: [
-        { type: 'share', label: { en: 'Send this to a friend who rents', es: 'Mándale esto a alguien que alquila' }, page: 'issues', hash: 'housing' },
+        { type: 'event', label: { en: 'See what’s coming up', es: 'Mira lo que viene' }, page: 'events', demo: true },
         { type: 'join', label: { en: 'Join YDSC', es: 'Únete a YDSC' }, page: 'join' }
       ],
-      eventTags: ['housing', 'meeting'],
+      eventSeries: ['mixer'],
       share: {
         title: { en: 'Rent in Seminole', es: 'El alquiler en Seminole' },
         text: {
-          en: 'Median rent in Seminole is $1,890 a month and 6 in 10 renters pay 30%+ of their income on it. It’s not just you. Come to a Young Dems night with me?',
-          es: 'El alquiler mediano en Seminole es de $1,890 al mes y 6 de cada 10 inquilinos pagan 30% o más de su ingreso. No eres solo tú. ¿Me acompañas a una noche de los Young Dems?'
+          en: 'Median rent in Seminole is $1,890 a month, and 6 in 10 renters pay 30% or more of their income on it. It’s not just you. Come to a Young Dems night with me?',
+          es: 'El alquiler mediano en Seminole es de $1,890 al mes, y 6 de cada 10 hogares que alquilan pagan el 30% o más de sus ingresos. No es solo cosa tuya. ¿Me acompañas a una noche de los Young Dems?'
         },
         page: 'issues',
         hash: 'housing'
@@ -256,8 +275,8 @@ window.YSD_DATA.issues = {
       title: { en: 'Heat, storms and home insurance', es: 'Calor, tormentas y seguros de vivienda' },
       short: { en: 'heat + insurance', es: 'el calor y los seguros' },
       hook: {
-        en: 'Summers keep getting hotter and insurance keeps getting pricier. Neither one is just the weather.',
-        es: 'Los veranos son cada vez más calientes y los seguros cada vez más caros. Ninguna de las dos cosas es solo culpa del clima.'
+        en: 'Record heat and $3,545-a-year home insurance. How Florida handles both is a choice, not the weather.',
+        es: 'Calor récord y un seguro de vivienda de $3,545 al año. Cómo responde Florida a las dos cosas es una decisión, no el clima.'
       },
       facts: [
         {
@@ -272,7 +291,7 @@ window.YSD_DATA.issues = {
           verified: '2026-11-09',
           asOf: 'summer 2026',
           confidence: 'high',
-          note: 'Sanford is 1.1°F above normal and ties 2024. Orlando was the 2nd-warmest summer on record (84.5°F); the previous 95°F-day record was 49 days in 1917.'
+          note: 'Page "Summer 2026 Average Temperature Statistics/Rankings". Sanford is 1.1°F above normal and ties 2024. Orlando was the 2nd-warmest summer on record (84.5°F); the previous 95°F-day record was 49 days in 1917. Do not use the August table (Sanford 84.4°F, 6th-warmest August): that is the month, not the season. "Record heat" in the hook rests on the Orlando 95°F-day record.'
         },
         {
           id: 'insurance-premium',
@@ -286,23 +305,24 @@ window.YSD_DATA.issues = {
           verified: '2026-11-09',
           asOf: '2026-03-31',
           confidence: 'high',
-          note: 'Page 20, "Average Premiums Charged". Without wind coverage: $2,372 (homeowners), $785 (condo). Orange County: $3,610.'
+          note: 'Page 20, "Average Premiums Charged" (traditional policies, MIR data as of March 31, 2026). Without wind coverage: $2,372 (homeowners), $785 (condo). Orange County: $3,610. The same report says the average homeowners premium "decreased in 51 counties from the January report", so do NOT write that insurance is still rising: quote the level, not a trend.'
         },
         {
           id: 'heat-preemption',
           text: {
-            en: 'A 2024 state law (HB 433) stops Florida cities and counties from requiring heat protections for outdoor workers, like guaranteed water breaks, beyond what state or federal law requires.',
-            es: 'Una ley estatal de 2024 (HB 433) impide que las ciudades y los condados de Florida exijan protecciones contra el calor para quienes trabajan al aire libre, como pausas garantizadas para tomar agua, más allá de lo que piden las leyes estatales o federales.'
+            en: 'A 2024 state law (HB 433) bars Florida cities and counties from making employers give workers heat protections, like water, shade or cool-down breaks, beyond what state or federal law already requires.',
+            es: 'Una ley estatal de 2024 (HB 433) prohíbe que las ciudades y los condados de Florida obliguen a los empleadores a dar protecciones contra el calor, como agua, sombra o pausas para refrescarse, más allá de lo que ya exigen las leyes estatales o federales.'
           },
-          source: 'https://news.wfsu.org/state-news/2024-04-12/gov-desantis-signs-worker-wage-and-heat-protection-preemptions',
-          sourceName: 'WFSU Public Media, "Gov. DeSantis signs worker wage and heat protection preemptions" (Apr 12, 2024)',
+          source: 'https://www.flsenate.gov/Session/Bill/2024/433/BillText/er/PDF',
+          sourceName: 'Florida Legislature, CS/CS/HB 433 (2024), enrolled text: creates s. 448.106, F.S., "Workplace heat exposure requirements" (approved Apr 11, 2024, Ch. 2024-80, effective July 1, 2024)',
           sources: [
-            { url: 'https://www.flsenate.gov/Session/Bill/2024/433', name: 'Florida Senate, CS/CS/HB 433 (2024), Employment Regulations: approved Apr 11, 2024, Ch. 2024-80' }
+            { url: 'https://www.flsenate.gov/Session/Bill/2024/433', name: 'Florida Senate, CS/CS/HB 433 (2024) bill page: approved Apr 11, 2024, Ch. 2024-80' },
+            { url: 'https://news.wfsu.org/state-news/2024-04-12/gov-desantis-signs-worker-wage-and-heat-protection-preemptions', name: 'WFSU Public Media, "Gov. DeSantis signs worker wage and heat protection preemptions" (Apr 12, 2024)' }
           ],
           verified: '2026-11-09',
           asOf: '2024-07-01',
           confidence: 'high',
-          note: 'The Senate bill-page summary mentions only the wage provisions; the heat preemption is described in WFSU and other coverage of the signed bill.'
+          note: 'Enrolled text, s. 448.106(2)(a): a political subdivision may not require an employer "to meet or provide heat exposure requirements not otherwise required under state or federal law"; the defined term covers water consumption, cooling measures, acclimation and recovery periods, training and more. It applies to all employers, not only outdoor work, and cities and counties may still set rules for their own employees (s. 448.106(3)). Do not claim there is no state or federal heat standard without a fresh source.'
         }
       ],
       ydsc: [
@@ -328,15 +348,15 @@ window.YSD_DATA.issues = {
         hash: 'heat'
       },
       moreActions: [
-        { type: 'event', label: { en: 'See upcoming events', es: 'Mira los próximos eventos' }, page: 'events', query: 'tag=heat', demo: true },
-        { type: 'vote', label: { en: 'Get set for the next election', es: 'Prepárate para la próxima elección' }, page: 'vote', hash: 'dates' }
+        { type: 'vote', label: { en: 'See the next election dates', es: 'Mira las próximas fechas de elecciones' }, page: 'vote', hash: 'dates', official: 'links.vote.upcomingElections' },
+        { type: 'join', label: { en: 'Join YDSC', es: 'Únete a YDSC' }, page: 'join' }
       ],
-      eventTags: ['heat', 'insurance'],
+      eventSeries: [],
       share: {
         title: { en: 'Heat and insurance in Seminole', es: 'Calor y seguros en Seminole' },
         text: {
-          en: 'Average home insurance in Seminole: $3,545 a year. Orlando just had 51 days at 95°F or hotter. Not normal, and not just the weather.',
-          es: 'Seguro de vivienda promedio en Seminole: $3,545 al año. Orlando acaba de tener 51 días a 95 °F o más. No es normal, y no es solo el clima.'
+          en: 'Average home insurance in Seminole: $3,545 a year. Orlando hit 95°F or hotter on a record 51 days in summer 2026. That’s not just the weather, it’s worth talking about.',
+          es: 'Seguro de vivienda promedio en Seminole: $3,545 al año. Orlando llegó a 95 °F o más en 51 días del verano de 2026, un récord. No es solo el clima, y vale la pena hablarlo.'
         },
         page: 'issues',
         hash: 'heat'
@@ -352,24 +372,26 @@ window.YSD_DATA.issues = {
       title: { en: 'Reproductive freedom', es: 'Libertad reproductiva' },
       short: { en: 'reproductive freedom', es: 'la libertad reproductiva' },
       hook: {
-        en: 'Your body, your doctor, your call. Most Seminole voters said so in 2024.',
-        es: 'Tu cuerpo, tu médico, tu decisión. La mayoría en Seminole lo dijo en las urnas en 2024.'
+        en: 'Your body, your doctor, your call. In 2024, more than 60% of Seminole voters agreed.',
+        es: 'Tu cuerpo, tu médico, tu decisión. En 2024, más del 60% de los votantes de Seminole estuvo de acuerdo.'
       },
       facts: [
         {
           id: 'six-week-ban',
           text: {
-            en: 'Since May 1, 2024, Florida has banned most abortions after six weeks of pregnancy, with limited exceptions.',
-            es: 'Desde el 1 de mayo de 2024, Florida prohíbe la mayoría de los abortos después de las seis semanas de embarazo, con pocas excepciones.'
+            en: 'Since May 1, 2024, Florida has banned most abortions after six weeks of pregnancy. The exceptions are narrow: to save the patient’s life or prevent serious, permanent physical harm; a fatal fetal condition; or rape, incest or human trafficking up to 15 weeks, with documents to prove it.',
+            es: 'Desde el 1 de mayo de 2024, Florida prohíbe la mayoría de los abortos después de las seis semanas de embarazo. Las excepciones son muy limitadas: para salvar la vida de la paciente o evitarle un daño físico grave y permanente; una condición fetal mortal; o violación, incesto o trata de personas hasta las 15 semanas, con documentos que lo prueben.'
           },
           source: 'https://www.wusf.org/courts-law/2024-05-01/floridas-6-week-abortion-ban-takes-effect-as-doctors-worry-women-will-lose-access-to-health-care',
           sourceName: 'Associated Press via WUSF, "Florida’s 6-week abortion ban takes effect" (May 1, 2024)',
           sources: [
-            { url: 'https://www.flsenate.gov/Session/Bill/2023/300', name: 'Florida Senate, SB 300 (2023), Pregnancy and Parenting Support' }
+            { url: 'https://www.flsenate.gov/Session/Bill/2023/300/BillText/er/PDF', name: 'Florida Legislature, SB 300 (2023) enrolled text, s. 390.0111(1)(a)-(d): the exceptions (Ch. 2023-21)' },
+            { url: 'https://www.flsenate.gov/Session/Bill/2023/300', name: 'Florida Senate, SB 300 (2023), Pregnancy and Parenting Support: bill page' }
           ],
           verified: '2026-11-09',
           asOf: '2024-05-01',
-          confidence: 'high'
+          confidence: 'high',
+          note: 'Exceptions per s. 390.0111(1): (a)-(b) two physicians (or one in an emergency) certify the abortion is needed to save the woman’s life or avert a serious risk of substantial and irreversible physical impairment; (c) two physicians certify a fatal fetal abnormality; (d) rape, incest or human trafficking, gestational age not more than 15 weeks, with a restraining order, police report, medical record or other court order or documentation. Keep this neutral and exact; it is a serious card.'
         },
         {
           id: 'amendment-4-seminole',
@@ -412,8 +434,8 @@ window.YSD_DATA.issues = {
         },
         {
           text: {
-            en: '(DEMO) Getting members registered and ready for 2028, when every vote on the ballot counts toward that 60%.',
-            es: '(DEMO) Ayudar a que cada miembro tenga su inscripción al día para 2028, cuando cada voto en la boleta cuenta para llegar a ese 60%.'
+            en: '(DEMO) A registration check-in before every election, so every member who wants to vote can.',
+            es: '(DEMO) Una revisión de la inscripción antes de cada elección, para que cada miembro que quiera votar pueda hacerlo.'
           },
           demo: true
         }
@@ -422,19 +444,19 @@ window.YSD_DATA.issues = {
         type: 'vote',
         label: { en: 'Check your voter registration', es: 'Revisa tu inscripción para votar' },
         page: 'vote',
-        hash: 'check',
+        hash: 'check-registration',
         official: 'links.vote.myVoterRecord'
       },
       moreActions: [
-        { type: 'vote', label: { en: 'Renew your mail ballot request', es: 'Renueva tu solicitud de voto por correo' }, page: 'vote', hash: 'mail-ballot', official: 'links.vote.voteByMail' },
+        { type: 'vote', label: { en: 'Renew your mail ballot request', es: 'Renueva tu solicitud de boleta por correo' }, page: 'vote', hash: 'renew-mail-ballot', official: 'links.vote.voteByMail' },
         { type: 'share', label: { en: 'Share the Seminole number', es: 'Comparte el dato de Seminole' }, page: 'issues', hash: 'repro' }
       ],
-      eventTags: ['repro'],
+      eventSeries: [],
       share: {
         title: { en: 'Seminole and Amendment 4', es: 'Seminole y la Enmienda 4' },
         text: {
-          en: 'In 2024, 60.37% of Seminole voters backed Amendment 4 to protect abortion access. Statewide it fell short of the 60% it needed. Make sure you’re registered for 2028.',
-          es: 'En 2024, el 60.37% de los votantes de Seminole apoyó la Enmienda 4 para proteger el acceso al aborto. En todo el estado no llegó al 60% que necesitaba. Revisa que tu inscripción esté al día para 2028.'
+          en: 'In 2024, 60.37% of Seminole voters backed Amendment 4 to protect abortion access. Statewide it got about 57%, short of the 60% it needed. Check that your registration is up to date.',
+          es: 'En 2024, el 60.37% de los votantes de Seminole apoyó la Enmienda 4 para proteger el acceso al aborto. En todo el estado sacó cerca del 57%, menos del 60% que necesitaba. Revisa que tu inscripción esté al día.'
         },
         page: 'issues',
         hash: 'repro'
@@ -457,15 +479,18 @@ window.YSD_DATA.issues = {
         {
           id: 'sb-254',
           text: {
-            en: 'Since May 17, 2023, a Florida law (SB 254) has banned gender-affirming prescriptions and procedures for anyone under 18.',
-            es: 'Desde el 17 de mayo de 2023, una ley de Florida (SB 254) prohíbe los tratamientos y procedimientos de afirmación de género para menores de 18 años.'
+            en: 'A Florida law signed May 17, 2023 (SB 254) bans gender-affirming prescriptions and procedures for anyone under 18. The only exception: some teens whose prescriptions started before the law took effect.',
+            es: 'Una ley de Florida firmada el 17 de mayo de 2023 (SB 254) prohíbe los medicamentos y procedimientos de afirmación de género para menores de 18 años. La única excepción: algunos adolescentes que ya tenían recetas antes de que la ley entrara en vigor.'
           },
           source: 'https://www.flsenate.gov/Session/Bill/2023/254',
-          sourceName: 'Florida Senate, CS/SB 254 (2023): approved May 17, 2023, Ch. 2023-90',
+          sourceName: 'Florida Senate, CS/SB 254 (2023), Treatments for Sex Reassignment: approved May 17, 2023, effective May 17, 2023, Ch. 2023-90',
+          sources: [
+            { url: 'https://www.flsenate.gov/Session/Bill/2023/254/BillText/er/PDF', name: 'Florida Legislature, CS/SB 254 (2023) enrolled text: s. 456.52(1) and the exception for prescriptions commenced before, and still active on, the effective date' }
+          ],
           verified: '2026-11-09',
           asOf: '2023-05-17',
           confidence: 'high',
-          note: 'The bill’s own wording is "sex-reassignment prescriptions and procedures". It also bars certain public funds for these treatments.'
+          note: 'The bill’s own wording is "sex-reassignment prescriptions and procedures for patients younger than 18". It also bars certain public funds for these treatments and restricts care for adults. Litigation: a federal judge blocked the law in June 2024 (Doe v. Ladapo); an 11th Circuit panel stayed that ruling on Aug 26, 2024, so the state can enforce it while the appeal goes on (The Advocate, Aug 26, 2024). We did not confirm a final appellate ruling; do not describe the case outcome without re-checking.'
         },
         {
           id: 'hb-1069',
@@ -486,25 +511,25 @@ window.YSD_DATA.issues = {
             es: 'En agosto de 2025, el Departamento de Transporte de Florida quitó durante la noche el cruce peatonal arcoíris frente al memorial de Pulse en Orlando. El alcalde de Orlando dijo que no avisaron a la ciudad.'
           },
           source: 'https://wjla.com/news/nation-world/fdot-pulls-rainbow-crosswalk-at-pulse-nightclub-overnight-delray-beach-fights-to-save-its-lgbtq-florida-department-of-transportation-pulse-nightclub-removal-orlando-shootingflorida-august-20-2025',
-          sourceName: 'CBS12 / Sinclair syndicated report, "FDOT pulls rainbow crosswalk at Pulse nightclub overnight" (Aug 20, 2025)',
+          sourceName: 'CBS12 / Sinclair syndicated report on WJLA, "FDOT pulls rainbow crosswalk at Pulse nightclub overnight" (Aug 21, 2025)',
           verified: '2026-11-09',
-          asOf: '2025-08-20',
+          asOf: '2025-08-21',
           confidence: 'high',
-          note: 'Seen via the syndicated story and search coverage (several outlets carried it). FDOT cited its policy against "political" markings on state roads.'
+          note: 'Article dated Thu, Aug 21, 2025; the crosswalk was removed overnight. Mayor Buddy Dyer said the city was not informed beforehand. FDOT cited its policy against "political" banners and markings on state roads. Pulse is in Orlando (Orange County), not Seminole: keep it framed as Central Florida.'
         }
       ],
       ydsc: [
         {
           text: {
-            en: 'YDSC has raised money for a local charity that supports LGBTQ+ youth, with a musical theatre night in Oviedo.',
-            es: 'YDSC ha recaudado fondos para una organización local que apoya a jóvenes LGBTQ+, con una noche de teatro musical en Oviedo.'
+            en: 'YDSC has hosted a musical theatre night in Oviedo to raise money for a local charity that supports LGBTQ+ youth.',
+            es: 'YDSC organizó una noche de teatro musical en Oviedo a beneficio de una organización local que apoya a jóvenes LGBTQ+.'
           },
           demo: false,
           source: 'https://secure.actblue.com/donate/ydscmusicaltheatre',
-          sourceName: 'Young Democrats of Seminole County, ActBlue page for a musical theatre review',
+          sourceName: 'Young Democrats of Seminole County, ActBlue page "Young Democrats Musical Theatre Review"',
           verified: '2026-11-09',
           confidence: 'med',
-          note: 'The page gives June 15 but no year (search snippets suggested 2024). It does not name the charity. Do not name the venue: it is a real business.'
+          note: 'The page gives June 15 but no year (search snippets suggested 2024) and says proceeds go to a local charity supporting LGBTQ+ youth without naming it; it does not say how much was raised, so do not claim an amount. The page names the venue (a real business at the Oviedo Mall) and a chapter officer: never name either on the site.'
         },
         {
           text: {
@@ -515,22 +540,20 @@ window.YSD_DATA.issues = {
         }
       ],
       action: {
-        type: 'event',
-        label: { en: 'Find a Pride meetup', es: 'Busca un encuentro de Pride' },
-        page: 'events',
-        query: 'tag=lgbtq',
-        demo: true
+        type: 'join',
+        label: { en: 'Join YDSC', es: 'Únete a YDSC' },
+        page: 'join'
       },
       moreActions: [
-        { type: 'join', label: { en: 'Join YDSC', es: 'Únete a YDSC' }, page: 'join' },
-        { type: 'vote', label: { en: 'Check your voter registration', es: 'Revisa tu inscripción para votar' }, page: 'vote', hash: 'check', official: 'links.vote.myVoterRecord' }
+        { type: 'vote', label: { en: 'Check your voter registration', es: 'Revisa tu inscripción para votar' }, page: 'vote', hash: 'check-registration', official: 'links.vote.myVoterRecord' },
+        { type: 'share', label: { en: 'Share this with a friend', es: 'Compártelo con alguien' }, page: 'issues', hash: 'lgbtq' }
       ],
-      eventTags: ['lgbtq', 'social'],
+      eventSeries: [],
       share: {
         title: { en: 'LGBTQ+ freedom in Seminole', es: 'Libertad LGBTQ+ en Seminole' },
         text: {
-          en: 'The Young Dems in Seminole have raised money for local LGBTQ+ youth. Ages 14 to 39, everyone welcome. Want to check them out with me?',
-          es: 'Los Young Dems de Seminole han recaudado fondos para jóvenes LGBTQ+ de aquí. De 14 a 39 años, con las puertas abiertas para todo el mundo. ¿Me acompañas a conocerlos?'
+          en: 'The Young Dems in Seminole put on a musical theatre night to raise money for a local charity that supports LGBTQ+ youth. They’re 14 to 39. Want to check them out with me?',
+          es: 'Los Young Dems de Seminole organizaron una noche de teatro musical a beneficio de una organización local que apoya a jóvenes LGBTQ+. Son de 14 a 39 años. ¿Me acompañas a conocerlos?'
         },
         page: 'issues',
         hash: 'lgbtq'
@@ -554,7 +577,7 @@ window.YSD_DATA.issues = {
           id: 'scps-31-books',
           text: {
             en: 'In fall 2023, Seminole County Public Schools pulled more than 30 books. Most were pulled because other Central Florida districts had objected to them, not because Seminole parents complained.',
-            es: 'En el otoño de 2023, las Escuelas Públicas del Condado de Seminole retiraron más de 30 libros. La mayoría salió porque otros distritos de la Florida Central los habían objetado, no por quejas de padres de Seminole.'
+            es: 'En el otoño de 2023, las Escuelas Públicas del Condado de Seminole retiraron más de 30 libros. La mayoría salió porque otros distritos escolares del centro de Florida los habían objetado, no por quejas de familias de Seminole.'
           },
           stat: { value: '30+', label: { en: 'books pulled in Seminole schools, fall 2023', es: 'libros retirados en escuelas de Seminole, otoño de 2023' } },
           source: 'https://www.cfpublic.org/education/2023-10-11/seminole-county-bans-books-challenged-in-other-school-districts',
@@ -576,19 +599,20 @@ window.YSD_DATA.issues = {
           verified: '2026-11-09',
           asOf: '2024-25 school year',
           confidence: 'med',
-          note: 'PEN counts instances (one title removed in two districts counts twice). The Florida Department of Education’s own report lists far fewer (444 titles in 16 counties per Florida Phoenix), partly because it counts only final removal decisions.'
+          note: 'Re-read Nov 9, 2026: FOX 35 says PEN tracked 6,870 instances nationally in 2024-25 and that Florida was "the No. 1 state". PEN counts instances (one title removed in two districts counts twice). pen.org blocked our checks, so this stays med until read at the source. The Florida Department of Education’s own report lists far fewer (444 titles in 16 counties per Florida Phoenix), partly because it counts only final removal decisions.'
         },
         {
           id: 'school-board-nonpartisan',
           text: {
-            en: 'Florida school board races are nonpartisan, so every registered voter can vote in them, independents included.',
-            es: 'Las elecciones para la junta escolar en Florida no son partidistas, así que cualquier persona inscrita puede votar en ellas, tenga o no partido.'
+            en: 'Florida school board races are nonpartisan, so you can vote in them whatever your party, independents included.',
+            es: 'Las elecciones para la junta escolar en Florida no son partidistas, así que puedes votar en ellas sin importar tu partido, aunque no tengas ninguno.'
           },
           source: 'https://www.flsenate.gov/Laws/Constitution',
-          sourceName: 'Constitution of the State of Florida, Article IX, Section 4(a)',
+          sourceName: 'Constitution of the State of Florida, Article IX, Section 4(a): school board members "chosen by vote of the electors in a nonpartisan election"',
           verified: '2026-11-09',
           asOf: '2026',
-          confidence: 'high'
+          confidence: 'high',
+          note: 'Report 01 §3b: nonpartisan races (school board, judges, city races) are open to every voter. Whether Seminole board seats are voted on countywide or by district was not checked: say nothing more specific without the SOE.'
         }
       ],
       ydsc: [
@@ -602,7 +626,7 @@ window.YSD_DATA.issues = {
         {
           text: {
             en: '(DEMO) A school board buddy system: we tell you when the meeting is, and we sit together.',
-            es: '(DEMO) Vamos en grupo a la junta escolar: te avisamos cuándo es la reunión y nos sentamos en grupo.'
+            es: '(DEMO) Nadie va sin compañía a la junta escolar: te avisamos cuándo es la reunión y nos sentamos en grupo.'
           },
           demo: true
         }
@@ -615,10 +639,10 @@ window.YSD_DATA.issues = {
         official: 'links.vote.register'
       },
       moreActions: [
-        { type: 'event', label: { en: 'Find a book swap', es: 'Busca un intercambio de libros' }, page: 'events', query: 'tag=schools', demo: true },
+        { type: 'vote', label: { en: 'See the next election dates', es: 'Mira las próximas fechas de elecciones' }, page: 'vote', hash: 'dates', official: 'links.vote.upcomingElections' },
         { type: 'share', label: { en: 'Share with a friend who reads', es: 'Compártelo con alguien que lee' }, page: 'issues', hash: 'schools' }
       ],
-      eventTags: ['schools', 'books'],
+      eventSeries: [],
       share: {
         title: { en: 'Books in Seminole schools', es: 'Libros en las escuelas de Seminole' },
         text: {
@@ -639,8 +663,8 @@ window.YSD_DATA.issues = {
       title: { en: 'Wages and cost of living', es: 'Sueldos y costo de vida' },
       short: { en: 'wages', es: 'los sueldos' },
       hook: {
-        en: '$15 an hour is the floor now. A single adult here needs about $25.50 to cover the basics.',
-        es: 'El mínimo ya es $15 la hora. Una persona sola aquí necesita unos $25.50 para cubrir lo básico.'
+        en: '$15 an hour is the floor now. MIT figures a single adult here needs about $25.50 to cover the basics.',
+        es: 'El mínimo ya es $15 la hora. Según el MIT, una persona sola aquí necesita unos $25.50 para cubrir lo básico.'
       },
       facts: [
         {
@@ -658,13 +682,13 @@ window.YSD_DATA.issues = {
           verified: '2026-11-09',
           asOf: '2026-09-30',
           confidence: 'high',
-          note: 'Tipped workers: $11.98 cash wage plus tips (WWSB).'
+          note: 'Constitution text: "until the Minimum Wage reaches $15.00 per hour on September 30th, 2026. On September 30th of 2027 and on each following September 30th" the rate is adjusted for inflation. Tipped workers: $11.98 cash wage plus tips (WWSB). Update the stat after Sep 30, 2027.'
         },
         {
           id: 'living-wage',
           text: {
             en: 'MIT’s Living Wage Calculator puts the living wage for a single adult with no kids in Seminole at $25.52 an hour.',
-            es: 'La calculadora de salario digno del MIT calcula que una persona adulta sin hijos en Seminole necesita $25.52 la hora.'
+            es: 'Según la calculadora de salario digno del MIT, una persona adulta sin hijos en Seminole necesita ganar $25.52 la hora.'
           },
           stat: { value: '$25.52', label: { en: 'living wage an hour, 1 adult, Seminole', es: 'salario digno por hora, 1 adulto, Seminole' } },
           source: 'https://livingwage.mit.edu/counties/12117',
@@ -703,8 +727,8 @@ window.YSD_DATA.issues = {
         },
         {
           text: {
-            en: '(DEMO) Free-food first-timer nights, because a meeting you can’t afford to get to isn’t really open.',
-            es: '(DEMO) Noches para recién llegados con comida gratis, porque una reunión a la que no puedes darte el lujo de ir no está abierta de verdad.'
+            en: '(DEMO) First-timer nights with free food, because nobody should have to spend money to show up.',
+            es: '(DEMO) Noches para recién llegados con comida gratis, porque nadie debería tener que gastar dinero para venir.'
           },
           demo: true
         }
@@ -717,9 +741,9 @@ window.YSD_DATA.issues = {
       },
       moreActions: [
         { type: 'join', label: { en: 'Join for $20, or for free', es: 'Únete por $20, o gratis' }, page: 'join' },
-        { type: 'event', label: { en: 'Find a free-food night', es: 'Busca una noche con comida gratis' }, page: 'events', query: 'tag=social', demo: true }
+        { type: 'event', label: { en: 'Come to a member mixer', es: 'Ven a un encuentro de miembros' }, page: 'events', query: 'series=mixer', demo: true }
       ],
-      eventTags: ['wages', 'social'],
+      eventSeries: ['mixer'],
       share: {
         title: { en: 'Wages in Seminole', es: 'Sueldos en Seminole' },
         text: {
@@ -740,8 +764,8 @@ window.YSD_DATA.issues = {
       title: { en: 'Transit and SunRail', es: 'Transporte y SunRail' },
       short: { en: 'transit', es: 'el transporte' },
       hook: {
-        en: 'Seminole has four SunRail stations, and 7 in 10 of us still drive to work alone.',
-        es: 'Seminole tiene cuatro estaciones de SunRail, y 7 de cada 10 todavía vamos al trabajo manejando sin compañía.'
+        en: 'Four SunRail stations in Seminole. No regular trains on weekends. And 7 in 10 of us drive to work alone.',
+        es: 'Cuatro estaciones de SunRail en Seminole. Ningún tren regular los fines de semana. Y 7 de cada 10 vamos al trabajo manejando sin compañía.'
       },
       facts: [
         {
@@ -775,50 +799,53 @@ window.YSD_DATA.issues = {
         {
           id: 'weekend-cost',
           text: {
-            en: 'Riders keep asking for weekend trains. A 2025 estimate put weekend SunRail service at about $26.3 million a year to run, plus about $61.8 million for more locomotives and cab cars.',
-            es: 'Los pasajeros siguen pidiendo trenes los fines de semana. Un cálculo de 2025 estimó que operar SunRail los fines de semana costaría unos $26.3 millones al año, más unos $61.8 millones en locomotoras y vagones adicionales.'
+            en: 'SunRail runs Monday to Friday only. In 2025, SunRail staff estimated that weekend trains would cost about $26.3 million a year to run, plus about $61.8 million for three more locomotives and cab cars.',
+            es: 'SunRail funciona solo de lunes a viernes. En 2025, el personal de SunRail calculó que operar trenes los fines de semana costaría unos $26.3 millones al año, más unos $61.8 millones en tres locomotoras y vagones de cabina adicionales.'
           },
           source: 'https://www.clickorlando.com/news/local/2025/07/24/heres-how-much-it-could-cost-to-expand-sunrail-service-to-weekends',
           sourceName: 'WKMG News 6 / ClickOrlando, "Here’s how much it could cost to expand SunRail service to weekends" (Jul 24, 2025)',
+          sources: [
+            { url: 'https://sunrail.com/help-center/support/maps-schedules/how-often-does-sunrail-run/', name: 'SunRail help center, "How often does SunRail run?": "SunRail currently runs Monday – Friday only" (page updated May 18, 2025; read Nov 9, 2026)' }
+          ],
           verified: '2026-11-09',
           asOf: '2025-07-24',
           confidence: 'med',
-          note: 'A staff estimate reported by local news, not a budget. Context: Seminole County was set to put $11.5 million toward SunRail operating costs as the line moved from state to local control (ClickOrlando, Sep 23, 2025).'
+          note: 'Weekday-only is from SunRail’s own page (high); the dollar figures are a staff estimate ($26,265,000 a year; $61,800,000 capital) presented to the Central Florida Commuter Rail Commission and reported by local news, not a budget (med). The commission chair told News 6 riders want weekend trains. News 6 notes SunRail has "previously offered a special service on weekends or for events", hence "regular" in the hook. Re-check the weekday-only line on sunrail.com before launch. Context from the first content pass, not re-checked: Seminole County was set to put $11.5 million toward SunRail operating costs as the line moved from state to local control (ClickOrlando, Sep 23, 2025).'
         }
       ],
       ydsc: [
         {
           text: {
-            en: '(DEMO) Ride together: we pick events near a SunRail station and meet on the platform.',
-            es: '(DEMO) Vamos en grupo: elegimos eventos cerca de una estación de SunRail y nos vemos en el andén.'
+            en: '(DEMO) Ride together: we hold weeknight events near a SunRail station and meet on the platform.',
+            es: '(DEMO) Vamos en grupo: hacemos eventos entre semana cerca de una estación de SunRail y nos vemos en el andén.'
           },
           demo: true
         },
         {
           text: {
-            en: '(DEMO) A carpool board for every event, so not having a car never means missing out.',
-            es: '(DEMO) Un tablero para compartir auto en cada evento, para que no tener carro nunca te deje fuera.'
+            en: '(DEMO) A carpool list for every event, so not having a car never means missing out.',
+            es: '(DEMO) Una lista para compartir carro en cada evento, para que no tener carro nunca te deje fuera.'
           },
           demo: true
         }
       ],
       action: {
         type: 'event',
-        label: { en: 'Find an event near SunRail', es: 'Busca un evento cerca de SunRail' },
+        label: { en: 'Find a SunRail social', es: 'Busca una salida en SunRail' },
         page: 'events',
-        query: 'tag=transit',
+        query: 'series=sunrail',
         demo: true
       },
       moreActions: [
         { type: 'clip', label: { en: 'Watch the reel', es: 'Mira los videos' }, page: 'clips' },
         { type: 'share', label: { en: 'Share with your commute buddy', es: 'Compártelo con quien va contigo al trabajo' }, page: 'issues', hash: 'transit' }
       ],
-      eventTags: ['transit'],
+      eventSeries: ['sunrail'],
       share: {
         title: { en: 'Getting around Seminole', es: 'Moverse por Seminole' },
         text: {
-          en: 'Seminole has 4 SunRail stations, but only 0.5% of us commute by transit. Riders keep asking for weekend trains. Ride to the next Young Dems thing with me?',
-          es: 'Seminole tiene 4 estaciones de SunRail, pero solo el 0.5% va al trabajo en transporte público. La gente sigue pidiendo trenes los fines de semana. ¿Me acompañas al próximo evento de los Young Dems?'
+          en: 'Seminole has 4 SunRail stations, no regular weekend trains, and only 0.5% of us take transit to work. Ride to the next Young Dems thing with me?',
+          es: 'Seminole tiene 4 estaciones de SunRail, ningún tren regular los fines de semana y solo el 0.5% va al trabajo en transporte público. ¿Me acompañas al próximo evento de los Young Dems?'
         },
         page: 'issues',
         hash: 'transit'
@@ -841,8 +868,8 @@ window.YSD_DATA.issues = {
         {
           id: 'lake-jesup',
           text: {
-            en: 'Decades of wastewater flowing into Lake Jesup’s creeks left it with chronic algae blooms and a thick layer of muck. It has been under a state cleanup plan since 2010.',
-            es: 'Décadas de aguas residuales en los arroyos que alimentan el lago Jesup le dejaron floraciones de algas crónicas y una capa gruesa de lodo. Desde 2010 tiene un plan estatal de limpieza.'
+            en: 'Decades of wastewater pouring into the streams that feed Lake Jesup left it with chronic algae blooms and a thick layer of muck on the bottom. It has had a state cleanup plan since 2010.',
+            es: 'Décadas de aguas residuales en los arroyos que alimentan el lago Jesup le dejaron floraciones crónicas de algas y una capa gruesa de lodo en el fondo. Desde 2010 tiene un plan estatal de limpieza.'
           },
           source: 'https://www.sjrwmd.com/streamlines/work-continues-in-the-journey-to-restore-lake-jesup/',
           sourceName: 'St. Johns River Water Management District, "Work continues in the journey to restore Lake Jesup" (undated, read Nov 9, 2026)',
@@ -852,7 +879,7 @@ window.YSD_DATA.issues = {
           verified: '2026-11-09',
           asOf: '2026',
           confidence: 'high',
-          note: 'SJRWMD gives the lake as 8,000 to 16,000 acres depending on water levels. The plan targets nitrogen and phosphorus.'
+          note: 'SJRWMD: "Decades of wastewater discharges to the lake’s tributaries" led to "chronic algal blooms" and "a thick layer of organic muck on the lake bottom"; the lake runs 8,000 to 16,000 acres depending on water levels, and its BMAP was updated in 2019. The DEP plan’s cover is dated April 2010.'
         },
         {
           id: 'fertilizer-season',
@@ -870,15 +897,18 @@ window.YSD_DATA.issues = {
         {
           id: 'wekiva-wild-scenic',
           text: {
-            en: 'The Wekiva, along Seminole’s western edge, has been a National Wild and Scenic River since Oct 13, 2000.',
-            es: 'El Wekiva, en el borde oeste de Seminole, es Río Nacional Silvestre y Escénico desde el 13 de octubre de 2000.'
+            en: 'The Wekiva River, on Seminole’s west side, has been a National Wild and Scenic River since Oct 13, 2000.',
+            es: 'El río Wekiva, en el lado oeste de Seminole, es Río Nacional Silvestre y Escénico desde el 13 de octubre de 2000.'
           },
           source: 'https://www.fws.gov/rivers/river/wekiva',
           sourceName: 'National Wild and Scenic Rivers System, Wekiva River',
+          sources: [
+            { url: 'https://www.seminolecountyfl.gov/docs/default-source/pdf/WekivaRiverAreaFactSheetNovember2024ADA.pdf', name: 'Seminole County, Wekiva River Area Fact Sheet (Nov 2024): the Wekiva River Protection Area within Seminole County' }
+          ],
           verified: '2026-11-09',
           asOf: '2000-10-13',
           confidence: 'high',
-          note: '41.6 designated miles across Orange, Seminole and Lake counties. Wekiwa Springs State Park itself is in Orange County: say "the Wekiva", not "the springs in Seminole".'
+          note: '41.6 designated miles (8.1 recreational, 2.1 scenic, 31.4 wild), from the St. Johns River confluence to Wekiwa Springs, plus Rock Springs Run and Black Water Creek. The federal page does not name counties for the river itself; "west side" rests on the county fact sheet and report 01 (med for the exact line). Wekiwa Springs State Park is in Orange County: say "the Wekiva", not "the springs in Seminole".'
         }
       ],
       ydsc: [
@@ -899,21 +929,21 @@ window.YSD_DATA.issues = {
       ],
       action: {
         type: 'event',
-        label: { en: 'Find a cleanup', es: 'Busca una jornada de limpieza' },
+        label: { en: 'Walk Lake Monroe with us', es: 'Ven a caminar por el lago Monroe' },
         page: 'events',
-        query: 'tag=water',
+        query: 'series=sunset-walk',
         demo: true
       },
       moreActions: [
         { type: 'share', label: { en: 'Share with your lake-day crew', es: 'Compártelo con tu grupo de paseos al lago' }, page: 'issues', hash: 'water' },
         { type: 'join', label: { en: 'Join YDSC', es: 'Únete a YDSC' }, page: 'join' }
       ],
-      eventTags: ['water', 'cleanup'],
+      eventSeries: ['sunset-walk', 'picnic'],
       share: {
         title: { en: 'Clean water in Seminole', es: 'Agua limpia en Seminole' },
         text: {
-          en: 'Lake Jesup has been under a state cleanup plan since 2010, and Seminole pauses lawn fertilizer every summer to protect the lakes. Come to a Riverwalk cleanup with me?',
-          es: 'El lago Jesup tiene un plan estatal de limpieza desde 2010, y Seminole pausa el fertilizante para césped cada verano para proteger los lagos. ¿Vienes conmigo a una limpieza en el Riverwalk?'
+          en: 'Lake Jesup has had a state cleanup plan since 2010, and every June to September Seminole bans nitrogen and phosphorus lawn fertilizer to protect the lakes. Want to get involved with me?',
+          es: 'El lago Jesup tiene un plan estatal de limpieza desde 2010, y cada año, de junio a septiembre, Seminole prohíbe el fertilizante para césped con nitrógeno o fósforo para proteger los lagos. ¿Te animas a participar conmigo?'
         },
         page: 'issues',
         hash: 'water'
@@ -929,22 +959,22 @@ window.YSD_DATA.issues = {
       title: { en: 'Voting rights', es: 'Derecho al voto' },
       short: { en: 'voting rights', es: 'el derecho al voto' },
       hook: {
-        en: 'Your mail ballot request runs out Dec 31, and student IDs stop counting at the polls Jan 1. Two quick fixes.',
-        es: 'Tu solicitud de voto por correo vence el 31 de diciembre, y desde el 1 de enero la identificación de estudiante ya no sirve para votar. Dos cosas rápidas.'
+        en: 'Two dates to know: your mail ballot request runs out Dec 31, and student IDs stop counting at the polls Jan 1.',
+        es: 'Dos fechas para tener en cuenta: tu solicitud de boleta por correo vence el 31 de diciembre, y desde el 1 de enero la identificación de estudiante deja de servir para votar en persona.'
       },
       hookAfter: {
         date: '2027-01-01',
-        en: 'Old mail ballot requests ran out Dec 31, and student IDs no longer count at the polls. Two quick fixes before the next election.',
-        es: 'Las solicitudes de voto por correo anteriores vencieron el 31 de diciembre, y la identificación de estudiante ya no sirve para votar. Dos cosas rápidas antes de la próxima elección.'
+        en: 'New year, new rules: old mail ballot requests ran out Dec 31, and student IDs no longer count at the polls. Sort both before the next election.',
+        es: 'Año nuevo, reglas nuevas: las solicitudes de boleta por correo anteriores vencieron el 31 de diciembre, y la identificación de estudiante ya no sirve para votar en persona. Resuelve las dos cosas antes de la próxima elección.'
       },
       facts: [
         {
           id: 'mail-ballot-expires',
           text: {
             en: 'Every Florida mail ballot request on file runs out Dec 31, 2026. To vote by mail in the 2027 city elections or in 2028, request again.',
-            es: 'Todas las solicitudes de voto por correo en Florida vencen el 31 de diciembre de 2026. Para votar por correo en las elecciones municipales de 2027 o en 2028, hay que pedirla de nuevo.'
+            es: 'Todas las solicitudes de boleta por correo en Florida vencen el 31 de diciembre de 2026. Para votar por correo en las elecciones municipales de 2027 o en 2028, hay que pedir la boleta de nuevo.'
           },
-          stat: { value: 'Dec 31', label: { en: 'mail ballot requests run out (2026)', es: 'vencen las solicitudes de voto por correo (2026)' } },
+          stat: { value: 'Dec 31', label: { en: 'mail ballot requests run out (2026)', es: 'vencen las solicitudes de boleta por correo (2026)' } },
           source: 'https://www.flsenate.gov/Laws/Statutes/2025/101.62',
           sourceName: 'Florida Statutes s. 101.62(1)(a): a request covers elections through the end of the calendar year of the next regularly scheduled general election',
           sources: [
@@ -954,13 +984,13 @@ window.YSD_DATA.issues = {
           asOf: '2026-11-09',
           confidence: 'high',
           staleAfter: '2026-12-31',
-          note: 'Lead ruling (docs/research/00). When Seminole starts accepting 2027-28 requests is not confirmed: ask the SOE (407-585-8683) before giving a start date.'
+          note: 'Lead ruling (docs/research/00). Statute text re-read Nov 9, 2026: "One request is deemed sufficient to receive a vote-by-mail ballot for all elections through the end of the calendar year of the next regularly scheduled general election." When Seminole starts accepting 2027-28 requests is not confirmed: ask the SOE (407-585-8683) before giving a start date. data/civic.js tells people to renew from Jan 1, 2027.'
         },
         {
           id: 'student-id',
           text: {
             en: 'Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it’s being challenged in court). Bring a driver’s license, state ID or passport, and check voteseminole.gov before you go.',
-            es: 'Desde el 1 de enero de 2027, Florida deja de aceptar identificaciones de estudiante para votar en persona (la medida está en disputa en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir.'
+            es: 'Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar en persona (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir.'
           },
           stat: { value: 'Jan 1', label: { en: 'student IDs stop counting at the polls (2027)', es: 'la identificación de estudiante deja de servir para votar (2027)' } },
           source: 'https://flsenate.gov/Committees/BillSummaries/2026/html/991',
@@ -972,30 +1002,31 @@ window.YSD_DATA.issues = {
           verified: '2026-11-09',
           asOf: '2026-11-09',
           confidence: 'high',
-          note: 'Required copy shape from docs/research/00: keep this wording. Do not list the full set of accepted IDs from memory; link the county elections office.'
+          note: 'Required copy shape from docs/research/00: keep this wording. Do not list the full set of accepted IDs from memory; link the county elections office. Bill history re-read Nov 9, 2026: signed by officers Mar 31, approved by the Governor Apr 1, Ch. 2026-26 filed Apr 2, 2026. Lawsuit: Florida State Conference of Branches and Youth Units of the NAACP v. Byrd, filed Oct 16, 2026; Democracy Docket’s case page listed no ruling as of Nov 9, 2026. Re-check before Jan 1, 2027: if a court blocks the ban, rewrite this fact.'
         },
         {
           id: 'citizenship-check',
           text: {
-            en: 'Also starting Jan 1, 2027, Florida adds a citizenship check when people register to vote or update their registration. Registering for the first time? Do it early, so there’s time to sort out any questions.',
-            es: 'También desde el 1 de enero de 2027, Florida agrega una verificación de ciudadanía cuando alguien se inscribe para votar o actualiza su inscripción. ¿Te vas a inscribir por primera vez? Hazlo con tiempo, por si hay que resolver alguna pregunta.'
+            en: 'Also starting Jan 1, 2027, Florida adds a citizenship check when people register to vote or update their registration (that part is being challenged in court too). Registering for the first time? Do it early, so there’s time to sort out any questions.',
+            es: 'También desde el 1 de enero de 2027, Florida agrega una verificación de ciudadanía cuando alguien se inscribe para votar o actualiza su inscripción (esa parte también está impugnada en los tribunales). ¿Te vas a inscribir por primera vez? Hazlo con tiempo, por si hay que aclarar algo.'
           },
           source: 'https://flsenate.gov/Committees/BillSummaries/2026/html/991',
           sourceName: 'Florida Senate, bill summary for CS/CS/HB 991 (2026)',
           sources: [
-            { url: 'https://registertovoteflorida.gov/home', name: 'RegisterToVoteFlorida.gov (official registration site)' }
+            { url: 'https://registertovoteflorida.gov/home', name: 'RegisterToVoteFlorida.gov (official registration site)' },
+            { url: 'https://wusf.org/text/politics-issues/2026-04-01/desantis-receives-bills-voter-id-domestic-terrorist-designations', name: 'WUSF, lawsuits filed as HB 991 was signed (Apr 1, 2026): two federal suits over the proof-of-citizenship and verification rules' }
           ],
           verified: '2026-11-09',
           asOf: '2026-11-09',
           confidence: 'high',
-          note: 'Senate summary: a check of DHSMV REAL ID citizenship data for new registrants and people updating their registrations, effective Jan 1, 2027. Say it plainly, without fearmongering, and link the official register page (docs/research/00).'
+          note: 'Senate summary, effective Jan 1, 2027: "a check of Department of Highway Safety and Motor Vehicles (DHSMV) REAL ID data related to citizenship for new voter registration applicants and voters updating registrations." Suits: Florida NAACP and Florida Alliance for Retired Americans (N.D. Fla.); League of Women Voters of Florida and others (S.D. Fla.), per WUSF. A Nov 9, 2026 news search turned up no ruling; check the dockets before launch. Say it plainly, without fearmongering, and link the official register page (docs/research/00).'
         }
       ],
       ydsc: [
         {
           text: {
             en: '(DEMO) January renewal nights: phones out, and we all renew our mail ballot requests together on the county elections site.',
-            es: '(DEMO) Noches de renovación en enero: sacamos el celular y renovamos en grupo la solicitud de voto por correo en la página de elecciones del condado.'
+            es: '(DEMO) Noches de renovación en enero: sacamos el celular y renovamos en grupo la solicitud de boleta por correo en la página de elecciones del condado.'
           },
           demo: true
         },
@@ -1009,26 +1040,32 @@ window.YSD_DATA.issues = {
       ],
       action: {
         type: 'vote',
-        label: { en: 'Renew your mail ballot request', es: 'Renueva tu solicitud de voto por correo' },
+        label: { en: 'Renew your mail ballot request', es: 'Renueva tu solicitud de boleta por correo' },
         page: 'vote',
-        hash: 'mail-ballot',
+        hash: 'renew-mail-ballot',
         official: 'links.vote.voteByMail'
       },
       moreActions: [
-        { type: 'vote', label: { en: 'See the new ID rules', es: 'Mira las nuevas reglas de identificación' }, page: 'vote', hash: 'voter-id', official: 'links.vote.countyElections' },
-        { type: 'share', label: { en: 'Text 3 friends about Dec 31', es: 'Avísales a 3 amistades del 31 de diciembre' }, page: 'issues', hash: 'voting' }
+        { type: 'vote', label: { en: 'See the new ID rules', es: 'Mira las nuevas reglas de identificación' }, page: 'vote', hash: 'what-id', official: 'links.vote.countyElections' },
+        {
+          type: 'share',
+          label: { en: 'Text 3 friends about Dec 31', es: 'Avísales a 3 amistades del 31 de diciembre' },
+          labelAfter: { date: '2027-01-01', en: 'Text 3 friends about the new rules', es: 'Avísales a 3 amistades de las reglas nuevas' },
+          page: 'issues',
+          hash: 'voting'
+        }
       ],
-      eventTags: ['voting', 'textbank'],
+      eventSeries: ['renew-ready', 'text-bank', 'workshop-es', 'canvass'],
       share: {
         title: { en: 'Two voting changes', es: 'Dos cambios para votar' },
         text: {
-          en: 'Heads up: Florida mail ballot requests run out Dec 31, so request again for 2027-28. And from Jan 1, student IDs won’t work at the polls. Bring a driver’s license, state ID or passport.',
-          es: 'Ojo: las solicitudes de voto por correo en Florida vencen el 31 de diciembre, así que hay que pedirla otra vez para 2027-28. Y desde el 1 de enero, la identificación de estudiante no sirve para votar. Lleva licencia de conducir, identificación estatal o pasaporte.'
+          en: 'Heads up: every Florida mail ballot request runs out Dec 31, so request again for 2027-28. And from Jan 1, student IDs won’t count at the polls (it’s being challenged in court). Bring a driver’s license, state ID or passport.',
+          es: 'Ojo: las solicitudes de boleta por correo en Florida vencen el 31 de diciembre, así que pide la boleta de nuevo para 2027-28. Y desde el 1 de enero, la identificación de estudiante deja de servir para votar en persona (hay una demanda en contra). Lleva licencia de conducir, identificación estatal o pasaporte.'
         },
         textAfter: {
           date: '2027-01-01',
-          en: 'Heads up: old Florida mail ballot requests ran out Dec 31, so request again before the next election. And student IDs no longer work at the polls. Bring a driver’s license, state ID or passport.',
-          es: 'Ojo: las solicitudes de voto por correo anteriores en Florida vencieron el 31 de diciembre, así que hay que pedirla otra vez antes de la próxima elección. Y la identificación de estudiante ya no sirve para votar. Lleva licencia de conducir, identificación estatal o pasaporte.'
+          en: 'Heads up: old Florida mail ballot requests ran out Dec 31, so request again before the next election. And student IDs no longer count at the polls. Bring a driver’s license, state ID or passport.',
+          es: 'Ojo: las solicitudes de boleta por correo anteriores en Florida vencieron el 31 de diciembre, así que hay que pedir la boleta otra vez antes de la próxima elección. Y la identificación de estudiante ya no sirve para votar en persona. Lleva licencia de conducir, identificación estatal o pasaporte.'
         },
         page: 'issues',
         hash: 'voting'

@@ -21,7 +21,10 @@
  * quiz = {
  *   version, updated ('YYYY-MM-DD'), lang: ['en','es'], demo: false,
  *   ui: { key: {en,es} }          shared buttons and labels (progress uses {n} and {total})
- *   eventTypes: { type: { label {en,es} } }  vocabulary for result.eventTypes and events.html?type=
+ *   eventSeries: { series: { label {en,es} } }  display labels for the `series` ids in
+ *                                 data/events.js (the same ids data/levels.js badges use); used by
+ *                                 result.eventSeries and events.html?series=<id>
+ *   eventKinds: { kind: { label {en,es} } }  labels for events.js `kind` (events.html?kind=<kind>)
  *   issueFinder: Quiz,
  *   organizerEra: Quiz
  * }
@@ -45,7 +48,11 @@
  *     recency: bool               true: on a full tie, the type that led the most recent answer wins
  *     rules: [string]             the same rules in words
  *   },
- *   copy: { key: {en,es} }        result-screen strings; templates use {match}, {undertone}, {name}
+ *   copy: { key: {en,es} }        result-screen strings; templates use {match}, {undertone}, {name}.
+ *                                 issueFinder fills {match}/{undertone} with the issue's `short`
+ *                                 (Spanish shorts carry their article: "el alquiler"), organizerEra
+ *                                 with the result `name`. Capitalize the first letter when a
+ *                                 template starts with a placeholder.
  *   results: ...                  issueFinder: { [issueId]: { slug, card } }  (issue content comes
  *                                 from YSD_DATA.issues.items: title, short, color, facts, actions)
  *                                 organizerEra: [Result]
@@ -53,7 +60,8 @@
  *
  * card (share card, YSD.cards 'story' 1080x1920 and 'square') = {
  *   headline {en,es}, subline {en,es},
- *   sublineAfter? { date, en, es }  use instead of subline on/after date
+ *   sublineAfter? { date, en, es, factRef? }  use instead of subline on/after date (with its own
+ *                 factRef when the dated line rests on a different fact)
  *   factRef?  '<issueId>.<factId>'  the sourced fact behind the subline (print its source small)
  * }
  *
@@ -62,16 +70,18 @@
  *   name {en,es}                  the Spanish names are their own jokes, not translations
  *   description { en: [line1, line2], es: [line1, line2] }
  *   strengths { en: [3], es: [3] }
- *   actions [Action]              same Action shape as data/issues.js (type, label, page, hash,
- *                                 query, official?, demo?, labelAfter? {date,en,es})
- *   eventTypes [type]             keys of quiz.eventTypes
+ *   actions [Action]              same Action shape as data/issues.js (type, label, labelAfter?,
+ *                                 page, hash, query, official?, demo?)
+ *   eventSeries [series]          keys of quiz.eventSeries, best fit first
  *   card { headline, subline }    share card copy
  * }
  *
- * Page map: actions use page keys from YSD_DATA.issues.pages (index, vote, events, join, clips,
- * post...). Events filters: issue cards use ?tag=<tag>; organizer results use ?type=<eventType>.
+ * Page map: actions use page keys from YSD_DATA.issues.pages (home, issues, quiz, vote, events,
+ * join, clips, post). vote.html hashes are data/civic.js step ids (see issues.anchors). Events
+ * filters use data/events.js fields: ?series=<series> or ?kind=<kind> (no `tags` or `type` field
+ * exists there).
  *
- * Event-type caution: there is deliberately no "voter registration drive" or "petition" type.
+ * Event caution: there is deliberately no "voter registration drive" or "petition" format.
  * Florida regulates third-party voter registration (F.S. 97.0575) and petition circulating
  * (HB 1205, 2025; see docs/research/01 section 3b). Add those only after a compliance check.
  *
@@ -131,8 +141,13 @@
  * Usage: ysdScoreQuiz(YSD_DATA.quiz.issueFinder, { commute: 'transit', home: 'renting', ... })
  *
  * Checked by enumerating every answer combination (Nov 9, 2026): every result is reachable in
- * both quizzes; organizer types have equal maximum scores. See the return notes from the content
- * workstream for the measured distributions.
+ * both quizzes; organizer types have equal maximum scores (17 each). Measured shares of all
+ * combinations: issueFinder full (680,400) housing 17.5, transit 14.3, wages 13.3, water 11.9,
+ * heat 9.8, repro 9.2, schools 8.3, lgbtq 7.9, voting 7.8; quick (1,350) lgbtq 15.6 down to heat
+ * 6.3; organizerEra (1,679,616) every type 16.0-17.0. Re-run after changing any scores.
+ *
+ * Spanish terms match data/issues.js: "boleta por correo", "solicitud de boleta por correo",
+ * "inscripción", "identificación".
  */
 window.YSD_DATA = window.YSD_DATA || {};
 window.YSD_DATA.quiz = {
@@ -155,18 +170,25 @@ window.YSD_DATA.quiz = {
     demoTag: { en: 'DEMO', es: 'DEMO' }
   },
 
-  eventTypes: {
-    social: { label: { en: 'Socials', es: 'Encuentros' } },
-    debrief: { label: { en: 'Debriefs', es: 'Charlas para procesar' } },
-    canvass: { label: { en: 'Door-knocking', es: 'Puerta a puerta' } },
-    textbank: { label: { en: 'Text-a-friend nights', es: 'Noches de mensajes' } },
-    training: { label: { en: 'Trainings', es: 'Talleres' } },
-    planning: { label: { en: 'Planning sessions', es: 'Sesiones de planificación' } },
-    meeting: { label: { en: 'Monthly meetings', es: 'Reuniones mensuales' } },
-    cleanup: { label: { en: 'Cleanups', es: 'Jornadas de limpieza' } },
-    'watch-party': { label: { en: 'Watch parties', es: 'Para ver en grupo' } },
+  // Keys = data/events.js `series` ids (checked against events.js on Nov 9, 2026).
+  eventSeries: {
+    'sunset-walk': { label: { en: 'Sunset walks', es: 'Caminatas al atardecer' } },
     trivia: { label: { en: 'Trivia nights', es: 'Noches de trivia' } },
-    'creator-lab': { label: { en: 'Creator labs', es: 'Talleres de video' } }
+    'text-bank': { label: { en: 'Text-a-friend nights', es: 'Noches de mensajes' } },
+    'creator-night': { label: { en: 'Creator nights', es: 'Noches de video' } },
+    'renew-ready': { label: { en: 'Renewal parties', es: 'Fiestas para renovar' } },
+    'workshop-es': { label: { en: 'Workshops in Spanish', es: 'Talleres en español' } },
+    mixer: { label: { en: 'Member mixers', es: 'Encuentros de miembros' } },
+    sunrail: { label: { en: 'SunRail socials', es: 'Salidas en SunRail' } },
+    canvass: { label: { en: 'Neighbor check-ins', es: 'Visitas al vecindario' } },
+    karaoke: { label: { en: 'Karaoke nights', es: 'Noches de karaoke' } },
+    picnic: { label: { en: 'Picnics', es: 'Pícnics' } }
+  },
+  eventKinds: {
+    social: { label: { en: 'Hang out', es: 'Para pasarla bien' } },
+    learn: { label: { en: 'Learn something', es: 'Para aprender' } },
+    volunteer: { label: { en: 'Pitch in', es: 'Para echar una mano' } },
+    create: { label: { en: 'Make something', es: 'Para crear' } }
   },
 
   // =========================================================================== FIND YOUR ISSUE
@@ -220,7 +242,7 @@ window.YSD_DATA.quiz = {
       {
         id: 'two-am',
         core: true,
-        prompt: { en: 'It’s 2 am and you can’t sleep. What’s got you mad?', es: 'Son las 2 am y no te puedes dormir. ¿Qué te está quitando el sueño?' },
+        prompt: { en: 'It’s 2 am and you can’t sleep. What’s keeping you up?', es: 'Son las 2 am y no te puedes dormir. ¿Qué te está quitando el sueño?' },
         options: [
           { id: 'rent', label: { en: 'My rent went up again', es: 'Me volvieron a subir el alquiler' }, scores: { housing: 3 } },
           { id: 'insurance', label: { en: 'My insurance renewal letter', es: 'La carta de renovación del seguro' }, scores: { heat: 3 } },
@@ -278,7 +300,7 @@ window.YSD_DATA.quiz = {
         prompt: { en: 'Which headline would you actually tap?', es: '¿Qué titular sí abrirías?' },
         options: [
           { id: 'rent', label: { en: 'What’s actually driving rent in Seminole', es: 'Qué está subiendo de verdad el alquiler en Seminole' }, scores: { housing: 3 } },
-          { id: 'insurance', label: { en: 'Why your insurance bill keeps going up', es: 'Por qué tu seguro sigue subiendo' }, scores: { heat: 3 } },
+          { id: 'insurance', label: { en: 'Why home insurance costs so much here', es: 'Por qué el seguro de vivienda cuesta tanto aquí' }, scores: { heat: 3 } },
           { id: 'abortion-law', label: { en: 'Florida’s abortion law, in plain words', es: 'La ley de aborto de Florida, en palabras simples' }, scores: { repro: 3 } },
           { id: 'pride-rights', label: { en: 'Know your rights at Pride this year', es: 'Conoce tus derechos en Pride este año' }, scores: { lgbtq: 3 } },
           { id: 'books', label: { en: 'Which books got pulled, and who decided', es: 'Qué libros retiraron, y quién lo decidió' }, scores: { schools: 3 } },
@@ -306,7 +328,7 @@ window.YSD_DATA.quiz = {
 
     copy: {
       matchLabel: { en: 'Your match', es: 'Tu tema' },
-      undertone: { en: '{match}, with a hint of {undertone}', es: '{match}, con un toque de {undertone}' },
+      undertone: { en: '{match}, with a hint of {undertone}', es: '{match}, con {undertone} de fondo' },
       mixLabel: { en: 'Your mix', es: 'Tu mezcla' },
       notQuite: { en: 'Not quite you? See your next match', es: '¿No es lo tuyo? Mira tu siguiente opción' },
       refine: { en: 'Fine-tune it (3 more taps)', es: 'Afínalo (3 toques más)' },
@@ -337,7 +359,7 @@ window.YSD_DATA.quiz = {
         slug: 'reproductive-freedom',
         card: {
           headline: { en: 'My Seminole issue: reproductive freedom.', es: 'Mi tema en Seminole: la libertad reproductiva.' },
-          subline: { en: 'Over 60% of Seminole voted to protect abortion access in 2024. Find your issue.', es: 'Más del 60% de Seminole votó por proteger el acceso al aborto en 2024. Encuentra tu tema.' },
+          subline: { en: 'More than 60% of Seminole voters said yes to protecting abortion access in 2024. Find your issue.', es: 'Más del 60% de los votantes de Seminole dijo sí a proteger el acceso al aborto en 2024. Encuentra tu tema.' },
           factRef: 'repro.amendment-4-seminole'
         }
       },
@@ -384,11 +406,12 @@ window.YSD_DATA.quiz = {
         slug: 'voting-rights',
         card: {
           headline: { en: 'My Seminole issue: voting rights.', es: 'Mi tema en Seminole: el derecho al voto.' },
-          subline: { en: 'Mail ballot requests run out Dec 31. Find your issue.', es: 'Las solicitudes de voto por correo vencen el 31 de diciembre. Encuentra tu tema.' },
+          subline: { en: 'Mail ballot requests run out Dec 31. Find your issue.', es: 'Las solicitudes de boleta por correo vencen el 31 de diciembre. Encuentra tu tema.' },
           sublineAfter: {
             date: '2027-01-01',
             en: 'Student IDs no longer count at the polls. Find your issue.',
-            es: 'La identificación de estudiante ya no sirve para votar. Encuentra tu tema.'
+            es: 'La identificación de estudiante ya no sirve para votar en persona. Encuentra tu tema.',
+            factRef: 'voting.student-id'
           },
           factRef: 'voting.mail-ballot-expires'
         }
@@ -400,7 +423,7 @@ window.YSD_DATA.quiz = {
   organizerEra: {
     id: 'organizer-era',
     slug: 'era',
-    title: { en: 'What’s your organizer era?', es: '¿En qué modo organizas tú?' },
+    title: { en: 'What’s your organizer era?', es: '¿Cuál es tu modo de organizar?' },
     intro: {
       en: '8 quick questions. No wrong answers, and every type has a spot on the team.',
       es: '8 preguntas rápidas. No hay respuestas incorrectas, y cada tipo tiene su lugar en el equipo.'
@@ -479,7 +502,7 @@ window.YSD_DATA.quiz = {
         options: [
           { id: 'slow-clap', label: { en: 'Starting the slow clap to wrap it up', es: 'Empezando un aplauso lento para cerrar' }, scores: { hype: 2, creator: 1 } },
           { id: 'recap', label: { en: 'Typing the recap for whoever left early', es: 'Escribiendo el resumen para quien se fue temprano' }, scores: { chat: 2, data: 1 } },
-          { id: 'agenda', label: { en: 'Timing next week’s agenda so this never happens again', es: 'Midiendo la agenda de la próxima semana para que no vuelva a pasar' }, scores: { data: 2, chat: 1 } },
+          { id: 'agenda', label: { en: 'Timing next week’s agenda so this never happens again', es: 'Poniéndole tiempos a la agenda de la próxima semana para que no vuelva a pasar' }, scores: { data: 2, chat: 1 } },
           { id: 'snacks', label: { en: 'Chatting with the new person by the snacks', es: 'Conversando con la persona nueva junto a la comida' }, scores: { doors: 2, plusone: 1 } },
           { id: 'clip', label: { en: 'Getting a clip of the best moment', es: 'Grabando el mejor momento' }, scores: { creator: 2, hype: 1 } },
           { id: 'ride-home', label: { en: 'Making sure the new person has a ride home', es: 'Asegurándote de que la persona nueva tenga cómo volver a casa' }, scores: { plusone: 2, doors: 1 } }
@@ -527,7 +550,7 @@ window.YSD_DATA.quiz = {
 
     copy: {
       matchLabel: { en: 'Your organizer era', es: 'Tu modo' },
-      undertone: { en: '{match}, with {undertone} undertones', es: '{match}, con un toque de {undertone}' },
+      undertone: { en: '{match}, with {undertone} undertones', es: '{match}, con {undertone} de fondo' },
       mixLabel: { en: 'Your mix', es: 'Tu mezcla' },
       notQuite: { en: 'Not quite you? See your next match', es: '¿No es lo tuyo? Mira tu siguiente opción' },
       strengthsTitle: { en: 'What you bring', es: 'Lo que aportas' },
@@ -553,10 +576,10 @@ window.YSD_DATA.quiz = {
           es: ['Convertir una reunión en un buen momento', 'Lograr que quien viene por primera vez se quede', 'Animar sin guion']
         },
         actions: [
-          { type: 'event', label: { en: 'Find a room to fill', es: 'Busca un evento para animar' }, page: 'events', query: 'type=social', demo: true },
+          { type: 'event', label: { en: 'Find a room to fill', es: 'Busca un evento para animar' }, page: 'events', query: 'kind=social', demo: true },
           { type: 'join', label: { en: 'Offer to host or emcee a night', es: 'Ofrécete para organizar o animar una noche' }, page: 'join', hash: 'volunteer' }
         ],
-        eventTypes: ['social', 'watch-party', 'trivia', 'debrief'],
+        eventSeries: ['trivia', 'karaoke', 'mixer'],
         card: {
           headline: { en: 'I’m the Hype Captain.', es: 'Soy La Chispa.' },
           subline: { en: 'I bring the energy. You bring a friend.', es: 'Yo pongo la energía. Tú traes a alguien.' }
@@ -583,15 +606,15 @@ window.YSD_DATA.quiz = {
             labelAfter: {
               date: '2027-01-01',
               en: 'Text 3 friends to renew their mail ballot request',
-              es: 'Avísales a 3 amistades que renueven su solicitud de voto por correo'
+              es: 'Avísales a 3 amistades que renueven su solicitud de boleta por correo'
             },
             page: 'vote',
-            hash: 'mail-ballot',
+            hash: 'renew-mail-ballot',
             official: 'links.vote.voteByMail'
           },
-          { type: 'event', label: { en: 'Join a text-a-friend night', es: 'Únete a una noche de mensajes' }, page: 'events', query: 'type=textbank', demo: true }
+          { type: 'event', label: { en: 'Join a text-a-friend night', es: 'Únete a una noche de mensajes' }, page: 'events', query: 'series=text-bank', demo: true }
         ],
-        eventTypes: ['textbank', 'planning', 'debrief'],
+        eventSeries: ['text-bank', 'renew-ready'],
         card: {
           headline: { en: 'I’m the Group-Chat General.', es: 'Estoy en Modo Admin.' },
           subline: { en: 'If I texted you a deadline, it’s real.', es: 'Si te mandé una fecha, va en serio.' }
@@ -615,7 +638,7 @@ window.YSD_DATA.quiz = {
           { type: 'join', label: { en: 'Help run RSVPs and sign-ins', es: 'Ayuda con las confirmaciones y la lista de asistencia' }, page: 'join', hash: 'volunteer' },
           { type: 'vote', label: { en: 'Learn the 2027-28 election dates', es: 'Conoce las fechas de elecciones de 2027-28' }, page: 'vote', hash: 'dates', official: 'links.vote.upcomingElections' }
         ],
-        eventTypes: ['planning', 'training', 'meeting'],
+        eventSeries: ['renew-ready', 'picnic', 'text-bank'],
         card: {
           headline: { en: 'I’m the Spreadsheet Witch.', es: 'Lo mío es Magia en Celdas.' },
           subline: { en: 'Give me chaos. I’ll give you a tracker.', es: 'Dame el caos y te devuelvo una tabla.' }
@@ -636,10 +659,10 @@ window.YSD_DATA.quiz = {
           es: ['Escuchar más de lo que hablas', 'Hacer que alguien desconocido se sienta en confianza', 'Mantener la calma cuando alguien no está de acuerdo']
         },
         actions: [
-          { type: 'event', label: { en: 'Try a door-knocking training (no experience needed)', es: 'Prueba un taller de puerta a puerta (no hace falta experiencia)' }, page: 'events', query: 'type=training', demo: true },
-          { type: 'vote', label: { en: 'Learn the 2027 ID change so you can explain it', es: 'Aprende el cambio de identificación de 2027 para poder explicarlo' }, page: 'vote', hash: 'voter-id', official: 'links.vote.countyElections' }
+          { type: 'event', label: { en: 'Try a neighbor check-in shift (training included)', es: 'Prueba un turno de visitas al vecindario (con capacitación incluida)' }, page: 'events', query: 'series=canvass', demo: true },
+          { type: 'vote', label: { en: 'Learn the 2027 ID change so you can explain it', es: 'Aprende el cambio de identificación de 2027 para poder explicarlo' }, page: 'vote', hash: 'what-id', official: 'links.vote.countyElections' }
         ],
-        eventTypes: ['canvass', 'training', 'cleanup'],
+        eventSeries: ['canvass', 'sunset-walk'],
         card: {
           headline: { en: 'I’m a Door-Knock Natural.', es: 'Toc, toc: soy yo.' },
           subline: { en: 'Talking to neighbors? Honestly my favorite part.', es: '¿Hablar con los vecinos? Lo mejor del día.' }
@@ -661,9 +684,9 @@ window.YSD_DATA.quiz = {
         },
         actions: [
           { type: 'clip', label: { en: 'Post a 60-second take', es: 'Sube un video de 60 segundos' }, page: 'post' },
-          { type: 'clip', label: { en: 'Watch the reel for ideas', es: 'Mira los videos para inspirarte' }, page: 'clips' }
+          { type: 'event', label: { en: 'Come to a creator night', es: 'Ven a una noche de video' }, page: 'events', query: 'series=creator-night', demo: true }
         ],
-        eventTypes: ['creator-lab', 'social', 'watch-party'],
+        eventSeries: ['creator-night', 'picnic', 'karaoke'],
         card: {
           headline: { en: 'I’m the Creator.', es: 'Lo mío es luces, cámara, acción.' },
           subline: { en: 'Hit record. Keep it local.', es: 'Grabo lo que pasa aquí.' }
@@ -677,7 +700,7 @@ window.YSD_DATA.quiz = {
         name: { en: 'The Plus-One', es: 'Conoce a Medio Mundo' },
         description: {
           en: ['You never show up alone, and nobody you bring ever regrets it.', 'Half your friends met each other because of you.'],
-          es: ['Nunca llegas sin compañía, y nadie que llevas se arrepiente.', 'La mitad de tus amistades se conocieron gracias a ti.']
+          es: ['Nunca llegas sin compañía, y nadie a quien llevas se arrepiente.', 'La mitad de tus amistades se conocieron gracias a ti.']
         },
         strengths: {
           en: ['Bringing new people in', 'Introductions that stick', 'Remembering who needs a ride'],
@@ -685,9 +708,9 @@ window.YSD_DATA.quiz = {
         },
         actions: [
           { type: 'join', label: { en: 'Join and share your invite link', es: 'Únete y comparte tu enlace de invitación' }, page: 'join' },
-          { type: 'event', label: { en: 'Bring someone to a first-timers night', es: 'Lleva a alguien a una noche para recién llegados' }, page: 'events', query: 'type=social', demo: true }
+          { type: 'event', label: { en: 'Bring someone to a member mixer', es: 'Lleva a alguien a un encuentro de miembros' }, page: 'events', query: 'series=mixer', demo: true }
         ],
-        eventTypes: ['social', 'trivia', 'meeting'],
+        eventSeries: ['mixer', 'sunrail', 'trivia'],
         card: {
           headline: { en: 'I’m the Plus-One.', es: 'Conozco a medio mundo.' },
           subline: { en: 'Wherever I go, I’m bringing you.', es: 'Y a donde voy, te llevo.' }

@@ -2,7 +2,9 @@
  * data/civic.js: voting-help data for the Young Democrats of Seminole County (YDSC) site, EN + ES.
  *
  * REAL GUIDANCE, NOT DEMO (demo:false). Every date, rule and link was checked against official
- * sources on Mon Nov 9, 2026 (verified: '2026-11-09'). There are no demo people, counts or quotes in
+ * sources on Mon Nov 9, 2026 (verified: '2026-11-09'), then re-checked the same day by a second
+ * reader (statutes, SOE pages, DOS pages and case trackers re-fetched; copy, Spanish and schema
+ * reviewed). There are no demo people, counts or quotes in
  * this file. The vote hub, the home "next thing to do" strip, countdowns and the make-a-plan card
  * render from it. Owner of the facts: whoever edits this file must re-verify before changing a date.
  *
@@ -12,6 +14,10 @@
  * CONVENTIONS
  *  - Bilingual text is { en, es }. The Spanish is written for neutral Latin American readers, not
  *    translated word for word; it carries the same facts and links. Placeholders look like {name}.
+ *    Spanish terms, as Florida's official Spanish forms and pages use them: "voto por correo" (the
+ *    method and the SOE page), "boleta por correo" (the ballot), "solicitud de boleta por correo" (the
+ *    request), "inscribirse / inscripción" (registering), "registro de votante" (the voter record),
+ *    "votación anticipada" (early voting), "Supervisor de Elecciones" (the SOE). Keep them consistent.
  *  - Times are ISO 8601 with the America/New_York offset (EDT -04:00 or EST -05:00, checked for each
  *    local date). allDay:true means `date` is the local midnight that starts that day: show the date,
  *    never a time. A deadline with a clock time (5 pm) has allDay:false and the exact instant.
@@ -39,12 +45,15 @@
  * TOP LEVEL (window.YSD_DATA.civic)
  *   version, demo, verified, timezone, recheck{ by, what{} }, disclaimer{}, labels{}
  *   office          the Seminole County Supervisor of Elections (SOE): name, phone, address, links
- *   hotlines[]      { id, name{}, use{}, phone, tel, vanity?, alt[]?, languages[], runBy?, nonpartisan?,
- *                     linkId, source, sources?, verified, confidence, note? }
+ *   hotlines[]      { id, name{}, use{}, phone, tel, vanity?, alt[]?, languages[], hours{}?, runBy?,
+ *                     nonpartisan?, linkId, source, sources?, verified, confidence, note? (editors only) }
  *   places[]        { id, name{}, kind 'city'|'unincorporated'|'unknown', next2027 'confirmed'|'expected'|
- *                     'none-known'|'unknown', electionIds[], note{}? }  (plan builder + date scope)
- *   links{}         { <linkId>: { key, url, urlEs?, label{}, note? } } every URL the steps use, by name
+ *                     'none-known'|'unknown', electionIds[], note{}?, source?, verified?, confidence? }
+ *                     (plan builder + date scope; a place with a note carries the note's source)
+ *   links{}         { <linkId>: { key, url, urlEs?, label{}, note? (editors only) } } every URL the
+ *                     steps use, by name
  *   nextActions[]   the home "next thing to do" strip (NEXT ACTION), windows in date order
+ *   nextActionFallback { short{}, cta{} }  shown when no nextActions entry matches
  *   dates[]         elections, deadlines, expiries, rule changes (DATE ENTRY), sorted by date
  *   changes[]       "what changed" explainers (CHANGE ENTRY)
  *   steps[]         action steps (STEP ENTRY)
@@ -62,8 +71,10 @@
  *   scope[]: place ids from places[] or ['all'] (every Seminole voter)
  *   status, statusNote{}?, computed?{ rule: 'reg29'|'reg29-holiday'|'mail12'|'statute-date', from, note{} }
  *   closedPrimary? (bool), earlyVoting?{ guaranteed, minimum?{start,end}, maximum?{start,end},
- *     actual?: null (fill when the SOE posts it), note{}, source }
+ *     actual?: null (fill when the SOE posts it), note{}, source, sources[]? }
  *   mailBallotsSent?{ start, end, note{}, source }  (window the SOE mails domestic ballots, computed)
+ *     In earlyVoting and mailBallotsSent, start and end are the first and last DAYS of the window
+ *     (inclusive), written as the local midnight that starts each day. Show dates only.
  *   priority 1 (headline) | 2 | 3 (minor), countdown (bool: OK for a countdown widget),
  *   calendar (bool: OK to offer as .ics via YSD.cal), stepId?, changeId?, appliesTo[]? (election ids)
  *   source, sources[]?, verified, confidence, expires, editorNote? (for editors; never render)
@@ -87,8 +98,9 @@
  *
  * STEP ENTRY
  *   id, order, title{}, summary{}, minutes? (rough time, only where an official page says "a few
- *   minutes"; currently unused), how[] ({en,es} bullets, in order), extra[]?{ id, title{}, body{} } (sub-cards: pre-register,
- *   deadlines, return rules), cta{ label{}, linkId }, linkIds[], dateIds[]? (related dates), tone,
+ *   minutes"; currently unused), how[] ({en,es} bullets, in order), extra[]?{ id, title{}, body{} }
+ *   (sub-cards: pre-register, deadlines, return rules), cta{ label{}, linkId }, linkIds[],
+ *   dateIds[]? (related dates), hotlineIds[]? (hotlines to list as call buttons), tone,
  *   facts[]{ claim{}, source, verified, confidence }, verified
  *
  * PLAN (make-a-plan builder; see plan.howItWorks)
@@ -99,7 +111,9 @@
  *   labels{ method, when, getThere, with }: lowercase phrases for templates (option labels are
  *     sentence-case button text; never paste them into templates)
  *   pledge{ statement{ <outcome>: {} }, button{}, consent{}, wall{ optIn, display, counterName } }
- *   outputs{ card, calendar, textToSelf, invite, inviteMail }; placeholders listed in howItWorks
+ *   outputs{ card, calendar{ ..., description, descriptionMail }, textToSelf, textToSelfMail, invite,
+ *     inviteMail }: the *Mail variants replace the others when method is 'mail'; placeholders are
+ *     listed in howItWorks
  */
 window.YSD_DATA = window.YSD_DATA || {};
 window.YSD_DATA.civic = {
@@ -111,14 +125,14 @@ window.YSD_DATA.civic = {
   recheck: {
     by: "2026-12-15",
     what: {
-      en: "Before Jan 1, 2027: the SOE's mail-ballot renewal start date, any court order on HB 991, and whether the SOE has posted the 2027 city elections. Before each election: dates, early-voting sites and hours, and every link.",
-      es: "Antes del 1 de enero de 2027: la fecha en que la oficina electoral empieza a aceptar renovaciones de boleta por correo, cualquier orden judicial sobre la HB 991 y si ya publicó las elecciones municipales de 2027. Antes de cada elección: fechas, sitios y horarios de votación anticipada, y todos los enlaces."
+      en: "Before Jan 1, 2027: how the SOE treats mail-ballot requests made Nov 4 to Dec 31, 2026 (state rule says they run through 2028), any court order on HB 991, the SOE's ID page (still the pre-2027 list on Nov 9), and whether the SOE has posted the 2027 city elections. Before each election: dates, early-voting sites and hours, and every link.",
+      es: "Antes del 1 de enero de 2027: cómo trata la oficina electoral las solicitudes de boleta por correo hechas entre el 4 de noviembre y el 31 de diciembre de 2026 (según la regla estatal, sirven hasta 2028), cualquier orden judicial sobre la HB 991, la página de identificaciones de la oficina (al 9 de noviembre seguía con la lista anterior a 2027) y si ya publicó las elecciones municipales de 2027. Antes de cada elección: fechas, sitios y horarios de votación anticipada, y todos los enlaces."
     }
   },
 
   disclaimer: {
-    en: "We're Young Democrats of Seminole County, a volunteer group, not the elections office. We checked every date and rule on this page against official sources on Nov 9, 2026. Before you act on one, confirm it at voteseminole.gov or call 407-585-8683.",
-    es: "Somos Young Democrats of Seminole County, un grupo de voluntarios, no la oficina electoral. Revisamos cada fecha y regla de esta página en fuentes oficiales el 9 de noviembre de 2026. Antes de actuar, confírmala en voteseminole.gov o llama al 407-585-8683."
+    en: "We're the Young Democrats of Seminole County, a volunteer group, not the elections office. We checked every date and rule on this page against official sources on Nov 9, 2026. Before you act on one, confirm it at voteseminole.gov or call 407-585-8683.",
+    es: "Somos los Young Democrats of Seminole County, un grupo de voluntarios, no la oficina electoral. Revisamos cada fecha y regla de esta página en fuentes oficiales el 9 de noviembre de 2026. Antes de actuar, confírmala en voteseminole.gov o llama al 407-585-8683."
   },
 
   labels: {
@@ -165,10 +179,11 @@ window.YSD_DATA.civic = {
     email: "elections@voteseminole.gov",
     address: "1500 E. Airport Blvd., Sanford, FL 32773",
     mailingAddress: "P.O. Box 1479, Sanford, FL 32772",
-    hours: { en: "Regular business hours", es: "Horario normal de oficina" },
+    hours: { en: "Mon to Fri, 8 am to 5 pm", es: "De lunes a viernes, de 8 a. m. a 5 p. m." },
     linkId: "countyElections",
-    source: "https://voteseminole.gov/voters/my-voter-record/",
+    source: "https://voteseminole.gov/contact-us/",
     sources: [
+      "https://voteseminole.gov/voters/my-voter-record/",
       "https://voteseminole.gov/how-to-vote/vote-by-mail/",
       "https://voteseminole.gov/voters/voter-guide-rights-responsibilities/"
     ],
@@ -188,8 +203,10 @@ window.YSD_DATA.civic = {
       vanity: "407-585-VOTE",
       tel: "+14075858683",
       languages: [],
+      hours: { en: "Mon to Fri, 8 am to 5 pm", es: "De lunes a viernes, de 8 a. m. a 5 p. m." },
       linkId: "countyElections",
-      source: "https://voteseminole.gov/voters/my-voter-record/",
+      source: "https://voteseminole.gov/contact-us/",
+      sources: ["https://voteseminole.gov/voters/my-voter-record/"],
       verified: "2026-11-09",
       confidence: "high",
       note: "Office hours only; phone languages aren't posted (poll workers assist in your preferred language). 407-708-7705 on voteseminole.gov is the fax, not a phone line."
@@ -207,12 +224,16 @@ window.YSD_DATA.civic = {
       phone: "1-866-308-6739",
       tel: "+18663086739",
       languages: ["en", "es"],
+      hours: {
+        en: "Mon to Fri, 8 am to 5 pm, with longer hours around statewide deadlines and Election Day",
+        es: "De lunes a viernes, de 8 a. m. a 5 p. m., con horario extendido en fechas límite estatales y el día de las elecciones"
+      },
       linkId: "stateContact",
       source: "https://dos.fl.gov/elections/contacts/contact-us/",
       sources: ["https://dos.fl.gov/elections/contacts/frequently-asked-questions/faq-voter-registration/"],
       verified: "2026-11-09",
-      confidence: "med",
-      note: "dos.fl.gov refuses automated page loads, so the number was confirmed through search results for the Division's own contact page (toll-free) and its voter registration FAQ (English and Spanish, office hours). Call it once before launch to confirm."
+      confidence: "high",
+      note: "Checked on the Division's contact page (page updated Oct 29, 2026: Voter/Election Assistance Hotline, toll-free, Mon-Fri 8 am-5 pm ET, extended hours during statewide elections) and its voter registration FAQ (\"in English and Español\"). Both load in a browser; plain scripts sometimes get blocked."
     },
     {
       id: "election-protection",
@@ -303,7 +324,7 @@ window.YSD_DATA.civic = {
       key: "links.vote.checkRegistration",
       url: "https://registration.dos.fl.gov/CheckVoterStatus",
       label: { en: "Florida's statewide voter lookup", es: "Búsqueda estatal de votantes de Florida" },
-      note: "Blocks scripted checks (403); config.js records a browser check on 2026-11-09."
+      note: "Loads with a browser user agent (checked 2026-11-09); bare scripts may get a 403."
     },
     voteByMail: {
       key: "links.vote.voteByMail",
@@ -314,7 +335,7 @@ window.YSD_DATA.civic = {
       key: null,
       url: "https://seminole.electionsfl.org/vrservices/mbrs",
       label: { en: "Request a mail ballot online", es: "Pedir la boleta por correo en línea" },
-      note: "The 'Request Ballot' button on the SOE vote-by-mail page. Blocks scripted checks (403): test in a browser. Proposed config key: links.vote.mailBallotRequest."
+      note: "The 'Request Ballot' button on the SOE vote-by-mail page. Loads with a browser user agent (checked 2026-11-09); bare scripts may get a 403. Proposed config key: links.vote.mailBallotRequest."
     },
     mailBallotFormPdf: {
       key: null,
@@ -385,12 +406,12 @@ window.YSD_DATA.civic = {
       key: null,
       url: "https://dos.fl.gov/elections/contacts/contact-us/",
       label: { en: "Division of Elections contacts", es: "Contactos de la División de Elecciones" },
-      note: "Refuses automated loads; confirm in a browser."
+      note: "Loads with a browser user agent (checked 2026-11-09); bare scripts may be blocked."
     },
     electionProtection: {
       key: null,
       url: "https://866ourvote.org/",
-      label: { en: "866-OUR-VOTE (Election Protection)", es: "866-OUR-VOTE (Protección Electoral)" },
+      label: { en: "866-OUR-VOTE (Election Protection)", es: "888-VE-Y-VOTA (Protección Electoral, en español)" },
       note: "Nonpartisan; administered by the Lawyers' Committee for Civil Rights Under Law."
     },
     oviedoElections: {
@@ -402,6 +423,12 @@ window.YSD_DATA.civic = {
       key: null,
       url: "https://flsenate.gov/Session/Bill/2026/991",
       label: { en: "HB 991 (2026) on the Florida Senate site", es: "HB 991 (2026) en el sitio del Senado de Florida" }
+    },
+    stateVoteByMail: {
+      key: null,
+      url: "https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/",
+      label: { en: "Florida's vote-by-mail rules (state)", es: "Reglas del voto por correo en Florida (estado)" },
+      note: "Division of Elections page; states that a request covers elections from the date it was submitted through the end of the calendar year of the next general election. Has a Spanish page selector."
     }
   },
 
@@ -413,15 +440,15 @@ window.YSD_DATA.civic = {
       scope: ["all"],
       priority: 1,
       short: {
-        en: "Your mail-ballot request runs out Dec 31. Set a reminder to renew it on Jan 1, and you're covered through 2028.",
-        es: "Tu solicitud de boleta por correo vence el 31 de diciembre. Ponte un recordatorio para renovarla el 1 de enero y te cubre hasta finales de 2028."
+        en: "Asked for a mail ballot before Nov 3? That request runs out Dec 31. Set a reminder to renew it in January, and one request covers you through 2028.",
+        es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Ponte un recordatorio para renovarla en enero: una sola solicitud te cubre hasta finales de 2028."
       },
       cta: { label: { en: "Add the reminder", es: "Agregar el recordatorio" }, calendar: true, stepId: "renew-mail-ballot" },
       calendar: {
         title: { en: "Renew my mail-ballot request", es: "Renovar mi solicitud de boleta por correo" },
         description: {
-          en: "Old requests ended Dec 31, 2026. Renew online on Seminole's vote-by-mail page (voteseminole.gov) or call 407-585-8683 on a business day. Have your Florida license or ID number, or the last 4 of your Social Security number.",
-          es: "Las solicitudes anteriores vencieron el 31 de diciembre de 2026. Renuévala en línea en la página de voto por correo de Seminole (voteseminole.gov) o llama al 407-585-8683 en un día hábil. Ten a mano el número de tu licencia o identificación de Florida, o los últimos 4 dígitos de tu Seguro Social."
+          en: "Requests made before Nov 3, 2026 ended Dec 31. Renew online on Seminole's vote-by-mail page (voteseminole.gov) or call 407-585-8683, Mon to Fri, 8 am to 5 pm. Have your Florida license or ID number, or the last 4 digits of your Social Security number.",
+          es: "Las solicitudes hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre. Renueva la tuya en línea en la página de voto por correo de Seminole (voteseminole.gov) o llama al 407-585-8683, de lunes a viernes, de 8 a. m. a 5 p. m. Ten a mano el número de tu licencia o identificación de Florida, o los últimos 4 dígitos de tu Seguro Social."
         },
         date: "2027-01-01T00:00:00-05:00",
         allDay: true
@@ -452,8 +479,8 @@ window.YSD_DATA.civic = {
       scope: ["all"],
       priority: 2,
       short: {
-        en: "New year, new mail-ballot request. The old ones ended Dec 31, and one new request covers every election through 2028.",
-        es: "Año nuevo, solicitud nueva. Las anteriores vencieron el 31 de diciembre, y una nueva te cubre en todas las elecciones hasta finales de 2028."
+        en: "Mail-ballot requests from before Nov 3, 2026 ended Dec 31, 2026. Renew once and you're covered for every election through 2028, including your city's if it has one.",
+        es: "Las solicitudes de boleta por correo hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre de 2026. Renueva la tuya una vez y te cubre en todas las elecciones hasta finales de 2028, incluida la de tu ciudad si tiene una."
       },
       cta: { label: { en: "Renew my request", es: "Renovar mi solicitud" }, stepId: "renew-mail-ballot" },
       dateId: "ppp-2028-mail-deadline",
@@ -484,7 +511,7 @@ window.YSD_DATA.civic = {
       expectedFor: ["lake-mary", "altamonte-springs"],
       priority: 1,
       short: {
-        en: "Nov 2 is your city election. Make your plan: when, how and who's coming with you.",
+        en: "Nov 2 is your city election. Make your plan: when, how, and who's coming with you.",
         es: "El 2 de noviembre es la elección de tu ciudad. Arma tu plan: cuándo, cómo y quién va contigo."
       },
       cta: { label: { en: "Make my plan", es: "Armar mi plan" }, plan: true },
@@ -499,8 +526,8 @@ window.YSD_DATA.civic = {
       scope: ["all"],
       priority: 1,
       short: {
-        en: "The presidential primary is Mar 21, 2028, and only registered Democrats and Republicans vote in it. Registration and party changes close Tue, Feb 22.",
-        es: "La primaria presidencial es el 21 de marzo de 2028, y solo votan quienes se inscribieron como demócratas o republicanos. La inscripción y los cambios de partido cierran el martes 22 de febrero."
+        en: "Want a say in who gets the presidential nomination? Florida's Mar 21, 2028 primary is for registered Democrats and Republicans. Registration and party changes close Tue, Feb 22.",
+        es: "¿Quieres tener voz en quién gana la candidatura presidencial? La primaria de Florida del 21 de marzo de 2028 es para quienes están inscritos como demócratas o republicanos. La inscripción y los cambios de partido cierran el martes 22 de febrero."
       },
       cta: { label: { en: "How primaries work", es: "Cómo funcionan las primarias" }, stepId: "party-and-primaries" },
       dateId: "ppp-2028-reg-deadline",
@@ -544,8 +571,8 @@ window.YSD_DATA.civic = {
       scope: ["all"],
       priority: 1,
       short: {
-        en: "Make your plan for the Aug 22 primary: when, how and who's coming with you.",
-        es: "Arma tu plan para la primaria del 22 de agosto: cuándo, cómo y quién va contigo."
+        en: "Aug 22 is primary day. Make your plan, then send it to the group chat.",
+        es: "El 22 de agosto es la primaria. Arma tu plan y mándalo al chat del grupo."
       },
       cta: { label: { en: "Make my plan", es: "Armar mi plan" }, plan: true },
       dateId: "primary-2028",
@@ -560,7 +587,7 @@ window.YSD_DATA.civic = {
       priority: 1,
       short: {
         en: "The general election is Nov 7, 2028. Registration closes Tue, Oct 10. Check yours, and send this to one friend who just moved.",
-        es: "Las elecciones generales son el 7 de noviembre de 2028. La inscripción cierra el martes 10 de octubre. Revisa la tuya y mándale esto a un amigo que se acaba de mudar."
+        es: "Las elecciones generales son el 7 de noviembre de 2028. La inscripción cierra el martes 10 de octubre. Revisa la tuya y mándale esto a alguien que se acaba de mudar."
       },
       cta: { label: { en: "Check my registration", es: "Revisar mi inscripción" }, stepId: "check-registration" },
       dateId: "general-2028-reg-deadline",
@@ -598,12 +625,12 @@ window.YSD_DATA.civic = {
       kind: "expiry",
       title: { en: "Mail-ballot requests run out", es: "Vencen las solicitudes de boleta por correo" },
       short: {
-        en: "Every mail-ballot request on file ends Dec 31. Ask again starting Jan 1 and you're set through 2028.",
-        es: "Todas las solicitudes de boleta por correo vencen el 31 de diciembre. Pídela de nuevo a partir del 1 de enero y te sirve hasta finales de 2028."
+        en: "Asked for a mail ballot before the Nov 3 election? That request ends Dec 31. Renew it once and you're set through 2028.",
+        es: "¿Pediste la boleta por correo antes de las elecciones del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Renuévala una vez y te sirve hasta finales de 2028."
       },
       detail: {
-        en: "One request lasts through the end of the year of the next regular general election. That was Nov 3, 2026, so requests made in 2025 or 2026 end Dec 31, 2026.",
-        es: "Una solicitud dura hasta el final del año de las siguientes elecciones generales ordinarias. Esas fueron el 3 de noviembre de 2026, así que las solicitudes hechas en 2025 o 2026 vencen el 31 de diciembre de 2026."
+        en: "One request lasts from the day you make it through the end of the year of the next regular general election. That election was Nov 3, 2026, so requests made before it end Dec 31, 2026.",
+        es: "Una solicitud dura desde el día en que la haces hasta el final del año de las siguientes elecciones generales ordinarias. Esas elecciones fueron el 3 de noviembre de 2026, así que las solicitudes hechas antes vencen el 31 de diciembre de 2026."
       },
       date: "2026-12-31T00:00:00-05:00",
       allDay: true,
@@ -615,7 +642,11 @@ window.YSD_DATA.civic = {
       stepId: "renew-mail-ballot",
       changeId: "mail-ballot-expiry",
       source: "https://www.flsenate.gov/Laws/Statutes/2026/101.62",
-      sources: ["https://voteseminole.gov/how-to-vote/vote-by-mail/", "https://cityofoviedo.net/724/Elections"],
+      sources: [
+        "https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/",
+        "https://voteseminole.gov/how-to-vote/vote-by-mail/",
+        "https://cityofoviedo.net/724/Elections"
+      ],
       verified: "2026-11-09",
       confidence: "high",
       expires: "2027-01-01T00:00:00-05:00"
@@ -629,8 +660,8 @@ window.YSD_DATA.civic = {
         es: "Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir."
       },
       detail: {
-        en: "The same law, HB 991, also starts a citizenship check for new registrations that day.",
-        es: "La misma ley, la HB 991, también empieza ese día a verificar la ciudadanía en las nuevas inscripciones."
+        en: "The same law, HB 991, also starts a citizenship check for new registrations and record updates that day.",
+        es: "La misma ley, la HB 991, también empieza ese día a verificar la ciudadanía en las inscripciones nuevas y en los cambios de datos."
       },
       date: "2027-01-01T00:00:00-05:00",
       allDay: true,
@@ -764,11 +795,11 @@ window.YSD_DATA.civic = {
       title: { en: "Oviedo city election", es: "Elección municipal de Oviedo" },
       short: {
         en: "Oviedo votes for mayor and City Council Group 1 on Tue, Nov 2, 2027. Polls open 7 am to 7 pm.",
-        es: "Oviedo elige alcaldía y el puesto del Grupo 1 del Concejo Municipal el martes 2 de noviembre de 2027. Se vota de 7 a. m. a 7 p. m."
+        es: "Oviedo elige alcalde o alcaldesa y el puesto del Grupo 1 del Concejo Municipal el martes 2 de noviembre de 2027. Se vota de 7 a. m. a 7 p. m."
       },
       detail: {
-        en: "Oviedo holds regular city elections on the first Tuesday after the first Monday in November, every year. If only one candidate qualifies for a seat, that race comes off the ballot, which is what happened to these same seats in 2025.",
-        es: "Oviedo celebra elecciones municipales ordinarias el primer martes después del primer lunes de noviembre, todos los años. Si solo un candidato se inscribe para un puesto, esa contienda sale de la boleta, como pasó con estos mismos puestos en 2025."
+        en: "Oviedo holds regular city elections every year on the first Tuesday after the first Monday in November, and the city lists the mayor and Group 1 seats as up in 2027 (both are two-year terms). If only one candidate qualifies for a seat, that race comes off the ballot, which is what happened to these same seats in 2025.",
+        es: "Oviedo celebra elecciones municipales ordinarias todos los años, el primer martes después del primer lunes de noviembre, y la ciudad indica que en 2027 se eligen la alcaldía y el puesto del Grupo 1 (ambos con períodos de dos años). Si solo una persona se postula para un puesto, esa contienda sale de la boleta, como pasó con estos mismos puestos en 2025."
       },
       date: "2027-11-02T07:00:00-04:00",
       end: "2027-11-02T19:00:00-04:00",
@@ -873,6 +904,7 @@ window.YSD_DATA.civic = {
       stepId: "register",
       source: "https://www.flsenate.gov/Laws/Statutes/2026/97.055",
       sources: ["https://www.flsenate.gov/Laws/Statutes/2026/683.01", "https://voteseminole.gov/voters/register-to-vote/"],
+      editorNote: "97.055(2): if the 29th day is a Sunday or legal holiday, books close the next day. Precedent: in 2024, Feb 19 (Washington's Birthday) moved PPP book closing to Tue, Feb 20, 2024 (Florida DOS 2024 election dates; Broward and Brevard SOE notices).",
       verified: "2026-11-09",
       confidence: "med",
       expires: "2028-02-23T00:00:00-05:00"
@@ -885,8 +917,8 @@ window.YSD_DATA.civic = {
         es: "Último día para pedir que te envíen la boleta por correo para la primaria presidencial"
       },
       short: {
-        en: "Need your presidential primary ballot mailed? Ask by 5 pm Thu, Mar 9, 2028. A request made in 2027 already covers it.",
-        es: "¿Necesitas que te envíen la boleta de la primaria presidencial? Pídela antes de las 5 p. m. del jueves 9 de marzo de 2028. Si la pediste en 2027, ya está cubierta."
+        en: "Need your presidential primary ballot mailed? Your request has to arrive by 5 pm Thu, Mar 9, 2028. A request made after Nov 3, 2026 already covers it.",
+        es: "¿Necesitas que te envíen la boleta de la primaria presidencial? Tu solicitud tiene que llegar antes de las 5 p. m. del jueves 9 de marzo de 2028. Si la pediste después del 3 de noviembre de 2026, ya está cubierta."
       },
       date: "2028-03-09T17:00:00-05:00",
       allDay: false,
@@ -917,12 +949,12 @@ window.YSD_DATA.civic = {
       planName: { en: "the 2028 presidential primary", es: "la primaria presidencial de 2028" },
       title: { en: "Presidential preference primary", es: "Primaria de preferencia presidencial" },
       short: {
-        en: "Florida's presidential primary is Tue, Mar 21, 2028. It's closed: Democrats and Republicans each vote for their own party's candidates.",
-        es: "La primaria presidencial de Florida es el martes 21 de marzo de 2028. Es cerrada: demócratas y republicanos votan, cada uno por los candidatos de su partido."
+        en: "Florida's presidential primary is Tue, Mar 21, 2028. It's closed: Democrats vote in the Democratic race, Republicans in the Republican one.",
+        es: "La primaria presidencial de Florida es el martes 21 de marzo de 2028. Es cerrada: los demócratas votan en la contienda demócrata y los republicanos, en la republicana."
       },
       detail: {
-        en: "State law puts it on the third Tuesday in March of a presidential election year, and the Legislature can move it, so we'll recheck. Only the two major parties hold one, and a party with just one candidate doesn't appear on the ballot. Registered with no party or a minor party? There are no presidential candidates on your ballot.",
-        es: "La ley estatal la fija el tercer martes de marzo de cada año de elecciones presidenciales, y la Legislatura puede cambiarla, así que lo volveremos a revisar. Solo la celebran los dos partidos principales, y un partido con un solo candidato no aparece en la boleta. ¿Te inscribiste sin partido o en un partido minoritario? Tu boleta no tendrá candidatos presidenciales."
+        en: "State law puts it on the third Tuesday in March of a presidential election year, and the Legislature can move it, so we'll recheck. Only the two major parties hold one, and a party with just one candidate doesn't appear on the ballot. Registered with no party or a minor party? The presidential primary won't be on your ballot.",
+        es: "La ley estatal la fija el tercer martes de marzo de cada año de elecciones presidenciales, y la Legislatura puede cambiarla, así que lo volveremos a revisar. Solo la celebran los dos partidos principales, y un partido con un solo candidato no aparece en la boleta. ¿Te inscribiste sin partido o en un partido minoritario? La primaria presidencial no estará en tu boleta."
       },
       date: "2028-03-21T07:00:00-04:00",
       end: "2028-03-21T19:00:00-04:00",
@@ -938,8 +970,8 @@ window.YSD_DATA.civic = {
         rule: "statute-date",
         from: null,
         note: {
-          en: "Third Tuesday in March 2028, per state law. The elections office hasn't posted 2028 dates yet.",
-          es: "Tercer martes de marzo de 2028, según la ley estatal. La oficina electoral aún no ha publicado las fechas de 2028."
+          en: "Third Tuesday in March 2028, per state law, and the Florida Division of Elections lists Mar 21, 2028. Seminole's elections office hasn't posted 2028 dates yet.",
+          es: "Tercer martes de marzo de 2028, según la ley estatal, y la División de Elecciones de Florida indica el 21 de marzo de 2028. La oficina electoral de Seminole aún no ha publicado las fechas de 2028."
         }
       },
       closedPrimary: true,
@@ -969,6 +1001,7 @@ window.YSD_DATA.civic = {
       stepId: "party-and-primaries",
       source: "https://www.flsenate.gov/Laws/Statutes/2026/103.101",
       sources: [
+        "https://dos.fl.gov/elections/for-voters/quick-facts-presidential-preference-primary/",
         "https://www.flsenate.gov/Laws/Statutes/2026/101.021",
         "https://voteseminole.gov/faqs/",
         "https://floridaphoenix.com/2024/03/20/chair-nikki-fried-defends-democratic-partys-move-to-cancel-primary-desantis-ridiculed-the-move/"
@@ -1238,10 +1271,10 @@ window.YSD_DATA.civic = {
     {
       id: "mail-requests-expire-2028",
       kind: "expiry",
-      title: { en: "2027-28 mail-ballot requests run out", es: "Vencen las solicitudes de boleta por correo de 2027-28" },
+      title: { en: "This cycle's mail-ballot requests run out", es: "Vencen las solicitudes de boleta por correo de este ciclo" },
       short: {
-        en: "Requests made in 2027 or 2028 end Dec 31, 2028. Then you ask again.",
-        es: "Las solicitudes hechas en 2027 o 2028 vencen el 31 de diciembre de 2028. Después, se pide otra vez."
+        en: "Requests made between the Nov 3, 2026 and Nov 7, 2028 elections end Dec 31, 2028. Then you renew again.",
+        es: "Las solicitudes hechas entre las elecciones del 3 de noviembre de 2026 y las del 7 de noviembre de 2028 vencen el 31 de diciembre de 2028. Después, se renueva otra vez."
       },
       date: "2028-12-31T00:00:00-05:00",
       allDay: true,
@@ -1253,8 +1286,10 @@ window.YSD_DATA.civic = {
       stepId: "renew-mail-ballot",
       changeId: "mail-ballot-expiry",
       source: "https://www.flsenate.gov/Laws/Statutes/2026/101.62",
+      sources: ["https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/"],
       verified: "2026-11-09",
-      confidence: "high",
+      confidence: "med",
+      editorNote: "Med because Seminole hasn't said how it treats requests made Nov 4 to Dec 31, 2026; the statute and the DOS page say they run through 2028.",
       expires: "2029-01-01T00:00:00-05:00"
     }
   ],
@@ -1263,40 +1298,40 @@ window.YSD_DATA.civic = {
     {
       id: "mail-ballot-expiry",
       eyebrow: { en: "HEADS UP", es: "OJO" },
-      title: { en: "Your mail-ballot request runs out Dec 31", es: "Tu solicitud de boleta por correo vence el 31 de diciembre" },
+      title: { en: "Mail-ballot requests from before Nov 3 run out Dec 31", es: "Las solicitudes de boleta por correo hechas antes del 3 de noviembre vencen el 31 de diciembre" },
       short: {
-        en: "Asked for a mail ballot in 2025 or 2026? That request ends Dec 31. Ask again in January and you're covered through 2028.",
-        es: "¿Pediste la boleta por correo en 2025 o 2026? Esa solicitud vence el 31 de diciembre. Pídela otra vez en enero y te cubre hasta finales de 2028."
+        en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Renew it once and you're covered through 2028.",
+        es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Renuévala una vez y te cubre hasta finales de 2028."
       },
       phases: [
         {
           until: "2027-01-01T00:00:00-05:00",
           short: {
-            en: "Asked for a mail ballot in 2025 or 2026? That request ends Dec 31. Ask again in January and you're covered through 2028.",
-            es: "¿Pediste la boleta por correo en 2025 o 2026? Esa solicitud vence el 31 de diciembre. Pídela otra vez en enero y te cubre hasta finales de 2028."
+            en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Renew it once and you're covered through 2028.",
+            es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Renuévala una vez y te cubre hasta finales de 2028."
           }
         },
         {
           from: "2027-01-01T00:00:00-05:00",
           until: "2029-01-01T00:00:00-05:00",
           short: {
-            en: "Old mail-ballot requests ended Dec 31, 2026. One new request covers every election through Dec 31, 2028. Takes a few minutes.",
-            es: "Las solicitudes de boleta por correo anteriores vencieron el 31 de diciembre de 2026. Una nueva te cubre en todas las elecciones hasta el 31 de diciembre de 2028. Toma unos minutos."
+            en: "Requests made before Nov 3, 2026 ended Dec 31, 2026. One new request covers every election through Dec 31, 2028.",
+            es: "Las solicitudes hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre de 2026. Una nueva te cubre en todas las elecciones hasta el 31 de diciembre de 2028."
           }
         }
       ],
       body: [
         {
-          en: "In Florida, one mail-ballot request lasts through the end of the year of the next regular general election. The last one was Nov 3, 2026, so every request on file ends Dec 31, 2026. That's the law, not a glitch, and it happens every two years.",
-          es: "En Florida, una solicitud de boleta por correo dura hasta el final del año de las siguientes elecciones generales ordinarias. Las últimas fueron el 3 de noviembre de 2026, así que todas las solicitudes vencen el 31 de diciembre de 2026. Es la ley, no un error, y pasa cada dos años."
+          en: "In Florida, one mail-ballot request lasts from the day you make it through the end of the year of the next regular general election. That election was Nov 3, 2026, so every request made before it ends Dec 31, 2026. That's the law, not a glitch, and it happens every two years.",
+          es: "En Florida, una solicitud de boleta por correo dura desde el día en que la haces hasta el final del año de las siguientes elecciones generales ordinarias. Esas elecciones fueron el 3 de noviembre de 2026, así que todas las solicitudes hechas antes vencen el 31 de diciembre de 2026. Es la ley, no un error, y pasa cada dos años."
         },
         {
-          en: "Starting Jan 1, 2027, ask again online, by phone at 407-585-8683, or on a signed paper form. One new request covers every election through Dec 31, 2028, including a 2027 city election if your city has one.",
-          es: "A partir del 1 de enero de 2027, pídela otra vez en línea, por teléfono al 407-585-8683 o con un formulario en papel firmado. Una nueva solicitud te cubre en todas las elecciones hasta el 31 de diciembre de 2028, incluida una elección municipal en 2027 si tu ciudad tiene una."
+          en: "Renew online, by phone at 407-585-8683, or on a signed paper form. One new request covers every election through Dec 31, 2028, including a 2027 city election if your city has one.",
+          es: "Renueva la tuya en línea, por teléfono al 407-585-8683 o con un formulario en papel firmado. Una nueva solicitud te cubre en todas las elecciones hasta el 31 de diciembre de 2028, incluida una elección municipal en 2027 si tu ciudad tiene una."
         },
         {
-          en: "Asking before Jan 1? Call the Supervisor of Elections and confirm it carries into 2027. The office hasn't posted when 2027-28 requests open.",
-          es: "¿La vas a pedir antes del 1 de enero? Llama a la oficina del Supervisor de Elecciones y confirma que sirva para 2027. La oficina no ha publicado desde cuándo acepta solicitudes para 2027-28."
+          en: "Renewing before Jan 1? Under the state's rule, a request made after Nov 3 should already count through 2028. Seminole hasn't posted how it's handling these yet, so look yourself up on My Voter Record in January and make sure your request shows.",
+          es: "¿La renuevas antes del 1 de enero? Según la regla del estado, una solicitud hecha después del 3 de noviembre ya debería servir hasta finales de 2028. Seminole todavía no ha publicado cómo las está manejando, así que búscate en My Voter Record en enero y confirma que tu solicitud aparezca."
         }
       ],
       effective: "2026-12-31T00:00:00-05:00",
@@ -1304,7 +1339,7 @@ window.YSD_DATA.civic = {
       showUntil: "2028-11-08T00:00:00-05:00",
       tone: "calm",
       stepId: "renew-mail-ballot",
-      linkIds: ["voteByMail", "mailBallotRequest", "myVoterRecord"],
+      linkIds: ["voteByMail", "mailBallotRequest", "myVoterRecord", "stateVoteByMail"],
       facts: [
         {
           claim: {
@@ -1314,6 +1349,15 @@ window.YSD_DATA.civic = {
           source: "https://www.flsenate.gov/Laws/Statutes/2026/101.62",
           verified: "2026-11-09",
           confidence: "high"
+        },
+        {
+          claim: {
+            en: "The Florida Division of Elections says a request covers all elections from the date it was submitted through the end of the calendar year of the next regularly scheduled general election, so a request made after Nov 3, 2026 should run through Dec 31, 2028.",
+            es: "La División de Elecciones de Florida indica que una solicitud cubre todas las elecciones desde la fecha en que se presentó hasta el final del año calendario de las siguientes elecciones generales ordinarias, así que una solicitud hecha después del 3 de noviembre de 2026 debería servir hasta el 31 de diciembre de 2028."
+          },
+          source: "https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/",
+          verified: "2026-11-09",
+          confidence: "med"
         },
         {
           claim: {
@@ -1327,7 +1371,7 @@ window.YSD_DATA.civic = {
         {
           claim: {
             en: "Last cycle, Oviedo told residents that all vote-by-mail requests expired on 12/31/2024.",
-            es: "En el ciclo anterior, Oviedo avisó que todas las solicitudes de voto por correo vencieron el 31/12/2024."
+            es: "En el ciclo anterior, Oviedo avisó que todas las solicitudes de boleta por correo vencieron el 31/12/2024."
           },
           source: "https://cityofoviedo.net/724/Elections",
           verified: "2026-11-09",
@@ -1335,12 +1379,12 @@ window.YSD_DATA.civic = {
         },
         {
           claim: {
-            en: "Seminole hasn't posted how it treats requests made in Nov-Dec 2026. Last cycle, neighboring Osceola's elections office said every request made before 2025 had expired, which takes in requests made after the November 2024 election.",
-            es: "Seminole no ha publicado cómo trata las solicitudes hechas en noviembre y diciembre de 2026. En el ciclo anterior, la oficina electoral del condado vecino de Osceola dijo que todas las solicitudes hechas antes de 2025 habían vencido, lo que incluye las hechas después de las elecciones de noviembre de 2024."
+            en: "As of Nov 9, 2026, Seminole's vote-by-mail page hasn't said how it treats requests made after the Nov 3 election; it still reads that requests received now apply to the Nov 3 General Election.",
+            es: "Al 9 de noviembre de 2026, la página de voto por correo de Seminole no ha dicho cómo trata las solicitudes hechas después de las elecciones del 3 de noviembre; todavía dice que las solicitudes recibidas ahora se aplican a las elecciones generales del 3 de noviembre."
           },
-          source: "https://www.aroundosceola.com/news/voting-mail-26-make-sure-your-request-valid",
+          source: "https://voteseminole.gov/how-to-vote/vote-by-mail/",
           verified: "2026-11-09",
-          confidence: "med"
+          confidence: "high"
         }
       ],
       verified: "2026-11-09"
@@ -1359,12 +1403,12 @@ window.YSD_DATA.civic = {
       },
       body: [
         {
-          en: "That means any card a school issues, even a public college or university, like a UCF or Seminole State ID. Debit and credit cards, and retirement-center, neighborhood-association and public-assistance IDs, come off the list too.",
-          es: "Eso incluye cualquier tarjeta emitida por una escuela o institución educativa, aunque sea pública, como la de UCF o Seminole State. También salen de la lista las tarjetas de débito y crédito, y las identificaciones de residencias de jubilados, asociaciones de vecinos y asistencia pública."
+          en: "That means any card a school issues, even a public college or university, like a UCF or Seminole State ID. Debit and credit cards, and retirement-center, neighborhood-association, and public-assistance IDs, come off the list too. One addition: a U.S. passport card now counts.",
+          es: "Eso incluye cualquier tarjeta emitida por una escuela o institución educativa, aunque sea pública, como la de UCF o Seminole State. También salen de la lista las tarjetas de débito y crédito, y las identificaciones de residencias de jubilados, asociaciones de vecinos y asistencia pública. Una novedad: ahora también sirve la tarjeta pasaporte de EE. UU."
         },
         {
           en: "At check-in you need photo and signature ID. One card with both works. If your photo ID has no signature, bring a second ID that has one. No ID? You can still vote a provisional ballot.",
-          es: "Al registrarte en el lugar de votación necesitas una identificación con foto y firma. Una sola tarjeta con las dos sirve. Si tu identificación con foto no tiene firma, lleva otra que sí la tenga. ¿Sin identificación? Igual puedes votar con una boleta provisional."
+          es: "Cuando te presentas a votar necesitas una identificación con foto y firma. Una sola tarjeta con las dos sirve. Si tu identificación con foto no tiene firma, lleva otra que sí la tenga. ¿Sin identificación? Igual puedes votar con una boleta provisional."
         },
         {
           en: "The new list also applies to the ID you send to fix a signature problem on a mail or provisional ballot.",
@@ -1384,7 +1428,7 @@ window.YSD_DATA.civic = {
       facts: [
         {
           claim: {
-            en: "HB 991 (Ch. 2026-26) removes student, retirement-center, neighborhood-association and public-assistance IDs from the accepted photo IDs, effective Jan 1, 2027.",
+            en: "HB 991 (Ch. 2026-26) removes student, retirement-center, neighborhood-association, and public-assistance IDs from the accepted photo IDs, effective Jan 1, 2027.",
             es: "La HB 991 (Cap. 2026-26) elimina de las identificaciones con foto aceptadas las de estudiante, residencias de jubilados, asociaciones de vecinos y asistencia pública, a partir del 1 de enero de 2027."
           },
           source: "https://flsenate.gov/Committees/BillSummaries/2026/html/991",
@@ -1442,18 +1486,18 @@ window.YSD_DATA.civic = {
     {
       id: "citizenship-check",
       eyebrow: { en: "NEW IN 2027", es: "NUEVO EN 2027" },
-      title: { en: "New registrations get a citizenship check", es: "Las nuevas inscripciones pasan por una verificación de ciudadanía" },
+      title: { en: "Registrations and updates get a citizenship check", es: "Las inscripciones y los cambios de datos pasan por una verificación de ciudadanía" },
       short: {
-        en: "From Jan 1, 2027, Florida checks citizenship when you register or update your record. It starts with driver-license records; if those can't confirm it, the elections office will ask you for proof.",
-        es: "Desde el 1 de enero de 2027, Florida verifica la ciudadanía cuando te inscribes o actualizas tu registro. Empieza con los registros de licencias de conducir; si con eso no se confirma, la oficina electoral te pedirá un comprobante."
+        en: "From Jan 1, 2027, Florida checks citizenship when you register or update your record. It starts with driver-license records; if those can't confirm it, the elections office checks other records and may ask you for proof.",
+        es: "Desde el 1 de enero de 2027, Florida verifica la ciudadanía cuando te inscribes o actualizas tu registro. Empieza con los registros de licencias de conducir; si con eso no se confirma, la oficina electoral revisa otros registros y puede pedirte un comprobante."
       },
       body: [
         {
-          en: "Only U.S. citizens can vote in Florida, and that isn't new. What's new: starting Jan 1, 2027, when you register, or update your name, address or party, the state checks your citizenship against driver-license and state ID records.",
+          en: "Only U.S. citizens can vote in Florida, and that isn't new. What's new: starting Jan 1, 2027, when you register, or update your name, address, or party, the state checks your citizenship against driver-license and state ID records.",
           es: "Solo los ciudadanos estadounidenses pueden votar en Florida, y eso no es nuevo. Lo nuevo: desde el 1 de enero de 2027, cuando te inscribes o actualizas tu nombre, dirección o partido, el estado verifica tu ciudadanía con los registros de licencias de conducir e identificaciones estatales."
         },
         {
-          en: "If those records can't confirm it, or you don't have a Florida license, state ID or Social Security number, the Supervisor of Elections checks other government sources and may ask you for proof, like a U.S. birth certificate, a U.S. passport or a naturalization certificate.",
+          en: "If those records can't confirm it, or you don't have a Florida license, state ID, or Social Security number, the Supervisor of Elections checks other government sources and may ask you for proof, like a U.S. birth certificate, a U.S. passport, or a naturalization certificate.",
           es: "Si esos registros no lo confirman, o si no tienes licencia de Florida, identificación estatal ni número de Seguro Social, la oficina del Supervisor de Elecciones revisa otras fuentes del gobierno y puede pedirte un comprobante, como un acta de nacimiento de EE. UU., un pasaporte estadounidense o un certificado de naturalización."
         },
         {
@@ -1462,11 +1506,11 @@ window.YSD_DATA.civic = {
         },
         {
           en: "Already registered? Keep your address current and open mail from the elections office. If you get a notice, answer it by the date on it, and call 407-585-8683 with any questions.",
-          es: "¿Ya tienes tu inscripción? Mantén tu dirección al día y abre el correo de la oficina electoral. Si te llega un aviso, contéstalo antes de la fecha que indica y llama al 407-585-8683 si tienes preguntas."
+          es: "¿Ya te inscribiste? Mantén tu dirección al día y abre el correo de la oficina electoral. Si te llega un aviso, contéstalo antes de la fecha que indica y llama al 407-585-8683 si tienes preguntas."
         },
         {
-          en: "Two federal lawsuits filed in April 2026 challenge these rules. We haven't found a court order pausing them as of Nov 9, 2026.",
-          es: "Dos demandas federales presentadas en abril de 2026 impugnan estas reglas. Al 9 de noviembre de 2026 no encontramos ninguna orden judicial que las suspenda."
+          en: "Several federal lawsuits challenge these rules. As of Nov 9, 2026, we haven't found any court order pausing them.",
+          es: "Varias demandas federales impugnan estas reglas. Al 9 de noviembre de 2026 no encontramos ninguna orden judicial que las suspenda."
         }
       ],
       effective: "2027-01-01T00:00:00-05:00",
@@ -1514,10 +1558,14 @@ window.YSD_DATA.civic = {
         },
         {
           claim: {
-            en: "Lawsuits filed Apr 1, 2026 in the Northern and Southern Districts of Florida challenge HB 991's citizenship requirements.",
-            es: "Demandas presentadas el 1 de abril de 2026 en los distritos Norte y Sur de Florida impugnan los requisitos de ciudadanía de la HB 991."
+            en: "Two lawsuits filed Apr 1, 2026 and a third filed Sep 1, 2026 challenge HB 991's citizenship rules; they now sit in the Southern District of Florida, and the case tracker lists motions and a trial date but no order pausing the law as of Nov 9, 2026.",
+            es: "Dos demandas presentadas el 1 de abril de 2026 y una tercera del 1 de septiembre de 2026 impugnan las reglas de ciudadanía de la HB 991; ahora están en el Distrito Sur de Florida, y el registro del caso muestra mociones y una fecha de juicio, pero ninguna orden que suspenda la ley al 9 de noviembre de 2026."
           },
-          source: "https://wusf.org/text/politics-issues/2026-04-01/desantis-receives-bills-voter-id-domestic-terrorist-designations",
+          source: "https://www.democracydocket.com/cases/florida-citizenship-requirement-challenge-unidosus/",
+          sources: [
+            "https://wusf.org/text/politics-issues/2026-04-01/desantis-receives-bills-voter-id-domestic-terrorist-designations",
+            "https://www.democracydocket.com/cases/florida-citizenship-requirement-challenge/"
+          ],
           verified: "2026-11-09",
           confidence: "med"
         }
@@ -1532,8 +1580,8 @@ window.YSD_DATA.civic = {
       order: 1,
       title: { en: "Register or update your info", es: "Inscríbete o actualiza tus datos" },
       summary: {
-        en: "A few minutes online. Same form for first-timers, new addresses, new names and party changes.",
-        es: "Unos minutos en línea. El mismo formulario sirve para inscribirte por primera vez, cambiar de dirección, de nombre o de partido."
+        en: "A few minutes online. The same form works for first-timers, new addresses, and party changes.",
+        es: "Unos minutos en línea. El mismo formulario sirve para inscribirte por primera vez, cambiar de dirección o cambiar de partido."
       },
       how: [
         {
@@ -1541,12 +1589,12 @@ window.YSD_DATA.civic = {
           es: "Entra en RegisterToVoteFlorida.gov (tiene versión en inglés y en español). Ten a mano tu licencia de conducir o tarjeta de identificación de Florida."
         },
         {
-          en: "No Florida license or ID? Fill it out online, then print, sign and mail or drop it off. Or use the paper form from the Supervisor of Elections, in English or Spanish.",
-          es: "¿No tienes licencia ni identificación de Florida? Llena la solicitud en línea y luego imprímela, fírmala y envíala por correo o entrégala. O usa el formulario en papel de la oficina del Supervisor de Elecciones, en inglés o en español."
+          en: "Changing your name or signature, or no Florida license or ID? Use the paper form from the Supervisor of Elections (in English or Spanish), sign it, and mail it or drop it off in Sanford.",
+          es: "¿Cambias tu nombre o tu firma, o no tienes licencia ni identificación de Florida? Usa el formulario en papel de la oficina del Supervisor de Elecciones (en inglés o en español), fírmalo y envíalo por correo o entrégalo en Sanford."
         },
         {
-          en: "To vote in Seminole you need to be a U.S. citizen and live in Florida and in Seminole County. There are a couple of other rules on the official page.",
-          es: "Para votar en Seminole tienes que ser ciudadano estadounidense y vivir en Florida y en el condado de Seminole. Hay un par de reglas más en la página oficial."
+          en: "To vote in Seminole you need to be a U.S. citizen, live in Seminole County, and be 18 (16 to pre-register). The official page lists the rest.",
+          es: "Para votar en Seminole tienes que ser ciudadano estadounidense, vivir en el condado de Seminole y tener 18 años (16 para preinscribirte). La página oficial explica el resto."
         },
         {
           en: "Give it up to two weeks, then look yourself up to make sure it went through.",
@@ -1578,8 +1626,8 @@ window.YSD_DATA.civic = {
       facts: [
         {
           claim: {
-            en: "The online application registers first-time voters, updates addresses within Florida and changes party; a paper form is available in English and Spanish.",
-            es: "La solicitud en línea sirve para inscribirse por primera vez, actualizar la dirección dentro de Florida y cambiar de partido; hay formulario en papel en inglés y en español."
+            en: "The online application registers first-time voters, updates addresses within Florida, changes party, and requests a new voter card; name or signature updates, or problems with the online form, go on the paper application (English and Spanish), by mail or in person.",
+            es: "La solicitud en línea sirve para inscribirse por primera vez, actualizar la dirección dentro de Florida, cambiar de partido y pedir una nueva tarjeta de votante; los cambios de nombre o firma, o los problemas con el formulario en línea, se resuelven con la solicitud en papel (en inglés y en español), por correo o en persona."
           },
           source: "https://voteseminole.gov/voters/register-to-vote/",
           verified: "2026-11-09",
@@ -1614,8 +1662,8 @@ window.YSD_DATA.civic = {
         },
         {
           claim: {
-            en: "The state's online registration system can be switched to Spanish with an 'español' button.",
-            es: "El sistema estatal de inscripción en línea se puede cambiar a español con el botón 'español'."
+            en: "RegisterToVoteFlorida.gov is available in English and Spanish (state FAQ, 2018 edition; the system was rebuilt in 2023).",
+            es: "RegisterToVoteFlorida.gov está disponible en inglés y en español (preguntas frecuentes del estado, edición de 2018; el sistema se renovó en 2023)."
           },
           source: "https://dos.fl.gov/media/698338/ovr-faq-spanish.pdf",
           verified: "2026-11-09",
@@ -1632,8 +1680,8 @@ window.YSD_DATA.civic = {
         },
         {
           claim: {
-            en: "Online applicants without a Florida license or ID get a pre-filled form to print, sign and deliver.",
-            es: "Quien se inscribe en línea sin licencia ni identificación de Florida recibe un formulario prellenado para imprimir, firmar y entregar."
+            en: "From Jan 1, 2027, online applicants without a Florida license or ID get a pre-filled form to print, sign, and deliver.",
+            es: "Desde el 1 de enero de 2027, quien se inscribe en línea sin licencia ni identificación de Florida recibe un formulario prellenado para imprimir, firmar y entregar."
           },
           source: "https://www.flsenate.gov/Session/Bill/2026/991/Analyses/h0991z1.GOS.PDF",
           verified: "2026-11-09",
@@ -1652,11 +1700,11 @@ window.YSD_DATA.civic = {
       },
       how: [
         {
-          en: "Look yourself up on My Voter Record with your first name, last name and date of birth.",
+          en: "Look yourself up on My Voter Record with your first name, last name, and date of birth.",
           es: "Búscate en My Voter Record (Mi registro de votante) con tu nombre, apellido y fecha de nacimiento."
         },
         {
-          en: "It shows whether you're registered, your address, your mail-ballot request, where you vote and your sample ballot.",
+          en: "It shows whether you're registered, your address, your mail-ballot request, where you vote, and your sample ballot.",
           es: "Ahí ves si tu inscripción está activa, tu dirección, tu solicitud de boleta por correo, dónde votas y tu boleta de muestra."
         },
         {
@@ -1696,23 +1744,23 @@ window.YSD_DATA.civic = {
     {
       id: "renew-mail-ballot",
       order: 3,
-      title: { en: "Renew your mail ballot", es: "Renueva tu boleta por correo" },
+      title: { en: "Renew your mail-ballot request", es: "Renueva tu solicitud de boleta por correo" },
       summary: {
-        en: "Every request ends Dec 31, 2026. One new request covers 2027 and 2028.",
-        es: "Todas las solicitudes vencen el 31 de diciembre de 2026. Una nueva te cubre en 2027 y 2028."
+        en: "Requests made before Nov 3, 2026 end Dec 31. One new request covers 2027 and 2028.",
+        es: "Las solicitudes hechas antes del 3 de noviembre de 2026 vencen el 31 de diciembre. Una nueva te cubre en 2027 y 2028."
       },
       how: [
         {
-          en: "From Jan 1, 2027, request online through the Supervisor of Elections, or call 407-585-8683.",
-          es: "Desde el 1 de enero de 2027, pídela en línea con la oficina del Supervisor de Elecciones o llama al 407-585-8683."
+          en: "Request online through the Supervisor of Elections, or call 407-585-8683 (Mon to Fri, 8 am to 5 pm). Doing it before Jan 1? Check My Voter Record in January to make sure it shows.",
+          es: "Pídela en línea con la oficina del Supervisor de Elecciones o llama al 407-585-8683 (de lunes a viernes, de 8 a. m. a 5 p. m.). ¿La pides antes del 1 de enero? Revisa My Voter Record en enero para confirmar que aparezca."
         },
         {
           en: "Have one number ready: your Florida driver license number, your Florida ID card number, or the last four digits of your Social Security number.",
           es: "Ten a mano uno de estos números: el de tu licencia de conducir de Florida, el de tu tarjeta de identificación de Florida o los últimos cuatro dígitos de tu Seguro Social."
         },
         {
-          en: "Want it sent somewhere other than the address on your record, like a dorm? That request has to be in writing, with your signature, by mail, fax or email.",
-          es: "¿Quieres que te la envíen a otra dirección que no es la de tu registro, como una residencia estudiantil? Esa solicitud tiene que ser por escrito y con tu firma, por correo, fax o email."
+          en: "Want it sent somewhere other than the address on your record, like a dorm? That request has to be in writing, with your signature, by mail, fax, or email.",
+          es: "¿Quieres que te la envíen a una dirección distinta de la de tu registro, como una residencia estudiantil? Esa solicitud tiene que ser por escrito y con tu firma, por correo, fax o email."
         },
         {
           en: "Once your ballot is printed, track it like a package.",
@@ -1732,16 +1780,16 @@ window.YSD_DATA.civic = {
           id: "return",
           title: { en: "Getting it back on time", es: "Devolverla a tiempo" },
           body: {
-            en: "Your voted ballot has to arrive by 7 pm on Election Day. Postmarks don't count. Mail it, drop it at the elections office in Sanford during business hours, or use a secure ballot intake station at an early-voting site during early-voting hours. Close to Election Day, dropping it off in person is the safer bet.",
-            es: "Tu boleta votada tiene que llegar antes de las 7 p. m. del día de las elecciones. El matasellos no cuenta. Envíala por correo, entrégala en la oficina electoral en Sanford en horario de oficina o déjala en una estación segura de recepción de boletas en un sitio de votación anticipada, durante ese horario. Si falta poco para el día de las elecciones, es más seguro entregarla en persona."
+            en: "Your voted ballot has to arrive by 7 pm on Election Day. Postmarks don't count. Mail it, drop it at the elections office in Sanford during business hours, or use a secure ballot intake station at an early-voting site during early-voting hours. Close to Election Day, dropping it off in person is the safer bet. On Election Day itself, the Sanford office is the only drop-off spot, until 7 pm.",
+            es: "Tu boleta votada tiene que llegar antes de las 7 p. m. del día de las elecciones. El matasellos no cuenta. Envíala por correo, entrégala en la oficina electoral en Sanford en horario de oficina o déjala en una estación segura de recepción de boletas en un sitio de votación anticipada, durante ese horario. Si falta poco para el día de las elecciones, es más seguro entregarla en persona. El mismo día de las elecciones, solo se recibe en la oficina de Sanford, hasta las 7 p. m."
           }
         },
         {
           id: "cure",
           title: { en: "Forgot to sign?", es: "¿Se te olvidó firmar?" },
           body: {
-            en: "If you forget to sign the envelope or your signature doesn't match, the elections office contacts you. Send the fix form by 5 pm on the second day after the election and your vote can still count.",
-            es: "Si se te olvida firmar el sobre o tu firma no coincide, la oficina electoral se comunica contigo. Envía el formulario de corrección antes de las 5 p. m. del segundo día después de la elección y tu voto todavía puede contar."
+            en: "If you forget to sign the envelope or your signature doesn't match, the elections office sends you a notice. Get the fix form back to the office by 5 pm on the second day after the election (in person, by mail, fax, or email), and your vote can still count.",
+            es: "Si se te olvida firmar el sobre o tu firma no coincide, la oficina electoral te envía un aviso. Haz que el formulario de corrección llegue a la oficina antes de las 5 p. m. del segundo día después de la elección (en persona, por correo, fax o email) y tu voto todavía puede contar."
           }
         },
         {
@@ -1754,7 +1802,7 @@ window.YSD_DATA.civic = {
         }
       ],
       cta: { label: { en: "Renew my request", es: "Renovar mi solicitud" }, linkId: "voteByMail" },
-      linkIds: ["voteByMail", "mailBallotRequest", "mailBallotFormPdf", "trackBallot", "mailCureFormPdf"],
+      linkIds: ["voteByMail", "mailBallotRequest", "mailBallotFormPdf", "trackBallot", "mailCureFormPdf", "myVoterRecord"],
       dateIds: ["mail-requests-expire-2026", "city-2027-mail-deadline", "ppp-2028-mail-deadline", "primary-2028-mail-deadline", "general-2028-mail-deadline"],
       tone: "calm",
       facts: [
@@ -1793,6 +1841,16 @@ window.YSD_DATA.civic = {
           source: "https://voteseminole.gov/how-to-vote/vote-by-mail/",
           verified: "2026-11-09",
           confidence: "high"
+        },
+        {
+          claim: {
+            en: "On Election Day, mail ballots may only be turned in at the Supervisor of Elections office, before 7 pm; the office is open Mon to Fri, 8 am to 5 pm.",
+            es: "El día de las elecciones, las boletas por correo solo se pueden entregar en la oficina del Supervisor de Elecciones, antes de las 7 p. m.; la oficina abre de lunes a viernes, de 8 a. m. a 5 p. m."
+          },
+          source: "https://voteseminole.gov/faqs/",
+          sources: ["https://voteseminole.gov/contact-us/"],
+          verified: "2026-11-09",
+          confidence: "high"
         }
       ],
       verified: "2026-11-09"
@@ -1807,7 +1865,7 @@ window.YSD_DATA.civic = {
       },
       how: [
         {
-          en: "Find it with the address lookup map, or on your voter record, voter card or sample ballot.",
+          en: "Find it with the address lookup map, or on your voter record, voter card, or sample ballot.",
           es: "Encuéntralo en el mapa de búsqueda por dirección, o en tu registro de votante, tu tarjeta de votante o tu boleta de muestra."
         },
         {
@@ -1863,7 +1921,7 @@ window.YSD_DATA.civic = {
       title: { en: "Vote early", es: "Vota por adelantado" },
       summary: {
         en: "Open to every registered voter, at any Seminole early-voting site. The most popular way to vote here.",
-        es: "Abierta a todos los votantes inscritos, en cualquier sitio de votación anticipada de Seminole. Es la forma más popular de votar aquí."
+        es: "La votación anticipada está abierta a todos los votantes inscritos, en cualquier sitio de Seminole. Es la forma más popular de votar aquí."
       },
       how: [
         {
@@ -2012,8 +2070,8 @@ window.YSD_DATA.civic = {
           es: "¿Quieres cambiar de partido? Lo puedes hacer cuando quieras. Para que cuente en una primaria, tiene que hacerse antes de que cierre la inscripción, 29 días antes."
         },
         {
-          en: "We're the Young Democrats, so yes, we'd love your vote in a Democratic primary. You're welcome at everything we do either way.",
-          es: "Somos los Young Democrats, así que sí, nos encantaría tu voto en una primaria demócrata. De cualquier forma, tienes un lugar en todo lo que hacemos."
+          en: "We're the Young Democrats, so yes, we'd love to see you in the Democratic primary. Either way, you're welcome at everything we do.",
+          es: "Somos los Young Democrats, así que sí, nos encantaría verte votar en la primaria demócrata. De cualquier forma, tienes un lugar en todo lo que hacemos."
         }
       ],
       cta: { label: { en: "Update my party", es: "Actualizar mi partido" }, linkId: "register" },
@@ -2205,8 +2263,8 @@ window.YSD_DATA.civic = {
       id: "faq-college",
       q: { en: "I go to school out of town. Where should I register?", es: "Estudio fuera de la ciudad. ¿Dónde me inscribo?" },
       a: {
-        en: "Pick one place as your legal residence, home or school, and register there; you can't be registered in two places. Staying registered in Seminole? Ask for your mail ballot to be sent to your school address, in writing, with your signature.",
-        es: "Escoge un solo lugar como tu residencia legal, la casa de tu familia o donde estudias, e inscríbete ahí; no puedes tener inscripción en dos lugares. ¿Sigues con tu inscripción en Seminole? Pide que te envíen la boleta por correo a tu dirección de estudiante, por escrito y con tu firma."
+        en: "Pick one place as your legal residence, home or school, and register there; you can't be registered and voting in two places at once. Staying registered in Seminole? Ask for your mail ballot to be sent to your school address, in writing, with your signature.",
+        es: "Escoge un solo lugar como tu residencia legal, la casa de tu familia o donde estudias, e inscríbete ahí; no puedes estar inscrito y votar en dos lugares a la vez. ¿Sigues con tu inscripción en Seminole? Pide que te envíen la boleta por correo a tu dirección de estudiante, por escrito y con tu firma."
       },
       linkIds: ["voteByMail", "mailBallotFormPdf"],
       tags: ["students", "vote-by-mail"],
@@ -2259,21 +2317,21 @@ window.YSD_DATA.civic = {
       id: "faq-mail-expire",
       q: { en: "I already asked for a mail ballot. Am I set for 2027?", es: "Ya pedí la boleta por correo. ¿Me sirve para 2027?" },
       a: {
-        en: "Not yet. Every request on file ends Dec 31, 2026. Ask again starting Jan 1, 2027, and that one request covers every election through Dec 31, 2028.",
-        es: "No. Todas las solicitudes vencen el 31 de diciembre de 2026. Pídela otra vez a partir del 1 de enero de 2027, y esa sola solicitud te cubre en todas las elecciones hasta el 31 de diciembre de 2028."
+        en: "Depends on when you asked. Before the Nov 3, 2026 election: no, that request ends Dec 31, 2026, so renew it once and you're covered through Dec 31, 2028. After Nov 3: under the state's rule it should already run through 2028, but check My Voter Record in January to be sure.",
+        es: "Depende de cuándo la pediste. Antes de las elecciones del 3 de noviembre de 2026: no, esa solicitud vence el 31 de diciembre de 2026; renuévala una vez y te cubre hasta el 31 de diciembre de 2028. Después del 3 de noviembre: según la regla del estado ya debería servir hasta finales de 2028, pero revisa My Voter Record en enero para confirmarlo."
       },
-      linkIds: ["voteByMail", "mailBallotRequest"],
+      linkIds: ["voteByMail", "mailBallotRequest", "myVoterRecord"],
       tags: ["vote-by-mail", "2027"],
       source: "https://www.flsenate.gov/Laws/Statutes/2026/101.62",
-      sources: ["https://voteseminole.gov/how-to-vote/vote-by-mail/"],
+      sources: ["https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/", "https://voteseminole.gov/how-to-vote/vote-by-mail/"],
       verified: "2026-11-09",
-      confidence: "high"
+      confidence: "med"
     },
     {
       id: "faq-mail-number",
       q: { en: "What do I need to request a mail ballot?", es: "¿Qué necesito para pedir la boleta por correo?" },
       a: {
-        en: "Your name, address, date of birth and one number: your Florida driver license number, Florida ID number, or the last four digits of your Social Security number. Request online or call 407-585-8683.",
+        en: "Your name, address, date of birth, and one number: your Florida driver license number, Florida ID number, or the last four digits of your Social Security number. Request online or call 407-585-8683.",
         es: "Tu nombre, dirección, fecha de nacimiento y un número: el de tu licencia de conducir de Florida, el de tu identificación de Florida o los últimos cuatro dígitos de tu Seguro Social. Pídela en línea o llama al 407-585-8683."
       },
       linkIds: ["mailBallotRequest", "voteByMail"],
@@ -2287,12 +2345,13 @@ window.YSD_DATA.civic = {
       id: "faq-postmark",
       q: { en: "Does a postmark count for my mail ballot?", es: "¿Cuenta el matasellos de mi boleta por correo?" },
       a: {
-        en: "No. It has to arrive by 7 pm on Election Day. Running late? Drop it at the elections office in Sanford during business hours, or at an early-voting site during early-voting hours.",
-        es: "No. Tiene que llegar antes de las 7 p. m. del día de las elecciones. ¿Se te hace tarde? Entrégala en la oficina electoral en Sanford en horario de oficina, o en un sitio de votación anticipada durante ese horario."
+        en: "No. It has to arrive by 7 pm on Election Day. Running late? Drop it at the elections office in Sanford during business hours, or at an early-voting site during early-voting hours. On Election Day itself, the Sanford office is the only drop-off spot.",
+        es: "No. Tiene que llegar antes de las 7 p. m. del día de las elecciones. ¿Se te hace tarde? Entrégala en la oficina electoral en Sanford en horario de oficina, o en un sitio de votación anticipada durante ese horario. El mismo día de las elecciones, solo se recibe en la oficina de Sanford."
       },
       linkIds: ["voteByMail", "trackBallot"],
       tags: ["vote-by-mail"],
       source: "https://voteseminole.gov/how-to-vote/vote-by-mail/",
+      sources: ["https://voteseminole.gov/faqs/"],
       verified: "2026-11-09",
       confidence: "high"
     },
@@ -2376,7 +2435,7 @@ window.YSD_DATA.civic = {
       id: "faq-public-record",
       q: { en: "Is my voter registration public?", es: "¿Mi inscripción de votante es pública?" },
       a: {
-        en: "Mostly, yes. Your registration becomes public record except your driver license number, Social Security number and signature. Some occupations can ask to keep their information private.",
+        en: "Mostly, yes. Your registration becomes public record except your driver license number, Social Security number, and signature. Some occupations can ask to keep their information private.",
         es: "En su mayoría, sí. Tu inscripción es un registro público, salvo tu número de licencia de conducir, tu número de Seguro Social y tu firma. Algunas profesiones pueden pedir que su información sea privada."
       },
       linkIds: ["soeFaq"],
@@ -2405,7 +2464,7 @@ window.YSD_DATA.civic = {
     version: 1,
     title: { en: "Make your voting plan", es: "Arma tu plan para votar" },
     intro: {
-      en: "A few quick taps: when, how, who's coming. You get a calendar reminder and a card for the group chat. Your address never goes on it.",
+      en: "A few quick taps: when, how, and who's coming. You get a calendar reminder and a card for the group chat. Your address never goes on it.",
       es: "Unos toques rápidos: cuándo, cómo y con quién. Te llevas un recordatorio para el calendario y una tarjeta para el chat del grupo. Tu dirección nunca aparece en ella."
     },
     privacy: {
@@ -2472,8 +2531,8 @@ window.YSD_DATA.civic = {
           {
             id: "mail", label: { en: "By mail", es: "Por correo" }, stepId: "renew-mail-ballot",
             note: {
-              en: "Request it first (requests from 2025-26 end Dec 31, 2026). It has to arrive back by 7 pm on Election Day.",
-              es: "Primero pídela (las solicitudes de 2025-26 vencen el 31 de diciembre de 2026). Tiene que llegar de vuelta antes de las 7 p. m. del día de las elecciones."
+              en: "Request it first (requests made before Nov 3, 2026 end Dec 31, 2026). It has to arrive back by 7 pm on Election Day.",
+              es: "Primero pídela (las solicitudes hechas antes del 3 de noviembre de 2026 vencen el 31 de diciembre de 2026). Tiene que llegar de vuelta antes de las 7 p. m. del día de las elecciones."
             }
           },
           {
@@ -2533,7 +2592,7 @@ window.YSD_DATA.civic = {
         options: [
           { id: "walk-bike", label: { en: "Walk or bike", es: "Caminando o en bici" } },
           { id: "drive", label: { en: "Drive", es: "Manejando" } },
-          { id: "ride-friend", label: { en: "Ride with a friend", es: "Con un amigo que me lleve" } },
+          { id: "ride-friend", label: { en: "Ride with a friend", es: "Con alguien que me lleve" } },
           { id: "transit", label: { en: "Bus or train", es: "En bus o tren" } },
           {
             id: "figuring-out", label: { en: "Still figuring it out", es: "Todavía no sé" },
@@ -2581,8 +2640,8 @@ window.YSD_DATA.civic = {
       "helper": {
         title: { en: "You count here", es: "Aquí cuentas" },
         body: {
-          en: "Not being able to vote doesn't mean you can't make a difference. Help a friend make their plan, and come to our next meetup.",
-          es: "No poder votar no significa que no puedas marcar la diferencia. Ayuda a un amigo a armar su plan y ven a nuestra próxima reunión."
+          en: "Voting is one way in, not the only one. Help a friend make their plan, and come to our next meetup.",
+          es: "Votar es una forma de participar, no la única. Ayuda a alguien a armar su plan y ven a nuestra próxima reunión."
         },
         stepIds: []
       }
@@ -2607,7 +2666,7 @@ window.YSD_DATA.civic = {
       getThere: {
         "walk-bike": { en: "walking or biking", es: "caminando o en bici" },
         "drive": { en: "driving", es: "manejando" },
-        "ride-friend": { en: "riding with a friend", es: "con un amigo que me lleva" },
+        "ride-friend": { en: "riding with a friend", es: "con alguien que me lleva" },
         "transit": { en: "by bus or train", es: "en bus o tren" },
         "figuring-out": { en: "ride still to be sorted", es: "todavía viendo cómo llegar" }
       },
@@ -2621,21 +2680,21 @@ window.YSD_DATA.civic = {
     pledge: {
       statement: {
         "plan": {
-          en: "I'm in. I've got a plan to vote in the {election}.",
+          en: "I'm in. I've got a plan to vote in {election}.",
           es: "Cuenten conmigo. Tengo un plan para votar en {election}."
         },
         "under-18": {
-          en: "I'm in. I'll pre-register at 16 and help someone vote before then.",
-          es: "Cuenten conmigo. Me voy a preinscribir a los 16 y, mientras tanto, voy a ayudar a alguien a votar."
+          en: "I'm in. I'll pre-register as soon as I can, and help someone vote in the meantime.",
+          es: "Cuenten conmigo. Me voy a preinscribir en cuanto pueda y, mientras tanto, voy a ayudar a alguien a votar."
         },
         "helper": {
           en: "I'm in. I'll help a friend make their voting plan.",
-          es: "Cuenten conmigo. Voy a ayudar a un amigo a armar su plan para votar."
+          es: "Cuenten conmigo. Voy a ayudar a alguien a armar su plan para votar."
         }
       },
       button: { en: "I'm in", es: "Cuenten conmigo" },
       consent: {
-        en: "Show my first name, last initial and city on the pledge wall. (Optional. You can take it down anytime.)",
+        en: "Show my first name, last initial, and city on the pledge wall. (Optional. You can take it down anytime.)",
         es: "Mostrar mi nombre, la inicial de mi apellido y mi ciudad en el muro de compromisos. (Opcional. Lo puedes quitar cuando quieras.)"
       },
       wall: {
@@ -2666,17 +2725,25 @@ window.YSD_DATA.civic = {
           en: "My plan: {method}, {when}, {with}. Bring photo and signature ID. Polls: 7 am to 7 pm. Check details at voteseminole.gov or call 407-585-8683.",
           es: "Mi plan: {method}, {when}, {with}. Lleva identificación con foto y firma. Horario: 7 a. m. a 7 p. m. Revisa los detalles en voteseminole.gov o llama al 407-585-8683."
         },
+        descriptionMail: {
+          en: "My plan: {method}, {when}. My ballot has to reach the elections office by 7 pm on Election Day; postmarks don't count. Track it or check details at voteseminole.gov, or call 407-585-8683.",
+          es: "Mi plan: {method}, {when}. Mi boleta tiene que llegar a la oficina electoral antes de las 7 p. m. del día de las elecciones; el matasellos no cuenta. Rastréala o revisa los detalles en voteseminole.gov, o llama al 407-585-8683."
+        },
         remindersMinutesBefore: [10080, 1440],
         deadlineEvent: {
           title: { en: "Deadline: {deadlineTitle}", es: "Fecha límite: {deadlineTitle}" },
           description: { en: "{deadlineShort}", es: "{deadlineShort}" },
           remindersMinutesBefore: [10080, 1440]
         },
-        rule: "Election event from the date entry (date to end). Add a second event for the deadline picked for {deadlineTitle}. Respect each entry's allDay flag. For mail voters, the election event is the return deadline (7 pm Election Day); say so in the description."
+        rule: "Election event from the date entry (date to end). Add a second event for the deadline picked for {deadlineTitle}. Respect each entry's allDay flag. For mail voters, the election event is the return deadline (7 pm Election Day) and uses descriptionMail instead of description."
       },
       textToSelf: {
         en: "My voting plan for {election} ({electionDate}): {method}, {when}, {with}. Bring photo and signature ID. {url}",
         es: "Mi plan para votar en {election} ({electionDate}): {method}, {when}, {with}. Lleva identificación con foto y firma. {url}"
+      },
+      textToSelfMail: {
+        en: "My voting plan for {election} ({electionDate}): {method}, {when}. It has to reach the elections office by 7 pm on Election Day. {url}",
+        es: "Mi plan para votar en {election} ({electionDate}): {method}, {when}. Tiene que llegar a la oficina electoral antes de las 7 p. m. del día de las elecciones. {url}"
       },
       invite: {
         en: "I'm voting {when} in {election} ({electionDate}). Come with me? Make your plan here: {url}",
@@ -2718,7 +2785,7 @@ window.YSD_DATA.civic = {
   ],
 
   sourceTitles: {
-    "https://www.flsenate.gov/Laws/Statutes/2026/101.62": { en: "Fla. Stat. 101.62 (2026), vote-by-mail requests", es: "Estatuto de Florida 101.62 (2026), solicitudes de voto por correo", publisher: "The Florida Senate" },
+    "https://www.flsenate.gov/Laws/Statutes/2026/101.62": { en: "Fla. Stat. 101.62 (2026), vote-by-mail requests", es: "Estatuto de Florida 101.62 (2026), solicitudes de boleta por correo", publisher: "The Florida Senate" },
     "https://www.flsenate.gov/Laws/Statutes/2026/97.055": { en: "Fla. Stat. 97.055 (2026), when registration closes", es: "Estatuto de Florida 97.055 (2026), cierre de la inscripción", publisher: "The Florida Senate" },
     "https://www.flsenate.gov/Laws/Statutes/2026/97.041": { en: "Fla. Stat. 97.041 (2026), who can register; pre-registration at 16", es: "Estatuto de Florida 97.041 (2026), quién puede inscribirse; preinscripción a los 16", publisher: "The Florida Senate" },
     "https://www.flsenate.gov/Laws/Statutes/2026/101.043": { en: "Fla. Stat. 101.043 (2026), ID required at the polls (as amended by HB 991)", es: "Estatuto de Florida 101.043 (2026), identificación para votar (reformado por la HB 991)", publisher: "The Florida Senate" },
@@ -2736,6 +2803,8 @@ window.YSD_DATA.civic = {
     "https://www.flsenate.gov/Session/Bill/2026/991/Analyses/h0991z1.GOS.PDF": { en: "HB 991 final bill analysis (Apr 2, 2026)", es: "Análisis final de la HB 991 (2 de abril de 2026)", publisher: "Florida House of Representatives" },
     "https://www.democracydocket.com/wp-content/uploads/2026/10/2026-10-16-Complaint.pdf": { en: "Complaint, Fla. State Conf. of Branches and Youth Units of the NAACP v. Byrd (S.D. Fla., Oct 16, 2026)", es: "Demanda, Fla. State Conf. of Branches and Youth Units of the NAACP v. Byrd (Distrito Sur de Florida, 16 de octubre de 2026)", publisher: "Democracy Docket (court filing copy)" },
     "https://www.democracydocket.com/cases/florida-student-id-ban-challenge/": { en: "Case page: Florida student ID ban challenge", es: "Página del caso: impugnación de la prohibición de la identificación de estudiante en Florida", publisher: "Democracy Docket" },
+    "https://www.democracydocket.com/cases/florida-citizenship-requirement-challenge-unidosus/": { en: "Case page: Florida citizenship requirement challenge (UnidosUS v. Byrd, consolidated)", es: "Página del caso: impugnación del requisito de ciudadanía en Florida (UnidosUS v. Byrd, casos unificados)", publisher: "Democracy Docket" },
+    "https://www.democracydocket.com/cases/florida-citizenship-requirement-challenge/": { en: "Case page: Florida citizenship requirement challenge (NAACP, filed Apr 1, 2026)", es: "Página del caso: impugnación del requisito de ciudadanía en Florida (NAACP, presentada el 1 de abril de 2026)", publisher: "Democracy Docket" },
     "https://wusf.org/text/politics-issues/2026-04-01/desantis-receives-bills-voter-id-domestic-terrorist-designations": { en: "Lawsuits filed after DeSantis signs HB 991 (Apr 1, 2026)", es: "Demandas tras la firma de la HB 991 (1 de abril de 2026)", publisher: "WUSF" },
     "https://voteseminole.gov/how-to-vote/vote-by-mail/": { en: "Vote by mail", es: "Voto por correo (en inglés)", publisher: "Seminole County Supervisor of Elections" },
     "https://voteseminole.gov/voters/register-to-vote/": { en: "Register to vote or update your record", es: "Inscripción y actualización (en inglés)", publisher: "Seminole County Supervisor of Elections" },
@@ -2745,6 +2814,7 @@ window.YSD_DATA.civic = {
     "https://voteseminole.gov/how-to-vote/early-voting/": { en: "Early voting", es: "Votación anticipada (en inglés)", publisher: "Seminole County Supervisor of Elections" },
     "https://voteseminole.gov/elections/upcoming-elections/": { en: "Upcoming elections", es: "Próximas elecciones (en inglés)", publisher: "Seminole County Supervisor of Elections" },
     "https://voteseminole.gov/faqs/": { en: "Elections office FAQs", es: "Preguntas frecuentes de la oficina electoral (en inglés)", publisher: "Seminole County Supervisor of Elections" },
+    "https://voteseminole.gov/contact-us/": { en: "Contact the elections office (phone, office hours, address)", es: "Contacto de la oficina electoral: teléfono, horario y dirección (en inglés)", publisher: "Seminole County Supervisor of Elections" },
     "https://voteseminole.gov/voters/voter-guide-rights-responsibilities/": { en: "Voter guide, Voter Bill of Rights", es: "Guía y derechos del votante (en inglés)", publisher: "Seminole County Supervisor of Elections" },
     "https://voteseminole.gov/wp-content/uploads/2026/04/UPDATED2026-Election-Facts.pdf": { en: "2026 Election Facts (PDF; Spanish edition linked from Upcoming elections)", es: "Detalles de las elecciones de 2026 (PDF; hay edición en español en Próximas elecciones)", publisher: "Seminole County Supervisor of Elections" },
     "https://voteseminole.gov/wp-content/uploads/2026/07/Totals-of-Voters-by-Cities.pdf": { en: "Totals of Voters by Cities, July 1, 2026 (PDF): 167,246 of 338,525 active voters live outside any city", es: "Total de votantes por ciudad, 1 de julio de 2026 (PDF): 167,246 de 338,525 votantes activos viven fuera de las ciudades", publisher: "Seminole County Supervisor of Elections" },
@@ -2752,9 +2822,10 @@ window.YSD_DATA.civic = {
     "https://floridaphoenix.com/2024/03/20/chair-nikki-fried-defends-democratic-partys-move-to-cancel-primary-desantis-ridiculed-the-move/": { en: "Florida Democrats' 2024 presidential primary was canceled with one candidate (Mar 20, 2024)", es: "La primaria presidencial demócrata de 2024 en Florida se canceló con un solo candidato (20 de marzo de 2024)", publisher: "Florida Phoenix" },
     "https://cityofoviedo.net/724/Elections": { en: "City of Oviedo: Elections", es: "Ciudad de Oviedo: Elecciones (en inglés)", publisher: "City of Oviedo" },
     "https://www.yahoo.com/news/articles/candidates-three-seminole-cities-win-125700315.html": { en: "Candidates in three Seminole cities win seats without opposition (Sep 5, 2025)", es: "Candidatos en tres ciudades de Seminole ganan sin oposición (5 de septiembre de 2025)", publisher: "Orlando Sentinel via Yahoo News" },
-    "https://www.aroundosceola.com/news/voting-mail-26-make-sure-your-request-valid": { en: "Voting by mail in '26? Make sure your request is valid (Jan 29, 2026)", es: "¿Votas por correo en 2026? Asegúrate de que tu solicitud esté vigente (29 de enero de 2026)", publisher: "Around Osceola" },
     "https://dos.fl.gov/media/698338/ovr-faq-spanish.pdf": { en: "Online voter registration FAQ, Spanish edition (PDF)", es: "Preguntas frecuentes sobre la inscripción en línea (PDF, en español)", publisher: "Florida Department of State" },
     "https://dos.fl.gov/elections/contacts/contact-us/": { en: "Division of Elections: contact us", es: "División de Elecciones: contacto (en inglés)", publisher: "Florida Department of State" },
+    "https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/": { en: "Division of Elections: vote-by-mail (when a request expires)", es: "División de Elecciones: voto por correo (cuándo vence una solicitud)", publisher: "Florida Department of State" },
+    "https://dos.fl.gov/elections/for-voters/quick-facts-presidential-preference-primary/": { en: "Division of Elections: presidential preference primary quick facts (next PPP Mar 21, 2028)", es: "División de Elecciones: datos sobre la primaria de preferencia presidencial (la próxima es el 21 de marzo de 2028; en inglés)", publisher: "Florida Department of State" },
     "https://dos.fl.gov/elections/contacts/frequently-asked-questions/faq-voter-registration/": { en: "Division of Elections: voter registration FAQ", es: "División de Elecciones: preguntas frecuentes sobre inscripción (en inglés)", publisher: "Florida Department of State" },
     "https://866ourvote.org/": { en: "Election Protection: 866-OUR-VOTE", es: "Protección Electoral: 866-OUR-VOTE y 888-VE-Y-VOTA", publisher: "Election Protection coalition (Lawyers' Committee for Civil Rights Under Law)" },
     "https://doi.org/10.1177/0956797609359326": { en: "Nickerson & Rogers, Do You Have a Voting Plan? (Psychological Science, 2010)", es: "Nickerson y Rogers, Do You Have a Voting Plan? (Psychological Science, 2010)", publisher: "SAGE / Association for Psychological Science" },
