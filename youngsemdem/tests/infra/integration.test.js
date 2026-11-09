@@ -260,6 +260,8 @@ async function main() {
         out.actblue = Y.share.actblue(25);
         out.actblueMine = Y.share.actblue(10, { mine: true });
         out.squadNow = Y.members.squad().length;
+        out.squadDefault = Y.members.squad({ now: Date.now() + 3 * 3600e3 }).length;
+        window.YSD_CONFIG.features.demoSquadGrowth = true; // opt in; off by default (BRIEF 0)
         out.squadLater = Y.members.squad({ now: Date.now() + 3 * 3600e3 });
         out.trackJoin = Y.track.history().filter((x) => x.event === 'join').map((x) => x.props);
         return out;
@@ -291,6 +293,7 @@ async function main() {
       eq(ab.searchParams.get('refcode2'), 'utm_tiktok', 'actblue refcode2 = utm_source');
       eq(new URL(r.actblueMine).searchParams.get('refcode'), 'ref_' + r.me.refCode, 'actblue {mine:true} uses my code');
       eq(r.squadNow, 0, 'no squad right after joining');
+      eq(r.squadDefault, 0, 'default config: no simulated squad (BRIEF 0)');
       ok(r.squadLater.length >= 3 && r.squadLater.every((s) => s.demo === true && s.simulated === true && s.referredBy === r.me.refCode),
         'simulated demo squad appears over time, flagged demo+simulated', r.squadLater);
       ok(r.trackJoin.length === 1 && r.trackJoin[0].referred === 'true' && !('email' in r.trackJoin[0]), 'track join {referred} without personal data', r.trackJoin);

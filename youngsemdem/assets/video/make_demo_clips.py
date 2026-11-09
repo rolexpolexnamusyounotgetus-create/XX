@@ -65,11 +65,12 @@ PHOTOS = {
         'description': 'Railroad track running to the horizon at sunset (tagged California). '
                        'Stand-in, not SunRail.',
     },
-    'rooftop': {
-        'id': '1758272134088-d3d58d939d12',
-        'page': 'https://unsplash.com/photos/a-diverse-group-of-friends-taking-a-selfie-outdoors--WBVWFBfoEc',
+    'park': {
+        # Replaced the rooftop-party selfie (1758272134088, drink in hand), banned by docs/BRIEF.md 0.
+        'id': '1758275557330-cfd545444dc3',
+        'page': 'https://images.unsplash.com/photo-1758275557330-cfd545444dc3',
         'photographer': 'Vitaly Gariev', 'handle': '@silverkblack',
-        'description': 'A diverse group of friends taking a selfie on a rooftop at a summer party.',
+        'description': 'A diverse group of friends taking a selfie together in a sunny park.',
     },
     'sticker': {
         'id': '1787091331480-c1e2b98e0140',
@@ -142,7 +143,7 @@ SPECS = [
         'title': 'SunRail to the rally',
         'segments': [
             {'photo': 'tracks', 'seconds': 5.4, 'focus': [(0.50, 0.58), (0.50, 0.62)], 'zoom': (1.0, 1.22)},
-            {'photo': 'rooftop', 'seconds': 5.0, 'focus': [(0.44, 0.50), (0.58, 0.50)], 'zoom': (1.0, 1.06)},
+            {'photo': 'park', 'seconds': 5.0, 'focus': [(0.46, 0.46), (0.58, 0.44)], 'zoom': (1.0, 1.06)},
         ],
         'lines': [
             ('4 Seminole stops:\nSanford, Lake Mary,\nLongwood, Altamonte Springs', 0.8, 5.0, 'light'),

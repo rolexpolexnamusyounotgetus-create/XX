@@ -88,7 +88,7 @@ window.YSD_DATA.clips = {
       "height": 1280,
       "orientation": "vertical",
       "duration": 9.9,
-      "bytes": 879840,
+      "bytes": 991261,
       "audio": false,
       "caption": "Took SunRail to the rally. No parking, no stress. Who is riding next time?",
       "author": {
@@ -127,14 +127,14 @@ window.YSD_DATA.clips = {
           "description": "Railroad track running to the horizon at sunset (tagged California). Stand-in, not SunRail."
         },
         {
-          "url": "https://images.unsplash.com/photo-1758272134088-d3d58d939d12",
-          "downloadUrl": "https://images.unsplash.com/photo-1758272134088-d3d58d939d12?w=2400&q=85&fm=jpg",
-          "page": "https://unsplash.com/photos/a-diverse-group-of-friends-taking-a-selfie-outdoors--WBVWFBfoEc",
+          "url": "https://images.unsplash.com/photo-1758275557330-cfd545444dc3",
+          "downloadUrl": "https://images.unsplash.com/photo-1758275557330-cfd545444dc3?w=2400&q=85&fm=jpg",
+          "page": "https://images.unsplash.com/photo-1758275557330-cfd545444dc3",
           "photographer": "Vitaly Gariev",
           "photographerHandle": "@silverkblack",
           "license": "Unsplash License",
           "licenseUrl": "https://unsplash.com/license",
-          "description": "A diverse group of friends taking a selfie on a rooftop at a summer party."
+          "description": "A diverse group of friends taking a selfie together in a sunny park."
         }
       ]
     },

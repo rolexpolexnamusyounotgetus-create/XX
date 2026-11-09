@@ -313,7 +313,13 @@ async function nodeTests() {
   });
 
   await section('node: members validate / join / refCode / squad', async () => {
-    const w = sandbox();
+    // Simulated squad growth and live counters are OFF by default (BRIEF 0: no fake social proof);
+    // this section opts in to test the simulation itself, and checks the default below.
+    const wOff = sandbox();
+    const mOff = wOff.YSD.members.join({ firstName: 'Kira', email: 'off@example.com', age: 22 });
+    eq(wOff.YSD.members.squad({ now: mOff.joinedAt + 86400e3 }).length, 0, 'default config: no simulated squad');
+    wOff.YSD.counters.stopLive();
+    const w = sandbox({ preConfig: { features: { demoSquadGrowth: true, demoLiveCounters: true } } });
     const M = w.YSD.members;
     const v0 = M.validate({});
     ok(!v0.ok && v0.errors.firstName === 'required' && v0.errors.email === 'required', 'empty profile errors', v0.errors);
@@ -684,7 +690,7 @@ async function browserTests() {
       ok(r.blob[0] === 'image/png' && r.blob[1] > 5000, 'toBlob PNG', r.blob);
       eq(r.theme.brand, '#00ff00', 'theme reads --ysd-card-brand');
       eq(r.theme.accent, '#0000ff', 'theme falls back to --ysd-accent');
-      eq(r.theme.pop, '#ffd23f', 'theme falls back to config hex');
+      eq(String(r.theme.pop).toUpperCase(), '#C8F03C', 'theme falls back to config hex (config.theme.pop)');
       eq(r.custom.join(','), '600,315,255,0,0', 'custom template, size and theme override');
       eq(r.unknown, 'rejected', 'unknown template rejects');
       ok(r.wrap[0] === 2 && r.wrap[1] === true && r.wrap[2] === '…', 'wrapText maxLines + ellipsis', r.wrap);
@@ -720,6 +726,10 @@ async function browserTests() {
       await page.clock.install({ time: new Date('2026-11-09T12:00:00-05:00') });
       await page.goto(base + '/__core_test__.html');
       await page.evaluate(() => {
+        // opt in: both simulations are off by default (BRIEF 0)
+        window.YSD_CONFIG.features.demoSquadGrowth = true;
+        window.YSD_CONFIG.features.demoLiveCounters = true;
+        if (window.YSD.counters.startLive) window.YSD.counters.startLive();
         window.__events = [];
         document.addEventListener('ysd:squad', (e) => window.__events.push(e.detail.added.length));
         window.__cb = 0;

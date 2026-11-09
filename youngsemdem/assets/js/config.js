@@ -85,9 +85,9 @@
       defaultLocale: 'en',
       /** Default share title/description (PLACEHOLDER copy). */
       title: 'Young Democrats of Seminole County',
-      description: 'The Young Democrats of Seminole County, Florida: ages 14 to 39.',
+      description: 'Young Democrats in Seminole County, FL, ages 14 to 39: free hangouts, straight answers about voting, and a crew that saves you a seat.',
       /** Absolute or root-relative default share image ('' = none yet). */
-      ogImage: '',
+      ogImage: 'assets/img/og/default.png',
       /** Domain used in calendar UIDs while site.url is '' (any host, file:// too), so UIDs stay stable across preview hosts. */
       uidDomain: 'youngsemdems'
     },
@@ -180,6 +180,8 @@
        * application/x-www-form-urlencoded (Netlify Forms, Formspree and similar).
        */
       formEndpoint: '',
+      /** RSVP endpoint (assets/js/rsvp.js production seam, BRIEF 5.4). '' = local only. */
+      rsvpEndpoint: '',
       formEncoding: 'json',
       /** Netlify Forms needs the form name in the body when formEncoding is 'form'. */
       formName: 'join',
@@ -230,7 +232,7 @@
       /** Mailing address for privacy requests and the disclaimer (data/legal.js). '' = not set yet. */
       mailingAddress: '',
       /** Small line drawn on share cards ('' = none). */
-      cardFooter: ''
+      cardFooter: 'Paid for by [committee name and address placeholder] · DEMO'
     },
 
     /**
@@ -249,16 +251,17 @@
      * cards --ysd-card-<key> first. These hexes are only used when a variable is missing.
      */
     theme: {
-      bg: '#101114',
-      fg: '#ffffff',
-      brand: '#2f5bea',
-      accent: '#ff4f8b',
-      pop: '#ffd23f',
-      muted: '#9aa0aa',
-      ink: '#101114',
-      paper: '#ffffff',
-      fontDisplay: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-      fontBody: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+      // Brand fallbacks ("Celery City Pop", docs/BRIEF.md 3.2). Live values come from tokens.css.
+      bg: '#FFF6EA',
+      fg: '#170B33',
+      brand: '#6A2BFF',
+      accent: '#FF7AC6',
+      pop: '#C8F03C',
+      muted: '#574D70',
+      ink: '#170B33',
+      paper: '#FFF6EA',
+      fontDisplay: '"Bricolage Grotesque", "Bricolage Fallback", system-ui, sans-serif',
+      fontBody: '"Atkinson Hyperlegible Next", "Atkinson Fallback", system-ui, sans-serif'
     },
 
     share: {
@@ -314,7 +317,7 @@
 
     cards: {
       /** Font specs to wait for before drawing (CSS font shorthand, e.g. '800 64px Inter'). */
-      fonts: [],
+      fonts: ['800 64px "Bricolage Grotesque"', '400 32px "Atkinson Hyperlegible Next"', '700 32px "Atkinson Hyperlegible Next"'],
       /** Draw a small DEMO mark on cards in demo mode. */
       demoWatermark: true
     },
@@ -348,10 +351,10 @@
       cards: true,
       clips: true,
       calendar: true,
-      /** Demo-only: simulated squad members appear over time after joining (flagged demo). */
-      demoSquadGrowth: true,
-      /** Demo-only: counters tick up while the page is open (flagged demo). */
-      demoLiveCounters: true
+      /** Demo-only: simulated squad members appear over time after joining. OFF: fake social proof (BRIEF 0). */
+      demoSquadGrowth: false,
+      /** Demo-only: counters tick up while the page is open. OFF: no live-ticking demo counters (BRIEF 0). */
+      demoLiveCounters: false
     }
   };
 
