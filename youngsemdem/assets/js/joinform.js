@@ -360,7 +360,7 @@
       var input = el('input', { type: type, name: name, value: value });
       if (checked) input.checked = true;
       var dot = null;
-      if (color) { dot = el('span', { class: 'x-dot', 'aria-hidden': 'true' }); dot.style.setProperty('--dot', color); }
+      if (color) { dot = el('span', { class: 'chip__dot', 'aria-hidden': 'true' }); dot.style.setProperty('--dot', color); }
       return el('label', { class: 'chip' }, [input, dot, el('span', { text: label })]);
     }
     function paintStep2(member) {

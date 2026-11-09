@@ -14,6 +14,13 @@
   function lang() { return YSD.lang === 'es' ? 'es' : 'en'; }
   function member() { try { return YSD.members ? YSD.members.current() : null; } catch (e) { return null; } }
   function isMinor(m) { return !!m && typeof m.age === 'number' && m.age < 18; }
+  // 40 and up: on the email list as a SUPPORTER, not a member (lead, Nov 9, 2026; membership is 14 to 39).
+  function isSupporter(m) {
+    if (!m) return false;
+    var cap = +(YSD.cfg ? YSD.cfg('org.ageCap', 39) : 39) || 39;
+    if (typeof m.age === 'number') return m.age > cap;
+    return !!(m.warnings && m.warnings.age === 'over_age_cap');
+  }
 
   var form = $('#join-form');
   var pass = $('[data-join-pass]');
@@ -47,10 +54,15 @@
       if (label) label.textContent = t('join:pass.county');
     }
   }
-  function paintSince(ts) {
+  function paintSince(ts, supporter) {
     var s = pass && $('[data-pass-since]', pass);
     var m = monthLabel(ts);
-    if (s && m) s.textContent = t('join:pass.since', { month: m });
+    if (s && m) s.textContent = t(supporter ? 'join:pass.sinceSupporter' : 'join:pass.since', { month: m });
+  }
+  function paintKind(supporter) {
+    var k = pass && $('[data-pass-kind]', pass);
+    if (k) k.textContent = t(supporter ? 'join:pass.kindSupporter' : 'join:pass.kind');
+    if (pass) pass.toggleAttribute('data-supporter', !!supporter);   // join.css keeps the SUPPORTER pill in place of the stamp
   }
   function stamp(on) {
     var s = pass && $('[data-pass-stamp]', pass);
@@ -65,8 +77,9 @@
     if (packNote) packNote.hidden = true;
     if (locked) locked.hidden = true;
     if (chipSec) chipSec.hidden = isMinor(m);   // no money asks aimed at members under 18
-    paintName(m.firstName); paintCity(m.city); paintSince(m.joinedAt);
-    stamp(!(m.warnings && m.warnings.age === 'over_age_cap'));   // past the age cap: on the list, no "You're in" stamp
+    var sup = isSupporter(m);
+    paintName(m.firstName); paintCity(m.city); paintSince(m.joinedAt, sup); paintKind(sup);
+    stamp(!sup);   // past the age cap: on the list as a supporter, no "You're in" stamp
     if (pass) pass.setAttribute('data-state', 'joined');
   }
   function relock() {
@@ -74,7 +87,7 @@
     if (packNote) packNote.hidden = false;
     if (locked) locked.hidden = false;
     if (chipSec) chipSec.hidden = false;
-    paintName(''); paintCity(''); paintSince(); stamp(false);
+    paintName(''); paintCity(''); paintSince(); paintKind(false); stamp(false);
     if (pass) pass.removeAttribute('data-state');
   }
 

@@ -78,6 +78,17 @@
   status = 404
   force = true
 
+# Spanish 404: an unknown path under /es/ gets the Spanish "not found" page (es/404.html) with a real 404
+# status. NOT forced, so every page that exists under /es/ is served as usual; Netlify only falls through to
+# this rule when no file matches. Keep it after the internal-folder rules and before any catch-all ("/*")
+# rule, which would otherwise answer first. Everything else unknown gets /404.html (Netlify's default).
+# Cloudflare Pages ignores this file and serves the nearest 404.html, which is es/404.html under /es/.
+[[redirects]]
+  from = "/es/*"
+  to = "/es/404.html"
+  status = 404
+  force = false
+
 # Dev server (`netlify dev`): serve the folder as is, no framework detection.
 [dev]
   framework = "#static"

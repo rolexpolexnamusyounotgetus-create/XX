@@ -189,7 +189,7 @@ How to read each day:
 - **Text:** "The biggest group of Seminole voters aged 18 to 40 isn't Democrats or Republicans. It's no-party voters: about 34%, by our math from the elections office's July numbers. Any party or none, you're welcome at our events: {url}" **[npa-18-40] [events-open]**
 - **CTA:** events · `2026-12-launch`
 
-**Day 4 · Sat, Dec 5 · How Seminole are you?**
+**Day 4 · Sat, Dec 5 · Trivia night: Seminole County edition**
 - **Video:** V06.
 - **Stories:**
   1. Quiz sticker: "Sanford's nickname?" Celery City / Lake City / Sun City.
@@ -528,8 +528,8 @@ Platform sound effects (a ding, a whoosh) are fine with any preset.
 - **CTA page:** `join#texts`.
 - **Facts:** [mail-expiry] [mail-renew-jan1] [mail-covers-2028].
 
-### V06 · How Seminole are you? · 25 to 30 s · quiz-show talking head · `library-low` · bright
-- **Hook:** tap a desk bell, or a pen on a mug. Ask: "Which Seminole city is nicknamed after a vegetable?" On screen: "How Seminole are you? 3 questions, no googling."
+### V06 · Trivia night: Seminole County edition · 25 to 30 s · quiz-show talking head · `library-low` · bright
+- **Hook:** tap a desk bell, or a pen on a mug. Ask: "Which Seminole city is nicknamed after a vegetable?" On screen: "Seminole County edition: 3 questions, no googling."
 
 | Time | Say | On screen |
 |---|---|---|

@@ -63,6 +63,9 @@
 @media (max-width: 359px) { .p-join .x-pass__code { display:none; } }
 @media (min-width: 480px) { .p-join .x-pass__code { right:28px; } }
 .p-join .x-pass[data-state="joined"] .x-pass__kind { display:none; }
+/* 40+ (supporters, not members): no "You're in" stamp, so the pass keeps its SUPPORTER / SIMPATIZANTE pill (lead, Nov 9). */
+.p-join .x-pass[data-state="joined"][data-supporter] .x-pass__kind { display:inline-block; }
+.p-join .x-pass[data-supporter] .x-pass__row:first-child { flex-wrap:wrap;row-gap:6px; }
 .p-join .x-pass__stamp {
   margin-block:-6px;padding:6px 12px;rotate:-7deg;
   font:800 20px/1 var(--font-display-84);font-stretch:84%;text-transform:uppercase;letter-spacing:.02em;
@@ -91,13 +94,8 @@
 .p-join [data-join] [data-join-step2] { margin-top:var(--sp-5);padding-top:var(--sp-5);border-top:1px solid var(--line);gap:var(--sp-5); }
 .p-join [data-join] [data-join-picks] { margin-top:var(--sp-4);padding-top:var(--sp-4);border-top:1px solid var(--line);align-items:flex-start; }
 .p-join [data-join] [data-join-young] { margin-top:var(--sp-4); }
-.p-join .x-dot { flex:none;width:12px;height:12px;border-radius:50%;background:var(--dot);border:1.5px solid var(--night); }
 .p-join [data-join] .chip { padding-inline:14px; }
 .p-join [data-join] .chip-row { gap:6px; }
-/* After joining, long labels (a 20-letter first name in "Not {name}? Start over", Spanish button and DEMO-tag text
-   in the member card) wrap instead of widening the page at 320 px. Core .btn and .tag are nowrap (Lead request). */
-.p-join [data-join] .btn, .p-join .x-card__host .btn { white-space:normal; }
-.p-join .x-card__host .tag { white-space:normal;line-height:1.25;text-align:left; }
 
 /* ---------- tiers ---------- */
 .p-join .x-tiers { display:grid;gap:var(--sp-5); }

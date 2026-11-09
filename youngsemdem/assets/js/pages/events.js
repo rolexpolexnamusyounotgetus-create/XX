@@ -1,7 +1,9 @@
 /*! YDSC · assets/js/pages/events.js (W2). The events list: next-up card, ticket rail, filters, the lineup,
  * the January drop, REAL partner events. Rendering comes from YSD.events (eventcard.js); RSVP state and the
  * sheet come from YSD.rsvp (rsvp.js). Filters live in the URL (?kind=volunteer&city=sanford&lang=es) so a
- * filtered list can be shared; ?drop=open previews the January drop. No network calls, no AI.
+ * filtered list can be shared; ?drop=open previews the January drop. ?series=<id> (a data/events.js series,
+ * e.g. ?series=trivia from the quiz's "Events made for you" chips) narrows the lineup to that format and shows
+ * a chip above the count that clears it. No network calls, no AI.
  */
 (function (w, d) {
   'use strict';
@@ -17,7 +19,17 @@
   function sget(k, f) { try { return YSD.store ? YSD.store.get(k, f) : f; } catch (e) { return f; } }
   function sset(k, v) { try { if (YSD.store) YSD.store.set(k, v); } catch (e) {} }
 
-  var E, filters = { kind: '', city: '', lang: '' };
+  var E, filters = { kind: '', city: '', lang: '', series: '' };
+  function noFilters() { return { kind: '', city: '', lang: '', series: '' }; }
+  function anyFilter() { return !!(filters.kind || filters.city || filters.lang || filters.series); }
+  function knownSeries() { var k = {}; (data().items || []).forEach(function (e) { if (e && e.series) k[e.series] = 1; }); return k; }
+  function seriesLabel(id) {
+    var s = t('events:series.' + id);
+    if (s) return s;
+    var items = data().items || [];
+    for (var i = 0; i < items.length; i++) if (items[i].series === id) return tx(items[i].cover && items[i].cover.short) || tx(items[i].title);
+    return id;
+  }
 
   function readUrl() {
     var p = {};
@@ -29,11 +41,12 @@
     filters.kind = kinds.indexOf(p.kind) >= 0 ? p.kind : '';
     filters.city = (data().cities || {})[p.city] ? p.city : '';
     filters.lang = p.lang === 'es' ? 'es' : '';
+    filters.series = p.series && knownSeries()[p.series] ? p.series : '';
   }
   function writeUrl() {
     try {
       var u = new w.URL(w.location.href);
-      ['kind', 'city', 'lang'].forEach(function (k) { if (filters[k]) u.searchParams.set(k, filters[k]); else u.searchParams['delete'](k); });
+      ['kind', 'city', 'lang', 'series'].forEach(function (k) { if (filters[k]) u.searchParams.set(k, filters[k]); else u.searchParams['delete'](k); });
       w.history.replaceState(null, '', u.pathname + u.search + u.hash);
     } catch (e) {}
   }
@@ -84,22 +97,53 @@
     $$('input[name="city"]', f).forEach(function (i) { i.checked = i.value === filters.city; });
     var es = $('input[name="lang"]', f); if (es) es.checked = filters.lang === 'es';
   }
+  /** The ?series= chip: "Only showing [Trivia nights ×]". One tap clears it; it is gone when no series is set. */
+  function seriesChip() {
+    var count = $('[data-count]');
+    var box = $('[data-series-filter]');
+    if (!box && count && filters.series) {
+      box = el('p', 'cluster cluster--sm');
+      box.setAttribute('data-series-filter', '');
+      count.parentNode.insertBefore(box, count);
+    }
+    if (!box) return;
+    box.textContent = '';
+    box.hidden = !filters.series;
+    if (!filters.series) return;
+    var name = seriesLabel(filters.series);
+    box.appendChild(el('span', null, t('events:filter.seriesOnly')));
+    var b = el('button', 'chip');
+    b.type = 'button';
+    b.setAttribute('data-series-clear', '');
+    b.setAttribute('aria-label', t('events:filter.seriesClear', { series: name }) || name);
+    b.appendChild(el('span', null, name));
+    var x = el('span', null, '×'); x.setAttribute('aria-hidden', 'true');
+    b.appendChild(x);
+    b.addEventListener('click', function () {
+      filters.series = '';
+      writeUrl(); lineup();
+      var first = $('input[name="kind"]:checked') || $('input[name="kind"]'); if (first) first.focus();
+      track('events_series_clear', {});
+    });
+    box.appendChild(b);
+  }
   function lineup() {
     var grid = $('[data-lineup]'), empty = $('[data-empty]'), count = $('[data-count]');
     if (!grid) return;
-    var list = E.upcoming({ kind: filters.kind, city: filters.city, lang: filters.lang });
+    seriesChip();
+    var list = E.upcoming({ kind: filters.kind, city: filters.city, lang: filters.lang }).filter(function (e) { return !filters.series || e.series === filters.series; });
     var dropOpen = E.drop.isOpen();
     grid.textContent = '';
     list.forEach(function (e) {
       grid.appendChild(E.render(e, { variant: 'invite', level: 3, anchor: true, isNew: dropOpen && E.drop.isDropEvent(e) }));
     });
     var dropEvs = E.drop.events();
-    if (!dropOpen && dropEvs.length && !filters.kind && !filters.city && !filters.lang && E.drop.cfg()) grid.appendChild(dropTile(dropEvs));
+    if (!dropOpen && dropEvs.length && !anyFilter() && E.drop.cfg()) grid.appendChild(dropTile(dropEvs));
     if (count) count.textContent = YSD.t && YSD.t.plural ? YSD.t.plural('events:count', list.length) : String(list.length);
     if (empty) {
       empty.hidden = list.length > 0;
       var line = $('[data-empty-line]', empty); if (line) line.textContent = E.label('empty');
-      var clear = $('[data-clear]', empty); if (clear) clear.hidden = !(filters.kind || filters.city || filters.lang);
+      var clear = $('[data-clear]', empty); if (clear) clear.hidden = !anyFilter();
     }
   }
   /** The last tile in the lineup while the drop is closed: a locked teaser that jumps to the drop band. */
@@ -135,7 +179,7 @@
     f.addEventListener('submit', function (evt) { evt.preventDefault(); });
     var clear = $('[data-clear]');
     if (clear) clear.addEventListener('click', function () {
-      filters = { kind: '', city: '', lang: '' };
+      filters = noFilters();
       syncForm(); writeUrl(); lineup();
       var first = $('input[name="kind"]', f); if (first) first.focus();
     });
@@ -220,6 +264,7 @@
 
   function jumpToHash() {
     var id = String(w.location.hash || '').slice(1);
+    if (!id && filters.series) { var lu = d.getElementById('lineup'); if (lu) lu.scrollIntoView({ block: 'start' }); return; }   // ?series= lands on the filtered lineup
     if (!id) return;
     var target = d.getElementById(id);
     if (target && target.classList.contains('invite')) target.scrollIntoView({ block: 'start' });

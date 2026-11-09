@@ -18,7 +18,7 @@
  *     id), city (sharekit.cities id) } plus, per template:
  *       invite        { eventId | event }          cover         { issue (issues id), photo (Image) }
  *       quiz-show-up  { resultId, undertone, mix } quiz-issue    { resultId, undertone, mix }
- *       membercard    { since (ISO), stickers [ids] }
+ *       membercard    { since (ISO), stickers [ids], supporter (bool: 40+, prints "Supporter", not "Member") }
  *       rewind        { slide 1|2|3|'summary', counts { rsvps, cards, friends, stickers }, stickers [ids] }
  *
  * Every card, every size, prints the link (YSD.ui.prettyLink: no protocol, no utm, keeps ref), a DEMO mark
@@ -755,11 +755,12 @@
       ctx.beginPath(); ctx.moveTo(0, 150); ctx.lineTo(cwid, 150); ctx.stroke();
       brand(ctx, env, wd, 40, 40, 1.15);
       setFont(ctx, 26, 800, fam(env, 'body')); track(ctx, 3); ctx.fillStyle = wd.fg; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
-      ctx.fillText(K('membercard.kicker', L), cwid - 40, 86); track(ctx, 0);
+      var sup = !!data.supporter;   // 40+: supporter, not member (lead, Nov 9, 2026)
+      ctx.fillText(K(sup ? 'membercard.supporterKicker' : 'membercard.kicker', L), cwid - 40, 86); track(ctx, 0);
       var name = data.name || K('membercard.friend', L);
       var nf = fit(ctx, name, cwid - 80, { max: tall ? 200 : 160, min: 70, maxLines: 2, lh: 0.9, family: fam(env, 'display'), stretch: 'condensed' });
       var yy = 200 + draw(ctx, nf, 40, 200, C.night, 'left', wd.dark ? C.celery : wd.bg) + 20;
-      var meta = [data.city ? cityName(data.city, L) : '', K('membercard.since', L, { month: monthYear(L, data.since) })].filter(Boolean).join(' · ');
+      var meta = [data.city ? cityName(data.city, L) : '', K(sup ? 'membercard.supporterSince' : 'membercard.since', L, { month: monthYear(L, data.since) })].filter(Boolean).join(' · ');
       setFont(ctx, 34, 700, fam(env, 'body')); ctx.fillStyle = '#574D70'; ctx.textAlign = 'left';
       ctx.fillText(meta, 40, yy + 30); yy += 80;
       setFont(ctx, 26, 800, fam(env, 'body')); track(ctx, 2.4); ctx.fillStyle = C.night;
@@ -776,7 +777,7 @@
       }
       if (env.demo) {
         setFont(ctx, 28, 800, fam(env, 'body')); track(ctx, 2); ctx.fillStyle = C.night; ctx.textAlign = 'center';
-        var wm = K('membercard.watermark', L).toUpperCase(), wmw = textW(ctx, wm) + 48;
+        var wm = K(sup ? 'membercard.supporterWatermark' : 'membercard.watermark', L).toUpperCase(), wmw = textW(ctx, wm) + 48;
         ctx.fillStyle = C.tangerine; rr(ctx, cwid / 2 - wmw / 2, ch - 86, wmw, 54, 27); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = C.night; ctx.stroke();
         ctx.fillStyle = C.night; ctx.fillText(wm, cwid / 2, ch - 49); track(ctx, 0);
       }

@@ -7,7 +7,10 @@
  *
  *   YSD.memberCard.mount(el, { city })   renders the card (or a join prompt for non-members) and keeps it
  *                                        current. Returns { el, refresh(), destroy() }.
- *   YSD.memberCard.data()                -> { name, city, colorway, since, stickers[] } for the card template
+ *   YSD.memberCard.data()                -> { name, city, colorway, since, stickers[], supporter } for the card template
+ *                                        supporter: true when the member's age is over org.ageCap (39). People 40 and
+ *                                        up join the email list as SUPPORTERS, not members (lead, Nov 9, 2026): the
+ *                                        card says "Supporter" / "Simpatizante" (sharekit cards.membercard.supporter*).
  *   YSD.stickers.act(action, { ref, series, city, lang })  logs an ORGANIZING action (join, rsvp, attend,
  *                                        bring-friend, post-clip, share-card, quiz, volunteer-shift) and
  *                                        collects every sticker whose rule it completes. Civic actions
@@ -191,12 +194,20 @@
 
   // ---------------------------------------------------------------- member card
   function me() { try { return YSD.members && YSD.members.current ? YSD.members.current() : null; } catch (e) { return null; } }
+  /** 40 and up: on the list as a supporter, not a member (membership is 14 to 39, org.ageCap). */
+  function isSupporter(m) {
+    if (!m) return false;
+    var age = m.age != null && m.age !== '' ? parseInt(m.age, 10) : NaN;
+    var cap = +(YSD.cfg ? YSD.cfg('org.ageCap', 39) : 39) || 39;
+    if (!isNaN(age)) return age > cap;
+    return !!(m.warnings && m.warnings.age === 'over_age_cap');
+  }
   function draftCity() { var dr = get('maker:draft', null); return dr && dr.city ? dr.city : ''; }
   function cityObj(id) { return byId(kit().cities, id); }
   function data(opts) {
     opts = opts || {};
     var m = me() || {}, city = opts.city || m.city || draftCity() || 'seminole', c = cityObj(city);
-    return { name: m.firstName || '', city: city, colorway: c ? c.colorway : 'violet', since: m.joinedAt ? new Date(m.joinedAt).toISOString() : new Date().toISOString(), stickers: list().map(function (s) { return s.id; }) };
+    return { name: m.firstName || '', city: city, colorway: c ? c.colorway : 'violet', since: m.joinedAt ? new Date(m.joinedAt).toISOString() : new Date().toISOString(), stickers: list().map(function (s) { return s.id; }), supporter: isSupporter(m) };
   }
   var MARK = '<svg class="brand__mark" viewBox="0 0 64 56" aria-hidden="true" focusable="false"><path d="M15 41 13 54 31 41Z" fill="#C8F03C" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><rect x="2.5" y="3" width="59" height="39" rx="9" fill="#6A2BFF" stroke="currentColor" stroke-width="3"/><path fill="#C8F03C" d="M21.94 31.5V25.49L15.93 12.5H21.5L24.27 22.36H24.51L27.18 12.5H32.44L26.63 25.47V31.5ZM36.34 31.5V27.92H40.23Q41.33 27.92 42.06 27.27Q42.78 26.62 43.15 25.3Q43.52 23.980 43.52 22.02Q43.52 20.47 43.31 19.34Q43.1 18.22 42.67 17.49Q42.25 16.77 41.57 16.42Q40.88 16.08 39.940 16.08H36.34V12.5H39.87Q42.38 12.5 44.23 13.61Q46.08 14.72 47.07 16.84Q48.07 18.96 48.07 21.99Q48.07 24.45 47.55 26.13Q47.02 27.81 46.14 28.87Q45.26 29.92 44.23 30.5Q43.19 31.07 42.18 31.28Q41.17 31.5 40.37 31.5ZM34.14 31.5V12.5H38.63V31.5Z"/></svg>';
   function brandEl() {
@@ -225,13 +236,14 @@
     var api = { el: el, refresh: paint, destroy: destroy };
     function paint() {
       var m = me(), dd = data(opts), mine = list(), c = byId(kit().colorways, dd.colorway) || { bg: '#6A2BFF', fg: '#FFF6EA' };
+      var sup = !!dd.supporter;   // 40+: "Supporter" / "Simpatizante", never "Member"
       el.textContent = '';
-      var root = h('div', { cls: 'membercard', 'data-membercard': '', 'data-member': m ? 'yes' : 'no', style: { '--mc-bg': c.bg, '--mc-fg': c.fg } });
+      var root = h('div', { cls: 'membercard', 'data-membercard': '', 'data-member': m ? (sup ? 'supporter' : 'yes') : 'no', style: { '--mc-bg': c.bg, '--mc-fg': c.fg } });
       // the card itself
       var card = h('div', { cls: 'membercard__card' });
       var head = h('div', { cls: 'membercard__head' }, [
         brandEl(),
-        h('span', { cls: 'membercard__kicker', text: C('membercard.kicker') })
+        h('span', { cls: 'membercard__kicker', text: C(sup ? 'membercard.supporterKicker' : 'membercard.kicker') })
       ]);
       card.appendChild(head);
       var body = h('div', { cls: 'membercard__body' });
@@ -239,11 +251,11 @@
       var cityName = cityObj(dd.city) ? pick(cityObj(dd.city).name) : '';
       var since = '';
       try { since = new Intl.DateTimeFormat(L() === 'es' ? 'es-US' : 'en-US', { month: 'short', year: 'numeric', timeZone: TZ }).format(new Date(dd.since)); } catch (e) {}
-      body.appendChild(h('p', { cls: 'membercard__meta', text: [cityName, C('membercard.since', { month: since })].filter(Boolean).join(' · ') }));
+      body.appendChild(h('p', { cls: 'membercard__meta', text: [cityName, C(sup ? 'membercard.supporterSince' : 'membercard.since', { month: since })].filter(Boolean).join(' · ') }));
       var link = '';
       try { link = YSD.ui.prettyLink(YSD.share.url('join.html')); } catch (e) {}
       if (m && link) body.appendChild(h('p', { cls: 'membercard__link' }, [h('span', { cls: 'u-visually-hidden', text: MK('actions.copy') + ': ' }), h('code', { translate: 'no', text: link })]));
-      if (YSD.cfg && YSD.cfg('demo', true) !== false) body.appendChild(h('p', { cls: 'membercard__demo' }, [h('span', { cls: 'tag tag--demo', text: C('membercard.watermark') })]));
+      if (YSD.cfg && YSD.cfg('demo', true) !== false) body.appendChild(h('p', { cls: 'membercard__demo' }, [h('span', { cls: 'tag tag--demo', text: C(sup ? 'membercard.supporterWatermark' : 'membercard.watermark') })]));
       card.appendChild(body);
       root.appendChild(card);
       // weeks + streak (current shown only at 2+; never a countdown)
@@ -272,7 +284,7 @@
       // actions
       var acts = h('div', { cls: 'btn-row membercard__actions' });
       if (m && YSD.maker && YSD.brandCards) {
-        var save = h('button', { type: 'button', cls: 'btn btn--primary', 'data-membercard-save': '', text: MK('templates.membercard') + ' · ' + MK('actions.save') });
+        var save = h('button', { type: 'button', cls: 'btn btn--primary', 'data-membercard-save': '', text: MK(sup ? 'templates.supportercard' : 'templates.membercard') + ' · ' + MK('actions.save') });
         acts.appendChild(save);
       }
       if (YSD.rewind && YSD.rewind.available() && m) acts.appendChild(h('button', { type: 'button', cls: 'btn btn--violet', 'data-rewind-open': '', text: MK('templates.rewind') }));
@@ -286,8 +298,9 @@
       if (t.hasAttribute('data-stickers-reset')) { YSD.stickers.reset(); paint(); return; }
       if (t.hasAttribute('data-rewind-open')) { YSD.rewind.open(t); return; }
       if (t.hasAttribute('data-membercard-save')) {
-        YSD.brandCards.render('membercard', Object.assign({ lang: L() }, data(opts)), { size: 'portrait' }).then(function (cv) {
-          return YSD.cards.download(cv, 'young-dems-member-card.png');
+        var dd = data(opts);
+        YSD.brandCards.render('membercard', Object.assign({ lang: L() }, dd), { size: 'portrait' }).then(function (cv) {
+          return YSD.cards.download(cv, dd.supporter ? 'young-dems-supporter-card.png' : 'young-dems-member-card.png');
         }).then(function (res) {
           if (res === 'downloaded') { act('share-card', { ref: 'membercard' }); if (YSD.ui) YSD.ui.toast(MK('toast.saved')); }
         });

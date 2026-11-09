@@ -6,7 +6,10 @@
  *     ysd:prefs:motion. Storage can be blocked (private windows): every read is wrapped;
  *  3. preloads the two critical fonts (BRIEF §3.3) on http(s). On file:// Chrome refuses font loads (CORS,
  *     console errors), so there it skips the preloads and points the font tokens at the metric-matched
- *     fallback faces instead: same layout, no errors, no request.
+ *     fallback faces instead: same layout, no errors, no request;
+ *  4. on http(s) only, and only without Pause motion, injects the cross-document view-transition rule
+ *     (@view-transition { navigation: auto }, under prefers-reduced-motion: no-preference). It used to sit
+ *     in base.css, where file:// pages logged an intermittent "Transition was aborted" console error.
  * It lives outside assets/js on purpose: it is the only script that must run before the CSS paints. */
 (function (d) {
   var r = d.documentElement, t, m;
@@ -31,6 +34,12 @@
       l.href = base + 'assets/fonts/' + f + '.woff2';
       (me && me.parentNode ? me.parentNode : d.head).insertBefore(l, me ? me.nextSibling : null);
     });
+    if (m !== 'paused') {
+      var vt = d.createElement('style');
+      vt.setAttribute('data-view-transition', '');
+      vt.textContent = '@media (prefers-reduced-motion:no-preference){@view-transition{navigation:auto}}';
+      (me && me.parentNode ? me.parentNode : d.head).insertBefore(vt, me ? me.nextSibling : null);
+    }
   } else if (location.protocol === 'file:') {
     r.setAttribute('data-protocol', 'file');
     var fb = { '--font-display': '"Bricolage fb", sans-serif', '--font-display-76': '"Bricolage fb 76", sans-serif',

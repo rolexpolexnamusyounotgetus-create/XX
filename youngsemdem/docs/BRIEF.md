@@ -1203,6 +1203,7 @@ mail-ballot requests made Nov 4 to Dec 31); Jan 1, 2027 (ID rules in effect; sta
 | NPA bloc | "The biggest group of them isn't registered with any party: 34.3%" (Dem 32.7%, Rep 27.4%). Never "most young voters are independents." | same | Nov 9, 2026 | high |
 | Hispanic share | Seminole is about 25% Hispanic or Latino (25.4%, ACS 2024); 23.1% speak a language other than English at home | [Census Reporter](https://censusreporter.org/profiles/05000US12117-seminole-county-fl/); [FL EDR profile](https://edr.state.fl.us/Content/area-profiles/county/seminole.pdf) | Nov 9, 2026 | high / med |
 | Amendment 4 (2024) | 60.37% yes in Seminole (computed), short of 60% statewide (57.17%) | [SOE 2024 precinct summary](https://voteseminole.gov/wp-content/uploads/2026/06/2024GeneralElection-Official-PrecinctSummary-Groups-Redacted-Public.pdf) | Nov 9, 2026 | high (computed) |
+| Seminole schools book removals | "In fall 2023, Seminole County Public Schools pulled more than 30 books, most of them because other Central Florida districts had objected to them, not local parents (CFPublic, Oct 11, 2023)." Always date it to 2023; titles included *Looking for Alaska* and *Thirteen Reasons Why*. | [CFPublic (Central Florida Public Media), Oct 11, 2023](https://www.cfpublic.org/education/2023-10-11/seminole-county-bans-books-challenged-in-other-school-districts) (URL re-opened Nov 9, 2026: "has banned over 30 books so far this school year") | Nov 9, 2026 | high (as reported in 2023) |
 | Minimum wage | Florida's minimum wage reached $15 an hour on Sep 30, 2026 | [Fla. Const. Art. X §24](https://www.flsenate.gov/Laws/Constitution) | Nov 9, 2026 | high |
 | SunRail | Four Seminole stations: Altamonte Springs, Longwood, Lake Mary, Sanford; weekday service | [SunRail stations](https://sunrail.com/stations/) | Nov 9, 2026 | high |
 | Upcoming elections | Nov 2, 2027 city elections (Oviedo confirmed; Lake Mary and Altamonte Springs "expected"); Mar 21, 2028 PPP; Aug 22, 2028 primary; Nov 7, 2028 general | `data/civic.js` `dates` (with sources) | Nov 9, 2026 | high / med ("expected") |
@@ -1217,7 +1218,7 @@ mail-ballot requests made Nov 4 to Dec 31); Jan 1, 2027 (ID rules in effect; sta
 - A list of accepted voter IDs written from memory (link the SOE instead).
 - Candidate names or faces anywhere; any politician as a guest, host or endorser.
 - "Most young voters are independents" (largest group, not a majority); "Seminole is blue" as a settled fact (results are unofficial; Trump won Seminole 50.9% to 47.4% in 2024).
-- Local rent, insurance or heat numbers (not yet sourced); Seminole County Public Schools book-removal specifics (not verified); the Puerto Rican share (not verified).
+- Local rent, insurance or heat numbers (not yet sourced); the Puerto Rican share (not verified); book-removal numbers beyond the CFPublic report above, or that report's 2023 count presented as current.
 - Youth-turnout figures as final (they are early estimates); "youthquake".
 - "Join the chat" or anything implying a chat exists; promises of a receipts page, rides or ASL unless the chapter confirms they're offered (event copy says "tell us and we'll do our best").
 - Wekiwa Springs as "in Seminole"; Oviedo's chickens as a present-day fact.

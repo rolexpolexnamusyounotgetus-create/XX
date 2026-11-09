@@ -33,11 +33,14 @@
  *   YSD.ui.form.errors(form, {field: code}, {messages}) / .clear(form)  aria-invalid, describedby, summary
  *   YSD.ui.share(opts?)               native share with this page's share.<page>.* text, else copy
  *   YSD.ui.stopLive()                 stops demo counter ticks (also called on load)
+ *   YSD.ui.joinCta()                  header [data-join-cta]: "Join free" -> join.html#join-form, or, once
+ *                                     YSD.members.current() exists, "Your card" (cta.yourCard) -> join.html#card.
+ *                                     Runs on load, on ysd:joined and on ysd:forgot.
  *   YSD.ui.ready(fn)
  * Declarative hooks (wired on DOMContentLoaded): [data-theme-toggle], [data-motion-toggle],
  * [data-menu-toggle], [data-sheet-open="id"], [data-sheet-close], [data-countdown], [data-rotor],
  * [data-ticker], [data-sticker], [data-lang-link], [data-share], [data-cfg-href="links.x"],
- * [data-social], [data-year], [data-reload].
+ * [data-social], [data-year], [data-reload], [data-join-cta].
  * There is no AI feature here, and no network call.
  */
 (function (w, d) {
@@ -292,11 +295,26 @@
       if (txt) lab.textContent = txt;
     });
   }
+  // Cross-document view transitions: boot.js injects the rule on http(s) unless motion was paused at load;
+  // this keeps it in step with the Pause motion toggle afterwards. Never on file:// (aborted-transition errors).
+  var VT_RULE = '@media (prefers-reduced-motion:no-preference){@view-transition{navigation:auto}}';
+  function viewTransitions(on) {
+    if (!/^https?:$/i.test(w.location.protocol)) return;
+    var st = d.querySelector('style[data-view-transition]');
+    if (!st && on) {
+      st = d.createElement('style');
+      st.setAttribute('data-view-transition', '');
+      st.textContent = VT_RULE;
+      d.head.appendChild(st);
+    }
+    if (st) st.disabled = !on;
+  }
   ui.motion = {
     paused: function () { return reduceMQ.matches || html.getAttribute('data-motion') === 'paused'; },
     set: function (paused) {
       if (paused) html.setAttribute('data-motion', 'paused'); else html.removeAttribute('data-motion');
       store('prefs:motion', paused ? 'paused' : 'on');
+      viewTransitions(!paused);
       paintMotion();
       rotors.forEach(function (r) { if (paused) r.stop(); else r.start(); });
       emit('motion', { paused: !!paused });
@@ -441,7 +459,9 @@
     var f = s.fact;
     if (s.expires && Date.now() >= Date.parse(s.expires) && s.next) f = s.next;
     var txt = (f && (f[YSD.lang] || f.en)) || '';
-    if (s.kind === 'fact' && s.source && s.source.label) txt += ' ' + (t('a11y.source', { label: s.source.label }) || ('Source: ' + s.source.label));
+    var lab = s.source && s.source.label;
+    lab = lab && typeof lab === 'object' ? (lab[YSD.lang] || lab.en || '') : (lab || ''); // {en, es}; plain strings still work
+    if (s.kind === 'fact' && lab) txt += ' ' + (t('a11y.source', { label: lab }) || ((YSD.lang === 'es' ? 'Fuente: ' : 'Source: ') + lab));
     return txt;
   }
   ui.stickerFacts = function (root) {
@@ -533,6 +553,28 @@
     return Promise.resolve(done('failed'));
   };
 
+  /* ------------------------------------------------------------------ header CTA */
+  // The header's "Join free" goes straight to the form (join.html#join-form). Once this browser has a member
+  // it becomes "Your card" (cta.yourCard) and points at join.html#card. The href keeps its own root and es/
+  // prefix, so the same code serves both partials. Same .btn--sm classes: still 44 px and fits at 320 px.
+  function currentMember() { try { return YSD.members && YSD.members.current ? YSD.members.current() : null; } catch (e) { return null; } }
+  ui.joinCta = function () {
+    var m = currentMember(), card = m ? t('cta.yourCard') : '';
+    $$('[data-join-cta]').forEach(function (a) {
+      if (!a.__ysdJoin) a.__ysdJoin = { href: a.getAttribute('href') || '', label: a.textContent };
+      var o = a.__ysdJoin;
+      if (card) {
+        a.textContent = card;
+        a.setAttribute('href', o.href.replace(/#.*$/, '') + '#card');
+        a.setAttribute('data-member', 'yes');
+      } else {
+        a.textContent = o.label;
+        a.setAttribute('href', o.href);
+        a.removeAttribute('data-member');
+      }
+    });
+  };
+
   /* ------------------------------------------------------------------ counters */
   ui.stopLive = function () { try { if (YSD.counters && YSD.counters.stopLive) YSD.counters.stopLive(); } catch (e) {} };
   ui.stopLive();
@@ -571,6 +613,7 @@
       a.addEventListener('click', function () { track('lang_switch', { to: to }); });
     });
     wireConfig(d);
+    ui.joinCta();
     ui.stopLive();
     html.setAttribute('data-ui', 'ready');
     emit('ui-ready', {});
@@ -602,5 +645,7 @@
     if (e.key === 'Escape' && ui.menu.isOpen() && !d.querySelector('dialog[open]')) { ui.menu.close({ focus: true }); }
   });
   w.addEventListener('pageshow', ui.stopLive);
+  d.addEventListener('ysd:joined', function () { ui.joinCta(); });
+  d.addEventListener('ysd:forgot', function () { ui.joinCta(); });
   ui.ready(init);
 })(window, document);

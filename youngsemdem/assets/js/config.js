@@ -181,7 +181,13 @@
       mobilize: '',         // Mobilize organization or event-feed URL
       volunteer: '',        // Volunteer sign-up page if separate from the join form
       countyParty: 'https://semdems.com/', // Seminole County Democrats (checked 2026-11-09)
-      contact: ''           // mailto: or contact page
+      // Florida Young Democrats, the state organization YDSC is chartered under. Checked Mon Nov 9, 2026:
+      // https://www.floridayoungdems.com/ answers 200 with the title "Florida Young Democrats", and
+      // flyoungdems.org redirects there. Not a party-controlled link: YDSC doesn't own it. Re-check before launch.
+      fyd: 'https://www.floridayoungdems.com/',
+      // How to reach the chapter: a mailto: address or a contact page URL. '' = not set yet, so about.js
+      // hides its contact block and sends people to the join form. The chapter supplies it before launch.
+      contact: ''
     },
 
     integrations: {
@@ -242,6 +248,12 @@
       smsNumber: '',
       /** Mailing address for privacy requests and the disclaimer (data/legal.js). '' = not set yet. */
       mailingAddress: '',
+      /**
+       * DMCA designated agent for copyright notices about member clips (data/legal.js {dmcaAgent} token,
+       * content-policy.html). '' = not designated yet: the page shows the "[copyright agent, registered before
+       * uploads go live]" fallback. Register the agent with the U.S. Copyright Office before clip uploads go live.
+       */
+      dmcaAgent: '',
       /** Small line drawn on share cards ('' = none). */
       cardFooter: 'Paid for by [committee name and address placeholder] · DEMO'
     },

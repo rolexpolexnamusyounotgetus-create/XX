@@ -24,12 +24,19 @@
  *   share      site.url forced to https://qa.invalid: every share link, Web Share payload and copied
  *              text must not point at localhost, 127.0.0.1, the page's own origin or youngsemdems.com;
  *              plus the ?ref&from&e invite landing when the page has [data-invite-landing]
+ *   scenarios  post-interaction states from the targets (quiz answered, RSVP sheet open, maker
+ *              mounted, joined): overflow, text size, targets, contrast and English left in each
+ *
+ * Colours are read only after they settle: a constructed stylesheet turns transitions off and shows
+ * scroll-driven reveals at their end, and qa waits for finite CSS animations before measuring.
+ * Pixel sampling covers text on gradients and images, over photos, video, SVG stickers (sticker
+ * buttons included) and painted ::before/::after layers, and marker swipes under a few words.
  *
  * Score per 6b item: 2 meets the threshold, 1 present but short of it, 0 failing, "review" when only a
  * person can judge it. N1..N10 are the non-negotiables, all GATEs except N7 (review).
  * Options: --root DIR  --pages a,b | page ...  --all  --widths 320,390,1440  --themes light,dark
- *          --no-axe  --no-throttle  --no-perf  --no-share  --targets FILE (JSON, merged over the defaults below)
- *          --allow-hosts a,b  --concurrency N  --out FILE  --json  --quiet  --timeout MS  --max-samples N
+ *          --no-axe  --no-throttle  --no-perf  --no-share  --no-scenarios  --targets FILE (JSON, merged over the defaults below)
+ *          --allow-hosts a,b  --es-allow "A,B"  --concurrency N  --out FILE  --json  --quiet  --timeout MS  --max-samples N
  * Writes tools/.cache/qa_report.json. Exit codes: 0 every GATE passes, 1 a GATE fails, 2 bad input or crash.
  */
 'use strict';
@@ -51,9 +58,25 @@ const SKIP_DIRS = new Set(['tools', 'tests', 'docs', 'partials', 'netlify', 'fun
 const AI_HOSTS = [['api', 'open' + 'ai', 'com'], ['api', 'anth' + 'ropic', 'com'], ['generativelanguage', 'goo' + 'gleapis', 'com'], ['api', 'mistral', 'ai'], ['api', 'cohere', 'ai']].map((p) => p.join('.'));
 
 /**
- * Per-page targets. Keys are page paths; es/<page> uses the English page's entry. '*' applies to
- * every page. positions: element tops at 390 px (selectors are tried in order; add data-qa hooks).
+ * Per-page targets. Keys are page paths (a '*' inside a key is a wildcard: 'events/*.html');
+ * es/<page> uses the English page's entry. '*' applies to every page. positions: element tops at
+ * 390 px (selectors are tried in order; add data-qa hooks).
+ *
+ * scenarios: post-interaction states qa measures after the normal passes (overflow, text size,
+ * targets, contrast with pixel samples, English left on es/ pages, source paths). Each one loads the
+ * page fresh at 390 px (or `widths`), runs its steps, then measures in every theme as
+ * '<width>-<theme>@<id>'. Steps, in order (selectors are data hooks, so they work on es/ twins):
+ *   { click: sel }                         first visible match
+ *   { fill: sel, value: 'text' }           types into a field
+ *   { press: 'Enter' }                     a key on the focused element
+ *   { scrollTo: sel }                      scrolls the first match into view
+ *   { waitFor: sel, timeout: ms }          until a match is visible (default 5000 ms)
+ *   { wait: ms }
+ *   { repeat: n, click: sel, until: sel, wait: ms }   clicks until `until` is visible (quiz answers)
+ * Any step can carry optional: true (a miss is not an error). A scenario with optional: true is
+ * skipped quietly when its first step finds nothing (a hook the page may not have yet).
  */
+const RSVP_SHEET = { id: 'rsvp', label: 'RSVP sheet open', steps: [{ click: '[data-rsvp]:not([data-rsvp-status])' }, { waitFor: 'dialog[open]', timeout: 5000 }] };
 const DEFAULT_TARGETS = {
   '*': { budgetKB: 500, maxRequests: 30 },
   'index.html': {
@@ -61,9 +84,33 @@ const DEFAULT_TARGETS = {
     positions: [
       { id: 'B9', label: 'Mail-ballot card top', selectors: ['[data-qa="mail-ballot"]', '.pin--deadline', '[data-pin="mail-ballot"]'], maxTop: 1000 },
       { id: 'B10', label: 'Reel top', selectors: ['[data-qa="reel"]', '[data-reel]', '.reel'], maxTop: 1688 }
+    ],
+    scenarios: [{ id: 'maker', label: 'Card maker mounted', optional: true, steps: [{ scrollTo: '[data-qa="maker"]' }, { waitFor: '[data-maker]', timeout: 8000 }] }]
+  },
+  'quiz.html': {
+    scenarios: [
+      { id: 'quiz-done', label: 'Quiz answered: result and card', steps: [
+        { click: '[data-quiz-start="show-up"]' },
+        { repeat: 24, click: '[data-quiz-player] [data-opt]', until: '[data-quiz-result]:not([hidden])', wait: 450 },
+        { waitFor: '[data-quiz-result] [data-maker]', timeout: 8000, optional: true }
+      ] },
+      { id: 'maker', label: 'Cover maker mounted', steps: [{ scrollTo: '[data-quiz-cover]' }, { waitFor: '[data-quiz-cover] [data-maker]', timeout: 8000 }] }
     ]
+  },
+  'events.html': { scenarios: [RSVP_SHEET] },
+  'events/*.html': { scenarios: [RSVP_SHEET] },
+  'join.html': {
+    scenarios: [{ id: 'joined', label: 'Joined state', steps: [
+      { fill: '#join-first', value: 'Ana' }, { fill: '#join-contact', value: 'ana@example.org' }, { fill: '#join-age', value: '21' },
+      { click: '[data-join-form] [type="submit"]' }, { waitFor: '[data-join-pass][data-state="joined"]', timeout: 6000 }
+    ] }]
   }
 };
+/** Words qa never counts as English left on es/ pages (proper names; make_es NEUTRAL is added too). */
+const EN_ALLOW = ['My Voter Record', 'DEMO', 'Young Democrats of Seminole County', 'Young Democrats', 'Seminole County Democrats', 'Florida Young Democrats',
+  'Vote.org', 'Rock the Vote', 'Pd. Pol. Adv.', 'QR', 'PDF', 'OK'];
+/** Source-file paths that may appear in rendered text (B37 never flags these). */
+const PATH_ALLOW = [/^node\.js$/i];
 
 const GATES = new Set(['B1', 'B2', 'B6', 'B8', 'B30', 'B31', 'B33', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N8', 'N9', 'N10']);
 const CHECKS = [
@@ -77,7 +124,7 @@ const CHECKS = [
   ['B22', 'Clip action'], ['B23', 'Post path'], ['B24', 'Microcopy'], ['B25', 'Spanish parity'], ['B26', 'Voice lint'], ['B27', 'Press and reduced motion'],
   ['B28', 'Pause for long motion'], ['B29', 'Dark mode'], ['B30', 'Honest proof'], ['B31', 'Accessibility'], ['B32', 'Privacy'], ['B33', 'Brand safety'],
   ['B34', 'Community safety'], ['B35', 'Come back next week'], ['B36', 'Sign-up friction'], ['B37', 'Freshness'], ['B38', 'Local layer'], ['B39', 'Starter kit'],
-  ['B40', 'Free sticker pack']
+  ['B40', 'Free sticker pack'], ['SC', 'Post-interaction states']
 ];
 const REVIEW = { B5: 'Home, landing pages', B11: 'Quiz, nav', B12: 'Quiz', B13: 'Join, home', B14: 'Join, vote', B15: 'Home, 404', B17: 'Events (W2 flow tests)',
   B18: 'Home, events', B19: 'Clips', B22: 'Home, clips', B23: 'Clips, post (W4 flow tests)', B32: 'Forms', B34: 'All', B35: 'Home', B36: 'Join, home', B38: 'About, events',
@@ -119,7 +166,9 @@ function walkPages(root) {
 
 function targetsFor(targets, page) {
   const base = page.replace(/^es\//, '');
-  return Object.assign({}, targets['*'] || {}, targets[base] || {}, targets[page] || {});
+  const glob = (k) => new RegExp('^' + k.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*') + '$');
+  const wild = Object.keys(targets).filter((k) => k !== '*' && k.indexOf('*') >= 0 && (glob(k).test(base) || glob(k).test(page)));
+  return Object.assign.apply(null, [{}, targets['*'] || {}].concat(wild.map((k) => targets[k]), [targets[base] || {}, targets[page] || {}]));
 }
 
 async function loadAxe() {
@@ -247,16 +296,79 @@ function qaCollect(o) {
   };
   const lumOf = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
   const ratioOf = (a, b) => { const x = lumOf(a), y = lumOf(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  /** Text as a person reads it: block and inline-block boundaries become spaces, aria-hidden and display:none are skipped. */
+  const readable = (root) => {
+    let txt = '';
+    (function walk(n) {
+      for (const c of n.childNodes) {
+        if (c.nodeType === 3) { txt += c.nodeValue; continue; }
+        if (c.nodeType !== 1 || c.getAttribute('aria-hidden') === 'true' || /^(SCRIPT|STYLE|TEMPLATE)$/.test(c.tagName)) continue;
+        const d = cs(c).display;
+        if (d === 'none') continue;
+        const gap = d !== 'inline' && d !== 'contents';
+        if (gap) txt += ' ';
+        walk(c);
+        if (gap) txt += ' ';
+      }
+    })(root);
+    return txt.replace(/\s+/g, ' ').replace(/\s+([,.;:!?])/g, '$1').trim();
+  };
 
-  // media rects (for text over photos, video, canvas, big SVG stickers)
+  // media rects (for text over photos, video, canvas, big SVG stickers, sticker buttons) and
+  // decoration layers: positioned elements painted with a gradient or an image that are not an
+  // ancestor of the text (blobs, photo overlays). Icon SVGs inside a labelled button or link and the
+  // logo are left out: they sit beside their label, not under it.
   const media = [];
+  const labelled = (c) => { for (const n of c.querySelectorAll('*')) { if (n.closest('svg')) continue; for (const k of n.childNodes) if (k.nodeType === 3 && k.nodeValue.trim()) return true; } for (const k of c.childNodes) if (k.nodeType === 3 && k.nodeValue.trim()) return true; return false; };
   for (const m of document.querySelectorAll('img, video, canvas, picture, iframe, svg')) {
-    if (m.closest('button, a') && m.tagName.toLowerCase() === 'svg') continue;
+    if (m.tagName.toLowerCase() === 'svg') {
+      if (m.parentElement && m.parentElement.closest('svg')) continue;
+      const c = m.closest('button, a');
+      if (c && (labelled(c) || c.closest('.brand, [data-logo]'))) continue;
+    }
     if (!visible(m)) continue;
     const r = m.getBoundingClientRect();
     if (r.width * r.height < 900) continue;
     media.push({ el: m, r });
   }
+  if (body) {
+    for (const el of body.querySelectorAll('*')) {
+      if (el.closest('svg') || /^(IMG|VIDEO|CANVAS|PICTURE|IFRAME)$/.test(el.tagName)) continue;
+      const s = cs(el);
+      if (s.position !== 'absolute' && s.position !== 'fixed') continue;
+      const ns = nonsolidBg(s);
+      if (!ns || ns.flat || ns === 'partial fill' || !visible(el)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width * r.height < 900) continue;
+      media.push({ el, r, layer: ns });
+    }
+  }
+  /** Painted ::before/::after boxes of el (absolutely positioned, with a fill), approximately placed. */
+  const pseudoBoxes = (el) => {
+    const out2 = [];
+    for (const pe of ['::before', '::after']) {
+      const ps = getComputedStyle(el, pe);
+      if (!ps || ps.content === 'none' || ps.content === 'normal' || ps.display === 'none' || ps.visibility !== 'visible' || parseFloat(ps.opacity) < 0.05) continue;
+      if (ps.position !== 'absolute' && ps.position !== 'fixed') continue;
+      const bgc = parseColor(ps.backgroundColor);
+      const fill = (ps.backgroundImage && ps.backgroundImage !== 'none') || (bgc && bgc[3] >= 0.05);
+      if (!fill) continue;
+      const w = parseFloat(ps.width), h = parseFloat(ps.height);
+      if (!(w > 0) || !(h > 0)) continue;
+      // containing block: the host when positioned, else the nearest positioned ancestor (fixed: the viewport)
+      let cb = null;
+      if (ps.position === 'fixed') cb = { left: 0, top: 0, right: W, bottom: H };
+      else {
+        for (let n = el; n && n.nodeType === 1; n = n.parentElement) { const ns = cs(n); if (ns.position !== 'static' || ns.transform !== 'none') { const b = n.getBoundingClientRect(); cb = { left: b.left + parseFloat(ns.borderLeftWidth), top: b.top + parseFloat(ns.borderTopWidth), right: b.right - parseFloat(ns.borderRightWidth), bottom: b.bottom - parseFloat(ns.borderBottomWidth) }; break; } }
+        if (!cb) cb = { left: -SX, top: -SY, right: W - SX, bottom: H - SY };
+      }
+      const L = parseFloat(ps.left), T = parseFloat(ps.top), Rr = parseFloat(ps.right), B = parseFloat(ps.bottom);
+      const left = !isNaN(L) && ps.left !== 'auto' ? cb.left + L : !isNaN(Rr) && ps.right !== 'auto' ? cb.right - Rr - w : cb.left;
+      const top = !isNaN(T) && ps.top !== 'auto' ? cb.top + T : !isNaN(B) && ps.bottom !== 'auto' ? cb.bottom - B - h : cb.top;
+      out2.push({ pe, left, top, right: left + w, bottom: top + h, width: w, height: h, z: ps.zIndex });
+    }
+    return out2;
+  };
 
   // ---- text elements
   const texts = [];
@@ -310,10 +422,29 @@ function qaCollect(o) {
         const c = parseColor(cs(n).backgroundColor);
         if (c && c[3] >= 0.999) { panel = true; break; }
       }
-      if (!panel) { t.overMedia = m.el.tagName.toLowerCase() + (m.el.className && typeof m.el.className === 'string' ? '.' + m.el.className.trim().split(/\s+/)[0] : ''); break; }
+      if (!panel) { t.overMedia = m.el.tagName.toLowerCase() + (m.el.className && typeof m.el.className === 'string' ? '.' + m.el.className.trim().split(/\s+/)[0] : '') + (m.layer ? ' (' + (typeof m.layer === 'string' ? m.layer : 'fill') + ')' : ''); break; }
+    }
+    // painted pseudo-elements under (or over) the text: on the element itself or an ancestor up to
+    // the first solid panel. A short box on the text's own inline line (a marker swipe under a few
+    // words) is a "marker": allowed by N5, its contrast is pixel-sampled for B8. Anything bigger is a
+    // decoration layer and is treated like a photo (N5 when the pixels under the glyphs vary).
+    if (!t.nonsolid && !t.overMedia) {
+      const area = Math.max(1, rr.width * rr.height);
+      for (let n = el, depth = 0; n && n.nodeType === 1 && n !== body && depth < 8 && !t.marker && !t.overMedia; n = n.parentElement, depth++) {
+        for (const pb of pseudoBoxes(n)) {
+          const ix = Math.max(0, Math.min(rr.right, pb.right) - Math.max(rr.left, pb.left)), iy = Math.max(0, Math.min(rr.bottom, pb.bottom) - Math.max(rr.top, pb.top));
+          if (ix * iy < Math.max(24, 0.03 * area)) continue;
+          const inlineHost = n === el || /^inline/.test(cs(n).display);
+          const name = n.tagName.toLowerCase() + (typeof n.className === 'string' && n.className.trim() ? '.' + n.className.trim().split(/\s+/)[0] : '') + pb.pe;
+          if (inlineHost && pb.height <= 0.6 * rr.height) t.marker = name; else t.overMedia = name;
+          break;
+        }
+        const c = parseColor(cs(n).backgroundColor);
+        if (c && c[3] >= 0.999) break;
+      }
     }
     t.color = color;
-    if ((t.nonsolid || t.overMedia) && o.sampleMark) { el.setAttribute('data-qa-sample', String(sampleId)); t.sample = sampleId++; }
+    if ((t.nonsolid || t.overMedia || t.marker) && o.sampleMark) { el.setAttribute('data-qa-sample', String(sampleId)); t.sample = sampleId++; }
     texts.push(t);
   }
   out.texts = texts;
@@ -357,7 +488,7 @@ function qaCollect(o) {
     list.sort((a, b) => b.right - a.right);
     out.overflow = list.slice(0, 6);
   }
-  if (o.lite) return out;
+  if (o.lite && !o.blocks) return out;
 
   // ---- blocks of copy (for voice rules, English-left, demo counts, exclamations)
   out.blocks = [];
@@ -394,6 +525,7 @@ function qaCollect(o) {
       out.attrs.push({ sel: desc(el), attr: a, text: v.trim().slice(0, 300), lang: langEl ? langEl.getAttribute('lang').slice(0, 2).toLowerCase() : '', tn: !!el.closest('[translate="no"]') });
     }
   }
+  if (o.lite) return out;
   // ---- demo honesty
   out.demoMode = !(window.YSD_CONFIG && window.YSD_CONFIG.demo === false);
   out.demoEls = [];
@@ -485,7 +617,7 @@ function qaCollect(o) {
     }
   } catch (e) {}
   out.pauseControl = Array.from(document.querySelectorAll('button, [role="button"], [data-motion-toggle]')).some((b) => visible(b) && (/(pause|pausar|motion|movimiento)/i.test((b.textContent || '') + ' ' + (b.getAttribute('aria-label') || '')) || b.hasAttribute('data-motion-toggle')));
-  out.landing = (() => { const l = document.querySelector('[data-invite-landing]'); return l ? { visible: visible(l), text: (l.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120) } : null; })();
+  out.landing = (() => { const l = document.querySelector('[data-invite-landing]'); return l ? { visible: visible(l), text: readable(l).slice(0, 120) } : null; })();
   out.rsvpId = (() => { const r = document.querySelector('[data-rsvp]'); return r ? r.getAttribute('data-rsvp') : ''; })();
   out.qa = (() => { const m = {}; for (const el of document.querySelectorAll('[data-qa]')) { const k = el.getAttribute('data-qa'); if (m[k]) continue; const r = el.getBoundingClientRect(); m[k] = { top: Math.round(r.top + SY), visible: visible(el) }; } return m; })();
   return out;
@@ -503,13 +635,28 @@ function qaPositions(lists) {
   });
 }
 
-/** First screen at the current viewport: primary + secondary actions fully visible, overlays. */
+/** First screen at the current viewport: primary + secondary actions fully visible, overlays, bottom bars. */
 function qaFirstScreen() {
   const W = document.documentElement.clientWidth || window.innerWidth, H = window.innerHeight;
-  const vis = (el) => { const s = getComputedStyle(el); if (s.display === 'none' || s.visibility !== 'visible' || +s.opacity === 0) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
-  const full = (el) => { const r = el.getBoundingClientRect(); if (r.left < -0.5 || r.top < -0.5 || r.right > W + 0.5 || r.bottom > H + 0.5) return false; const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!hit && (hit === el || el.contains(hit) || hit.contains(el)); };
+  // seen: displayed, visibility visible, and not faded out by itself or an ancestor (a bar parked at opacity 0)
+  const seen = (el) => { for (let n = el; n && n.nodeType === 1; n = n.parentElement) { const s = getComputedStyle(n); if (s.display === 'none' || parseFloat(s.opacity) < 0.05) return false; if (n === el && s.visibility !== 'visible') return false; } return true; };
+  const vis = (el) => { if (!seen(el)) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+  // the top element at a point, skipping layers nobody can see (an invisible bar does not cover anything)
+  const topAt = (x, y) => { for (const n of document.elementsFromPoint(x, y)) if (seen(n)) return n; return null; };
+  const full = (el) => { const r = el.getBoundingClientRect(); if (r.left < -0.5 || r.top < -0.5 || r.right > W + 0.5 || r.bottom > H + 0.5) return false; const hit = topAt(r.left + r.width / 2, r.top + r.height / 2); return !!hit && (hit === el || el.contains(hit) || hit.contains(el)); };
   const half = (el) => { const r = el.getBoundingClientRect(); const vh = Math.max(0, Math.min(H, r.bottom) - Math.max(0, r.top)); return r.height > 0 && vh / r.height >= 0.5 && r.left >= -0.5 && r.right <= W + 0.5; };
   const label = (el) => (el.getAttribute('aria-label') || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  const name = (el) => el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/)[0] : '');
+  // share of the screen a fixed layer paints: its own box when it has a fill, else its visible painted children (a transparent wrapper paints nothing)
+  const paints = (el) => { const s = getComputedStyle(el); const c = s.backgroundColor; return (c && !/rgba\(\s*0,\s*0,\s*0,\s*0\s*\)|transparent/.test(c)) || (s.backgroundImage && s.backgroundImage !== 'none') || (s.backdropFilter && s.backdropFilter !== 'none') || /^(IMG|VIDEO|CANVAS|SVG|IFRAME)$/i.test(el.tagName) || Array.from(el.childNodes).some((k) => k.nodeType === 3 && k.nodeValue.trim()); };
+  const cover = (el) => {
+    const boxes = [];
+    const add = (n) => { const r = n.getBoundingClientRect(); if (r.width > 0 && r.height > 0) boxes.push(r); };
+    if (paints(el)) add(el); else for (const n of Array.from(el.querySelectorAll('*')).slice(0, 400)) if (vis(n) && paints(n)) add(n);
+    let hit = 0, all = 0;
+    for (let y = H / 40; y < H; y += H / 20) for (let x = W / 24; x < W; x += W / 12) { all++; if (boxes.some((r) => x >= r.left && x <= r.right && y >= r.top && y <= r.bottom)) hit++; }
+    return all ? hit / all : 0;
+  };
   const prim = Array.from(document.querySelectorAll('.btn--primary, [data-qa="primary"]')).filter(vis);
   const p = prim.find(full) || null;
   const pl = p ? label(p) : '';
@@ -518,15 +665,37 @@ function qaFirstScreen() {
   const sHalf = s ? null : sec.find(half) || null;
   const overlays = [];
   for (const d of document.querySelectorAll('dialog[open], [role="dialog"], [aria-modal="true"]')) if (vis(d)) overlays.push('dialog ' + (d.className || d.id || ''));
+  const bars = qaBarsIn(W, H, vis, name, cover);
   for (const el of document.querySelectorAll('body *')) {
     const st = getComputedStyle(el);
     if (st.position !== 'fixed' || !vis(el)) continue;
     if (el.closest('header, .site-header, .demo-banner, [role="status"], .toast-region')) continue;
+    let nested = false;
+    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) if (getComputedStyle(n).position === 'fixed') { nested = true; break; }
+    if (nested) continue;   // counted with its fixed ancestor
     const r = el.getBoundingClientRect();
     const a = Math.max(0, Math.min(W, r.right) - Math.max(0, r.left)) * Math.max(0, Math.min(H, r.bottom) - Math.max(0, r.top));
-    if (a > 0.25 * W * H) overlays.push('fixed ' + el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/)[0] : ''));
+    if (a <= 0.25 * W * H) continue;
+    const c = cover(el);
+    if (c > 0.25) overlays.push('fixed ' + name(el) + ' (' + Math.round(c * 100) + '% of the screen)');
   }
-  return { primary: p ? label(p) : null, primaryCandidates: prim.length, secondary: s ? label(s) : null, secondaryHalf: sHalf ? label(sHalf) : null, overlays };
+  return { primary: p ? label(p) : null, primaryCandidates: prim.length, secondary: s ? label(s) : null, secondaryHalf: sHalf ? label(sHalf) : null, overlays, bars };
+  /** Fixed or sticky bars anchored to the bottom edge: whether they show right now and how much of the screen they cover. */
+  function qaBarsIn(W2, H2, vis2, name2, cover2) {
+    const out = [];
+    for (const el of document.querySelectorAll('body *')) {
+      const st = getComputedStyle(el);
+      if (st.position !== 'fixed' && st.position !== 'sticky') continue;
+      if (el.closest('.toast-region, [role="status"], dialog, .confetti, header, .site-header')) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < 0.6 * W2 || r.height < 1) continue;
+      const bottomed = st.position === 'fixed' ? (st.bottom !== 'auto' && st.top === 'auto') || Math.abs(r.bottom - H2) <= 2 || r.top >= H2 - 1 : st.bottom !== 'auto';
+      if (!bottomed) continue;
+      const shown = vis2(el) && r.top < H2 - 1 && r.bottom > 1;
+      out.push({ sel: name2(el), shown, cover: shown ? Math.round(cover2(el) * 1000) / 10 : 0 });
+    }
+    return out;
+  }
 }
 
 /** Running animations and playing videos (reduced-motion pass). */
@@ -579,14 +748,21 @@ function qaFocusState() {
 // ------------------------------------------------------------------------------------------
 
 async function sampleTexts(page, texts, max) {
-  const out = [];
-  const cands = texts.filter((t) => t.sample != null).slice(0, max);
-  for (const t of cands) {
+  const out = [], skipped = [];
+  const cands = texts.filter((t) => t.sample != null);
+  const why = (t) => t.nonsolid ? (typeof t.nonsolid === 'string' ? t.nonsolid : 'background') + ' on ' + t.nonsolidAt : t.marker ? 'marker ' + t.marker : 'over ' + t.overMedia;
+  for (const t of cands.slice(0, max)) {
     try {
       const box = await page.evaluate((i) => {
         const el = document.querySelector('[data-qa-sample="' + i + '"]');
-        if (!el) return null;
+        if (!el) return { miss: 'element gone (re-rendered)' };
         el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' }); // 'instant' beats base.css scroll-behavior: smooth
+        // fixed and sticky layers that do not hold the text (a bottom bar that shows on scroll, the
+        // sticky header) could cover it in the shot: hide them while sampling
+        for (const n of document.querySelectorAll('body *')) {
+          const p = getComputedStyle(n).position;
+          if ((p === 'fixed' || p === 'sticky') && !n.contains(el) && !n.hasAttribute('data-qa-hid')) { n.setAttribute('data-qa-hid', n.style.getPropertyValue('visibility') + '|' + n.style.getPropertyPriority('visibility')); n.style.setProperty('visibility', 'hidden', 'important'); }
+        }
         const range = document.createRange();
         let r = null;
         for (const n of el.childNodes) {
@@ -595,10 +771,10 @@ async function sampleTexts(page, texts, max) {
           const b = range.getBoundingClientRect();
           r = r ? { l: Math.min(r.l, b.left), t: Math.min(r.t, b.top), r: Math.max(r.r, b.right), b: Math.max(r.b, b.bottom) } : { l: b.left, t: b.top, r: b.right, b: b.bottom };
         }
-        if (!r) return null;
+        if (!r) return { miss: 'no text box' };
         return { x: Math.max(0, Math.floor(r.l) - 2), y: Math.max(0, Math.floor(r.t) - 2), w: Math.min(window.innerWidth, Math.ceil(r.r) + 2) - Math.max(0, Math.floor(r.l) - 2), h: Math.min(window.innerHeight, Math.ceil(r.b) + 2) - Math.max(0, Math.floor(r.t) - 2) };
       }, t.sample);
-      if (!box || box.w < 2 || box.h < 2) continue;
+      if (!box || box.miss || box.w < 2 || box.h < 2) { skipped.push({ sel: t.sel, text: t.text, why: (box && box.miss) || 'off screen' }); continue; }
       const clip = { x: box.x, y: box.y, width: box.w, height: box.h };
       const a = await page.screenshot({ clip, animations: 'disabled', caret: 'hide' });
       await page.evaluate((i) => {
@@ -614,17 +790,50 @@ async function sampleTexts(page, texts, max) {
         const d = Math.abs(A.data[i] - B.data[i]) + Math.abs(A.data[i + 1] - B.data[i + 1]) + Math.abs(A.data[i + 2] - B.data[i + 2]);
         if (d > 48) bgs.push([B.data[i], B.data[i + 1], B.data[i + 2]]);
       }
-      if (bgs.length < 4) continue;
+      if (bgs.length < 4) { skipped.push({ sel: t.sel, text: t.text, why: 'no glyph pixels changed when the text was hidden' }); continue; }
       const med = [0, 1, 2].map((c) => bgs.map((p) => p[c]).sort((x, y) => x - y)[bgs.length >> 1]);
       const fg = over(t.color, med);
       const rs = bgs.map((p) => ratio(fg, p)).sort((x, y) => x - y);
       const p10 = rs[Math.floor(rs.length * 0.1)];
       const far = bgs.filter((p) => Math.hypot(p[0] - med[0], p[1] - med[1], p[2] - med[2]) > 40).length / bgs.length;
-      out.push({ sel: t.sel, text: t.text, ratio: Math.round(p10 * 100) / 100, need: t.large ? 3 : 4.5, uniform: far <= 0.08, spread: Math.round(far * 100), why: t.nonsolid ? (typeof t.nonsolid === 'string' ? t.nonsolid : 'background') + ' on ' + t.nonsolidAt : 'over ' + t.overMedia });
-    } catch (e) { /* element moved or detached; skip */ }
+      out.push({ sel: t.sel, text: t.text, ratio: Math.round(p10 * 100) / 100, need: t.large ? 3 : 4.5, uniform: far <= 0.08, spread: Math.round(far * 100), why: why(t) });
+    } catch (e) { skipped.push({ sel: t.sel, text: t.text, why: 'error: ' + firstLine(e).slice(0, 80) }); }
   }
-  await page.evaluate(() => { for (const el of document.querySelectorAll('[data-qa-sample]')) el.removeAttribute('data-qa-sample'); window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); }).catch(() => {});
-  return { sampled: out, candidates: texts.filter((t) => t.sample != null).length };
+  for (const t of cands.slice(max)) skipped.push({ sel: t.sel, text: t.text, why: 'over --max-samples' });
+  await page.evaluate(() => {
+    for (const el of document.querySelectorAll('[data-qa-sample]')) el.removeAttribute('data-qa-sample');
+    for (const n of document.querySelectorAll('[data-qa-hid]')) { const [v, pr] = n.getAttribute('data-qa-hid').split('|'); if (v) n.style.setProperty('visibility', v, pr); else n.style.removeProperty('visibility'); n.removeAttribute('data-qa-hid'); }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }).catch(() => {});
+  return { sampled: out, candidates: cands.length, skipped };
+}
+
+/**
+ * Let colours settle before measuring: an injected sheet turns CSS transitions off (a running one
+ * jumps to its end value, so a theme switch or a fade-in is never read halfway) and makes
+ * scroll-driven reveals show their end state, then it waits (up to `cap` ms) for finite CSS
+ * animations to finish. Infinite loops keep running (B28 and the reduced-motion pass read them).
+ * The sheet is a constructed stylesheet, so the production CSP does not block it.
+ */
+const SETTLE_CSS = '*, *::before, *::after { transition: none !important; animation-timeline: auto !important; }';
+async function settle(page, cap) {
+  return page.evaluate(async (o) => {
+    if (!window.__qaSettle) {
+      try { const sh = new CSSStyleSheet(); sh.replaceSync(o.css); document.adoptedStyleSheets = document.adoptedStyleSheets.concat([sh]); window.__qaSettle = sh; }
+      catch (e) { const st = document.createElement('style'); st.textContent = o.css; (document.head || document.documentElement).appendChild(st); window.__qaSettle = st; }
+    }
+    if (document.body) void document.body.offsetHeight;
+    const finite = () => { try { return document.getAnimations().filter((a) => { if (a.playState !== 'running' || !a.effect) return false; const e = a.effect.getComputedTiming().endTime; return typeof e === 'number' && Number.isFinite(e); }); } catch (e) { return []; } };
+    const t0 = performance.now();
+    let list = finite();
+    while (list.length && performance.now() - t0 < o.cap) {
+      const left = Math.max(16, o.cap - (performance.now() - t0));
+      await Promise.race([Promise.all(list.map((a) => a.finished.catch(() => {}))), new Promise((r) => setTimeout(r, left))]);
+      list = finite();
+    }
+    await Promise.race([new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))), new Promise((r) => setTimeout(r, 100))]);
+    return { waited: Math.round(performance.now() - t0), running: list.length };
+  }, { css: SETTLE_CSS, cap: cap || 1500 }).catch(() => null);
 }
 
 // ------------------------------------------------------------------------------------------
@@ -712,6 +921,7 @@ async function mainPass(browser, url, pageRel, opts, axe, R) {
   R.net = { requests: net.requests, bytes: net.bytes, text: net.text, raw: net.raw, fonts: net.fonts, video: net.video, json: net.json.filter((u) => !/manifest/.test(u)), ai: net.ai, top: net.items.sort((a, b) => b.bytes - a.bytes).slice(0, 6) };
   R.hosts = { allowed: Array.from(rec.allowed), blocked: Array.from(rec.blocked) };
   R.pageErrors = errors;
+  R.settled = await settle(page);
   const before = await page.evaluate(qaCollect, { numbers: true, sampleMark: true });
   const csp = await page.evaluate(() => (window.__qa && window.__qa.csp) || []);
   R.hosts.csp = Array.from(new Set(csp.map((c) => { try { return new URL(c.uri).hostname; } catch (e) { return ''; } }).filter((h) => h && opts.allowHosts.indexOf(h) < 0)));
@@ -726,13 +936,15 @@ async function mainPass(browser, url, pageRel, opts, axe, R) {
   const bgOf = () => getComputedStyle(document.body || document.documentElement).backgroundColor;
   const lightBg = await page.evaluate(bgOf);
   await page.emulateMedia({ colorScheme: 'dark' });
-  await sleep(250);
+  await sleep(150);
+  await settle(page, 800);
   const darkBg = await page.evaluate(bgOf);
   const dark = await page.evaluate(qaCollect, { lite: true, sampleMark: true });
   R.v['390-dark'] = slimVariant(dark);
   R.v['390-dark'].samples = await sampleTexts(page, dark.texts, opts.maxSamples);
   if (axe.code && opts.axe) R.axe['390-dark'] = await runAxe(page, axe.code);
   await page.emulateMedia({ colorScheme: 'light' });
+  await settle(page, 800);
   const toggleBg = await page.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); const b = getComputedStyle(document.body || document.documentElement).backgroundColor; document.documentElement.removeAttribute('data-theme'); return b; });
   R.darkMode = { light: lightBg, dark: darkBg, toggle: toggleBg };
   await sleep(150);
@@ -741,6 +953,7 @@ async function mainPass(browser, url, pageRel, opts, axe, R) {
   const waited = Date.now() - t0;
   if (waited < 3500) await sleep(3500 - waited);
   const after = await page.evaluate(qaCollect, { numbers: true, lite: false });
+  R.late = { blocks: after.blocks || [], attrs: after.attrs || [] };   // text rendered by late JS (English left, source paths)
   const a0 = new Set(before.numbers || []);
   R.ticks = (after.numbers || []).filter((x) => !a0.has(x) && (before.numbers || []).some((y) => y.split('|')[0] === x.split('|')[0])).slice(0, 5);
   // first screen at 390 x 664
@@ -748,6 +961,11 @@ async function mainPass(browser, url, pageRel, opts, axe, R) {
   await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }));
   await sleep(300);
   R.firstScreen = await page.evaluate(qaFirstScreen);
+  // bottom bars once the visitor scrolls: one that shows on scroll must cover under 25% of the screen
+  await page.evaluate(() => window.scrollTo({ top: Math.min(Math.max(0, document.documentElement.scrollHeight - window.innerHeight), Math.round(window.innerHeight * 1.5)), left: 0, behavior: 'instant' }));
+  await sleep(450);
+  await settle(page, 600);
+  R.barsScrolled = (await page.evaluate(qaFirstScreen)).bars;
   await ctx.close();
 }
 
@@ -760,9 +978,11 @@ async function widthPass(browser, url, w, opts, axe, R) {
   const page = await ctx.newPage();
   await goto(page, url, opts.timeout);
   await sleep(400);
+  await settle(page);
   for (const theme of opts.themes) {
     await page.emulateMedia({ colorScheme: theme });
-    await sleep(200);
+    await sleep(150);
+    await settle(page, 800);
     const d = await page.evaluate(qaCollect, { lite: true, sampleMark: true });
     const key = w + '-' + theme;
     R.v[key] = slimVariant(d);
@@ -880,17 +1100,120 @@ async function sharePass(browser, url, opts, R) {
     const e = R.dom.rsvpId ? '&e=' + encodeURIComponent(R.dom.rsvpId) : '';
     await goto(page, url + sep + 'ref=QATEST7&from=Kira' + e, opts.timeout);
     await sleep(500);
-    const l = await page.evaluate(() => { const el = document.querySelector('[data-invite-landing]'); if (!el) return null; const s = getComputedStyle(el); return { visible: !el.hidden && s.display !== 'none' && el.getBoundingClientRect().height > 0, text: (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120) }; });
+    const l = await page.evaluate(qaLanding);
     const ref = await page.evaluate(() => (window.YSD && YSD.share && YSD.share.ref) ? YSD.share.ref() : null).catch(() => null);
     R.landing = { landing: l, ref };
   }
   await ctx.close();
 }
 
+/** The invite landing banner, its text read the way a person reads it (block boundaries are spaces). */
+function qaLanding() {
+  const el = document.querySelector('[data-invite-landing]');
+  if (!el) return null;
+  const s = getComputedStyle(el);
+  let txt = '';
+  (function walk(n) {
+    for (const c of n.childNodes) {
+      if (c.nodeType === 3) { txt += c.nodeValue; continue; }
+      if (c.nodeType !== 1 || c.getAttribute('aria-hidden') === 'true' || /^(SCRIPT|STYLE|TEMPLATE)$/.test(c.tagName)) continue;
+      const d = getComputedStyle(c).display;
+      if (d === 'none') continue;
+      const gap = d !== 'inline' && d !== 'contents';
+      if (gap) txt += ' ';
+      walk(c);
+      if (gap) txt += ' ';
+    }
+  })(el);
+  return { visible: !el.hidden && s.display !== 'none' && el.getBoundingClientRect().height > 0, text: txt.replace(/\s+/g, ' ').replace(/\s+([,.;:!?])/g, '$1').trim().slice(0, 160) };
+}
+
+/** Runs one scenario step list on a page. Throws with the step that failed. */
+async function runSteps(page, steps, opts) {
+  const visibleIndex = async (sel) => { const loc = page.locator(sel); const n = await loc.count(); for (let i = 0; i < n; i++) if (await loc.nth(i).isVisible().catch(() => false)) return loc.nth(i); return null; };
+  for (let i = 0; i < steps.length; i++) {
+    const st = steps[i];
+    const tag = 'step ' + (i + 1) + ' ' + JSON.stringify(st).slice(0, 90);
+    try {
+      if (st.click) {
+        const el = await visibleIndex(st.click);
+        if (!el) throw new Error('nothing visible matches ' + st.click);
+        await el.click({ timeout: 3000 });
+      } else if (st.fill) {
+        const el = await visibleIndex(st.fill);
+        if (!el) throw new Error('nothing visible matches ' + st.fill);
+        await el.fill(String(st.value == null ? '' : st.value), { timeout: 3000 });
+      } else if (st.press) {
+        await page.keyboard.press(st.press);
+      } else if (st.scrollTo) {
+        const ok = await page.evaluate((sel) => { const el = document.querySelector(sel); if (!el) return false; el.scrollIntoView({ block: 'center', behavior: 'instant' }); return true; }, st.scrollTo);
+        if (!ok) throw new Error('no element matches ' + st.scrollTo);
+      } else if (st.waitFor) {
+        await page.waitForSelector(st.waitFor, { state: 'visible', timeout: st.timeout || 5000 });
+      } else if (st.repeat) {
+        let done = false;
+        for (let k = 0; k < st.repeat && !done; k++) {
+          if (st.until && await page.locator(st.until).first().isVisible().catch(() => false)) { done = true; break; }
+          const el = await visibleIndex(st.click);
+          if (el) await el.click({ timeout: 3000 }).catch(() => {});
+          await sleep(st.wait || 300);
+        }
+        if (st.until && !done && !(await page.locator(st.until).first().isVisible().catch(() => false))) throw new Error(st.until + ' never showed after ' + st.repeat + ' clicks');
+      }
+      if (st.wait && !st.repeat) await sleep(st.wait);
+      else if (!st.wait) await sleep(120);
+    } catch (e) {
+      if (st.optional) continue;
+      const err = new Error(tag + ': ' + firstLine(e));
+      err.step = i;
+      throw err;
+    }
+  }
+}
+
+/** A post-interaction state: run the steps, then measure layout, contrast and English left in every theme. */
+async function scenarioPass(browser, url, sc, opts, R) {
+  const rec = { id: sc.id, label: sc.label || sc.id, status: 'ok', keys: [] };
+  R.scenarios.push(rec);
+  for (const w of (sc.widths || [390])) {
+    const ctx = await newCtx(browser, w, opts);
+    try {
+      await ctx.addInitScript({ content: '(' + qaInit.toString() + ')({})' });
+      await routeOutside(ctx, new URL(url), opts.allowHosts, { allowed: new Set(), blocked: new Set() });
+      const page = await ctx.newPage();
+      const errs = [];
+      page.on('pageerror', (e) => errs.push(firstLine(e)));
+      await goto(page, url, opts.timeout);
+      await sleep(400);
+      try { await runSteps(page, sc.steps || [], opts); } catch (e) {
+        if (sc.optional && e.step === 0) { rec.status = 'skipped'; rec.note = firstLine(e); return; }
+        rec.status = 'error'; rec.note = firstLine(e); return;
+      }
+      await sleep(250);
+      await settle(page);
+      let first = true;
+      for (const theme of opts.themes) {
+        await page.emulateMedia({ colorScheme: theme });
+        await sleep(120);
+        await settle(page, 800);
+        const d = await page.evaluate(qaCollect, { lite: true, blocks: first, sampleMark: true });
+        const key = w + '-' + theme + '@' + sc.id;
+        R.v[key] = slimVariant(d);
+        R.v[key].scenario = sc.id;
+        R.v[key].samples = await sampleTexts(page, d.texts, opts.maxSamples);
+        if (first) R.stateText.push({ at: key, blocks: d.blocks || [], attrs: d.attrs || [] });
+        rec.keys.push(key);
+        first = false;
+      }
+      if (errs.length) rec.pageErrors = errs.slice(0, 3);
+    } finally { await ctx.close().catch(() => {}); }
+  }
+}
+
 function slimVariant(d) {
   const small = d.texts.filter((t) => t.fs < 11.95).map((t) => ({ sel: t.sel, text: t.text, fs: Math.round(t.fs * 10) / 10 }));
   const low = d.texts.filter((t) => t.ratio != null && !t.disabled && !t.logo && t.ratio < (t.large ? 3 : 4.5)).map((t) => ({ sel: t.sel, text: t.text, ratio: Math.round(t.ratio * 100) / 100, need: t.large ? 3 : 4.5 }));
-  const ns = d.texts.filter((t) => t.nonsolid || t.overMedia).map((t) => ({ sel: t.sel, text: t.text, why: t.nonsolid ? (typeof t.nonsolid === 'string' ? t.nonsolid : 'background') + ' on ' + t.nonsolidAt : 'over ' + t.overMedia }));
+  const ns = d.texts.filter((t) => t.nonsolid || t.overMedia || t.marker).map((t) => ({ sel: t.sel, text: t.text, why: t.nonsolid ? (typeof t.nonsolid === 'string' ? t.nonsolid : 'background') + ' on ' + t.nonsolidAt : t.marker ? 'marker ' + t.marker : 'over ' + t.overMedia }));
   return { vw: d.vw, scrollW: d.scrollW, overflow: d.overflow, small, targets: d.targets, low, nonsolid: ns, texts: d.texts.length };
 }
 
@@ -898,13 +1221,30 @@ function slimVariant(d) {
 // Scoring
 // ------------------------------------------------------------------------------------------
 
-const EN_WORDS = new Set('the and you your with for this that what when where who are is was will from have has not but all can get how more see into just our we us its on in at of to be or an my me by up out now new here there their they them next first time day week join free about events event sign send share friend friends going read learn privacy policy home menu close open back skip content main vote voting check make bring save seat details see maybe'.split(' '));
-const ES_WORDS = new Set('el la los las de del y que en un una para con por tu tus es son más se al lo como qué cuándo dónde nos te su sus este esta estos gratis únete votar evento eventos amigo amigos hoy semana política condado ya muy sin sobre también hay mira guarda lugar boleta correo inscríbete'.split(' '));
-const EN_SINGLE = new Set(['join', 'join free', 'menu', 'close', 'home', 'events', 'vote', 'share', 'next', 'back', 'skip to content', 'search', 'submit', 'send', 'read more', 'learn more', 'about', 'privacy', "i'm in", 'maybe', "can't", 'details', 'copy link', 'save image', 'start', 'done', 'cancel', 'continue', 'see all', 'more', 'open menu', 'close menu', 'dismiss', 'got it']);
-function englishLeft(text) {
+const EN_WORDS = new Set(('the and you your with for this that what when where who are is was were will would could should from have has not but all can get how more see into just our we us its on in at of to be or an my me by up out now new here there their they them ' +
+  'next first time day week join free about events event sign send share friend friends going read learn privacy policy home menu close open back skip content main vote voting check make bring save seat details maybe ' +
+  'it if than then which only also any each every some very too yet ready pick choose try tap again copy copied question questions answer answers result results today tonight tomorrow people city name ' +
+  'show hide less loading done start retake quit previous thanks thank please yes').split(' '));
+const ES_WORDS = new Set(('el la los las de del y que en un una para con por tu tus es son más se al lo como qué cuándo dónde nos te su sus este esta estos gratis únete votar evento eventos amigo amigos hoy semana política condado ya muy sin sobre también hay mira guarda lugar boleta correo inscríbete ' +
+  'pregunta preguntas respuesta resultado resultados otra vez copiar copiado listo empieza siguiente anterior gracias sí ver menos más cargando nombre ciudad gente').split(' '));
+const EN_SINGLE = new Set(['join', 'join free', 'menu', 'close', 'home', 'events', 'vote', 'share', 'next', 'back', 'skip to content', 'search', 'submit', 'send', 'read more', 'learn more', 'about', 'privacy', "i'm in", 'maybe', "can't", 'details', 'copy link', 'save image', 'start', 'done', 'cancel', 'continue', 'see all', 'more', 'open menu', 'close menu', 'dismiss', 'got it',
+  'copied', 'copy', 'save', 'saved', 'skip', 'quit', 'previous', 'next question', 'start over', 'try again', 'retake', 'see more', 'show more', 'show less', 'loading', 'going', 'interested', 'yes', 'no thanks', 'thanks', 'thank you', 'play', 'pause', 'mute', 'unmute', 'download', 'upload', 'sent', "you're in", 'not quite', 'results', 'your result']);
+const reEsc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+let allowCache = null;
+/**
+ * Stopword heuristic for English left on a Spanish page. Proper names and brands never count: make_es's
+ * NEUTRAL list, EN_ALLOW above ("My Voter Record", "DEMO"...) and `allow` (targets esAllow, --es-allow),
+ * matched as whole words. URLs and emails are dropped first.
+ */
+function englishLeft(text, allow) {
   let t = String(text || '');
   t = t.replace(/https?:\/\/\S+|\S+@\S+\.\S+/g, ' ');
-  for (const w of es.NEUTRAL.slice().sort((a, b) => b.length - a.length)) t = t.split(w).join(' ');
+  const extra = allow && allow.length ? allow : [];
+  if (!allowCache) allowCache = es.NEUTRAL.concat(EN_ALLOW);
+  for (const w of allowCache.concat(extra).slice().sort((a, b) => b.length - a.length)) {
+    if (t.indexOf(w) < 0) continue;
+    t = t.replace(new RegExp('(^|[^\\p{L}\\p{N}])' + reEsc(w) + '(?=$|[^\\p{L}\\p{N}])', 'gu'), '$1 ');
+  }
   const words = t.toLowerCase().match(/[\p{L}']+/gu) || [];
   if (!words.length) return false;
   const phrase = words.join(' ');
@@ -914,8 +1254,36 @@ function englishLeft(text) {
   return (en >= 2 && esn === 0) || (en >= 3 && en > esn * 3);
 }
 
+/**
+ * B37: source-file paths in rendered text ("data/civic.js", "assets/img/", "home.css", a bare ".js"). URLs with a
+ * host (voteseminole.gov/vote.html, 127.0.0.1:8000/join.html), file:// links and emails are dropped
+ * first; PATH_ALLOW lists names that may stay (Node.js).
+ */
+const SITE_DIRS = 'assets|data|tools|partials|docs|tests|functions|netlify|src|node_modules|vendor';
+const PATH_RE = new RegExp('(?:^|[\\s(\\[\'"“‘«])((?:\\.{1,2}/)?(?:' + SITE_DIRS + ')/[\\w./-]*|(?:[\\w-]+/)*[\\w-]+\\.(?:js|mjs|cjs|json|css|scss|py|md|html?)|\\.(?:js|mjs|cjs|json|css|scss|py|html?))(?=$|[\\s)\\]\'".,;:!?”’»])', 'gi');
+function sourcePaths(text) {
+  let t = String(text || '');
+  t = t.replace(/[a-z][\w+.-]*:\/\/\S+/gi, ' ').replace(/\S+@\S+\.\S+/g, ' ')
+    .replace(/\b(?:localhost|\d{1,3}(?:\.\d{1,3}){3})(?::\d+)?(?:\/\S*)?/gi, ' ')
+    .replace(/\b(?:[\w-]+\.)+(?:gov|com|org|net|edu|us|io|app|me|co|info|ai|dev|page|link|invalid)(?::\d+)?(?:\/\S*)?/gi, ' ');
+  const out = [];
+  let m;
+  PATH_RE.lastIndex = 0;
+  while ((m = PATH_RE.exec(t))) { const v = m[1].replace(/[.]+$/, ''); if (v.length > 2 && !PATH_ALLOW.some((r) => r.test(v)) && out.indexOf(v) < 0) out.push(v); }
+  return out;
+}
+
 const DEMO_COUNT = /(?:^|[^\d$])(\d[\d,.]*\s*[kKmM]?\+?)\s*(?:people\s+)?(going|attending|members?|rsvps?|rsvp'd|joined|signed up|volunteers|views?|likes?|followers|shares|asistentes|van|vamos|miembros|inscritos|se unieron|voluntarios|vistas|reproducciones|seguidores|me gusta)\b/i;
 const VIEW_COUNT = /\b\d[\d,.]*\s*[kKmM]?\s*(views|vistas|visualizaciones|reproducciones|plays)\b/i;
+
+/** Rendered text sets for English-left and source-path checks: first view, 3.5 s later, scenario states. */
+function renderedSets(R) {
+  const dom = R.dom || {};
+  const sets = [{ at: '390-light', blocks: dom.blocks || [], attrs: dom.attrs || [], js: false }];
+  if (R.late) sets.push({ at: '390-light +3.5 s', blocks: R.late.blocks || [], attrs: R.late.attrs || [], js: true });
+  for (const st of R.stateText || []) sets.push({ at: st.at, blocks: st.blocks || [], attrs: st.attrs || [], js: true });
+  return sets;
+}
 
 function score(pageRel, R, opts, rules) {
   const tg = targetsFor(opts.targets, pageRel);
@@ -1029,18 +1397,21 @@ function score(pageRel, R, opts, rules) {
   const samples = all((v) => (v.samples && v.samples.sampled || []).map((x) => Object.assign({}, x, { text: x.text, key: x.sel + '|' + x.ratio })));
   const lowSamples = samples.filter((s) => s.ratio < s.need);
   const nonUniform = samples.filter((s) => !s.uniform);
-  const unsampled = variants.reduce((n, k) => n + Math.max(0, ((V[k].samples && V[k].samples.candidates) || 0) - ((V[k].samples && V[k].samples.sampled.length) || 0)), 0);
-  const contrastBad = lows.map((l) => ({ at: l.at, sel: l.sel, text: l.ratio + ':1 (need ' + l.need + '): ' + l.text })).concat(lowSamples.map((s) => ({ at: s.at, sel: s.sel, text: 'pixel-sampled ' + s.ratio + ':1 (need ' + s.need + ') ' + s.why + ': ' + s.text })));
+  const notSampled = all((v) => (v.samples && v.samples.skipped) || []);
+  const unsampled = notSampled.length;
+  const markers = samples.filter((x) => /^marker /.test(x.why)).length;
+  const contrastBad = lows.map((l) => ({ at: l.at, sel: l.sel, text: l.ratio + ':1 (need ' + l.need + '): ' + l.text })).concat(lowSamples.map((s) => ({ at: s.at, sel: s.sel, text: 'pixel-sampled ' + s.ratio + ':1 (need ' + s.need + ') ' + s.why + (/^marker /.test(s.why) ? ' (' + s.spread + '% of the glyph pixels sit on it)' : '') + ': ' + s.text })));
   const bands = (dom.bands || []).length;
   const b8 = contrastBad.slice();
   if (tg.bands && bands < tg.bands) b8.push({ text: bands + ' saturated full-bleed blocks at 390 (need ' + tg.bands + ')' });
-  set('B8', b8.length ? 0 : 2, b8.length ? (contrastBad.length ? contrastBad.length + ' low-contrast text' : '') + (tg.bands && bands < tg.bands ? (contrastBad.length ? '; ' : '') + bands + '/' + tg.bands + ' colour blocks' : '') : 'every pair 4.5:1 (3:1 large), ' + samples.length + ' pixel-sampled' + (tg.bands ? ', ' + bands + ' colour blocks' : ''), b8);
+  const sampledNote = samples.length + ' pixel-sampled' + (markers ? ' (' + markers + ' marker' + (markers > 1 ? 's' : '') + ')' : '') + (unsampled ? ', ' + unsampled + ' not sampled (' + Array.from(new Set(notSampled.map((x) => x.why))).slice(0, 2).join('; ') + ')' : '');
+  set('B8', b8.length ? 0 : 2, b8.length ? (contrastBad.length ? contrastBad.length + ' low-contrast text' : '') + (tg.bands && bands < tg.bands ? (contrastBad.length ? '; ' : '') + bands + '/' + tg.bands + ' colour blocks' : '') + '; ' + sampledNote : 'every pair 4.5:1 (3:1 large), ' + sampledNote + (tg.bands ? ', ' + bands + ' colour blocks' : ''), b8.concat(notSampled.slice(0, 3).map((x) => ({ at: x.at, sel: x.sel, text: 'not sampled (' + x.why + '): ' + x.text }))));
   // N5: text straight on a gradient or image (computed style), or over a photo/sticker with no
   // solid panel between them when the pixels under the glyphs are not one flat colour. A partial
   // fill (a marker swipe under a few words) is allowed; its contrast is checked under B8.
   const n5 = all((v) => v.nonsolid).filter((x) => /^(gradient|image|background) on /.test(x.why)).map((x) => ({ at: x.at, sel: x.sel, text: 'text straight on a ' + x.why + ': ' + x.text }));
   for (const sm of nonUniform) if (/^over /.test(sm.why) && !n5.some((x) => x.sel === sm.sel)) n5.push({ at: sm.at, sel: sm.sel, text: 'text ' + sm.why + ' with no solid panel (' + sm.spread + '% of pixels vary): ' + sm.text });
-  set('N5', n5.length ? 0 : 2, n5.length ? n5.length + ' text block(s) on gradients, photos or patterns' : 'text sits on flat fills' + (unsampled ? ' (' + unsampled + ' candidates not sampled; raise --max-samples)' : ''), n5);
+  set('N5', n5.length ? 0 : 2, n5.length ? n5.length + ' text block(s) on gradients, photos or patterns' : 'text sits on flat fills' + (samples.length ? ', ' + samples.length + ' pixel-sampled' : '') + (unsampled ? ' (' + unsampled + ' candidates not sampled: ' + Array.from(new Set(notSampled.map((x) => x.why))).slice(0, 2).join('; ') + ')' : ''), n5);
 
   // ---- N4
   const n4sum = [];
@@ -1094,10 +1465,21 @@ function score(pageRel, R, opts, rules) {
   // ---- B6 first screen
   const fsr = R.firstScreen || {};
   const b6d = [];
+  // A bottom bar (fixed or sticky) is fine when it stays hidden on the first screen and covers under
+  // 25% of the screen once it shows after a scroll. Shown before any scroll: noted (score 1). Over 25%
+  // at any point: an overlay.
+  const overl = (fsr.overlays || []).slice();
+  const barsFirst = (fsr.bars || []).filter((b) => b.shown);
+  const barsLater = (R.barsScrolled || []).filter((b) => b.shown);
+  for (const b of barsFirst) if (b.cover >= 25 && !overl.some((o) => o.indexOf(b.sel) >= 0)) overl.push('bottom bar ' + b.sel + ' (' + b.cover + '% of the screen)');
+  for (const b of barsLater) if (b.cover >= 25 && !barsFirst.some((x) => x.sel === b.sel && x.cover >= 25)) overl.push('bottom bar ' + b.sel + ' covers ' + b.cover + '% of the screen after a scroll (max 25%)');
   if (!fsr.primary) b6d.push({ text: 'no .btn--primary fully visible at 390 x 664 (' + (fsr.primaryCandidates || 0) + ' on the page)' });
   if (!fsr.secondary) b6d.push({ text: 'no second action fully visible at 390 x 664' + (fsr.secondaryHalf ? ' ("' + fsr.secondaryHalf + '" is cut off)' : '') });
-  (fsr.overlays || []).forEach((o) => b6d.push({ text: 'overlay on first screen: ' + o }));
-  set('B6', !b6d.length ? 2 : (fsr.primary && fsr.secondaryHalf && !(fsr.overlays || []).length) ? 1 : 0, fsr.primary ? '"' + fsr.primary + '"' + (fsr.secondary ? ' + "' + fsr.secondary + '"' : '') + ((fsr.overlays || []).length ? ', overlay' : '') : 'no primary action on the first screen', b6d);
+  overl.forEach((o) => b6d.push({ text: 'overlay on first screen: ' + o }));
+  const b6soft = barsFirst.filter((b) => b.cover < 25).map((b) => ({ text: 'bottom bar ' + b.sel + ' shows before any scroll (' + b.cover + '% of the screen); keep it hidden until the visitor scrolls' }));
+  const barOk = barsLater.filter((b) => b.cover < 25 && !barsFirst.some((x) => x.sel === b.sel));
+  const barNote = barOk.length ? ', bottom bar hidden until scroll (' + barOk.map((b) => b.cover + '%').join(', ') + ' of the screen after)' : '';
+  set('B6', !b6d.length ? (b6soft.length ? 1 : 2) : (fsr.primary && fsr.secondaryHalf && !overl.length) ? 1 : 0, (fsr.primary ? '"' + fsr.primary + '"' + (fsr.secondary ? ' + "' + fsr.secondary + '"' : '') + (overl.length ? ', overlay' : '') : 'no primary action on the first screen') + barNote, b6d.concat(b6soft));
 
   // ---- B7 people photo (home)
   if (tg.peopleWithin) {
@@ -1128,13 +1510,22 @@ function score(pageRel, R, opts, rules) {
   const missingHl = ['en', 'es', 'x-default'].filter((l) => hreflang.indexOf(l) < 0);
   if (isEs) {
     if (!/^es/i.test(dom.lang || '')) n8.push({ text: '<html lang="' + dom.lang + '"> on a Spanish page' });
-    for (const b of dom.blocks || []) {
-      if (b.tn || (b.lang && b.lang !== 'es')) continue;
-      if (englishLeft(b.own)) n8.push({ sel: b.sel, text: 'English left: "' + b.own.slice(0, 70) + '"' });
-    }
-    for (const a of dom.attrs || []) {
-      if (a.tn || (a.lang && a.lang !== 'es')) continue;
-      if (englishLeft(a.text)) n8.push({ sel: a.sel, text: 'English left in ' + a.attr + ': "' + a.text.slice(0, 60) + '"' });
+    // Rendered text after JS runs (make_es --check sees only the static HTML): the first view, the
+    // page 3.5 s later, and every scenario state. Proper names never count (EN_ALLOW, NEUTRAL,
+    // targets esAllow, --es-allow); translate="no" and lang="en" are skipped.
+    const allow = (tg.esAllow || []).concat(opts.esAllow || []);
+    const seenEn = new Set();
+    for (const set2 of renderedSets(R)) {
+      for (const b of set2.blocks) {
+        if (b.tn || (b.lang && b.lang !== 'es') || seenEn.has(b.sel + '|' + b.own)) continue;
+        seenEn.add(b.sel + '|' + b.own);
+        if (englishLeft(b.own, allow)) n8.push({ at: set2.at, sel: b.sel, text: 'English left' + (set2.js ? ' (rendered by JS)' : '') + ': "' + b.own.slice(0, 70) + '"' });
+      }
+      for (const a of set2.attrs) {
+        if (a.tn || (a.lang && a.lang !== 'es') || seenEn.has(a.sel + '|' + a.attr + '|' + a.text)) continue;
+        seenEn.add(a.sel + '|' + a.attr + '|' + a.text);
+        if (englishLeft(a.text, allow)) n8.push({ at: set2.at, sel: a.sel, text: 'English left in ' + a.attr + (set2.js ? ' (rendered by JS)' : '') + ': "' + a.text.slice(0, 60) + '"' });
+      }
     }
   } else if (needsTwin) {
     if (!fs.existsSync(path.join(opts.root, 'es', pageRel))) n8.push({ text: 'es/' + pageRel + ' does not exist: run node tools/make_es.js ' + pageRel });
@@ -1187,8 +1578,37 @@ function score(pageRel, R, opts, rules) {
   set('B24', b24.length ? 0 : 'review', b24.length ? b24.length + ' microcopy rule hit(s)' : 'no rule hits; personality needs a person', b24.map((h) => ({ sel: h.sel, text: h.rule + ': "' + h.match + '"' })));
   const b26e = errGate('B26'), b26w = vHits.filter((h) => h.gate === 'B26' && h.severity === 'warning');
   set('B26', b26e.length ? 0 : b26w.length ? 1 : 2, b26e.length ? b26e.length + ' error(s)' + (b26w.length ? ', ' + b26w.length + ' warning(s)' : '') : b26w.length ? b26w.length + ' warning(s)' : 'clean', b26e.concat(b26w).map((h) => ({ sel: h.sel, text: h.severity + ' ' + h.rule + ': "' + h.match + '" ' + (h.excerpt || '') })));
-  const b37 = errGate('B37');
-  set('B37', b37.length ? 0 : 2, b37.length ? b37.length + ' leftover(s)' : 'no leftovers or unfilled templates', b37.map((h) => ({ sel: h.sel, text: '"' + h.match + '" ' + (h.excerpt || '') })));
+  const b37 = errGate('B37').map((h) => ({ sel: h.sel, text: '"' + h.match + '" ' + (h.excerpt || '') }));
+  const seenPath = new Set();
+  for (const set2 of renderedSets(R)) {
+    for (const b of set2.blocks) {
+      if (!b.visible) continue;
+      for (const pth of sourcePaths(b.own)) { const k = b.sel + '|' + pth; if (seenPath.has(k)) continue; seenPath.add(k); b37.push({ at: set2.at, sel: b.sel, text: 'source path "' + pth + '" in rendered text: ' + b.own.slice(0, 70) }); }
+    }
+  }
+  set('B37', b37.length ? 0 : 2, b37.length ? b37.length + ' leftover(s)' : 'no leftovers, unfilled templates or source paths', b37);
+
+  // ---- SC post-interaction states (their findings also count under B8, B31, N4 and N5)
+  if ((R.scenarios || []).length) {
+    const sc = R.scenarios;
+    const per = sc.map((x) => {
+      if (x.status !== 'ok') return { x, n: 0 };
+      const keys = x.keys;
+      let n = 0;
+      for (const k of keys) { const v = V[k]; if (!v) continue; n += v.small.length + v.targets.length + v.low.length + (v.scrollW > v.vw + 1 ? 1 : 0) + ((v.samples && v.samples.sampled) || []).filter((y) => y.ratio < y.need).length; }
+      return { x, n };
+    });
+    const det = [];
+    for (const { x, n } of per) {
+      if (x.status === 'error') det.push({ text: x.id + ': could not run (' + x.note + ')' });
+      else if (x.status === 'skipped') det.push({ text: x.id + ': skipped (' + x.note + ')' });
+      else if (n) det.push({ text: x.id + ': ' + n + ' problem(s); see B8, B31 and N4 at ' + x.keys.join(', ') });
+      if (x.pageErrors) det.push({ text: x.id + ': page error ' + x.pageErrors[0] });
+    }
+    const bad = per.filter((p) => p.x.status === 'ok' && p.n).length, err = sc.filter((x) => x.status === 'error').length;
+    const ran = sc.filter((x) => x.status === 'ok');
+    set('SC', bad ? 0 : err ? 'review' : ran.length ? 2 : 'n/a', ran.map((x) => x.id).join(', ') + (ran.length ? ' measured' : 'none measured') + (bad ? ': ' + bad + ' with problems' : ran.length ? ': overflow, text size, targets, contrast clean' : '') + (err ? '; ' + err + ' could not run' : ''), det);
+  }
 
   // ---- B27, B28, B29
   if (R.motion) {
@@ -1213,7 +1633,7 @@ function score(pageRel, R, opts, rules) {
 
 function parseArgs(argv) {
   const o = { root: ROOT, pages: [], all: false, widths: [320, 390, 1440], themes: ['light', 'dark'], axe: true, throttle: true, share: true, perf: true,
-    targetsFile: '', allowHosts: ['images.unsplash.com'], concurrency: 2, out: path.join(CACHE, 'qa_report.json'), json: false, quiet: false, timeout: 30000, maxSamples: 30, help: false };
+    targetsFile: '', allowHosts: ['images.unsplash.com'], scenarios: true, esAllow: [], concurrency: 2, out: path.join(CACHE, 'qa_report.json'), json: false, quiet: false, timeout: 30000, maxSamples: 30, help: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const val = () => { if (i + 1 >= argv.length) throw new Error(a + ' needs a value'); return argv[++i]; };
@@ -1226,6 +1646,8 @@ function parseArgs(argv) {
     else if (a === '--no-throttle') o.throttle = false;
     else if (a === '--no-perf') o.perf = false;
     else if (a === '--no-share') o.share = false;
+    else if (a === '--no-scenarios') o.scenarios = false;
+    else if (a === '--es-allow') o.esAllow = o.esAllow.concat(val().split(',').map((s) => s.trim()).filter(Boolean));
     else if (a === '--targets') o.targetsFile = path.resolve(val());
     else if (a === '--allow-hosts') o.allowHosts = val().split(',').map((s) => s.trim()).filter(Boolean);
     else if (a === '--concurrency') o.concurrency = Math.max(1, parseInt(val(), 10) || 2);
@@ -1245,7 +1667,7 @@ function parseArgs(argv) {
 
 async function checkPage(browser, base, pageRel, opts, axe, rules) {
   const url = base + encodeURI(pageRel);
-  const R = { page: pageRel, url, v: {}, axe: {}, errors: [] };
+  const R = { page: pageRel, url, v: {}, axe: {}, errors: [], scenarios: [], stateText: [] };
   R.rawHtml = fs.readFileSync(path.join(opts.root, pageRel), 'utf8');
   const started = Date.now();
   try { await mainPass(browser, url, pageRel, opts, axe, R); } catch (e) { R.errors.push('main pass: ' + firstLine(e)); }
@@ -1253,6 +1675,11 @@ async function checkPage(browser, base, pageRel, opts, axe, rules) {
   try { await motionPass(browser, url, opts, R); } catch (e) { R.errors.push('reduced-motion pass: ' + firstLine(e)); }
   if (opts.perf) { try { await perfPass(browser, url, opts, R); } catch (e) { R.errors.push('4g pass: ' + firstLine(e)); } }
   if (opts.share) { try { await sharePass(browser, url, opts, R); } catch (e) { R.errors.push('share pass: ' + firstLine(e)); } }
+  if (opts.scenarios) {
+    for (const sc of (targetsFor(opts.targets, pageRel).scenarios || [])) {
+      try { await scenarioPass(browser, url, sc, opts, R); } catch (e) { R.errors.push('scenario ' + sc.id + ': ' + firstLine(e)); }
+    }
+  }
   R.rows = score(pageRel, R, opts, rules);
   R.seconds = Math.round((Date.now() - started) / 100) / 10;
   const rows = Object.values(R.rows);
@@ -1262,7 +1689,7 @@ async function checkPage(browser, base, pageRel, opts, axe, rules) {
   R.points = measured.reduce((s, r) => s + r.score, 0);
   R.possible = measured.length * 2;
   R.reviewCount = rows.filter((r) => /^B/.test(r.id) && r.score === 'review').length;
-  delete R.rawHtml;
+  delete R.rawHtml; delete R.late; delete R.stateText;
   if (R.dom) R.dom = { lang: R.dom.lang, bands: R.dom.bands, photos: R.dom.photos, firstScreen: R.firstScreen };
   return R;
 }
@@ -1355,7 +1782,7 @@ async function main(argv) {
   let opts;
   try { opts = parseArgs(argv); } catch (e) { console.error('qa: ' + e.message); return 2; }
   if (opts.help) {
-    console.log('Usage: node tools/qa.js [--pages a.html,es/a.html | --all] [--widths 320,390,1440] [--themes light,dark] [--no-axe] [--no-throttle] [--no-perf] [--no-share] [--targets FILE] [--allow-hosts a,b] [--concurrency N] [--out FILE] [--json] [--quiet] [--max-samples N]');
+    console.log('Usage: node tools/qa.js [--pages a.html,es/a.html | --all] [--widths 320,390,1440] [--themes light,dark] [--no-axe] [--no-throttle] [--no-perf] [--no-share] [--no-scenarios] [--targets FILE] [--allow-hosts a,b] [--es-allow "A,B"] [--concurrency N] [--out FILE] [--json] [--quiet] [--max-samples N]');
     return 0;
   }
   let report;
@@ -1369,4 +1796,4 @@ async function main(argv) {
 
 if (require.main === module) main(process.argv.slice(2)).then((c) => { process.exitCode = c; });
 
-module.exports = { run, main, parseArgs, score, englishLeft, ratio, lum, walkPages, DEFAULT_TARGETS, GATES, CHECKS, qaCollect, qaFirstScreen, QA_SITE };
+module.exports = { run, main, parseArgs, score, englishLeft, sourcePaths, targetsFor, ratio, lum, walkPages, DEFAULT_TARGETS, EN_ALLOW, GATES, CHECKS, qaCollect, qaFirstScreen, QA_SITE, SETTLE_CSS };

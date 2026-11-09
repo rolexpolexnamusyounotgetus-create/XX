@@ -14,20 +14,21 @@ photos, clips or events, member or not.
 ---
 
 ## The short version
+<!-- synced word for word with data/legal.js pages.minors.tldr (EN), Nov 9, 2026. Numbers the sections
+     below mark *(proposal)* are still proposals for Kira and the board. Edit both together. -->
 
-- **13 and under can't join.** Our club starts at 14, and we never collect info from anyone under 13.
-- **Teens are welcome.** 14- to 17-year-olds can join, learn, volunteer and come to events.
-- **No last names, no schools, no locations** in anything we post that shows a teen.
-- **A parent or guardian says yes** before we post a photo or clip where a teen can be recognized.
-- **No one-on-one DMs** between adult organizers and teen members. Group chats with two adults in
-  them, always.
-- **Two adults, always,** at anything teens attend. No adult is alone with a teen.
-- **No alcohol for anyone under 21.**
-- **See something, say something.** Florida law says anyone who suspects child abuse must report it.
+- Under 14? You can't join yet. Our club starts at 14, and we never collect info from anyone under 13.
+- Teens 14 to 17 are welcome to join, learn, volunteer and come to events.
+- No last names, no schools, no locations in anything we post that shows a teen.
+- A parent or guardian says yes before we post a photo or clip where a teen can be recognized.
+- No one-on-one DMs between adult organizers and teen members. Group chats with two adults, always.
+- Two adults at anything teens attend. No adult is ever alone with a teen.
+- No alcohol for anyone under 21.
 
 ---
 
-## 1. Age rules
+## 1. Who can join?
+<!-- page: teen-safety.html#minors-ages -->
 
 | Age | Status |
 |---|---|
@@ -54,7 +55,8 @@ type.]` If we ever learn we hold info from someone under 13, we delete it right 
 ([Fla. Stat. 743.07(1)](http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0700-0799/0743/Sections/0743.07.html)),
 so a parent or legal guardian gives consent for a minor wherever this policy asks for consent.
 
-## 2. Joining at 14 to 17
+## 2. How does joining work at 14 to 17?
+<!-- page: teen-safety.html#minors-joining -->
 
 - Teens join with the same short form as everyone: first name, email or phone, and the optional
   fields. Nothing extra is required just to join and get emails.
@@ -70,7 +72,8 @@ so a parent or legal guardian gives consent for a minor wherever this policy ask
   `[COUNSEL: can 14- to 17-year-olds pay dues through ActBlue, and do any contribution rules for
   minors apply to dues? Not researched for this draft.]`
 
-## 3. Photos and video of minors
+## 3. What are the rules for photos and video of teens?
+<!-- page: teen-safety.html#minors-photos -->
 
 These rules cover club accounts, the website, the clip feed, share cards, flyers and anything a
 YDSC volunteer posts "for the club". They apply whether a teen is a member or not.
@@ -114,7 +117,8 @@ YDSC volunteer posts "for the club". They apply whether a teen is a member or no
     shared folder and delete them from personal phones and personal accounts within 7 days
     *(proposal)*.
 
-## 4. Online contact and texting
+## 4. Can adult organizers DM teens?
+<!-- page: teen-safety.html#minors-online -->
 
 - **No private one-on-one messages** between adult organizers (18+) and teen members, on any app.
   Use group chats or channels with **at least two adult organizers** in them, or copy the
@@ -134,7 +138,8 @@ YDSC volunteer posts "for the club". They apply whether a teen is a member or no
 - **Never ask a teen** for home address, school, schedule, social security number or photos
   outside club activities.
 
-## 5. Events with members under 18
+## 5. How do you keep events safe?
+<!-- page: teen-safety.html#minors-events -->
 
 1. **Two-adult rule.** At least two adult organizers (21 or older *(proposal)*) at every event or
    activity a minor attends. No adult is ever alone with a minor: not in a room, not in a car, not
@@ -166,7 +171,8 @@ YDSC volunteer posts "for the club". They apply whether a teen is a member or no
    romantic or sexual contact between an adult and a minor, and sharing sexual content with a
    minor are grounds for immediate removal and a report to the authorities.
 
-## 6. Reporting concerns
+## 6. What if something's wrong?
+<!-- page: teen-safety.html#minors-report; the page's #minors-parents ("Parents and guardians: what can you ask for?") draws on sections 2, 3 and 6 -->
 
 - **Someone in danger right now:** call **911**.
 - **Suspected child abuse, abandonment or neglect:** in Florida, **any person** who knows or has
@@ -184,6 +190,7 @@ YDSC volunteer posts "for the club". They apply whether a teen is a member or no
 - **No retaliation** against anyone who reports in good faith.
 
 ## 7. Florida's teen social media laws (for counsel)
+<!-- not on the public page (teen-safety.html) -->
 
 - **Fla. Stat. 501.1736** (HB 3, 2024) bars "social media platforms" from letting under-14s hold
   accounts and requires parental consent for 14- and 15-year-olds. A platform must meet **all four**
@@ -205,6 +212,7 @@ YDSC volunteer posts "for the club". They apply whether a teen is a member or no
   feature needs, no precise location data about minors, no dark patterns.
 
 ## 8. Training and sign-off
+<!-- not on the public page (teen-safety.html) -->
 
 - Every officer and every adult who works with teens reads this policy and confirms it in writing
   each year *(proposal)*.

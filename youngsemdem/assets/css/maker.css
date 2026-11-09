@@ -103,6 +103,8 @@
 .membercard__link { margin:var(--sp-2) 0 0; }
 .membercard__link code { font:700 var(--fs-small)/1.3 var(--font-body);overflow-wrap:anywhere;padding:4px 8px;border-radius:var(--r-xs);background:#F3EADB;color:var(--night); }
 .membercard__demo { margin:var(--sp-2) 0 0; }
+/* The Spanish watermark ("DEMO · NO ES UNA TARJETA DE MIEMBRO REAL") and long button labels wrap instead of clipping at 320/390. */
+.membercard__demo .tag { white-space:normal;max-width:100%;line-height:1.25;text-align:left;overflow-wrap:break-word; }
 .membercard__weeks { display:flex;flex-wrap:wrap;gap:var(--sp-5);margin:0; }
 .membercard__weeks > div { display:grid; }
 .membercard__weeks dt { font-size:var(--fs-tag);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted); }
@@ -127,6 +129,7 @@
 .stickerbook__perk { display:flex;flex-wrap:wrap;justify-content:center;gap:4px;max-width:100%;font-size:var(--fs-small);line-height:1.3; }
 .stickerbook__perk .tag { white-space:normal;text-align:center;line-height:1.2; }
 .membercard__actions { margin:0; }
+.membercard__actions .btn { white-space:normal;max-width:100%;text-wrap:balance; }
 
 @media (prefers-reduced-motion: reduce) {
   .maker__frame, .membercard__card { transition:none; }

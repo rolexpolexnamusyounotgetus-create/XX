@@ -13,25 +13,21 @@
 ---
 
 ## The short version
+<!-- synced word for word with data/legal.js pages.privacy.tldr (EN), Nov 9, 2026. Numbers the sections
+     below mark *(proposal)* are still proposals for Kira and the board. Edit both together. -->
 
-- **Demo right now.** On the demo site, everything you type stays in your own browser. Nothing is
-  sent to us.
-- **On the live site** we collect only what you put in the join form, the texts you sign up for and
-  any clips you choose to post.
-- **No selling. Ever.** We don't sell, rent or trade your info, and we never share your phone
-  number for anyone's marketing.
-- **Analytics that don't track you.** No ad pixels, no cookies from us, no personal data in our
-  stats. If your browser sends Do Not Track or Global Privacy Control, we skip analytics entirely.
-- **Texts only if you tick the box.** Reply STOP any time to stop them.
-- **Clips are checked by a real person** before anyone else can see them.
-- **14 and up.** We don't accept anyone under 13 at all, and our club starts at 14. Members 14 to 17
-  get extra protections ([Teen Safety Policy](MINORS_POLICY.md)).
-- **You're in control.** Ask us to see, fix or delete your info at `{privacyEmail}`, or wipe what
-  this site saved in your browser with one tap.
+- Right now this is a demo: everything you type stays in your own browser. Nothing reaches us.
+- On the live site we only keep what you give us: the join form, the texts you sign up for and the clips you choose to post.
+- We never sell, rent or trade your info, and we never share your phone number for anyone's marketing.
+- No ad trackers and no cookies from us. If your browser sends Do Not Track or Global Privacy Control, we skip analytics completely.
+- Texts only if you tick the box. Reply STOP any time.
+- A real person checks every clip before anyone else can see it.
+- Want to see, fix or delete your info? Email `{privacyEmail}`.
 
 ---
 
-## 1. Who we are
+## 1. Who's behind this?
+<!-- page: privacy.html#privacy-who -->
 
 The **Young Democrats of Seminole County** (YDSC) is a volunteer club for Democrats aged 14 to
 under 40 in Seminole County, Florida. This site is run by YDSC volunteers. When this policy says
@@ -44,7 +40,8 @@ under 40 in Seminole County, Florida. This site is run by YDSC volunteers. When 
   data (YDSC as an unincorporated club, a committee, or the Seminole County Democratic Executive
   Committee). See README, question C1.]`
 
-## 2. Demo site vs live site
+## 2. Is anything being sent right now?
+<!-- page: privacy.html#privacy-demo -->
 
 This matters, so it gets its own section.
 
@@ -60,7 +57,8 @@ How we know: the site's config has a `demo` switch, and while it is on, the join
 upload code paths make no network calls (`assets/js/members.js` `submit()`, `assets/js/clips.js`
 `uploadEnabled()`, `assets/js/track.js` `enabled()`).
 
-## 3. What we collect, and why
+## 3. What do you collect, and why?
+<!-- page: privacy.html#privacy-collect -->
 
 ### 3.1 When you join
 
@@ -124,7 +122,8 @@ sent you, so we can thank the right people.
 
 We don't use ad pixels, retargeting, social media trackers or fingerprinting.
 
-## 4. What this site saves in your browser
+## 4. What's saved in my browser?
+<!-- page: privacy.html#privacy-browser -->
 
 The site keeps some things on your own device using your browser's storage (`localStorage`,
 `sessionStorage` and IndexedDB). This is how the demo works without a server. **The site's own
@@ -148,7 +147,8 @@ we already have on the live site: for that, see section 13.
 **Other sites' cookies.** When you use ActBlue, Action Network, Mobilize, a video player or the
 bot check, those services may set their own cookies under their own policies.
 
-## 5. How we use your info
+## 5. How do you use my info?
+<!-- not on the public page (privacy.html) -->
 
 - To welcome you, send updates you asked for, and invite you to events and volunteer shifts.
 - To track dues and voting membership under the club's bylaws.
@@ -160,7 +160,8 @@ bot check, those services may set their own cookies under their own policies.
 We don't use your info for ad targeting, and we don't give it to anyone to train AI models. There
 is no AI chatbot on this site.
 
-## 6. Analytics, Do Not Track and Global Privacy Control
+## 6. Do you track me? (Analytics, Do Not Track and GPC)
+<!-- page: privacy.html#privacy-analytics -->
 
 - The demo never sends analytics (`track.js`: `enabled()` is false while `demo` is on).
 - The live site will use **Cloudflare Web Analytics** (which "does not collect or use your
@@ -181,7 +182,8 @@ is no AI chatbot on this site.
 - **If your browser sends Do Not Track or Global Privacy Control, we send no analytics at all**
   (`integrations.analytics.respectDoNotTrack`, on by default).
 
-## 7. Who we share with
+## 7. Who sees my info?
+<!-- page: privacy.html#privacy-share -->
 
 **We don't sell, rent or trade your info.** We share it only with services that help us run the
 club, under their own privacy policies, and only what each needs:
@@ -212,7 +214,8 @@ including reporting suspected child abuse (section 11).
 and last initial in their squad. Members under 18 appear by first name only *(proposal; needs a
 change in the squad code)*.
 
-## 8. Text messages (SMS terms)
+## 8. Text message (SMS) terms
+<!-- page: privacy.html#privacy-sms -->
 
 - **Program:** `{orgShort}` texts about events, volunteer shifts and voting reminders.
 - **How often:** recurring automated texts, up to 4 a month *(proposal)*, a few more in the weeks
@@ -231,14 +234,16 @@ change in the squad code)*.
 The sign-up box is unchecked by default, and the exact wording is kept in `data/legal.js`
 (`snippets.smsConsent`) so the record of what you saw stays exact.
 
-## 9. Email
+## 9. What about email?
+<!-- not on the public page (privacy.html) -->
 
 Every email has a one-click unsubscribe link and our mailing address. CAN-SPAM's rules (a valid
 postal address, opt-outs honored within 10 business days) are written for commercial email
 ([FTC guide](https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business));
 political email is generally outside them, and we follow them anyway.
 
-## 10. Clips you post
+## 10. What happens to clips I post?
+<!-- page: privacy.html#privacy-clips -->
 
 - Nothing you upload is public until a person on our moderation team approves it.
 - You can delete your clip from your device at any time. To take down a published clip, use the
@@ -247,7 +252,8 @@ political email is generally outside them, and we follow them anyway.
 - Don't put personal details in captions (yours or anyone else's).
 - Full rules: [Clip Rules](MODERATION_POLICY.md).
 
-## 11. Kids and teens
+## 11. What about kids and teens?
+<!-- page: privacy.html#privacy-teens -->
 
 - **Under 13: never.** The federal children's privacy law (COPPA) treats anyone under 13 as a
   child ([16 CFR 312.2](https://www.law.cornell.edu/cfr/text/16/312.2)). COPPA covers commercial
@@ -259,7 +265,8 @@ political email is generally outside them, and we follow them anyway.
   [Teen Safety Policy](MINORS_POLICY.md).
 - **Parents and guardians** can ask to see or delete their teen's info at `{privacyEmail}`.
 
-## 12. How long we keep things *(proposals)*
+## 12. How long do you keep things? *(proposals)*
+<!-- page: privacy.html#privacy-retention -->
 
 | Data | Kept for |
 |---|---|
@@ -273,7 +280,8 @@ political email is generally outside them, and we follow them anyway.
 | Anything from someone under 13 | Deleted as soon as we know |
 | Analytics | Totals only; no personal data to keep |
 
-## 13. Your choices and rights
+## 13. Can I see, fix or delete my info?
+<!-- page: privacy.html#privacy-rights -->
 
 You can ask us to:
 
@@ -289,7 +297,8 @@ We may ask a question or two to confirm it's really you. Florida's consumer data
 cover us ([501.702(9)](http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0500-0599/0501/Sections/0501.702.html));
 we offer these rights anyway.
 
-## 14. Security
+## 14. How do you keep it safe?
+<!-- page: privacy.html#privacy-security -->
 
 - HTTPS everywhere. Secret keys stay in the host's server settings, never in the site's code.
 - Only named volunteers can reach the member list, each with their own login and two-factor
@@ -303,12 +312,14 @@ we offer these rights anyway.
   ([Fla. Stat. 501.171(4)](http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0500-0599/0501/Sections/0501.171.html));
   it may not reach a volunteer club, and we follow it anyway.
 
-## 15. Changes
+## 15. What if this policy changes?
+<!-- page: privacy.html#privacy-changes -->
 
 When we change this policy, we update the date at the top and say what changed. If a change
 affects how we use info you already gave us, we'll ask you first.
 
-## 16. Contact
+## 16. How do I reach you?
+<!-- not on the public page (privacy.html) -->
 
 `{privacyEmail}` · `[MAILING ADDRESS]` · Seminole County, Florida.
 

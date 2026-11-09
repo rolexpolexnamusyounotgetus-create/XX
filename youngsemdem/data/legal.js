@@ -69,7 +69,8 @@ window.YSD_DATA.legal = {
   effective: "",
   // Nov 9, 2026 (W7): headings rephrased as the questions people ask, TL;DRs tightened, the stale
   // "demo numbers move" limitation replaced (counters no longer tick), pages.conduct added. Same legal
-  // points as before; docs/legal/*.md still hold the long versions (conduct has no .md draft yet).
+  // points as before; docs/legal/*.md still hold the long versions. Lead, Nov 9: the .md headings and short
+  // versions now match these pages word for word, and conduct has its full draft (docs/legal/CONDUCT_DRAFT.md).
   langs: ["en", "es"],
 
   banner: {
@@ -84,7 +85,7 @@ window.YSD_DATA.legal = {
     privacyEmail: { from: "legal.privacyEmail", fallback: { en: "[privacy email, set before launch]", es: "[correo de privacidad, se configura antes del lanzamiento]" } },
     mailingAddress: { from: "legal.mailingAddress", fallback: { en: "[mailing address, set before launch]", es: "[dirección postal, se configura antes del lanzamiento]" } },
     smsNumber: { from: "legal.smsNumber", fallback: { en: "[texting number, set before launch]", es: "[número de mensajes, se configura antes del lanzamiento]" } },
-    dmcaAgent: { from: "legal.dmcaAgent", suggested: true, fallback: { en: "[copyright agent, registered before uploads go live]", es: "[agente de derechos de autor, se registra antes de abrir las subidas]" } },
+    dmcaAgent: { from: "legal.dmcaAgent", fallback: { en: "[copyright agent, registered before uploads go live]", es: "[agente de derechos de autor, se registra antes de abrir las subidas]" } },
     soePhone: { from: "links.vote.countyPhone", fallback: { en: "407-585-8683", es: "407-585-8683" } }
   },
 
@@ -571,7 +572,7 @@ window.YSD_DATA.legal = {
         }
       ],
       sources: ["fl-934-03", "fl-934-02", "fl-540-08", "fl-39-201", "dcf-hotline", "fl-562-11", "fl-102-031", "fl-104-0615"],
-      fullDraft: ""
+      fullDraft: "docs/legal/CONDUCT_DRAFT.md"
     },
 
     // ------------------------------------------------------------------------- ACCESSIBILITY

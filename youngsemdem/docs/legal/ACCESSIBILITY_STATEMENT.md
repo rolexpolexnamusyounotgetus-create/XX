@@ -3,31 +3,32 @@
 > **DRAFT: not legal advice; have counsel review before launch.**
 > Written Monday, November 9, 2026 for the youngsemdems demo site. The site has **not** had a
 > full accessibility audit yet, so this statement describes our target, what we've built in, and
-> what we know falls short. Update the "Known limitations" list after every `npm run check` and
-> every manual test. *(proposal)* marks service levels for Kira and the board to confirm. The
-> short bilingual page version lives in `data/legal.js` (`pages.accessibility`).
+> what we know falls short. Update the "What doesn't work well yet?" list (section 4) after every
+> `npm run check` and every manual test. *(proposal)* marks service levels for Kira and the board to
+> confirm. The short bilingual page version lives in `data/legal.js` (`pages.accessibility`).
 
 ---
 
 ## The short version
+<!-- synced word for word with data/legal.js pages.accessibility.tldr (EN), Nov 9, 2026. Numbers the sections
+     below mark *(proposal)* are still proposals for Kira and the board. Edit both together. -->
 
-- **Our goal:** every page meets **WCAG 2.2 Level AA**.
-- **Where we are:** a demo, not yet fully tested. Some things don't work well yet, listed below.
-- **Stuck?** Email `{privacyEmail}` and tell us the page and the problem. We'll reply within
-  2 business days and fix it or get you the info another way within 10 business days
-  *(proposal)*.
-- **Voting deadline today?** Tell us it's urgent and we answer the same day. You can also call the
-  Seminole County Supervisor of Elections at `{soePhone}`.
+- Our goal: every page meets WCAG 2.2 Level AA.
+- Where we are: a demo, not yet fully tested. Known problems are listed below.
+- Stuck? Email `{privacyEmail}`. We reply within 2 business days and fix it or get you the info another way within 10.
+- Voting deadline today? Say it's urgent and we answer the same day.
 
 ---
 
-## 1. Our commitment
+## 1. What's the goal?
+<!-- page: accessibility.html#accessibility-goal -->
 
 The Young Democrats of Seminole County want everyone in the county to be able to join, learn,
 show up and post, including people who use screen readers, keyboards, switch devices,
 captions, magnification, voice control or plain-language reading, and people who read in Spanish.
 
-## 2. The standard we aim for
+## 2. Which standard do you aim for?
+<!-- page: accessibility.html#accessibility-goal -->
 
 **Web Content Accessibility Guidelines (WCAG) 2.2, Level AA**, the W3C Recommendation (current
 edition dated Dec 12, 2024: https://www.w3.org/TR/WCAG22/). WCAG 2.2 added criteria that matter
@@ -38,7 +39,8 @@ Accessible Authentication (3.3.8).
 **Conformance status:** not yet assessed. We'll say "partially conforms" or "conforms" only after
 an audit (automated plus manual) backs it up.
 
-## 3. What we've built in
+## 3. What's already built in?
+<!-- page: accessibility.html#accessibility-built -->
 
 These are true of the site's code today (file references are for the team):
 
@@ -64,7 +66,8 @@ These are true of the site's code today (file references are for the team):
 - **Works without the extras:** pages work from a plain file, without the service worker, and
   without the share or clipboard features when a browser lacks them.
 
-## 4. Known limitations (Nov 9, 2026)
+## 4. What doesn't work well yet? (Nov 9, 2026)
+<!-- page: accessibility.html#accessibility-limits -->
 
 We know about these. Some are fixed before launch, some depend on other services.
 
@@ -89,7 +92,8 @@ We know about these. Some are fixed before launch, some depend on other services
 8. **Video players from providers** (Mux or Cloudflare Stream) on the live site have not been
    tested yet.
 
-## 5. Get help or ask for another format
+## 5. Stuck? Here's how to get help
+<!-- page: accessibility.html#accessibility-help; voting help: #accessibility-voting -->
 
 Tell us what you need and we'll make it work: the information in plain text, large print, in
 Spanish, read to you over the phone, or help filling in a form.
@@ -112,11 +116,13 @@ source is the **Seminole County Supervisor of Elections**: https://voteseminole.
 `{soePhone}` (number checked Nov 9, 2026, in `YSD_CONFIG.links.vote.countyPhone`).
 
 ## 6. Not happy with our answer?
+<!-- not on the public page (accessibility.html) -->
 
 Ask for your message to go to the YDSC president or board, and we'll answer in writing within
 10 business days *(proposal)*.
 
-## 7. How we test
+## 7. How do you test?
+<!-- not on the public page (accessibility.html) -->
 
 - Before launch: `npm run check:strict` with zero errors, then a manual keyboard pass and a
   screen-reader pass on join, share, clips, events and voting info.
@@ -124,7 +130,8 @@ Ask for your message to go to the YDSC president or board, and we'll answer in w
   each election *(proposal)*.
 - We review this statement every January and whenever a big feature ships.
 
-## 8. Compatibility
+## 8. Which browsers and devices does it work with?
+<!-- not on the public page (accessibility.html) -->
 
 Built for current versions of Safari (iPhone and Mac), Chrome (Android and desktop), Firefox and
 Edge. Older browsers get a simpler experience: the pages still load, some extras turn off.

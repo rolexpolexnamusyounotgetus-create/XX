@@ -300,6 +300,7 @@ window.YSD_DATA.sharekit = {
       "quiz-show-up": { en: "My type", es: "Mi modo" },
       "quiz-issue": { en: "My issue", es: "Mi tema" },
       membercard: { en: "Member card", es: "Tarjeta de miembro" },
+      supportercard: { en: "Supporter card", es: "Tarjeta de simpatizante" },
       rewind: { en: "My 2026", es: "Mi 2026" }
     },
     labels: {
@@ -483,7 +484,12 @@ window.YSD_DATA.sharekit = {
       since: { en: "Member since {month}", es: "Miembro desde {month}" },
       stickers: { en: "{n} stickers so far", es: "{n} stickers hasta ahora" },
       watermark: { en: "DEMO · not a real member card", es: "DEMO · no es una tarjeta de miembro real" },
-      friend: { en: "Friend of the Young Dems", es: "Amistad de los Young Dems" }
+      friend: { en: "Friend of the Young Dems", es: "Amistad de los Young Dems" },
+      // Lead decision, Nov 9, 2026: people 40 and up can join the email list as SUPPORTERS, not members
+      // (membership is 14 to 39). membercard.js and cards-brand.js swap in these lines when age > 39.
+      supporterKicker: { en: "SUPPORTER CARD", es: "TARJETA DE SIMPATIZANTE" },
+      supporterSince: { en: "Supporter since {month}", es: "Simpatizante desde {month}" },
+      supporterWatermark: { en: "DEMO · not a real supporter card", es: "DEMO · no es una tarjeta de simpatizante real" }
     },
     rewind: {
       title: { en: "My 2026 with the Young Dems", es: "Mi 2026 con los Young Dems" },
@@ -1017,7 +1023,7 @@ window.YSD_DATA.sharekit = {
     },
     {
       id: "v06",
-      title: { en: "How Seminole are you?", es: "¿Qué tan de Seminole eres?" },
+      title: { en: "Trivia night: Seminole County edition", es: "Noche de trivia: edición condado de Seminole" },   // same name as the trivia night in data/events.js (lead, Nov 9)
       primaryLang: "en",
       format: "quiz-show talking head",
       lengthSec: [25, 30],
@@ -1026,7 +1032,7 @@ window.YSD_DATA.sharekit = {
       hook: {
         visual: { en: "Game-show energy: tap a desk bell (or a pen on a mug) as the first question pops up.", es: "Ambiente de concurso: toca una campanita (o un bolígrafo contra una taza) mientras aparece la primera pregunta." },
         line: { en: "Which Seminole city is nicknamed after a vegetable?", es: "¿Qué ciudad de Seminole tiene apodo de verdura?" },
-        onScreen: { en: "How Seminole are you? 3 questions, no googling", es: "¿Qué tan de Seminole eres? 3 preguntas, sin googlear" }
+        onScreen: { en: "Seminole County edition: 3 questions, no googling", es: "Edición condado de Seminole: 3 preguntas, sin googlear" }
       },
       cta: {
         line: { en: "Three out of three? You'd crush our trivia night. Zero out of three? Come anyway, we'll put you on a team.", es: "¿Tres de tres? Arrasarías en nuestra noche de trivia. ¿Cero de tres? Ven igual, te armamos un equipo." },

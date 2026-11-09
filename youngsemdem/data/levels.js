@@ -492,7 +492,7 @@ window.YSD_DATA.levels = {
       id: "quiz-done",
       art: "sun",
       ring: "celery",
-      name: { en: "Know Thyself", es: "Te conoces" },
+      name: { en: "Called It", es: "Le atinó" }, // was the placeholder "Know Thyself" (lead, Nov 9, 2026)
       desc: { en: "You took a quiz and it called you out, kindly.", es: "Hiciste un quiz y te describió, con cariño." },
       unlock: { en: "Finish either quiz.", es: "Termina cualquiera de los dos quizzes." },
       rule: { type: "count", action: "quiz", min: 1 },

@@ -433,6 +433,7 @@ window.YSD_DATA.strings = {
 
     // ==================================================================================== CTA
     "cta.join": { en: "Join free", es: "Únete gratis", note: "BRIEF §2.7 line 5: the primary CTA (header, hero, join). Was \"Count me in\" until Nov 9, 2026." },
+    "cta.yourCard": { en: "Your card", es: "Tu tarjeta", note: "Header CTA once this browser has a member (assets/js/ui.js YSD.ui.joinCta swaps cta.join for it and points it at join.html#card). Keep it no longer than cta.join so the header fits at 320 px." },
     "cta.imIn": { en: "I'm in", es: "Me apunto", note: "RSVP start: opens the RSVP sheet (BRIEF §2.7 line 8). The sheet button is cta.rsvp." },
     "cta.seeWhatsOn": { en: "See what's on", es: "Mira qué hay", note: "BRIEF §2.7 line 6." },
     "cta.maybe": { en: "Maybe", es: "Quizás" },
@@ -714,7 +715,7 @@ window.YSD_DATA.strings = {
     },
     "success.card.title": { en: "Your card's ready.", es: "Tu tarjeta está lista." },
     "success.card.body": { en: "Send it to one person you'd actually text.", es: "Mándasela a una persona a la que de verdad le escribirías.", note: "BRIEF §2.7 line 15." },
-    "success.reminder.title": { en: "We'll remind you on {date}.", es: "Te lo recordamos el {date}." },
+    "success.reminder.title": { en: "Your calendar will remind you on {date}.", es: "Tu calendario te lo recordará el {date}.", note: "Shown after a reminder .ics or calendar link is added. The visitor's own calendar sends the reminder, not us: the site stores no contact info for it and sends nothing (lead, Nov 9, 2026)." },
     "success.unsubscribe.title": { en: "You're unsubscribed.", es: "Te diste de baja." },
     "success.unsubscribe.body": { en: "Sad to see you go, glad you were here. The door stays open.", es: "Nos da pena que te vayas y nos alegra que hayas estado. La puerta sigue abierta." },
 
@@ -1472,7 +1473,7 @@ window.YSD_DATA.strings = {
     "seo.newsletter.ogTitle": { en: "One good email a week", es: "Un buen correo a la semana", placeholder: "chapter-confirm" },
     "seo.newsletter.ogDescription": { en: "What's happening in Seminole, one thing to do, and nothing panicky.", es: "Lo que pasa en Seminole, una cosa para hacer y cero pánico.", placeholder: "chapter-confirm" },
     // ---- about
-    "seo.about.title": { en: "About the Young Democrats of Seminole County", es: "Quiénes somos: Young Democrats of Seminole County" },
+    "seo.about.title": { en: "About · Young Democrats of Seminole County", es: "Quiénes somos · Young Democrats of Seminole County", note: "Lead, Nov 9, 2026: the shared \"Page · Young Democrats of Seminole County\" title shape (BRIEF §4.0)." },
     "seo.about.description": {
       en: "Seminole County's chapter of the Florida Young Democrats, for ages 14 to 39: what we do, who can join, how dues work, and how to get involved.",
       es: "El capítulo del condado de Seminole de los Florida Young Democrats, de 14 a 39 años: qué hacemos, quién puede unirse, cómo funciona la cuota y cómo participar.",

@@ -32,6 +32,9 @@
    it is !important to survive base.css's reduced-motion "animation:none !important" (checker, Nov 9). */
 html.js .p-legal .x-lwrap[data-legal-pending] { visibility:hidden;min-height:110vh;animation:x-unhide 0s 2.5s forwards !important; }
 @keyframes x-unhide { to { visibility:visible; } }
+/* Under reduced motion the policy text never waits on that timer (or on any animation): visible from the first paint,
+   even if legal.js never runs. The 110vh floor still keeps the footer down. */
+@media (prefers-reduced-motion: reduce) { html.js .p-legal .x-lwrap[data-legal-pending] { visibility:visible;animation:none !important; } }
 .p-legal .btn { transition-property:transform, box-shadow; }
 .p-legal .x-draft { max-width:var(--prose); }
 .p-legal .x-noscript { padding:var(--sp-4);border:1px dashed var(--control);border-radius:var(--r-md); }

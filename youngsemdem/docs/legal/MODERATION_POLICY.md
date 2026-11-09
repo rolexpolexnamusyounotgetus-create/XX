@@ -13,18 +13,19 @@ how to report or appeal.
 ---
 
 ## The short version
+<!-- synced word for word with data/legal.js pages.moderation.tldr (EN), Nov 9, 2026. Numbers the sections
+     below mark *(proposal)* are still proposals for Kira and the board. Edit both together. -->
 
-- **A real person checks every clip** before anyone else sees it.
-- **Bring your voice:** opinions, event recaps, explainers, jokes, Spanish, all welcome.
-  Disagreeing with politicians, Democrats included, is fine.
-- **We remove:** harassment, doxxing, lies about how to vote, impersonation, hate, sexual
-  content, and anything showing a minor without a guardian's OK.
-- **Review takes up to 3 days** *(proposal)*. Reports about safety or minors: within 24 hours.
-- **Report anything** with the Report button or `{privacyEmail}`. **Appeal** within 14 days.
+- A real person checks every clip before anyone else sees it.
+- Bring your voice: opinions, recaps, explainers, jokes, Spanish, all welcome. Disagreeing with politicians, Democrats included, is fine.
+- We remove harassment, doxxing, lies about how to vote, impersonation, hate, sexual content, and anything showing a minor without a guardian's OK.
+- Review takes up to 3 days. Reports about safety or minors: within 24 hours.
+- Report with the Report button or `{privacyEmail}`. Appeal within 14 days.
 
 ---
 
-## 1. How review works
+## 1. How does review work?
+<!-- page: content-policy.html#moderation-review -->
 
 1. **Checks in your browser.** The site only accepts video files (MP4, MOV, WebM and similar), up
    to 150 MB and 3 minutes (`YSD.clips.validate()`, `check()`).
@@ -47,7 +48,8 @@ weeks before an election, clips about voting get priority. We'll tell you the re
 or by email. `[BUILD: the review queue, the approved-list endpoint (/api/clips) and decision
 notices do not exist yet; see docs/infra/video.md.]`
 
-## 2. What's welcome
+## 2. What can I post?
+<!-- page: content-policy.html#moderation-welcome -->
 
 - Your take on local and national issues, why you vote, why you joined.
 - Event recaps, canvass and tabling clips, behind-the-scenes, trivia night chaos.
@@ -57,7 +59,8 @@ notices do not exist yet; see docs/infra/video.md.]`
 - Spanish, Spanglish, Haitian Creole, any language. We may ask for a translation to review it.
 - Music, footage and images you made or have the rights to use.
 
-## 3. What we remove (or never approve)
+## 3. What gets taken down?
+<!-- page: content-policy.html#moderation-removed -->
 
 1. **Harassment and threats.** Bullying, targeted insults, piling on, threats of violence, or
    encouraging others to harass someone. Public figures can be criticized; they can't be
@@ -108,7 +111,8 @@ Clips that break a rule are declined (before they go up) or removed (after). If 
 clip is a problem, we may ask you to trim, blur or recaption it instead. We don't edit your words
 for you.
 
-## 4. Reporting a clip
+## 4. How do I report a clip?
+<!-- page: content-policy.html#moderation-report -->
 
 - Tap **Report** on any clip `[BUILD: add a report control to the feed; feed.js exposes data-feed-*
   hooks]`, or email `{privacyEmail}` with the clip link and what's wrong.
@@ -122,7 +126,8 @@ for you.
 - **People in a clip** can ask us to take it down even if no rule was broken. If it shows you, we
   remove it within 3 days; if it shows a minor, within 24 hours *(proposal)*.
 
-## 5. Strikes
+## 5. What if I break a rule?
+<!-- page: content-policy.html#moderation-strikes (the page puts strikes and appeals under one heading: "What if I break a rule, or think you got it wrong?") -->
 
 | What happened | What we do |
 |---|---|
@@ -130,7 +135,8 @@ for you.
 | Repeated problems | Uploads paused for 30 days *(proposal)* |
 | Serious harm (threats, doxxing, sexual content, deceptive voting info, content with minors without consent) | Upload access removed right away; we may report to the authorities |
 
-## 6. Appeals
+## 6. What if I think you got it wrong?
+<!-- page: content-policy.html#moderation-strikes -->
 
 - Disagree with a decision? Reply to the decision notice or email `{privacyEmail}` within
   **14 days**. Say why you think we got it wrong.
@@ -138,7 +144,8 @@ for you.
   *(proposal)*. Their decision is final.
 - Appeals are not available for content we must remove or report by law.
 
-## 7. Legal duties
+## 7. What about copyright and the law?
+<!-- page: content-policy.html#moderation-copyright -->
 
 - **Child sexual abuse material.** Federal law requires "providers" of electronic communication or
   remote computing services that learn of apparent child sexual exploitation to report it to
@@ -161,6 +168,7 @@ for you.
 - **Law enforcement** requests go to the board and counsel. We share only what the law requires.
 
 ## 8. Moderator norms
+<!-- not on the public page (content-policy.html) -->
 
 - At least two trained moderators on the rota; one is an officer *(proposal)*.
 - Moderators follow this policy and the Teen Safety Policy, keep a short log of each decision

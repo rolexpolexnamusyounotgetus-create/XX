@@ -14,10 +14,13 @@
 | `MINORS_POLICY.md` | Teen Safety Policy: ages, photos and video of minors, DMs and texts, events, reporting | Counsel, the board, every adult volunteer |
 | `MODERATION_POLICY.md` | Clip Rules: what's welcome, what's removed, review times, reports, strikes, appeals, DMCA | Counsel, moderators |
 | `ACCESSIBILITY_STATEMENT.md` | WCAG 2.2 AA target, what's built in, known limitations, how to get help, response times | Counsel, design, the public |
-| `../../data/legal.js` | Short, page-ready versions of all four in **English and Spanish**, plus form copy and the 106.143 disclaimer placeholder (`window.YSD_DATA.legal`) | Page builders |
+| `CONDUCT_DRAFT.md` | Code of conduct: who it covers, what's expected, what's not OK, reporting, who replies, what happens next, appeals | Counsel, the board, every organizer |
+| `../../data/legal.js` | Short, page-ready versions of all five in **English and Spanish**, plus form copy and the 106.143 disclaimer placeholder (`window.YSD_DATA.legal`) | Page builders |
 
 The `.md` files are the long versions with citations and `[BRACKETED]` open items. `data/legal.js`
-is what pages render. **Change the `.md` first, then mirror it in `data/legal.js`, and bump
+is what pages render. Since Nov 9, 2026 each `.md` section heading matches its page heading (an HTML
+comment under it names the page anchor, e.g. `<!-- page: privacy.html#privacy-who -->`), and each
+"The short version" list is the page's `tldr`, word for word. **Change the `.md` first, then mirror it in `data/legal.js`, and bump
 `updated` there.**
 
 ## How to use it on pages

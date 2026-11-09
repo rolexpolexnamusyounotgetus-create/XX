@@ -40,7 +40,9 @@ body {
 /* ---------- Links ---------- */
 :where(a) { color:var(--link);text-decoration-line:underline;text-decoration-thickness:.08em;text-underline-offset:.18em; }
 :where(a:hover) { text-decoration-thickness:.16em; }
-:where(a[href^="tel:"]) { white-space:nowrap; }
+/* A bare phone number (numbers carry translate="no", BUILDERS §4) never breaks across lines; a labelled tel: link
+   ("Florida Abuse Hotline: 1-800-962-2873", "Call 407-585-8683") wraps like any other text. */
+:where(a[href^="tel:"][translate="no"]) { white-space:nowrap; }
 
 /* ---------- Focus:3 px ring, 2 px offset, colour per surface (tokens) ---------- */
 :focus { outline:none; }
@@ -71,10 +73,14 @@ body {
 :where(legend) { padding:0; }
 
 /* ---------- Motion ---------- */
+/* Cross-document view transitions are NOT declared here: assets/boot.js injects the @view-transition rule on
+   http(s) only (on file:// Chrome logs "Transition was aborted" now and then), and never under Pause motion. */
 @media (prefers-reduced-motion:no-preference) {
   html:not([data-motion="paused"]) { scroll-behavior:smooth; }
-  @view-transition { navigation:auto; }
 }
+/* Reduced motion stops every animation and transition. Rule for every page: never hide content in a base state
+   and reveal it only through an animation (opacity:0 + "forwards"/"both"), because here that animation never
+   runs. Start visible and animate FROM hidden instead, inside (prefers-reduced-motion: no-preference). */
 @media (prefers-reduced-motion:reduce) {
   *, *::before, *::after { animation:none !important;transition:none !important;scroll-behavior:auto !important; }
 }

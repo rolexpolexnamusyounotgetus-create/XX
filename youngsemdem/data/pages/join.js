@@ -30,6 +30,9 @@ window.YSD_DATA.pages.join = {
   'pass.county': { en: "Seminole County", es: "Condado de Seminole" },
   'pass.since': { en: "Member since {month}", es: "Miembro desde {month}" },
   'pass.sinceStatic': { en: "Member since Nov 2026", es: "Miembro desde nov. 2026" },
+  // 40 and up join the list as supporters, not members (lead, Nov 9, 2026): assets/js/pages/join.js swaps these in.
+  'pass.kindSupporter': { en: "SUPPORTER", es: "SIMPATIZANTE" },
+  'pass.sinceSupporter': { en: "Supporter since {month}", es: "Simpatizante desde {month}" },
   'pass.stamp': { en: "You're in", es: "Ya eres parte" },
 
   'consent.before': { en: "By joining, you'll get updates from YDSC. We never sell your info. See our", es: "Al unirte, recibirás novedades de YDSC. Nunca vendemos tus datos. Consulta nuestra" },

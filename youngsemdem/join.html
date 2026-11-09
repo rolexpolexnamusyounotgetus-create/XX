@@ -62,7 +62,7 @@
     <div class="site-header__actions">
       <a class="lang-link" href="es/index.html" hreflang="es" lang="es" data-lang-link>ES<span class="u-visually-hidden">: leer esta página en español</span></a>
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Color theme: Auto. Change theme"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 3a9 9 0 0 1 0 18Z"/></svg><span class="theme-toggle__label" data-theme-label>Auto</span></button>
-      <a class="btn btn--primary btn--sm" href="join.html" data-t="cta.join">Join free</a>
+      <a class="btn btn--primary btn--sm" href="join.html#join-form" data-t="cta.join" data-join-cta>Join free</a>
       <button class="menu-btn" type="button" data-menu-toggle aria-expanded="false" aria-controls="site-menu"><span class="menu-btn__bars" aria-hidden="true"></span><span class="u-visually-hidden" data-t="nav.menu">Menu</span></button>
     </div>
   </div>
@@ -120,7 +120,7 @@
           <div class="x-pass" data-join-pass aria-hidden="true">
             <div class="x-pass__row">
               <span class="x-pass__brand"><svg class="x-pass__mark" viewBox="0 0 64 56" focusable="false"><path d="M15 41 13 54 31 41Z" fill="#C8F03C" stroke="#170B33" stroke-width="3" stroke-linejoin="round"/><rect x="2.5" y="3" width="59" height="39" rx="9" fill="#6A2BFF" stroke="#170B33" stroke-width="3"/><path fill="#C8F03C" d="M21.94 31.5V25.49L15.93 12.5H21.5L24.27 22.36H24.51L27.18 12.5H32.44L26.63 25.47V31.5ZM36.34 31.5V27.92H40.23Q41.33 27.92 42.06 27.27Q42.78 26.62 43.15 25.3Q43.52 23.98 43.52 22.02Q43.52 20.47 43.31 19.34Q43.1 18.22 42.67 17.49Q42.25 16.77 41.57 16.42Q40.88 16.08 39.94 16.08H36.34V12.5H39.87Q42.38 12.5 44.23 13.61Q46.08 14.72 47.07 16.84Q48.07 18.96 48.07 21.99Q48.07 24.45 47.55 26.13Q47.02 27.81 46.14 28.87Q45.26 29.92 44.23 30.5Q43.19 31.07 42.18 31.28Q41.17 31.5 40.37 31.5ZM34.14 31.5V12.5H38.63V31.5Z"/></svg><span translate="no">Young Dems</span></span>
-              <span class="x-pass__kind" data-t="join:pass.kind">MEMBER</span>
+              <span class="x-pass__kind" data-pass-kind data-t="join:pass.kind">MEMBER</span>
               <span class="x-pass__stamp" data-pass-stamp hidden><span data-t="join:pass.stamp">You're in</span></span>
             </div>
             <p class="x-pass__name" data-pass-name data-t="join:pass.name">Your name</p>
@@ -216,7 +216,7 @@
       </div>
     </section>
 
-    <section class="section x-next" aria-labelledby="next-title">
+    <section class="section x-next" id="volunteer" aria-labelledby="next-title">
       <div class="wrap">
         <div class="section-head">
           <p class="eyebrow" data-t="join:next.eyebrow">AFTER YOU JOIN</p>
