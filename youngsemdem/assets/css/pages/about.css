@@ -22,7 +22,7 @@
 }
 @keyframes x-swipe { from { transform:scaleX(0); } }
 
-/* The basics: a real-facts card (each row links its source) */
+/* The basics: real facts, each row sourced */
 .p-about .x-basics {
   position:relative;align-self:center;max-width:460px;width:100%;padding:var(--sp-5) var(--sp-5) var(--sp-4);
   background:var(--cream);color:var(--night);border:var(--bw) solid var(--night);border-radius:var(--r-lg);box-shadow:10px 10px 0 var(--night);
@@ -62,7 +62,7 @@
 .p-about .x-fit { display:grid;grid-template-columns:minmax(0, 1fr);gap:var(--sp-5);margin-top:clamp(40px, 6vw, 72px); }
 @media (min-width: 900px) { .p-about .x-fit { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);align-items:start; } }
 
-/* Where we fit: a tiny family tree */
+/* Where we fit */
 .p-about .x-tree { display:grid;gap:var(--sp-4);padding:var(--sp-5);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface); }
 .p-about .x-tree__title { font:800 var(--fs-h3)/1 var(--font-display-84);font-stretch:84%; }
 .p-about .x-tree__chain { display:grid;gap:var(--sp-5); }
@@ -134,7 +134,7 @@
 .p-about .x-rd__verdict { font-weight:800; }
 .p-about .x-rd__verdict:empty { display:none; }
 .p-about .x-rd__src { display:inline-block;padding-block:11px;margin-block:-11px;color:var(--link);font-weight:700; }
-/* With JS: answers wait for a guess. Without JS they stay visible. */
+/* JS: answers wait for a guess; no JS: visible */
 .p-about [data-rd-game][data-ready] .x-rd[data-state="idle"] .x-rd__why { display:none; }
 .p-about .x-rd[data-correct="true"] { box-shadow:6px 6px 0 var(--violet); }
 .p-about .x-rd[data-correct="true"] .x-rd__why { background:#EEF9C7; }
@@ -206,6 +206,7 @@
 .p-about .x-crew__idea { line-height:1.45; }
 .p-about .x-crew__status { align-self:flex-start;margin-top:var(--sp-2);padding:5px 12px;border:1.5px dashed var(--night);border-radius:var(--r-pill);font-size:var(--fs-small);font-weight:700; }
 .p-about .x-crew__cta { align-self:flex-start;margin-top:auto;--btn-bg:var(--night);--btn-fg:var(--cream);--btn-edge:var(--night);--btn-sh:rgba(23, 11, 51, .35); }
+.p-about .x-crew--open { border-style:dashed; }
 @media (min-width: 1024px) {
   .p-about .x-crews__list { grid-auto-flow:row;grid-template-columns:repeat(4, minmax(0, 1fr));overflow:visible;margin-inline:0;padding-inline:0; }
 }
