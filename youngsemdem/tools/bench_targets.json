@@ -1,0 +1,26 @@
+{
+  "about": "Competitor homepages for tools/bench_compare.js (--group right, brands or all). Each URL was fetched on Nov 9, 2026 with curl, following redirects, and is the address it settled on; the page title confirmed it is the organization's own site. Add a group by adding another array of {name, url, note}.",
+  "verified": "2026-11-09",
+  "right": [
+    { "name": "Turning Point USA", "url": "https://tpusa.com/" },
+    { "name": "PragerU", "url": "https://www.prageru.com/" },
+    { "name": "Young Republican National Federation", "url": "https://yrnf.com/", "note": "yri.org is a GoDaddy domain-for-sale page, so the federation's own site is used. It showed a 'Checking your browser' page to headless Chromium in the Nov 9 research run (docs/research/07-benchmark-right-wing.md)." },
+    { "name": "Republican Party of Florida", "url": "https://florida.gop/" },
+    { "name": "Seminole County Republican Party", "url": "https://seminolegop.org/" },
+    { "name": "College Republican National Committee", "url": "https://www.crnc.org/" },
+    { "name": "College Republicans of America", "url": "https://www.uscollegegop.com/", "note": "The CRNC's rival national College Republicans organization (see docs/research/07-benchmark-right-wing.md)." }
+  ],
+  "brands": [
+    { "name": "Rare Beauty", "url": "https://www.rarebeauty.com/" },
+    { "name": "rhode", "url": "https://www.rhodeskin.com/" },
+    { "name": "Fenty Beauty", "url": "https://fentybeauty.com/" },
+    { "name": "Glossier", "url": "https://www.glossier.com/" },
+    { "name": "e.l.f. Cosmetics", "url": "https://www.elfcosmetics.com/" },
+    { "name": "Starface", "url": "https://starface.world/" },
+    { "name": "poppi", "url": "https://www.drinkpoppi.com/", "note": "poppi.com redirects to a domain-for-sale page (domains.atom.com); the brand's site is drinkpoppi.com." },
+    { "name": "Liquid Death", "url": "https://liquiddeath.com/" },
+    { "name": "Partiful", "url": "https://partiful.com/" },
+    { "name": "SKIMS", "url": "https://skims.com/" },
+    { "name": "Duolingo", "url": "https://www.duolingo.com/" }
+  ]
+}

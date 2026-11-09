@@ -11,6 +11,8 @@
     "serve": "python3 -m http.server 8000",
     "check": "node tools/check_site.js",
     "check:strict": "node tools/check_site.js --strict",
+    "shoot": "node tools/shoot.js",
+    "bench": "node tools/bench_compare.js",
     "sync": "python3 tools/sync_partials.py",
     "sync:check": "python3 tools/sync_partials.py --check",
     "csp": "node tools/csp.js --write",
