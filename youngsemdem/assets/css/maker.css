@@ -1,0 +1,131 @@
+/* YDSC · assets/css/maker.css (W5). The share-card maker (.maker), member card (.membercard), sticker book
+   (.stickerbook) and squad meter (.meter). BRIEF 3.8 "Features". Load it on every page that mounts
+   YSD.maker, YSD.memberCard or YSD.squadMeter (home, join, quiz). Semantic tokens only, so it works on
+   cream, night and bright bands, light and dark. Hard offsets only on things you can tap or collect
+   (the card preview, stickers); the controls stay quiet. */
+
+/* ---------- Maker ---------- */
+.maker { display:grid;gap:var(--sp-6);align-items:start;min-width:0; }
+@media (min-width: 900px) {
+  .maker { grid-template-columns:minmax(0, 5fr) minmax(0, 6fr);gap:var(--sp-8); }
+  .maker__preview { position:sticky;top:calc(var(--header-h) + var(--sp-5)); }
+}
+.maker__preview { display:grid;gap:var(--sp-5);justify-items:center;min-width:0; }
+.maker__frame {
+  position:relative;margin:0;width:min(100%, 440px);aspect-ratio:4 / 5;border-radius:22px;overflow:hidden;
+  border:var(--bw) solid var(--edge);background:var(--surface-2);box-shadow:var(--sh-lift) var(--shadow);rotate:-1.5deg;
+  transition:rotate var(--dur-3) var(--ease-pop), width var(--dur-2) var(--ease-out);
+}
+.maker__frame[data-size="story"] { aspect-ratio:9 / 16;width:min(100%, 360px, calc(72vh * 9 / 16)); }
+.maker:hover .maker__frame { rotate:0deg; }
+.maker__canvas { display:block;width:100%;height:100%; }
+.maker__loading { display:grid;place-items:center;height:100%;margin:0;padding:var(--sp-5);text-align:center;color:var(--text-muted);font-weight:700; }
+.maker[data-state="loading"] .maker__frame::after {
+  content:"";position:absolute;inset:auto 16px 16px auto;width:14px;height:14px;border-radius:50%;background:var(--celery);border:2px solid var(--night);
+  animation:maker-pulse .7s var(--ease-out) infinite alternate;
+}
+@keyframes maker-pulse { to { scale:.6;opacity:.5; } }
+.maker__chat { width:min(100%, 440px);display:grid;gap:var(--sp-2); }
+.maker__chat-label { margin:0;font-size:var(--fs-tag);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted); }
+.maker__bubble { margin:0;max-width:100%;overflow-wrap:anywhere; }
+.maker__bubble-link { text-decoration:underline;text-underline-offset:.15em;color:var(--celery);font-weight:700; }
+
+.maker__side { display:grid;gap:var(--sp-6);min-width:0; }
+.maker__controls { display:grid;gap:var(--sp-5);min-width:0; }
+.maker__controls [hidden] { display:none !important; }
+.maker__templates .chip { min-height:48px; }
+.maker__field { min-width:0; }
+.maker__pair { display:grid;gap:var(--sp-5);min-width:0; }
+@media (min-width: 520px) { .maker__pair { grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); } }
+.maker__pair > [hidden] { display:none; }
+.maker__fieldset { min-width:0;margin:0;padding:0;border:0;display:grid;gap:var(--sp-3); }
+.maker__fieldset > legend { padding:0;margin-bottom:var(--sp-3); }
+.maker__swatches { display:flex;flex-wrap:wrap;gap:var(--sp-3); }
+.maker__stickers { display:flex;flex-wrap:wrap;gap:var(--sp-2); }
+.maker__sticker { position:relative;display:inline-grid;place-items:center;width:52px;height:52px;border-radius:50%;cursor:pointer;flex:none;transition:transform var(--dur-1) var(--ease-pop); }
+.maker__sticker > input { position:absolute;inset:0;opacity:0;margin:0;width:100%;height:100%;cursor:pointer; }
+.maker__sticker-art { display:block;width:46px;height:46px;pointer-events:none;filter:drop-shadow(0 0 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 2px 0 var(--night)); }
+.maker__sticker-art > svg { display:block;width:100%;height:100%; }
+.maker__sticker:hover { transform:rotate(-8deg) scale(1.06); }
+.maker__sticker:has(> input:checked) { box-shadow:0 0 0 3px var(--bg), 0 0 0 6px var(--edge);transform:rotate(-6deg); }
+.maker__sticker:has(> input:focus-visible) { outline:3px solid var(--focus);outline-offset:4px; }
+.maker__file { padding:var(--sp-2) 0;min-height:44px; }
+.maker__size { margin:0; }
+.maker__actions { display:grid;gap:var(--sp-3); }
+.maker__share { flex:1 1 auto; }
+@media (min-width: 520px) { .maker__share { flex:0 1 auto; } }
+.maker__more .btn { min-height:44px; }
+.maker__demo { display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center;margin:0;font-size:var(--fs-small);color:var(--text-muted); }
+.maker__meter { margin-top:var(--sp-2); }
+
+/* get your link */
+.maker__link { padding:var(--sp-5);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);color:var(--text); }
+.maker__link[hidden] { display:none; }
+.maker__link-ask { display:flex;flex-wrap:wrap;gap:var(--sp-4);align-items:center;justify-content:space-between; }
+.maker__link-title { margin:0;font:800 var(--fs-h4)/1.1 var(--font-display-88);font-stretch:88%; }
+.maker__link-body { margin:var(--sp-1) 0 0;font-size:var(--fs-small);color:var(--text-muted);max-width:42ch; }
+.maker__link-done { margin:0;font-weight:700; }
+.maker__link-done::before { content:"";display:inline-block;width:.55em;height:1em;margin-right:.6em;border:solid var(--success);border-width:0 .2em .2em 0;transform:rotate(45deg) translateY(-.1em); }
+.maker__join { margin-top:var(--sp-5); }
+.maker__joinform { gap:var(--sp-4); }
+.maker__privacy { margin:0; }
+
+/* compact (quiz result card) */
+.maker--compact { gap:var(--sp-5); }
+@media (min-width: 900px) { .maker--compact { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); } }
+.maker--compact .maker__controls { gap:var(--sp-4); }
+
+/* ---------- Squad meter ---------- */
+.meter { display:grid;gap:var(--sp-2); }
+.meter__label { margin:0;font-weight:700; }
+.meter__dots { display:flex;gap:var(--sp-2);margin:0;padding:0;list-style:none; }
+.meter__dot { width:34px;height:34px;border-radius:50%;border:var(--bw) dashed var(--text-muted);background:transparent; }
+.meter__dot[data-state="done"] { border-style:solid;border-color:var(--edge);background:var(--celery);box-shadow:2px 2px 0 var(--shadow); }
+.meter__hint { margin:0;font-size:var(--fs-small);color:var(--text-muted); }
+
+/* ---------- Member card ---------- */
+.membercard { display:grid;gap:var(--sp-6);min-width:0;--mc-bg:var(--violet);--mc-fg:var(--cream); }
+.membercard__card {
+  position:relative;max-width:520px;border:var(--bw) solid var(--night);border-radius:var(--r-xl);overflow:hidden;
+  background:var(--cream);color:var(--night);box-shadow:var(--sh-card) var(--shadow);rotate:-1deg;
+}
+.membercard__head { display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-4) var(--sp-5);background:var(--mc-bg);color:var(--mc-fg);border-bottom:var(--bw) solid var(--night); }
+.membercard__brand { color:var(--mc-fg); }
+.membercard__brand .brand__mark { color:var(--night); }
+.membercard__kicker { font:700 var(--fs-tag)/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase; }
+.membercard__body { display:grid;gap:var(--sp-2);padding:var(--sp-5); }
+.membercard__name { margin:0;font:800 clamp(48px, 9vw, 84px)/.9 var(--font-display-76);font-stretch:76%;letter-spacing:-.01em;overflow-wrap:anywhere; }
+.membercard__meta { margin:0;color:#574D70;font-weight:700; }
+.membercard__link { margin:var(--sp-2) 0 0; }
+.membercard__link code { font:700 var(--fs-small)/1.3 var(--font-body);overflow-wrap:anywhere;padding:4px 8px;border-radius:var(--r-xs);background:#F3EADB;color:var(--night); }
+.membercard__demo { margin:var(--sp-2) 0 0; }
+.membercard__weeks { display:flex;flex-wrap:wrap;gap:var(--sp-5);margin:0; }
+.membercard__weeks > div { display:grid; }
+.membercard__weeks dt { font-size:var(--fs-tag);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted); }
+.membercard__weeks dd { margin:0;font:800 var(--fs-h3)/1 var(--font-display-84);font-stretch:84%; }
+
+/* ---------- Sticker book ---------- */
+.stickerbook { display:grid;gap:var(--sp-4); }
+.stickerbook__head { display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:var(--sp-2); }
+.stickerbook__title { margin:0;font-size:var(--fs-h3); }
+.stickerbook__count { margin:0;font-weight:700;color:var(--text-muted); }
+.stickerbook__empty, .stickerbook__note { margin:0;font-size:var(--fs-small);color:var(--text-muted); }
+.stickerbook__grid { display:grid;grid-template-columns:repeat(auto-fill, minmax(min(100%, 148px), 1fr));gap:var(--sp-5) var(--sp-4);margin:0;padding:0;list-style:none; }
+.stickerbook__item { display:grid;justify-items:center;align-content:start;gap:6px;text-align:center;min-width:0;overflow-wrap:break-word; }
+.stickerbook__art { display:block;width:84px;height:84px;filter:drop-shadow(0 0 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(3px 3px 0 var(--night)); }
+.stickerbook__art > svg { display:block;width:100%;height:100%; }
+.stickerbook__item:nth-child(odd) .stickerbook__art { rotate:-6deg; }
+.stickerbook__item:nth-child(even) .stickerbook__art { rotate:5deg; }
+.stickerbook__item[data-state="empty"] .stickerbook__art { filter:grayscale(1) contrast(.6);opacity:.38; }
+.stickerbook__item[data-state="empty"] .stickerbook__art::after { content:none; }
+.stickerbook__name { font-weight:800;line-height:1.2; }
+.stickerbook__meta { font-size:var(--fs-small);line-height:1.35;color:var(--text-muted); }
+.stickerbook__perk { display:flex;flex-wrap:wrap;justify-content:center;gap:4px;max-width:100%;font-size:var(--fs-small);line-height:1.3; }
+.stickerbook__perk .tag { white-space:normal;text-align:center;line-height:1.2; }
+.membercard__actions { margin:0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .maker__frame, .membercard__card { transition:none; }
+  .maker[data-state="loading"] .maker__frame::after { animation:none; }
+}
+:root[data-motion="paused"] .maker[data-state="loading"] .maker__frame::after { animation:none; }

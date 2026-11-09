@@ -26,7 +26,8 @@
  *    BEFORE the Nov 3, 2026 election run out Dec 31, 2026. Never write "every request runs out":
  *    under F.S. 101.62(1)(a) and the Division of Elections page, a request made after Nov 3 should
  *    already run through Dec 31, 2028. Seminole hasn't said how it handles those, so the December
- *    ask is "set a Jan 1 reminder" and "renew in January", never "you can't renew until Jan 1".
+ *    ask is "set a reminder for January" (the site's .ics is Mon, Jan 4, 2027, 10 am) and "renew in January",
+ *    never "you can't renew until Jan 1". Online renewal from Jan 1 stays true.
  *  - Spanish terms follow data/civic.js and Florida's Spanish forms: "solicitud de boleta por correo"
  *    (the request), "boleta por correo" (the ballot), "voto por correo" (the method), "inscribirse"
  *    (register), "identificación de estudiante", "Supervisor de Elecciones" / "la oficina electoral".
@@ -80,6 +81,7 @@
  *   campaign{}       name{}, window{ start, end }, coda{ start, end }, note{}
  *   pages{}, esPrefix, anchors{}, newAnchors[] (hashes no other file asks for yet), proposedPages{}
  *   labels{}         UI chrome for "copy this" blocks
+ *   maker{}, cities[], colorways[], makerStickers[], cards{}   share-card maker and card copy (MAKER + CARDS)
  *   utm{}            param rules, sources{}, mediums{}, campaigns{}, contentIds{}, terms, rules[], examples[]
  *   groupChat[]      GROUP CHAT TEMPLATE (10)
  *   stickers[]       STICKER (12) + stickerSpec{} + stickerSets{}
@@ -136,8 +138,8 @@ window.YSD_DATA.sharekit = {
     window: { start: "2026-12-02T00:00:00-05:00", end: "2026-12-31T23:59:59-05:00" },
     coda: { start: "2027-01-01T00:00:00-05:00", end: "2027-01-03T23:59:59-05:00" },
     note: {
-      en: "Day 1 is Wed, Dec 2, 2026; day 30 is Thu, Dec 31, when Florida mail-ballot requests made before the Nov 3 election run out. Seminole hasn't said how it treats requests made after Nov 3, so the December ask is: set a Jan 1 reminder, and renew in January. If launch moves, keep the date-locked posts on their dates.",
-      es: "El día 1 es el miércoles 2 de diciembre de 2026; el día 30 es el jueves 31 de diciembre, cuando vencen las solicitudes de boleta por correo en Florida hechas antes de las elecciones del 3 de noviembre. Seminole no ha dicho cómo trata las solicitudes hechas después del 3 de noviembre, así que lo que pedimos en diciembre es: pon un recordatorio para el 1 de enero y renueva en enero. Si el lanzamiento se mueve, las publicaciones con fecha fija se quedan en su fecha."
+      en: "Day 1 is Wed, Dec 2, 2026; day 30 is Thu, Dec 31, when Florida mail-ballot requests made before the Nov 3 election run out. Seminole hasn't said how it treats requests made after Nov 3, so the December ask is: set a reminder for January, and renew in January. If launch moves, keep the date-locked posts on their dates.",
+      es: "El día 1 es el miércoles 2 de diciembre de 2026; el día 30 es el jueves 31 de diciembre, cuando vencen las solicitudes de boleta por correo en Florida hechas antes de las elecciones del 3 de noviembre. Seminole no ha dicho cómo trata las solicitudes hechas después del 3 de noviembre, así que lo que pedimos en diciembre es: pon un recordatorio para enero y renueva en enero. Si el lanzamiento se mueve, las publicaciones con fecha fija se quedan en su fecha."
     }
   },
 
@@ -158,11 +160,11 @@ window.YSD_DATA.sharekit = {
   anchors: {
     vote: ["renew-mail-ballot", "what-id", "register", "dates"],
     join: ["bring-three", "texts"],
-    quiz: ["era", "issue"],
+    quiz: ["show-up", "issue"],
     events: ["creator-night-60-seconds", "renew-ready-party"]
   },
   /** Anchors no other data file asks for yet: page builders must add these ids. */
-  newAnchors: ["join#bring-three", "join#texts", "quiz#era", "quiz#issue"],
+  newAnchors: ["join#bring-three", "join#texts", "quiz#show-up", "quiz#issue"],
   proposedPages: {
     rewind: {
       fallback: "home",
@@ -232,7 +234,7 @@ window.YSD_DATA.sharekit = {
     /** utm_campaign = the arc. Format YYYY-MM-<arc>. */
     campaigns: {
       "2026-12-launch": { label: "Launch week and evergreen hello posts", start: "2026-12-02", end: "2026-12-06" },
-      "2026-12-renew": { label: "Mail-ballot requests run out Dec 31; set the Jan 1 reminder", start: "2026-12-02", end: "2026-12-31" },
+      "2026-12-renew": { label: "Mail-ballot requests run out Dec 31; set the January reminder", start: "2026-12-02", end: "2026-12-31" },
       "2026-12-idrule": { label: "Student IDs stop counting at the polls Jan 1, 2027", start: "2026-12-02", end: "2026-12-31" },
       "2026-12-bring3": { label: "The Bring Three referral challenge", start: "2026-12-07", end: "2026-12-31" },
       "2026-12-rewind": { label: "Seminole Rewind, the year-end recap", start: "2026-12-14", end: "2026-12-31" },
@@ -280,16 +282,235 @@ window.YSD_DATA.sharekit = {
     ]
   },
 
+  // ------------------------------------------------------------------------------- MAKER + CARDS
+  /**
+   * Copy for the share-card maker (assets/js/maker.js), the brand card templates
+   * (assets/js/cards-brand.js) and the member card (assets/js/membercard.js). Pages that mount them
+   * load data/slices/growth.js (generated from this file and data/levels.js) or this whole file.
+   * maker.* is interface copy; cards.* is printed ON the PNG; cities/colorways/stickers are options.
+   * Card text that states a voting rule uses the required wording from docs/research/00, verbatim.
+   */
+  maker: {
+    templates: {
+      invite: { en: "Invite", es: "Invitación" },
+      "psa-mail": { en: "Mail-ballot heads-up", es: "Aviso de boleta por correo" },
+      "psa-id": { en: "Student-ID change", es: "Cambio de identificación" },
+      join: { en: "Join me", es: "Únete conmigo" },
+      cover: { en: "Me, on the cover", es: "Yo, en la portada" },
+      "quiz-show-up": { en: "My type", es: "Mi modo" },
+      "quiz-issue": { en: "My issue", es: "Mi tema" },
+      membercard: { en: "Member card", es: "Tarjeta de miembro" },
+      rewind: { en: "My 2026", es: "Mi 2026" }
+    },
+    labels: {
+      template: { en: "Card", es: "Tarjeta" },
+      firstName: { en: "First name (or what you go by)", es: "Nombre (o como te dicen)" },
+      firstNameHint: { en: "It goes on the card. That's all we do with it.", es: "Va en la tarjeta. Es lo único que hacemos con él." },
+      firstNameOptional: { en: "First name (optional)", es: "Nombre (opcional)" },
+      city: { en: "Your city", es: "Tu ciudad" },
+      colorway: { en: "Colour", es: "Color" },
+      sticker: { en: "Sticker", es: "Sticker" },
+      size: { en: "Size", es: "Tamaño" },
+      sizePortrait: { en: "4:5 post", es: "4:5 post" },
+      sizeStory: { en: "9:16 story", es: "9:16 historia" },
+      issue: { en: "I'm here for", es: "Estoy aquí por" },
+      event: { en: "Event", es: "Evento" },
+      photo: { en: "Add a photo (optional)", es: "Agrega una foto (opcional)" },
+      photoHint: { en: "It stays on your phone. We never upload or save it.", es: "Se queda en tu teléfono. Nunca la subimos ni la guardamos." },
+      photoRemove: { en: "Remove photo", es: "Quitar la foto" },
+      message: { en: "Your message", es: "Tu mensaje" },
+      messageHint: { en: "Written to sound like you. Change any word before you send.", es: "Escrito para que suene a ti. Cambia lo que quieras antes de enviarlo." },
+      bubble: { en: "How it lands in the chat", es: "Así llega al chat" },
+      preview: { en: "Card preview: {summary}", es: "Vista previa de la tarjeta: {summary}" },
+      previewLoading: { en: "Making your card…", es: "Haciendo tu tarjeta…" },
+      slide: { en: "Slide", es: "Lámina" },
+      demoNote: { en: "DEMO: every card says DEMO until the chapter signs off.", es: "DEMO: cada tarjeta dice DEMO hasta que el grupo la apruebe." }
+    },
+    actions: {
+      share: { en: "Send it to the group chat", es: "Mándalo al grupo" },
+      save: { en: "Save image", es: "Guardar imagen" },
+      sms: { en: "Text it", es: "Mándalo por SMS" },
+      whatsapp: { en: "WhatsApp", es: "WhatsApp" },
+      copy: { en: "Copy link", es: "Copiar enlace" }
+    },
+    toast: {
+      ready: { en: "Your card's ready. Send it to one person you'd actually text.", es: "Tu tarjeta está lista. Mándasela a una persona a quien de verdad le escribirías." },
+      saved: { en: "Saved. Post it, then send the link to one friend.", es: "Guardada. Publícala y luego mándale el enlace a alguien." },
+      copied: { en: "Link copied. Paste it anywhere.", es: "Enlace copiado. Pégalo donde quieras." },
+      failed: { en: "That one's on us, not you. Give it a minute and try again.", es: "Eso fue culpa nuestra, no tuya. Espera un minuto y vuelve a intentarlo." },
+      photo: { en: "Looking good. Your photo stays on this device.", es: "Te ves bien. Tu foto se queda en este dispositivo." },
+      photoBad: { en: "That file didn't open as a photo. Try a JPG or PNG.", es: "Ese archivo no se abrió como foto. Prueba con un JPG o PNG." }
+    },
+    errors: {
+      firstName: { en: "Add your first name so friends know it's from you.", es: "Agrega tu nombre para que sepan que es de tu parte." },
+      firstNameChars: { en: "Letters, spaces and hyphens only, 20 at most.", es: "Solo letras, espacios y guiones, 20 como máximo." }
+    },
+    getLink: {
+      title: { en: "Want credit when friends join?", es: "¿Quieres que cuente cuando alguien se una?" },
+      body: { en: "Get your own link. Free, two fields, and nothing is sent in the demo.", es: "Consigue tu propio enlace. Es gratis, son dos datos y en la demo no se envía nada." },
+      open: { en: "Get your link", es: "Consigue tu enlace" },
+      contact: { en: "Email or mobile", es: "Correo o celular" },
+      contactHint: { en: "For your invite and one reminder. Nothing else unless you ask.", es: "Para tu invitación y un recordatorio. Nada más, a menos que lo pidas." },
+      age: { en: "How old are you?", es: "¿Cuántos años tienes?" },
+      ageTeen: { en: "14 to 17", es: "De 14 a 17" },
+      ageAdult: { en: "18 to 39", es: "De 18 a 39" },
+      teenNote: { en: "Under 18? Your link uses a random code, never your name.", es: "¿Menor de 18? Tu enlace usa un código al azar, nunca tu nombre." },
+      submit: { en: "Get my link", es: "Quiero mi enlace" },
+      done: { en: "You're in. Your link is on the card now.", es: "Ya estás dentro. Tu enlace ya está en la tarjeta." },
+      privacy: { en: "We never sell or share your info. DEMO: nothing leaves this browser.", es: "Nunca vendemos ni compartimos tus datos. DEMO: nada sale de este navegador." },
+      contactError: { en: "That email or number doesn't look right. Try once more?", es: "Ese correo o número no se ve bien. ¿Lo intentas otra vez?" },
+      ageError: { en: "Pick an age range so we can keep your link safe.", es: "Escoge un rango de edad para que tu enlace sea seguro." }
+    },
+    messages: {
+      cover: {
+        en: "I put myself on the cover of the Young Dems. Your turn, then come with me to the next thing: {url}",
+        es: "Me puse en la portada de los Young Dems. Te toca, y luego vienes conmigo al próximo plan: {url}"
+      },
+      membercard: {
+        en: "Got my Young Dems member card. It's free if you're 14 to 39 in Seminole. Join me: {url}",
+        es: "Ya tengo mi tarjeta de miembro de los Young Dems. Es gratis si tienes de 14 a 39 años y vives en Seminole. Únete conmigo: {url}"
+      },
+      rewind: {
+        en: "My 2026 with the Young Dems, in three cards. Make yours, then come with me in 2027: {url}",
+        es: "Mi 2026 con los Young Dems, en tres tarjetas. Haz las tuyas y en 2027 vienes conmigo: {url}"
+      },
+      join: {
+        en: "I joined the Young Dems here in Seminole. Free, under 40, good people, things to actually do. Come with me? {url}",
+        es: "Me uní a los Young Dems aquí en Seminole. Gratis, menores de 40, gente buena y planes de verdad. ¿Vienes conmigo? {url}"
+      }
+    },
+    /** Template -> groupChat id whose text prefills the message (first one whose window is open). */
+    messageIds: { invite: ["gc04"], "psa-mail": ["gc01"], "psa-id": ["gc02"], join: ["gc06"], "quiz-show-up": ["gc05"] }
+  },
+
+  /** The squad meter (BRIEF 2.7 line 28, 5.1). Counts real joins only: never simulated members. */
+  meter: {
+    text: { en: "Friends who joined with your link: {n} of 3. Three friends, not 300.", es: "Personas que se unieron con tu enlace: {n} de 3. Tres, no 300." },
+    full: { en: "Friends who joined with your link: {n}. That's a squad.", es: "Personas que se unieron con tu enlace: {n}. Eso ya es un grupo." },
+    demoHint: { en: "DEMO: only joins on this device count, and nobody here is simulated.", es: "DEMO: solo cuentan las personas que se unen en este dispositivo, y aquí nadie es simulado." }
+  },
+
+  cities: [
+    { id: "altamonte-springs", name: { en: "Altamonte Springs", es: "Altamonte Springs" }, colorway: "bubblegum" },
+    { id: "casselberry", name: { en: "Casselberry", es: "Casselberry" }, colorway: "bubblegum" },
+    { id: "lake-mary", name: { en: "Lake Mary", es: "Lake Mary" }, colorway: "sky" },
+    { id: "longwood", name: { en: "Longwood", es: "Longwood" }, colorway: "sky" },
+    { id: "oviedo", name: { en: "Oviedo", es: "Oviedo" }, colorway: "tangerine" },
+    { id: "sanford", name: { en: "Sanford", es: "Sanford" }, colorway: "celery" },
+    { id: "winter-springs", name: { en: "Winter Springs", es: "Winter Springs" }, colorway: "celery" },
+    { id: "seminole", name: { en: "Elsewhere in Seminole", es: "Otra parte de Seminole" }, colorway: "violet" }
+  ],
+  /** The 5 card colourways (BRIEF 3.2 city colourways). bg/fg are brand constants, never theme tokens. */
+  colorways: [
+    { id: "violet", name: { en: "Ultraviolet", es: "Ultravioleta" }, bg: "#6A2BFF", fg: "#FFF6EA", pop: "#C8F03C" },
+    { id: "celery", name: { en: "Celery", es: "Apio" }, bg: "#C8F03C", fg: "#170B33", pop: "#6A2BFF" },
+    { id: "sky", name: { en: "Sky", es: "Cielo" }, bg: "#4FD6FF", fg: "#170B33", pop: "#6A2BFF" },
+    { id: "tangerine", name: { en: "Tangerine", es: "Mandarina" }, bg: "#FF8B3D", fg: "#170B33", pop: "#FFF6EA" },
+    { id: "bubblegum", name: { en: "Bubblegum", es: "Chicle" }, bg: "#FF7AC6", fg: "#170B33", pop: "#6A2BFF" }
+  ],
+  /** data/stickers.js art the maker offers (the mail-ballot envelope is civic, so it isn't offered). */
+  makerStickers: ["celery", "gator", "train", "chicken", "cypress", "sun", "heart", "camera"],
+
+  cards: {
+    common: {
+      whatsYours: { en: "What's yours?", es: "¿Y el tuyo?" },
+      officialInfo: { en: "Official info: voteseminole.gov", es: "Información oficial: voteseminole.gov" },
+      ages: { en: "Ages 14 to 39", es: "De 14 a 39 años" },
+      county: { en: "Seminole County, FL", es: "Condado de Seminole, FL" },
+      free: { en: "Free", es: "Gratis" },
+      demo: { en: "DEMO", es: "DEMO" },
+      paidFor: { en: "Paid for by [committee name and address placeholder]", es: "Pagado por [nombre y dirección del comité]" }
+    },
+    invite: {
+      kicker: { en: "YOU'RE INVITED", es: "TE INVITO" },
+      demoEvent: { en: "DEMO EVENT", es: "EVENTO DEMO" },
+      generic: { en: "Come with me.", es: "Ven conmigo." },
+      withName: { en: "{name} saved you a seat.", es: "{name} te guardó un lugar." },
+      imIn: { en: "I'm in", es: "Me apunto" },
+      fallbackTitle: { en: "A free Young Dems hangout", es: "Un plan gratis de los Young Dems" }
+    },
+    psaMail: {
+      kicker: { en: "MAIL-BALLOT HEADS-UP", es: "AVISO: BOLETA POR CORREO" },
+      /** Required shape (docs/research/00; BRIEF 2.7 line 23); the Spanish matches data/strings.js nudge.mailBallot.text. */
+      text: {
+        en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set through 2028. Check My Voter Record to be sure.",
+        es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Pídela otra vez y debería cubrirte hasta 2028. Revisa tu registro de votante para confirmarlo."
+      },
+      headline: { en: "Your mail-ballot request has an end date.", es: "Tu solicitud de boleta por correo tiene fecha de vencimiento." },
+      days: { en: "{n} days", es: "{n} días" },
+      daysLabel: { en: "until requests made before Nov 3 end", es: "para que venzan las solicitudes hechas antes del 3 de nov." },
+      fromName: { en: "From {name}, who checked.", es: "De parte de {name}, que ya lo revisó." }
+    },
+    psaId: {
+      kicker: { en: "NEW RULE · JAN 1, 2027", es: "REGLA NUEVA · 1 DE ENERO DE 2027" },
+      headline: { en: "Student IDs stop counting at the polls.", es: "La identificación de estudiante deja de servir para votar." },
+      text: {
+        en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go.",
+        es: "Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir."
+      },
+      fromName: { en: "Passed along by {name}.", es: "Te lo pasa {name}." }
+    },
+    join: {
+      kicker: { en: "AGES 14 TO 39 · FREE", es: "DE 14 A 39 AÑOS · GRATIS" },
+      generic: { en: "Join the Young Dems.", es: "Únete a los Young Dems." },
+      withName: { en: "{name} is in. Join me.", es: "{name} ya está. Únete conmigo." },
+      sub: { en: "Local politics is a group project.", es: "La política local es un trabajo en equipo." },
+      promise: { en: "Free hangouts · straight answers about voting · a seat saved for your friend", es: "Planes gratis · respuestas claras sobre cómo votar · un lugar guardado para tu amistad" }
+    },
+    cover: {
+      folio: { en: "THE SEMINOLE ISSUE", es: "EDICIÓN SEMINOLE" },
+      flash: { en: "DEMO ISSUE", es: "EDICIÓN DEMO" },
+      you: { en: "You", es: "Tú" },
+      cityLine: { en: "{city}'s newest Young Dem", es: "Nuevo Young Dem de {city}" },
+      hereFor: { en: "is here for {issue}.", es: "está aquí por {issue}." },
+      teaser1: { en: "Free hangouts", es: "Planes gratis" },
+      teaser2: { en: "Straight answers about voting", es: "Respuestas claras sobre cómo votar" },
+      teaser3: { en: "A seat saved for your friend", es: "Un lugar guardado para tu amistad" },
+      comeWithMe: { en: "Come with me", es: "Ven conmigo" }
+    },
+    quizShowUp: {
+      kicker: { en: "HOW I SHOW UP", es: "MI MODO DE ORGANIZAR" },
+      undertone: { en: "with {undertone} undertones", es: "con {undertone} de fondo" },
+      mix: { en: "MY MIX", es: "MI MEZCLA" }
+    },
+    quizIssue: {
+      kicker: { en: "MY SEMINOLE ISSUE", es: "MI TEMA EN SEMINOLE" },
+      undertone: { en: "with a hint of {undertone}", es: "con {undertone} de fondo" },
+      source: { en: "Source: {source}", es: "Fuente: {source}" },
+      findYours: { en: "Find yours", es: "Encuentra el tuyo" }
+    },
+    membercard: {
+      kicker: { en: "MEMBER CARD", es: "TARJETA DE MIEMBRO" },
+      since: { en: "Member since {month}", es: "Miembro desde {month}" },
+      stickers: { en: "{n} stickers so far", es: "{n} stickers hasta ahora" },
+      watermark: { en: "DEMO · not a real member card", es: "DEMO · no es una tarjeta de miembro real" },
+      friend: { en: "Friend of the Young Dems", es: "Amistad de los Young Dems" }
+    },
+    rewind: {
+      title: { en: "My 2026 with the Young Dems", es: "Mi 2026 con los Young Dems" },
+      kicker: { en: "SEMINOLE REWIND", es: "SEMINOLE REWIND" },
+      rsvps: { en: "events I said I'm in to", es: "eventos a los que dije que voy" },
+      cards: { en: "cards I made", es: "tarjetas que hice" },
+      friends: { en: "friends who joined with my link", es: "amistades que se unieron con mi enlace" },
+      stickers: { en: "stickers collected", es: "stickers en mi álbum" },
+      slide1: { en: "I showed up.", es: "Llegué." },
+      slide2: { en: "I brought people.", es: "Traje gente." },
+      slide3: { en: "I collected the county.", es: "Coleccioné el condado." },
+      summary: { en: "That's my year. 2027, you're coming with me.", es: "Ese fue mi año. En 2027 vienes conmigo." },
+      local: { en: "Counted on my phone. No chapter totals here.", es: "Contado en mi teléfono. Aquí no hay totales del grupo." }
+    }
+  },
+
   // ------------------------------------------------------------------------------- GROUP CHAT
   groupChat: [
     {
       id: "gc01",
-      use: { en: "The main one: requests made before Nov 3 run out Dec 31, so set a Jan 1 reminder.", es: "El principal: las solicitudes hechas antes del 3 de noviembre vencen el 31 de diciembre, así que toca poner un recordatorio para el 1 de enero." },
+      use: { en: "The main one: requests made before Nov 3 run out Dec 31, so set a reminder for January.", es: "El principal: las solicitudes hechas antes del 3 de noviembre vencen el 31 de diciembre, así que toca poner un recordatorio para enero." },
       audience: { en: "Friends, roommates, coworkers", es: "Amistades, compañeros de casa, compañeros de trabajo" },
       tone: "calm",
       text: {
-        en: "Heads up: if you asked for a mail ballot before Nov 3, that request runs out Dec 31 (mine too). Renew in January and one request covers you through 2028. I set a Jan 1 reminder. Set yours: {url}",
-        es: "Ojo: si pediste la boleta por correo antes del 3 de noviembre, esa solicitud vence el 31 de diciembre (la mía también). Renuévala en enero y una sola solicitud te cubre hasta finales de 2028. Ya puse un recordatorio para el 1 de enero. Pon el tuyo: {url}"
+        en: "Heads up: if you asked for a mail ballot before Nov 3, that request runs out Dec 31 (mine too). Renew in January and one request covers you through 2028. I set a reminder for January. Set yours: {url}",
+        es: "Ojo: si pediste la boleta por correo antes del 3 de noviembre, esa solicitud vence el 31 de diciembre (la mía también). Renuévala en enero y una sola solicitud te cubre hasta finales de 2028. Ya puse un recordatorio para enero. Pon el tuyo: {url}"
       },
       after: {
         date: "2027-01-01T00:00:00-05:00",
@@ -362,14 +583,14 @@ window.YSD_DATA.sharekit = {
     },
     {
       id: "gc05",
-      use: { en: "After the organizer-era quiz: share your result.", es: "Después del quiz «¿Cuál es tu modo de organizar?»: comparte tu resultado." },
+      use: { en: "After the quiz \"How do you show up?\": share your result.", es: "Después del quiz «¿Cuál es tu modo de organizar?»: comparte tu resultado." },
       audience: { en: "Group chat", es: "Chat del grupo" },
       tone: "bright",
       text: {
         en: "Took a quiz on what kind of organizer I'd be and got {result}. It knows me too well. What do you get? {url}",
         es: "Hice el quiz «¿Cuál es tu modo de organizar?» y me salió {result}. Me conoce demasiado. ¿A ti cuál te sale? {url}"
       },
-      link: { page: "quiz", hash: "era" },
+      link: { page: "quiz", hash: "show-up" },
       utm: { campaign: "evergreen", content: "gc05" },
       channels: ["sms", "whatsapp", "ig", "share"],
       factIds: [],
@@ -639,7 +860,7 @@ window.YSD_DATA.sharekit = {
       },
       cta: {
         line: { en: "The reminder and the official link are in my bio. Send this to whoever you vote with.", es: "El recordatorio y el enlace oficial están en mi perfil. Mándaselo a quien vota contigo." },
-        onScreen: { en: "Set a Jan 1 reminder · link in bio", es: "Pon un recordatorio para el 1 de enero · enlace en el perfil" }
+        onScreen: { en: "Set a reminder for January · link in bio", es: "Pon un recordatorio para enero · enlace en el perfil" }
       },
       caption: {
         en: "Asked for a Florida mail ballot before Nov 3? That request runs out Dec 31. Renew in January and one request covers you through 2028. Reminder and official link in bio.",
@@ -832,7 +1053,7 @@ window.YSD_DATA.sharekit = {
       hook: {
         visual: { en: "Hold your phone up to the camera showing your result card, then turn it back to yourself in mock outrage.", es: "Muestra a la cámara tu tarjeta de resultado en el teléfono y luego gírala hacia ti con indignación fingida." },
         line: { en: "A quiz just called me a Spreadsheet Witch, and I can't even argue.", es: "Un quiz me dijo que lo mío es Magia en Celdas, y ni puedo discutirlo." },
-        onScreen: { en: "What's your organizer era?", es: "¿Cuál es tu modo de organizar?" }
+        onScreen: { en: "How do you show up?", es: "¿Cuál es tu modo de organizar?" }
       },
       cta: {
         line: { en: "Eight questions. Stitch this with yours.", es: "Ocho preguntas. Haz un stitch con tu resultado." },
@@ -842,7 +1063,7 @@ window.YSD_DATA.sharekit = {
         en: "Six types: Hype Captain, Group-Chat General, Spreadsheet Witch, Door-Knock Natural, Creator, Plus-One. Which are you? Stitch it.",
         es: "Seis modos: «La Chispa», «Modo Admin», «Magia en Celdas», «Toc, Toc», «Luces, Cámara, Acción» y «Conoce a Medio Mundo». ¿Cuál eres? Haz tu stitch."
       },
-      link: { page: "quiz", hash: "era" },
+      link: { page: "quiz", hash: "show-up" },
       utm: { campaign: "2026-12-bring3", content: "v07" },
       factIds: [],
       safety: { en: "Swap in your own result. Result names come from data/quiz.js, spelled as there; Spanish names are their own jokes.", es: "Usa tu propio resultado. Los nombres vienen de data/quiz.js, escritos igual que allí; los nombres en español son chistes propios." }
@@ -1108,8 +1329,8 @@ window.YSD_DATA.sharekit = {
     },
     "mail-renew-jan1": {
       claim: {
-        en: "Seminole voters can renew a mail-ballot request online, by phone or on a signed form. Under the state rule, a request made after Nov 3, 2026 should already run through 2028, but as of Nov 9 Seminole's elections office hasn't said how it handles requests made Nov 4 to Dec 31, 2026. A request made on or after Jan 1, 2027 covers 2027-28 for sure, so the safe ask is a Jan 1 reminder; anyone who renews earlier should check My Voter Record in January.",
-        es: "Los votantes de Seminole pueden renovar su solicitud de boleta por correo en línea, por teléfono o con un formulario firmado. Según la regla del estado, una solicitud hecha después del 3 de noviembre de 2026 ya debería servir hasta 2028, pero al 9 de noviembre la oficina electoral de Seminole no ha dicho cómo maneja las solicitudes hechas entre el 4 de noviembre y el 31 de diciembre de 2026. Una solicitud hecha a partir del 1 de enero de 2027 cubre 2027-28 con seguridad, así que lo prudente es un recordatorio para el 1 de enero; quien renueve antes debe revisar My Voter Record en enero."
+        en: "Seminole voters can renew a mail-ballot request online, by phone or on a signed form. Under the state rule, a request made after Nov 3, 2026 should already run through 2028, but as of Nov 9 Seminole's elections office hasn't said how it handles requests made Nov 4 to Dec 31, 2026. A request made on or after Jan 1, 2027 covers 2027-28 for sure, so the safe ask is a reminder for January; anyone who renews earlier should check My Voter Record in January.",
+        es: "Los votantes de Seminole pueden renovar su solicitud de boleta por correo en línea, por teléfono o con un formulario firmado. Según la regla del estado, una solicitud hecha después del 3 de noviembre de 2026 ya debería servir hasta 2028, pero al 9 de noviembre la oficina electoral de Seminole no ha dicho cómo maneja las solicitudes hechas entre el 4 de noviembre y el 31 de diciembre de 2026. Una solicitud hecha a partir del 1 de enero de 2027 cubre 2027-28 con seguridad, así que lo prudente es un recordatorio para enero; quien renueve antes debe revisar My Voter Record en enero."
       },
       source: "https://voteseminole.gov/how-to-vote/vote-by-mail/",
       sources: ["https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/", "https://www.flsenate.gov/Laws/Statutes/2026/101.62", "https://voteseminole.gov/voters/my-voter-record/"],
@@ -1117,7 +1338,7 @@ window.YSD_DATA.sharekit = {
       confidence: "med",
       audience: "public",
       via: "data/civic.js changes[mail-ballot-expiry]",
-      note: "Recheck by Dec 15, 2026: if Seminole confirms that Nov-Dec 2026 requests count for 2027-28, set YSD_CONFIG.sharekit.confirmed['soe-2027-requests-open'] and switch the 'set a Jan 1 reminder' lines to 'renew now'."
+      note: "Recheck by Dec 15, 2026: if Seminole confirms that Nov-Dec 2026 requests count for 2027-28, set YSD_CONFIG.sharekit.confirmed['soe-2027-requests-open'] and switch the 'set a reminder for January' lines to 'renew now'."
     },
     "mail-covers-2028": {
       claim: {

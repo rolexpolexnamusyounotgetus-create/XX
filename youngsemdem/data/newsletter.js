@@ -12,10 +12,12 @@
  * (checked Mon Nov 9, 2026).
  *
  * Voice: docs/research/05 section 8 template (a Service95-style letter, adapted and renamed; never
- * mention the inspiration on the site). Letter 120-200 words in English (report 05 sections 6 and 8;
- * Spanish runs about 15% longer), zero emoji, no exclamation marks,
- * one self-answered question at most, opens on a moment, closes with "I hope..." and the ritual
- * sign-off. Serious and fun content sit in separate sections (tone field). The letter's demo scene
+ * mention the inspiration on the site). Letter 150-200 words in English, sign-off included (BRIEF 4.8
+ * says 120-200, report 05 about 150; Spanish runs about 15% longer), zero emoji, no exclamation marks
+ * (the letter is calm), one self-answered question at most, opens on a moment (BRIEF 2.7 line 21),
+ * closes with "I hope..." and the ritual sign-off (BRIEF 2.7 line 22). The mail-ballot lines use the
+ * required wording from docs/research/00 word for word. No candidate names anywhere, facts included
+ * (BRIEF 0.3: "the Democrat" / "the Republican"). Serious and fun content sit in separate sections (tone field). The letter's demo scene
  * stays away from polling places on purpose: within 150 feet of a polling place only Supervisor of
  * Elections staff and volunteers may give voters items (F.S. 102.031(4)), so no "handing out water".
  *
@@ -47,8 +49,8 @@
  *   inside[]    { en, es, section }  "what's inside" bullets, each pointing at a section id
  *   oneThing    { title{}, body{}, deadline (ISO, all-day: the local midnight that starts the last
  *                 day, same convention as civic.js allDay; show the date only), deadlineAllDay: true,
- *                 cta{ label{}, calendar{ id, title{}, description{}, date (ISO), allDay } }, link{},
- *                 factIds[] }
+ *                 cta{ label{}, calendar{ id, title{}, description{}, start, end (ISO, New York) } },
+ *                 link{} (how to renew), check{} (My Voter Record), factIds[] }
  *   picks[]     { id, kind 'place'|'book'|'podcast'|'show', title{}, creator{}?, detail{}?, reason{},
  *                 event? (events.js id), link?{ url, label{} }, factIds[] }  (free and nearby first)
  *   spotlight   { demo, name, city, label{} (render it: carries "DEMO member"), headline{},
@@ -81,9 +83,9 @@ window.YSD_DATA.newsletter = {
     }
   },
   signoff: {
-    ritual: { en: "See you Thursday.", es: "Nos vemos el jueves." },
+    ritual: { en: "That's it from me. Text one friend, drink some water. See you Thursday.", es: "Eso es todo de mi parte. Escríbele a alguien, tómate un vaso de agua. Nos vemos el jueves." },
     template: { en: "{name}, for the Young Dems xo", es: "Un abrazo, {name}, de parte de los Young Dems" },
-    note: "Recommended option (a) from docs/research/05 section 7, with the casual name 'Young Dems' (docs/research/00). Keep it identical every week."
+    note: "BRIEF 2.7 line 22 (report 05 section 7 option (a), with the casual name 'Young Dems' from docs/research/00). Keep it identical every week."
   },
 
   sections: {
@@ -135,8 +137,8 @@ window.YSD_DATA.newsletter = {
     date: "2026-11-12T07:00:00-05:00",
     tone: "calm",
     subject: {
-      en: "Mail-ballot requests from before Nov 3 run out Dec 31 (plus a sunset walk Saturday)",
-      es: "Las solicitudes de boleta por correo de antes del 3 de noviembre vencen el 31 de diciembre (y una caminata al atardecer el sábado)"
+      en: "Asked for a mail ballot before Nov 3? That request ends Dec 31 (plus a sunset walk Saturday)",
+      es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre (y una caminata al atardecer el sábado)"
     },
     preheader: {
       en: "One reminder to set, five picks for a slow weekend, and a first-time voter who stayed to help.",
@@ -151,19 +153,19 @@ window.YSD_DATA.newsletter = {
       },
       paragraphs: [
         {
-          en: "Hi, it's Dani from Casselberry (DEMO writer). On election night I was at our text-bank table, refilling the chip bowl and answering a \"where do I vote?\" text, when a guy about my age asked if he could help. He'd voted for the first time that morning. He stayed until the polls closed at 7, sending strangers the official link like he'd been doing it for years.",
-          es: "Hola, soy Dani, de Casselberry (perfil DEMO). La noche de las elecciones estaba en nuestra mesa de mensajes, rellenando el plato de papitas y contestando un «¿dónde voto?», cuando un muchacho más o menos de mi edad me preguntó si podía ayudar. Había votado por primera vez esa misma mañana. Se quedó hasta que cerraron las urnas a las 7, mandándoles el enlace oficial a desconocidos como si llevara años haciéndolo."
+          en: "Hi, it's Dani from Casselberry (DEMO writer). On election night a guy who'd voted for the first time that morning asked if he could help at our text-bank table. He stayed until the polls closed. Most people are one invitation away, so here's yours.",
+          es: "Hola, soy Dani, de Casselberry (perfil DEMO). La noche de las elecciones, un muchacho que había votado por primera vez esa misma mañana me preguntó si podía ayudar en nuestra mesa de mensajes. Se quedó hasta que cerraron las urnas. Casi todo el mundo está a una invitación de distancia, así que aquí va la tuya."
         },
         {
-          en: "By the unofficial count, Seminole voted blue for governor, about 54% to 45%, while the state went the other way by about a point. The county files its official results by Mon, Nov 16. I'm proud of this county and tired at the same time. If you're somewhere else entirely, that makes sense too.",
-          es: "Según el conteo no oficial, Seminole votó azul para gobernador, más o menos 54 % a 45 %, mientras que el estado se fue para el otro lado por cerca de un punto. El condado entrega sus resultados oficiales a más tardar el lunes 16 de noviembre. Siento orgullo por este condado y cansancio a la vez. Si tú estás en otro lugar, también tiene sentido."
+          en: "By the unofficial count, Seminole picked the Democrat for governor, about 54% to 45%, while the state went the other way by about a point. Official results are due Mon, Nov 16. I'm proud of this county and tired at the same time. If you feel something else, that's fair too.",
+          es: "Según el conteo no oficial, Seminole eligió al demócrata para gobernador, más o menos 54 % a 45 %, mientras que el estado se fue para el otro lado por cerca de un punto. Los resultados oficiales se entregan a más tardar el lunes 16 de noviembre. Siento orgullo por este condado y cansancio a la vez. Si sientes otra cosa, también es válido."
         },
         {
-          en: "So this week is for breathing, plus one small, unglamorous task. If you asked for a mail ballot before Nov 3, that request runs out Dec 31. Set a reminder for Jan 1 now, and renewing will be quick. (Details below.)",
-          es: "Así que esta semana es para respirar, y para una tarea pequeña y nada glamorosa. Si pediste la boleta por correo antes del 3 de noviembre, esa solicitud vence el 31 de diciembre. Ponte ya un recordatorio para el 1 de enero y renovarla te va a tomar muy poco. (Los detalles, más abajo.)"
+          en: "So this week is for breathing, plus one small task. Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set through 2028. Check My Voter Record to be sure. One Thing, below, has the January reminder.",
+          es: "Así que esta semana es para respirar, y para una tarea pequeña. ¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Pídela de nuevo y debería valer hasta 2028. Revisa My Voter Record para confirmarlo. En Una sola cosa, más abajo, está el recordatorio de enero."
         },
         {
-          en: "Also inside: a sunset walk on Lake Monroe Saturday, five picks for a slow weekend, and Marisol (DEMO member), who rewrote our text-bank script on her first night.",
+          en: "Also inside: a sunset walk on Lake Monroe Saturday, five picks for a slow weekend, and Marisol (DEMO member), who rewrote our text-bank script her first night.",
           es: "Además: una caminata al atardecer en el lago Monroe el sábado, cinco recomendaciones para un fin de semana tranquilo y Marisol (miembro DEMO), que reescribió nuestro guion de mensajes en su primera noche."
         },
         {
@@ -171,41 +173,43 @@ window.YSD_DATA.newsletter = {
           es: "Ojalá encuentres aquí algo que sientas tuyo."
         }
       ],
-      wordCount: { en: 200, es: 233 },
-      ritual: { en: "See you Thursday.", es: "Nos vemos el jueves." },
+      wordCount: { en: 197, es: 241, note: "Counted with the sign-off (ritual + signature) on Nov 9, 2026: body 178 EN." },
+      ritual: { en: "That's it from me. Text one friend, drink some water. See you Thursday.", es: "Eso es todo de mi parte. Escríbele a alguien, tómate un vaso de agua. Nos vemos el jueves." },
       signature: { en: "Dani, for the Young Dems xo", es: "Un abrazo, Dani, de parte de los Young Dems" },
       factIds: ["seminole-governor-unofficial", "official-returns-nov-16", "mail-requests-expire-2026"]
     },
 
     inside: [
-      { en: "One Thing: set your Jan 1 mail-ballot renewal reminder", es: "Una sola cosa: pon tu recordatorio del 1 de enero para renovar la boleta por correo", section: "oneThing" },
+      { en: "One Thing: put the mail-ballot reminder on your January calendar", es: "Una sola cosa: pon en tu calendario de enero el recordatorio de la boleta por correo", section: "oneThing" },
       { en: "The Picks: two outdoor spots, a book, a podcast in Spanish and a show", es: "Recomendados: dos lugares al aire libre, un libro, un pódcast en español y una serie", section: "picks" },
       { en: "Spotlight: Marisol (DEMO member), who rewrote our text-bank script", es: "En primer plano: Marisol (miembro DEMO), que reescribió nuestro guion de mensajes", section: "spotlight" },
       { en: "Ask the Group Chat: \"I'm NPA. Is this group even for me?\"", es: "Pregúntale al chat: «Me inscribí sin partido. ¿Este grupo es para mí?»", section: "askGroupChat" }
     ],
 
     oneThing: {
-      title: { en: "Set your Jan 1 renewal reminder", es: "Pon tu recordatorio para renovar el 1 de enero" },
+      title: { en: "Put the January reminder on your calendar", es: "Pon el recordatorio de enero en tu calendario" },
       body: {
-        en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Starting Jan 1, one new request covers every election through 2028. Set the reminder now, then renew online or at 407-585-8683 with your Florida license or ID number, or the last 4 of your Social Security number. Renewing sooner? Check My Voter Record in January to be sure.",
-        es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Desde el 1 de enero, una sola solicitud nueva te cubre en todas las elecciones hasta 2028. Ponte el recordatorio ahora y luego renuévala en línea o al 407-585-8683 con el número de tu licencia o identificación de Florida, o los últimos 4 dígitos de tu Seguro Social. ¿La renuevas antes? Revisa My Voter Record en enero para confirmarlo."
+        en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set through 2028. Check My Voter Record to be sure. The reminder pops up Mon, Jan 4 at 10 am, with the link and the elections office number.",
+        es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Pídela de nuevo y debería valer hasta 2028. Revisa My Voter Record para confirmarlo. El recordatorio te sale el lunes 4 de enero a las 10 a. m., con el enlace y el teléfono de la oficina electoral."
       },
+      note: "The first four sentences are the required wording from docs/research/00 (Spanish from data/civic.js nextActions). Never 'deadline to renew', never 'you can't renew before Jan 1'.",
       deadline: "2026-12-31T00:00:00-05:00",
       deadlineAllDay: true,
       cta: {
-        label: { en: "Add the reminder", es: "Agregar el recordatorio" },
+        label: { en: "Add the January reminder", es: "Agrega el recordatorio de enero" },
         calendar: {
           id: "renew-mail-ballot-reminder",
           title: { en: "Renew my mail-ballot request", es: "Renovar mi solicitud de boleta por correo" },
           description: {
-            en: "Requests made before Nov 3, 2026 ended Dec 31. Renew online on Seminole's vote-by-mail page (voteseminole.gov) or call 407-585-8683 on a weekday. Have your Florida license or ID number, or the last 4 digits of your Social Security number.",
-            es: "Las solicitudes hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre. Renueva la tuya en línea en la página de voto por correo de Seminole (voteseminole.gov) o llama al 407-585-8683 un día entre semana. Ten a mano el número de tu licencia o identificación de Florida, o los últimos 4 dígitos de tu Seguro Social."
+            en: "Requests made before Nov 3, 2026 ended Dec 31. Renew online on Seminole's vote-by-mail page (voteseminole.gov) or call 407-585-8683, Mon to Fri, 8 am to 5 pm. Have your Florida license or ID number, or the last 4 digits of your Social Security number.",
+            es: "Las solicitudes hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre. Renueva la tuya en línea en la página de voto por correo de Seminole (voteseminole.gov) o llama al 407-585-8683, de lunes a viernes, de 8 a. m. a 5 p. m. Ten a mano el número de tu licencia o identificación de Florida, o los últimos 4 dígitos de tu Seguro Social."
           },
-          date: "2027-01-01T00:00:00-05:00",
-          allDay: true,
-          note: "Mirrors data/civic.js nextActions 'na-renew-reminder-2026'.calendar; if civic's object is loaded on the page, use it so the text never drifts. Pass start: date.slice(0, 10) to YSD.cal ('YYYY-MM-DD' is all-day)."
+          start: "2027-01-04T10:00:00-05:00",
+          end: "2027-01-04T10:30:00-05:00",
+          note: "BRIEF 4.1 and 10.4 W3: the January reminder is Mon, Jan 4, 2027, 10 am New York time (DTSTART;TZID=America/New_York:20270104T100000), the same .ics as the home pin and the vote hub. Text mirrors data/civic.js nextActions 'na-renew-reminder-2026'.calendar."
         }
       },
+      check: { linkId: "myVoterRecord", key: "links.vote.myVoterRecord", url: "https://voteseminole.gov/voters/my-voter-record/", label: { en: "Check My Voter Record", es: "Revisa My Voter Record" } },
       link: { linkId: "voteByMail", key: "links.vote.voteByMail", url: "https://voteseminole.gov/how-to-vote/vote-by-mail/", label: { en: "Seminole's vote-by-mail page", es: "Página de voto por correo de Seminole" } },
       factIds: ["mail-requests-expire-2026", "new-request-covers-2028", "renew-how"]
     },
@@ -320,14 +324,14 @@ window.YSD_DATA.newsletter = {
       {
         id: "seminole-governor-unofficial",
         claim: {
-          en: "Unofficial Nov 3, 2026 returns show David Jolly (D) at about 54.1% to Byron Donalds (R) at about 44.6% in Seminole County, while Donalds won statewide (about 50.0% to 48.7%, AP).",
-          es: "Los resultados no oficiales del 3 de noviembre de 2026 dan a David Jolly (D) cerca del 54.1 % frente a Byron Donalds (R) con cerca del 44.6 % en el condado de Seminole, mientras que Donalds ganó a nivel estatal (cerca del 50.0 % contra 48.7 %, según AP)."
+          en: "Unofficial Nov 3, 2026 returns show the Democrat for governor at about 54.1% and the Republican at about 44.6% in Seminole County, while the Republican won statewide (about 50.0% to 48.7%, AP).",
+          es: "Los resultados no oficiales del 3 de noviembre de 2026 dan al candidato demócrata a gobernador cerca del 54.1 % y al republicano cerca del 44.6 % en el condado de Seminole, mientras que el republicano ganó a nivel estatal (cerca del 50.0 % contra 48.7 %, según AP)."
         },
         source: "https://www.wftv.com/news/local/florida-election-results-by-county-explore-governor-us-senate-races/M4I4A3YEGJH6BJ3TSVPISSSXHA/",
         sources: ["https://floridaphoenix.com/2026/11/03/donalds-defeats-jolly-becoming-floridas-first-black-governor/"],
         verified: "2026-11-09",
         confidence: "high",
-        note: "Re-read on WFTV's unofficial results page on Nov 9: Seminole Jolly 54.08%, Donalds 44.59%; statewide Donalds 50.02%, Jolly 48.71% (margin 1.31 points). Florida Phoenix/AP per the lead's check (docs/research/00; blocked to our fetch). Keep the 'unofficial' label until certification."
+        note: "Re-read on WFTV's unofficial results page on Nov 9: Seminole, the Democrat 54.08%, the Republican 44.59%; statewide, the Republican 50.02%, the Democrat 48.71% (margin 1.31 points). No candidate names on the site (BRIEF 0.3). Florida Phoenix/AP per the lead's check (docs/research/00; blocked to our fetch). Keep the 'unofficial' label until certification."
       },
       {
         id: "official-returns-nov-16",

@@ -1,7 +1,9 @@
 /*!
  * data/team.js: the chapter team page for the Young Democrats of Seminole County (YDSC), EN + ES.
  *
- * DEMO DATA (demo:true). Every name here is an obvious placeholder ("Your President Here"). No real
+ * DEMO DATA (demo:true). Nov 9, 2026 (W7): the treasurer no longer promises a public receipts page
+ * (BRIEF 4.9: only if the chapter agrees to publish one).
+ * Every name here is an obvious placeholder ("Your President Here"). No real
  * officer is named, on purpose: real names, photos and pronouns go in only with each person's
  * consent, after the chapter signs off. The role list itself is a DEMO structure: YDSC's bylaws and
  * elected board decide the real seats (president, vice president, secretary and treasurer are the
@@ -154,12 +156,12 @@ window.YSD_DATA.team = {
       name: { en: "Your Treasurer Here", es: "Aquí va quien lleva la tesorería" },
       pronouns: null,
       bio: {
-        en: "Keeps the receipts: every dollar in, every dollar out, posted where members can see it.",
-        es: "Guarda los recibos: cada dólar que entra y cada dólar que sale, publicado donde los miembros lo puedan ver."
+        en: "Keeps the receipts: every dollar in, every dollar out, and the paperwork that goes with them.",
+        es: "Guarda los recibos: cada dólar que entra, cada dólar que sale y el papeleo que los acompaña."
       },
       does: [
         { en: "Tracks dues, donations and spending", es: "Lleva la cuenta de cuotas, donaciones y gastos" },
-        { en: "Publishes a simple receipts page for members", es: "Publica una página sencilla de recibos para los miembros" }
+        { en: "Reports the numbers to the board in plain words", es: "Le explica las cuentas a la directiva en palabras sencillas" }
       ],
       avatar: { token: "--bubblegum", monogram: "T", alt: { en: "Placeholder avatar for the treasurer", es: "Avatar de relleno para la tesorería" } },
       contact: null

@@ -9,7 +9,8 @@
  *
  *   issueFinder   "Find your issue": 7 daily-life questions -> one of the 9 issue cards in
  *                 data/issues.js (load issues.js too). Quick mode = the 4 `core` questions.
- *   organizerEra  "What's your organizer era?": 8 playful questions -> one of 6 organizer types.
+ *   organizerEra  "How do you show up?" (slug show-up; renamed from the old era quiz, BRIEF 4.7): 8 playful
+ *                 questions -> one of 6 organizer types. The internal key stays organizerEra.
  *
  * Copy follows report 05 (voice): plain words, a wink not a costume, no slang cosplay, no guilt.
  * Nothing here is a statistic about real people except issue facts referenced by factRef, which
@@ -70,7 +71,7 @@
  *   name {en,es}                  the Spanish names are their own jokes, not translations
  *   description { en: [line1, line2], es: [line1, line2] }
  *   strengths { en: [3], es: [3] }
- *   actions [Action]              same Action shape as data/issues.js (type, label, labelAfter?,
+ *   actions [Action]              3 per type (BRIEF 4.7), same Action shape as data/issues.js (type, label, labelAfter?,
  *                                 page, hash, query, official?, demo?)
  *   eventSeries [series]          keys of quiz.eventSeries, best fit first
  *   card { headline, subline }    share card copy
@@ -198,7 +199,7 @@ window.YSD_DATA.quiz = {
     title: { en: 'Find your issue', es: 'Encuentra tu tema' },
     intro: {
       en: 'A few taps about your actual life (your commute, your rent, your 2 am thoughts) and we’ll match you with the Seminole issue that fits.',
-      es: 'Unas cuantas preguntas sobre tu vida real (cómo te mueves, tu alquiler, lo que piensas a las 2 am) y te mostramos el tema de Seminole que más va contigo.'
+      es: 'Unas cuantas preguntas sobre tu vida real (cómo te mueves, tu alquiler, lo que piensas a las 2 a. m.) y te mostramos el tema de Seminole que más va contigo.'
     },
     cta: { en: 'Match me', es: 'Encuentra mi tema' },
     privacy: {
@@ -242,7 +243,7 @@ window.YSD_DATA.quiz = {
       {
         id: 'two-am',
         core: true,
-        prompt: { en: 'It’s 2 am and you can’t sleep. What’s keeping you up?', es: 'Son las 2 am y no te puedes dormir. ¿Qué te está quitando el sueño?' },
+        prompt: { en: 'It’s 2 am and you can’t sleep. What’s keeping you up?', es: 'Son las 2 a. m. y no te puedes dormir. ¿Qué te está quitando el sueño?' },
         options: [
           { id: 'rent', label: { en: 'My rent went up again', es: 'Me volvieron a subir el alquiler' }, scores: { housing: 3 } },
           { id: 'insurance', label: { en: 'My insurance renewal letter', es: 'La carta de renovación del seguro' }, scores: { heat: 3 } },
@@ -419,16 +420,16 @@ window.YSD_DATA.quiz = {
     }
   },
 
-  // ===================================================================== WHAT'S YOUR ORGANIZER ERA
+  // ===================================================================== HOW DO YOU SHOW UP?
   organizerEra: {
-    id: 'organizer-era',
-    slug: 'era',
-    title: { en: 'What’s your organizer era?', es: '¿Cuál es tu modo de organizar?' },
+    id: 'show-up',
+    slug: 'show-up',
+    title: { en: 'How do you show up?', es: '¿Cuál es tu modo de organizar?' },
     intro: {
       en: '8 quick questions. No wrong answers, and every type has a spot on the team.',
       es: '8 preguntas rápidas. No hay respuestas incorrectas, y cada tipo tiene su lugar en el equipo.'
     },
-    cta: { en: 'Show me my era', es: 'Muéstrame mi modo' },
+    cta: { en: 'Show me my type', es: 'Muéstrame mi modo' },
     privacy: {
       en: 'We don’t save your answers. If you share, only your result goes with it.',
       es: 'No guardamos tus respuestas. Si compartes, solo se comparte tu resultado.'
@@ -549,7 +550,7 @@ window.YSD_DATA.quiz = {
     },
 
     copy: {
-      matchLabel: { en: 'Your organizer era', es: 'Tu modo' },
+      matchLabel: { en: 'How you show up', es: 'Tu modo' },
       undertone: { en: '{match}, with {undertone} undertones', es: '{match}, con {undertone} de fondo' },
       mixLabel: { en: 'Your mix', es: 'Tu mezcla' },
       notQuite: { en: 'Not quite you? See your next match', es: '¿No es lo tuyo? Mira tu siguiente opción' },
@@ -557,7 +558,7 @@ window.YSD_DATA.quiz = {
       actionsTitle: { en: 'Start here', es: 'Empieza por aquí' },
       eventsTitle: { en: 'Events made for you', es: 'Eventos hechos para ti' },
       allTypes: { en: 'Meet all 6 types', es: 'Conoce los 6 tipos' },
-      shareText: { en: 'I got {match} on the Young Dems organizer quiz. What’s yours?', es: 'Me salió {match} en el quiz de los Young Dems. ¿Y a ti?' }
+      shareText: { en: 'I got {match} on the Young Dems quiz “How do you show up?” What’s yours?', es: 'Me salió {match} en el quiz de los Young Dems. ¿Y a ti?' }
     },
 
     results: [
@@ -577,7 +578,8 @@ window.YSD_DATA.quiz = {
         },
         actions: [
           { type: 'event', label: { en: 'Find a room to fill', es: 'Busca un evento para animar' }, page: 'events', query: 'kind=social', demo: true },
-          { type: 'join', label: { en: 'Offer to host or emcee a night', es: 'Ofrécete para organizar o animar una noche' }, page: 'join', hash: 'volunteer' }
+          { type: 'join', label: { en: 'Offer to host or emcee a night', es: 'Ofrécete para organizar o animar una noche' }, page: 'join' },
+          { type: 'event', label: { en: 'Bring a team to trivia night', es: 'Arma un equipo para la noche de trivia' }, page: 'events', query: 'series=trivia', demo: true }
         ],
         eventSeries: ['trivia', 'karaoke', 'mixer'],
         card: {
@@ -612,7 +614,8 @@ window.YSD_DATA.quiz = {
             hash: 'renew-mail-ballot',
             official: 'links.vote.voteByMail'
           },
-          { type: 'event', label: { en: 'Join a text-a-friend night', es: 'Únete a una noche de mensajes' }, page: 'events', query: 'series=text-bank', demo: true }
+          { type: 'event', label: { en: 'Join a text-a-friend night', es: 'Únete a una noche de mensajes' }, page: 'events', query: 'series=text-bank', demo: true },
+          { type: 'join', label: { en: 'Join and get your own invite link', es: 'Únete y consigue tu propio enlace de invitación' }, page: 'join' }
         ],
         eventSeries: ['text-bank', 'renew-ready'],
         card: {
@@ -635,8 +638,9 @@ window.YSD_DATA.quiz = {
           es: ['Convertir un desorden en un plan', 'Ver el número que importa', 'Listas de asistencia que sí funcionan']
         },
         actions: [
-          { type: 'join', label: { en: 'Help run RSVPs and sign-ins', es: 'Ayuda con las confirmaciones y la lista de asistencia' }, page: 'join', hash: 'volunteer' },
-          { type: 'vote', label: { en: 'Learn the 2027-28 election dates', es: 'Conoce las fechas de elecciones de 2027-28' }, page: 'vote', hash: 'dates', official: 'links.vote.upcomingElections' }
+          { type: 'join', label: { en: 'Help run RSVPs and sign-ins', es: 'Ayuda con las confirmaciones y la lista de asistencia' }, page: 'join' },
+          { type: 'vote', label: { en: 'Learn the 2027-28 election dates', es: 'Conoce las fechas de elecciones de 2027-28' }, page: 'vote', hash: 'dates', official: 'links.vote.upcomingElections' },
+          { type: 'event', label: { en: 'Help set up a renewal party', es: 'Ayuda a preparar una fiesta para renovar' }, page: 'events', query: 'series=renew-ready', demo: true }
         ],
         eventSeries: ['renew-ready', 'picnic', 'text-bank'],
         card: {
@@ -660,7 +664,8 @@ window.YSD_DATA.quiz = {
         },
         actions: [
           { type: 'event', label: { en: 'Try a neighbor check-in shift (training included)', es: 'Prueba un turno de visitas al vecindario (con capacitación incluida)' }, page: 'events', query: 'series=canvass', demo: true },
-          { type: 'vote', label: { en: 'Learn the 2027 ID change so you can explain it', es: 'Aprende el cambio de identificación de 2027 para poder explicarlo' }, page: 'vote', hash: 'what-id', official: 'links.vote.countyElections' }
+          { type: 'vote', label: { en: 'Learn the 2027 ID change so you can explain it', es: 'Aprende el cambio de identificación de 2027 para poder explicarlo' }, page: 'vote', hash: 'what-id', official: 'links.vote.countyElections' },
+          { type: 'event', label: { en: 'Come to a sunset walk-and-talk', es: 'Ven a una caminata al atardecer' }, page: 'events', query: 'series=sunset-walk', demo: true }
         ],
         eventSeries: ['canvass', 'sunset-walk'],
         card: {
@@ -684,7 +689,8 @@ window.YSD_DATA.quiz = {
         },
         actions: [
           { type: 'clip', label: { en: 'Post a 60-second take', es: 'Sube un video de 60 segundos' }, page: 'post' },
-          { type: 'event', label: { en: 'Come to a creator night', es: 'Ven a una noche de video' }, page: 'events', query: 'series=creator-night', demo: true }
+          { type: 'event', label: { en: 'Come to a creator night', es: 'Ven a una noche de video' }, page: 'events', query: 'series=creator-night', demo: true },
+          { type: 'card', label: { en: 'Put yourself on the cover', es: 'Ponte en la portada' }, page: 'quiz', hash: 'cover' }
         ],
         eventSeries: ['creator-night', 'picnic', 'karaoke'],
         card: {
@@ -708,7 +714,8 @@ window.YSD_DATA.quiz = {
         },
         actions: [
           { type: 'join', label: { en: 'Join and share your invite link', es: 'Únete y comparte tu enlace de invitación' }, page: 'join' },
-          { type: 'event', label: { en: 'Bring someone to a member mixer', es: 'Lleva a alguien a un encuentro de miembros' }, page: 'events', query: 'series=mixer', demo: true }
+          { type: 'event', label: { en: 'Bring someone to a member mixer', es: 'Lleva a alguien a un encuentro de miembros' }, page: 'events', query: 'series=mixer', demo: true },
+          { type: 'event', label: { en: 'Ride SunRail to a meetup with a friend', es: 'Ve en SunRail a un encuentro con alguien' }, page: 'events', query: 'series=sunrail', demo: true }
         ],
         eventSeries: ['mixer', 'sunrail', 'trivia'],
         card: {

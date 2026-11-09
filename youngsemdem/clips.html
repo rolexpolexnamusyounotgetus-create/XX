@@ -1,0 +1,380 @@
+<!doctype html>
+<!-- clips.html (W4): "The Reel", the vertical clip feed. Logic: assets/js/pages/clips.js (+ assets/js/reel.js,
+     assets/js/pages/post.js for the post sheet, both shared). Copy: data/pages/clips.js via data/slices/clips.js. -->
+<html lang="en" data-page="clips">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title data-t="seo.feed.title">Clips from Seminole · Young Democrats of Seminole County</title>
+  <meta name="description" content="Short videos from people around Seminole County on why they show up, plus how to post your own. A real person reviews every clip." data-t-content="seo.feed.description">
+  <meta property="og:title" content="Why we show up" data-t-content="seo.feed.ogTitle">
+  <meta property="og:description" content="Short clips from people around Seminole County. Sound optional." data-t-content="seo.feed.ogDescription">
+  <meta property="og:image" content="assets/img/og/clips.png">
+  <meta property="og:image:alt" content="Card that reads: Why we show up. Short clips from people around Seminole County." data-t-content="clips:og.alt">
+  <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US"><meta property="og:locale:alternate" content="es_US">
+  <meta name="ysd:og" content='{"template":"og-page","kicker":"THE REEL","title":"Why we show up","accent":"show up","sticker":"camera","keys":{"kicker":"clips:og.kicker","title":"seo.feed.ogTitle","accent":"clips:og.accent"}}'>
+  <!-- @head --><meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#6A2BFF">
+<script src="assets/boot.js"></script>
+<link rel="canonical" href="/clips">
+<meta property="og:url" content="/clips">
+<meta property="og:site_name" content="Young Democrats of Seminole County">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/utilities.css"><!-- /@head -->
+  <link rel="alternate" hreflang="en" href="clips.html">
+  <link rel="alternate" hreflang="es" href="es/clips.html">
+  <link rel="alternate" hreflang="x-default" href="clips.html">
+  <link rel="stylesheet" href="assets/css/pages/clips.css">
+</head>
+<body class="p-clips">
+  <!-- @demo-banner --><a class="skip-link" href="#main" data-t="a11y.skip">Skip to main content</a>
+<aside class="demo-banner" aria-label="DEMO notice" data-t-aria-label="demo.noticeLabel">
+  <div class="wrap demo-banner__inner">
+    <span class="tag tag--demo">DEMO</span>
+    <p class="demo-banner__text"><span class="demo-banner__long" data-t="demo.banner">DEMO preview for the Young Democrats of Seminole County, pending the chapter's sign-off. Anything marked DEMO is made up, and forms don't send anything.</span><span class="demo-banner__short" data-t="demo.bannerShort">DEMO preview. Forms don't send anything.</span> <a href="about.html#whats-real" data-t="demo.bannerMore">What's real?</a></p>
+  </div>
+</aside><!-- /@demo-banner -->
+  <!-- @header --><header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand" href="index.html" data-no-current>
+      <svg class="brand__mark" viewBox="0 0 64 56" aria-hidden="true" focusable="false"><path d="M15 41 13 54 31 41Z" fill="#C8F03C" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><rect x="2.5" y="3" width="59" height="39" rx="9" fill="#6A2BFF" stroke="currentColor" stroke-width="3"/><path fill="#C8F03C" d="M21.94 31.5V25.49L15.93 12.5H21.5L24.27 22.36H24.51L27.18 12.5H32.44L26.63 25.47V31.5ZM36.34 31.5V27.92H40.23Q41.33 27.92 42.06 27.27Q42.78 26.62 43.15 25.3Q43.52 23.98 43.52 22.02Q43.52 20.47 43.31 19.34Q43.1 18.22 42.67 17.49Q42.25 16.77 41.57 16.42Q40.88 16.08 39.94 16.08H36.34V12.5H39.87Q42.38 12.5 44.23 13.61Q46.08 14.72 47.07 16.84Q48.07 18.96 48.07 21.99Q48.07 24.45 47.55 26.13Q47.02 27.81 46.14 28.87Q45.26 29.92 44.23 30.5Q43.19 31.07 42.18 31.28Q41.17 31.5 40.37 31.5ZM34.14 31.5V12.5H38.63V31.5Z"/></svg>
+      <span class="brand__word" translate="no">Young Dems</span>
+      <span class="u-visually-hidden" data-t="a11y.logo">Young Democrats of Seminole County, home</span>
+    </a>
+    <nav class="site-nav" aria-label="Main menu" data-t-aria-label="nav.aria">
+      <ul class="site-nav__list">
+        <li><a href="events.html" data-t="nav.events">Events</a></li>
+        <li><a href="vote.html" data-t="nav.vote">Vote</a></li>
+        <li><a href="clips.html" data-t="nav.reel" aria-current="page">Reel</a></li>
+        <li><a href="quiz.html" data-t="nav.quiz">Quiz</a></li>
+        <li><a href="issues.html" data-t="nav.issues">Issues</a></li>
+        <li><a href="about.html" data-t="nav.about">About</a></li>
+      </ul>
+    </nav>
+    <div class="site-header__actions">
+      <a class="lang-link" href="es/index.html" hreflang="es" lang="es" data-lang-link>ES<span class="u-visually-hidden">: leer esta página en español</span></a>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Color theme: Auto. Change theme"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 3a9 9 0 0 1 0 18Z"/></svg><span class="theme-toggle__label" data-theme-label>Auto</span></button>
+      <a class="btn btn--primary btn--sm" href="join.html" data-t="cta.join">Join free</a>
+      <button class="menu-btn" type="button" data-menu-toggle aria-expanded="false" aria-controls="site-menu"><span class="menu-btn__bars" aria-hidden="true"></span><span class="u-visually-hidden" data-t="nav.menu">Menu</span></button>
+    </div>
+  </div>
+  <div class="menu" id="site-menu" hidden>
+    <div class="wrap menu__inner">
+      <nav aria-label="Menu" data-t-aria-label="nav.menu">
+        <ul class="menu__list">
+          <li><a href="index.html" data-t="nav.home">Home</a></li>
+          <li><a href="events.html" data-t="nav.events">Events</a></li>
+          <li><a href="vote.html" data-t="nav.vote">Vote</a></li>
+          <li><a href="clips.html" data-t="nav.reel" aria-current="page">Reel</a></li>
+          <li><a href="quiz.html" data-t="nav.quiz">Quiz</a></li>
+          <li><a href="issues.html" data-t="nav.issues">Issues</a></li>
+          <li><a href="join.html" data-t="nav.join">Join</a></li>
+          <li><a href="about.html" data-t="nav.about">About</a></li>
+        </ul>
+        <ul class="menu__group">
+          <li><a href="newsletter.html" data-t="brand.newsletter">The Thursday Letter</a></li>
+          <li><a href="post.html" data-t="nav.post">Post a clip</a></li>
+          <li><a href="privacy.html" data-t="nav.privacy">Privacy</a></li>
+          <li><a href="accessibility.html" data-t="nav.accessibility">Accessibility</a></li>
+          <li><a href="teen-safety.html" data-t="nav.teenSafety">Teen safety</a></li>
+          <li><a href="content-policy.html" data-t="nav.clipRules">Clip rules</a></li>
+          <li><a href="conduct.html" data-t="nav.conduct">Code of conduct</a></li>
+        </ul>
+      </nav>
+      <div class="menu__row">
+        <a class="lang-link" href="es/index.html" hreflang="es" lang="es" data-lang-link>ES<span class="u-visually-hidden">: leer esta página en español</span></a>
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Color theme: Auto. Change theme"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 3a9 9 0 0 1 0 18Z"/></svg><span class="theme-toggle__label" data-theme-label>Auto</span></button>
+      </div>
+    </div>
+  </div>
+</header><!-- /@header -->
+  <main id="main">
+    <div class="x-reel">
+      <section class="section section--violet x-intro" aria-labelledby="clips-title">
+        <div class="x-intro__inner">
+          <button class="sticker sticker--md x-intro__sticker u-js-only" type="button" data-sticker="camera"></button>
+          <p class="eyebrow eyebrow--pill" data-t="clips:hero.eyebrow">THE REEL · DEMO CLIPS</p>
+          <h1 class="x-title" id="clips-title"><span class="x-title__line" data-t="clips:hero.title1">Why we</span> <span class="x-title__line x-title__hi" data-t="clips:hero.title2">show up.</span></h1>
+          <p class="x-intro__sub" data-t="clips:hero.sub">Short clips from people around Seminole. Captions on, always. Sound optional.</p>
+
+          <article class="x-prompt" data-reel-prompt aria-labelledby="prompt-title">
+            <div class="x-prompt__top">
+              <p class="tag tag--new" data-t="clips:prompt.eyebrow">THIS WEEK</p>
+              <p class="x-prompt__dates" data-prompt-dates></p>
+            </div>
+            <h2 class="x-prompt__title" id="prompt-title" data-prompt-title data-t="clips:prompt.title">60 seconds on why you showed up.</h2>
+            <p class="x-prompt__sub" data-prompt-sub hidden></p>
+            <div class="x-prompt__actions">
+              <a class="btn btn--primary" href="post.html?tag=why-i-showed-up" data-post-open data-post-prompt data-tag="why-i-showed-up" data-t="clips:prompt.add">Add yours</a>
+              <details class="x-prompt__tips" data-prompt-tips>
+                <summary data-t="clips:prompt.tips">How to film it</summary>
+                <div class="x-prompt__tipsbody">
+                  <p data-t="clips:prompt.sub">Film it vertical, keep it kind, captions on.</p>
+                  <ul>
+                    <li data-t="clips:post.side.1">Open with the moment: where were you, who was there?</li>
+                    <li data-t="clips:post.side.2">Film vertical, face the light, say your first name only.</li>
+                    <li data-t="clips:post.side.3">Add captions in the app before you post. Lots of people watch with the sound off.</li>
+                  </ul>
+                  <p class="x-prompt__help" data-prompt-help hidden><span data-t="clips:prompt.help">Want a hand filming it?</span> <a class="link" href="events.html" data-t="cta.seeEvents">See all events</a></p>
+                </div>
+              </details>
+            </div>
+          </article>
+
+          <section class="x-pending-wrap" data-post-pending hidden aria-labelledby="pending-title">
+            <h2 class="x-pending-wrap__title" id="pending-title" data-post-pending-heading data-t="clips:pending.heading">Your clips</h2>
+            <div class="x-pending-list" data-post-pending-list></div>
+          </section>
+
+          <p class="x-promise" data-t="clips:hero.promise">A person on our team checks every clip before it goes up. No view counts, no like counts.</p>
+
+          <div class="x-filters" role="group" aria-label="Filter clips" data-t-aria-label="clips:filters.label">
+            <button class="chip" type="button" data-filter="all" aria-pressed="true" data-t="clips:filter.all">All</button>
+            <button class="chip" type="button" data-filter="vote" aria-pressed="false" data-t="clips:filter.vote">Voting help</button>
+            <button class="chip" type="button" data-filter="hangouts" aria-pressed="false" data-t="clips:filter.hangouts">Hangouts</button>
+            <button class="chip" type="button" data-filter="volunteer" aria-pressed="false" data-t="clips:filter.volunteer">Volunteer</button>
+            <button class="chip" type="button" data-filter="prompt" aria-pressed="false" data-t="clips:filter.prompt">This week’s prompt</button>
+          </div>
+          <p class="x-count" data-reel-count aria-hidden="true"></p>
+        </div>
+      </section>
+
+      <section class="section--night x-feedwrap" id="feed" aria-labelledby="feed-title">
+        <h2 class="u-visually-hidden" id="feed-title" data-t="clips:feed.label">Clips</h2>
+        <span class="x-feedtop" data-reel-feed-top tabindex="-1"></span>
+        <p class="x-feednote" data-reel-autoplay-off hidden data-t="feed.reducedMotion">Autoplay is off because your device asked for less motion. Tap a clip to play it.</p>
+        <p class="x-feednote u-no-js"><span data-t="clips:nojs">The clips need JavaScript to play. You can still post one from the post page.</span> <a href="post.html" data-t="cta.postClip">Post a clip</a></p>
+        <div class="x-feed" data-reel-feed></div>
+        <div class="x-feednav" data-reel-nav hidden>
+          <button class="x-rail-btn" type="button" data-reel-prev aria-label="Previous clip" data-t-aria-label="feed.prev"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
+          <button class="x-rail-btn" type="button" data-reel-next aria-label="Next clip" data-t-aria-label="feed.next"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
+        </div>
+
+        <div class="x-panel x-empty" data-reel-empty hidden>
+          <span class="sticker sticker--md" data-sticker="camera" aria-hidden="true"></span>
+          <h3 class="x-panel__title" data-t="empty.clips.title">No clips here yet.</h3>
+          <p class="x-panel__sub" data-t="empty.clips.body">Yours could be first: 60 seconds, filmed vertical, about why you showed up.</p>
+          <div class="btn-row"><a class="btn btn--primary" href="post.html" data-post-open data-post-prompt data-tag="why-i-showed-up" data-t="cta.postYours">Post yours</a></div>
+        </div>
+
+        <article class="x-panel x-end" data-reel-end hidden aria-labelledby="end-title">
+          <div class="x-panel__card">
+            <span class="sticker sticker--lg" data-sticker="camera" aria-hidden="true"></span>
+            <p class="eyebrow eyebrow--pill" data-t="clips:end.eyebrow">YOUR TURN</p>
+            <h3 class="x-panel__title" id="end-title" data-t="clips:end.title">That’s the reel for now.</h3>
+            <p class="x-panel__sub" data-t="clips:end.sub">Yours could be next: 60 seconds, filmed vertical, about why you showed up.</p>
+            <div class="btn-row">
+              <a class="btn btn--primary btn--lg" href="post.html" data-post-open data-post-prompt data-tag="why-i-showed-up" data-t="cta.postYours">Post yours</a>
+              <button class="btn btn--ink btn--lg" type="button" data-share="feed"><span data-t="cta.shareGroup">Send it to the group chat</span></button>
+            </div>
+          </div>
+          <p class="x-end__more">
+            <button class="btn btn--quiet" type="button" data-reel-unhide hidden><span></span></button>
+            <button class="btn btn--quiet" type="button" data-reel-top data-t="clips:end.top">Back to the first clip</button>
+          </p>
+          <p class="x-keys" data-t="clips:feed.keys">Keys: J or K to move, Space to play or pause, L to like.</p>
+        </article>
+      </section>
+    </div>
+
+    <section class="section section--cream x-rules" aria-labelledby="rules-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow" data-t="clips:rules.eyebrow">HOW THE REEL WORKS</p>
+          <h2 id="rules-title" data-t="clips:rules.title">Kind clips, real people, no scoreboard.</h2>
+        </div>
+        <ul class="x-rules__list">
+          <li><h3 class="x-rules__title" data-t="clips:rules.check.title">A person checks every clip</h3><p data-t="clips:rules.check.body">Usually within 3 days. Nothing goes public before that, and only you can see yours while it waits.</p></li>
+          <li><h3 class="x-rules__title" data-t="clips:rules.report.title">Report anything</h3><p data-t="clips:rules.report.body">Tap Report on any clip. Reports can be anonymous, and we never tell the uploader who reported.</p></li>
+          <li><h3 class="x-rules__title" data-t="clips:rules.counts.title">No views. No like counts.</h3><p data-t="clips:rules.counts.body">Your heart is just for you. Post because it matters to you, not for a number.</p></li>
+          <li><h3 class="x-rules__title" data-t="clips:rules.teens.title">Under 18? A parent says OK first</h3><p data-t="clips:rules.teens.body">If anyone under 18 shows up in a clip, a parent or guardian signs off before it goes public. No last names, schools or addresses.</p></li>
+        </ul>
+        <p class="x-rules__links">
+          <a class="link" href="content-policy.html" data-t="clips:rules.linkRules">Clip rules</a>
+          <a class="link" href="teen-safety.html" data-t="clips:rules.linkTeens">Teen safety</a>
+          <a class="link" href="conduct.html" data-t="clips:rules.linkConduct">Code of conduct</a>
+        </p>
+        <p class="small muted" data-t="clips:rules.draft">Draft rules until the chapter signs off.</p>
+      </div>
+    </section>
+
+    <dialog class="sheet x-postsheet" id="post-sheet" aria-labelledby="post-sheet-title">
+      <div class="sheet__head">
+        <div class="stack stack--sm"><p class="tag tag--demo" data-t="clips:post.eyebrow">POST A CLIP</p><h2 class="sheet__title" id="post-sheet-title" data-t="clips:post.title">Got a minute and something to say?</h2></div>
+        <button class="sheet__close" type="button" data-sheet-close aria-label="Close" data-t-aria-label="a11y.close"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg></button>
+      </div>
+      <div class="sheet__body">
+        <form class="form x-post" data-post-form="sheet" novalidate>
+          <div class="form__summary" hidden>
+            <p class="form__summary-title" data-summary-title></p>
+            <ul></ul>
+          </div>
+          <div class="x-post__prompt" data-post-prompt>
+              <p class="eyebrow" data-t="clips:post.promptLabel">This week’s prompt</p>
+              <p class="x-post__prompt-title" data-post-prompt-title data-t="clips:prompt.title">60 seconds on why you showed up.</p>
+              <p class="small" data-post-prompt-tag hidden></p>
+              <button class="btn btn--sm x-post__use" type="button" data-post-use-prompt data-t="clips:post.usePrompt">Use this prompt</button>
+            </div>
+          <fieldset class="field field--choice">
+            <legend data-t="clips:post.how">How are you sharing it?</legend>
+            <div class="seg x-post__how">
+              <label class="seg__opt"><input type="radio" name="how" value="upload" checked><span data-t="clips:post.howUpload">Upload a video</span></label>
+              <label class="seg__opt"><input type="radio" name="how" value="link"><span data-t="clips:post.howLink">Paste a link</span></label>
+            </div>
+          </fieldset>
+          <div class="field" data-post-when="upload">
+            <label class="field__label" for="sheet-file" data-t="clips:post.fileLabel">Your video</label>
+            <p class="field__hint" id="sheet-file-hint" data-t="clips:post.fileHint">Vertical works best. MP4, MOV or WebM, up to 3 minutes and 150 MB.</p>
+            <input id="sheet-file" name="file" type="file" accept="video/*,.mov,.mp4,.m4v,.webm" aria-describedby="sheet-file-hint">
+            <p class="field__hint x-post__chosen" data-post-chosen hidden></p>
+            <p class="field__error" hidden></p>
+          </div>
+          <div class="field" data-post-when="link" hidden>
+            <label class="field__label" for="sheet-link" data-t="clips:post.linkLabel">Link to your TikTok, Instagram or YouTube post</label>
+            <p class="field__hint" id="sheet-link-hint" data-t="clips:post.linkHint">Use the app’s share link. Other sites aren’t supported yet.</p>
+            <input id="sheet-link" name="link" type="url" inputmode="url" autocomplete="off" spellcheck="false" autocapitalize="none" aria-describedby="sheet-link-hint">
+            <p class="field__error" hidden></p>
+          </div>
+          <div class="field">
+            <div class="x-checkrow">
+              <input id="sheet-captions" name="hasCaptions" type="checkbox">
+              <label class="field__label" for="sheet-captions" data-t="clips:post.captionsCheck">It has captions (burned in, or added in the app).</label>
+            </div>
+            <p class="field__error" hidden></p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="sheet-caption" data-t="clips:post.captionLabel">Caption</label>
+            <p class="field__hint" id="sheet-caption-hint" data-t="clips:post.captionHint">What’s it about? No last names, schools or addresses.</p>
+            <textarea id="sheet-caption" name="caption" rows="3" aria-describedby="sheet-caption-hint sheet-caption-count"></textarea>
+            <p class="field__hint x-post__count" id="sheet-caption-count" data-post-count></p>
+            <p class="field__error" hidden></p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="sheet-tags" data-t="clips:post.tagsLabel">Tags</label>
+            <p class="field__hint" id="sheet-tags-hint" data-t="clips:post.tagsHint">Up to 8, separated by commas. Like: rent, transit, voting.</p>
+            <input id="sheet-tags" name="tags" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="sheet-tags-hint">
+            <p class="field__error" hidden></p>
+          </div>
+          <div class="field" data-post-age>
+            <label class="field__label" for="sheet-age" data-t="form.age.label">How old are you?</label>
+            <p class="field__hint" id="sheet-age-hint" data-t="form.age.hint">We ask so we can follow our teen safety rules.</p>
+            <input id="sheet-age" name="age" type="text" inputmode="numeric" autocomplete="off" maxlength="3" class="x-post__age" aria-describedby="sheet-age-hint">
+            <p class="field__error" hidden></p>
+          </div>
+          <fieldset class="field field--choice" data-post-minors></fieldset>
+          <div class="field" data-post-guardian hidden></div>
+          <fieldset class="field x-post__consents">
+            <legend class="field__label" data-t="clips:post.consents">Before you send it</legend>
+            <div class="stack stack--sm" data-post-consents></div>
+            <p class="small"><a class="link" href="content-policy.html" data-t="clips:post.rulesLink">Read the Clip Rules</a></p>
+          </fieldset>
+          <p class="consent"><span><span data-t="clips:post.privacy">DEMO: your clip stays on this device. Nothing is uploaded, and only you can see it. We never sell your info.</span> <a href="privacy.html" data-t="clips:post.privacyLink">Privacy policy</a></span></p>
+          <div class="btn-row">
+            <button class="btn btn--primary" type="submit" data-t="clips:post.submit">Send for review</button>
+            <button class="btn btn--quiet" type="button" data-sheet-close data-t="cta.notNow">Not now</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <dialog class="sheet x-reportsheet" id="report-sheet" aria-labelledby="report-title">
+      <div class="sheet__head">
+        <div class="stack stack--sm"><h2 class="sheet__title" id="report-title"></h2><p class="small muted" data-report-about></p></div>
+        <button class="sheet__close" type="button" data-sheet-close aria-label="Close" data-t-aria-label="a11y.close"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg></button>
+      </div>
+      <form class="sheet__body form" data-report-form novalidate></form>
+    </dialog>
+  </main>
+  <!-- @footer --><footer class="site-footer" id="site-footer">
+  <div class="wrap">
+    <div class="site-footer__top">
+      <p class="site-footer__word" translate="no">Young Dems</p>
+      <p class="site-footer__motto"><span data-t="brand.motto">Local politics is a group project.</span> <span data-t="brand.welcome">Come as you are. Bring a friend.</span></p>
+      <div class="site-footer__stickers u-js-only">
+        <button class="sticker sticker--sm" type="button" data-sticker="train" style="--rot: -10deg" aria-label="Sticker: SunRail train. Tap for a Seminole fact"></button>
+        <button class="sticker sticker--sm" type="button" data-sticker="chicken" style="--rot: 8deg" aria-label="Sticker: Oviedo chicken. Tap for a Seminole fact"></button>
+        <button class="sticker sticker--sm" type="button" data-sticker="cypress" style="--rot: -4deg" aria-label="Sticker: young cypress. Tap for a Seminole fact"></button>
+        <button class="sticker sticker--sm" type="button" data-sticker="gator" style="--rot: 12deg" aria-label="Sticker: gator. Tap for a Seminole fact"></button>
+      </div>
+    </div>
+    <nav class="site-footer__nav" aria-label="Site links" data-t-aria-label="nav.footerAria">
+      <div>
+        <h2 data-t="nav.groupDo">Do</h2>
+        <ul>
+          <li><a href="join.html" data-t="cta.join">Join free</a></li>
+          <li><a href="events.html" data-t="nav.events">Events</a></li>
+          <li><a href="clips.html" data-t="nav.reel" aria-current="page">Reel</a></li>
+          <li><a href="post.html" data-t="nav.post">Post a clip</a></li>
+          <li><a href="quiz.html" data-t="nav.quiz">Quiz</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 data-t="nav.groupLearn">Learn</h2>
+        <ul>
+          <li><a href="vote.html" data-t="nav.vote">Vote</a></li>
+          <li><a href="issues.html" data-t="nav.issues">Issues</a></li>
+          <li><a href="newsletter.html" data-t="brand.newsletter">The Thursday Letter</a></li>
+          <li><a href="https://voteseminole.gov/" rel="noopener" data-cfg-href="links.vote.countyElections" data-t="nav.elections">Supervisor of Elections</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 data-t="nav.about">About</h2>
+        <ul>
+          <li><a href="about.html" data-t="nav.about">About</a></li>
+          <li><a href="about.html#whats-real" data-t="nav.whatsReal">What's real?</a></li>
+          <li><a href="https://semdems.com/" rel="noopener" data-cfg-href="links.countyParty" data-t="nav.countyParty" translate="no">Seminole County Democratic Party</a></li>
+        </ul>
+        <div data-social-group hidden>
+          <h2 data-t="nav.social">Follow along</h2>
+          <ul data-social></ul>
+        </div>
+      </div>
+      <div>
+        <h2 data-t="nav.policies">Policies</h2>
+        <ul>
+          <li><a href="privacy.html" data-t="nav.privacy">Privacy</a></li>
+          <li><a href="accessibility.html" data-t="nav.accessibility">Accessibility</a></li>
+          <li><a href="teen-safety.html" data-t="nav.teenSafety">Teen safety</a></li>
+          <li><a href="content-policy.html" data-t="nav.clipRules">Clip rules</a></li>
+          <li><a href="conduct.html" data-t="nav.conduct">Code of conduct</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="site-footer__legal">
+      <p><span data-t="footer.paidFor">Paid for by [committee name and address placeholder]</span> <span class="tag tag--demo">DEMO</span></p>
+      <p data-t="footer.notApproved">Not approved by any candidate. [Placeholder: depends on the chapter's committee status.]</p>
+      <p data-t="footer.notOfficial">Preview for the Young Democrats of Seminole County. Not yet approved by the chapter. Not an official site of the Seminole County Democrats, Florida Young Democrats or any party organization.</p>
+      <p data-t="footer.stockPhotos">People in stock photos are not members and don't endorse anything.</p>
+      <p><span data-t="footer.madeIn">Made in Seminole County.</span> <span data-year translate="no">2026</span></p>
+    </div>
+  </div>
+  <div class="toast-region" role="status" aria-live="polite" data-toast-region></div>
+</footer><!-- /@footer -->
+  <!-- @scripts --><script src="assets/js/config.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="data/counters.js"></script>
+<script src="assets/js/share.js"></script>
+<script src="assets/js/cal.js"></script>
+<script src="assets/js/cards.js"></script>
+<script src="assets/js/members.js"></script>
+<script src="assets/js/track.js"></script>
+<script src="data/slices/core.js"></script>
+<script src="data/stickers.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/sw-register.js"></script><!-- /@scripts -->
+  <script src="data/clips.js"></script>
+  <script src="data/slices/clips.js"></script>
+  <script src="assets/js/clips.js"></script>
+  <script src="assets/js/reel.js"></script>
+  <script src="assets/js/pages/clips.js"></script>
+</body>
+</html>

@@ -87,7 +87,8 @@
  *   expectedFor[]? (place ids for which the related election is only expected: show labels.expected),
  *   short{}, cta{ label{}, stepId? | linkId? | plan: true | calendar: true (offer `calendar`; stepId
  *   is then the secondary link) }, dateId? (countdown target),
- *   calendar?{ title{}, description{}, date, allDay } (optional reminder to offer), source, verified
+ *   calendar?{ title{}, description{}, date, end?, allDay } (optional reminder to offer; a timed reminder
+ *   has allDay:false and an end), source, verified
  *   Pick: entries whose window contains now and whose scope matches the visitor's place (unknown
  *   place: 'all' entries only, plus any city entry if you show a city picker); lowest priority
  *   number wins; ties go to the earlier showUntil. Nothing matches: use nextActionFallback.
@@ -452,8 +453,12 @@ window.YSD_DATA.civic = {
           en: "Requests made before Nov 3, 2026 ended Dec 31. Renew online on Seminole's vote-by-mail page (voteseminole.gov) or call 407-585-8683, Mon to Fri, 8 am to 5 pm. Have your Florida license or ID number, or the last 4 digits of your Social Security number.",
           es: "Las solicitudes hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre. Renueva la tuya en línea en la página de voto por correo de Seminole (voteseminole.gov) o llama al 407-585-8683, de lunes a viernes, de 8 a. m. a 5 p. m. Ten a mano el número de tu licencia o identificación de Florida, o los últimos 4 dígitos de tu Seguro Social."
         },
-        date: "2027-01-01T00:00:00-05:00",
-        allDay: true
+        // Mon, Jan 4, 2027, 10 am ET (BRIEF §4.4): Jan 1 is a holiday and the SOE phones are open
+        // Mon to Fri, 8 am to 5 pm, so the reminder fires on the first business morning. Copy says
+        // "in January"; online renewal works from Jan 1 too.
+        date: "2027-01-04T10:00:00-05:00",
+        end: "2027-01-04T10:30:00-05:00",
+        allDay: false
       },
       dateId: "mail-requests-expire-2026",
       source: "https://www.flsenate.gov/Laws/Statutes/2026/101.62",
@@ -466,7 +471,7 @@ window.YSD_DATA.civic = {
       scope: ["all"],
       priority: 2,
       short: {
-        en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.",
+        en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go.",
         es: "Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir."
       },
       cta: { label: { en: "What ID to bring", es: "Qué identificación llevar" }, stepId: "what-id" },
@@ -658,7 +663,7 @@ window.YSD_DATA.civic = {
       kind: "rule-change",
       title: { en: "Student IDs stop counting at the polls", es: "La identificación de estudiante deja de servir para votar" },
       short: {
-        en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.",
+        en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go.",
         es: "Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir."
       },
       detail: {
@@ -1396,11 +1401,11 @@ window.YSD_DATA.civic = {
       eyebrow: { en: "NEW IN 2027", es: "NUEVO EN 2027" },
       title: { en: "Student IDs stop counting at the polls", es: "La identificación de estudiante deja de servir para votar" },
       copy: {
-        en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.",
+        en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go.",
         es: "Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir."
       },
       short: {
-        en: "From Jan 1, 2027, a student ID won't get you through check-in. Bring a driver's license, state ID or passport.",
+        en: "From Jan 1, 2027, a student ID won't get you through check-in. Bring a driver's license, state ID, or passport.",
         es: "Desde el 1 de enero de 2027, la identificación de estudiante no sirve para votar. Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte."
       },
       body: [
@@ -1986,7 +1991,7 @@ window.YSD_DATA.civic = {
       order: 6,
       title: { en: "What ID to bring", es: "Qué identificación llevar" },
       summary: {
-        en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.",
+        en: "Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go.",
         es: "Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir."
       },
       how: [
@@ -2361,7 +2366,7 @@ window.YSD_DATA.civic = {
       id: "faq-student-id",
       q: { en: "Can I use my UCF or Seminole State ID to vote?", es: "¿Puedo votar con mi identificación de UCF o de Seminole State?" },
       a: {
-        en: "Not from Jan 1, 2027. Florida stops accepting student IDs at the polls, including public college and university cards (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.",
+        en: "Not from Jan 1, 2027. Florida stops accepting student IDs at the polls, including public college and university cards (it's being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go.",
         es: "No a partir del 1 de enero de 2027. Florida deja de aceptar identificaciones de estudiante para votar, incluidas las de instituciones educativas públicas (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir."
       },
       linkIds: ["electionReady", "countyElections"],
@@ -2807,7 +2812,7 @@ window.YSD_DATA.civic = {
     "https://www.democracydocket.com/cases/florida-student-id-ban-challenge/": { en: "Case page: Florida student ID ban challenge", es: "Página del caso: impugnación de la prohibición de la identificación de estudiante en Florida", publisher: "Democracy Docket" },
     "https://www.democracydocket.com/cases/florida-citizenship-requirement-challenge-unidosus/": { en: "Case page: Florida citizenship requirement challenge (UnidosUS v. Byrd, consolidated)", es: "Página del caso: impugnación del requisito de ciudadanía en Florida (UnidosUS v. Byrd, casos unificados)", publisher: "Democracy Docket" },
     "https://www.democracydocket.com/cases/florida-citizenship-requirement-challenge/": { en: "Case page: Florida citizenship requirement challenge (NAACP, filed Apr 1, 2026)", es: "Página del caso: impugnación del requisito de ciudadanía en Florida (NAACP, presentada el 1 de abril de 2026)", publisher: "Democracy Docket" },
-    "https://wusf.org/text/politics-issues/2026-04-01/desantis-receives-bills-voter-id-domestic-terrorist-designations": { en: "Lawsuits filed after DeSantis signs HB 991 (Apr 1, 2026)", es: "Demandas tras la firma de la HB 991 (1 de abril de 2026)", publisher: "WUSF" },
+    "https://wusf.org/text/politics-issues/2026-04-01/desantis-receives-bills-voter-id-domestic-terrorist-designations": { en: "Lawsuits filed after the governor signs HB 991 (Apr 1, 2026)", es: "Demandas tras la firma de la HB 991 (1 de abril de 2026)", publisher: "WUSF" },
     "https://voteseminole.gov/how-to-vote/vote-by-mail/": { en: "Vote by mail", es: "Voto por correo (en inglés)", publisher: "Seminole County Supervisor of Elections" },
     "https://voteseminole.gov/voters/register-to-vote/": { en: "Register to vote or update your record", es: "Inscripción y actualización (en inglés)", publisher: "Seminole County Supervisor of Elections" },
     "https://voteseminole.gov/voters/my-voter-record/": { en: "My voter record and where to vote", es: "Mi registro de votante y dónde votar (en inglés)", publisher: "Seminole County Supervisor of Elections" },

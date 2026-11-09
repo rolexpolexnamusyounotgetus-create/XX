@@ -1,0 +1,88 @@
+/* YDSC · assets/css/rsvp.css (W2). Styles for the shared RSVP layer: what eventcard.js adds to the F0 .invite card,
+   the RSVP sheet (rsvp.js builds it inside the F0 .sheet dialog), the RSVP row on event pages, and the invite
+   landing banner. Load it on every page that loads assets/js/rsvp.js (events, event pages, home).
+   Quiet chrome, loud content; state lives in attributes (aria-pressed, data-state, hidden). */
+
+/* ---- card additions ---- */
+.invite__tags { position:absolute;z-index:3;top:12px;right:12px;display:flex;flex-direction:column;align-items:flex-end;gap:6px; }
+.invite[data-duo="violet"] .invite__cover-title { color:var(--white); }
+.invite__count { font-weight:700; }
+.invite__left { display:inline-flex;align-items:center;min-height:26px;padding:3px 10px;border-radius:var(--r-pill);background:var(--tangerine);color:var(--night);border:1.5px solid var(--night);font:700 13px/1.1 var(--font-body); }
+.invite__going .tag--outline { color:var(--text); }
+.avatar--me { box-shadow:0 0 0 3px var(--surface), 0 0 0 5px var(--violet); position:relative;z-index:1; }
+.invite[data-state="past"] { opacity:.72; }
+.invite__cover .photo__tag { z-index:4; }
+.invite--hero .invite__vibes li { font-size:13px; }
+[data-rsvp][aria-pressed="true"]:not([data-rsvp-status]) { --btn-bg:var(--violet);--btn-fg:var(--white);--btn-edge:var(--night); }
+[data-rsvp][aria-pressed="true"]:not([data-rsvp-status])::before { content:"";width:.45em;height:.8em;border:solid currentColor;border-width:0 .16em .16em 0;transform:rotate(45deg) translateY(-.1em);margin-right:.15em; }
+
+/* ---- RSVP row (event pages): I'm in / Maybe / Can't ---- */
+.rsvp-row { display:grid;gap:var(--sp-3);padding:var(--sp-4) var(--sp-4) var(--sp-5);background:var(--surface);color:var(--text);border:var(--bw) solid var(--edge);border-radius:var(--r-lg);box-shadow:var(--sh-card) var(--shadow); }
+.rsvp-row__q { font:800 var(--fs-h4)/1 var(--font-display-88);font-stretch:88%; }
+.rsvp-row__btns { display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:var(--sp-3); }
+.rsvp-row__btns > [data-rsvp]:not([data-rsvp-status]) { grid-column:1 / -1; }
+.rsvp-row__btns .btn { width:100%;min-width:0;padding-inline:10px;white-space:normal; }
+.rsvp-row [data-rsvp-status][aria-pressed="true"] { --btn-bg:var(--inverse-bg);--btn-fg:var(--inverse-text);--btn-edge:var(--inverse-bg); }
+.rsvp-row .invite__going { font-size:var(--fs-body); }
+.rsvp-row__note { font-size:var(--fs-small);color:var(--text-muted); }
+@media (min-width: 480px) {
+  .rsvp-row__btns { grid-template-columns:minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); }
+  .rsvp-row__btns > [data-rsvp]:not([data-rsvp-status]) { grid-column:auto; }
+}
+
+/* ---- the sheet ---- */
+.rsvp-sheet { border-top:10px solid var(--duo, var(--celery)); }
+.rsvp-sheet .sheet__head::before { top:-7px;background:var(--night);opacity:.35; }
+.rsvp-sheet .sheet__title:focus { outline:none; }
+.rsvp-sheet .sheet__title:focus-visible { outline:3px solid var(--focus);outline-offset:4px; }
+.rsvp-sheet__sub { font-weight:700; }
+.rsvp-sheet__form, .rsvp-done { display:flex;flex-direction:column;flex:1 1 auto;min-height:0; }
+.rsvp-sheet__form[hidden], .rsvp-done[hidden] { display:none; }
+.rsvp-sheet .sheet__body { flex:1 1 auto;min-height:0; }
+.rsvp-sheet textarea { min-height:76px; }
+.rsvp-sheet__note { padding:12px 16px;border-radius:var(--r-bubble);background:var(--surface-2);font-size:var(--fs-small);line-height:1.45; }
+.rsvp-sheet__guardian { font-size:var(--fs-small); }
+.rsvp-sheet .field--check + .field__hint, .rsvp-sheet .field--check .field__hint { flex-basis:100%;margin-left:36px;margin-top:-6px; }
+.rsvp-sheet .field--check { flex-wrap:wrap; }
+.rsvp-sheet .sheet__foot .btn--primary { flex:1 1 auto; }
+.rsvp-done__hero { display:flex;gap:var(--sp-4);align-items:center;padding:var(--sp-4);border-radius:var(--r-md);background:var(--duo, var(--celery));color:var(--night);border:var(--bw) solid var(--night); }
+.rsvp-sheet[style*="--violet"] .rsvp-done__hero { color:var(--white); }
+.rsvp-done__hero .muted { color:inherit;opacity:1; }
+.rsvp-done__ticket { flex:none; }
+.rsvp-done__ticket .ticket { --rot:-6deg; }
+.rsvp-done__line { font-weight:700;line-height:1.4; }
+.rsvp-done__group { display:grid;gap:var(--sp-3); }
+.rsvp-done__h { font:700 var(--fs-tag)/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase; }
+.rsvp-done__row { display:flex;flex-wrap:wrap;gap:var(--sp-2); }
+.rsvp-done__row .btn { flex:1 1 auto; }
+.rsvp-done__switch { font-weight:400; }
+.rsvp-done .sheet__foot .btn--ink { flex:1 1 auto; }
+
+/* ---- invite landing banner (?ref / ?from) ---- */
+.invite-landing { position:relative;background:var(--island-night);color:var(--cream);border-bottom:var(--bw) solid var(--night);--link:var(--celery);--focus:var(--celery);--text-muted:#D9D1F2;--edge:var(--cream);--shadow:var(--violet);--text:var(--cream); }
+.invite-landing[hidden] { display:none; }
+.invite-landing__inner { display:grid;grid-template-columns:auto 1fr;gap:var(--sp-3) var(--sp-4);align-items:center;padding-block:var(--sp-5);padding-right:52px;position:relative; }
+.invite-landing__avatar { width:64px;height:64px;font:800 30px/1 var(--font-display-76);font-stretch:76%;background:var(--bubblegum);color:var(--night);border-color:var(--cream);box-shadow:4px 4px 0 var(--violet);rotate:-6deg; }
+.invite-landing__avatar.sticker { --sticker-size:64px;box-shadow:none;background:none; }
+.invite-landing__who { font:800 clamp(28px, 4vw + 14px, 48px)/.92 var(--font-display-76);font-stretch:76%;letter-spacing:-.01em;text-wrap:balance;color:var(--celery); }
+.invite-landing__what { font-weight:700;margin-top:6px;text-wrap:pretty; }
+.invite-landing__sub { font-size:var(--fs-small);color:var(--text-muted);margin-top:4px; }
+.invite-landing__actions { grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:var(--sp-3); }
+.invite-landing__actions .btn--primary { --btn-edge:var(--cream);--btn-sh:var(--violet); }
+.invite-landing__close { position:absolute;top:var(--sp-4);right:0;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:var(--bw) solid var(--cream);background:transparent;color:var(--cream); }
+.invite-landing__close svg { width:18px;height:18px; }
+@media (min-width: 760px) {
+  .invite-landing__inner { grid-template-columns:auto 1fr auto;padding-right:60px; }
+  .invite-landing__actions { grid-column:auto; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .invite-landing:not([hidden]) .invite-landing__avatar { animation:landing-pop var(--dur-4) var(--ease-pop) both; }
+  @keyframes landing-pop { from { scale:.4;rotate:-30deg;opacity:0; } }
+}
+@media (max-width: 599px) {
+  .invite:not(.invite--hero) .invite__vibes li:nth-child(n + 3) { display:none; }
+  .invite:not(.invite--hero):not(.invite--compact) .invite__cover { aspect-ratio:16 / 9; }
+}
+html:not(.js) [data-needs-js] { display:none !important; }
+/* buttons and chips here change colour instantly with the theme (no background transition to sample mid-way) */
+.invite .btn, .rsvp-row .btn, .rsvp-sheet .btn, .invite-landing .btn { transition-property:transform, box-shadow; }

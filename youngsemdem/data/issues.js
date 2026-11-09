@@ -69,7 +69,8 @@
  * Fact = {
  *   id            stable id, referenced from quiz.js as '<issueId>.<factId>'
  *   text          {en, es}  the claim as it should read on the page
- *   stat?         { value: '$1,890', label {en,es} }  big-number treatment for cards (same in both)
+ *   stat?         { value: '$1,890', valueEs?, label {en,es} }  big-number treatment for cards; value is the
+ *                 same in both languages unless it has words, then valueEs holds the Spanish ('51 días')
  *   source        URL of the source (open it to check the claim)
  *   sourceEs?     Spanish official page when one exists (most official sources are English-only;
  *                 voteseminole.gov uses a built-in translate widget rather than separate URLs)
@@ -209,7 +210,7 @@ window.YSD_DATA.issues = {
             en: 'About 6 in 10 Seminole renters (60.9%) spend 30% or more of their income on rent and utilities. More than 1 in 4 (27.8%) spend half or more.',
             es: 'Cerca de 6 de cada 10 hogares que alquilan en Seminole (60.9%) destinan el 30% o más de sus ingresos al alquiler y los servicios. Más de 1 de cada 4 (27.8%) destina la mitad o más.'
           },
-          stat: { value: '6 in 10', label: { en: 'renters pay 30%+ of income on rent', es: 'hogares que alquilan pagan 30%+ de su ingreso' } },
+          stat: { value: '6 in 10', valueEs: '6 de cada 10', label: { en: 'renters pay 30%+ of income on rent', es: 'hogares que alquilan pagan 30%+ de su ingreso' } },
           source: 'https://censusreporter.org/data/table/?table=B25070&geo_ids=05000US12117,04000US12&primary_geo_id=05000US12117',
           sourceName: 'U.S. Census Bureau, American Community Survey 2024 1-year, table B25070 Gross Rent as a Percentage of Household Income (via Census Reporter)',
           verified: '2026-11-09',
@@ -291,7 +292,7 @@ window.YSD_DATA.issues = {
             en: 'Sanford’s summer 2026 averaged 84.1°F, tied for its 4th-hottest on record (records go back to 1948). Orlando had a record 51 days at 95°F or hotter.',
             es: 'El verano de 2026 en Sanford tuvo un promedio de 84.1 °F, empatado como el 4.º más caluroso desde 1948. Orlando tuvo un récord de 51 días a 95 °F o más.'
           },
-          stat: { value: '51 days', label: { en: 'at 95°F+ in Orlando, summer 2026', es: 'a 95 °F o más en Orlando, verano de 2026' } },
+          stat: { value: '51 days', valueEs: '51 días', label: { en: 'at 95°F+ in Orlando, summer 2026', es: 'a 95 °F o más en Orlando, verano de 2026' } },
           source: 'https://www.weather.gov/media/mlb/summary/AugSummer2026.pdf',
           sourceName: 'National Weather Service Melbourne, August 2026 and Summer 2026 Weather Summary, East Central Florida',
           verified: '2026-11-09',
@@ -323,7 +324,7 @@ window.YSD_DATA.issues = {
           sourceName: 'Florida Legislature, CS/CS/HB 433 (2024), enrolled text: creates s. 448.106, F.S., "Workplace heat exposure requirements" (approved Apr 11, 2024, Ch. 2024-80, effective July 1, 2024)',
           sources: [
             { url: 'https://www.flsenate.gov/Session/Bill/2024/433', name: 'Florida Senate, CS/CS/HB 433 (2024) bill page: approved Apr 11, 2024, Ch. 2024-80' },
-            { url: 'https://news.wfsu.org/state-news/2024-04-12/gov-desantis-signs-worker-wage-and-heat-protection-preemptions', name: 'WFSU Public Media, "Gov. DeSantis signs worker wage and heat protection preemptions" (Apr 12, 2024)' }
+            { url: 'https://news.wfsu.org/state-news/2024-04-12/gov-desantis-signs-worker-wage-and-heat-protection-preemptions', name: 'WFSU Public Media, report on the governor signing the worker wage and heat protection preemption bills (Apr 12, 2024)' }
           ],
           verified: '2026-11-09',
           asOf: '2024-07-01',
@@ -961,7 +962,9 @@ window.YSD_DATA.issues = {
       id: 'voting',
       color: 'celery',
       onColor: 'ink',
-      tone: 'bright',
+      // serious: this section carries the 2027 student-ID change, which BRIEF §2.5 puts in the calm
+      // template (Lake blue, no sticker, no rotation). Checked Mon, Nov 9, 2026.
+      tone: 'serious',
       title: { en: 'Voting rights', es: 'Derecho al voto' },
       short: { en: 'voting rights', es: 'el derecho al voto' },
       hook: {
@@ -980,7 +983,7 @@ window.YSD_DATA.issues = {
             en: 'Florida mail ballot requests made before Nov 3, 2026 run out Dec 31, 2026. If yours is one, request again to vote by mail in the 2027 city elections or in 2028. A request made after Nov 3 should last through 2028; check My Voter Record to be sure.',
             es: 'Las solicitudes de boleta por correo en Florida hechas antes del 3 de noviembre de 2026 vencen el 31 de diciembre de 2026. Si la tuya es una de ellas, pide la boleta de nuevo para votar por correo en las elecciones municipales de 2027 o en 2028. Una solicitud hecha después del 3 de noviembre debería durar hasta 2028; revisa My Voter Record para confirmarlo.'
           },
-          stat: { value: 'Dec 31', label: { en: 'requests from before Nov 3 run out (2026)', es: 'vencen las solicitudes de antes del 3 de noviembre (2026)' } },
+          stat: { value: 'Dec 31', valueEs: '31 de dic.', label: { en: 'requests from before Nov 3 run out (2026)', es: 'vencen las solicitudes de antes del 3 de noviembre (2026)' } },
           source: 'https://www.flsenate.gov/Laws/Statutes/2025/101.62',
           sourceName: 'Florida Statutes s. 101.62(1)(a): a request covers elections through the end of the calendar year of the next regularly scheduled general election',
           sources: [
@@ -995,10 +998,10 @@ window.YSD_DATA.issues = {
         {
           id: 'student-id',
           text: {
-            en: 'Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it’s being challenged in court). Bring a driver’s license, state ID or passport, and check voteseminole.gov before you go.',
+            en: 'Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it’s being challenged in court). Bring a driver’s license, state ID, or passport, and check voteseminole.gov before you go.',
             es: 'Desde el 1 de enero de 2027, Florida deja de aceptar la identificación de estudiante para votar en persona (la medida está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y revisa voteseminole.gov antes de ir.'
           },
-          stat: { value: 'Jan 1', label: { en: 'student IDs stop counting at the polls (2027)', es: 'la identificación de estudiante deja de servir para votar (2027)' } },
+          stat: { value: 'Jan 1', valueEs: '1 de ene.', label: { en: 'student IDs stop counting at the polls (2027)', es: 'la identificación de estudiante deja de servir para votar (2027)' } },
           source: 'https://flsenate.gov/Committees/BillSummaries/2026/html/991',
           sourceName: 'Florida Senate, bill summary for CS/CS/HB 991 (2026), Ch. 2026-26, signed Apr 1, 2026',
           sources: [
@@ -1065,12 +1068,12 @@ window.YSD_DATA.issues = {
       share: {
         title: { en: 'Two voting changes', es: 'Dos cambios para votar' },
         text: {
-          en: 'Heads up: Florida mail ballot requests made before Nov 3 run out Dec 31, so if you asked before then, request again for 2027-28. And from Jan 1, student IDs won’t count at the polls (it’s being challenged in court). Bring a driver’s license, state ID or passport.',
+          en: 'Heads up: Florida mail ballot requests made before Nov 3 run out Dec 31, so if you asked before then, request again for 2027-28. And from Jan 1, student IDs won’t count at the polls (it’s being challenged in court). Bring a driver’s license, state ID, or passport.',
           es: 'Ojo: las solicitudes de boleta por correo en Florida hechas antes del 3 de noviembre vencen el 31 de diciembre, así que si la pediste antes, pide la boleta de nuevo para 2027-28. Y desde el 1 de enero, la identificación de estudiante deja de servir para votar en persona (hay una demanda en contra). Lleva licencia de conducir, identificación estatal o pasaporte.'
         },
         textAfter: {
           date: '2027-01-01',
-          en: 'Heads up: Florida mail ballot requests made before Nov 3, 2026 ran out Dec 31, so request again before the next election. And student IDs no longer count at the polls. Bring a driver’s license, state ID or passport.',
+          en: 'Heads up: Florida mail ballot requests made before Nov 3, 2026 ran out Dec 31, so request again before the next election. And student IDs no longer count at the polls. Bring a driver’s license, state ID, or passport.',
           es: 'Ojo: las solicitudes de boleta por correo en Florida hechas antes del 3 de noviembre de 2026 vencieron el 31 de diciembre, así que hay que pedir la boleta otra vez antes de la próxima elección. Y la identificación de estudiante ya no sirve para votar en persona. Lleva licencia de conducir, identificación estatal o pasaporte.'
         },
         page: 'issues',

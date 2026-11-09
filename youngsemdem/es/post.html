@@ -1,0 +1,320 @@
+<!doctype html>
+<!-- post.html (W4): post a clip. The same flow as the post sheet on clips.html, as a page for deep links
+     (post.html?tag=why-i-showed-up). Logic: assets/js/pages/post.js. Copy: data/pages/clips.js. -->
+<html lang="es" data-page="post">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title data-t="seo.post.title">Sube un clip · Young Democrats of Seminole County</title>
+  <meta name="description" content="¿Tienes algo que decir sobre Seminole? Sube un clip corto y vertical. Una persona revisa cada clip antes de publicarlo." data-t-content="seo.post.description">
+  <meta property="og:title" content="¿Tienes un minuto y algo que decir?" data-t-content="seo.post.ogTitle">
+  <meta property="og:description" content="Grábalo en vertical, que sea respetuoso, y mándalo." data-t-content="seo.post.ogDescription">
+  <meta property="og:image" content="../assets/img/og/es/post.png">
+  <meta property="og:image:alt" content="Tarjeta que dice: ¿Tienes un minuto y algo que decir? Sube un clip a los Young Dems." data-t-content="clips:post.og.alt">
+  <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+  <meta property="og:locale" content="es_US"><meta property="og:locale:alternate" content="en_US">
+  <meta name="ysd:og" content='{"template":"og-page","kicker":"SUBE UN CLIP","title":"¿Tienes un minuto y algo que decir?","accent":"algo que decir","sticker":"camera","color":"night","keys":{"kicker":"clips:post.og.kicker","title":"seo.post.ogTitle","accent":"clips:post.og.accent"},"lang":"es"}'>
+  <!-- @head --><meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#6A2BFF">
+<script src="../assets/boot.js"></script>
+<link rel="canonical" href="/es/post">
+<meta property="og:url" content="/es/post">
+<meta property="og:site_name" content="Young Democrats of Seminole County">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/components.css">
+<link rel="stylesheet" href="../assets/css/utilities.css"><!-- /@head -->
+  <link rel="alternate" hreflang="en" href="../post.html">
+  <link rel="alternate" hreflang="es" href="post.html">
+  <link rel="alternate" hreflang="x-default" href="../post.html">
+  <link rel="stylesheet" href="../assets/css/pages/clips.css">
+</head>
+<body class="p-post">
+  <!-- @demo-banner-es --><a class="skip-link" href="#main">Saltar al contenido principal</a>
+<aside class="demo-banner" aria-label="Aviso DEMO">
+  <div class="wrap demo-banner__inner">
+    <span class="tag tag--demo">DEMO</span>
+    <p class="demo-banner__text"><span class="demo-banner__long">Vista previa DEMO para los Young Democrats of Seminole County, pendiente de la aprobación del capítulo. Todo lo marcado DEMO es inventado, y los formularios no envían nada. Borrador en español, pendiente de revisión.</span><span class="demo-banner__short">Vista previa DEMO. Borrador en español, pendiente de revisión.</span> <a href="../es/about.html#whats-real">¿Qué es real?</a></p>
+  </div>
+</aside><!-- /@demo-banner-es -->
+  <!-- @header-es --><header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand" href="../es/index.html" data-no-current>
+      <svg class="brand__mark" viewBox="0 0 64 56" aria-hidden="true" focusable="false"><path d="M15 41 13 54 31 41Z" fill="#C8F03C" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><rect x="2.5" y="3" width="59" height="39" rx="9" fill="#6A2BFF" stroke="currentColor" stroke-width="3"/><path fill="#C8F03C" d="M21.94 31.5V25.49L15.93 12.5H21.5L24.27 22.36H24.51L27.18 12.5H32.44L26.63 25.47V31.5ZM36.34 31.5V27.92H40.23Q41.33 27.92 42.06 27.27Q42.78 26.62 43.15 25.3Q43.52 23.98 43.52 22.02Q43.52 20.47 43.31 19.34Q43.1 18.22 42.67 17.49Q42.25 16.77 41.57 16.42Q40.88 16.08 39.94 16.08H36.34V12.5H39.87Q42.38 12.5 44.23 13.61Q46.08 14.72 47.07 16.84Q48.07 18.96 48.07 21.99Q48.07 24.45 47.55 26.13Q47.02 27.81 46.14 28.87Q45.26 29.92 44.23 30.5Q43.19 31.07 42.18 31.28Q41.17 31.5 40.37 31.5ZM34.14 31.5V12.5H38.63V31.5Z"/></svg>
+      <span class="brand__word" translate="no">Young Dems</span>
+      <span class="u-visually-hidden">Young Democrats of Seminole County, inicio</span>
+    </a>
+    <nav class="site-nav" aria-label="Menú principal">
+      <ul class="site-nav__list">
+        <li><a href="../es/events.html">Eventos</a></li>
+        <li><a href="../es/vote.html">Votar</a></li>
+        <li><a href="../es/clips.html">Clips</a></li>
+        <li><a href="../es/quiz.html">Quiz</a></li>
+        <li><a href="../es/issues.html">Temas</a></li>
+        <li><a href="../es/about.html">Quiénes somos</a></li>
+      </ul>
+    </nav>
+    <div class="site-header__actions">
+      <a class="lang-link" href="../index.html" hreflang="en" lang="en" data-lang-link>EN<span class="u-visually-hidden">: read this page in English</span></a>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Tema de color: Auto. Cambiar tema"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 3a9 9 0 0 1 0 18Z"/></svg><span class="theme-toggle__label" data-theme-label>Auto</span></button>
+      <a class="btn btn--primary btn--sm" href="../es/join.html">Únete gratis</a>
+      <button class="menu-btn" type="button" data-menu-toggle aria-expanded="false" aria-controls="site-menu"><span class="menu-btn__bars" aria-hidden="true"></span><span class="u-visually-hidden">Menú</span></button>
+    </div>
+  </div>
+  <div class="menu" id="site-menu" hidden>
+    <div class="wrap menu__inner">
+      <nav aria-label="Menú">
+        <ul class="menu__list">
+          <li><a href="../es/index.html">Inicio</a></li>
+          <li><a href="../es/events.html">Eventos</a></li>
+          <li><a href="../es/vote.html">Votar</a></li>
+          <li><a href="../es/clips.html">Clips</a></li>
+          <li><a href="../es/quiz.html">Quiz</a></li>
+          <li><a href="../es/issues.html">Temas</a></li>
+          <li><a href="../es/join.html">Únete</a></li>
+          <li><a href="../es/about.html">Quiénes somos</a></li>
+        </ul>
+        <ul class="menu__group">
+          <li><a href="../es/newsletter.html">La Carta del Jueves</a></li>
+          <li><a href="../es/post.html" aria-current="page">Sube un clip</a></li>
+          <li><a href="../es/privacy.html">Privacidad</a></li>
+          <li><a href="../es/accessibility.html">Accesibilidad</a></li>
+          <li><a href="../es/teen-safety.html">Seguridad para adolescentes</a></li>
+          <li><a href="../es/content-policy.html">Reglas para clips</a></li>
+          <li><a href="../es/conduct.html">Código de conducta</a></li>
+        </ul>
+      </nav>
+      <div class="menu__row">
+        <a class="lang-link" href="../index.html" hreflang="en" lang="en" data-lang-link>EN<span class="u-visually-hidden">: read this page in English</span></a>
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Tema de color: Auto. Cambiar tema"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 3a9 9 0 0 1 0 18Z"/></svg><span class="theme-toggle__label" data-theme-label>Auto</span></button>
+      </div>
+    </div>
+  </div>
+</header><!-- /@header-es -->
+  <main id="main">
+    <section class="section section--violet x-posthero" aria-labelledby="post-title">
+      <div class="wrap x-posthero__inner">
+        <div class="stack x-posthero__copy">
+          <p class="eyebrow eyebrow--pill" data-t="clips:post.eyebrow">SUBE UN CLIP</p>
+          <h1 class="h1 x-posthero__title" id="post-title" data-t="clips:post.title">¿Tienes un minuto y algo que decir?</h1>
+          <p class="lead" data-t="clips:post.sub">Grábalo en vertical, que sea respetuoso, y mándalo. Una persona de nuestro equipo revisa cada clip antes de publicarlo, casi siempre en 3 días.</p>
+          <div class="btn-row">
+            <a class="btn btn--primary btn--lg" href="#post-form" data-t="cta.sendClip">Enviar</a>
+            <a class="btn btn--ghost btn--lg" href="clips.html" data-t="cta.watch">Ver clips</a>
+          </div>
+        </div>
+        <div class="x-posthero__stack" aria-hidden="true">
+          <img class="x-posthero__poster x-posthero__poster--a" src="../assets/video/trivia-night-recap.jpg" alt="" width="720" height="1280" decoding="async" fetchpriority="low">
+          <img class="x-posthero__poster x-posthero__poster--b" src="../assets/video/sunrail-rally.jpg" alt="" width="720" height="1280" loading="lazy" decoding="async">
+          <span class="sticker sticker--md x-posthero__sticker" data-sticker="camera"></span>
+        </div>
+        <p class="x-posthero__tags"><span class="tag tag--demo" data-t="demo.badgeClip">Clip DEMO</span> <span class="tag tag--stock" data-t="tag.stock">Foto de archivo · no son miembros</span></p>
+      </div>
+    </section>
+
+    <section class="section x-postbody" aria-labelledby="post-form-title">
+      <div class="wrap x-postgrid">
+        <div class="x-postcol">
+          <h2 class="h3 x-postcol__title" id="post-form-title" data-t="clips:post.sheetTitle">Sube un clip</h2>
+          <form class="form x-post" id="post-form" data-post-form="post" novalidate>
+            <div class="form__summary" hidden>
+              <p class="form__summary-title" data-summary-title></p>
+              <ul></ul>
+            </div>
+            <div class="x-post__prompt" data-post-prompt>
+              <p class="eyebrow" data-t="clips:post.promptLabel">Tema de la semana</p>
+              <p class="x-post__prompt-title" data-post-prompt-title data-t="clips:prompt.title">60 segundos sobre por qué participaste.</p>
+              <p class="small" data-post-prompt-tag hidden></p>
+              <button class="btn btn--sm x-post__use" type="button" data-post-use-prompt data-t="clips:post.usePrompt">Usar este tema</button>
+            </div>
+            <fieldset class="field field--choice">
+              <legend data-t="clips:post.how">¿Cómo lo vas a compartir?</legend>
+              <div class="seg x-post__how">
+                <label class="seg__opt"><input type="radio" name="how" value="upload" checked><span data-t="clips:post.howUpload">Subir un video</span></label>
+                <label class="seg__opt"><input type="radio" name="how" value="link"><span data-t="clips:post.howLink">Pegar un enlace</span></label>
+              </div>
+            </fieldset>
+            <div class="field" data-post-when="upload">
+              <label class="field__label" for="post-file" data-t="clips:post.fileLabel">Tu video</label>
+              <p class="field__hint" id="post-file-hint" data-t="clips:post.fileHint">En vertical se ve mejor. MP4, MOV o WebM, hasta 3 minutos y 150 MB.</p>
+              <input id="post-file" name="file" type="file" accept="video/*,.mov,.mp4,.m4v,.webm" aria-describedby="post-file-hint">
+              <p class="field__hint x-post__chosen" data-post-chosen hidden></p>
+              <p class="field__error" hidden></p>
+            </div>
+            <div class="field" data-post-when="link" hidden>
+              <label class="field__label" for="post-link" data-t="clips:post.linkLabel">Enlace a tu publicación de TikTok, Instagram o YouTube</label>
+              <p class="field__hint" id="post-link-hint" data-t="clips:post.linkHint">Usa el enlace para compartir de la app. Por ahora no aceptamos otros sitios.</p>
+              <input id="post-link" name="link" type="url" inputmode="url" autocomplete="off" spellcheck="false" autocapitalize="none" aria-describedby="post-link-hint">
+              <p class="field__error" hidden></p>
+            </div>
+            <div class="field">
+              <div class="x-checkrow">
+                <input id="post-captions" name="hasCaptions" type="checkbox">
+                <label class="field__label" for="post-captions" data-t="clips:post.captionsCheck">Tiene subtítulos (incrustados o agregados en la app).</label>
+              </div>
+              <p class="field__error" hidden></p>
+            </div>
+            <div class="field">
+              <label class="field__label" for="post-caption" data-t="clips:post.captionLabel">Descripción</label>
+              <p class="field__hint" id="post-caption-hint" data-t="clips:post.captionHint">¿De qué se trata? Sin apellidos, escuelas ni direcciones.</p>
+              <textarea id="post-caption" name="caption" rows="3" aria-describedby="post-caption-hint post-caption-count"></textarea>
+              <p class="field__hint x-post__count" id="post-caption-count" data-post-count></p>
+              <p class="field__error" hidden></p>
+            </div>
+            <div class="field">
+              <label class="field__label" for="post-tags" data-t="clips:post.tagsLabel">Etiquetas</label>
+              <p class="field__hint" id="post-tags-hint" data-t="clips:post.tagsHint">Hasta 8, separadas por comas. Por ejemplo: alquiler, transporte, votar.</p>
+              <input id="post-tags" name="tags" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="post-tags-hint">
+              <p class="field__error" hidden></p>
+            </div>
+            <div class="field" data-post-age>
+              <label class="field__label" for="post-age" data-t="form.age.label">¿Cuántos años tienes?</label>
+              <p class="field__hint" id="post-age-hint" data-t="form.age.hint">Te lo preguntamos para seguir nuestras reglas de seguridad para adolescentes.</p>
+              <input id="post-age" name="age" type="text" inputmode="numeric" autocomplete="off" maxlength="3" class="x-post__age" aria-describedby="post-age-hint">
+              <p class="field__error" hidden></p>
+            </div>
+            <fieldset class="field field--choice" data-post-minors></fieldset>
+            <div class="field" data-post-guardian hidden></div>
+            <fieldset class="field x-post__consents">
+              <legend class="field__label" data-t="clips:post.consents">Antes de enviarlo</legend>
+              <div class="stack stack--sm" data-post-consents></div>
+              <p class="small"><a class="link" href="content-policy.html" data-t="clips:post.rulesLink">Lee las Reglas para clips</a></p>
+            </fieldset>
+            <p class="consent"><span><span data-t="clips:post.privacy">DEMO: tu clip se queda en este dispositivo. No se sube nada y solo tú puedes verlo. Nunca vendemos tus datos.</span> <a href="privacy.html" data-t="clips:post.privacyLink">Política de privacidad</a></span></p>
+            <div class="btn-row">
+              <button class="btn btn--primary btn--lg" type="submit" data-t="clips:post.submit">Enviar a revisión</button>
+            </div>
+          </form>
+
+          <div class="x-done" data-post-done hidden>
+            <span class="sticker sticker--md x-done__sticker" data-sticker="camera" aria-hidden="true"></span>
+            <h2 class="h2" data-post-done-title data-t="clips:post.doneTitle">Clip enviado.</h2>
+            <p class="lead" data-t="success.clip.body">¡Gracias! Tu clip está en revisión. Una persona de nuestro equipo revisa cada clip, casi siempre en 3 días. Hasta entonces, solo tú puedes verlo.</p>
+            <div class="btn-row">
+              <a class="btn btn--primary" href="clips.html" data-t="clips:post.back">Volver a los clips</a>
+              <button class="btn" type="button" data-post-again data-t="clips:post.again">Subir otro</button>
+            </div>
+          </div>
+
+          <section class="x-pending-wrap" data-post-pending hidden aria-labelledby="pending-title">
+            <h2 class="h4" id="pending-title" data-post-pending-heading data-t="clips:pending.heading">Tus clips</h2>
+            <div class="x-pending-list" data-post-pending-list></div>
+          </section>
+        </div>
+
+        <section class="x-postside" aria-labelledby="side-title">
+          <div class="x-tips">
+            <h2 class="h4" id="side-title" data-t="clips:post.side.title">Qué hace que un clip funcione</h2>
+            <ol class="x-tips__list">
+              <li data-t="clips:post.side.1">Empieza con el momento: ¿dónde estabas y quién estaba contigo?</li>
+              <li data-t="clips:post.side.2">Graba en vertical, de frente a la luz, y di solo tu nombre de pila.</li>
+              <li data-t="clips:post.side.3">Ponle subtítulos en la app antes de publicarlo. Mucha gente mira sin sonido.</li>
+              <li data-t="clips:post.side.4">Termina con una sola cosa por hacer: ven a un encuentro, revisa tu inscripción o trae a alguien.</li>
+            </ol>
+          </div>
+          <ul class="x-rules__list x-rules__list--side">
+            <li><h3 class="x-rules__title" data-t="clips:rules.check.title">Una persona revisa cada clip</h3><p data-t="clips:rules.check.body">Casi siempre en 3 días. Nada se publica antes, y mientras espera, solo tú puedes ver el tuyo.</p></li>
+            <li><h3 class="x-rules__title" data-t="clips:rules.teens.title">¿Menor de 18? Primero da el visto bueno tu familia</h3><p data-t="clips:rules.teens.body">Si en un clip aparece alguien menor de 18, su madre, padre o tutor legal da el visto bueno antes de publicarlo. Sin apellidos, escuelas ni direcciones.</p></li>
+            <li><h3 class="x-rules__title" data-t="clips:rules.counts.title">Sin vistas. Sin conteo de me gusta.</h3><p data-t="clips:rules.counts.body">Tu me gusta es solo para ti. Sube algo porque te importa, no por un número.</p></li>
+          </ul>
+          <p class="x-rules__links">
+            <a class="link" href="content-policy.html" data-t="clips:rules.linkRules">Reglas para clips</a>
+            <a class="link" href="teen-safety.html" data-t="clips:rules.linkTeens">Seguridad para adolescentes</a>
+            <a class="link" href="conduct.html" data-t="clips:rules.linkConduct">Código de conducta</a>
+          </p>
+          <p class="small muted" data-t="clips:rules.draft">Reglas en borrador hasta que el capítulo las apruebe.</p>
+          <p><button class="btn btn--ink" type="button" data-share="postTake"><span data-t="cta.shareGroup">Mándalo al grupo</span></button></p>
+        </section>
+      </div>
+    </section>
+  </main>
+  <!-- @footer-es --><footer class="site-footer" id="site-footer">
+  <div class="wrap">
+    <div class="site-footer__top">
+      <p class="site-footer__word" translate="no">Young Dems</p>
+      <p class="site-footer__motto"><span>La política local es un trabajo en equipo.</span> <span>Ven como eres. Trae a alguien.</span></p>
+      <div class="site-footer__stickers u-js-only">
+        <button class="sticker sticker--sm" type="button" data-sticker="train" style="--rot: -10deg" aria-label="Sticker: tren SunRail. Toca para ver un dato de Seminole"></button>
+        <button class="sticker sticker--sm" type="button" data-sticker="chicken" style="--rot: 8deg" aria-label="Sticker: gallina de Oviedo. Toca para ver un dato de Seminole"></button>
+        <button class="sticker sticker--sm" type="button" data-sticker="cypress" style="--rot: -4deg" aria-label="Sticker: ciprés joven. Toca para ver un dato de Seminole"></button>
+        <button class="sticker sticker--sm" type="button" data-sticker="gator" style="--rot: 12deg" aria-label="Sticker: caimán. Toca para ver un dato de Seminole"></button>
+      </div>
+    </div>
+    <nav class="site-footer__nav" aria-label="Enlaces del sitio">
+      <div>
+        <h2>Participa</h2>
+        <ul>
+          <li><a href="../es/join.html">Únete gratis</a></li>
+          <li><a href="../es/events.html">Eventos</a></li>
+          <li><a href="../es/clips.html">Clips</a></li>
+          <li><a href="../es/post.html" aria-current="page">Sube un clip</a></li>
+          <li><a href="../es/quiz.html">Quiz</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Aprende</h2>
+        <ul>
+          <li><a href="../es/vote.html">Votar</a></li>
+          <li><a href="../es/issues.html">Temas</a></li>
+          <li><a href="../es/newsletter.html">La Carta del Jueves</a></li>
+          <li><a href="https://voteseminole.gov/" rel="noopener" data-cfg-href="links.vote.countyElections">Supervisor de Elecciones</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Quiénes somos</h2>
+        <ul>
+          <li><a href="../es/about.html">Quiénes somos</a></li>
+          <li><a href="../es/about.html#whats-real">¿Qué es real?</a></li>
+          <li><a href="https://semdems.com/" rel="noopener" data-cfg-href="links.countyParty" translate="no">Seminole County Democratic Party</a></li>
+        </ul>
+        <div data-social-group hidden>
+          <h2>Síguenos</h2>
+          <ul data-social></ul>
+        </div>
+      </div>
+      <div>
+        <h2>Políticas</h2>
+        <ul>
+          <li><a href="../es/privacy.html">Privacidad</a></li>
+          <li><a href="../es/accessibility.html">Accesibilidad</a></li>
+          <li><a href="../es/teen-safety.html">Seguridad para adolescentes</a></li>
+          <li><a href="../es/content-policy.html">Reglas para clips</a></li>
+          <li><a href="../es/conduct.html">Código de conducta</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="site-footer__legal">
+      <p><span>Pagado por [nombre y dirección del comité: pendiente]</span> <span class="tag tag--demo">DEMO</span></p>
+      <p>Ningún candidato aprobó este contenido. [Texto provisional: depende del estatus de comité del capítulo.]</p>
+      <p>Vista previa para los Young Democrats of Seminole County. El capítulo todavía no la aprueba. No es un sitio oficial de los Seminole County Democrats, de los Florida Young Democrats ni de ninguna organización del partido.</p>
+      <p>Las personas de las fotos de archivo no son miembros y no respaldan nada.</p>
+      <p><span>Hecho en el condado de Seminole.</span> <span data-year translate="no">2026</span></p>
+    </div>
+  </div>
+  <div class="toast-region" role="status" aria-live="polite" data-toast-region></div>
+</footer><!-- /@footer-es -->
+  <!-- @scripts --><script src="../assets/js/config.js"></script>
+<script src="../assets/js/store.js"></script>
+<script src="../data/counters.js"></script>
+<script src="../assets/js/share.js"></script>
+<script src="../assets/js/cal.js"></script>
+<script src="../assets/js/cards.js"></script>
+<script src="../assets/js/members.js"></script>
+<script src="../assets/js/track.js"></script>
+<script src="../data/slices/core.js"></script>
+<script src="../data/stickers.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/sw-register.js"></script><!-- /@scripts -->
+  <script src="../data/clips.js"></script>
+  <script src="../data/slices/clips.js"></script>
+  <script src="../assets/js/clips.js"></script>
+  <script src="../assets/js/reel.js"></script>
+  <script src="../assets/js/pages/post.js"></script>
+</body>
+</html>

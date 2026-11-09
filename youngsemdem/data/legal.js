@@ -37,7 +37,7 @@
  *   tokens: { name: { from, fallback: L, suggested? } }
  *   labels: { key: L }                UI chrome for legal pages
  *   order: [pageId]                   footer / nav order
- *   pages: { privacy, minors, moderation, accessibility }   (Page)
+ *   pages: { privacy, minors, moderation, conduct, accessibility }   (Page)
  *   snippets: { ... }                 form and UI copy, documented inline below
  *   disclaimer: { statute, source, configKey, placeholder: L, note: L }
  *   sources: { id: { cite, label, url, checked } }           every citation, checked 2026-11-09
@@ -67,6 +67,9 @@ window.YSD_DATA.legal = {
   reviewedSpanish: false,
   updated: "2026-11-09",
   effective: "",
+  // Nov 9, 2026 (W7): headings rephrased as the questions people ask, TL;DRs tightened, the stale
+  // "demo numbers move" limitation replaced (counters no longer tick), pages.conduct added. Same legal
+  // points as before; docs/legal/*.md still hold the long versions (conduct has no .md draft yet).
   langs: ["en", "es"],
 
   banner: {
@@ -99,7 +102,7 @@ window.YSD_DATA.legal = {
     questions: { en: "Questions? Email {privacyEmail}.", es: "¿Preguntas? Escribe a {privacyEmail}." }
   },
 
-  order: ["privacy", "minors", "moderation", "accessibility"],
+  order: ["privacy", "minors", "moderation", "conduct", "accessibility"],
 
   pages: {
     // ------------------------------------------------------------------------------- PRIVACY
@@ -113,18 +116,18 @@ window.YSD_DATA.legal = {
         es: "Qué datos recopilan los Young Democrats of Seminole County, para qué, quién los ve y cómo borrarlos."
       },
       tldr: [
-        { en: "Demo right now: everything you type stays in your own browser. Nothing is sent to us.", es: "Por ahora es una demo: todo lo que escribes se queda en tu navegador. No nos llega nada." },
-        { en: "On the live site we only collect what you put in the join form, the texts you sign up for and the clips you choose to post.", es: "En el sitio real solo guardamos lo que pones en el formulario para unirte, los mensajes de texto que pidas y los clips que decidas publicar." },
+        { en: "Right now this is a demo: everything you type stays in your own browser. Nothing reaches us.", es: "Por ahora es una demo: todo lo que escribes se queda en tu navegador. No nos llega nada." },
+        { en: "On the live site we only keep what you give us: the join form, the texts you sign up for and the clips you choose to post.", es: "En el sitio real solo guardamos lo que pones en el formulario para unirte, los mensajes de texto que pidas y los clips que decidas publicar." },
         { en: "We never sell, rent or trade your info, and we never share your phone number for anyone's marketing.", es: "Nunca vendemos, alquilamos ni cambiamos tus datos, y nunca compartimos tu número de teléfono para publicidad de nadie." },
         { en: "No ad trackers and no cookies from us. If your browser sends Do Not Track or Global Privacy Control, we skip analytics completely.", es: "Sin rastreadores de anuncios y sin cookies nuestras. Si tu navegador envía “No rastrear” (Do Not Track) o Control Global de Privacidad (GPC), no usamos analíticas." },
         { en: "Texts only if you tick the box. Reply STOP any time.", es: "Mensajes de texto solo si marcas la casilla. Responde STOP cuando quieras." },
         { en: "A real person checks every clip before anyone else can see it.", es: "Una persona revisa cada clip antes de que alguien más lo vea." },
-        { en: "Ask us to see, fix or delete your info at {privacyEmail}.", es: "Pídenos ver, corregir o borrar tus datos en {privacyEmail}." }
+        { en: "Want to see, fix or delete your info? Email {privacyEmail}.", es: "¿Quieres ver, corregir o borrar tus datos? Escribe a {privacyEmail}." }
       ],
       sections: [
         {
           id: "privacy-who",
-          heading: { en: "Who we are", es: "Quiénes somos" },
+          heading: { en: "Who's behind this?", es: "¿Quién está detrás de esto?" },
           body: [
             { p: { en: "The {org} ({orgShort}) is a volunteer club for Democrats ages 14 to under 40 in Seminole County, Florida. Volunteers run this site. “We” means {orgShort}.", es: "Los {org} ({orgShort}) son un club de voluntarios para demócratas de 14 a 39 años en el condado de Seminole, Florida. Este sitio lo manejan voluntarios. Cuando decimos “nosotros”, hablamos de {orgShort}." } },
             { p: { en: "Privacy questions: {privacyEmail}. Mail: {mailingAddress}.", es: "Preguntas sobre privacidad: {privacyEmail}. Correo postal: {mailingAddress}." } }
@@ -132,7 +135,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "privacy-demo",
-          heading: { en: "Demo site vs. live site", es: "Sitio de demostración vs. sitio real" },
+          heading: { en: "Is anything being sent right now?", es: "¿Se está enviando algo ahora mismo?" },
           body: [
             { p: { en: "While this site is a demo, the join form, counters and clip uploads send nothing. Everything stays in your browser, and demo numbers and demo people are labeled as demo.", es: "Mientras el sitio sea una demo, el formulario para unirte, los contadores y las subidas de clips no envían nada. Todo se queda en tu navegador, y los números y las personas de la demo están marcados como demo." } },
             { p: { en: "On the live site, the join form goes to our member list (Action Network or a similar tool), and clips go to our video provider, where they wait for review.", es: "En el sitio real, el formulario va a nuestra lista de miembros (Action Network o una herramienta parecida) y los clips van a nuestro proveedor de video, donde esperan revisión." } }
@@ -140,7 +143,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "privacy-collect",
-          heading: { en: "What we collect and why", es: "Qué recopilamos y para qué" },
+          heading: { en: "What do you collect, and why?", es: "¿Qué recopilan y para qué?" },
           body: [
             { list: [
               { en: "Join form: first name (required), last name, email or mobile number (one of the two), ZIP code, age, interests, and whether you want emails or texts. We use them to welcome you, invite you to things you care about, and follow our teen safety rules.", es: "Formulario para unirte: nombre (obligatorio), apellido, correo o celular (uno de los dos), código postal, edad, intereses y si quieres correos o mensajes de texto. Los usamos para darte la bienvenida, invitarte a lo que te interesa y seguir nuestras reglas de seguridad para adolescentes." },
@@ -154,7 +157,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "privacy-browser",
-          heading: { en: "What's saved in your browser", es: "Qué se guarda en tu navegador" },
+          heading: { en: "What's saved in my browser?", es: "¿Qué se guarda en mi navegador?" },
           body: [
             { p: { en: "This site's own code sets no cookies. It uses your browser's storage to remember your member profile, your invite code and squad, the invite code from a link you opened (it counts for 30 days), your clips, likes and views, and counter values. On the live site, your email, phone and ZIP are removed from your browser once they reach our list.", es: "El código de este sitio no pone cookies. Usa el almacenamiento de tu navegador para recordar tu perfil de miembro, tu código de invitación y tu grupo, el código de invitación de un enlace que abriste (cuenta por 30 días), tus clips, “me gusta” y vistas, y los contadores. En el sitio real, tu correo, teléfono y código postal se borran de tu navegador cuando llegan a nuestra lista." } },
             { p: { en: "Tap “Forget me on this device” to wipe it all, or clear site data in your browser settings. That doesn't delete what we already have on the live site: email us for that.", es: "Toca “Olvidarme en este dispositivo” para borrarlo todo, o borra los datos del sitio en la configuración de tu navegador. Eso no borra lo que ya tenemos en el sitio real: para eso, escríbenos." } },
@@ -163,7 +166,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "privacy-analytics",
-          heading: { en: "Analytics, Do Not Track and GPC", es: "Analíticas, “No rastrear” y GPC" },
+          heading: { en: "Do you track me? (Analytics, Do Not Track and GPC)", es: "¿Me rastrean? (Analíticas, “No rastrear” y GPC)" },
           body: [
             { p: { en: "The demo never sends analytics. The live site counts page visits with privacy-friendly tools (Cloudflare Web Analytics, maybe Plausible later) that don't collect personal data. Our code strips anything that looks personal (name, email, phone, ZIP, age and similar) before an event is sent.", es: "La demo nunca envía analíticas. El sitio real cuenta visitas con herramientas que respetan la privacidad (Cloudflare Web Analytics y quizá Plausible más adelante) y no recopilan datos personales. Nuestro código quita todo lo que parezca personal (nombre, correo, teléfono, código postal, edad y similares) antes de enviar un evento." } },
             { p: { en: "If your browser sends Do Not Track or Global Privacy Control, we send no analytics at all.", es: "Si tu navegador envía “No rastrear” o Control Global de Privacidad, no enviamos ninguna analítica." } },
@@ -172,7 +175,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "privacy-share",
-          heading: { en: "Who we share with", es: "Con quién compartimos" },
+          heading: { en: "Who sees my info?", es: "¿Quién ve mis datos?" },
           body: [
             { p: { en: "We don't sell, rent or trade your info. We share only what each service needs to help us run the club:", es: "No vendemos, alquilamos ni cambiamos tus datos. Solo compartimos lo que cada servicio necesita para ayudarnos a manejar el club:" } },
             { list: [
@@ -189,7 +192,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "privacy-sms",
-          heading: { en: "Text messages", es: "Mensajes de texto" },
+          heading: { en: "Text message (SMS) terms", es: "Términos de los mensajes de texto (SMS)" },
           body: [
             { list: [
               { en: "{orgShort} texts about events, volunteer shifts and voting reminders, from {smsNumber}.", es: "Mensajes de {orgShort} sobre eventos, turnos de voluntariado y recordatorios para votar, desde {smsNumber}." },
@@ -203,7 +206,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "privacy-clips",
-          heading: { en: "Clips you post", es: "Clips que publicas" },
+          heading: { en: "What happens to clips I post?", es: "¿Qué pasa con los clips que publico?" },
           body: [
             { p: { en: "Nothing you upload is public until a person on our team approves it. Ask us to take down your own clip and we'll do it within 3 days, or within 24 hours if it shows someone under 18. Keep personal details out of captions.", es: "Nada de lo que subes es público hasta que una persona de nuestro equipo lo aprueba. Si nos pides quitar tu clip, lo hacemos en 3 días, o en 24 horas si aparece alguien menor de 18. No pongas datos personales en las descripciones." } },
             { links: [{ label: { en: "Read the Clip Rules", es: "Lee las Reglas para clips" }, page: "moderation" }] }
@@ -211,7 +214,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "privacy-teens",
-          heading: { en: "Kids and teens", es: "Niños y adolescentes" },
+          heading: { en: "What about kids and teens?", es: "¿Y los niños y adolescentes?" },
           body: [
             { p: { en: "We don't accept anyone under 13, and our club starts at 14. If we learn we have info from someone under 13, we delete it. Members 14 to 17 get extra protections for photos, video, texts and events. Parents and guardians can ask to see or delete their teen's info.", es: "No aceptamos a nadie menor de 13 años, y nuestro club empieza a los 14. Si descubrimos que tenemos datos de alguien menor de 13, los borramos. Los miembros de 14 a 17 años tienen protecciones extra para fotos, videos, mensajes de texto y eventos. Madres, padres y tutores legales pueden pedir ver o borrar los datos de su adolescente." } },
             { links: [{ label: { en: "Read the Teen Safety Policy", es: "Lee la Política de seguridad para adolescentes" }, page: "minors" }] }
@@ -219,7 +222,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "privacy-retention",
-          heading: { en: "How long we keep things", es: "Cuánto tiempo guardamos los datos" },
+          heading: { en: "How long do you keep things?", es: "¿Cuánto tiempo guardan los datos?" },
           body: [
             { list: [
               { en: "Member records: while you're a member. Each January we remove people who asked to leave or haven't been active for 2 years.", es: "Registros de miembros: mientras seas miembro. Cada enero quitamos a quienes pidieron salir o llevan 2 años sin participar." },
@@ -232,7 +235,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "privacy-rights",
-          heading: { en: "Your choices", es: "Tus opciones" },
+          heading: { en: "Can I see, fix or delete my info?", es: "¿Puedo ver, corregir o borrar mis datos?" },
           body: [
             { p: { en: "Email {privacyEmail} to see, fix or delete your info. We reply within 3 business days and finish within 30 days. When you ask us to delete, we also tell our list, texting and video services to delete it. We keep only what the law requires and a do-not-contact note.", es: "Escribe a {privacyEmail} para ver, corregir o borrar tus datos. Respondemos en 3 días hábiles y terminamos en 30 días. Cuando nos pides borrar, también se lo pedimos a nuestros servicios de lista, mensajes y video. Solo guardamos lo que exige la ley y una nota para no contactarte." } },
             { p: { en: "Unsubscribe from emails with the link in any email. Stop texts by replying STOP.", es: "Date de baja de los correos con el enlace que viene en cada uno. Deja de recibir mensajes respondiendo STOP." } }
@@ -240,14 +243,14 @@ window.YSD_DATA.legal = {
         },
         {
           id: "privacy-security",
-          heading: { en: "Security", es: "Seguridad" },
+          heading: { en: "How do you keep it safe?", es: "¿Cómo protegen mis datos?" },
           body: [
             { p: { en: "HTTPS everywhere, secret keys kept off the website, and only named volunteers with two-factor logins can open the member list. Being on a Democratic club's list says something about your politics, so we treat it as sensitive and never post it. If a breach puts your info at risk, we'll tell you within 30 days.", es: "HTTPS en todo el sitio, claves secretas fuera de la página web y solo voluntarios designados, con verificación en dos pasos, pueden abrir la lista de miembros. Estar en la lista de un club demócrata dice algo sobre tus ideas políticas, así que la tratamos como información sensible y nunca la publicamos. Si una filtración pone en riesgo tus datos, te avisaremos en un plazo de 30 días." } }
           ]
         },
         {
           id: "privacy-changes",
-          heading: { en: "Changes and contact", es: "Cambios y contacto" },
+          heading: { en: "What if this policy changes?", es: "¿Y si esta política cambia?" },
           body: [
             { p: { en: "When we change this policy, we update the date and say what changed. If a change affects info you already gave us, we'll ask you first. Contact: {privacyEmail}, {mailingAddress}.", es: "Cuando cambiemos esta política, actualizaremos la fecha y diremos qué cambió. Si un cambio afecta datos que ya nos diste, te preguntaremos primero. Contacto: {privacyEmail}, {mailingAddress}." } }
           ]
@@ -268,7 +271,7 @@ window.YSD_DATA.legal = {
         es: "Cómo los Young Democrats of Seminole County protegen a los miembros de 14 a 17 años en línea y en los eventos."
       },
       tldr: [
-        { en: "13 and under can't join. Our club starts at 14, and we never collect info from anyone under 13.", es: "Menores de 14 no pueden unirse. Nuestro club empieza a los 14 y nunca recopilamos datos de menores de 13." },
+        { en: "Under 14? You can't join yet. Our club starts at 14, and we never collect info from anyone under 13.", es: "¿Tienes menos de 14? Todavía no puedes unirte. Nuestro club empieza a los 14 y nunca recopilamos datos de menores de 13." },
         { en: "Teens 14 to 17 are welcome to join, learn, volunteer and come to events.", es: "Los adolescentes de 14 a 17 años pueden unirse, aprender, ser voluntarios e ir a eventos." },
         { en: "No last names, no schools, no locations in anything we post that shows a teen.", es: "Sin apellidos, sin escuelas y sin ubicaciones en nada que publiquemos donde aparezca un adolescente." },
         { en: "A parent or guardian says yes before we post a photo or clip where a teen can be recognized.", es: "Una madre, padre o tutor legal dice que sí antes de publicar una foto o clip donde se reconozca a un adolescente." },
@@ -279,7 +282,7 @@ window.YSD_DATA.legal = {
       sections: [
         {
           id: "minors-ages",
-          heading: { en: "Who can join", es: "Quién puede unirse" },
+          heading: { en: "Who can join?", es: "¿Quién puede unirse?" },
           body: [
             { list: [
               { en: "Under 14: can't join. We don't collect any info. (Federal privacy law treats anyone under 13 as a child; we go further.)", es: "Menores de 14: no pueden unirse y no recopilamos ningún dato. (La ley federal de privacidad considera niño a cualquier menor de 13; nosotros vamos más allá)." },
@@ -291,14 +294,14 @@ window.YSD_DATA.legal = {
         },
         {
           id: "minors-joining",
-          heading: { en: "Joining at 14 to 17", es: "Unirte entre los 14 y los 17" },
+          heading: { en: "How does joining work at 14 to 17?", es: "¿Cómo funciona unirse entre los 14 y los 17?" },
           body: [
             { p: { en: "Teens join with the same short form as everyone. We ask for a parent or guardian contact only when a teen wants to be in a photo or clip, go to an off-site event, or get texts. In referral squads, teens show by first name only. We never aim donation asks at members under 18.", es: "Los adolescentes se unen con el mismo formulario corto que todos. Solo pedimos el contacto de una madre, padre o tutor legal cuando un adolescente quiere salir en una foto o clip, ir a un evento fuera del local o recibir mensajes de texto. En los grupos de invitación, los adolescentes aparecen solo con su nombre. Nunca dirigimos pedidos de donación a menores de 18." } }
           ]
         },
         {
           id: "minors-photos",
-          heading: { en: "Photos and video of anyone under 18", es: "Fotos y videos de menores de 18" },
+          heading: { en: "What are the rules for photos and video of teens?", es: "¿Qué reglas hay para fotos y videos de adolescentes?" },
           body: [
             { steps: [
               { en: "Consent first: the teen's own OK plus written consent from a parent or legal guardian before we post anything where they can be recognized.", es: "Primero, el consentimiento: el permiso del adolescente y el permiso por escrito de su madre, padre o tutor legal antes de publicar algo donde se le reconozca." },
@@ -313,7 +316,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "minors-online",
-          heading: { en: "DMs and texts", es: "Mensajes privados y de texto" },
+          heading: { en: "Can adult organizers DM teens?", es: "¿Los organizadores adultos pueden escribirles en privado a los adolescentes?" },
           body: [
             { list: [
               { en: "No private one-on-one messages between adult organizers and teen members, on any app. Use group chats with at least two adult organizers, or copy the guardian.", es: "Nada de mensajes privados uno a uno entre organizadores adultos y miembros adolescentes, en ninguna app. Usamos chats de grupo con al menos dos organizadores adultos, o con copia al tutor." },
@@ -325,7 +328,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "minors-events",
-          heading: { en: "At events", es: "En los eventos" },
+          heading: { en: "How do you keep events safe?", es: "¿Cómo cuidan a los adolescentes en los eventos?" },
           body: [
             { list: [
               { en: "At least two adult organizers at every activity a minor attends. No adult alone with a minor: not in a room, a car or a call.", es: "Al menos dos organizadores adultos en cada actividad con menores. Ningún adulto a solas con un menor: ni en un cuarto, ni en un carro, ni en una llamada." },
@@ -338,7 +341,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "minors-report",
-          heading: { en: "If something's wrong", es: "Si algo anda mal" },
+          heading: { en: "What if something's wrong?", es: "¿Y si algo anda mal?" },
           body: [
             { list: [
               { en: "Someone in danger right now: call 911.", es: "Si alguien está en peligro ahora mismo: llama al 911." },
@@ -355,7 +358,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "minors-parents",
-          heading: { en: "For parents and guardians", es: "Para madres, padres y tutores" },
+          heading: { en: "Parents and guardians: what can you ask for?", es: "Madres, padres y tutores: ¿qué pueden pedir?" },
           body: [
             { p: { en: "You can ask what we have about your teen, ask us to delete it, withdraw photo consent at any time, or raise a concern with the club's youth safety officer at {privacyEmail}.", es: "Pueden preguntarnos qué datos tenemos de su adolescente, pedir que los borremos, retirar el permiso para fotos en cualquier momento o contarle una preocupación a la persona encargada de seguridad juvenil del club en {privacyEmail}." } }
           ]
@@ -385,7 +388,7 @@ window.YSD_DATA.legal = {
       sections: [
         {
           id: "moderation-review",
-          heading: { en: "How review works", es: "Cómo funciona la revisión" },
+          heading: { en: "How does review work?", es: "¿Cómo funciona la revisión?" },
           body: [
             { steps: [
               { en: "You upload a video file up to 3 minutes and 150 MB.", es: "Subes un video de hasta 3 minutos y 150 MB." },
@@ -398,7 +401,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "moderation-welcome",
-          heading: { en: "What's welcome", es: "Lo que sí" },
+          heading: { en: "What can I post?", es: "¿Qué puedo publicar?" },
           body: [
             { list: [
               { en: "Your take on local and national issues, why you vote, why you joined.", es: "Tu opinión sobre temas locales y nacionales, por qué votas, por qué te uniste." },
@@ -412,7 +415,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "moderation-removed",
-          heading: { en: "What we remove", es: "Lo que quitamos" },
+          heading: { en: "What gets taken down?", es: "¿Qué se quita?" },
           body: [
             { list: [
               { en: "Harassment and threats: bullying, targeted insults, piling on, threats of violence.", es: "Acoso y amenazas: bullying, insultos dirigidos, ataques en grupo, amenazas de violencia." },
@@ -431,7 +434,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "moderation-report",
-          heading: { en: "Report a clip", es: "Reportar un clip" },
+          heading: { en: "How do I report a clip?", es: "¿Cómo reporto un clip?" },
           body: [
             { p: { en: "Tap Report on any clip or email {privacyEmail} with the link and what's wrong. Reports can be anonymous, and we never tell the uploader who reported.", es: "Toca Reportar en cualquier clip o escribe a {privacyEmail} con el enlace y el problema. Puedes reportar de forma anónima y nunca le decimos a quien subió el clip quién lo reportó." } },
             { list: [
@@ -444,7 +447,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "moderation-strikes",
-          heading: { en: "Strikes and appeals", es: "Advertencias y apelaciones" },
+          heading: { en: "What if I break a rule, or think you got it wrong?", es: "¿Y si rompo una regla o creo que se equivocaron?" },
           body: [
             { list: [
               { en: "First minor problem: the clip is declined or removed, with a note saying which rule.", es: "Primer problema menor: el clip se rechaza o se quita, con una nota que dice qué regla rompió." },
@@ -456,7 +459,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "moderation-copyright",
-          heading: { en: "Copyright and the law", es: "Derechos de autor y la ley" },
+          heading: { en: "What about copyright and the law?", es: "¿Y los derechos de autor y la ley?" },
           body: [
             { p: { en: "Copyright complaints go to our designated agent: {dmcaAgent}. Include the clip link, the work you own, your contact details and a good-faith statement. Uploaders can send a counter-notice. Repeat infringers lose upload access.", es: "Las quejas por derechos de autor van a nuestro agente designado: {dmcaAgent}. Incluye el enlace del clip, la obra que te pertenece, tus datos de contacto y una declaración de buena fe. Quien subió el clip puede enviar una contranotificación. Quien infrinja derechos varias veces pierde el acceso para subir clips." } },
             { p: { en: "We report child sexual exploitation to NCMEC and suspected child abuse to the Florida Abuse Hotline. We share info with law enforcement only when the law requires it.", es: "Reportamos la explotación sexual infantil al NCMEC y las sospechas de abuso infantil a la Línea de Abuso de Florida. Solo compartimos información con las autoridades cuando la ley lo exige." } }
@@ -465,6 +468,110 @@ window.YSD_DATA.legal = {
       ],
       sources: ["fl-104-0615", "fl-106-145", "fl-934-03", "fl-39-201", "fl-106-011", "usc-2258a", "usc-2258e", "dmca-faq", "ncmec-cybertip", "lifeline-988"],
       fullDraft: "docs/legal/MODERATION_POLICY.md"
+    },
+
+    // ------------------------------------------------------------------------------- CONDUCT
+    // Added by W7 on Nov 9, 2026 (BRIEF 4.10). Response times and consequences are proposals for Kira and
+    // the YDSC board, matching the Teen Safety Policy (24-hour follow-up) and the Clip Rules (appeals).
+    conduct: {
+      id: "conduct",
+      slug: "conduct.html",
+      title: { en: "Code of Conduct", es: "Código de conducta" },
+      short: { en: "Code of conduct", es: "Código de conducta" },
+      summary: {
+        en: "How members and guests of the Young Democrats of Seminole County treat each other at events and online, what's not OK, and how to report a problem.",
+        es: "Cómo se tratan los miembros e invitados de los Young Democrats of Seminole County en los eventos y en línea, qué no está bien y cómo reportar un problema."
+      },
+      tldr: [
+        { en: "Be kind. Argue about ideas, never attack people.", es: "Sé amable. Discute ideas, nunca ataques a las personas." },
+        { en: "No harassment, threats or slurs, and no touching, flirting or photos nobody asked for.", es: "Nada de acoso, amenazas ni insultos, y nada de contacto, coqueteo o fotos que nadie pidió." },
+        { en: "No doxxing and no lists of private people. Ever.", es: "Nada de doxeo ni listas de personas privadas. Nunca." },
+        { en: "Nobody records or posts anyone under 18 without a parent's or guardian's OK.", es: "Nadie graba ni publica a un menor de 18 sin el permiso de su madre, padre o tutor legal." },
+        { en: "Something wrong? Tell the event's safety lead or email {privacyEmail}. We follow up within 24 hours.", es: "¿Algo anda mal? Díselo a la persona responsable de seguridad del evento o escribe a {privacyEmail}. Damos seguimiento en 24 horas." },
+        { en: "Breaking these rules can mean a warning, being asked to leave, or losing your membership.", es: "Romper estas reglas puede significar una advertencia, que te pidamos irte o perder tu membresía." }
+      ],
+      sections: [
+        {
+          id: "conduct-who",
+          heading: { en: "Who does this cover?", es: "¿A quién aplica?" },
+          body: [
+            { p: { en: "Everyone in a {orgShort} space: members, guests, volunteers, organizers and officers. That means events, meetings and calls, and every online space we run, like group chats, comments, clips and texts. It also covers how you treat people while you're with us somewhere else, like a rally or a door you're knocking on.", es: "A todas las personas en un espacio de {orgShort}: miembros, invitados, voluntarios, organizadores y la directiva. Eso incluye eventos, reuniones y llamadas, y cada espacio en línea que manejamos, como chats de grupo, comentarios, clips y mensajes de texto. También aplica a cómo tratas a la gente cuando estás con nosotros en otro lugar, como una marcha o una puerta que tocas." } }
+          ]
+        },
+        {
+          id: "conduct-expect",
+          heading: { en: "What do you expect from me?", es: "¿Qué se espera de mí?" },
+          body: [
+            { list: [
+              { en: "Assume good faith. Lots of people here are new to politics, and asking questions is the point.", es: "Asume buena fe. Mucha gente aquí es nueva en la política, y hacer preguntas es justamente la idea." },
+              { en: "Disagree about ideas, not people. Criticize policies and politicians all you want; don't go after the person in front of you.", es: "Debate ideas, no personas. Critica políticas y políticos todo lo que quieras; no ataques a quien tienes enfrente." },
+              { en: "Use the names and pronouns people give you. Every accent and language is welcome, Spanish included.", es: "Usa el nombre y los pronombres que cada persona te da. Todos los acentos e idiomas son bienvenidos, incluido el español." },
+              { en: "Respect a no: in conversations, photos, hugs and everything else.", es: "Respeta un no: en conversaciones, fotos, abrazos y todo lo demás." },
+              { en: "Look out for each other. If someone seems uncomfortable, check in or get an organizer.", es: "Cuídense entre todos. Si alguien parece incómodo, pregúntale cómo está o busca a alguien del equipo organizador." },
+              { en: "No alcohol for anyone under 21. Events teens attend are alcohol-free or keep alcohol in a separate, ID-checked area.", es: "Nada de alcohol para menores de 21. Los eventos con adolescentes no tienen alcohol o lo mantienen en un área aparte donde se revisa la identificación." }
+            ] }
+          ]
+        },
+        {
+          id: "conduct-not",
+          heading: { en: "What's not OK?", es: "¿Qué no está bien?" },
+          body: [
+            { list: [
+              { en: "Harassment: insults, slurs, threats, intimidation, stalking, or following someone around after they've asked you to stop.", es: "Acoso: insultos, ofensas, amenazas, intimidación, acecho o seguir a alguien después de que te pidió que pararas." },
+              { en: "Unwanted touching, sexual comments, or advances nobody asked for. Any romantic or sexual contact between an adult and a minor.", es: "Contacto físico no deseado, comentarios sexuales o insinuaciones que nadie pidió. Cualquier contacto romántico o sexual entre un adulto y un menor." },
+              { en: "Hate: attacks on people for race, ethnicity, national origin, immigration status, religion, sex, gender identity, sexual orientation, disability or age.", es: "Odio: ataques por raza, etnia, origen nacional, estatus migratorio, religión, sexo, identidad de género, orientación sexual, discapacidad o edad." },
+              { en: "Doxxing: sharing anyone's home address, phone number, school, workplace, license plate or voter-record details without their OK.", es: "Doxeo: compartir la dirección, el teléfono, la escuela, el trabajo, la placa del carro o los datos del registro electoral de alguien sin su permiso." },
+              { en: "Lists of private people: no watch lists, spreadsheets or posts that target private individuals, including people who disagree with us.", es: "Listas de personas privadas: nada de listas negras, hojas de cálculo ni publicaciones contra personas privadas, incluidas las que no piensan como nosotros." },
+              { en: "Recording or posting people who didn't agree to it. Florida law generally requires everyone's consent to record a private conversation. Never record or post anyone under 18 without a parent's or guardian's OK.", es: "Grabar o publicar a personas que no aceptaron. La ley de Florida en general exige el consentimiento de todas las personas para grabar una conversación privada. Nunca grabes ni publiques a un menor de 18 sin el permiso de su madre, padre o tutor legal." },
+              { en: "Pressuring voters, election workers or people who disagree with us. We never solicit voters inside a voting site or within 150 feet of its entrance or a ballot drop box: no handouts, no asking how someone will vote, no giving out items.", es: "Presionar a votantes, trabajadores electorales o a quienes no piensan como nosotros. Nunca abordamos a votantes dentro de un lugar de votación ni a menos de 150 pies (unos 46 metros) de su entrada o de un buzón de boletas: nada de folletos, nada de preguntar por quién van a votar, nada de regalar cosas." }
+            ] }
+          ]
+        },
+        {
+          id: "conduct-report",
+          heading: { en: "How do I report something?", es: "¿Cómo reporto algo?" },
+          body: [
+            { list: [
+              { en: "Someone in danger right now: call 911.", es: "Si alguien está en peligro ahora mismo: llama al 911." },
+              { en: "At an event: tell the safety lead (we introduce them at check-in) or any organizer.", es: "En un evento: díselo a la persona responsable de seguridad (la presentamos al registrarte) o a cualquier organizador." },
+              { en: "Online or afterward: email {privacyEmail}. You don't have to give your name.", es: "En línea o después: escribe a {privacyEmail}. No tienes que dar tu nombre." },
+              { en: "On a clip: tap Report.", es: "En un clip: toca Reportar." },
+              { en: "Suspected child abuse: call the Florida Abuse Hotline, 1-800-962-2873, any time. In Florida, anyone who suspects it must report it.", es: "Sospecha de abuso infantil: llama a la Línea de Abuso de Florida, 1-800-962-2873, a cualquier hora. En Florida, cualquier persona que lo sospeche debe reportarlo." }
+            ] },
+            { links: [
+              { label: { en: "Florida Abuse Hotline: 1-800-962-2873", es: "Línea de Abuso de Florida: 1-800-962-2873" }, href: "tel:+18009622873" },
+              { label: { en: "Read the Teen Safety Policy", es: "Lee la Política de seguridad para adolescentes" }, page: "minors" }
+            ] },
+            { note: { en: "Someone in danger? Call 911 first.", es: "¿Alguien en peligro? Llama primero al 911." } }
+          ]
+        },
+        {
+          id: "conduct-reply",
+          heading: { en: "Who replies, and how fast?", es: "¿Quién responde y qué tan rápido?" },
+          body: [
+            { list: [
+              { en: "Organizers on the club's safety team read every report. This is a demo, so that team isn't named yet: the chapter picks it before launch.", es: "Las personas del equipo de seguridad del club leen cada reporte. Esto es una demo, así que ese equipo todavía no tiene nombres: el capítulo lo elige antes del lanzamiento." },
+              { en: "We follow up within 24 hours.", es: "Damos seguimiento en 24 horas." },
+              { en: "Nobody involved in a report helps decide it.", es: "Nadie involucrado en un reporte participa en la decisión." },
+              { en: "Reports stay private. We share them only with the people who need to act, or when the law requires it.", es: "Los reportes son privados. Solo los compartimos con quienes necesitan actuar o cuando la ley lo exige." },
+              { en: "No payback: nobody gets punished for reporting in good faith.", es: "Sin represalias: nadie recibe un castigo por reportar de buena fe." }
+            ] }
+          ]
+        },
+        {
+          id: "conduct-next",
+          heading: { en: "What happens next?", es: "¿Qué pasa después?" },
+          body: [
+            { list: [
+              { en: "Depending on what happened: a private talk, a written warning, being asked to leave an event, a break from events or online spaces, or losing membership.", es: "Según lo que pasó: una conversación en privado, una advertencia por escrito, pedirte que te vayas de un evento, una pausa de los eventos o espacios en línea, o perder la membresía." },
+              { en: "Serious harm, like threats, violence, sexual misconduct, doxxing or anything involving a minor, can mean removal right away and, when the law requires it, a report to the authorities.", es: "Un daño grave, como amenazas, violencia, conducta sexual inapropiada, doxeo o cualquier cosa que involucre a un menor, puede significar la expulsión inmediata y, cuando la ley lo exige, un reporte a las autoridades." }
+            ] },
+            { p: { en: "Think we got it wrong? Email {privacyEmail} within 14 days. Two organizers who weren't part of the first decision review it and answer within 7 days.", es: "¿Crees que nos equivocamos? Escribe a {privacyEmail} en un plazo de 14 días. Dos organizadores que no participaron en la primera decisión lo revisan y responden en 7 días." } }
+          ]
+        }
+      ],
+      sources: ["fl-934-03", "fl-934-02", "fl-540-08", "fl-39-201", "dcf-hotline", "fl-562-11", "fl-102-031", "fl-104-0615"],
+      fullDraft: ""
     },
 
     // ------------------------------------------------------------------------- ACCESSIBILITY
@@ -486,14 +593,14 @@ window.YSD_DATA.legal = {
       sections: [
         {
           id: "accessibility-goal",
-          heading: { en: "Our goal", es: "Nuestra meta" },
+          heading: { en: "What's the goal?", es: "¿Cuál es la meta?" },
           body: [
             { p: { en: "We want everyone in Seminole County to be able to join, learn, show up and post, including people who use screen readers, keyboards, captions, magnification or voice control, and people who read in Spanish. We aim for the Web Content Accessibility Guidelines (WCAG) 2.2, Level AA. We haven't had a full audit yet, so we don't claim to meet it today.", es: "Queremos que todas las personas del condado de Seminole puedan unirse, aprender, participar y publicar, incluidas quienes usan lectores de pantalla, teclado, subtítulos, ampliación o control por voz, y quienes leen en español. Nuestra meta son las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Todavía no hemos hecho una auditoría completa, así que no decimos que ya las cumplimos." } }
           ]
         },
         {
           id: "accessibility-built",
-          heading: { en: "What we've built in", es: "Lo que ya incluimos" },
+          heading: { en: "What's already built in?", es: "¿Qué ya está incluido?" },
           body: [
             { list: [
               { en: "Automated checks on every page at phone and desktop sizes (alt text, labels, contrast and more).", es: "Revisiones automáticas en cada página, en tamaño de celular y de computadora (texto alternativo, etiquetas, contraste y más)." },
@@ -507,13 +614,13 @@ window.YSD_DATA.legal = {
         },
         {
           id: "accessibility-limits",
-          heading: { en: "What doesn't work well yet", es: "Lo que todavía no funciona bien" },
+          heading: { en: "What doesn't work well yet?", es: "¿Qué todavía no funciona bien?" },
           body: [
             { list: [
               { en: "No full audit or screen-reader testing yet: the demo is still being built.", es: "Todavía no hay auditoría completa ni pruebas con lectores de pantalla: la demo sigue en construcción." },
               { en: "Share cards are pictures. The same words are always on the page as text.", es: "Las tarjetas para compartir son imágenes. Las mismas palabras siempre están en la página como texto." },
               { en: "Clips you save on your own device in the demo have no captions.", es: "Los clips que guardas en tu dispositivo durante la demo no tienen subtítulos." },
-              { en: "Some demo numbers move while the page is open. They go away on the live site.", es: "Algunos números de la demo se mueven mientras la página está abierta. Desaparecen en el sitio real." },
+              { en: "Demo clips have their captions burned into the video, so you can't resize or restyle them. The transcript under each clip is real text.", es: "Los clips de la demo tienen los subtítulos grabados en el video, así que no puedes cambiar su tamaño ni su estilo. La transcripción debajo de cada clip es texto real." },
               { en: "Spanish text is still waiting for review by a fluent speaker.", es: "El texto en español todavía espera la revisión de una persona hablante nativa." },
               { en: "Sites we link to (ActBlue, Action Network, Mobilize, state and county election sites) have their own accessibility. If one blocks you, tell us and we'll help another way.", es: "Los sitios a los que enlazamos (ActBlue, Action Network, Mobilize, los sitios electorales del estado y del condado) tienen su propia accesibilidad. Si alguno te bloquea, avísanos y te ayudamos de otra forma." }
             ] }
@@ -521,7 +628,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "accessibility-help",
-          heading: { en: "Get help", es: "Pide ayuda" },
+          heading: { en: "Stuck? Here's how to get help", es: "¿Algo no te funciona? Así pides ayuda" },
           body: [
             { p: { en: "Tell us what you need: the info in plain text, large print, in Spanish, read to you over the phone, or help filling in a form. Email {privacyEmail} with the page, what you were trying to do, and your device and assistive technology if you know them.", es: "Dinos qué necesitas: la información en texto simple, en letra grande, en español, leída por teléfono o ayuda para llenar un formulario. Escribe a {privacyEmail} con la página, lo que intentabas hacer y, si lo sabes, tu dispositivo y la tecnología de asistencia que usas." } },
             { list: [
@@ -534,7 +641,7 @@ window.YSD_DATA.legal = {
         },
         {
           id: "accessibility-voting",
-          heading: { en: "Accessible voting", es: "Votar con accesibilidad" },
+          heading: { en: "Where do I get help voting?", es: "¿Dónde pido ayuda para votar?" },
           body: [
             { p: { en: "For accessible ballots, help at the polls and mail ballots, the official source is the Seminole County Supervisor of Elections.", es: "Para boletas accesibles, ayuda en los centros de votación y voto por correo, la fuente oficial es la oficina del Supervisor de Elecciones del condado de Seminole." } },
             { links: [
@@ -717,6 +824,7 @@ window.YSD_DATA.legal = {
     "fl-106-143": { cite: "Fla. Stat. 106.143", label: "Political advertisements circulated prior to election; requirements", url: "http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0100-0199/0106/Sections/0106.143.html", checked: "2026-11-09" },
     "fl-106-011": { cite: "Fla. Stat. 106.011", label: "Campaign finance definitions (political advertisement, political committee)", url: "http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0100-0199/0106/Sections/0106.011.html", checked: "2026-11-09" },
     "fl-106-145": { cite: "Fla. Stat. 106.145", label: "Use of artificial intelligence in political advertising", url: "http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0100-0199/0106/Sections/0106.145.html", checked: "2026-11-09" },
+    "fl-102-031": { cite: "Fla. Stat. 102.031(4)", label: "No soliciting voters within 150 feet of a polling place, early-voting site or ballot drop box", url: "http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0100-0199/0102/Sections/0102.031.html", checked: "2026-11-09" },
     "fl-104-0615": { cite: "Fla. Stat. 104.0615", label: "Voter intimidation or suppression prohibited", url: "http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0100-0199/0104/Sections/0104.0615.html", checked: "2026-11-09" },
     "fl-97-041": { cite: "Fla. Stat. 97.041", label: "Qualifications to register or vote (pre-registration at 16)", url: "http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0000-0099/0097/Sections/0097.041.html", checked: "2026-11-09" },
     "fl-97-0575": { cite: "Fla. Stat. 97.0575", label: "Third-party voter registration organizations", url: "http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0000-0099/0097/Sections/0097.0575.html", checked: "2026-11-09" },

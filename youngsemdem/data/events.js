@@ -15,8 +15,9 @@
  * next regular general election (F.S. 101.62(1)(a)). That election was Nov 3, 2026, so requests made
  * BEFORE it end Dec 31, 2026. Say "asked for a mail ballot before Nov 3", not "every request on
  * file": the statute reads as if a request made after Nov 3 would run through 2028, and the
- * Supervisor of Elections hasn't posted how it handles those. Our advice stays "ask again from Jan 1";
- * anyone who asks sooner should check My Voter Record in January.
+ * Supervisor of Elections hasn't posted how it handles those. Copy follows ruling 00's required shape:
+ * "Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set
+ * through 2028. Check My Voter Record to be sure."
  *
  * SPANISH TERMS (same as data/civic.js, issues.js, strings.js): "boleta por correo" for the mail
  * ballot and "solicitud de boleta por correo" for the request (Florida's Spanish form DS-DE 160 says
@@ -56,7 +57,8 @@
  *
  * TOP LEVEL (window.YSD_DATA.events)
  *   version, demo, verified, timezone, note{}, labels{}, policy{}, rsvpForm{}, vibes{}, cities{},
- *   coverRules{}, skipDates[], schedule{}, items[] (EVENT, sorted by start)
+ *   coverRules{}, skipDates[], schedule{} (+ schedule.drop: the January drop), partners[] (REAL
+ *   SemDems events, link out only), items[] (EVENT, sorted by start)
  *
  * EVENT
  *   id            stable slug; use it for URLs (events.html#<id> or /events/<id>/) and as the YSD.cal id
@@ -84,8 +86,11 @@
  *   host          { label{} (DEMO host, always the same as labels.demoHost), team: role id in data/team.js }
  *   capacity      number (DEMO)
  *   going         number (DEMO): render with labels.going, never alone
- *   cover         { query (stock-photo search hint), alt{}, token (CSS colour token for the fallback
- *                 block, from data/team.js tokens) }
+ *   cover         { query (stock-photo search hint), alt{} (for the hinted photo), token (CSS colour
+ *                 token: the event's --duo colour), sticker (data/stickers.js id drawn on the cover),
+ *                 short{} (2 or 3 words for the poster-style cover), photo? { id, photographer,
+ *                 photographerHandle, page, width, height, alt{}, verified } (Unsplash photos viewed
+ *                 and credited by W2 on Nov 9, 2026; no photo = a solid --duo block with the sticker) }
  *   share         { text{} (friend-text style, ends with {url}), title{} (short, for Web Share title) }
  *   bringFriend   {en,es}: the "+1" line under the RSVP button
  *   calDescription {en,es}: body for the .ics/Google event
@@ -140,13 +145,48 @@ window.YSD_DATA.events = {
     empty: {
       en: "No events this week. Rest counts too. Want to host the next one? We'll help you plan it.",
       es: "No hay eventos esta semana. Descansar también cuenta. ¿Quieres organizar el próximo? Te ayudamos a planearlo."
-    }
+    },
+    /* RSVP sheet, RSVP row and invite landing (assets/js/rsvp.js reads these wherever events data loads) */
+    youreIn: { en: "You're in", es: "Ya te apuntaste" },
+    onWaitlist: { en: "On the waitlist", es: "En la lista de espera" },
+    rsvpQuestion: { en: "Are you in?", es: "¿Te apuntas?" },
+    you: { en: "You", es: "Tú" },
+    maybeSaved: { en: "Marked as a maybe. No pressure, change it anytime.", es: "Quedaste como \"quizás\". Sin presión, lo cambias cuando quieras." },
+    cantSaved: { en: "Rest counts too. See you at the next one.", es: "Descansar también cuenta. Nos vemos en el próximo." },
+    cleared: { en: "Got it. Your answer is cleared.", es: "Listo. Borramos tu respuesta." },
+    waitlistTitle: { en: "Join the waitlist", es: "Anótame en la lista de espera" },
+    waitlistSub: { en: "It's full right now. Leave your name and we'll let you know if a spot opens.", es: "Ahora está lleno. Deja tu nombre y te avisamos si se libera un lugar." },
+    waitlistDone: { en: "You're on the waitlist. If a spot opens, we'll let you know.", es: "Estás en la lista de espera. Si se libera un lugar, te avisamos." },
+    contactInvalid: { en: "That doesn't look like an email or a 10-digit mobile number. Check it once more?", es: "Eso no parece un correo ni un celular de 10 dígitos. ¿Lo revisas otra vez?" },
+    shareName: { en: "Show my first name on the invite", es: "Mostrar mi nombre en la invitación" },
+    shareNameTeen: { en: "Under 18, your invite links never show your name.", es: "Si tienes menos de 18, tus enlaces nunca muestran tu nombre." },
+    plusOneFriend: { en: "+1 a friend", es: "Invita a alguien" },
+    bringTitle: { en: "Bring a friend", es: "Trae a alguien" },
+    calTitle: { en: "Add it to your calendar", es: "Agrégalo a tu calendario" },
+    calIcs: { en: "Calendar file (.ics)", es: "Archivo de calendario (.ics)" },
+    calGoogle: { en: "Google", es: "Google" },
+    calOutlook: { en: "Outlook.com", es: "Outlook.com" },
+    changeRsvp: { en: "Change my RSVP", es: "Cambiar mi respuesta" },
+    cantAnymore: { en: "Can't make it anymore", es: "Ya no puedo ir" },
+    done: { en: "Done", es: "Listo" },
+    notNow: { en: "Not now", es: "Ahora no" },
+    demoShare: { en: "(DEMO event)", es: "(Evento DEMO)" },
+    invitedBy: { en: "{name} invited you", es: "{name} te invitó" },
+    invitedAnon: { en: "A friend invited you", es: "Alguien te invitó" },
+    invitedTo: { en: "to {event} · {when}", es: "a {event} · {when}" },
+    invitedToUs: { en: "to the Young Dems: free hangouts and straight answers about voting, all over Seminole.", es: "a los Young Dems: encuentros gratis y respuestas claras sobre cómo votar, en todo Seminole." },
+    invitedPast: { en: "That one already happened, but there's more coming. Pick another night.", es: "Ese evento ya pasó, pero viene más. Elige otra noche." },
+    invitedSub: { en: "Free, no account needed. Save your seat in one tap.", es: "Gratis y sin crear cuenta. Guarda tu lugar con un toque." },
+    dismiss: { en: "Dismiss the invite", es: "Cerrar la invitación" },
+    newTag: { en: "Just dropped", es: "Recién salido" },
+    spotsLeftDemo: { en: "{n} spots left (DEMO)", es: "Quedan {n} lugares (DEMO)" },
+    fullDemo: { en: "Full (DEMO)", es: "Lleno (DEMO)" }
   },
 
   policy: {
     ages: {
-      en: "Everyone 14 and up is welcome at every event. You don't have to be a member, and you don't have to be registered with any party.",
-      es: "Todas las personas de 14 años en adelante son bienvenidas a todos los eventos. No tienes que ser miembro ni estar inscrito en ningún partido."
+      en: "You don't have to be a member, and you don't have to be registered with any party.",
+      es: "No tienes que ser miembro ni estar inscrito en ningún partido."
     },
     guardian: {
       en: "Under 18? Events that end after dark, and door-knocking shifts, need a quick OK from a parent or guardian. We'll send the form when you RSVP.",
@@ -241,8 +281,79 @@ window.YSD_DATA.events = {
   schedule: {
     note: "Demo schedule chosen to avoid the holidays above, the Seminole County Democrats' monthly meeting (second Thursday, 6:30 pm social, 7 pm meeting, Altamonte Springs) and their holiday party (Fri, Dec 11), per the Florida Democrats events calendar (checked Nov 9, 2026).",
     source: "https://events.floridadems.org/org/seminole-county-democrats",
-    verified: "2026-11-09"
+    verified: "2026-11-09",
+    /* The January drop (BRIEF 4.3, 5.4): events that start after `cutoff` stay hidden on the events
+       list until `opensAt` by the visitor's clock (events.html?drop=open previews them). DEMO date. */
+    drop: {
+      demo: true,
+      cutoff: "2026-12-31T23:59:59-05:00",
+      opensAt: "2026-12-15T12:00:00-05:00",
+      label: { en: "January's lineup drops Tue, Dec 15 at noon (DEMO)", es: "La programación de enero sale el mar. 15 de dic. a las 12 p. m. (DEMO)" },
+      calTitle: { en: "Young Dems: January's lineup drops (DEMO)", es: "Young Dems: sale la programación de enero (DEMO)" },
+      calDescription: {
+        en: "DEMO reminder. The Young Dems post January's events at noon today. Pick one and bring a friend.",
+        es: "Recordatorio DEMO. Los Young Dems publican los eventos de enero hoy a las 12 p. m. Elige uno y trae a alguien."
+      }
+    }
   },
+
+  /* REAL events hosted by the Seminole County Democrats (not by YDSC), copied from the Florida
+     Democrats events calendar and re-checked on Mon Nov 9, 2026. Pages show them with a REAL tag and a
+     link out to the party's page for RSVP: no RSVP sheet, no count. Each one hides itself after `end`.
+     Re-check the calendar before every review pass. */
+  partners: [
+    {
+      id: "semdems-meeting-2026-11-12",
+      real: true,
+      host: { en: "Seminole County Democrats", es: "Seminole County Democrats" },
+      title: { en: "SemDems monthly meeting", es: "Reunión mensual de SemDems" },
+      start: "2026-11-12T19:00:00-05:00",
+      end: "2026-11-12T21:00:00-05:00",
+      city: "altamonte-springs",
+      detail: {
+        en: "Open to the public, second Thursday of every month. People start chatting at 6:30 pm, and the meeting starts at 7.",
+        es: "Abierta al público, el segundo jueves de cada mes. La gente empieza a llegar y conversar a las 6:30 p. m., y la reunión empieza a las 7."
+      },
+      url: "https://events.floridadems.org/event/12198/semdems-monthly-meeting",
+      source: "https://events.floridadems.org/event/12198/semdems-monthly-meeting",
+      verified: "2026-11-09",
+      confidence: "high"
+    },
+    {
+      id: "semdems-meeting-2026-12-10",
+      real: true,
+      host: { en: "Seminole County Democrats", es: "Seminole County Democrats" },
+      title: { en: "SemDems monthly meeting", es: "Reunión mensual de SemDems" },
+      start: "2026-12-10T19:00:00-05:00",
+      end: "2026-12-10T21:00:00-05:00",
+      city: "altamonte-springs",
+      detail: {
+        en: "Open to the public, second Thursday of every month. December's meeting is at a different address, so check their page.",
+        es: "Abierta al público, el segundo jueves de cada mes. La de diciembre es en otra dirección, así que revisa su página."
+      },
+      url: "https://events.floridadems.org/org/seminole-county-democrats",
+      source: "https://events.floridadems.org/org/seminole-county-democrats",
+      verified: "2026-11-09",
+      confidence: "high"
+    },
+    {
+      id: "semdems-holiday-party-2026",
+      real: true,
+      host: { en: "Seminole County Democrats", es: "Seminole County Democrats" },
+      title: { en: "SemDems annual holiday party", es: "Fiesta anual de fin de año de SemDems" },
+      start: "2026-12-11T18:00:00-05:00",
+      end: "2026-12-11T21:00:00-05:00",
+      city: "longwood",
+      detail: {
+        en: "Their party, their rules: it's ticketed, at a private home in Longwood, and the address comes with your ticket.",
+        es: "Es su fiesta y sus reglas: hay que comprar boleto, es en una casa particular en Longwood y la dirección llega con el boleto."
+      },
+      url: "https://events.floridadems.org/event/50836/semdems-annual-holiday-party",
+      source: "https://events.floridadems.org/event/50836/semdems-annual-holiday-party",
+      verified: "2026-11-09",
+      confidence: "high"
+    }
+  ],
 
   items: [
     {
@@ -300,7 +411,22 @@ window.YSD_DATA.events = {
       cover: {
         query: "golden hour sunset over calm lake with palm trees and a lakefront path",
         alt: { en: "Sunset over a calm lake with palm trees", es: "Atardecer sobre un lago tranquilo con palmeras" },
-        token: "--bubblegum"
+        token: "--bubblegum",
+        sticker: "celery",
+        short: { en: "Sunset walk", es: "Caminata al atardecer" },
+        photo: {
+          id: "1783676056910-e5f3b27bdcbd",
+          photographer: "Richard Burlton",
+          photographerHandle: "richardworks",
+          page: "https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo",
+          width: 640,
+          height: 427,
+          alt: {
+            en: "Two people stand on a lakeside dock at sunset while others watch the water from the shore",
+            es: "Dos personas en un muelle a orillas de un lago al atardecer mientras otras miran el agua desde la orilla"
+          },
+          verified: "2026-11-09"
+        }
       },
       share: {
         title: { en: "Sunset walk on Lake Monroe", es: "Caminata al atardecer en el lago Monroe" },
@@ -346,13 +472,13 @@ window.YSD_DATA.events = {
     },
 
     {
-      id: "trivia-how-seminole-are-you",
+      id: "trivia-county-edition",
       demo: true,
       status: "scheduled",
       series: "trivia",
       kind: "social",
       tone: "fun",
-      title: { en: "Trivia night: how Seminole are you?", es: "Noche de trivia: ¿qué tan de Seminole eres?" },
+      title: { en: "Trivia night: Seminole County edition", es: "Noche de trivia: edición condado de Seminole" },
       tagline: {
         en: "Seven cities, four SunRail stops, one very old tree. Bring a team or join one.",
         es: "Siete ciudades, cuatro estaciones de SunRail y un árbol muy, muy viejo. Trae tu equipo o únete a uno."
@@ -393,7 +519,22 @@ window.YSD_DATA.events = {
       cover: {
         query: "friends laughing around a table with trivia answer sheets and board games",
         alt: { en: "Friends laughing around a table covered in game cards", es: "Un grupo de amigos riéndose alrededor de una mesa con tarjetas de juego" },
-        token: "--celery"
+        token: "--celery",
+        sticker: "gator",
+        short: { en: "Trivia night", es: "Noche de trivia" },
+        photo: {
+          id: "1646934280686-768a69c444eb",
+          photographer: "Jametlene Reskp",
+          photographerHandle: "reskp",
+          page: "https://unsplash.com/photos/a-group-of-people-sitting-around-a-wooden-table-WciYmqSwNAA",
+          width: 640,
+          height: 360,
+          alt: {
+            en: "Three friends laughing across a wooden table covered in playing cards",
+            es: "Tres amigos se ríen alrededor de una mesa de madera llena de cartas de juego"
+          },
+          verified: "2026-11-09"
+        }
       },
       share: {
         title: { en: "Seminole trivia night", es: "Noche de trivia de Seminole" },
@@ -482,8 +623,8 @@ window.YSD_DATA.events = {
         es: "Dos horas, tu laptop o tu celular y un guion amable. Para que nadie se lleve una sorpresa en 2027."
       },
       description: {
-        en: "Anyone who asked for a mail ballot before the Nov 3 election has a request that runs out Dec 31, and it's an easy one to miss. Tonight we text Seminole voters a friendly heads-up: ask again starting Jan 1, here's the official link. New to this? We train you in 15 minutes, and you can make the script sound like you. If someone's not into it, we say thanks and move on. We never argue by text.",
-        es: "Quien pidió la boleta por correo antes de las elecciones del 3 de noviembre tiene una solicitud que vence el 31 de diciembre, y es fácil que se pase por alto. Esta noche les mandamos a votantes de Seminole un aviso amable: desde el 1 de enero hay que pedirla otra vez, y aquí está el enlace oficial. ¿Es tu primera vez? Te entrenamos en 15 minutos y puedes adaptar el guion a tu manera de hablar. Si a alguien no le interesa, le damos las gracias y seguimos. Nunca discutimos por mensaje."
+        en: "Anyone who asked for a mail ballot before the Nov 3 election has a request that runs out Dec 31, and it's an easy one to miss. Tonight we text Seminole voters a friendly heads-up, in the words we use everywhere: \"Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set through 2028. Check My Voter Record to be sure.\" New to this? We train you in 15 minutes, and you can make the script sound like you. If someone's not into it, we say thanks and move on. We never argue by text.",
+        es: "Quien pidió la boleta por correo antes de las elecciones del 3 de noviembre tiene una solicitud que vence el 31 de diciembre, y es fácil que se pase por alto. Esta noche les mandamos a votantes de Seminole un aviso amable, con las palabras que usamos en todas partes: «¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Pídela de nuevo y debería valer hasta 2028. Revisa My Voter Record para confirmarlo.» ¿Es tu primera vez? Te entrenamos en 15 minutos y puedes adaptar el guion a tu manera de hablar. Si a alguien no le interesa, le damos las gracias y seguimos. Nunca discutimos por mensaje."
       },
       start: "2026-12-01T18:30:00-05:00",
       end: "2026-12-01T20:30:00-05:00",
@@ -521,7 +662,9 @@ window.YSD_DATA.events = {
       cover: {
         query: "hands typing on a phone at a table with snacks and laptops, warm light",
         alt: { en: "People texting on phones and laptops around a table", es: "Personas escribiendo en celulares y laptops alrededor de una mesa" },
-        token: "--sky"
+        token: "--sky",
+        sticker: "envelope",
+        short: { en: "Text bank", es: "Jornada de mensajes" }
       },
       share: {
         title: { en: "Text bank: the Dec 31 heads-up", es: "Jornada de mensajes: el aviso del 31 de diciembre" },
@@ -555,10 +698,10 @@ window.YSD_DATA.events = {
           confidence: "high"
         },
         {
-          id: "renew-from-jan-1",
+          id: "requests-after-nov-3",
           claim: {
-            en: "Seminole voters can request a mail ballot online through the Supervisor of Elections or by phone at 407-585-8683. Our guidance, matching data/civic.js, is to ask again starting Jan 1, 2027; the office hasn't posted when it starts taking 2027-28 requests.",
-            es: "Los votantes de Seminole pueden pedir la boleta por correo en línea con la oficina del Supervisor de Elecciones o por teléfono al 407-585-8683. Nuestra recomendación, igual que en data/civic.js, es pedirla otra vez desde el 1 de enero de 2027; la oficina no ha publicado desde cuándo acepta solicitudes para 2027-28."
+            en: "Seminole voters can request a mail ballot online through the Supervisor of Elections or by phone at 407-585-8683. Under the state's rule, a request made after Nov 3, 2026 should last through 2028. The office hasn't posted how it handles requests made before Jan 1, 2027, so check My Voter Record to be sure.",
+            es: "Los votantes de Seminole pueden pedir la boleta por correo en línea con la oficina del Supervisor de Elecciones o por teléfono al 407-585-8683. Según la regla estatal, una solicitud hecha después del 3 de noviembre de 2026 debería valer hasta 2028. La oficina no ha publicado cómo maneja las solicitudes hechas antes del 1 de enero de 2027, así que revisa My Voter Record para confirmarlo."
           },
           source: "https://voteseminole.gov/how-to-vote/vote-by-mail/",
           verified: "2026-11-09",
@@ -570,7 +713,7 @@ window.YSD_DATA.events = {
     {
       id: "creator-night-60-seconds",
       demo: true,
-      status: "scheduled",
+      status: "full",
       series: "creator-night",
       kind: "create",
       tone: "fun",
@@ -616,11 +759,13 @@ window.YSD_DATA.events = {
       cost: { amount: 0, label: { en: "Free", es: "Gratis" } },
       host: { label: { en: "DEMO host", es: "Equipo anfitrión (DEMO)" }, team: "communications" },
       capacity: 20,
-      going: 17,
+      going: 20,
       cover: {
         query: "person filming a vertical video with a phone on a tripod and a ring light",
         alt: { en: "A phone on a tripod in front of a ring light", es: "Un celular en un trípode frente a un aro de luz" },
-        token: "--violet"
+        token: "--violet",
+        sticker: "camera",
+        short: { en: "Creator night", es: "Noche de creadores" }
       },
       share: {
         title: { en: "Creator night", es: "Noche de creadores" },
@@ -652,12 +797,12 @@ window.YSD_DATA.events = {
       tone: "fun",
       title: { en: "Renew-ready party", es: "Fiesta para dejar lista tu renovación" },
       tagline: {
-        en: "Asked for a mail ballot before Nov 3? It runs out Dec 31. Get everything ready now, so renewing in January is quick.",
-        es: "¿Pediste la boleta por correo antes del 3 de noviembre? Vence el 31 de diciembre. Deja todo listo ahora y en enero renovar es cosa de nada."
+        en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set through 2028. Check My Voter Record to be sure.",
+        es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Pídela de nuevo y debería valer hasta 2028. Revisa My Voter Record para confirmarlo."
       },
       description: {
-        en: "Snacks, music, lawn games and a table of people who know this stuff. We'll help you look up your voter record, fix your address if you've moved, find the one number you'll need to renew, and put a Jan 1 reminder in your phone. If the elections office confirms it's taking 2027-28 requests before New Year's, we'll update this page and you can renew right there, on your own phone.",
-        es: "Habrá algo para picar, música, juegos al aire libre y una mesa con gente que se sabe todo esto. Te ayudamos a buscar tu registro de votante, a corregir tu dirección si te mudaste, a encontrar el número que vas a necesitar para renovar y a poner en tu celular un recordatorio para el 1 de enero. Si la oficina electoral confirma que acepta solicitudes para 2027-28 antes de Año Nuevo, actualizamos esta página y puedes renovar ahí mismo, desde tu celular."
+        en: "Snacks, music, lawn games and a table of people who know this stuff. Bring your phone: we'll help you look up your voter record, fix your address if you've moved, find the one number you'll need, and ask for your mail ballot again on the official site, yourself. Seminole hasn't posted how it handles requests made before New Year's, so set a reminder to check My Voter Record in January and make sure yours shows.",
+        es: "Habrá algo para picar, música, juegos al aire libre y una mesa con gente que se sabe todo esto. Trae tu celular: te ayudamos a buscar tu registro de votante, a corregir tu dirección si te mudaste, a encontrar el número que vas a necesitar y a pedir otra vez la boleta por correo en el sitio oficial, por tu cuenta. Seminole no ha publicado cómo maneja las solicitudes hechas antes de Año Nuevo, así que ponte un recordatorio para revisar My Voter Record en enero y confirmar que aparece la tuya."
       },
       extraNote: {
         en: "You do everything yourself on the official site. We never take forms or personal information.",
@@ -703,7 +848,11 @@ window.YSD_DATA.events = {
       cover: {
         query: "picnic in a sunny Florida park pavilion with string lights and snacks",
         alt: { en: "A picnic table with snacks under a park pavilion", es: "Una mesa de picnic con comida bajo un pabellón en un parque" },
-        token: "--celery"
+        token: "--celery",
+        sticker: "calendar",
+        short: { en: "Renew-ready", es: "Lista para renovar" },
+        // No photo: the one we had (Unsplash 1595265616362, return envelopes) shows the USPS Official
+        // Election Mail mark, a logo with a stylized flag (BRIEF 3.6). The poster title and sticker carry it.
       },
       share: {
         title: { en: "Renew-ready party", es: "Fiesta para dejar lista tu renovación" },
@@ -717,15 +866,15 @@ window.YSD_DATA.events = {
         es: "Trae a quien votó por correo este año. Su solicitud también vence el 31 de diciembre."
       },
       calDescription: {
-        en: "DEMO event. Get ready to renew your Florida mail-ballot request (requests made before Nov 3 end Dec 31, 2026; ask again from Jan 1). Snacks and music. Free.",
-        es: "Evento DEMO. Prepárate para renovar tu solicitud de boleta por correo en Florida (las hechas antes del 3 de noviembre vencen el 31 de diciembre de 2026; pídela otra vez desde el 1 de enero). Comida y música. Gratis."
+        en: "DEMO event. Renew your Florida mail-ballot request (requests made before Nov 3 end Dec 31, 2026; ask again and you should be set through 2028). Snacks and music. Free.",
+        es: "Evento DEMO. Renueva tu solicitud de boleta por correo en Florida (las hechas antes del 3 de noviembre vencen el 31 de diciembre de 2026; pídela de nuevo y debería valer hasta 2028). Comida y música. Gratis."
       },
       links: [
         { linkId: "voteByMail", key: "links.vote.voteByMail", url: "https://voteseminole.gov/how-to-vote/vote-by-mail/", label: { en: "Seminole's vote-by-mail page", es: "Página de voto por correo de Seminole" } },
         { linkId: "myVoterRecord", key: "links.vote.myVoterRecord", url: "https://voteseminole.gov/voters/my-voter-record/", label: { en: "Look up my voter record", es: "Buscar mi registro de votante" } }
       ],
-      xpActions: ["rsvp", "attend", "set-renewal-reminder"],
-      badgeIds: ["renew-ready"],
+      xpActions: ["rsvp", "attend"], // civic steps (renewing, reminders) earn nothing (00, BRIEF 5.5)
+      badgeIds: [],
       facts: [
         {
           id: "mail-requests-expire-2026",
@@ -748,12 +897,12 @@ window.YSD_DATA.events = {
           confidence: "high"
         },
         {
-          id: "renew-from-jan-1",
+          id: "requests-after-nov-3",
           claim: {
-            en: "Our guidance, matching data/civic.js: ask for a new request starting Jan 1, 2027. The statute reads as if a request made after Nov 3, 2026 would last through 2028, but the Supervisor of Elections hasn't posted how it handles requests made in Nov-Dec 2026, so check My Voter Record in January (or call 407-585-8683) before relying on one.",
-            es: "Nuestra recomendación, igual que en data/civic.js: pide la nueva solicitud desde el 1 de enero de 2027. Según la ley, una solicitud hecha después del 3 de noviembre de 2026 duraría hasta 2028, pero la oficina del Supervisor de Elecciones no ha publicado cómo maneja las solicitudes de noviembre y diciembre de 2026, así que revisa My Voter Record en enero (o llama al 407-585-8683) antes de contar con una."
+            en: "Under the state's rule, a mail-ballot request made after the Nov 3, 2026 general election should last through 2028. Seminole's Supervisor of Elections hasn't posted how it handles requests made Nov 4 to Dec 31, 2026, so check My Voter Record in January (or call 407-585-8683) to make sure yours shows.",
+            es: "Según la regla estatal, una solicitud de boleta por correo hecha después de la elección general del 3 de noviembre de 2026 debería valer hasta 2028. La oficina del Supervisor de Elecciones de Seminole no ha publicado cómo maneja las solicitudes hechas entre el 4 de noviembre y el 31 de diciembre de 2026, así que revisa My Voter Record en enero (o llama al 407-585-8683) para confirmar que aparece la tuya."
           },
-          source: "https://voteseminole.gov/how-to-vote/vote-by-mail/",
+          source: "https://www.flsenate.gov/Laws/Statutes/2026/101.62",
           verified: "2026-11-09",
           confidence: "med"
         }
@@ -817,7 +966,9 @@ window.YSD_DATA.events = {
       cover: {
         query: "small friendly workshop group around a table with coffee, notebooks and a laptop",
         alt: { en: "A small group talking around a table with coffee and notebooks", es: "Un grupo pequeño conversando alrededor de una mesa con café y libretas" },
-        token: "--sky"
+        token: "--sky",
+        sticker: "calendar",
+        short: { en: "Voter workshop", es: "Taller 2027" }
       },
       share: {
         title: { en: "Spanish-language voter workshop", es: "Taller en español: votar en 2027" },
@@ -935,7 +1086,9 @@ window.YSD_DATA.events = {
       cover: {
         query: "group of young adults sharing pizza and laughing at a long table",
         alt: { en: "Friends sharing pizza at a long table", es: "Un grupo compartiendo pizza en una mesa larga" },
-        token: "--violet"
+        token: "--violet",
+        sticker: "heart",
+        short: { en: "Member mixer", es: "Encuentro de miembros" }
       },
       share: {
         title: { en: "Young Dems new-member mixer", es: "Encuentro de miembros nuevos de los Young Dems" },
@@ -956,7 +1109,7 @@ window.YSD_DATA.events = {
         { linkId: null, key: "links.dues", url: "https://secure.actblue.com/donate/ydscdues", label: { en: "Membership and dues", es: "Membresía y cuotas" } },
         { linkId: "voteByMail", key: "links.vote.voteByMail", url: "https://voteseminole.gov/how-to-vote/vote-by-mail/", label: { en: "Seminole's vote-by-mail page", es: "Página de voto por correo de Seminole" } }
       ],
-      xpActions: ["rsvp", "attend", "renew-mail-ballot"],
+      xpActions: ["rsvp", "attend"], // civic steps earn nothing (00, BRIEF 5.5)
       badgeIds: ["card-carrier"],
       facts: [
         {
@@ -1047,7 +1200,22 @@ window.YSD_DATA.events = {
       cover: {
         query: "commuter train platform at dusk with people waiting, Florida",
         alt: { en: "People waiting on a train platform at dusk", es: "Gente esperando en el andén de un tren al atardecer" },
-        token: "--sky"
+        token: "--sky",
+        sticker: "train",
+        short: { en: "SunRail social", es: "Encuentro SunRail" },
+        photo: {
+          id: "1676304437086-ad9db3b3df66",
+          photographer: "Komorebi Photo",
+          photographerHandle: "komophoto",
+          page: "https://unsplash.com/photos/cs18eMhnmxI",
+          width: 640,
+          height: 427,
+          alt: {
+            en: "Railroad tracks running toward an orange sunset between trees and palms",
+            es: "Vías de tren que se pierden hacia un atardecer naranja entre árboles y palmeras"
+          },
+          verified: "2026-11-09"
+        }
       },
       share: {
         title: { en: "SunRail social", es: "Encuentro SunRail" },
@@ -1162,7 +1330,22 @@ window.YSD_DATA.events = {
       cover: {
         query: "two volunteers with clipboards walking a sunny suburban sidewalk",
         alt: { en: "Two volunteers with clipboards on a sunny sidewalk", es: "Dos voluntarios con tablillas en una acera soleada" },
-        token: "--celery"
+        token: "--celery",
+        sticker: "chicken",
+        short: { en: "Neighbor shift", es: "Turno de vecinos" },
+        photo: {
+          id: "1555636222-cae831e670b3",
+          photographer: "FilterGrade",
+          photographerHandle: "filtergrade",
+          page: "https://unsplash.com/photos/suburban-street-with-houses-and-palms-4T4AcGJvARQ",
+          width: 640,
+          height: 424,
+          alt: {
+            en: "A sunny suburban street lined with palm trees and tile-roof houses",
+            es: "Una calle soleada de casas con techos de teja y palmeras"
+          },
+          verified: "2026-11-09"
+        }
       },
       share: {
         title: { en: "Oviedo neighbor check-in shift", es: "Turno de visitas a vecinos en Oviedo" },
@@ -1279,7 +1462,9 @@ window.YSD_DATA.events = {
       cover: {
         query: "friends singing karaoke together under colorful lights",
         alt: { en: "Two friends singing into microphones under colorful lights", es: "Dos amigos cantando con micrófonos bajo luces de colores" },
-        token: "--bubblegum"
+        token: "--bubblegum",
+        sticker: "sun",
+        short: { en: "Karaoke night", es: "Noche de karaoke" }
       },
       share: {
         title: { en: "Karaoke night", es: "Noche de karaoke" },
@@ -1358,7 +1543,9 @@ window.YSD_DATA.events = {
       cover: {
         query: "towering bald cypress trees and a wooden boardwalk in a Florida forest",
         alt: { en: "Tall cypress trees beside a wooden boardwalk", es: "Cipreses altos junto a un sendero de madera" },
-        token: "--celery"
+        token: "--celery",
+        sticker: "cypress",
+        short: { en: "Big Tree picnic", es: "Picnic en Big Tree" }
       },
       share: {
         title: { en: "Picnic at Big Tree Park", es: "Picnic en Big Tree Park" },
