@@ -4,6 +4,9 @@
  * Checked Nov 9, 2026 (checker pass): every source re-opened, the mail-ballot lines realigned with
  * data/civic.js, the bylaw lines re-quoted from the dues page, and claims about other features matched
  * to their data files.
+ * Updated Nov 9, 2026 (F0 foundation, BRIEF §10.2 item 6): cta.join "Join free", cta.findEra "Find your
+ * type", new cta.imIn / cta.seeWhatsOn and the other §2.7 shared lines, the §4.0 demo banner and footer
+ * lines, the required mail-ballot shape in nudge.mailBallot.text, a new `tag` area, "era" removed from copy.
  *
  * Every button, label, hint, consent line, validation error, success/empty/offline/404 state, toast,
  * share-sheet label, per-page SEO and Open Graph line, and prewritten share text that is not a page's
@@ -183,6 +186,7 @@ window.YSD_DATA.strings = {
     feed: "Clip feed controls and labels",
     count: "Counts and countdowns (with .one/.other plurals)",
     format: "Date, time and list patterns",
+    tag: "Small pill labels other than DEMO (REAL, NEW, stock photo, links-checked dates)",
     a11yStatement: "Short accessibility statement for footers and forms"
   },
 
@@ -277,6 +281,7 @@ window.YSD_DATA.strings = {
       placeholder: "chapter-confirm",
       note: "Newsletter name and weekly Thursday cadence from docs/research/05. The chapter has to agree to keep that promise before launch."
     },
+    "brand.ogAlt": { en: "Local politics is a group project. Young Democrats of Seminole County, ages 14 to 39. DEMO preview.", es: "La política local es un trabajo en equipo. Young Democrats of Seminole County, de 14 a 39 años. Vista previa DEMO.", note: "og:image:alt for assets/img/og/default.png (and its es/ twin)." },
 
     // ==================================================================================== NAV
     "nav.aria": { en: "Main menu", es: "Menú principal" },
@@ -305,6 +310,13 @@ window.YSD_DATA.strings = {
       note: "Proper name, as the party's own site titles itself (over the nav limit on purpose; footer use). Link it with YSD.cfg('links.countyParty') (https://semdems.com/, checked 2026-11-09); render the link only while it's set. A link, not an endorsement."
     },
     "nav.elections": { en: "Supervisor of Elections", es: "Supervisor de Elecciones", note: "Footer link to links.vote.countyElections." },
+    "nav.reel": { en: "Reel", es: "Clips", note: "Header label for clips.html (\"The Reel\")." },
+    "nav.whatsReal": { en: "What's real?", es: "¿Qué es real?" },
+    "nav.conduct": { en: "Code of conduct", es: "Código de conducta" },
+    "nav.teenSafety": { en: "Teen safety", es: "Seguridad para adolescentes" },
+    "nav.clipRules": { en: "Clip rules", es: "Reglas para clips" },
+    "nav.groupDo": { en: "Do", es: "Participa" },
+    "nav.groupLearn": { en: "Learn", es: "Aprende" },
 
     // =================================================================================== A11Y
     "a11y.skip": { en: "Skip to main content", es: "Saltar al contenido principal" },
@@ -325,6 +337,12 @@ window.YSD_DATA.strings = {
     "a11y.languageGroup": { en: "Choose a language", es: "Elige un idioma" },
     "a11y.counter": { en: "{label}: {count}", es: "{label}: {count}", note: "Announce counters once on load, not on every demo tick." },
     "a11y.demoBadge": { en: "DEMO: made up for this preview", es: "DEMO: inventado para esta vista previa", demo: true },
+    "a11y.themeAuto": { en: "Auto", es: "Auto" },
+    "a11y.themeLight": { en: "Light", es: "Claro" },
+    "a11y.themeDark": { en: "Dark", es: "Oscuro" },
+    "a11y.themeChange": { en: "Color theme: {mode}. Change theme", es: "Tema de color: {mode}. Cambiar tema", note: "{mode} = a11y.themeAuto | themeLight | themeDark." },
+    "a11y.stickerTap": { en: "Sticker: {name}. Tap for a Seminole fact", es: "Sticker: {name}. Toca para ver un dato de Seminole", note: "{name} = data/stickers.js items[].name." },
+    "a11y.source": { en: "Source: {label}", es: "Fuente: {label}" },
 
     // =================================================================================== LANG
     "lang.label": { en: "Language", es: "Idioma" },
@@ -345,13 +363,13 @@ window.YSD_DATA.strings = {
 
     // =================================================================================== DEMO
     "demo.banner": {
-      en: "DEMO: This is a preview of the Young Democrats of Seminole County site for the chapter to review. Anything marked DEMO is made up, and forms don't send anything.",
-      es: "DEMO: Esta es una vista previa del sitio de los Young Democrats of Seminole County para que el capítulo la revise. Todo lo marcado DEMO es inventado, y los formularios no envían nada.",
+      en: "DEMO preview for the Young Democrats of Seminole County, pending the chapter's sign-off. Anything marked DEMO is made up, and forms don't send anything.",
+      es: "Vista previa DEMO para los Young Democrats of Seminole County, pendiente de la aprobación del capítulo. Todo lo marcado DEMO es inventado, y los formularios no envían nada.",
       demo: true,
       note: "Top of every page while YSD_CONFIG.demo is true. Dismissing collapses it to demo.bannerShort; it never disappears."
     },
     "demo.bannerShort": { en: "DEMO preview. Forms don't send anything.", es: "Vista previa DEMO. Los formularios no envían nada.", demo: true },
-    "demo.bannerMore": { en: "What's real here?", es: "¿Qué es real aquí?" },
+    "demo.bannerMore": { en: "What's real?", es: "¿Qué es real?", note: "Links to about.html#whats-real (BRIEF §4.0)." },
     "demo.bannerDismiss": { en: "Got it", es: "Entendido" },
     "demo.explain": {
       en: "Real: the voting rules, dates and official links, all sourced. DEMO: the people, events, clips, quotes and counts. Before launch, the DEMO items come down and the forms get connected.",
@@ -372,6 +390,7 @@ window.YSD_DATA.strings = {
       es: "Vista previa DEMO: los formularios no envían nada. Todo se queda en tu navegador.",
       demo: true, mirror: "legal.snippets.demoNotice"
     },
+    "demo.draftSpanish": { en: "Spanish draft, pending review.", es: "Borrador en español, pendiente de revisión.", demo: true, note: "Spanish demo banner only (BRIEF §4.0)." },
 
     // ================================================================================= FOOTER
     "footer.paidFor": {
@@ -404,16 +423,35 @@ window.YSD_DATA.strings = {
       source: "https://voteseminole.gov/", verified: "2026-11-09", confidence: "high"
     },
     "footer.madeIn": { en: "Made in Seminole County.", es: "Hecho en el condado de Seminole." },
+    "footer.notOfficial": {
+      en: "Preview for the Young Democrats of Seminole County. Not yet approved by the chapter. Not an official site of the Seminole County Democrats, Florida Young Democrats or any party organization.",
+      es: "Vista previa para los Young Democrats of Seminole County. El capítulo todavía no la aprueba. No es un sitio oficial de los Seminole County Democrats, de los Florida Young Democrats ni de ninguna organización del partido.",
+      note: "Footer legal block, line 2 (BRIEF §4.0, §8)."
+    },
+    "footer.stockPhotos": { en: "People in stock photos are not members and don't endorse anything.", es: "Las personas de las fotos de archivo no son miembros y no respaldan nada.", note: "Footer legal block, line 3." },
 
     // ==================================================================================== CTA
-    "cta.join": { en: "Count me in", es: "Cuenta conmigo" },
+    "cta.join": { en: "Join free", es: "Únete gratis", note: "BRIEF §2.7 line 5: the primary CTA (header, hero, join). Was \"Count me in\" until Nov 9, 2026." },
+    "cta.imIn": { en: "I'm in", es: "Me apunto", note: "RSVP start: opens the RSVP sheet (BRIEF §2.7 line 8). The sheet button is cta.rsvp." },
+    "cta.seeWhatsOn": { en: "See what's on", es: "Mira qué hay", note: "BRIEF §2.7 line 6." },
+    "cta.maybe": { en: "Maybe", es: "Quizás" },
+    "cta.cant": { en: "Can't", es: "No puedo" },
+    "cta.details": { en: "Details", es: "Detalles" },
+    "cta.plusOne": { en: "+1 a friend", es: "Invita a alguien" },
+    "cta.notifyMe": { en: "Notify me", es: "Avísame", note: "Drop reminder (.ics)." },
+    "cta.januaryReminder": { en: "Add the January reminder", es: "Agrega el recordatorio de enero", expires: "2027-01-04T10:00:00-05:00", note: ".ics for Mon, Jan 4, 2027, 10 am ET (BRIEF §4.1, §4.4)." },
+    "cta.howToRenew": { en: "How to renew", es: "Cómo renovarla" },
+    "cta.start": { en: "Start", es: "Empezar" },
+    "cta.postYours": { en: "Post yours", es: "Sube el tuyo" },
+    "cta.pauseMotion": { en: "Pause motion", es: "Pausar movimiento", note: "Visible label of the Pause motion button (prefs:motion)." },
+    "cta.playMotion": { en: "Play motion", es: "Reanudar movimiento" },
     "cta.joinLong": { en: "Join the Young Dems", es: "Únete a los Young Dems" },
     "cta.rsvp": { en: "Save my seat", es: "Guárdame un lugar" },
     "cta.rsvpCancel": { en: "I can't make it", es: "No puedo ir" },
     "cta.going": { en: "I'm going", es: "Voy" },
     "cta.waitlist": { en: "Join the waitlist", es: "Anótame en la lista de espera", note: "Same as data/events.js labels.waitlist." },
     "cta.share": { en: "Share", es: "Compartir" },
-    "cta.shareGroup": { en: "Send to the group chat", es: "Mándalo al grupo" },
+    "cta.shareGroup": { en: "Send it to the group chat", es: "Mándalo al grupo", note: "BRIEF §2.7 line 9." },
     "cta.textFriend": { en: "Text a friend", es: "Mándaselo a alguien" },
     "cta.copyLink": { en: "Copy link", es: "Copiar enlace" },
     "cta.shareCard": { en: "Share my card", es: "Compartir mi tarjeta" },
@@ -425,7 +463,7 @@ window.YSD_DATA.strings = {
     "cta.subscribeCalendar": { en: "Subscribe to the calendar", es: "Suscribirme al calendario" },
     "cta.takeQuiz": { en: "Take the quiz", es: "Haz el quiz" },
     "cta.findIssue": { en: "Find your issue", es: "Encuentra tu tema" },
-    "cta.findEra": { en: "Find your era", es: "Descubre tu modo" },
+    "cta.findEra": { en: "Find your type", es: "Descubre tu modo", note: "Quiz \"How do you show up?\" (renamed from the era quiz, BRIEF §4.7). Key kept stable; never say \"era\"." },
     "cta.makePlan": { en: "Make my plan", es: "Hacer mi plan" },
     "cta.pledge": { en: "I'm in", es: "Me comprometo" },
     "cta.checkRegistration": { en: "Check my registration", es: "Revisar mi inscripción" },
@@ -438,9 +476,9 @@ window.YSD_DATA.strings = {
     "cta.mailBallotCheck": { en: "Check my mail ballot", es: "Revisar mi boleta por correo" },
     "cta.mailBallotRequest": { en: "Request a mail ballot", es: "Pedir boleta por correo" },
     "cta.mailBallotRemind": {
-      en: "Remind me Jan 1", es: "Recuérdamelo el 1 de enero",
-      expires: "2027-01-01T00:00:00-05:00",
-      note: "Calendar reminder for Jan 1, 2027: renew the mail-ballot request if you haven't, or check My Voter Record if you renewed in November or December (data/civic.js steps[renew-mail-ballot])."
+      en: "Remind me in January", es: "Recuérdamelo en enero",
+      expires: "2027-01-04T10:00:00-05:00",
+      note: "The .ics fires Mon, Jan 4, 2027, 10 am ET (BRIEF §4.4: Jan 1 is a holiday; office phones are open Mon to Fri). Copy says \"in January\", never \"Jan 1\". Calendar reminder for January 2027: renew the mail-ballot request if you haven't, or check My Voter Record if you renewed in November or December (data/civic.js steps[renew-mail-ballot])."
     },
     "cta.idRules": { en: "See what ID works", es: "Ver qué identificación sirve" },
     "cta.pollingPlace": { en: "Find my polling place", es: "Buscar mi lugar de votación" },
@@ -493,6 +531,9 @@ window.YSD_DATA.strings = {
     "form.phone.hint": { en: "We only text you if you tick the box below.", es: "Solo te enviamos mensajes de texto si marcas la casilla de abajo." },
     "form.phone.placeholder": { en: "407-555-0123", es: "407-555-0123" },
     "form.contact.hint": { en: "Email or mobile: one is enough.", es: "Correo o celular: con uno basta." },
+    "form.contact.label": { en: "Email or mobile", es: "Correo o celular" },
+    "form.rsvp.contact.hint": { en: "For your invite and one reminder. Nothing else unless you ask.", es: "Para tu invitación y un recordatorio. Nada más, a menos que lo pidas.", note: "BRIEF §2.7 line 11." },
+    "form.privacyPromise": { en: "We never sell your info.", es: "Nunca vendemos tus datos.", note: "Plain privacy promise beside every form (BRIEF §6b B32)." },
     "form.zip.label": { en: "ZIP code", es: "Código postal" },
     "form.zip.hint": { en: "So we can invite you to things near you.", es: "Para invitarte a cosas cerca de ti." },
     "form.city.label": { en: "Where in Seminole?", es: "¿En qué parte de Seminole?", note: "Options: data/civic.js places[].name (proper nouns, not repeated here), then the three below." },
@@ -588,7 +629,7 @@ window.YSD_DATA.strings = {
     "error.firstName.required": { en: "What should we call you? Add a first name.", es: "¿Cómo te llamamos? Escribe tu nombre." },
     "error.email.required": { en: "Add an email or a mobile number so we can reach you.", es: "Agrega un correo o un número de celular para poder contactarte.", note: "members.validate returns email 'required' when both email and phone are empty." },
     "error.email.invalid": { en: "That email doesn't look right. Check for a missing @ or a typo.", es: "Ese correo no se ve bien. Revisa si falta la @ o hay un error." },
-    "error.email.missingAt": { en: "That email's missing an @. Happens to everyone.", es: "A ese correo le falta la @. Le pasa a cualquiera.", note: "Optional page-side check before members.validate." },
+    "error.email.missingAt": { en: "That email's missing an @. Happens to everyone. Try once more?", es: "A ese correo le falta la @. Le pasa a cualquiera. ¿Lo intentas otra vez?", note: "Optional page-side check before members.validate." },
     "error.phone.invalid": { en: "Use a 10-digit US mobile number, like 407-555-0123.", es: "Usa un número de celular de EE. UU. de 10 dígitos, como 407-555-0123." },
     "error.zip.invalid": { en: "ZIP codes are 5 digits, like 32771.", es: "El código postal tiene 5 dígitos, como 32771." },
     "error.age.invalid": { en: "Enter your age as a number, like 22.", es: "Escribe tu edad en números, por ejemplo 22." },
@@ -671,6 +712,7 @@ window.YSD_DATA.strings = {
       mirror: "legal.snippets.uploadPending", placeholder: "chapter-confirm"
     },
     "success.card.title": { en: "Your card's ready.", es: "Tu tarjeta está lista." },
+    "success.card.body": { en: "Send it to one person you'd actually text.", es: "Mándasela a una persona a la que de verdad le escribirías.", note: "BRIEF §2.7 line 15." },
     "success.reminder.title": { en: "We'll remind you on {date}.", es: "Te lo recordamos el {date}." },
     "success.unsubscribe.title": { en: "You're unsubscribed.", es: "Te diste de baja." },
     "success.unsubscribe.body": { en: "Sad to see you go, glad you were here. The door stays open.", es: "Nos da pena que te vayas y nos alegra que hayas estado. La puerta sigue abierta." },
@@ -681,7 +723,7 @@ window.YSD_DATA.strings = {
     "empty.eventsFilter.title": { en: "No events match that filter.", es: "Ningún evento coincide con ese filtro." },
     "empty.eventsFilter.body": { en: "Try another city or type, or see everything.", es: "Prueba otra ciudad u otro tipo, o mira todos." },
     "empty.clips.title": { en: "No clips here yet.", es: "Todavía no hay clips aquí." },
-    "empty.clips.body": { en: "Yours could be first: a short vertical video about why you showed up.", es: "El tuyo podría ser el primero: un video corto y vertical sobre por qué participaste." },
+    "empty.clips.body": { en: "Yours could be first: 60 seconds, filmed vertical, about why you showed up.", es: "El tuyo podría ser el primero: 60 segundos, grabado en vertical, sobre por qué participaste." },
     "empty.clipsMine.title": { en: "You haven't posted a clip yet.", es: "Todavía no has subido ningún clip." },
     "empty.clipsMine.body": { en: "When you do, it shows up here while it waits for review.", es: "Cuando subas uno, aparecerá aquí mientras espera revisión." },
     "empty.squad.title": { en: "No one's joined with your link yet.", es: "Todavía nadie se ha unido con tu enlace." },
@@ -702,6 +744,7 @@ window.YSD_DATA.strings = {
     "state.offline.title": { en: "You're offline", es: "No tienes conexión" },
     "state.offline.body": { en: "No signal right now. This page will load once you're back online, and forms won't send until then.", es: "Ahora mismo no hay señal. Esta página va a cargar cuando vuelvas a tener conexión, y los formularios no se envían hasta entonces." },
     "state.offline.banner": { en: "You're offline. Pages you've opened before may still load.", es: "No tienes conexión. Las páginas que ya abriste podrían seguir cargando." },
+    "state.offline.works": { en: "Pages you've opened before should still load. Try one of these:", es: "Las páginas que ya abriste deberían seguir cargando. Prueba una de estas:" },
     "state.error.title": { en: "That one's on us, not you.", es: "El error es nuestro, no tuyo." },
     "state.error.body": { en: "Something broke on our end. Give it a minute and try again.", es: "Algo falló de nuestro lado. Espera un minuto e inténtalo de nuevo." },
     "state.error.network": { en: "We couldn't reach the server. Check your connection and try again.", es: "No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo." },
@@ -902,7 +945,7 @@ window.YSD_DATA.strings = {
       es: "Dos quizzes rápidos de los Young Dems: cuál tema de Seminole es el tuyo y cuál es tu modo de organizar. Haz uno y me cuentas qué te salió. {link}"
     },
     "share.quiz.whatsapp": {
-      en: "Quiz time: seven everyday questions and it tells you which Seminole issue is yours. There's also one for your organizer era. Send me your result. {link}",
+      en: "Quiz time: seven everyday questions and it tells you which Seminole issue is yours. There's also one for how you show up. Send me your result. {link}",
       es: "Hora del quiz: siete preguntas de la vida diaria y te dice cuál tema de Seminole es el tuyo. También hay uno sobre tu modo de organizar. Mándame tu resultado. {link}"
     },
     "share.quiz.igStory": { en: "Which Seminole issue is yours? One minute to find out.\n{link}", es: "¿Cuál tema de Seminole es el tuyo? Un minuto para saberlo.\n{link}" },
@@ -968,12 +1011,12 @@ window.YSD_DATA.strings = {
       es: "Hola:\n\nHice un quiz de un minuto de los Young Democrats of Seminole County y me salió {match}. Viene con los datos locales y una cosa para hacer al respecto. Tengo curiosidad de qué te sale a ti:\n\n{link}"
     },
 
-    // ---- Organizer era result (var: match)
-    "share.quizEra.sms": { en: "I got {match} on the Young Dems organizer quiz. Which one are you? {link}", es: "Me salió {match} en el quiz de los Young Dems. ¿Y a ti cuál? {link}" },
-    "share.quizEra.whatsapp": { en: "Apparently my organizer era is {match}. Accurate, unfortunately. Take it and tell me yours: {link}", es: "Parece que mi modo de organizar es {match}. Muy acertado, para qué negarlo. Hazlo y dime el tuyo: {link}" },
-    "share.quizEra.igStory": { en: "Organizer era: {match}. It's me.\n{link}", es: "Mi modo de organizar: {match}. Me describe bien.\n{link}" },
-    "share.quizEra.short": { en: "My organizer era is {match}. Eight quick questions. What's yours? {link}", es: "Mi modo de organizar es {match}. Ocho preguntas rápidas. ¿Cuál es el tuyo? {link}" },
-    "share.quizEra.email.subject": { en: "I got {match}. Which organizer are you?", es: "Me salió {match}. ¿Cuál es tu modo?" },
+    // ---- "How do you show up?" result (var: match). Keys keep the old quizEra name (stable); copy never says "era".
+    "share.quizEra.sms": { en: "I got {match} on the Young Dems quiz \"How do you show up?\" Which one are you? {link}", es: "Me salió {match} en el quiz de los Young Dems. ¿Y a ti cuál? {link}" },
+    "share.quizEra.whatsapp": { en: "Apparently the way I show up is {match}. Accurate, unfortunately. Take it and tell me yours: {link}", es: "Parece que mi modo de organizar es {match}. Muy acertado, para qué negarlo. Hazlo y dime el tuyo: {link}" },
+    "share.quizEra.igStory": { en: "How I show up: {match}. It's me.\n{link}", es: "Mi modo de organizar: {match}. Me describe bien.\n{link}" },
+    "share.quizEra.short": { en: "How I show up: {match}. Eight quick questions. What's yours? {link}", es: "Mi modo de organizar es {match}. Ocho preguntas rápidas. ¿Cuál es el tuyo? {link}" },
+    "share.quizEra.email.subject": { en: "I got {match}. How do you show up?", es: "Me salió {match}. ¿Cuál es tu modo?" },
     "share.quizEra.email.body": {
       en: "Hi,\n\nThe Young Democrats of Seminole County have a quiz that tells you what kind of organizer you are. I got {match}, which tracks. Take it and send me yours:\n\n{link}",
       es: "Hola:\n\nLos Young Democrats of Seminole County tienen un quiz que te dice cuál es tu modo de organizar. Me salió {match}, y tiene sentido. Hazlo y mándame el tuyo:\n\n{link}"
@@ -1406,7 +1449,7 @@ window.YSD_DATA.strings = {
     "seo.issues.ogTitle": { en: "The Seminole numbers behind the headlines", es: "Los datos de Seminole detrás de los titulares" },
     "seo.issues.ogDescription": { en: "Nine local issues, sourced, each with one thing you can actually do.", es: "Nueve temas locales, con fuentes, cada uno con algo que de verdad puedes hacer." },
     // ---- quiz
-    "seo.quiz.title": { en: "Quizzes: find your issue, find your era | YDSC", es: "Quizzes: encuentra tu tema y tu modo | YDSC" },
+    "seo.quiz.title": { en: "Quizzes: find your issue, find your type | YDSC", es: "Quizzes: encuentra tu tema y tu modo | YDSC" },
     "seo.quiz.description": {
       en: "Two quick quizzes from the Young Democrats of Seminole County: the local issue that's yours, and the way you like to organize. Shareable results.",
       es: "Dos quizzes rápidos de los Young Democrats of Seminole County: el tema local que es tuyo y tu modo de organizar. Resultados para compartir."
@@ -1470,15 +1513,25 @@ window.YSD_DATA.strings = {
     },
     "seo.notFound.ogTitle": { en: "Page not found", es: "Página no encontrada" },
     "seo.notFound.ogDescription": { en: "This page skipped the meeting. Let's get you back home.", es: "Esta página no llegó a la reunión. Te llevamos de vuelta al inicio." },
+    // ---- offline (F0)
+    "seo.offline.title": { en: "You're offline · Young Democrats of Seminole County", es: "Sin conexión · Young Democrats of Seminole County" },
+    "seo.offline.description": { en: "No signal right now. Pages you've opened before may still load.", es: "Ahora mismo no hay señal. Las páginas que ya abriste podrían seguir cargando." },
+    "seo.offline.ogTitle": { en: "You're offline", es: "Sin conexión" },
+    "seo.offline.ogDescription": { en: "No signal right now. Pages you've opened before may still load.", es: "Ahora mismo no hay señal. Las páginas que ya abriste podrían seguir cargando." },
+    // ---- style guide (F0, internal, noindex)
+    "seo.styleguide.title": { en: "Style guide · Young Democrats of Seminole County", es: "Guía de estilo · Young Democrats of Seminole County" },
+    "seo.styleguide.description": { en: "Every component of the Young Dems site, in light and dark, with copy-paste markup. Internal.", es: "Todos los componentes del sitio de los Young Dems, en claro y oscuro, con el código para copiar. Uso interno." },
+    "seo.styleguide.ogTitle": { en: "Young Dems style guide", es: "Guía de estilo de los Young Dems" },
+    "seo.styleguide.ogDescription": { en: "Tokens, components and markup for page builders.", es: "Tokens, componentes y código para quienes arman páginas." },
 
     // ================================================================================== NUDGE
     "nudge.mailBallot.eyebrow": { en: "HEADS UP", es: "OJO", expires: "2027-01-01T00:00:00-05:00", next: "nudge.mailBallot2027.eyebrow" },
     "nudge.mailBallot.text": {
-      en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Renew it once and you're covered through 2028.",
-      es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Renuévala una vez y te cubre hasta finales de 2028.",
+      en: "Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set through 2028. Check My Voter Record to be sure.",
+      es: "¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Pídela otra vez y debería cubrirte hasta 2028. Revisa tu registro de votante para confirmarlo.",
       source: "https://www.flsenate.gov/Laws/Statutes/2026/101.62", sources: ["https://voteseminole.gov/how-to-vote/vote-by-mail/"],
       verified: "2026-11-09", confidence: "high", expires: "2027-01-01T00:00:00-05:00", next: "nudge.mailBallot2027.text",
-      note: "Same wording as data/civic.js changes[mail-ballot-expiry].short."
+      note: "Required copy shape (docs/research/00; BRIEF §2.7 line 23), with \"Check My Voter Record\" linked to links.vote.myVoterRecord. Updated Nov 9, 2026 from \"Renew it once and you're covered through 2028\" (data/civic.js still has that variant; W3 owns it)."
     },
     "nudge.mailBallot2027.eyebrow": { en: "VOTE BY MAIL?", es: "¿VOTAS POR CORREO?", showFrom: "2027-01-01T00:00:00-05:00", expires: "2028-11-08T00:00:00-05:00" },
     "nudge.mailBallot2027.text": {
@@ -1641,6 +1694,13 @@ window.YSD_DATA.strings = {
     "format.timeRange": { en: "{start} to {end}", es: "de {start} a {end}" },
     "format.eventWhen": { en: "{date} · {time}", es: "{date} · {time}" },
     "format.list2": { en: "{a} and {b}", es: "{a} y {b}", note: "Spanish uses \"e\" before words starting with an i sound; rare here." },
+    
+    // ==================================================================================== TAG
+    "tag.real": { en: "REAL", es: "REAL", note: "Celery pill on real (not demo) items, e.g. partner events and sourced facts." },
+    "tag.new": { en: "NEW", es: "NUEVO" },
+    "tag.stock": { en: "Stock photo · not members", es: "Foto de archivo · no son miembros", note: "Required on every stock photo (BRIEF §3.6)." },
+    "tag.checked": { en: "Links checked {date}", es: "Enlaces revisados el {date}", note: "{date} per format.dateYear without the weekday, e.g. \"Nov 9, 2026\"." },
+    "tag.realDeadline": { en: "Real deadline", es: "Fecha real" },
 
     // ========================================================================= A11Y STATEMENT
     "a11yStatement.title": { en: "Accessibility", es: "Accesibilidad" },

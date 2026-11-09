@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" data-page="good" data-es="skip">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>QA fixture (40 px target) · Young Democrats of Seminole County</title>
+  <meta name="description" content="A fixture page with no seeded defects.">
+  <meta property="og:title" content="QA fixture">
+  <meta property="og:description" content="A fixture page with no seeded defects.">
+  <meta property="og:image" content="assets/img/og/good.png">
+  <meta property="og:image:alt" content="QA fixture card on ultraviolet.">
+  <meta name="twitter:card" content="summary_large_image">
+        <link rel="stylesheet" href="assets/css/fixture.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="demo-banner"><p>DEMO preview for the Young Democrats of Seminole County. Forms don't send anything.</p></div>
+  <header class="site-header"><a class="brand" href="good.html">Young Dems</a> <a class="btn btn--primary" href="#join">Join free</a></header>
+  <main id="main">
+    <section class="wrap section--violet">
+      <h1>Local politics is a group project.</h1>
+      <p>Free hangouts, straight answers about voting, and a crew from Sanford to Oviedo.</p>
+      <p><a class="btn btn--primary" href="#join">Join free</a> <a class="btn btn--ghost" href="#invites">See what's on</a></p>
+    </section>
+    <section class="wrap" id="invites">
+      <h2>You're invited</h2>
+      <article class="invite" data-qa="invite">
+        <p>Trivia night: Seminole County edition <span class="tag tag--demo">DEMO event</span></p>
+        <p>Thu, Nov 19 · 7 pm · Casselberry</p>
+        <p data-demo>23 going (DEMO)</p>
+      </article>
+      <button type="button" class="btn" data-share>Send it to the group chat</button>
+      <!-- seeded defect: 40 px target -->
+      <button type="button" class="btn x-small-btn" aria-label="Close">×</button>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <p>Paid for by [committee name and address placeholder] <span class="tag tag--demo">DEMO</span></p>
+    <p>Preview for the Young Democrats of Seminole County. Not an official site of the Seminole County Democrats, Florida Young Democrats or any party organization.</p>
+  </footer>
+  <div class="toast-region" role="status" aria-live="polite"></div>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/share.js"></script>
+  <script src="assets/js/fixture.js"></script>
+</body>
+</html>

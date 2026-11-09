@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Young Dems of Seminole County: press start (DEMO)</title>
+<meta name="description" content="DEMO prototype. The Young Democrats of Seminole County, ages 14 to 39: small weekly quests, free events, a squad to bring, and the deadlines that matter.">
+<meta name="theme-color" content="#FFD60A">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Press start on Seminole County">
+<meta property="og:description" content="Small moves, one a week, with people you'll actually like. Young Dems of Seminole County, 14 to 39. (Demo prototype.)">
+<meta property="og:image" content="https://images.unsplash.com/photo-1758275557330-cfd545444dc3?w=1200&auto=format&fit=crop&q=70">
+<meta property="og:image:alt" content="A group of friends taking a selfie together in a sunny park">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://images.unsplash.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500..900&family=Lexend:wght@400..700&family=Jersey+15&display=swap">
+<link rel="stylesheet" href="c.css">
+<link rel="alternate" hreflang="en" href="./">
+<link rel="alternate" hreflang="es" href="es/">
+<script>
+  /* Theme before paint: saved choice wins, else follow the OS. */
+  (function () { try { var t = localStorage.getItem('ydsc-c-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {} })();
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- DEMO bar: always visible, never dismissable -->
+<div class="demobar" role="note">
+  <div class="wrap demobar-in">
+    <p><span class="demo-pill">DEMO</span> <span class="long" data-i18n="demobar">Prototype for the Young Democrats of Seminole County. People, events, clips and counters are samples.</span><span class="short" data-i18n="demobarShort">Prototype. People, events and numbers are samples.</span></p>
+    <div class="demobar-tools">
+      <button type="button" class="tool" id="langBtn" aria-pressed="false" lang="es"><span aria-hidden="true">ES</span><span class="sr-only">Ver en español</span></button>
+      <button type="button" class="tool" id="themeBtn" aria-label="Switch to dark mode"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="currentColor"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<header class="site-head" id="top">
+  <div class="wrap head-in">
+    <a class="logo" href="#top">
+      <svg class="logo-mark" viewBox="0 0 44 44" width="44" height="44" aria-hidden="true">
+        <rect x="2" y="2" width="40" height="40" rx="11" fill="var(--card)" stroke="var(--line)" stroke-width="3"/>
+        <circle cx="22" cy="11.5" r="5.2" fill="#FFD60A" stroke="#15121F" stroke-width="2.4"/>
+        <circle cx="32.5" cy="22" r="5.2" fill="#FF5FA8" stroke="#15121F" stroke-width="2.4"/>
+        <circle cx="22" cy="32.5" r="5.2" fill="#2FE07A" stroke="#15121F" stroke-width="2.4"/>
+        <circle cx="11.5" cy="22" r="5.2" fill="#3346FF" stroke="#15121F" stroke-width="2.4"/>
+      </svg>
+      <span class="logo-word"><b>Young Dems</b> <small>of Seminole County</small><span class="sr-only">, home</span></span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Main">
+      <a href="#quests" data-i18n="navQuests">Quests</a>
+      <a href="#events" data-i18n="navEvents">Events</a>
+      <a href="#reel" data-i18n="navReel">The Reel</a>
+      <a href="#squad" data-i18n="navSquad">Squad</a>
+      <a href="#letter" data-i18n="navLetter">Thursday Letter</a>
+    </nav>
+    <div class="head-actions">
+      <a class="hud" id="hud" href="#quests" aria-describedby="hudDesc">
+        <span class="hud-sprite" data-sprite="seed" aria-hidden="true"></span>
+        <span class="hud-txt"><span class="hud-lv" id="hudLv">LV 1</span> <span class="hud-xp"><b id="hudXp">0</b> XP</span><span class="sr-only" id="hudName">, Seed, demo</span></span>
+        <span class="hud-bar" aria-hidden="true"><i id="hudBar"></i></span>
+      </a>
+      <span class="sr-only" id="hudDesc">Your demo level and XP, saved only in this browser.</span>
+      <a class="btn btn-blue btn-sm" href="#join"><span class="join-long" data-i18n="join">Join free</span><span class="join-short" data-i18n="joinShort">Join</span></a>
+      <button type="button" class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="nav"><span class="sr-only">Menu</span><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ===================== HERO ===================== -->
+<section class="hero" aria-labelledby="heroTitle">
+  <div class="wrap hero-in">
+    <div class="hero-copy">
+      <p class="eyebrow eyebrow-ink hero-eyebrow"><span data-i18n="heroEyebrow">Young Democrats of Seminole County</span> <span class="nowrap" data-i18n="heroAges">· 14 to 39</span></p>
+      <h1 id="heroTitle" class="hero-title"><span data-i18n="heroH1a">Press</span> <span class="keycap" data-i18n="heroH1b">start</span> <span data-i18n="heroH1c">on Seminole County.</span></h1>
+      <p class="hero-sub" data-i18n="heroSub">Seminole voted blue for governor on Nov 3 (unofficial count); the state didn't. The next round is local, and it's built from small moves, one a week, with people you'll actually like.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-blue btn-lg" href="#join"><span data-i18n="heroCta">Join free</span> <span class="xp-chip">+50 XP</span></a>
+        <a class="btn btn-white btn-lg" href="#quests" data-i18n="heroCta2">See this week's quests</a>
+      </div>
+      <p class="hero-micro" data-i18n="heroMicro">$0 to start · about 20 seconds · we never sell your info</p>
+    </div>
+
+    <div class="hero-art" aria-hidden="true">
+      <div class="photo-frame">
+        <img src="https://images.unsplash.com/photo-1758275557330-cfd545444dc3?w=1200&auto=format&fit=crop&q=70" width="1200" height="800" alt="" fetchpriority="high">
+        <span class="photo-tag">Stock photo · not members</span>
+      </div>
+      <div class="stk stk-level float1"><span data-sprite="sprout" class="stk-sprite"></span><span><b>LV 2</b> Sprout</span></div>
+      <div class="stk stk-squad float2"><span data-sprite="heart" class="stk-sprite"></span><span>Squad <b>3/3</b></span></div>
+      <div class="stk stk-quest float3">
+        <span class="stk-k">QUEST COMPLETE</span>
+        <span class="stk-q">Saved a seat: sunset walk</span>
+        <span class="stk-row"><span class="xp-chip">+10 XP</span><span class="mini-bar"><i style="width:72%"></i></span></span>
+      </div>
+      <div class="stk stk-streak float2"><span data-sprite="star" class="stk-sprite"></span><span><b>4</b> weeks in a row</span></div>
+      <span class="coin c1">XP</span><span class="coin c2">XP</span><span class="coin c3">XP</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== MARQUEE ===================== -->
+<div class="marquee" id="marquee">
+  <div class="marquee-track" aria-hidden="true">
+    <div class="mg">
+      <span>NEXT UP: SAT NOV 14 · SUNSET WALK ON LAKE MONROE · 4:45 PM</span><span class="m-dot">◆</span>
+      <span>MAIL-BALLOT REQUESTS RUN OUT DEC 31</span><span class="m-dot">◆</span>
+      <span>TRIVIA: HOW SEMINOLE ARE YOU? THU NOV 19</span><span class="m-dot">◆</span>
+      <span lang="es">HABLAMOS ESPAÑOL</span><span class="m-dot">◆</span>
+      <span>14 TO 39 · FREE TO JOIN</span><span class="m-dot">◆</span>
+    </div>
+    <div class="mg">
+      <span>NEXT UP: SAT NOV 14 · SUNSET WALK ON LAKE MONROE · 4:45 PM</span><span class="m-dot">◆</span>
+      <span>MAIL-BALLOT REQUESTS RUN OUT DEC 31</span><span class="m-dot">◆</span>
+      <span>TRIVIA: HOW SEMINOLE ARE YOU? THU NOV 19</span><span class="m-dot">◆</span>
+      <span lang="es">HABLAMOS ESPAÑOL</span><span class="m-dot">◆</span>
+      <span>14 TO 39 · FREE TO JOIN</span><span class="m-dot">◆</span>
+    </div>
+  </div>
+  <p class="sr-only">Coming up: sunset walk on Lake Monroe, Saturday Nov 14 at 4:45 pm. Mail-ballot requests run out Dec 31. Trivia night Thursday Nov 19. We speak Spanish. Ages 14 to 39, free to join.</p>
+  <button type="button" class="marquee-pause" id="marqueePause" aria-pressed="false"><span class="sr-only">Pause the scrolling ticker</span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="i-pause" d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor"/><path class="i-play" d="M8 5l11 7-11 7z" fill="currentColor"/></svg></button>
+</div>
+
+<!-- ===================== NEXT MOVE ===================== -->
+<section class="nextmove" aria-labelledby="nextTitle">
+  <div class="wrap">
+    <div class="nm-head">
+      <p class="eyebrow eyebrow-ink">Next move</p>
+      <h2 id="nextTitle" class="nm-title" data-i18n="nextTitle">Three things worth doing this week</h2>
+    </div>
+    <ol class="nm-list" role="list">
+      <li class="nm-card">
+        <span class="nm-ico ico-green" data-sprite="envelope" aria-hidden="true"></span>
+        <p class="nm-k">Deadline · Dec 31</p>
+        <h3 data-i18n="nm1Title">Your mail-ballot request runs out Dec 31.</h3>
+        <p data-i18n="nm1Body">Set a reminder to renew it on Jan 1, and you're covered through 2028. Renewing takes a minute on the county's site.</p>
+        <div class="nm-foot">
+          <button type="button" class="btn btn-blue" data-action="reminder"><span data-i18n="nm1Cta">Add the reminder</span> <span class="xp-chip">+15</span></button>
+          <a class="src" href="https://voteseminole.gov/how-to-vote/vote-by-mail/" target="_blank" rel="noopener">voteseminole.gov</a>
+        </div>
+      </li>
+      <li class="nm-card">
+        <span class="nm-ico ico-orange" data-sprite="sun" aria-hidden="true"></span>
+        <p class="nm-k">Sat, Nov 14 · 4:45 pm · Sanford</p>
+        <h3 data-i18n="nm2Title">Sunset walk-and-talk on Lake Monroe</h3>
+        <p data-i18n="nm2Body">However Nov 3 landed for you, come walk it off with us. Free, slow pace, and you can hold down a bench instead.</p>
+        <div class="nm-foot">
+          <a class="btn btn-blue" href="#ev-sunset-walk-lake-monroe" data-action="goto-rsvp" data-event="sunset-walk-lake-monroe"><span data-i18n="nm2Cta">Save my seat</span> <span class="xp-chip">+10</span></a>
+          <span class="going-mini"><b>23</b> going <span class="demo-tag">DEMO</span></span>
+        </div>
+      </li>
+      <li class="nm-card">
+        <span class="nm-ico ico-pink" data-sprite="card" aria-hidden="true"></span>
+        <p class="nm-k">New rule · Jan 1, 2027</p>
+        <h3 data-i18n="nm3Title">Student IDs stop counting at the polls.</h3>
+        <p data-i18n="nm3Body">Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.</p>
+        <div class="nm-foot">
+          <a class="btn btn-white" href="https://voteseminole.gov/" target="_blank" rel="noopener"><span data-i18n="nm3Cta">What ID to bring</span><span class="sr-only"> (opens the Seminole County Supervisor of Elections site)</span></a>
+          <a class="src" href="https://flsenate.gov/Committees/BillSummaries/2026/html/991" target="_blank" rel="noopener">HB 991 summary</a>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ===================== QUESTS ===================== -->
+<section class="quests" id="quests" aria-labelledby="questTitle">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="eyebrow eyebrow-ink">Quest log</p>
+        <h2 id="questTitle" data-i18n="questTitle">This week's quests</h2>
+        <p class="lede" data-i18n="questLede">Small, real moves. Each one earns XP, and doing one a week keeps your streak going. Miss a week? Nothing happens. Your streak waits for you.</p>
+      </div>
+    </div>
+
+    <div class="quest-grid">
+      <!-- Player card -->
+      <aside class="player block" aria-labelledby="playerTitle">
+        <div class="player-top">
+          <p class="eyebrow eyebrow-yellow" id="playerTitle">Player 1 <span class="demo-tag">DEMO</span></p>
+          <span class="player-save">Saved in this browser only</span>
+        </div>
+        <div class="player-id">
+          <span class="player-sprite" id="playerSprite" data-sprite="seed" aria-hidden="true"></span>
+          <div>
+            <p class="player-lv" id="playerLv">Level 1 · Seed</p>
+            <p class="player-xp"><b id="playerXp">0</b> XP</p>
+          </div>
+        </div>
+        <div class="xpbar" role="progressbar" aria-labelledby="xpbarLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="xpbar">
+          <i id="xpbarFill"></i><span class="xpbar-ticks" aria-hidden="true"></span>
+        </div>
+        <p class="xpbar-label" id="xpbarLabel"><b id="toNext">100 XP</b> to <span id="nextLv">Sprout</span></p>
+        <p class="player-perk"><span class="perk-k">Next perk</span> <span id="nextPerk">First pick from the sticker sheet</span> <span class="muted">(example)</span></p>
+
+        <div class="weeks">
+          <p class="weeks-k"><span>Weeks</span> <span id="weeksTxt">Active weeks: 0</span></p>
+          <ol class="week-row" id="weekRow" role="list" aria-label="Your weeks, Oct 19 to Dec 7"></ol>
+          <p class="weeks-note">Streak counter shows up at 2 weeks in a row. Thanksgiving week is a rest week.</p>
+        </div>
+
+        <div class="badges">
+          <p class="weeks-k"><span>Badges</span> <span id="badgeCount">0 of 8</span></p>
+          <ul class="badge-grid" id="badgeGrid" role="list"></ul>
+        </div>
+        <p class="fine">XP never buys anything, never becomes money and never decides chapter votes.</p>
+      </aside>
+
+      <!-- Quest list -->
+      <ol class="quest-list" role="list" id="questList">
+        <li class="quest" data-quest="join">
+          <span class="q-ico ico-blue" data-sprite="controller" aria-hidden="true"></span>
+          <div class="q-body"><h3>Join the Young Dems</h3><p>Free to start. Two fields, about 20 seconds.</p><p class="q-meta"><span class="xp-chip">+50 XP</span><span class="time-chip">20 sec</span></p></div>
+          <a class="btn btn-blue q-btn" href="#join">Join free</a>
+        </li>
+        <li class="quest" data-quest="reminder">
+          <span class="q-ico ico-green" data-sprite="calendar" aria-hidden="true"></span>
+          <div class="q-body"><h3>Set your Jan 1 renewal reminder</h3><p>Mail-ballot requests run out Dec 31. One calendar file, done.</p><p class="q-meta"><span class="xp-chip">+15 XP</span><span class="time-chip">10 sec</span><span class="badge-hint">Unlocks Renew-Ready</span></p></div>
+          <button type="button" class="btn btn-white q-btn" data-action="reminder">Add reminder</button>
+        </li>
+        <li class="quest" data-quest="check-registration">
+          <span class="q-ico ico-yellow" data-sprite="check" aria-hidden="true"></span>
+          <div class="q-body"><h3>Check your registration</h3><p>Moved? New license? Look yourself up on the county's official site. Honor system: we never ask for your voter info.</p><p class="q-meta"><span class="xp-chip">+15 XP</span><span class="time-chip">1 min</span></p></div>
+          <div class="q-btns">
+            <a class="btn btn-white q-btn" href="https://voteseminole.gov/voters/my-voter-record/" target="_blank" rel="noopener" data-action="open-check">Look me up<span class="sr-only"> (opens voteseminole.gov)</span></a>
+            <button type="button" class="btn btn-ghost q-btn" data-action="honor" data-quest-id="check-registration" data-xp="15">I did it</button>
+          </div>
+        </li>
+        <li class="quest" data-quest="rsvp">
+          <span class="q-ico ico-orange" data-sprite="sun" aria-hidden="true"></span>
+          <div class="q-body"><h3>Save a seat at an event</h3><p>Free, alcohol-free, first-timer friendly. Come alone and we'll introduce you.</p><p class="q-meta"><span class="xp-chip">+10 XP</span><span class="time-chip">15 sec</span></p></div>
+          <a class="btn btn-white q-btn" href="#events">Pick one</a>
+        </li>
+        <li class="quest" data-quest="share-card">
+          <span class="q-ico ico-pink" data-sprite="star" aria-hidden="true"></span>
+          <div class="q-body"><h3>Find your organizer era, share the card</h3><p>8 quick questions, 6 types, zero wrong answers.</p><p class="q-meta"><span class="xp-chip">+10 XP</span><span class="time-chip">1 min</span></p></div>
+          <a class="btn btn-white q-btn" href="#era">Take it</a>
+        </li>
+        <li class="quest" data-quest="bring-friend">
+          <span class="q-ico ico-pink" data-sprite="heart" aria-hidden="true"></span>
+          <div class="q-body"><h3>Bring a friend</h3><p>Send your squad link. When a friend joins, you both get the sticker pack.</p><p class="q-meta"><span class="xp-chip">+60 XP each</span><span class="badge-hint">Unlocks Plus-One</span></p></div>
+          <a class="btn btn-white q-btn" href="#squad">Get my link</a>
+        </li>
+        <li class="quest" data-quest="post-clip">
+          <span class="q-ico ico-blue" data-sprite="play" aria-hidden="true"></span>
+          <div class="q-body"><h3>Post your 60 seconds</h3><p>Film it vertical, keep it kind. A real person on our team watches every clip first.</p><p class="q-meta"><span class="xp-chip">+30 XP</span><span class="time-chip">after review</span></p></div>
+          <a class="btn btn-white q-btn" href="#reel" data-action="open-post">Post a clip</a>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ERA QUIZ + IMPACT CARD ===================== -->
+<section class="era" id="era" aria-labelledby="eraTitle">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="eyebrow eyebrow-yellow">Bonus round</p>
+        <h2 id="eraTitle" data-i18n="eraTitle">What's your organizer era?</h2>
+        <p class="lede" data-i18n="eraLede">8 quick questions. No wrong answers, and every type has a spot on the team. You get a card to send the group chat.</p>
+      </div>
+    </div>
+    <div class="era-grid">
+      <div class="quiz block block-dark" id="quiz" aria-live="polite">
+        <div class="quiz-top">
+          <p class="quiz-count" id="quizCount">Question 1 of 8</p>
+          <ol class="pips" id="pips" role="list" aria-hidden="true"></ol>
+        </div>
+        <h3 class="quiz-q" id="quizQ">Friday night. Your ideal plan?</h3>
+        <div class="quiz-opts" id="quizOpts"></div>
+        <div class="quiz-foot">
+          <button type="button" class="link-btn" id="quizBack" hidden>Back</button>
+          <p class="quiz-privacy">We don't save your answers. If you share, only your result goes with it.</p>
+        </div>
+      </div>
+
+      <div class="card-stage">
+        <div class="era-card" id="eraCard" data-color="sky" role="group" aria-roledescription="story card" aria-label="Your organizer era card">
+          <div class="ec-progress" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <span class="ec-sample" id="ecSample">SAMPLE</span>
+          <div class="ec-slides">
+            <div class="ec-slide is-on" data-slide="0">
+              <p class="ec-k">My organizer era</p>
+              <span class="ec-sprite" data-sprite="phone" aria-hidden="true"></span>
+              <p class="ec-name" id="ecName">The Group-Chat General</p>
+              <p class="ec-sub" id="ecSub">If I texted you a deadline, it's real.</p>
+            </div>
+            <div class="ec-slide" data-slide="1">
+              <p class="ec-k">My mix</p>
+              <ul class="ec-mix" id="ecMix" role="list"></ul>
+              <p class="ec-sub" id="ecUnder">with Plus-One undertones</p>
+            </div>
+            <div class="ec-slide" data-slide="2">
+              <p class="ec-k">My week so far</p>
+              <div class="ec-stats">
+                <p><b id="ecXp">0</b><span>XP</span></p>
+                <p><b id="ecQuests">0</b><span>quests</span></p>
+                <p><b id="ecBadges">0</b><span>badges</span></p>
+              </div>
+              <p class="ec-sub" id="ecLevel">Level 1 · Seed</p>
+            </div>
+            <div class="ec-slide" data-slide="3">
+              <p class="ec-k">Your turn</p>
+              <p class="ec-name ec-name-sm">What's your era?</p>
+              <p class="ec-sub">Take the 1-minute quiz and come to something with me.</p>
+              <p class="ec-code">code <b id="ecCode">------</b></p>
+            </div>
+          </div>
+          <p class="ec-foot"><span>Young Dems · Seminole County</span><span class="ec-demo">DEMO</span></p>
+          <button type="button" class="ec-nav ec-prev" data-dir="-1"><span class="sr-only">Previous slide</span></button>
+          <button type="button" class="ec-nav ec-next" data-dir="1"><span class="sr-only">Next slide</span></button>
+        </div>
+        <div class="card-actions">
+          <button type="button" class="btn btn-pink" id="shareCard"><span>Send to the group chat</span> <span class="xp-chip">+10</span></button>
+          <button type="button" class="btn btn-white" id="saveCard">Save image</button>
+          <button type="button" class="icon-btn" id="pauseCard" aria-pressed="false"><span class="sr-only">Pause card animation</span><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path class="i-pause" d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor"/><path class="i-play" d="M8 5l11 7-11 7z" fill="currentColor"/></svg></button>
+        </div>
+        <p class="card-note" id="cardNote">Finish the quiz to make it yours. The card shows your type and your demo XP, never your answers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== THE REEL ===================== -->
+<section class="reel" id="reel" aria-labelledby="reelTitle">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="eyebrow eyebrow-ink">The Reel</p>
+        <h2 id="reelTitle" data-i18n="reelTitle">Sixty seconds, made by members</h2>
+        <p class="lede" data-i18n="reelLede">Vertical clips about Seminole life and the deadlines that matter. Every clip ends with one thing you can do. (These six are demo clips.)</p>
+      </div>
+      <button type="button" class="btn btn-yellow" data-action="open-post"><span aria-hidden="true">+</span> <span data-i18n="postCta">Post a clip</span></button>
+    </div>
+  </div>
+  <div class="reel-scroller" tabindex="0" aria-label="Demo video clips, scroll sideways">
+    <ul class="reel-row" role="list" id="reelRow">
+      <li class="clip clip-post">
+        <button type="button" class="post-tile" data-action="open-post">
+          <span class="post-plus" aria-hidden="true">+</span>
+          <span class="post-t">Post your 60 seconds</span>
+          <span class="post-s">Film it vertical. Keep it kind. Someone on our team watches every clip before it goes live.</span>
+          <span class="xp-chip">+30 XP after review</span>
+        </button>
+      </li>
+    </ul>
+  </div>
+  <div class="wrap">
+    <form class="post-panel block" id="postPanel" hidden novalidate>
+      <div class="pp-head">
+        <h3 tabindex="-1" id="postTitle">Post your 60 seconds</h3>
+        <button type="button" class="icon-btn" id="postClose"><span class="sr-only">Close</span><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="pp-grid">
+        <div class="field">
+          <label for="ppLink">Link to your TikTok, Reel or Short</label>
+          <input id="ppLink" name="link" type="url" inputmode="url" placeholder="https://www.tiktok.com/@you/video/…" autocomplete="off">
+          <p class="hint">Or <label class="file-lbl"><input type="file" id="ppFile" accept="video/*"> pick a video from your phone</label> (stays on your device in this demo).</p>
+        </div>
+        <div class="field">
+          <label for="ppCap">Caption <span class="opt">(optional)</span></label>
+          <input id="ppCap" name="caption" maxlength="300" placeholder="The Seminole spot that needs fixing is…">
+        </div>
+        <fieldset class="checks">
+          <legend>Before it goes in the queue</legend>
+          <label><input type="checkbox" required name="c1"> I made this, or I have the right to post it.</label>
+          <label><input type="checkbox" required name="c2"> Everyone you can recognize agreed to be in it.</label>
+          <label><input type="checkbox" required name="c3"> Nobody under 18 is shown without a parent's OK.</label>
+        </fieldset>
+      </div>
+      <div class="pp-foot">
+        <button type="submit" class="btn btn-blue">Send for review</button>
+        <p class="hint" id="postMsg" role="status">A real person on our team watches every video before it goes live. Demo: nothing is uploaded.</p>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ===================== EVENTS ===================== -->
+<section class="events" id="events" aria-labelledby="eventsTitle">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="eyebrow eyebrow-ink">IRL</p>
+        <h2 id="eventsTitle" data-i18n="eventsTitle">Save your seat</h2>
+        <p class="lede" data-i18n="eventsLede">Free, alcohol-free and first-timer friendly. Every event lists access details up front. Came alone? Perfect.</p>
+      </div>
+      <a class="btn btn-white" href="events.html">All events</a>
+    </div>
+    <div class="ev-grid" id="evGrid"></div>
+  </div>
+</section>
+
+<!-- ===================== SQUAD ===================== -->
+<section class="squad" id="squad" aria-labelledby="squadTitle">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="eyebrow eyebrow-ink">Co-op mode</p>
+        <h2 id="squadTitle" data-i18n="squadTitle">Bring your squad</h2>
+        <p class="lede lede-ink" data-i18n="squadLede">A text from a friend moves people more than any ad. So the best move here is yours: send your link to three people you'd actually hang out with.</p>
+      </div>
+    </div>
+    <div class="squad-grid">
+      <div class="block squad-link">
+        <img class="squad-photo" src="https://images.unsplash.com/photo-1758599667729-a6f0f8bd213b?w=1200&auto=format&fit=crop&q=70" width="1200" height="800" alt="A volunteer with a clipboard smiles while friends pick up litter in a park behind her (stock photo, not members)" loading="lazy">
+        <div class="sl-body">
+          <h3>Your squad link</h3>
+          <div class="field sl-name">
+            <label for="slName">Your first name <span class="opt">(puts it on your code)</span></label>
+            <input id="slName" autocomplete="given-name" maxlength="20" placeholder="Kira">
+          </div>
+          <p class="sl-code"><span class="sl-url" id="slUrl">youngsemdems · ?ref=</span><b id="slCode">------</b></p>
+          <div class="sl-btns">
+            <button type="button" class="btn btn-blue" id="slCopy"><span>Copy my link</span></button>
+            <button type="button" class="btn btn-white" id="slShare">Text it</button>
+          </div>
+          <ol class="slots" id="slots" role="list" aria-label="Your squad">
+            <li class="slot"><span class="slot-c">1</span><span class="slot-t">Friend 1</span></li>
+            <li class="slot"><span class="slot-c">2</span><span class="slot-t">Friend 2</span></li>
+            <li class="slot"><span class="slot-c">3</span><span class="slot-t">Friend 3</span></li>
+          </ol>
+          <p class="fine">When a friend joins with your link, you both get the sticker pack. We never show who didn't join.</p>
+        </div>
+      </div>
+
+      <div class="block cup">
+        <div class="cup-head">
+          <h3>The Squad Cup <span class="demo-tag">DEMO</span></h3>
+          <p class="cup-sub">Squads that opted in, by actions this month. No one is ranked by name, and there are no points for posting about people.</p>
+        </div>
+        <ol class="cup-list" id="cupList" role="list"></ol>
+        <div class="cup-foot">
+          <p class="cup-trophy"><span data-sprite="trophy" class="cup-tro" aria-hidden="true"></span> <span>Most improved this month gets the trophy and picks a trivia round.</span></p>
+          <a class="btn btn-white btn-sm" href="#join">Start a squad</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SCOREBOARD (real numbers) ===================== -->
+<section class="score" aria-labelledby="scoreTitle">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="eyebrow eyebrow-ink">Scoreboard</p>
+        <h2 id="scoreTitle" data-i18n="scoreTitle">The real scoreboard</h2>
+        <p class="lede" data-i18n="scoreLede">No demo numbers in this one. Every figure links to where it came from.</p>
+      </div>
+    </div>
+    <ul class="score-grid" role="list">
+      <li class="score-tile st-yellow">
+        <p class="st-num">54%</p>
+        <p class="st-lbl">of Seminole's votes for governor went to the Democrat on Nov 3. The state went the other way.</p>
+        <p class="st-src">Unofficial until certified (due Nov 16). <a href="https://enr.electionsfl.org/SEM/4119/Summary/" target="_blank" rel="noopener">Seminole election-night results</a></p>
+      </li>
+      <li class="score-tile st-green">
+        <p class="st-num">1 in 3</p>
+        <p class="st-lbl">Seminole voters is 18 to 40 (the elections office's age band): 124,626 people.</p>
+        <p class="st-src">Active voters, Jul 1, 2026. <a href="https://voteseminole.gov/wp-content/uploads/2026/07/District-Demographic-Analysis.pdf" target="_blank" rel="noopener">Seminole SOE</a></p>
+      </li>
+      <li class="score-tile st-pink">
+        <p class="st-num">34%</p>
+        <p class="st-lbl">of those voters are independents (no party), the biggest group. You're invited too.</p>
+        <p class="st-src">Same file, our math. <a href="https://voteseminole.gov/wp-content/uploads/2026/07/District-Demographic-Analysis.pdf" target="_blank" rel="noopener">Seminole SOE</a></p>
+      </li>
+      <li class="score-tile st-blue">
+        <p class="st-num">27%</p>
+        <p class="st-lbl">estimated youth (18 to 29) turnout nationally on Nov 3, the second-highest midterm in 30 years.</p>
+        <p class="st-src">Early estimate. <a href="https://circle.tufts.edu/2026-election" target="_blank" rel="noopener">CIRCLE at Tufts</a></p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================== JOIN + LETTER ===================== -->
+<section class="joinwrap" aria-label="Join and newsletter">
+  <div class="wrap join-grid">
+    <div class="block join" id="join">
+      <p class="eyebrow eyebrow-ink">Player select</p>
+      <h2 data-i18n="joinTitle">Join the team</h2>
+      <p class="join-lede">Ages 14 to 39, anywhere in Seminole County. Free to start, and you can come to everything before you decide anything.</p>
+      <form id="joinForm" novalidate>
+        <div class="join-fields">
+          <div class="field">
+            <label for="jName">What should we call you?</label>
+            <input id="jName" name="name" autocomplete="given-name" required>
+          </div>
+          <div class="field">
+            <label for="jContact">Email or mobile</label>
+            <input id="jContact" name="contact" autocomplete="email" inputmode="email" required aria-describedby="jContactHelp">
+            <p class="hint" id="jContactHelp">One letter a week, never more. Unsubscribe anytime.</p>
+          </div>
+        </div>
+        <fieldset class="member-pick">
+          <legend>Membership <span class="opt">(you can decide later)</span></legend>
+          <label class="mp"><input type="radio" name="tier" value="voting"> <span><b>Voting member</b> $20 a year, paid in January. You vote in chapter elections.</span></label>
+          <label class="mp"><input type="radio" name="tier" value="nonvoting"> <span><b>Non-voting member</b> $0. For anyone who can't pay dues, because of money or citizenship status. No questions asked.</span></label>
+        </fieldset>
+        <label class="sms"><input type="checkbox" name="sms"> <span>Text me about events (optional). About 4 texts a month. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. Not required to join. <a href="privacy.html">Privacy</a></span></label>
+        <div class="join-foot">
+          <button type="submit" class="btn btn-blue btn-lg"><span>Count me in</span> <span class="xp-chip">+50 XP</span></button>
+          <a class="dues" href="https://secure.actblue.com/donate/ydscdues" target="_blank" rel="noopener">Pay dues on ActBlue<span class="sr-only"> (opens ActBlue)</span></a>
+        </div>
+        <p class="hint" id="joinMsg" role="status">Demo: nothing is sent anywhere. We don't sell or share your info.</p>
+      </form>
+    </div>
+
+    <div class="block letter" id="letter">
+      <p class="eyebrow eyebrow-yellow">Every Thursday</p>
+      <h2 data-i18n="letterTitle">The Thursday Letter</h2>
+      <p class="letter-lede">One letter a week. The deadline you need, the plan for this week, and a few good things.</p>
+      <blockquote class="letter-peek">
+        <p>Hi, it's Dani from Casselberry. On election night I was outside a polling place with a clipboard and a lukewarm coffee when a guy about my age asked if he could help. He'd voted for the first time that morning…</p>
+        <footer>From a sample letter <span class="demo-tag">DEMO</span> · Dani is a demo writer</footer>
+      </blockquote>
+      <form class="letter-form" id="letterForm" novalidate>
+        <label for="lEmail">Email</label>
+        <div class="lf-row">
+          <input id="lEmail" type="email" autocomplete="email" required aria-describedby="lHelp">
+          <button type="submit" class="btn btn-yellow">Send me Thursdays</button>
+        </div>
+        <p class="hint" id="lHelp">Every Thursday morning. Never more than once a week. <span id="letterMsg" role="status"></span></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="wrap foot-in">
+    <div class="foot-brand">
+      <p class="foot-logo">Young Dems<small>of Seminole County</small></p>
+      <p>Democrats 14 to 39 in Sanford, Lake Mary, Oviedo, Winter Springs, Altamonte Springs, Casselberry, Longwood and everywhere in between.</p>
+      <p class="foot-promise">No ad pixels. We don't sell or share your data.</p>
+    </div>
+    <nav class="foot-col" aria-label="Official voting links">
+      <p class="foot-k">Vote stuff (official sites)</p>
+      <a href="https://voteseminole.gov/voters/my-voter-record/" target="_blank" rel="noopener">Check my registration</a>
+      <a href="https://voteseminole.gov/how-to-vote/vote-by-mail/" target="_blank" rel="noopener">Vote by mail</a>
+      <a href="https://voteseminole.dolphmap.com/" target="_blank" rel="noopener">Find my polling place</a>
+      <a href="https://registertovoteflorida.gov/home" target="_blank" rel="noopener">Register or update</a>
+    </nav>
+    <nav class="foot-col" aria-label="Young Dems">
+      <p class="foot-k">Young Dems</p>
+      <a href="#quests">Quests</a>
+      <a href="#events">Events</a>
+      <a href="#reel">The Reel</a>
+      <a href="https://secure.actblue.com/donate/youngsemdems" target="_blank" rel="noopener">Chip in (or just come)</a>
+      <a href="https://semdems.com/" target="_blank" rel="noopener">Seminole County Democrats</a>
+    </nav>
+    <nav class="foot-col" aria-label="Fine print">
+      <p class="foot-k">Fine print</p>
+      <a href="privacy.html">Privacy</a>
+      <a href="conduct.html">Code of conduct</a>
+      <a href="content-rules.html">Video and content rules</a>
+      <a href="es/" lang="es">En español</a>
+    </nav>
+  </div>
+  <div class="wrap foot-legal">
+    <p class="paidfor">Paid for by [committee name and address placeholder]</p>
+    <p class="foot-demo"><span class="demo-pill">DEMO</span> A prototype for the Young Democrats of Seminole County, pending the chapter's sign-off. Events, people, clips, squads and counters are samples. Photos are Unsplash stock (not members).</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="lvlup" id="lvlup" hidden>
+  <div class="lvlup-card">
+    <span class="lvlup-sprite" id="lvlupSprite" aria-hidden="true"></span>
+    <p class="lvlup-k">Level up</p>
+    <p class="lvlup-name" id="lvlupName">Sprout</p>
+    <p class="lvlup-perk" id="lvlupPerk"></p>
+    <button type="button" class="btn btn-blue" id="lvlupOk">Nice</button>
+  </div>
+</div>
+
+<script src="c-data.js"></script>
+<script src="c.js"></script>
+</body>
+</html>

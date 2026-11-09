@@ -1,0 +1,63 @@
+{
+  "tool": "tools/fetch_fonts.py",
+  "fetched": "2026-11-09",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "note": "Self-hosted copies of Google Fonts files (all SIL OFL 1.1). Re-run the tool to refresh; assets/css/tokens.css holds the @font-face rules and the measured fallback metrics.",
+  "criticalPathBytes": 74372,
+  "files": [
+    {
+      "file": "bricolage-800-wdth.woff2",
+      "family": "Bricolage Grotesque",
+      "role": "display",
+      "axes": "wdth 75-100, wght 800 only (no opsz)",
+      "subset": "latin",
+      "preload": true,
+      "bytes": 40376,
+      "sha256": "5caa9277ec4c1f111d2b286cff8faa66db1da6d7dc1dc745eb2dd5e0f910adef",
+      "cssUrl": "https://fonts.googleapis.com/css2?family=Bricolage%20Grotesque%3Awdth%2Cwght%4075..100%2C800&display=swap",
+      "srcUrl": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9H6as8bTXq_nANBjzKo3IeZx8z6up5BeSl5jBNz_19PpbpMXuECoAsyJBOm_OJ2iCwA1Xp.woff2",
+      "license": "SIL Open Font License 1.1",
+      "licenseFile": "licenses/bricolagegrotesque-OFL.txt",
+      "licenseSource": "https://raw.githubusercontent.com/google/fonts/main/ofl/bricolagegrotesque/OFL.txt",
+      "licenseText": "https://openfontlicense.org/open-font-license-official-text/",
+      "copyright": "Copyright 2022 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)",
+      "specimen": "https://fonts.google.com/specimen/Bricolage+Grotesque"
+    },
+    {
+      "file": "atkinson-next-var.woff2",
+      "family": "Atkinson Hyperlegible Next",
+      "role": "body",
+      "axes": "wght 400-800",
+      "subset": "latin",
+      "preload": true,
+      "bytes": 33996,
+      "sha256": "18b2a1a39a2fa298b0ba5390aca68462669826c90925656f1c1f6796e0e1bbaf",
+      "cssUrl": "https://fonts.googleapis.com/css2?family=Atkinson%20Hyperlegible%20Next%3Awght%40400..800&display=swap",
+      "srcUrl": "https://fonts.gstatic.com/s/atkinsonhyperlegiblenext/v7/NaPNcYPdHfdVxJw0IfIP0lvYFqijb-UxCtm5_wdGseiJn3o.woff2",
+      "license": "SIL Open Font License 1.1",
+      "licenseFile": "licenses/atkinsonhyperlegiblenext-OFL.txt",
+      "licenseSource": "https://raw.githubusercontent.com/google/fonts/main/ofl/atkinsonhyperlegiblenext/OFL.txt",
+      "licenseText": "https://openfontlicense.org/open-font-license-official-text/",
+      "copyright": "Copyright 2020-2024 The Atkinson Hyperlegible Next Project Authors (https://github.com/googlefonts/atkinson-hyperlegible-next)",
+      "specimen": "https://fonts.google.com/specimen/Atkinson+Hyperlegible+Next"
+    },
+    {
+      "file": "caveat-brush.woff2",
+      "family": "Caveat Brush",
+      "role": "hand (decorative only, not preloaded, font-display: optional)",
+      "axes": "static 400",
+      "subset": "text= (119 characters: printable ASCII + Spanish letters, ¡ ¿, quotes, dashes)",
+      "preload": false,
+      "bytes": 63144,
+      "sha256": "ffa764989f78d857027741ec0c6f95357b779acfab7618d366dd0476ca9c7882",
+      "cssUrl": "https://fonts.googleapis.com/css2?family=Caveat%20Brush&display=swap&text=%20%21%22%23%24%25%26%27%28%29%2A%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5B%5C%5D%5E_%60abcdefghijklmnopqrstuvwxyz%7B%7C%7D~%C2%A1%C2%BF%C3%81%C3%89%C3%8D%C3%93%C3%9A%C3%9C%C3%91%C3%A1%C3%A9%C3%AD%C3%B3%C3%BA%C3%BC%C3%B1%C2%B7%E2%80%99%E2%80%98%E2%80%9C%E2%80%9D%E2%80%93%E2%80%94%E2%80%A6",
+      "srcUrl": "https://fonts.gstatic.com/l/font?kit=EYq0maZfwr9S9-ETZc3fKXtMXqEs2VtkYLiVgOlhKVTvqn4wuAl0sc93gYLU6rZnIdrJ_kxxnkbsDSPD3w4Ailw9MMlh7osS7p8Q8jo5hKfBKahHBlXeWmryH54a9wvpSAvZ-8rQ3hfZu5kY_77JoXIg4nnKU-imcceGj1XcUYdsrrPMXqQAfWhm6esYsq5im3lIbAzzRf7beYi4NpT6XYcxNrY1J-aikviGgOW7KMPIB3I3XbI8fGd8A-uBPlXQVEklTgL33SwpcBSo20hLDOutydHIFfv9_cmbslafuMTUYKfJTs2oXA5kGBXx0nUyxzAXHReLfPXeTSETdS27wcCN4cWBg8bx3DTS5D1uBeGsX6SpvEDEG46GMasqgBU0E6zrXP1_p1OBhjGmyu54ieSIkTphikHebfetPJeilqYKwsqhnpgi8bIRSAtP3cxqmA&skey=fac58a4d598f3b27&v=v12",
+      "license": "SIL Open Font License 1.1",
+      "licenseFile": "licenses/caveatbrush-OFL.txt",
+      "licenseSource": "https://raw.githubusercontent.com/google/fonts/main/ofl/caveatbrush/OFL.txt",
+      "licenseText": "https://openfontlicense.org/open-font-license-official-text/",
+      "copyright": "Copyright 2015 Google Inc. All Rights Reserved.",
+      "specimen": "https://fonts.google.com/specimen/Caveat+Brush"
+    }
+  ]
+}

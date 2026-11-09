@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>OG card renderer (tools)</title>
+  <!--
+    Renderer page for tools/make_og.js (W8). It loads the card engine and the og-* templates with
+    the brand fonts, and make_og.js drives it from Playwright. Not part of the site: hosts return
+    404 for /tools/*. To look at the templates, run: node tools/make_og.js --samples
+  -->
+  <link rel="stylesheet" href="../assets/css/tokens.css">
+  <style>
+    @font-face { font-family: "Bricolage Grotesque"; src: url("../assets/fonts/bricolage-800-wdth.woff2") format("woff2");
+      font-weight: 800; font-stretch: 75% 100%; font-display: block; }
+    @font-face { font-family: "Atkinson Hyperlegible Next"; src: url("../assets/fonts/atkinson-next-var.woff2") format("woff2");
+      font-weight: 200 800; font-display: block; }
+    body { margin: 24px; background: #F3EADB; color: #170B33; font: 17px/1.5 "Atkinson Hyperlegible Next", system-ui, sans-serif; }
+    .warm { font-family: "Bricolage Grotesque"; font-weight: 800; font-stretch: 75%; }
+  </style>
+</head>
+<body>
+  <p>Renderer for <code>tools/make_og.js</code>. <span class="warm">Young Dems</span> <b>Young Dems</b></p>
+  <div id="out"></div>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/cards.js"></script>
+  <script src="../assets/js/cards-og.js"></script>
+</body>
+</html>

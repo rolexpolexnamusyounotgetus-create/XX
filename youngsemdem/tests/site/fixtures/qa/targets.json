@@ -1,0 +1,3 @@
+{
+  "good.html": { "maxHeight": 4000, "positions": [ { "id": "B9", "label": "Invite card top", "selectors": ["[data-qa=\"invite\"]"], "maxTop": 1000 } ] }
+}
