@@ -1,6 +1,7 @@
-/* YDSC · assets/css/maker.css (W5). The share-card maker (.maker), member card (.membercard), sticker book
-   (.stickerbook) and squad meter (.meter). BRIEF 3.8 "Features". Load it on every page that mounts
-   YSD.maker, YSD.memberCard or YSD.squadMeter (home, join, quiz). Semantic tokens only, so it works on
+/* YDSC · assets/css/maker.css (W5; G-GROWTH round 1). The share-card maker (.maker), its quick mode (.mq), member
+   card (.membercard + its link block), sticker book (.stickerbook), the public sticker rules (.rules) and squad meter
+   (.meter). BRIEF 3.8 "Features". Load it on every page that mounts YSD.maker, YSD.memberCard (YSD.membercard) or
+   YSD.squadMeter (home, join, quiz). Semantic tokens only, so it works on
    cream, night and bright bands, light and dark. Hard offsets only on things you can tap or collect
    (the card preview, stickers); the controls stay quiet. */
 
@@ -117,6 +118,7 @@
 .stickerbook__count { margin:0;font-weight:700;color:var(--text-muted); }
 .stickerbook__empty, .stickerbook__note { margin:0;font-size:var(--fs-small);color:var(--text-muted); }
 .stickerbook__grid { display:grid;grid-template-columns:repeat(auto-fill, minmax(min(100%, 148px), 1fr));gap:var(--sp-5) var(--sp-4);margin:0;padding:0;list-style:none; }
+@media (max-width: 599.98px) { .stickerbook__grid { grid-template-columns:repeat(3, minmax(0, 1fr));gap:var(--sp-4) var(--sp-2); } .stickerbook__art { width:64px;height:64px; } }
 .stickerbook__item { display:grid;justify-items:center;align-content:start;gap:6px;text-align:center;min-width:0;overflow-wrap:break-word; }
 .stickerbook__art { display:block;width:84px;height:84px;filter:drop-shadow(0 0 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(3px 3px 0 var(--night)); }
 .stickerbook__art > svg { display:block;width:100%;height:100%; }
@@ -136,3 +138,83 @@
   .maker[data-state="loading"] .maker__frame::after { animation:none; }
 }
 :root[data-motion="paused"] .maker[data-state="loading"] .maker__frame::after { animation:none; }
+
+/* ---------- Quick mode (YSD.maker.mountQuick, home): 3 ready-made cards, one name, one Send ---------- */
+.mq { display:grid;gap:var(--sp-4);min-width:0; }
+.mq__swipe { margin:0;font-size:var(--fs-small);font-weight:700;color:var(--text-muted); }
+@media (min-width: 1100px) { .mq__swipe { display:none; } }
+.mq__row {
+  display:flex;gap:var(--sp-5);overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding-inline:var(--sp-4);
+  margin-inline:calc(var(--sp-4) * -1);padding:var(--sp-3) var(--sp-4) var(--sp-5);scrollbar-width:thin;
+}
+.mq__card {
+  flex:0 0 auto;width:clamp(320px, 80vw, 360px);display:grid;gap:var(--sp-2);justify-items:start;padding:0;margin:0;border:0;background:none;color:inherit;
+  font:inherit;text-align:left;cursor:pointer;scroll-snap-align:center;
+}
+.mq__frame {
+  position:relative;display:block;width:100%;aspect-ratio:4 / 5;border-radius:22px;overflow:hidden;border:var(--bw) solid var(--edge);background:var(--surface-2);
+  box-shadow:6px 6px 0 var(--shadow);transition:transform var(--dur-2) var(--ease-pop), box-shadow var(--dur-2);
+}
+.mq__card:nth-child(odd) .mq__frame { rotate:-1.2deg; } .mq__card:nth-child(even) .mq__frame { rotate:1.2deg; }
+.mq__card[aria-pressed="true"] .mq__frame { box-shadow:0 0 0 4px var(--bg), 0 0 0 8px var(--edge), 10px 12px 0 8px var(--shadow);transform:translateY(-4px); }
+.mq__card:focus-visible { outline:none; }
+.mq__card:focus-visible .mq__frame { outline:3px solid var(--focus);outline-offset:6px; }
+.mq__canvas { display:block;width:100%;height:100%; }
+.mq__label { display:inline-flex;align-items:center;gap:8px;min-height:32px;padding-left:4px;font-weight:800; }
+.mq__card[aria-pressed="true"] .mq__label::before { content:"";width:.5em;height:.9em;border:solid currentColor;border-width:0 .2em .2em 0;rotate:45deg;translate:0 -.1em; }
+.mq__controls { display:grid;gap:var(--sp-4);align-items:end;max-width:760px; }
+@media (min-width: 720px) { .mq__controls { grid-template-columns:minmax(0, 1fr) auto; } }
+.mq__field { min-width:0; }
+.mq__actions { margin:0; }
+.mq__actions .btn { white-space:normal;text-wrap:balance; }
+.mq__sheet .maker { margin-top:var(--sp-2); }
+@media (prefers-reduced-motion: reduce) { .mq__frame { transition:none; } .mq__row { scroll-behavior:auto; } }
+
+/* ---------- Member card: the invite link block (journeys-07) ---------- */
+.membercard__share { display:grid;gap:var(--sp-3);max-width:520px; }
+.membercard__share .btn { white-space:normal;text-wrap:balance; }
+.membercard__share-main, .membercard__share-more { margin:0; }
+.membercard__share-more .btn { min-height:44px; }
+.membercard__showname { margin-top:var(--sp-1); }
+.membercard__hint { margin:0;font-size:var(--fs-small);color:var(--text-muted); }
+
+/* ---------- Public sticker rules (YSD.membercard.rulesPanel; right-wing-rewards-hidden) ---------- */
+.rules { display:grid;gap:var(--sp-5);min-width:0; }
+.rules__head { display:grid;gap:var(--sp-2); }
+.rules__eyebrow { margin:0; }
+.rules__title { margin:0;font-size:var(--fs-h2);line-height:1; }
+.rules__sub { margin:0;max-width:52ch;font-weight:700; }
+.rules__grid { display:grid;grid-template-columns:repeat(auto-fill, minmax(min(100%, 150px), 1fr));gap:var(--sp-5) var(--sp-4);margin:0;padding:0;list-style:none; }
+.rules[data-rules="teaser"] .rules__grid { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+.rules__item { position:relative;display:grid;justify-items:center;align-content:start;gap:4px;padding:var(--sp-4) var(--sp-2) var(--sp-3);text-align:center;min-width:0;border:var(--bw) dashed var(--edge);border-radius:var(--r-md);background:var(--surface);color:var(--text);overflow-wrap:break-word; }
+.rules__item[data-state="got"] { border-style:solid;box-shadow:4px 4px 0 var(--shadow); }
+.rules__art { display:block;width:76px;height:76px;filter:drop-shadow(0 0 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(3px 3px 0 var(--night)); }
+.rules__art > svg { display:block;width:100%;height:100%; }
+.rules__item[data-state="locked"] .rules__art { filter:grayscale(1) drop-shadow(0 0 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff);opacity:.55; }
+.rules__item:nth-child(odd) .rules__art { rotate:-6deg; } .rules__item:nth-child(even) .rules__art { rotate:5deg; }
+.rules__name { font-weight:800;line-height:1.2; }
+.rules__rule { font-size:var(--fs-small);line-height:1.35; }
+.rules__state { font-size:var(--fs-tag);font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted); }
+.rules__item[data-state="got"] .rules__state { color:var(--text); }
+.rules__perk { display:flex;flex-wrap:wrap;justify-content:center;gap:4px;max-width:100%;font-size:var(--fs-small);line-height:1.3; }
+.rules__perk .tag { white-space:normal;text-align:center;line-height:1.2; }
+.rules__civic { display:flex;align-items:flex-start;gap:var(--sp-3);margin:0;padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);border:var(--bw) solid var(--edge);background:var(--surface);color:var(--text);font-weight:800;line-height:1.35; }
+.rules__civic::before { content:"";flex:none;width:.5em;height:.95em;margin:.1em .3em 0 .2em;border:solid var(--success);border-width:0 .22em .22em 0;rotate:45deg; }
+.rules__more { margin:0; }
+.rules__more .link { display:inline-flex;align-items:center;min-height:44px;font-weight:800; }
+.rules__perks { display:grid;gap:var(--sp-3); }
+.rules__perks-title { margin:0;font-size:var(--fs-h4); }
+.rules__perklist { display:grid;gap:var(--sp-2);margin:0;padding:0;list-style:none; }
+.rules__perklist li { display:flex;flex-wrap:wrap;gap:4px var(--sp-3);padding:var(--sp-2) 0;border-top:1px solid var(--line); }
+.rules__perklist b { min-width:9em; }
+.rules__note { margin:0;font-size:var(--fs-small);color:var(--text-muted); }
+.rules__fair > summary { display:flex;align-items:center;min-height:44px;font-weight:800;cursor:pointer; }
+.rules__fair-list { display:grid;gap:var(--sp-2);margin:var(--sp-2) 0 0;padding-left:1.2em; }
+.rules__cta { margin:0; }
+/* phones: one compact row per sticker (art, name, rule), so all 15 rules read in about a screen and a half */
+@media (max-width: 599.98px) {
+  .rules__grid, .rules[data-rules="teaser"] .rules__grid { grid-template-columns:1fr;gap:var(--sp-2); }
+  .rules__item { grid-template-columns:56px minmax(0, 1fr);grid-template-areas:"art name" "art rule" "art state" "art perk";justify-items:start;align-items:center;column-gap:var(--sp-3);row-gap:2px;padding:var(--sp-3);text-align:left; }
+  .rules__art { grid-area:art;width:52px;height:52px;align-self:center; }
+  .rules__name { grid-area:name; } .rules__rule { grid-area:rule; } .rules__state { grid-area:state; } .rules__perk { grid-area:perk;justify-content:flex-start; }
+}

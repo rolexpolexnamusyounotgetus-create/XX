@@ -12,7 +12,37 @@
 .section--sky { background:var(--sky);color:var(--on-fill);--link:var(--night);--focus:var(--night);--shadow:var(--night);--text-muted:#0F3240; }
 .section--night { background:var(--island-night);color:var(--text); }
 .section--cream { background:var(--cream);color:var(--text); }
-:is(.section--celery, .section--pink, .section--sky) { border-block:var(--bw) solid var(--night); }
+/* Colour worlds (round 1, genz-brand-01): every page owns one. Bright fills take ink text (light islands in
+   tokens.css, so cards inside them stay light in dark mode too); lake takes cream like violet. Muted text on each is
+   picked to stay at 4.5:1 or better (lake #DCE1FF 6.6, sun #4A3800 7.6, mint #1F4A22 6.2, teal #0A2E2B 5.6,
+   orange #3A1400 5.8, tangerine #3D1A00 6.7; see styleguide). */
+.section--bubblegum { background:var(--bubblegum);color:var(--on-fill);--link:var(--night);--focus:var(--night);--shadow:var(--night);--text-muted:#3A1530; }
+.section--lake { background:var(--lake);color:var(--cream);--link:var(--celery);--focus:var(--celery);--shadow:var(--night);--text-muted:#DCE1FF; }
+.section--sun { background:var(--sun);color:var(--on-fill);--link:var(--night);--focus:var(--night);--shadow:var(--night);--text-muted:#4A3800; }
+.section--mint { background:var(--mint);color:var(--on-fill);--link:var(--night);--focus:var(--night);--shadow:var(--night);--text-muted:#1F4A22; }
+.section--teal { background:var(--teal);color:var(--on-fill);--link:var(--night);--focus:var(--night);--shadow:var(--night);--text-muted:#0A2E2B; }
+.section--orange { background:var(--orange);color:var(--on-fill);--link:var(--night);--focus:var(--night);--shadow:var(--night);--text-muted:#3A1400; }
+.section--tangerine { background:var(--tangerine);color:var(--on-fill);--link:var(--night);--focus:var(--night);--shadow:var(--night);--text-muted:#3D1A00; }
+:is(.section--celery, .section--pink, .section--bubblegum, .section--sky, .section--sun, .section--mint, .section--teal, .section--orange, .section--tangerine) { border-block:var(--bw) solid var(--night); }
+/* A world's hero pill and highlight: --world is the band colour, --world-pop the accent fill that pops on it (always
+   under ink text: 6:1 or better), --world-note the colour for a few hand-written words on the band (3:1 or better,
+   large text): celery on violet, lake and night; violet-deep on every bright fill. */
+:is(.section--celery, .section--pink, .section--bubblegum, .section--sky, .section--sun, .section--mint, .section--teal, .section--orange, .section--tangerine) { --world-note:var(--violet-deep); }
+:is(.section--violet, .section--lake, .section--night) { --world-note:var(--celery); }
+.section--violet { --world:var(--violet);--world-pop:var(--celery); } .section--celery { --world:var(--celery);--world-pop:var(--bubblegum); }
+:is(.section--pink, .section--bubblegum) { --world:var(--bubblegum);--world-pop:var(--sun); } .section--sky { --world:var(--sky);--world-pop:var(--sun); }
+.section--lake { --world:var(--lake);--world-pop:var(--tangerine); } .section--sun { --world:var(--sun);--world-pop:var(--hotpink); }
+.section--mint { --world:var(--mint);--world-pop:var(--hotpink); } .section--teal { --world:var(--teal);--world-pop:var(--sun); }
+.section--orange { --world:var(--orange);--world-pop:var(--sky); } .section--tangerine { --world:var(--tangerine);--world-pop:var(--sky); }
+.section--night { --world:var(--island-night);--world-pop:var(--celery); }
+
+/* Edge silhouettes: cut a band's bottom edge so each page's first screen has its own outline, not only its own
+   fill. The cut shows whatever sits behind (the page background or the next band). Add room with --edge. */
+.edge--scallop { --edge:16px;padding-bottom:calc(var(--section-pad) + var(--edge));-webkit-mask:radial-gradient(var(--edge) at 50% 100%, #0000 97%, #000) 50% / calc(var(--edge) * 2.6) 100%;mask:radial-gradient(var(--edge) at 50% 100%, #0000 97%, #000) 50% / calc(var(--edge) * 2.6) 100%; }
+.edge--zigzag { --edge:18px;padding-bottom:calc(var(--section-pad) + var(--edge));-webkit-mask:conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / calc(var(--edge) * 2) 100%;mask:conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / calc(var(--edge) * 2) 100%; }
+.edge--tilt { --edge:clamp(28px, 6vw, 72px);padding-bottom:calc(var(--section-pad) + var(--edge));clip-path:polygon(0 0, 100% 0, 100% calc(100% - var(--edge)), 0 100%); }
+.edge--arch { --edge:clamp(32px, 7vw, 96px);padding-bottom:calc(var(--section-pad) + var(--edge) * .5);border-end-start-radius:50% var(--edge);border-end-end-radius:50% var(--edge); }
+.edge--scallop, .edge--zigzag { border-bottom:0; }
 .band--serious { background:var(--lake);color:var(--cream);--link:var(--cream);--focus:var(--cream);--text-muted:#E3E7FF;--shadow:transparent; }
 .band--serious :is(.sticker, .word-sticker, .confetti) { display:none !important; }
 .band--serious * { rotate:none !important; }
@@ -64,17 +94,24 @@
   .site-header .theme-toggle { display:inline-flex; }
   .menu-btn, .menu { display:none !important; }
 }
+/* Brand (round 1, genz-brand-20): the Saved Seat ticket (YD on an admit-one stub, tilted like a sticker) and the
+   lettered "Young Dems" wordmark (Bricolage outlines, the Y's arm raised, a marker swoosh under "Dems"). Both are
+   inline SVG in the header partial, so they never wait for a web font or shift when one arrives; the footer
+   reuses the wordmark paths with <use href="#ysd-word">. Paths: YSD.cards.brand.paths (tools/make_brand.js). */
 .brand { display:inline-flex;align-items:center;gap:8px;min-height:44px;color:var(--text);text-decoration:none;flex:none; }
-.brand__mark { width:40px;height:35px;color:var(--edge);flex:none;transition:transform var(--dur-2) var(--ease-pop); }
-.brand:hover .brand__mark { transform:rotate(-8deg) scale(1.06); }
-.brand__word { font:800 21px/1 var(--font-display-84);font-stretch:84%;letter-spacing:-.01em;white-space:nowrap; }
+.brand__mark { width:46px;height:33px;color:var(--edge);flex:none;overflow:visible;transition:transform var(--dur-2) var(--ease-pop); }
+.brand:hover .brand__mark { transform:rotate(-6deg) scale(1.08); }
+.brand__word { display:block;height:23px;width:auto;aspect-ratio:4974 / 1020;color:var(--text);flex:none;overflow:visible; }
+.brand__swoosh { stroke:var(--swoosh, var(--celery)); } /* <use> copies inherit --swoosh from the <use> element */
 @media (max-width: 419px) {
   .site-header__inner, .site-header__actions { gap:6px; }
   .site-header .btn--sm { padding-inline:12px; }
-  .brand { gap:6px; } .brand__word { font-size:18px; } .brand__mark { width:34px;height:30px; }
+  .brand { gap:6px; } .brand__word { height:20px; } .brand__mark { width:40px;height:29px; }
   .site-header .lang-link { padding:0 8px; }
 }
-@media (max-width: 389px) { .brand__word { font-size:17px;letter-spacing:-.02em; } .site-header .btn--sm { padding-inline:10px; } }
+@media (max-width: 389px) { .brand__word { height:18px; } .brand__mark { width:36px;height:26px; } .site-header .btn--sm { padding-inline:10px; } }
+@media (min-width: 1024px) { .brand__word { height:26px; } .brand__mark { width:52px;height:37px; } }
+@media (prefers-reduced-motion: reduce) { .brand__mark { transition:none; } .brand:hover .brand__mark { transform:none; } }
 /* Spanish: "Únete gratis" is 25 px wider than "Join free". Under 375 px EN folds into the menu (it is in .menu__row); under 360 px gaps tighten. */
 @media (max-width: 374px) { html[lang="es"] .site-header .lang-link { display:none; } }
 @media (max-width: 359px) { html[lang="es"] .site-header__inner, html[lang="es"] .site-header__actions { gap:4px; } html[lang="es"] .site-header .btn--sm { padding-inline:8px; } }
@@ -106,22 +143,39 @@ html:not(.js) .menu-btn { display:none; }
 .menu__row { display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:center; }
 .menu__row .lang-link, .menu__row .theme-toggle { display:inline-flex; }
 
-.site-footer { background:var(--island-night);color:var(--cream);padding-block:clamp(48px, 7vw, 88px) var(--sp-6);--link:var(--cream);--focus:var(--celery);--text-muted:#D9D1F2;--edge:var(--cream);--surface:#241650;--surface-2: #2F1F63;--text:var(--cream);--shadow:var(--violet); }
-.site-footer__top { display:grid;gap:var(--sp-5);align-items:end;padding-bottom:var(--sp-6);border-bottom:1px solid rgba(255, 246, 234, .2); }
-.site-footer__word { font:800 clamp(56px, 12vw, 128px)/.82 var(--font-display-76);font-stretch:76%;letter-spacing:-.03em;color:var(--celery); }
-.site-footer__motto { font-size:var(--fs-lead);color:var(--text-muted);max-width:34ch; }
-.site-footer__stickers { display:flex;gap:var(--sp-3);flex-wrap:wrap; }
-.site-footer__nav { display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:var(--sp-6) var(--sp-5);padding-block:var(--sp-6); }
-.site-footer__nav h2 { font:700 var(--fs-tag)/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--celery);margin-bottom:var(--sp-3); }
+.site-footer { background:var(--island-night);color:var(--cream);padding-block:clamp(40px, 7vw, 88px) var(--sp-5);--link:var(--cream);--focus:var(--celery);--text-muted:#D9D1F2;--edge:var(--cream);--surface:#241650;--surface-2: #2F1F63;--text:var(--cream);--shadow:var(--violet); }
+/* Phones (round 1): the same content in about two thirds of the height. Wordmark, motto and stickers share a tight
+   block; links sit in two columns with 44 px rows and no extra gaps; the legal lines drop to 13 px. */
+.site-footer__top { display:grid;grid-template-columns:1fr auto;gap:var(--sp-3) var(--sp-4);align-items:center;padding-bottom:var(--sp-5);border-bottom:1px solid rgba(255, 246, 234, .2); }
+.site-footer__word { grid-column:1 / -1;margin:0;color:var(--celery);line-height:0; }
+.site-footer__word svg { display:block;width:min(100%, 300px);height:auto;aspect-ratio:4974 / 1020;overflow:visible; }
+@media (min-width: 480px) { .site-footer__word svg { width:min(100%, 34rem); } }
+.site-footer__swoosh { --swoosh:var(--bubblegum); }
+.site-footer__motto { font-size:var(--fs-small);line-height:1.4;color:var(--text-muted);max-width:30ch; }
+.site-footer__stickers { display:flex;gap:6px;flex-wrap:nowrap;justify-content:flex-end; }
+.site-footer__stickers .sticker { --sticker-size:44px; }
+.site-footer__nav { columns:2;column-gap:var(--sp-4);padding-block:var(--sp-5); } /* groups flow into balanced columns (no row gaps under the shorter group) */
+.site-footer__nav > div { break-inside:avoid;padding-bottom:var(--sp-4); }
+.site-footer__nav h2 { font:700 var(--fs-tag)/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--celery);margin-bottom:2px; }
 .site-footer ul { list-style:none;margin:0;padding:0; }
-.site-footer__nav a { display:inline-flex;align-items:center;min-height:44px;min-width:44px;color:var(--cream);text-decoration:none; }
+.site-footer__nav a { display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding-block:2px;color:var(--cream);text-decoration:none;font-size:var(--fs-small);line-height:1.25; }
 .site-footer__nav a:hover { text-decoration:underline; }
-.site-footer__legal { display:grid;gap:var(--sp-3);padding-top:var(--sp-5);border-top:1px solid rgba(255, 246, 234, .2);font-size:var(--fs-small);color:var(--text-muted); }
+.site-footer__legal { display:grid;gap:6px;padding-top:var(--sp-4);border-top:1px solid rgba(255, 246, 234, .2);font-size:var(--fs-tag);line-height:1.4;color:var(--text-muted); }
 .site-footer__legal p:first-child { color:var(--cream);font-weight:700; }
 .site-footer__legal a { color:var(--cream); }
+@media (min-width: 640px) {
+  .site-footer__motto { font-size:var(--fs-lead);max-width:34ch; }
+  .site-footer__stickers .sticker { --sticker-size:56px; }
+  .site-footer__nav a { font-size:var(--fs-body); }
+  .site-footer__legal { gap:var(--sp-2);font-size:var(--fs-small); }
+}
 @media (min-width: 900px) {
-  .site-footer__top { grid-template-columns:auto 1fr auto; }
-  .site-footer__nav { grid-template-columns:repeat(4, minmax(0, 1fr)); }
+  .site-footer__top { grid-template-columns:auto 1fr auto;gap:var(--sp-5);align-items:end; }
+  .site-footer__word { grid-column:auto; }
+  .site-footer__word svg { width:clamp(320px, 34vw, 520px); }
+  .site-footer__nav { display:grid;columns:auto;grid-template-columns:repeat(4, minmax(0, 1fr));gap:var(--sp-6) var(--sp-5);padding-block:var(--sp-6); }
+  .site-footer__nav > div { padding-bottom:0; }
+  .site-footer__nav h2 { margin-bottom:var(--sp-3); }
 }
 
 .toast-region { position:fixed;z-index:90;left:50%;bottom:max(16px, env(safe-area-inset-bottom, 0px));transform:translateX(-50%);width:min(520px, 100% - 32px);display:grid;justify-items:center;pointer-events:none; }
@@ -139,6 +193,13 @@ html:not(.js) .menu-btn { display:none; }
 .toast[data-state="out"] { animation:toast-out var(--dur-2) var(--ease-out) both; }
 @keyframes toast-in { from { opacity:0;transform:translateY(24px) scale(.96); } }
 @keyframes toast-out { to { opacity:0;transform:translateY(12px); } }
+/* Inside an open modal <dialog> (YSD.ui.toast mounts a region there so it is seen and announced): the toast sits at
+   the top of the screen, clear of the sheet's buttons. A high-priority toast (copied, shared, errors) gets a celery
+   edge. */
+.toast-region--dialog { bottom:auto;top:max(12px, env(safe-area-inset-top, 0px));z-index:2; }
+.toast-region--dialog .toast { animation-name:toast-drop; }
+.toast[data-priority="high"] { box-shadow:var(--sh-card) var(--celery); }
+@keyframes toast-drop { from { opacity:0;transform:translateY(-16px) scale(.96); } }
 
 /* ---- atoms ---- */
 .btn {
@@ -458,7 +519,7 @@ button.sticker:focus-visible { outline-offset:6px;border-radius:50%; }
   background:var(--surface);color:var(--text);border:var(--bw) solid var(--edge);border-bottom:0;border-radius:var(--r-xl) var(--r-xl) 0 0;
   box-shadow:0 -10px 0 var(--shadow);overflow:hidden;overscroll-behavior:contain;
 }
-.sheet[open] { display:flex;flex-direction:column;animation:sheet-up var(--dur-3) var(--ease-out) both; }
+.sheet[open] { display:flex;flex-direction:column;animation:sheet-up var(--dur-3) var(--ease-out) backwards; } /* backwards, not both: a held transform would make the sheet the containing block of fixed children (toasts) */
 .sheet::backdrop { background:var(--overlay); }
 .sheet__head { display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-5) var(--sp-5) var(--sp-3); }
 .sheet__head::before { content:"";position:absolute;top:8px;left:50%;width:44px;height:5px;margin-left:-22px;border-radius:3px;background:var(--line); }
@@ -482,7 +543,10 @@ html:has(dialog[open]) { overflow:hidden; }
 .kinetic__line { display:block;white-space:nowrap; }
 .kinetic__hi { position:relative;width:fit-content;color:var(--celery);isolation:isolate; }
 /* The marker sits under the baseline (only descenders cross it), so the celery word never sits on pink: qa pixel-samples it (B8). */
-.kinetic__hi::after { content:"";position:absolute;z-index:-1;left:-.04em;right:-.06em;bottom:-.08em;height:.11em;background:var(--bubblegum);border-radius:var(--r-pill);transform-origin:left;rotate:-1deg; }
+.kinetic__hi::after { content:"";position:absolute;z-index:-1;left:-.04em;right:-.06em;bottom:-.2em;height:.08em;background:var(--bubblegum);border-radius:var(--r-pill);transform-origin:left;rotate:-1deg; }
+/* Round 1 follow-up: the marker sits below the descenders (p, j, q, g, y) on every page, not just home, so no glyph
+   pixel ever lands on pink (qa B8 samples it). It may hang .2em below the h1 box: leave that much space after it. */
+html[data-motion="paused"] .kinetic__line, html[data-motion="paused"] .kinetic__hi::after { animation:none !important; }
 @media (prefers-reduced-motion: no-preference) {
   .kinetic__line { animation:kinetic-in var(--dur-4) var(--ease-pop) both; }
   .kinetic__line + .kinetic__line { animation-delay:120ms; }
@@ -526,6 +590,7 @@ html[data-motion="paused"] .ticker[data-ready] .ticker__track { animation-play-s
 
 /* Confetti: CSS burst, under 1 s, never under reduced motion or in serious blocks (YSD.ui.confetti). */
 .confetti { position:fixed;z-index:95;width:0;height:0;pointer-events:none; }
+.confetti[popover] { inset:auto;margin:0;padding:0;border:0;background:none;overflow:visible;color:inherit; } /* above an open <dialog>: top layer */
 .confetti__bit { position:absolute;left:0;top:0;width:9px;height:13px;border-radius:2px;background:var(--c, var(--celery));animation:confetti 900ms var(--ease-out) forwards; }
 @keyframes confetti { 0% { transform:translate(0, 0) rotate(0);opacity:1; } 100% { transform:translate(var(--dx), var(--dy)) rotate(var(--r));opacity:0; } }
 
@@ -536,3 +601,96 @@ html[data-motion="paused"] .ticker[data-ready] .ticker__track { animation-play-s
   }
 }
 @keyframes reveal { from { opacity:0;transform:translateY(24px); } }
+
+/* ---- heroes (round 1, genz-brand-01): one layout system, many silhouettes ----
+   <section class="section section--sun hero hero--split edge--zigzag" aria-labelledby="x-title">
+     <div class="wrap hero__grid">
+       <div class="hero__copy"> eyebrow, <h1 class="hero__title">, .hero__sub, .hero__actions (one primary, one other) </div>
+       <div class="hero__object"> the page's own object: ticket stack (.fan), type deck, member card, .device, laptop </div>
+     </div>
+   </section>
+   Shapes: --split (copy | object from 900 px), --flip (object left), --center (centred copy, object below),
+   --object-first (object above the copy on phones: event invite art), --bleed (object runs off the right edge),
+   --compact (short hero: the Reel goes video first), --poster (giant type). Combine with a world (.section--*) and
+   an edge (.edge--scallop | zigzag | tilt | arch) so no two pages share a first-screen outline. */
+.hero { --hero-gap:clamp(24px, 4vw, 56px);overflow-x:clip; }
+.hero__grid { display:grid;gap:var(--hero-gap);align-items:center; }
+.hero__copy { display:grid;gap:var(--sp-4);align-content:start;min-width:0; }
+.hero__title { margin:0;text-wrap:balance; }
+.hero__sub { font-size:var(--fs-lead);line-height:1.45;max-width:46ch;text-wrap:pretty; }
+.hero__actions { display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:center; }
+.hero__fine { font-size:var(--fs-small);color:var(--text-muted);max-width:52ch; }
+.hero__object { position:relative;min-width:0;width:min(100%, var(--hero-object, 440px));justify-self:center; }
+.hero__note { display:inline-block;width:fit-content;font:400 clamp(24px, 1.2vw + 18px, 30px)/1 var(--font-hand);color:var(--world-note, var(--link));rotate:-5deg; } /* hand note: a few words, never essential */
+.hero__pill { display:inline-flex;align-items:center;gap:6px;width:fit-content;padding:6px 12px;border:var(--bw) solid var(--night);border-radius:var(--r-pill);background:var(--world-pop, var(--celery));color:var(--night);font:700 var(--fs-tag)/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase;box-shadow:3px 3px 0 var(--night); }
+@media (min-width: 900px) {
+  .hero--split .hero__grid { grid-template-columns:minmax(0, 1.1fr) minmax(0, .9fr); }
+  .hero--flip .hero__object { order:-1; }
+  .hero--bleed .hero__grid { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); }
+  .hero--bleed .hero__object { justify-self:end;width:calc(100% + var(--gutter-r));margin-right:calc(var(--gutter-r) * -1); }
+}
+@media (max-width: 899px) { .hero--object-first .hero__object { order:-1; } }
+.hero--center .hero__grid, .hero--center .hero__copy { justify-items:center;text-align:center; }
+.hero--center .hero__actions { justify-content:center; }
+.hero--center .hero__sub, .hero--center .hero__fine { margin-inline:auto; }
+.hero--compact { padding-block:clamp(20px, 3vw, 40px); }
+.hero--compact .hero__copy { gap:var(--sp-3); }
+.hero--poster .hero__title { font-size:clamp(60px, 16vw + 4px, 176px);line-height:.84; }
+
+/* Fan: a stack of tappable things (date tickets, a type deck), the top one last in the source. Rotation only for
+   items with two lines of text or fewer (BRIEF 3.4). */
+.fan { --fan-x:52%;display:grid;place-items:center;padding:var(--sp-4) calc(var(--sp-6) + 8%); }
+.fan > * { grid-area:1 / 1;transition:transform var(--dur-3) var(--ease-pop); }
+.fan > :nth-last-child(3) { transform:translate(calc(var(--fan-x) * -1), 7%) rotate(-11deg); }
+.fan > :nth-last-child(2) { transform:translate(var(--fan-x), 4%) rotate(8deg); }
+.fan > :last-child { position:relative;z-index:1;transform:rotate(-2deg); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .fan:hover > :nth-last-child(3) { transform:translate(calc(var(--fan-x) * -1.25), 9%) rotate(-15deg); }
+  .fan:hover > :nth-last-child(2) { transform:translate(calc(var(--fan-x) * 1.25), 5%) rotate(12deg); }
+}
+
+/* Device: a phone frame for previews (a clip, a lock screen, a card). Put the content in .device__screen. */
+.device { position:relative;width:min(100%, var(--device-w, 300px));aspect-ratio:9 / 19.5;padding:10px;border-radius:46px;background:var(--night);border:var(--bw) solid var(--edge);box-shadow:var(--sh-lift) var(--shadow); }
+.device::before { content:"";position:absolute;z-index:2;top:20px;left:50%;width:32%;height:22px;translate:-50% 0;border-radius:var(--r-pill);background:var(--night); }
+.device__screen { position:relative;width:100%;height:100%;overflow:hidden;border-radius:36px;background:var(--surface);color:var(--text); }
+
+/* ---- sticker unlock reveal (YSD.ui.reveal; round 1, genz-brand-10) ----
+   A centred collectible moment sized to the sticker art: the sticker slaps down onto a small cream card (a light
+   island in both themes) with its name, one line and up to two actions. Static under reduced motion / Pause. */
+.unlock { width:min(360px, 100% - 32px);max-width:none;max-height:none;margin:auto;padding:0;border:0;background:none;color:var(--night);overflow:visible; }
+.unlock::backdrop { background:rgba(23, 11, 51, .6); }
+.unlock__card { position:relative;display:grid;justify-items:center;gap:var(--sp-2);margin-top:88px;padding:92px var(--sp-5) var(--sp-5);text-align:center;border:var(--bw) solid var(--night);border-radius:var(--r-xl);box-shadow:var(--sh-lift) var(--unlock-ring, var(--celery)); }
+.unlock__art { position:absolute;top:-88px;left:50%;width:168px;height:168px;translate:-50% 0;rotate:-6deg;filter:drop-shadow(4px 0 0 #fff) drop-shadow(-4px 0 0 #fff) drop-shadow(0 4px 0 #fff) drop-shadow(0 -4px 0 #fff) drop-shadow(0 10px 12px rgba(23, 11, 51, .35)); }
+.unlock__art::before { content:"";position:absolute;inset:-26px;z-index:-1;border-radius:50%;background:repeating-conic-gradient(var(--unlock-ring, var(--celery)) 0 9deg, transparent 9deg 22deg);-webkit-mask:radial-gradient(circle, #000 45%, transparent 71%);mask:radial-gradient(circle, #000 45%, transparent 71%); }
+.unlock__art > svg { width:100%;height:100%; }
+.unlock__kicker { padding:4px 12px;border-radius:var(--r-pill);background:var(--night);color:var(--cream);font:700 var(--fs-tag)/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase; }
+.unlock__title { font:800 var(--fs-h3)/1 var(--font-display-84);font-stretch:84%;text-wrap:balance; }
+.unlock__body { max-width:30ch;font-size:var(--fs-small);line-height:1.45;color:var(--text-muted); }
+.unlock__actions { display:grid;gap:var(--sp-2);width:100%;margin-top:var(--sp-3); }
+.unlock__actions .btn { width:100%; }
+@media (prefers-reduced-motion: no-preference) {
+  .unlock[data-anim]::backdrop { animation:unlock-fade var(--dur-2) var(--ease-out) both; }
+  .unlock[data-anim] .unlock__card { animation:unlock-pop var(--dur-3) var(--ease-out) both; }
+  .unlock[data-anim] .unlock__art { animation:unlock-slap 760ms 80ms var(--ease-pop) both; }
+  .unlock[data-anim] .unlock__art::before { animation:unlock-rays 1.2s 200ms var(--ease-out) both; }
+}
+html[data-motion="paused"] .unlock *, html[data-motion="paused"] .unlock::backdrop { animation:none !important; }
+@keyframes unlock-fade { from { opacity:0; } }
+@keyframes unlock-pop { from { opacity:0;transform:translateY(24px) scale(.94); } }
+@keyframes unlock-slap { 0% { opacity:0;scale:2.1;rotate:20deg; } 55% { opacity:1;scale:.9;rotate:-10deg; } 75% { scale:1.04;rotate:-4deg; } 100% { scale:1;rotate:-6deg; } }
+@keyframes unlock-rays { from { opacity:0;rotate:-40deg;scale:.6; } }
+
+/* ---- "who sent this" landing line (YSD.ui.landing; round 1, journeys-18) ----
+   One slim night strip at the top of <main>: avatar, "Kira sent you this", Join free, dismiss. */
+.landing { background:var(--island-night);color:var(--cream);border-bottom:var(--bw) solid var(--night);--link:var(--celery);--focus:var(--celery);--edge:var(--cream);--shadow:var(--violet);--text:var(--cream);--text-muted:#D9D1F2; }
+.landing__inner { display:flex;align-items:center;gap:var(--sp-3);min-height:60px;padding-block:8px; }
+.landing__avatar { display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:50%;background:var(--bubblegum);color:var(--night);border:var(--bw) solid var(--cream);font:800 20px/1 var(--font-display-76);font-stretch:76%;rotate:-6deg; }
+.landing__sticker { --sticker-size:40px;flex:none; }
+.landing__text { flex:1;min-width:0;font-size:var(--fs-body);line-height:1.25; }
+.landing__text strong { font-weight:800;color:var(--celery); }
+.landing__join { flex:none; }
+.landing__close { display:grid;place-items:center;flex:none;width:44px;height:44px;margin-right:-6px;border:0;border-radius:50%;background:transparent;color:var(--cream); }
+.landing__close:hover { background:rgba(255, 246, 234, .12); }
+.landing__close svg { width:18px;height:18px; }
+@media (max-width: 359px) { .landing__text { font-size:var(--fs-small); } .landing__inner { gap:var(--sp-2); } }
+@media (prefers-reduced-motion: no-preference) { .landing:not([hidden]) .landing__inner { animation:toast-drop var(--dur-3) var(--ease-pop) both; } }

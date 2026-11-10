@@ -342,6 +342,8 @@
     return artCache[id];
   }
   function arts(ids) { return Promise.all(ids.map(art)); }
+  /** A sticker-book entry's art id: its own piece, or its artFallback when this page's stickers data lacks it. */
+  function bookArt(b) { if (!b) return ''; return stickerUrl(b.art) ? b.art : (b.artFallback || b.art); }
   function silhouette(src, color) {
     var s = canvasOf(src.width, src.height), x = s.getContext('2d');
     x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = color; x.fillRect(0, 0, s.width, s.height);
@@ -479,7 +481,7 @@
       var cx = x + i * (colW + gap), big = i === 0 ? (o.max || 170) : Math.round((o.max || 170) * 0.72);
       var nf = fit(ctx, top[i].pct + '%', colW, { max: big, min: 60, maxLines: 1, lh: 0.86, family: fam(env, 'display'), stretch: 'condensed' });
       var hgt = draw(ctx, nf, cx, y + (i === 0 ? 0 : nf.size * 0.25), wd.fg, 'left');
-      var lf = fit(ctx, top[i].label, colW, { max: o.label || 32, min: 22, maxLines: 2, lh: 1.12, weight: 800, family: fam(env, 'body') });
+      var lf = fit(ctx, top[i].label, colW - 34, { max: o.label || 32, min: 24, maxLines: 2, lh: 1.12, weight: 800, family: fam(env, 'body') });
       // a dot in the result's colour ties the numeral to the mix
       var ly = y + (i === 0 ? 0 : nf.size * 0.25) + hgt + 12;
       ctx.fillStyle = String(top[i].color).toLowerCase() === String(wd.bg).toLowerCase() ? C.cream : top[i].color;
@@ -535,17 +537,18 @@
       var bubO = { max: tall ? 40 : 34, maxLines: 4, rotate: -2 };
       var bubH = bubble(ctx, env, line, pad, colTop, leftW, bubO);
       var items = mixItems(data, L, 'show-up');
-      var numTop = colTop + bubH + (tall ? 44 : 28);
-      if (items.length) numerals(ctx, env, wd, items, pad, numTop, leftW, { max: tall ? 190 : 150, label: tall ? 32 : 28 });
+      // 4:5: the numerals sit in the left column under the bubble; 9:16: a full-width row under the art
+      var numTop = tall ? Math.max(charCy + charSize / 2 + 34, colTop + bubH + 40) : colTop + bubH + 28, numH = 0;
+      if (items.length) numH = numerals(ctx, env, wd, items, pad, numTop, tall ? W - pad * 2 : leftW, { max: tall ? 240 : 150, label: tall ? 38 : 32 });
       if (im[0]) drawChar(ctx, im[0], charCx, charCy, charSize, 4);
       else dieCut(ctx, im[1], charCx, charCy, charSize * 0.8, 10);
       // the name, huge, under the art
       var bandY = H - BAND, linkBottom = bandY - (tall ? 120 : 40);
       setFont(ctx, 32, 800, fam(env, 'body'));
       var linkH = linkPanel(ctx, env, data, 'quiz-show-up', K('common.whatsYours', L), pad, linkBottom, W - pad * 2 - 10);
-      var nameTop = Math.max(charCy + charSize / 2 + (tall ? 20 : 6), numTop + (tall ? 300 : 230));
-      var room = linkBottom - linkH - (tall ? 60 : 30) - nameTop;
-      var nf = fit(ctx, pick(r.name, L), W - pad * 2, { max: tall ? 250 : 200, min: 80, maxLines: tall ? 3 : 2, lh: 0.86, maxH: room, family: fam(env, 'display'), stretch: 'condensed' });
+      var nameTop = tall ? numTop + numH + 50 : Math.max(charCy + charSize / 2 + 6, numTop + numH + 24);
+      var room = linkBottom - linkH - (tall ? 70 : 30) - nameTop;
+      var nf = fit(ctx, pick(r.name, L), W - pad * 2, { max: tall ? 260 : 200, min: 80, maxLines: tall ? 3 : 2, lh: 0.86, maxH: room, family: fam(env, 'display'), stretch: 'condensed' });
       draw(ctx, nf, pad, nameTop + Math.max(0, (room - nf.height) / 2), wd.fg, 'left', wd.mark);
       if (tall) yoursSticker(ctx, env, K('common.whatsYours', L), W - pad - 150, linkBottom - linkH - 10);
       band(ctx, env, data);
@@ -597,24 +600,24 @@
       var charSize = Math.round(W * (tall ? 0.5 : 0.44)), charCx = W - pad - charSize / 2 + 24, charCy = y + 20 + charSize / 2;
       var leftW = W - pad * 2 - charSize + 30;
       // the plain issue as a chip
-      var chip = pill(ctx, env, Short, pad, colTop, { size: tall ? 34 : 30, bg: C.cream, fg: C.night, edge: C.night, shadow: C.night, track: 0, rotate: serious ? 0 : -1.5 });
-      var sy = colTop + chip.h + (tall ? 36 : 24);
-      // the sourced number, big
+      var chip = pill(ctx, env, Short, pad, colTop, { size: tall ? 36 : 30, bg: C.cream, fg: C.night, edge: C.night, shadow: C.night, track: 0, rotate: serious ? 0 : -1.5 });
+      // the sourced number, big: left column on 4:5, a full-width block under the art on 9:16
+      var sy = tall ? Math.max(charCy + charSize / 2 + 30, colTop + chip.h + 40) : colTop + chip.h + 24, colW = tall ? W - pad * 2 : leftW;
       if (statTxt) {
-        var sf = fit(ctx, statTxt, leftW, { max: tall ? 190 : 150, min: 64, maxLines: 1, lh: 0.88, family: fam(env, 'display'), stretch: 'condensed' });
+        var sf = fit(ctx, statTxt, colW, { max: tall ? 260 : 150, min: 64, maxLines: 1, lh: 0.88, family: fam(env, 'display'), stretch: 'condensed' });
         sy += draw(ctx, sf, pad, sy, wd.fg, 'left') + 12;
       }
-      var lf = fit(ctx, statTxt ? statLbl : sub, leftW, { max: tall ? 38 : 32, min: 24, maxLines: statTxt ? 3 : 5, lh: 1.18, weight: 800, family: fam(env, 'body') });
+      var lf = fit(ctx, statTxt ? statLbl : sub, colW, { max: tall ? 46 : 32, min: 24, maxLines: statTxt ? 3 : 5, lh: 1.18, weight: 800, family: fam(env, 'body') });
       sy += draw(ctx, lf, pad, sy, wd.fg, 'left');
       if (src) {
-        var srcF = fit(ctx, src, leftW, { max: 24, min: 20, maxLines: 2, lh: 1.2, weight: 600, family: fam(env, 'body') });
+        var srcF = fit(ctx, src, colW, { max: tall ? 28 : 24, min: 20, maxLines: 2, lh: 1.2, weight: 600, family: fam(env, 'body') });
         setFont(ctx, srcF.size, 600, fam(env, 'body'));
         sy += 12 + draw(ctx, srcF, pad, sy + 12, wd.fg, 'left');
       }
       drawChar(ctx, im[0], charCx, charCy, charSize, serious ? 0 : 4);
       var linkH = linkPanel(ctx, env, data, 'quiz-issue', K('quizIssue.findYours', L), pad, linkBottom, W - pad * 2 - 10);
-      var nameTop = Math.max(charCy + charSize / 2 + (tall ? 20 : 4), sy + 24);
-      var room = linkBottom - linkH - (tall ? 60 : 30) - nameTop;
+      var nameTop = tall ? sy + 50 : Math.max(charCy + charSize / 2 + 4, sy + 24);
+      var room = linkBottom - linkH - (tall ? 70 : 30) - nameTop;
       var nf = fit(ctx, ident, W - pad * 2, { max: tall ? 250 : 190, min: 76, maxLines: tall ? 3 : 2, lh: 0.86, maxH: room, family: fam(env, 'display'), stretch: 'condensed' });
       draw(ctx, nf, pad, nameTop + Math.max(0, (room - nf.height) / 2), wd.fg, 'left', serious ? null : wd.mark);
       if (tall && !serious) yoursSticker(ctx, env, K('common.whatsYours', L), W - pad - 150, linkBottom - linkH - 10);
@@ -661,13 +664,13 @@
       kicker(ctx, env, wd, K('going.kicker', L), pad, y);
       y += tall ? 140 : 104;
       var head = first ? K('going.withName', L, { first: first }) : K('going.generic', L);
-      var hf = fit(ctx, head, W - pad * 2, { max: tall ? 230 : 170, min: 84, maxLines: 3, lh: 0.88, family: fam(env, 'display'), stretch: 'condensed' });
-      y += draw(ctx, hf, pad, y, wd.fg, 'left', wd.mark) + (tall ? 80 : 44);
+      var hf = fit(ctx, head, W - pad * 2, { max: tall ? 280 : 170, min: 84, maxLines: 3, lh: 0.88, family: fam(env, 'display'), stretch: 'condensed' });
+      y += draw(ctx, hf, pad, y, wd.fg, 'left', wd.mark) + (tall ? 90 : 44);
       // the ticket
       var tw = W - pad * 2 - 10, title = String(data.eventTitle || K('invite.fallbackTitle', L));
-      var tf = fit(ctx, title, tw - 80, { max: tall ? 84 : 66, min: 40, maxLines: 3, lh: 1, family: fam(env, 'display'), stretch: 'semi-condensed' });
+      var tf = fit(ctx, title, tw - 80, { max: tall ? 96 : 66, min: 40, maxLines: 3, lh: 1, family: fam(env, 'display'), stretch: 'semi-condensed' });
       var meta = [data.when, data.place].filter(Boolean);
-      var th = 60 + tf.height + 24 + meta.length * (tall ? 52 : 46) + 30, tx = pad, ty = y;
+      var th = 60 + tf.height + 24 + meta.length * (tall ? 58 : 46) + (tall ? 50 : 30), tx = pad, ty = y;
       ctx.save(); ctx.translate(tx + tw / 2, ty + th / 2); ctx.rotate(-1.5 * Math.PI / 180); ctx.translate(-tw / 2, -th / 2);
       ctx.fillStyle = C.night; rr(ctx, 10, 10, tw, th, 28); ctx.fill();
       ctx.fillStyle = C.cream; rr(ctx, 0, 0, tw, th, 28); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = C.night; ctx.stroke();
@@ -679,19 +682,23 @@
       var my = 40 + used + 30;
       setFont(ctx, tall ? 38 : 34, 800, fam(env, 'body')); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
       for (var i = 0; i < meta.length; i++) {
-        var mf = fit(ctx, String(meta[i]), tw - 120, { max: tall ? 38 : 34, min: 24, maxLines: 1, lh: 1.2, weight: i ? 700 : 800, family: fam(env, 'body') });
+        var mf = fit(ctx, String(meta[i]), tw - 200, { max: tall ? 44 : 34, min: 24, maxLines: 1, lh: 1.2, weight: i ? 700 : 800, family: fam(env, 'body') });
         ctx.fillStyle = i ? '#574D70' : C.violetDeep;
         ctx.fillText(mf.lines[0], 40, my + mf.size * 0.85);
-        my += tall ? 52 : 46;
+        my += tall ? 58 : 46;
       }
       ctx.restore();
-      dieCut(ctx, im[0], W - pad - 50, ty - 10, tall ? 190 : 150, 14);
+      dieCut(ctx, im[0], W - pad - 40, ty + th - 6, tall ? 190 : 150, 14);
       var bandY = H - BAND, linkBottom = bandY - (tall ? 140 : 44);
       var linkH = linkPanel(ctx, env, d2, 'join', K('going.lead', L), pad, linkBottom, W - pad * 2 - 10);
       if (tall) {
-        var by = ty + th + 90;
-        if (by + 160 < linkBottom - linkH - 40) bubble(ctx, env, K('going.bubble', L), pad, by, W - pad * 2 - 220, { max: 48, maxLines: 2, rotate: -2 });
-        dieCut(ctx, im[1], W - pad - 90, linkBottom - linkH - 110, 170, -10);
+        var gap = linkBottom - linkH - (ty + th);
+        var by = ty + th + Math.max(70, gap * 0.28);
+        var linkTop = linkBottom - linkH;
+        if (by + 130 < linkTop - 30) {
+          var bh = bubble(ctx, env, K('going.bubble', L), pad, by, W - pad * 2 - 260, { max: 56, maxLines: 2, rotate: -2 });
+          if (by + bh / 2 + 110 < linkTop - 20) dieCut(ctx, im[1], W - pad - 110, by + bh / 2, 190, -10);
+        }
       }
       band(ctx, env, data);
       return done(env);
@@ -987,7 +994,7 @@
     var L = langOf(data), cw = byId(list('colorways'), data.colorway), wd = world(cw ? cw.id : 'violet');
     var W = env.width, H = env.height, tall = H > 1500, pad = 64;
     var stk = (data.stickers || []).slice(0, 8), S = D().levels, book = (S && S.stickers) || [];
-    var artIds = stk.map(function (id) { var b = byId(book, id); return b ? b.art : id; });
+    var artIds = stk.map(function (id) { var b = byId(book, id); return bookArt(b) || id; });
     return arts(artIds).then(function (im) {
       base(ctx, env, wd);
       top(ctx, env, wd, data);
@@ -1040,7 +1047,7 @@
     var map = { 1: 'violet', 2: 'bubblegum', 3: 'celery', summary: 'night' };
     var wd = world(map[slide] || 'violet');
     var stk = (data.stickers || []).slice(0, 9), S = D().levels, book = (S && S.stickers) || [];
-    var artIds = slide === 3 ? stk.map(function (id) { var b = byId(book, id); return b ? b.art : id; }) : [];
+    var artIds = slide === 3 ? stk.map(function (id) { var b = byId(book, id); return bookArt(b) || id; }) : [];
     return arts(artIds).then(function (im) {
       base(ctx, env, wd);
       var y = top(ctx, env, wd, data);

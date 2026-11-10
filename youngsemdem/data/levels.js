@@ -101,7 +101,13 @@ window.YSD_DATA.levels = {
     rulesCta: { en: "Start your book: join free", es: "Empieza tu álbum: únete gratis" },
     rulesAll: { en: "See all 15 stickers and the rules", es: "Mira los 15 stickers y las reglas" },
     rulesYours: { en: "See your stickers", es: "Mira tus stickers" },
-    onYourCard: { en: "{sticker} · on your card", es: "{sticker} · en tu tarjeta" }
+    onYourCard: { en: "{desc} It's on your card now.", es: "{desc} Ya está en tu tarjeta." },
+    // the member card's link block (journeys-07, journeys-08)
+    copyMyLink: { en: "Copy my link", es: "Copiar mi enlace" },
+    showName: { en: "Show my first name on my link", es: "Mostrar mi nombre en mi enlace" },
+    showNameOn: { en: "Friends see \"{name} invited you.\"", es: "Tus amistades ven «{name} te invitó»." },
+    showNameOff: { en: "Friends see \"A friend invited you.\"", es: "Tus amistades ven «Alguien te invitó»." },
+    teenLink: { en: "Your link uses a random code, never your name.", es: "Tu enlace usa un código al azar, nunca tu nombre." }
   },
 
   demoMode: {

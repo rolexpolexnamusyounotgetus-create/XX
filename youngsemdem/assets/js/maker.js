@@ -20,6 +20,17 @@
  *     meter: false              // true: show the squad meter under the actions (needs membercard.js)
  *   });
  *   m.set({ template, data, size, ... }) re-renders; m.canvas() is the current card; m.state; m.destroy().
+ *
+ *   QUICK MODE (Home, genz-brand-04):
+ *   var q = YSD.maker.mountQuick(el, { templates: ['invite', 'psa-mail', 'cover'], eventId, onCustomize(template) });
+ *   A swipeable row of 3 ready-made 4:5 cards (each at least 320 px wide), one optional first-name field and one
+ *   "Send it to the group chat" button; "Customize" opens the full maker in a sheet on the chosen template (or calls
+ *   onCustomize). q.select(template), q.canvas(), q.render(), q.destroy(). Markup: .mq, .mq__row, .mq__card
+ *   [aria-pressed], .mq__controls (maker.css). Same events and analytics as mount() (card_made { quick: true }).
+ *
+ *   Toasts for share and copy results are priority 'high' (YSD.ui.toast), so the "Card Maker" sticker can't wipe
+ *   "Link copied" (journeys-14); the sticker announces itself after the result. "Copy link" copies only the link
+ *   (journeys-22). Links come from YSD.share.url(), which adds from=<FirstName> for adults (journeys-08).
  *   Markup: el gets <div class="maker" data-maker> with __preview, __controls, __actions (maker.css).
  *   Storage: YSD.store 'maker:draft' = { template, size, city, colorway, sticker, issue, message, eventId };
  *   never the first name, never the photo. The link is YSD.share.url(...): it carries a ref only after the
@@ -50,7 +61,9 @@
   }
   function track(e, p) { try { if (YSD.track) YSD.track(e, p); } catch (x) {} }
   function emit(n, det) { try { if (YSD.emit) YSD.emit(n, det); } catch (x) {} }
-  function toast(t, tone) { if (YSD.ui && YSD.ui.toast && t) YSD.ui.toast(t, { tone: tone }); }
+  // share and copy outcomes are priority toasts, so a sticker note can never wipe "Link copied" (journeys-14)
+  function toast(t, tone) { if (YSD.ui && YSD.ui.toast && t) YSD.ui.toast(t, { tone: tone, priority: 'high' }); }
+  function linkCopiedText() { return (YSD.t && YSD.t('toast.linkCopied')) || M('toast.copied'); }
   function h(tag, attrs, kids) {
     var el = d.createElement(tag);
     for (var k in attrs || {}) {
@@ -97,6 +110,11 @@
     return own ? pick(own) : '';
   }
   function stripLink(t) { return String(t || '').replace(/\s*\{(?:url|link)\}\s*$/, '').replace(/\{(?:url|link)\}/g, '').trim(); }
+  /** Chip label; people 40 and up hold a Supporter card, never a "Member card" (lead, Nov 9, 2026). */
+  function templateLabel(t) {
+    if (t === 'membercard') { try { if (YSD.memberCard && YSD.memberCard.data().supporter) return M('templates.supportercard'); } catch (e) {} }
+    return M('templates.' + t);
+  }
 
   // ---------------------------------------------------------------- mount
   function mount(el, opts) {
@@ -138,7 +156,7 @@
     if (templates.length > 1) {
       chips = h('div', { cls: 'chip-row maker__templates', role: 'group', 'aria-label': M('labels.template') });
       templates.forEach(function (t) {
-        var b = h('button', { cls: 'chip', type: 'button', 'aria-pressed': String(t === st.template), 'data-maker-template': t, text: M('templates.' + t) });
+        var b = h('button', { cls: 'chip', type: 'button', 'aria-pressed': String(t === st.template), 'data-maker-template': t, text: templateLabel(t) });
         chips.appendChild(b);
       });
       controls.appendChild(chips);
@@ -350,7 +368,6 @@
       });
     }
     function pretty(u) { return YSD.ui && YSD.ui.prettyLink ? YSD.ui.prettyLink(u) : u; }
-    function fullText() { return (st.message ? st.message + ' ' : '') + (st.url || ''); }
     function updateLinks(u) {
       bubble.textContent = '';
       bubble.appendChild(d.createTextNode(st.message ? st.message + ' ' : ''));
@@ -377,7 +394,8 @@
     }
 
     // ------------------------------------------------ actions
-    function sticker() { try { if (YSD.stickers && YSD.stickers.act) YSD.stickers.act('share-card', { ref: st.template }); } catch (e) {} }
+    // the Card Maker sticker lands after the share result has been seen (journeys-14, genz-brand-10)
+    function sticker() { try { if (YSD.stickers && YSD.stickers.act) YSD.stickers.act('share-card', { ref: st.template, delay: 1200 }); } catch (e) {} }
     function made(result) {
       track('card_made', { template: st.template, size: sizeFor() });
       emit('maker-share', { template: st.template, result: result });
@@ -401,7 +419,7 @@
       var p = YSD.share && YSD.share.native ? YSD.share.native({ title: title, text: st.message, url: st.url }) : Promise.resolve('failed');
       p.then(function (res) {
         if (res === 'shared') { toast(M('toast.ready')); sticker(); }
-        else if (res === 'copied') { toast(M('toast.copied')); sticker(); }
+        else if (res === 'copied') { toast(YSD.t && YSD.t('toast.textCopied') || M('toast.copied')); sticker(); }
         else if (res === 'failed') toast(M('toast.failed'), 'error');
         made(res);
       });
@@ -414,9 +432,10 @@
         made(res);
       });
     }
+    // "Copy link" copies only the link (journeys-22); "Send it to the group chat" sends the message with it
     function copy() {
-      var p = YSD.share && YSD.share.copy ? YSD.share.copy(fullText()) : Promise.resolve(false);
-      p.then(function (ok) { toast(ok ? M('toast.copied') : M('toast.failed'), ok ? null : 'error'); });
+      var p = YSD.share && YSD.share.copy ? YSD.share.copy(st.url || '') : Promise.resolve(false);
+      p.then(function (ok) { toast(ok ? linkCopiedText() : M('toast.failed'), ok ? null : 'error'); });
     }
 
     // ------------------------------------------------ get your link (a ref is minted only by joining)
@@ -579,5 +598,182 @@
     };
   }
 
-  YSD.maker = { version: 1, mount: mount };
+  // ---------------------------------------------------------------- quick mode (Home; genz-brand-04 contract)
+  /**
+   * YSD.maker.mountQuick(el, { templates: ['invite', 'psa-mail', 'cover'], eventId?, size?: 'portrait',
+   *                            onCustomize?(template) })  -> { el, state, select(template), canvas(), destroy() }
+   * A swipeable row of ready-made cards (4:5, each at least 320 px wide), one first-name field (optional) and one
+   * Send button. Tapping a card (or swiping it to the middle) selects it; Send shares that card's image when the
+   * browser can, else its message and link (copy fallback, "Message copied" as a priority toast). "Customize"
+   * calls onCustomize(template), or opens the full maker in a sheet on that template. Templates that are out of
+   * their window drop out (psa-mail ends Jan 1, 2027) and 'join' fills the gap. Needs what mount() needs.
+   */
+  function mountQuick(el, opts) {
+    el = typeof el === 'string' ? d.querySelector(el) : el;
+    var BC = YSD.brandCards;
+    if (!el || !BC) return null;
+    opts = opts || {};
+    var id = 'mq' + (++uid);
+    var want = (opts.templates || ['invite', 'psa-mail', 'cover']).slice(0, 3);
+    var list = want.filter(function (t) { return BC.templates.indexOf(t) >= 0 && BC.available(t); });
+    ['join', 'cover', 'invite'].forEach(function (t) { if (list.length < want.length && list.indexOf(t) < 0 && BC.available(t)) list.push(t); });
+    if (!list.length) return null;
+    var evs = events(), eventId = opts.eventId || (evs[0] && evs[0].id) || '';
+    var st = { template: list[0], name: '', canvases: {}, blobs: {}, urls: {}, seq: 0 };
+    var root = h('div', { cls: 'mq', 'data-maker-quick': '' });
+    var row = h('div', { cls: 'mq__row', role: 'group', 'aria-label': M('labels.quickPick') });
+    var cards = {};
+    list.forEach(function (t) {
+      var b = h('button', { type: 'button', cls: 'mq__card', 'data-mq': t, 'aria-pressed': String(t === st.template) }, [
+        h('span', { cls: 'mq__frame', 'data-state': 'loading' }, [h('span', { cls: 'maker__loading', text: M('labels.previewLoading') })]),
+        h('span', { cls: 'mq__label', text: templateLabel(t) })
+      ]);
+      cards[t] = b; row.appendChild(b);
+    });
+    var nameId = id + '-name', errId = id + '-err', hintId = id + '-hint';
+    var nameIn = h('input', { id: nameId, type: 'text', name: 'firstName', autocomplete: 'given-name', maxlength: '20', spellcheck: 'false', 'aria-describedby': hintId + ' ' + errId });
+    var send = h('button', { type: 'button', cls: 'btn btn--primary btn--lg mq__send', 'data-mq-send': '', text: M('actions.share') });
+    var custom = h('button', { type: 'button', cls: 'btn btn--ghost mq__custom', 'data-mq-customize': '', text: M('actions.customize') });
+    var controls = h('div', { cls: 'mq__controls' }, [
+      h('div', { cls: 'field mq__field' }, [
+        h('label', { cls: 'field__label', 'for': nameId, text: M('labels.quickName') }),
+        h('p', { cls: 'field__hint', id: hintId, text: M('labels.quickHint') }),
+        nameIn,
+        h('p', { cls: 'field__error', id: errId, 'aria-live': 'polite' })
+      ]),
+      h('div', { cls: 'btn-row mq__actions' }, [send, custom])
+    ]);
+    root.appendChild(h('p', { cls: 'mq__swipe', text: M('labels.quickSwipe') }));
+    root.appendChild(row);
+    root.appendChild(controls);
+    if (YSD.cfg && YSD.cfg('demo', true) !== false) root.appendChild(h('p', { cls: 'maker__demo' }, [h('span', { cls: 'tag tag--demo', text: 'DEMO' }), ' ', h('span', { text: String(M('labels.demoNote')).replace(/^DEMO:\s*/, '').replace(/^./, function (c) { return c.toUpperCase(); }) })]));
+    el.textContent = '';
+    el.appendChild(root);
+
+    function validName() { return !!st.name && NAME_RE.test(st.name) && st.name.length <= 20; }
+    function dataFor(t) {
+      var o = { lang: L(), name: validName() ? st.name : '', eventId: t === 'invite' ? eventId : '' };
+      o.url = (function () { var p = BC.path(t, o); try { return YSD.share && YSD.share.url ? YSD.share.url(p) : p; } catch (e) { return p; } })();
+      return o;
+    }
+    function messageFor(t) {
+      var vars = {};
+      if (t === 'invite') {
+        var ev = BC.event(eventId);
+        if (ev) {
+          vars.event = pick(ev.title);
+          try { vars.when = YSD.fmt.date(ev.start, { time: true }); } catch (e) { vars.when = ''; }
+          var c = byId(BC.cities(), ev.city); vars.city = c ? pick(c.name) : ev.city;
+          vars.demoEvent = ev.demo !== false;
+        }
+      }
+      return stripLink(fill(groupChatText(t, vars), vars));
+    }
+    function summary(t, o) {
+      var bits = [templateLabel(t)];
+      if (o.name) bits.push(o.name);
+      if (t === 'invite') { var ev = BC.event(eventId); if (ev) bits.push(pick(ev.title)); }
+      return bits.join(', ');
+    }
+    function renderAll() {
+      var seq = ++st.seq;
+      return Promise.all(list.map(function (t) {
+        var o = dataFor(t);
+        return BC.render(t, o, { size: opts.size || 'portrait' }).then(function (cv) {
+          if (seq !== st.seq) return;
+          cv.className = 'mq__canvas';
+          cv.setAttribute('aria-hidden', 'true');
+          var fr = cards[t].querySelector('.mq__frame');
+          fr.textContent = ''; fr.appendChild(cv); fr.setAttribute('data-state', 'idle');
+          cards[t].setAttribute('aria-label', M('labels.preview', { summary: summary(t, o) }));
+          st.canvases[t] = cv; st.urls[t] = o.url; st.blobs[t] = null;
+          YSD.cards.toBlob(cv).then(function (b) { if (seq === st.seq) st.blobs[t] = b; }, function () {});
+        }, function (err) { if (YSD.log) YSD.log('maker quick: render failed', t, err); });
+      })).then(function () { emit('maker-render', { template: 'quick', size: opts.size || 'portrait' }); });
+    }
+    function select(t, scroll) {
+      if (list.indexOf(t) < 0) return;
+      st.template = t;
+      list.forEach(function (x) { cards[x].setAttribute('aria-pressed', String(x === t)); });
+      if (scroll) { try { cards[t].scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduced() ? 'auto' : 'smooth' }); } catch (e) {} }
+    }
+    function reduced() { try { return YSD.ui && YSD.ui.motion ? YSD.ui.motion.paused() : w.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+    function sticker() { try { if (YSD.stickers && YSD.stickers.act) YSD.stickers.act('share-card', { ref: st.template, delay: 1200 }); } catch (e) {} }
+    function doSend() {
+      if (st.name && !validName()) { nameErr(true); nameIn.focus(); return; }
+      var t = st.template, cv = st.canvases[t], blob = st.blobs[t], url = st.urls[t], msg = messageFor(t), title = templateLabel(t);
+      if (!cv) return;
+      var file = null, can = false, fname = 'young-dems-' + t + '.png';
+      try { file = blob && typeof w.File === 'function' ? new w.File([blob], fname, { type: 'image/png' }) : null; } catch (e) { file = null; }
+      try { can = !!(file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) { can = false; }
+      var done = function (res) {
+        if (res === 'shared') { toast(M('toast.ready')); sticker(); if (YSD.ui && YSD.ui.confetti && !/^psa-/.test(t)) YSD.ui.confetti(send); }
+        else if (res === 'downloaded') { toast(M('toast.saved')); sticker(); }
+        else if (res === 'copied') { toast(YSD.t && YSD.t('toast.textCopied') || M('toast.copied')); sticker(); }
+        else if (res === 'failed') toast(M('toast.failed'), 'error');
+        track('card_made', { template: t, size: opts.size || 'portrait', quick: true });
+        emit('maker-share', { template: t, result: res, quick: true });
+      };
+      if (can) { YSD.cards.share(cv, { title: title, text: msg, url: url, filename: fname }).then(done); return; }
+      (YSD.share && YSD.share.native ? YSD.share.native({ title: title, text: msg, url: url }) : Promise.resolve('failed')).then(done);
+    }
+    function nameErr(on) {
+      var err = d.getElementById(errId);
+      if (on) { nameIn.setAttribute('aria-invalid', 'true'); err.textContent = M('errors.firstNameChars'); }
+      else { nameIn.removeAttribute('aria-invalid'); err.textContent = ''; }
+    }
+    var sheetMaker = null;
+    function customize() {
+      var t = st.template;
+      if (typeof opts.onCustomize === 'function') { opts.onCustomize(t); return; }
+      var dlg = d.getElementById(id + '-sheet');
+      if (!dlg) {
+        dlg = h('dialog', { id: id + '-sheet', cls: 'sheet mq__sheet', 'aria-labelledby': id + '-sheet-title' });
+        var body = h('div', { cls: 'sheet__body' });
+        dlg.appendChild(h('div', { cls: 'sheet__head' }, [
+          h('h2', { cls: 'sheet__title', id: id + '-sheet-title', text: M('labels.customizeTitle') }),
+          h('button', { type: 'button', cls: 'btn btn--icon btn--quiet sheet__close', 'data-sheet-close': '', 'aria-label': (YSD.t && YSD.t('a11y.close')) || 'Close', text: '×' })
+        ]));
+        dlg.appendChild(body);
+        d.body.appendChild(dlg);
+        sheetMaker = mount(body, { templates: list.concat(list.indexOf('join') < 0 ? ['join'] : []), template: t, eventId: eventId });
+      } else if (sheetMaker) sheetMaker.set({ template: t });
+      if (sheetMaker && st.name && validName()) { var ni = dlg.querySelector('input[name="firstName"]'); if (ni && !ni.value) { ni.value = st.name; ni.dispatchEvent(new Event('input', { bubbles: true })); } }
+      if (YSD.ui && YSD.ui.sheet) YSD.ui.sheet.open(dlg, { opener: custom }); else if (dlg.showModal) dlg.showModal();
+    }
+    var timer = 0;
+    root.addEventListener('click', function (e) {
+      var c = e.target.closest ? e.target.closest('[data-mq],[data-mq-send],[data-mq-customize]') : null;
+      if (!c) return;
+      if (c.hasAttribute('data-mq')) { select(c.getAttribute('data-mq'), true); return; }
+      if (c.hasAttribute('data-mq-send')) { doSend(); return; }
+      if (c.hasAttribute('data-mq-customize')) customize();
+    });
+    nameIn.addEventListener('input', function () {
+      st.name = String(nameIn.value || '').trim();
+      if (!st.name || validName()) nameErr(false);
+      clearTimeout(timer); timer = setTimeout(renderAll, 220);
+    });
+    // swiping a card to the middle selects it (only when the row scrolls; on wide screens all three show)
+    var stimer = 0;
+    function onScroll() {
+      clearTimeout(stimer);
+      stimer = setTimeout(function () {
+        if (row.scrollWidth <= row.clientWidth + 4) return;
+        var rc = row.getBoundingClientRect(), mid = rc.left + rc.width / 2, best = null, bd = 1e9;
+        list.forEach(function (t) { var r = cards[t].getBoundingClientRect(), dd = Math.abs(r.left + r.width / 2 - mid); if (dd < bd) { bd = dd; best = t; } });
+        if (best && best !== st.template) select(best, false);
+      }, 120);
+    }
+    row.addEventListener('scroll', onScroll, { passive: true });
+    var onJoin = function () { renderAll(); };
+    d.addEventListener('ysd:joined', onJoin);
+    renderAll();
+    return {
+      el: root, state: st, select: function (t) { select(t, true); }, canvas: function () { return st.canvases[st.template] || null; }, render: renderAll,
+      destroy: function () { row.removeEventListener('scroll', onScroll); d.removeEventListener('ysd:joined', onJoin); clearTimeout(timer); el.textContent = ''; }
+    };
+  }
+
+  YSD.maker = { version: 2, mount: mount, mountQuick: mountQuick };
 })(window, document);

@@ -53,3 +53,22 @@
 .sg-toast-static .toast { animation: none; }
 .sg-hand { font-size: 30px; }
 .sg-photo { aspect-ratio: 4 / 3; }
+/* round 1: brand explorations, mark sizes, worlds and heroes, overlay demos */
+.sg-brand-explore { display: grid; gap: var(--sp-5); grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); }
+.sg-brand-explore figure { display: grid; gap: var(--sp-3); justify-items: start; margin: 0; padding: var(--sp-4); border: 1px dashed var(--line); border-radius: var(--r-md); }
+.sg-brand-explore figure[data-picked] { border: var(--bw) solid var(--edge); background: var(--surface); box-shadow: var(--sh-card) var(--shadow); }
+.sg-brand-explore figcaption { font-size: var(--fs-small); color: var(--text-muted); }
+.sg-brand-explore figcaption strong { color: var(--text); }
+.sg-brand-sizes { display: flex; flex-wrap: wrap; gap: var(--sp-4); align-items: end; }
+.sg-mono-on-violet { display: inline-grid; place-items: center; width: 56px; height: 56px; padding: 4px; border-radius: var(--r-sm); background: var(--violet); }
+.sg-mono-on-violet svg { width: 100%; height: 100%; }
+.sg-mono-on-cream { padding: 4px; border-radius: var(--r-sm); background: var(--cream); }
+.sg-heroes .fan { scale: 1.6; margin-block: var(--sp-6); }
+.sg-brand-big { margin: 0; line-height: 0; color: var(--text); }
+.sg-brand-big svg { width: min(100%, 420px); height: auto; aspect-ratio: 4974 / 1020; overflow: visible; }
+.sg-brand-big__swoosh { --swoosh: var(--bubblegum); }
+.sg-subhead { display: grid; gap: var(--sp-2); }
+.sg-heroes > * { padding-block: var(--sp-7) calc(var(--sp-7) + var(--edge, 0px)); }
+.sg-device-demo { display: grid; place-content: center; gap: var(--sp-3); justify-items: center; padding: var(--sp-5); text-align: center; }
+.sg-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
+.sg-tiles .pin__title { font: 800 clamp(36px, 4vw + 16px, 64px)/.9 var(--font-display-76); font-stretch: 76%; }

@@ -58,5 +58,7 @@ window.YSD_DATA.pages.issues = {
   'js.card': { en: 'Share the card', es: 'Compartir la tarjeta' },
   'js.cardReady': { en: 'Card saved. Send it to one person you’d actually text.', es: 'Tarjeta guardada. Mándasela a una persona a la que de verdad le escribirías.' },
   'js.cardFail': { en: 'That card didn’t load. The text is copied instead, so you can paste it anywhere.', es: 'La tarjeta no cargó. Copiamos el texto para que lo pegues donde quieras.' },
+  'js.tileWords': { en: 'Come as you are', es: 'Ven como eres' }, // jump tile with no sourced number (genz-brand-24 fallback)
+  'js.tileUS': { en: 'U.S.', es: 'EE. UU.' }, // tiny scope mark on a national number
   'js.cardSource': { en: 'Source: {source}', es: 'Fuente: {source}' }
 };

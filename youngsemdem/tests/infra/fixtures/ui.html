@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" data-page="ui-fixture">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>UI fixture</title>
+<script src="../../../assets/boot.js"></script>
+<link rel="stylesheet" href="../../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../../assets/css/base.css">
+<link rel="stylesheet" href="../../../assets/css/components.css">
+</head>
+<body class="p-ui-fixture">
+<!--
+  Fixture for tests/infra/ui.test.js (round 1 G-CORE): the shared ui.js behaviours on the smallest page that has
+  them. Not part of the site (tools skip tests/). No inline scripts; Playwright drives it.
+-->
+<header class="site-header"><div class="wrap site-header__inner">
+  <a class="lang-link" href="#" hreflang="es" data-lang-link id="lang">ES</a>
+  <a href="#two" id="to-two">Jump to two</a>
+  <a href="#inside" id="to-inside">Jump inside the closed details</a>
+</div></header>
+<main id="main">
+  <h1 id="top">UI fixture</h1>
+  <section id="one" class="section"><h2>Section one</h2><p style="height:1400px">Tall.</p></section>
+  <section id="two" class="section"><h2 id="two-title">Section two</h2><p style="height:1400px">Tall.</p>
+    <details id="faq"><summary>FAQ</summary><div><h3 id="inside">Inside the details</h3><p>Answer.</p></div></details>
+    <p style="height:900px">Tall.</p>
+  </section>
+  <div data-tone="calm"><button type="button" id="calm-btn">Calm</button></div>
+  <button type="button" id="open-sheet" data-sheet-open="sheet">Open sheet</button>
+  <dialog class="sheet" id="sheet" aria-labelledby="sheet-title">
+    <div class="sheet__head"><h2 class="sheet__title" id="sheet-title">Sheet</h2><button class="sheet__close" type="button" data-sheet-close aria-label="Close">x</button></div>
+    <div class="sheet__body"><button type="button" id="in-sheet">Inside</button></div>
+  </dialog>
+</main>
+<div class="toast-region" role="status" aria-live="polite" data-toast-region></div>
+<script src="../../../assets/js/config.js"></script>
+<script src="../../../assets/js/store.js"></script>
+<script src="../../../assets/js/share.js"></script>
+<script src="../../../assets/js/cal.js"></script>
+<script src="../../../assets/js/cards.js"></script>
+<script src="../../../assets/js/members.js"></script>
+<script src="../../../assets/js/track.js"></script>
+<script src="../../../data/slices/core.js"></script>
+<script src="../../../data/stickers.js"></script>
+<script src="../../../assets/js/ui.js"></script>
+</body>
+</html>

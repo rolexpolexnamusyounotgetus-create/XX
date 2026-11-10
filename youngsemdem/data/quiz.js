@@ -188,6 +188,8 @@ window.YSD_DATA.quiz = {
     fromIssue: { en: '{name} got {match}. Your turn: 4 taps, about a minute.', es: '{name} sacó {match}. Te toca: 4 toques, como un minuto.' },
     fromIssuePlain: { en: '{name}’s issue is {match}. Find yours: 4 taps, about a minute.', es: 'El tema de {name} es {match}. Encuentra el tuyo: 4 toques, como un minuto.' },
     dropSeries: { en: '{series}: in January’s lineup.', es: '{series}: en la programación de enero.' },
+    // keep in step with data/events.js schedule.drop.opensAt
+    dropWhen: { en: 'It drops Tue, Dec 15 at noon (DEMO).', es: 'Sale el mar. 15 de dic. a las 12 p. m. (DEMO).' },
     dropTag: { en: 'JAN', es: 'ENE' },
     notify: { en: 'Notify me', es: 'Avísame' },
     notifyDone: { en: 'Calendar file ready. It pings you at noon on Dec 15.', es: 'Archivo de calendario listo. Te avisa el 15 de dic. a las 12 p. m.' },

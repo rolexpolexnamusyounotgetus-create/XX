@@ -550,6 +550,43 @@ test('check_site: bad fixture reports every problem and exits 1', () => {
   if (r.report.axe.status === 'ran') assert.ok(by['axe:image-alt'] > 0, 'axe found the missing alt');
 });
 
+// Round 1, right-wing-bench-artifacts + journeys-26: fair bench numbers and the Spanish 404 on the local server.
+test('check_site server: gzip option, Spanish 404 for /es/*; bench_compare: CLS after FCP, poller after DCL, share copy', async () => {
+  const cs = require(path.join(TOOLS, 'check_site.js'));
+  const srv = cs.createServer(SITE, { gzip: true });
+  await new Promise((r) => srv.listen(0, '127.0.0.1', r));
+  const port = srv.address().port;
+  const get = (p, h) => new Promise((r) => require('http').get({ host: '127.0.0.1', port, path: p, headers: h || {} }, (res) => {
+    const parts = []; res.on('data', (c) => parts.push(c)); res.on('end', () => r({ status: res.statusCode, enc: res.headers['content-encoding'], body: Buffer.concat(parts) }));
+  }));
+  try {
+    const gz = await get('/index.html', { 'accept-encoding': 'gzip, br' });
+    assert.strictEqual(gz.enc, 'gzip', 'text is gzipped when asked');
+    const html = require('zlib').gunzipSync(gz.body).toString('utf8');
+    assert.ok(/<html/.test(html), 'gzip body decodes to the page');
+    const raw = await get('/index.html');
+    assert.strictEqual(raw.enc, undefined, 'no gzip without Accept-Encoding');
+    assert.ok(gz.body.length < raw.body.length / 2, 'gzip is much smaller');
+    const png = await get('/assets/icons/icon-192.png', { 'accept-encoding': 'gzip' });
+    assert.strictEqual(png.enc, undefined, 'images are not gzipped');
+    const es404 = await get('/es/eventos/nada.html');
+    assert.strictEqual(es404.status, 404);
+    assert.match(es404.body.toString('utf8'), /<html[^>]*lang="es"/, 'es/404.html for missing /es/* paths');
+    const en404 = await get('/nada.html');
+    assert.match(en404.body.toString('utf8'), /<html[^>]*lang="en"/, '404.html elsewhere');
+  } finally { srv.close(); }
+  const src = read(path.join(TOOLS, 'bench_compare.js'));
+  const m = /const shareRe = (\/.*\/[a-z]*);/.exec(src);
+  assert.ok(m, 'shareRe found');
+  const shareRe = eval(m[1]); // eslint-disable-line no-eval
+  for (const t of ['Send it to the group chat', 'Mándalo al grupo', 'Share', 'Copy link']) assert.ok(shareRe.test(t), 'share copy matches: ' + t);
+  assert.ok(!shareRe.test('Shareholders'), 'whole words only');
+  assert.match(src, /filter\(\(\[t\]\) => fcp == null \|\| t >= fcp\)/, 'CLS ignores shifts before first contentful paint');
+  assert.match(src, /DOMContentLoaded', \(\) => setTimeout\(tick, 0\)/, 'CTA poller starts after DOMContentLoaded');
+  assert.match(src, /startServer\(opts\.root, \{ headers: true, gzip: true \}\)/, 'our pages are served gzipped');
+  assert.match(read(path.join(SITE, 'partials', 'head.html')), /<style>body\{margin:0\}<\/style>/, 'head partial resets the body margin before the stylesheets');
+});
+
 test('check_site: no pages yet is not an error; --strict fails noindex pages', () => {
   const r = checkSite(path.join(FIX, 'site-empty'));
   assert.strictEqual(r.code, 0, r.out);

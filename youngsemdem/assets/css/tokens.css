@@ -1,7 +1,8 @@
 /* YDSC · tokens.css (F0; lead after merge). BRIEF §3.2-3.5. Bright colours are fills under ink, never text
    on cream. Dark mode is designed and defined twice: the OS media query and [data-theme="dark"] (boot.js sets
-   it before paint). .theme-light/.theme-dark force a theme on a subtree; bright and cream sections are light
-   islands, night sections dark islands. */
+   it before paint). .theme-light/.theme-dark force a theme on a subtree; bright and cream sections (celery, pink or
+   bubblegum, sky, sun, mint, teal, orange, tangerine) are light islands, night sections dark islands; violet and
+   lake keep the page theme for the cards inside them. */
 
 /* ---------- Fonts: self-hosted WOFF2 (tools/fetch_fonts.py; assets/fonts/fonts.json) ---------- */
 @font-face {
@@ -124,7 +125,8 @@
 }
 
 /* ---------- Semantic tokens: light (default, and every light island) ---------- */
-:root, .theme-light, .section--cream, .section--celery, .section--pink, .section--sky {
+:root, .theme-light, .section--cream, .section--celery, .section--pink, .section--bubblegum, .section--sky,
+.section--sun, .section--mint, .section--teal, .section--orange, .section--tangerine {
   --bg:#FFF6EA; --surface:#FFFFFF; --surface-2:#F3EADB; --text:#170B33;
   --text-muted:#574D70; --link:#4B12D6; --focus:#4B12D6; --edge:#170B33;
   --line:#E4D9C6; --shadow:#170B33; --error:#B3261E; --success:#1E6B3A;

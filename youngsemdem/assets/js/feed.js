@@ -309,7 +309,12 @@
       if (btn) {
         e.preventDefault();
         if (btn.hasAttribute('data-feed-mute')) { if (i !== index) activate(i, 'tap'); setMuted(!muted, 'user'); if (!muted) playIndex(i, true); }
-        else if (btn.hasAttribute('data-feed-play')) { if (i !== index) activate(i, 'tap'); toggleIndex(i); }
+        else if (btn.hasAttribute('data-feed-play')) {
+          // a Play tap on a clip that isn't the active one means "play this": activate() may already have
+          // started it (autoplay), so only toggle when it was already the active clip
+          if (i !== index) { activate(i, 'tap'); var pv = videoOf(i); if (pv && pv.paused) playIndex(i, true); }
+          else toggleIndex(i);
+        }
         else likeIndex(i, 'button', null, true);
         return;
       }

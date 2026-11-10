@@ -7,7 +7,9 @@
  *   weight      transfer bytes and request count, by type (document, script, css, image, font,
  *               media, xhr, other), third-party requests and hosts
  *   speed       DOMContentLoaded, load, FCP, LCP and CLS (PerformanceObserver, CLS as the largest
- *               session window), time until the first call to action is visible
+ *               session window of shifts at or after first contentful paint), time until the first call
+ *               to action is visible (the CTA poller starts at DOMContentLoaded so it never forces a
+ *               layout of the unstyled page)
  *   first screen  distinct calls to action whose centre is visible in the first 390x844 screen,
  *               and how much of that screen a fixed overlay (pop-up, cookie banner) covers
  *   mobile      tap targets under 44x44 CSS px (whole page, links inside sentences exempt),
@@ -15,12 +17,13 @@
  *   a11y        <img> without alt, axe-core WCAG 2.x A/AA violations (colour contrast separately)
  *   features    Open Graph tags, dark mode (does prefers-color-scheme: dark change the background),
  *               language toggle (and Spanish), video, share affordances (Web Share, copy link,
- *               share intents), sign-up form field count
+ *               share intents, "Send it to the group chat" / "Mándalo al grupo"), sign-up form field count
  * A site that times out, answers 401/403/429/503 or shows a bot check is marked blocked or timeout
  * and listed separately; the run carries on.
  *
  * Our pages are served from --root by the same local server as tools/shoot.js (with _headers, so
- * the production CSP applies). Competitors come from tools/bench_targets.json. Note: our pages load
+ * the production CSP applies) and gzipped like a real host, so transfer bytes compare fairly with
+ * competitors' compressed responses. Competitors come from tools/bench_targets.json. Note: our pages load
  * from 127.0.0.1 and competitors over the internet, so compare timings with --throttle 4g (adds the
  * same latency and bandwidth cap to both); bytes, requests and the checks are fair either way.
  *
@@ -314,6 +317,10 @@ function benchInit(cfg) {
       Object.defineProperty(proto, 'clipboard', { configurable: true, enumerable: cd.enumerable, get() { B.clipboard = true; return g.call(this); } });
     }
   } catch (e) { /* leave navigator alone */ }
+  // The CTA poller waits for DOMContentLoaded: polling before the render-blocking stylesheets arrive forces a
+  // layout of the unstyled page (body's default 8 px margin), which then "shifts" when CSS lands and the bench
+  // reported CLS 0.57-0.75 for pages that measure 0 without it (review right-wing-bench-artifacts). The time to
+  // first CTA is still counted from navigation start (performance.now()).
   const t0 = performance.now();
   const tick = () => {
     if (B.firstCta != null) return;
@@ -324,7 +331,8 @@ function benchInit(cfg) {
     const age = performance.now() - t0;
     if (age < 90000) setTimeout(tick, age < 10000 ? 50 : 250);
   };
-  setTimeout(tick, 0);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(tick, 0), { once: true });
+  else setTimeout(tick, 0);
 }
 
 /** Does this look like a bot check rather than the site? */
@@ -391,7 +399,10 @@ function collect(a, findCtas) {
   const fcpE = performance.getEntriesByName('first-contentful-paint')[0];
   const fcp = fcpE ? fcpE.startTime : null;
   let cls = 0, cur = 0, wStart = -1, last = -1;
-  for (const [t, v] of (B.shifts || []).slice().sort((x, y) => x[0] - y[0])) {
+  // Shifts before first contentful paint move nothing anyone saw, so they don't count (Lighthouse and the CLS
+  // definition only score what the visitor can see). Without an FCP entry every shift counts, as before.
+  const seenShifts = (B.shifts || []).filter(([t]) => fcp == null || t >= fcp);
+  for (const [t, v] of seenShifts.slice().sort((x, y) => x[0] - y[0])) {
     if (wStart < 0 || t - last > 1000 || t - wStart > 5000) { cur = 0; wStart = t; }
     cur += v; last = t;
     if (cur > cls) cls = cur;
@@ -529,7 +540,7 @@ function collect(a, findCtas) {
   // Share affordances
   const intentRe = /(?:twitter\.com|x\.com)\/intent\/|facebook\.com\/sharer|facebook\.com\/dialog\/(?:share|feed)|linkedin\.com\/(?:sharing|shareArticle)|wa\.me\/\?|api\.whatsapp\.com\/send|whatsapp:\/\/send|t\.me\/share|telegram\.me\/share|reddit\.com\/submit|pinterest\.com\/pin\/create|bsky\.app\/intent|threads\.(?:net|com)\/intent|^sms:.*body=|^mailto:.*[?&]body=/i;
   const intents = Array.from(doc.querySelectorAll('a[href]')).filter((el) => intentRe.test(el.getAttribute('href') || ''));
-  const shareRe = /(?<![\p{L}])(?:share|compartir|comparte|copy link|copy url|copiar (?:el )?enlace|copiar link)(?![\p{L}])/iu;
+  const shareRe = /(?<![\p{L}])(?:share|compartir|comparte|copy link|copy url|copiar (?:el )?enlace|copiar link|group chat|grupo|m\u00e1ndalo|mandalo|send it to)(?![\p{L}])/iu;
   const shareBtns = Array.from(doc.querySelectorAll('a[href],button,[role="button"]')).filter((el) => { const t = text(el); return t && t.length <= 40 && shareRe.test(t); });
   const copyBtns = shareBtns.filter((el) => /copy|copiar/i.test(text(el)));
   out.share = {
@@ -827,7 +838,7 @@ async function run(opts) {
   const started = Date.now();
   fs.mkdirSync(opts.out, { recursive: true });
   const { chromium } = shoot.loadPlaywright();
-  const srv = await shoot.startServer(opts.root, { headers: true });
+  const srv = await shoot.startServer(opts.root, { headers: true, gzip: true }); // compressed like a real host, so MB compares fairly
   const report = {
     tool: 'tools/bench_compare.js', generatedAt: new Date().toISOString(), chromium: '', viewport: VIEWPORT, throttle: opts.throttle,
     local: srv.base + ' (local server for ' + opts.root + (srv.headersEmulated ? ', _headers applied' : '') + ')',

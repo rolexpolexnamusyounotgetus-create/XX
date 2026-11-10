@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /*
- * Core infrastructure tests: config, store/db/counters, share, cal, cards, members, track.
+ * Core infrastructure tests: config, store/db/counters, share, cal, cards, members, track, plus the shared
+ * UI suite (tests/infra/ui.test.js: language toggle, queued toasts, dialog overlays, jumps, reveal, landing).
  *
  *   node tests/infra/core.test.js            all tests (Node sandbox + headless Chromium)
  *   node tests/infra/core.test.js --node     Node sandbox tests only (no browser)
@@ -961,6 +962,12 @@ async function browserTests() {
   const t0 = Date.now();
   await nodeTests();
   if (!NODE_ONLY) await browserTests();
+  // Shared UI (ui.js) suite, round 1: run here too so `npm test` covers it until package.json lists it.
+  if (!NODE_ONLY) {
+    const u = await require('./ui.test.js').run();
+    passed += u.passed; failed += u.failed;
+    for (const f of u.failures) failures.push('ui: ' + f);
+  }
   const secs = ((Date.now() - t0) / 1000).toFixed(1);
   if (failures.length) {
     console.log('\nFailures:');

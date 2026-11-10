@@ -75,5 +75,6 @@ window.YSD_DATA.pages.quiz = {
   'r.allIssues': { en: 'See all 9 issues', es: 'Mira los 9 temas' },
   'r.share': { en: 'Send it to the group chat', es: 'Mándalo al grupo' },
   'r.others': { en: 'The other types', es: 'Los otros modos' },
+  'char.alt': { en: 'Illustrated character for {name}', es: 'Personaje ilustrado de {name}' },
   'r.otherIssues': { en: 'The other issues', es: 'Los otros temas' }
 };

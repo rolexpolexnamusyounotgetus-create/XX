@@ -128,7 +128,8 @@ node tools/check_site.js [--root DIR] [--pages a.html,b.html] [--out FILE] [--st
 ```
 
 It serves the root on `127.0.0.1` with a built-in server. The server handles pretty URLs, `Range`
-requests and `404.html`, and it applies `_headers` (dropping `upgrade-insecure-requests` and HSTS
+requests and `404.html` (`es/404.html` for missing `/es/*` paths, like `netlify.toml`), optionally gzips text
+(`createServer(root, {gzip: true})`, used by `bench_compare.js` so transfer bytes compare with live sites), and it applies `_headers` (dropping `upgrade-insecure-requests` and HSTS
 locally), so the production CSP is enforced. It opens each root-level page once per viewport. The
 mobile viewport uses `isMobile` and touch. Service workers are blocked unless you pass `--sw`.
 `--base` crawls a deployed site instead.
@@ -149,8 +150,23 @@ The report (`tools/check_report.json`, git-ignored) looks like this:
 
 Module: `require('./tools/check_site')` exports `run(opts)`, `parseArgs(argv)`,
 `parseHeadersFile(text)` (returning `[{pattern, re, set, detach}]`), `headersFor(rules, path)`,
-`localizeHeaders(h)`, `createServer(root, {headers})`, `rootPages(root)`, `printReport(report, opts)`
+`localizeHeaders(h)`, `createServer(root, {headers, gzip})`, `rootPages(root)`, `printReport(report, opts)`
 and `AXE_VERSION`.
+
+### tools/make_brand.js (round 1)
+
+`node tools/make_brand.js [--check] [--no-png]` builds every brand asset from `YSD.cards.brand.paths`
+(assets/js/cards.js): `assets/img/brand/*.svg` (mark, mono, wordmark, lockup, the three explorations),
+`assets/icons/favicon.svg` (light outline on dark tabs), the PNG app icons (192, 512, maskable, monochrome,
+apple-touch) and `assets/img/og/default.png`. `--check` fails when the header partials' inline paths or the
+SVG files drift from cards.js (tests/infra/ui.test.js runs it).
+
+### tools/bench_compare.js: fairness (round 1)
+
+CLS counts only shifts at or after first contentful paint; the first-CTA poller starts at DOMContentLoaded (it
+used to force a layout of the unstyled page, which read as a 0.6-0.75 shift); our pages are served gzipped; and
+"Send it to the group chat" / "Mándalo al grupo" count as share buttons. The head partial also resets the body
+margin inline, before the stylesheets.
 
 ### tools/csp.js
 

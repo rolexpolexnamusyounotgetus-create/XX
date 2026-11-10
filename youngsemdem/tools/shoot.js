@@ -134,7 +134,8 @@ function basicServer(root) {
 
 /**
  * Serve root on 127.0.0.1 like production: tools/check_site.js's server (pretty URLs, Range
- * requests, 404.html) with the _headers rules applied unless opts.headers === false.
+ * requests, 404.html) with the _headers rules applied unless opts.headers === false. opts.gzip: gzip text
+ * responses like a real host (bench_compare.js uses it so byte counts compare with live sites).
  * Resolves to {base, headersEmulated, close()}.
  */
 function startServer(root, opts) {
@@ -147,7 +148,7 @@ function startServer(root, opts) {
   if (opts.headers !== false && cs && cs.parseHeadersFile && fs.existsSync(hf)) {
     try { rules = cs.parseHeadersFile(fs.readFileSync(hf, 'utf8')); } catch (e) { rules = null; }
   }
-  const server = cs && cs.createServer ? cs.createServer(root, { headers: rules }) : basicServer(root);
+  const server = cs && cs.createServer ? cs.createServer(root, { headers: rules, gzip: !!opts.gzip }) : basicServer(root);
   return new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(0, '127.0.0.1', () => {

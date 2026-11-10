@@ -1,0 +1,92 @@
+/* YDSC · assets/css/reel.css (G-VIDEO): the Reel card from assets/js/reel.js, on any page (home strip, clips feed,
+   post examples) and its ··· sheet. reel.js loads this file itself when a page doesn't link it.
+   Rules are scoped to .x-rc / .x-more; page layout (strip widths, the full-height feed) stays with the page. */
+
+/* ---------------------------------------------------------------- the frame: placeholder first, never black */
+.x-rc { --clip-color:#2A1B55; }
+.x-rc .story__frame {
+  container-type:inline-size;isolation:isolate;
+  background:var(--clip-color) var(--clip-lqip, none) center / cover no-repeat;
+}
+.x-rc .story__frame > video { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:transparent; }
+.x-rc[data-controls="on"] .story__frame > video { z-index:5; }
+.x-rc[data-controls="on"] :is(.story__play, .story__bars, .x-rc__cap) { display:none; }
+
+/* captions: TikTok-style boxed lines in the page language, drawn from the cues (never burned in) */
+.x-rc__cap { position:absolute;z-index:2;left:7%;right:7%;top:61%;display:flex;justify-content:center;text-align:center;pointer-events:none;text-wrap:balance; }
+.x-rc[data-cc="off"] .x-rc__cap { display:none; }
+.x-rc__cap-text {
+  display:inline;padding:.12em .4em;border-radius:.32em;background:#FFFFFF;color:#170B33;
+  font:800 clamp(12px, 6.2cqw, 25px)/1.46 var(--font-body);letter-spacing:-.005em;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;
+}
+.x-rc__w[data-off] { visibility:hidden; }
+.x-rc__w[data-on] { color:#4B12D6; }
+
+/* the one label: DEMO · stock photo, top left, under the progress bars */
+.x-rc__demo { position:absolute;z-index:3;left:10px;top:20px;max-width:calc(100% - 20px);white-space:normal;line-height:1.2; }
+
+/* the format badge (a span on strips, a link on the feed) */
+.x-rc__series {
+  display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:2px 10px 2px 2px;border-radius:999px;
+  background:var(--sun);color:#170B33;border:2px solid #170B33;font:800 13px/1.15 var(--font-body);text-decoration:none;
+}
+.x-rc__series[data-color="sky"] { background:var(--sky); }
+.x-rc__series[data-color="celery"] { background:var(--celery); }
+.x-rc__series[data-color="bubblegum"] { background:var(--bubblegum); }
+.x-rc__series[data-color="tangerine"] { background:var(--tangerine); }
+.x-rc__series-art { display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:50%;background:#FFFFFF; }
+.x-rc__series-art > svg { width:24px;height:24px; }
+.x-rc__series-name { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.x-rc .story__frame > .x-rc__series { position:absolute;z-index:3;left:10px;bottom:12px;max-width:calc(100% - 72px); }
+a.x-rc__series { min-height:44px;padding-block:7px; }
+a.x-rc__series:hover .x-rc__series-name { text-decoration:underline;text-underline-offset:.15em; }
+.x-rc__series--inline { vertical-align:middle; }
+
+/* play / pause */
+.x-rc .story__play .x-i-pause { display:none; }
+.x-rc .story__play[aria-pressed="true"] .x-i-play { display:none; }
+.x-rc .story__play[aria-pressed="true"] .x-i-pause { display:block; }
+.x-rc[data-feed-state="loading"] .story__play::after { content:"";position:absolute;inset:-8px;border-radius:50%;border:3px solid var(--celery);border-right-color:transparent;animation:spin .8s linear infinite; }
+
+/* ··· (strip cards; the feed has it on the rail) */
+.x-rc__more {
+  position:absolute;z-index:3;right:8px;bottom:8px;display:grid;place-items:center;width:44px;height:44px;padding:0;
+  border-radius:50%;border:2px solid #170B33;background:#FFF6EA;color:#170B33;box-shadow:2px 2px 0 #170B33;--focus:#170B33;
+}
+.x-rc__more svg { width:22px;height:22px;fill:currentColor; }
+.x-rc__more:active { transform:translate(2px, 2px);box-shadow:none; }
+
+/* the one thing under the clip */
+.x-rc > .story__action, .x-rc .story__action {
+  display:inline-flex;align-items:center;gap:6px;max-width:100%;white-space:normal;text-align:left;line-height:1.2;
+  background:var(--celery);color:#170B33;border-color:#170B33;--focus:#170B33;
+}
+.x-chip-arrow { display:inline-grid;flex:none; }
+.x-chip-arrow svg { width:16px;height:16px; }
+
+/* ---------------------------------------------------------------- the ··· sheet */
+.x-more .sheet__body { display:grid;gap:18px; }
+.x-more__head { min-width:0; }
+.x-more__tags { display:flex;flex-wrap:wrap;align-items:center;gap:6px; }
+.x-more__tags:empty { display:none; }
+.x-more__who { color:var(--text-muted); }
+.x-more__list { display:grid;border-top:1px solid var(--line); }
+.x-more__row {
+  display:flex;align-items:center;gap:14px;width:100%;min-height:56px;padding:6px 2px;border:0;border-bottom:1px solid var(--line);
+  background:none;color:var(--text);font:700 var(--fs-body)/1.25 var(--font-body);text-align:left;text-decoration:none;cursor:pointer;
+}
+.x-more__row:hover > span:last-child { text-decoration:underline;text-underline-offset:.18em; }
+.x-more__icon { display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:50%;background:var(--surface-2);color:var(--text);border:2px solid transparent; }
+.x-more__icon svg { width:20px;height:20px;fill:currentColor; }
+.x-more__icon svg [stroke] { fill:none; }
+.x-more__row[aria-pressed="true"] .x-more__icon { background:var(--celery);color:#170B33;border-color:#170B33; }
+.x-more__row[aria-pressed]::after { content:"";margin-left:auto;width:42px;height:26px;border-radius:999px;background:var(--surface-2);border:2px solid var(--line);box-shadow:inset -16px 0 0 2px var(--surface); }
+.x-more__row[aria-pressed="true"]::after { background:var(--celery);border-color:#170B33;box-shadow:inset 16px 0 0 2px #FFFFFF; }
+.x-more__captions > summary { display:inline-flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;font-weight:700;list-style:none; }
+.x-more__captions > summary::-webkit-details-marker { display:none; }
+.x-more__captions .story__captions-body { background:var(--surface-2);color:var(--text); }
+.x-more__facts { display:grid;gap:4px; }
+.x-more__factlist { margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:0 16px; }
+.x-more__factlist a { display:inline-flex;align-items:center;min-height:44px;color:var(--link);font-size:var(--fs-small);font-weight:700; }
+.x-more__credit { color:var(--text-muted); }

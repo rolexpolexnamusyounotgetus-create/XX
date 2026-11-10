@@ -1,19 +1,10 @@
-/*! assets/js/pages/vote.js · W3 (round 1 rework: G-VOTE) · the "2027 Ready" vote hub (vote.html).
- * Renders steps, key dates, the plan builder, the private checklist, the FAQ, hotlines and the share cards from
- * data/civic.js (the single source for voting facts). Static copy lives in vote.html + data/pages/vote.js; this
- * file never types a voting URL: every link is YSD.cfg(link.key, link.url) from civic.links (config wins).
- *
- * Round 1 (docs/reviews/round-1): steps sit behind a "How do you want to vote?" switch (3 open steps for the
- * chosen method, the other 5 folded below; every step keeps id="<step.id>" so old links still land), the
- * checklist is the "Done" ticks on the steps plus one count line, dates show 3 then "Show all", the FAQ shows 4
- * then "Show all", and the Dec 31 / Jan 1 tiles open a sheet that renders a 9:16 or 4:5 card (YSD.cards:
- * w3-dates, w3-psa-mail, w3-psa-id), rendered before the share click. A mail voter's plan .ics carries the
- * 7 pm ARRIVAL deadline and a separate "Mail your ballot today" event a week earlier (journeys-17).
- *
- * Storage (YSD.store, prefixed ysd:): vote:checklist { stepId: ts }, vote:plan { answer ids, ts },
- * vote:method ('mail'|'early'|'election-day'); never an address, birth date or party. Civic steps earn nothing:
- * no points, stickers or confetti.
- * Testing: ?now=2027-01-02 previews the page on another day (flips the mail card, hides expired dates).
+/*! assets/js/pages/vote.js · W3, round 1 by G-VOTE · the "2027 Ready" vote hub. Renders steps, dates, the plan, the
+ * private checklist, FAQ, hotlines and share cards from data/civic.js; every voting link is YSD.cfg(link.key, link.url).
+ * Steps: a "How do you want to vote?" switch opens 3 steps, folds 5 (ids kept as anchors). Dates and FAQ show a few,
+ * then "Show all". The Dec 31 / Jan 1 tiles open a sheet with a 9:16 or 4:5 card (w3-dates, w3-psa-mail, w3-psa-id),
+ * rendered before the click. Mail plans: ARRIVE-by-7-pm event plus "Mail your ballot today" a week earlier
+ * (journeys-17). Store: vote:checklist, vote:plan, vote:method; never an address, birth date or party. No points,
+ * stickers or confetti for civic steps. ?now=2027-01-02 previews another day. YSD.votePlanEvents(answers): test hook.
  */
 (function (w, d) {
   'use strict';
@@ -76,7 +67,6 @@
   function download(ev, name) {
     if (YSD.cal && YSD.cal.download(ev, name)) { toast(t('js.calDone')); track('reminder_add', { id: (Array.isArray(ev) ? ev[0] : ev).id }); }
   }
-  // 'YYYY-MM-DD' of a New York date-time minus n days (plain calendar arithmetic, no DST drift)
   function nyDayMinus(iso, n) {
     var ymd = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso)).split('-');
     return new Date(Date.UTC(+ymd[0], +ymd[1] - 1, +ymd[2] - n)).toISOString().slice(0, 10);
@@ -138,7 +128,7 @@
     (s.hotlineIds || []).slice(0, 1).forEach(function () { add(row, telLink(TEL, t('js.call') + ' ' + PHONE, 'btn btn--ghost btn--sm')); });
     row.appendChild(checkbox(s.id, t('check.done'), t('check.doneHidden')));
     body.appendChild(row);
-    var det = el('details', 'x-how');
+    var det = el('details', 'x-fold x-how');
     det.appendChild(el('summary', '', t('js.how')));
     var how = el('ol', 'x-how__list');
     (s.how || []).forEach(function (h) { how.appendChild(el('li', '', tx(h))); });
@@ -158,7 +148,7 @@
     }
     var srcs = [];
     (s.facts || []).forEach(function (f) { if (srcs.indexOf(f.source) < 0) srcs.push(f.source); });
-    var meta = el('p', 'step__meta x-fine');
+    var meta = el('p', 'step__meta x-fine x-srcs');
     meta.appendChild(d.createTextNode(tx(C.labels.sources) + ': '));
     srcs.slice(0, 4).forEach(function (u, j) { if (j) meta.appendChild(d.createTextNode(' · ')); meta.appendChild(srcLink(u)); });
     meta.appendChild(d.createTextNode(' · ' + checked(s.verified)));
@@ -170,7 +160,7 @@
   steps.forEach(function (s) {
     var li = d.getElementById(s.id); if (!li) return;
     if (s.tone === 'serious') li.setAttribute('data-tone', 'calm');
-    var det = el('details', 'x-stepd'), sum = el('summary'), n = el('span', 'step__n');
+    var det = el('details', 'x-fold x-stepd'), sum = el('summary'), n = el('span', 'step__n');
     n.setAttribute('aria-hidden', 'true');
     add(sum, n, el('h3', 'step__title', tx(s.title)));
     add(det, sum, stepBody(s));
@@ -201,6 +191,9 @@
   arrange(method);
   syncChecks();
 
+  // wide screens have room beside the mail card: open "Three ways to renew" there
+  var ways = $('#renew-ways'); if (ways && w.matchMedia && w.matchMedia('(min-width: 960px)').matches) ways.open = true;
+
   /* ---------- hash targets: open a folded step, a hidden FAQ answer or a folded box ---------- */
   function openHash() {
     var id = decodeURIComponent((w.location.hash || '').slice(1)), x = id && d.getElementById(id);
@@ -219,12 +212,11 @@
     var b = el('button', 'chip', label); b.type = 'button'; b.setAttribute(attr, val); b.setAttribute('aria-pressed', pressed ? 'true' : 'false'); return b;
   }
   function scopeNames(sc) { return sc.map(function (id) { var p = byId(C.places, id); return p ? tx(p.name) : id; }).join(', '); }
-  var allDates = false, DATES_FIRST = 3;
+  var allDates = false, DATES_FIRST = 4;
   function computedLabel(x) {
     var r = x.computed && x.computed.rule;
     return r === 'reg29' || r === 'reg29-holiday' ? tx(C.labels.computedReg) : r === 'mail12' ? tx(C.labels.computedMail) : x.computed ? tx(x.computed.note) : '';
   }
-  // A deadline is only as sure as its election (ruling 00: Lake Mary and Altamonte Springs are "expected").
   function expectedFor(x, pl) {
     if (x.status === 'expected') return true;
     var rel = (x.appliesTo || []).map(function (id) { return byId(C.dates, id); }).filter(function (e) { return e && (!pl || pl === 'all' || e.scope.indexOf(pl) >= 0 || e.scope.indexOf('all') >= 0); });
@@ -239,20 +231,23 @@
     if (place !== 'all' && !items.some(function (x) { return x.scope.indexOf(place) >= 0; })) datesBox.appendChild(el('p', 'notice notice--info', t('dates.none')));
     var total = items.length;
     if (!allDates) items = items.slice(0, DATES_FIRST);
-    var year = '', grid;
+    datesBox.setAttribute('data-all', allDates ? 'true' : 'false');
+    // collapsed: one row of the next few (a swipeable ticket row on phones); expanded: grouped by year
+    var year = '', grid = allDates ? null : el('ol', 'x-dates__grid snap');
+    if (grid) datesBox.appendChild(grid);
     items.forEach(function (x) {
       var y = part(x.date, { year: 'numeric' });
-      if (y !== year) { year = y; grid = el('ol', 'x-dates__grid'); add(datesBox, el('h3', 'x-year', y), grid); }
+      if (allDates && y !== year) { year = y; grid = el('ol', 'x-dates__grid'); add(datesBox, el('h3', 'x-year', y), grid); }
       var row = el('li', 'x-date x-date--' + x.kind);
-      var stub = add(el('p', 'x-date__stub'), el('span', 'x-date__m', part(x.date, { month: 'short' })), el('span', 'x-date__d', part(x.date, { day: 'numeric' })), el('span', 'x-date__w', part(x.date, { weekday: 'short' })), x.time && !/ to | a /.test(tx(x.time)) ? el('span', 'x-date__time', tx(x.time)) : null);
+      var stub = add(el('p', 'x-date__stub'), el('span', 'x-date__m', part(x.date, { month: 'short' })), el('span', 'x-date__d', part(x.date, { day: 'numeric' })), el('span', 'x-date__w', part(x.date, { weekday: 'short' })), el('span', 'x-date__y', y), x.time && !/ to | a /.test(tx(x.time)) ? el('span', 'x-date__time', tx(x.time)) : null);
       stub.setAttribute('aria-hidden', 'true');
       var b = el('div', 'x-date__body');
       var tags = el('p', 'x-date__tags'), isExp = expectedFor(x, place);
       add(tags, el('span', isExp ? 'tag tag--outline' : 'tag tag--real', isExp ? tx(C.labels.expected).split('.')[0] : tx(C.labels.confirmed)));
       if (x.scope.indexOf('all') < 0) add(tags, el('span', 'tag tag--outline', t('js.scope') + ': ' + scopeNames(x.scope)));
-      add(b, tags, el('h4', 'x-date__title', tx(x.title)), el('p', 'u-visually-hidden', longDate(x.date) + (x.time ? ', ' + tx(x.time) : '')));
+      add(b, tags, el(allDates ? 'h4' : 'h3', 'x-date__title', tx(x.title)), el('p', 'u-visually-hidden', longDate(x.date) + (x.time ? ', ' + tx(x.time) : '')));
       if (x.kind === 'election') add(b, el('p', 'x-date__short', tx(x.short))); // the rest repeat cards above
-      var note = x.status === 'expected' ? tx(C.labels.expected) : computedLabel(x) || (x.statusNote ? tx(x.statusNote) : '');
+      var note = x.status === 'expected' ? tx(C.labels.expected) : computedLabel(x) || (x.statusNote && (allDates || x.kind !== 'rule-change') ? tx(x.statusNote) : ''); // rule notes repeat the Jan 1 rules above; the full list keeps them
       if (note) add(b, el('p', 'x-fine', note));
       if (x.status !== 'expected' && x.computed && x.statusNote && hedged(x)) add(b, el('p', 'x-fine', tx(x.statusNote)));
       var act = el('p', 'x-date__act');
@@ -285,7 +280,7 @@
   renderDates();
 
   /* ---------- FAQ: 4 first, then "Show all" ---------- */
-  var FAQ_TAGS = ['all', 'vote-by-mail', 'id', 'register', 'party', 'students', 'under-18', 'election-day'], faqTag = 'all', faqAll = false, FAQ_FIRST = 4;
+  var FAQ_TAGS = ['all', 'vote-by-mail', 'id', 'register', 'party', 'students', 'under-18', 'election-day'], faqTag = 'all', faqAll = false, FAQ_FIRST = w.matchMedia && w.matchMedia('(min-width: 1024px)').matches ? 6 : 3;
   var faqBox = $('[data-faq]'), faqTags = $('[data-faq-tags]');
   function renderFaq(focusMore) {
     if (!faqBox) return;
@@ -293,14 +288,14 @@
     var list = (C.faq || []).filter(function (f) { return faqTag === 'all' || (f.tags || []).indexOf(faqTag) >= 0; });
     var cut = faqTag === 'all' && !faqAll ? FAQ_FIRST : list.length;
     list.forEach(function (f, i) {
-      var det = el('details', 'x-qa'); det.id = f.id;
+      var det = el('details', 'x-fold x-qa'); det.id = f.id;
       if (i >= cut) det.hidden = true;
       det.appendChild(el('summary', '', tx(f.q)));
       var body = add(el('div', 'x-qa__a'), el('p', '', tx(f.a)));
       var links = el('p', 'x-qa__links');
       (f.linkIds || []).forEach(function (id) { var a = official(id); if (a) add(links, a, d.createTextNode(' ')); });
       add(body, links);
-      var src = el('p', 'x-fine'); src.appendChild(d.createTextNode(tx(C.labels.source) + ': ')); src.appendChild(srcLink(f.source)); src.appendChild(d.createTextNode(' · ' + checked(f.verified)));
+      var src = el('p', 'x-fine x-srcs'); src.appendChild(d.createTextNode(tx(C.labels.source) + ': ')); src.appendChild(srcLink(f.source)); src.appendChild(d.createTextNode(' · ' + checked(f.verified)));
       add(det, add(body, src));
       faqBox.appendChild(det);
     });
@@ -410,9 +405,7 @@
       }
     };
   }
-  // journeys-17: a mail voter's calendar never says "Vote" at 7 pm on Election Day. Event 1 is the ARRIVAL
-  // deadline (titleMail), event 2 the registration or mail-request deadline, event 3 "Mail your ballot today"
-  // a week earlier (cal.mailEvent), so the alarm and the event agree.
+  // journeys-17: never "Vote" at 7 pm for mail voters; ARRIVE deadline + mail-it-today a week before + deadline
   function planEvents(V, v, mail) {
     var cal = P.outputs.calendar, dt = V.dt;
     var ev = { id: 'ysd-plan-' + dt.id, title: fill(tx(mail && cal.titleMail ? cal.titleMail : cal.title), v), description: fill(tx(mail ? cal.descriptionMail : cal.description), v), url: href('countyElections'), alarm: cal.remindersMinutesBefore[0] };
@@ -487,94 +480,70 @@
   /* ---------- share cards: "Send these 2 dates" sheet (canvas, rendered before the click) ---------- */
   var cards = YSD.cards, sheet = $('#dates-sheet'), frame = $('[data-dcard-frame]');
   var LAKE = '#2236C9', CREAM = '#FFF6EA', NIGHT = '#170B33', TANG = '#FF8B3D', SUN = '#FFD23F';
-  var PSA = {
-    both: { title: t('psa.both'), text: t('psa.bothText'), hash: '' },
-    mail: { fill: TANG, ink: NIGHT, kicker: tx(byId(C.changes, 'mail-ballot-expiry').eyebrow), title: t('mail.title'), body: t('mail.body1') + ' ' + t('mail.bodyLink') + ' ' + t('mail.body2'), sticker: 'envelope', hash: 'mail-ballot', text: t('psa.mailText') },
-    id: { fill: LAKE, ink: CREAM, kicker: tx(byId(C.changes, 'student-id').eyebrow), title: t('id.title'), body: t('id.copy'), sticker: null, hash: 'student-id', text: t('psa.idText') }
+  var TILE = {
+    mail: { bg: TANG, fg: NIGHT, rot: -0.045, k: t('tile.mail.k'), big: t('tile.mail.big'), t: t('tile.mail.t'), iso: '2026-12-31T12:00:00-05:00', line: t('card.mailLine'), title: t('mail.title'), full: t('mail.body1') + ' ' + t('mail.bodyLink') + ' ' + t('mail.body2') },
+    id: { bg: CREAM, fg: LAKE, rot: 0.035, k: t('tile.id.k'), big: t('tile.id.big'), t: t('tile.id.t'), iso: '2027-01-01T12:00:00-05:00', line: t('card.idLine'), title: t('id.title'), full: t('id.copy') }
+  };
+  var PSA = { // one card engine, three cards: both tiles, or one big tile with the full required wording
+    both: { keys: ['mail', 'id'], title: t('psa.both'), text: t('psa.bothText'), hash: '' },
+    mail: { keys: ['mail'], title: t('psa.mail'), text: t('psa.mailText'), hash: 'mail-ballot' },
+    id: { keys: ['id'], title: t('psa.id'), text: t('psa.idText'), hash: 'student-id' }
   };
   var kind = after ? 'id' : 'both', dsize = 'story', canv = {};
   function shareUrl(k) { return YSD.share ? YSD.share.url('vote.html' + (PSA[k].hash ? '#' + PSA[k].hash : '')) : w.location.href; }
-  function prettyUrl(u) { return YSD.ui && YSD.ui.prettyLink ? YSD.ui.prettyLink(u) : u; }
-  function footer(ctx, env, data, ink) {
-    var W = env.width, H = env.height, s = W / 1080, h = env.h, th = env.theme, m = 84 * s, fy = H - m - 120 * s;
-    ctx.fillStyle = ink; ctx.globalAlpha = 0.3; ctx.fillRect(m, fy - 28 * s, W - 2 * m, 3 * s); ctx.globalAlpha = 1;
-    ctx.font = h.font(38 * s, 800, th.fontBody); ctx.textBaseline = 'top';
-    ctx.fillText(prettyUrl(data.url), m, fy);
-    ctx.font = h.font(26 * s, 400, th.fontBody);
-    h.wrapText(ctx, (YSD.cfg && YSD.cfg('legal.cardFooter', '')) || '', m, fy + 56 * s, W - 2 * m - 150 * s, 34 * s, { maxLines: 2 });
-    return fy;
-  }
-  function tile(ctx, env, x, y, w2, h2, rot, o) {
-    var s = env.width / 1080, h = env.h, th = env.theme, pad = 34 * s;
+  function tile(ctx, env, x, y, w2, h2, rot, o, big) {
+    var s = env.width / 1080, h = env.h, th = env.theme, pad = 34 * s, r = 40 * s;
     ctx.save(); ctx.translate(x + w2 / 2, y + h2 / 2); ctx.rotate(rot); ctx.translate(-w2 / 2, -h2 / 2);
-    h.roundRect(ctx, 14 * s, 16 * s, w2, h2, 40 * s, { fill: NIGHT });
-    h.roundRect(ctx, 0, 0, w2, h2, 40 * s, { fill: o.bg });
-    ctx.save(); h.roundRect(ctx, 0, 0, w2, h2, 40 * s); ctx.clip(); ctx.fillStyle = NIGHT; ctx.fillRect(0, 0, w2, 52 * s); ctx.restore();
+    h.roundRect(ctx, 14 * s, 16 * s, w2, h2, r, { fill: NIGHT });
+    h.roundRect(ctx, 0, 0, w2, h2, r, { fill: o.bg });
+    ctx.save(); h.roundRect(ctx, 0, 0, w2, h2, r); ctx.clip(); ctx.fillStyle = NIGHT; ctx.fillRect(0, 0, w2, 52 * s); ctx.restore();
     ctx.fillStyle = LAKE; [0.28, 0.72].forEach(function (f) { ctx.beginPath(); ctx.arc(w2 * f, 26 * s, 10 * s, 0, Math.PI * 2); ctx.fill(); });
-    ctx.lineWidth = 6 * s; ctx.strokeStyle = NIGHT; h.roundRect(ctx, 0, 0, w2, h2, 40 * s); ctx.stroke();
+    ctx.lineWidth = 6 * s; ctx.strokeStyle = NIGHT; h.roundRect(ctx, 0, 0, w2, h2, r); ctx.stroke();
     ctx.textBaseline = 'top'; ctx.fillStyle = NIGHT; ctx.font = h.font(30 * s, 700, th.fontBody);
     ctx.fillText(o.k, pad, 80 * s);
     ctx.fillStyle = o.fg;
-    var ft = h.fitText(ctx, o.big, w2 - 2 * pad, { max: 210 * s, min: 90 * s, weight: 800, family: th.fontDisplay, maxLines: 1, lineHeight: 0.9 });
+    var ft = h.fitText(ctx, o.big, w2 - 2 * pad, { max: (big ? 300 : 210) * s, min: 90 * s, weight: 800, family: th.fontDisplay, maxLines: 1, lineHeight: 0.9 });
     ctx.fillText(ft.lines[0], pad, 130 * s);
-    ctx.fillStyle = NIGHT; ctx.font = h.font(34 * s, 700, th.fontBody);
-    h.wrapText(ctx, o.t, pad, 130 * s + ft.lineHeight + 26 * s, w2 - 2 * pad, 42 * s, { maxLines: 4 });
+    ctx.fillStyle = NIGHT; ctx.font = h.font((big ? 44 : 34) * s, 700, th.fontBody);
+    h.wrapText(ctx, o.t, pad, 130 * s + ft.lineHeight + 26 * s, w2 - 2 * pad, (big ? 54 : 42) * s, { maxLines: 4 });
+    if (h2 > 470 * s) { // calendar-page footer: weekday · year
+      ctx.globalAlpha = 0.35; ctx.fillRect(pad, h2 - pad - 58 * s, w2 - 2 * pad, 3 * s); ctx.globalAlpha = 1;
+      ctx.font = h.font(30 * s, 800, th.fontBody); ctx.fillText((part(o.iso, { weekday: 'short' }) + ' · ' + part(o.iso, { year: 'numeric' })).toUpperCase(), pad, h2 - pad - 36 * s);
+    }
     ctx.restore();
   }
-  function drawBoth(ctx, data, env) {
-    var W = env.width, H = env.height, s = W / 1080, h = env.h, th = env.theme, m = 84 * s, tall = H > 1500;
-    ctx.fillStyle = LAKE; ctx.fillRect(0, 0, W, H);
-    ctx.textBaseline = 'top'; ctx.textAlign = 'left';
-    var y = m + (tall ? 90 * s : 0);
-    ctx.font = h.font(32 * s, 700, th.fontBody);
-    var kk = t('card.kicker'), kw = ctx.measureText(kk).width;
-    h.roundRect(ctx, m, y, kw + 48 * s, 62 * s, 31 * s, { fill: CREAM });
-    ctx.fillStyle = NIGHT; ctx.fillText(kk, m + 24 * s, y + 15 * s);
-    y += (tall ? 120 : 96) * s;
-    ctx.fillStyle = CREAM;
-    var ft = h.fitText(ctx, t('card.title'), W - 2 * m, { max: (tall ? 150 : 120) * s, min: 70 * s, weight: 800, family: th.fontDisplay, maxLines: 2, lineHeight: 0.92 });
-    ft.lines.forEach(function (ln, i) { ctx.fillText(ln, m, y + i * ft.lineHeight); });
-    y += ft.lines.length * ft.lineHeight + (tall ? 70 : 44) * s;
-    var gap = 44 * s, tw = (W - 2 * m - gap) / 2, thh = (tall ? 620 : 450) * s;
-    tile(ctx, env, m, y, tw, thh, -0.045, { bg: TANG, fg: NIGHT, k: t('tile.mail.k'), big: t('tile.mail.big'), t: t('tile.mail.t') });
-    tile(ctx, env, m + tw + gap, y, tw, thh, 0.035, { bg: CREAM, fg: LAKE, k: t('tile.id.k'), big: t('tile.id.big'), t: t('tile.id.t') });
-    y += thh + (tall ? 100 : 56) * s;
-    [[TANG, t('card.mailLine')], [CREAM, t('card.idLine')]].forEach(function (pr) {
-      ctx.fillStyle = pr[0]; ctx.beginPath(); ctx.arc(m + 14 * s, y + 24 * s, 13 * s, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = CREAM; ctx.font = h.font((tall ? 42 : 36) * s, 700, th.fontBody);
-      y += h.wrapText(ctx, pr[1], m + 50 * s, y, W - 2 * m - 50 * s, (tall ? 54 : 46) * s, { maxLines: 3 }).height + (tall ? 30 : 18) * s;
-    });
-    ctx.fillStyle = SUN; ctx.font = h.font((tall ? 40 : 34) * s, 800, th.fontBody);
-    ctx.fillText(t('psa.official'), m, y + (tall ? 12 : 4) * s);
-    ctx.fillStyle = CREAM; footer(ctx, env, data, CREAM);
-  }
-  function drawPsa(k) {
+  function drawCard(k) {
     return function (ctx, data, env) {
-      var p = PSA[k], W = env.width, H = env.height, s = W / 1080, h = env.h, th = env.theme, m = 84 * s;
-      ctx.fillStyle = p.fill; ctx.fillRect(0, 0, W, H);
+      var W = env.width, H = env.height, s = W / 1080, h = env.h, th = env.theme, m = 84 * s, tall = H > 1500, keys = PSA[k].keys, one = keys.length === 1;
+      ctx.fillStyle = LAKE; ctx.fillRect(0, 0, W, H);
       ctx.textBaseline = 'top'; ctx.textAlign = 'left';
-      var y = m + (H > 1500 ? 140 * s : 0);
-      ctx.font = h.font(34 * s, 700, th.fontBody);
-      var kw = ctx.measureText(p.kicker).width;
-      h.roundRect(ctx, m, y, kw + 48 * s, 64 * s, 32 * s, { fill: p.ink });
-      ctx.fillStyle = p.fill; ctx.fillText(p.kicker, m + 24 * s, y + 15 * s);
-      y += 110 * s;
-      ctx.fillStyle = p.ink;
-      var ft = h.fitText(ctx, p.title, W - 2 * m - (p.sticker ? 120 * s : 0), { max: 150 * s, min: 70 * s, weight: 800, family: th.fontDisplay, maxLines: 3, lineHeight: 0.95 });
+      var y = m + (tall ? 90 * s : 0);
+      ctx.font = h.font(32 * s, 700, th.fontBody);
+      var kk = t('card.kicker'), kw = ctx.measureText(kk).width;
+      h.roundRect(ctx, m, y, kw + 48 * s, 62 * s, 31 * s, { fill: CREAM });
+      ctx.fillStyle = NIGHT; ctx.fillText(kk, m + 24 * s, y + 15 * s);
+      y += (tall ? 120 : 96) * s;
+      ctx.fillStyle = CREAM;
+      var ft = h.fitText(ctx, one ? TILE[keys[0]].title : t('card.title'), W - 2 * m, { max: (tall ? 150 : 120) * s, min: 64 * s, weight: 800, family: th.fontDisplay, maxLines: 2, lineHeight: 0.92 });
       ft.lines.forEach(function (ln, i) { ctx.fillText(ln, m, y + i * ft.lineHeight); });
-      y += ft.lines.length * ft.lineHeight + 40 * s;
-      ctx.font = h.font(48 * s, 400, th.fontBody);
-      var r = h.wrapText(ctx, p.body, m, y, W - 2 * m, 64 * s, { maxLines: 8 });
-      y += r.height + 36 * s;
-      ctx.font = h.font(42 * s, 700, th.fontBody);
-      ctx.fillText(t('psa.official'), m, y);
-      footer(ctx, env, data, p.ink);
-      if (p.sticker && YSD.ui && YSD.ui.stickerDataUrl) {
-        return h.loadImage(YSD.ui.stickerDataUrl(p.sticker)).then(function (img) {
-          ctx.save(); ctx.translate(W - m - 90 * s, m + 70 * s + (H > 1500 ? 140 * s : 0)); ctx.rotate(0.22);
-          ctx.drawImage(img, -95 * s, -95 * s, 190 * s, 190 * s); ctx.restore();
-        }, function () {});
-      }
+      y += ft.lines.length * ft.lineHeight + (tall ? 70 : 44) * s;
+      var gap = 44 * s, tw = one ? W - 2 * m - 20 * s : (W - 2 * m - gap) / 2, thh = (one ? (tall ? 560 : 400) : (tall ? 600 : 450)) * s;
+      keys.forEach(function (key, i) { var o = TILE[key]; tile(ctx, env, m + i * (tw + gap), y, tw, thh, one && key === 'id' ? 0 : one ? o.rot / 2 : o.rot, o, one); });
+      y += thh + (tall ? 100 : 56) * s;
+      keys.forEach(function (key) { // one tile: the full required wording; two: the short lines
+        var o = TILE[key], fs = (one ? (tall ? 44 : 36) : (tall ? 42 : 36)) * s;
+        ctx.fillStyle = o.bg; ctx.beginPath(); ctx.arc(m + 14 * s, y + fs * 0.6, 13 * s, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = CREAM; ctx.font = h.font(fs, 700, th.fontBody);
+        y += h.wrapText(ctx, one ? o.full : o.line, m + 50 * s, y, W - 2 * m - 50 * s, fs * 1.28, { maxLines: one ? 7 : 3 }).height + (tall ? 30 : 18) * s;
+      });
+      ctx.fillStyle = SUN; ctx.font = h.font((tall ? 40 : 34) * s, 800, th.fontBody);
+      ctx.fillText(t('psa.official'), m, y + (tall ? 12 : 4) * s);
+      var fy = H - m - 120 * s; // footer: link + paid-for line (the engine adds the DEMO mark)
+      ctx.fillStyle = CREAM; ctx.globalAlpha = 0.3; ctx.fillRect(m, fy - 28 * s, W - 2 * m, 3 * s); ctx.globalAlpha = 1;
+      ctx.font = h.font(38 * s, 800, th.fontBody);
+      ctx.fillText(YSD.ui && YSD.ui.prettyLink ? YSD.ui.prettyLink(data.url) : data.url, m, fy);
+      ctx.font = h.font(26 * s, 400, th.fontBody);
+      h.wrapText(ctx, (YSD.cfg && YSD.cfg('legal.cardFooter', '')) || '', m, fy + 56 * s, W - 2 * m - 150 * s, 34 * s, { maxLines: 2 });
     };
   }
   function cardKey() { return kind + '-' + dsize; }
@@ -596,9 +565,9 @@
     renderCard(kind, dsize).then(function (cv) { if (cv && cardKey() === key) { frame.textContent = ''; frame.appendChild(cv); } });
   }
   if (cards && cards.register) {
-    cards.register('w3-dates', drawBoth, { size: 'story' });
-    cards.register('w3-psa-mail', drawPsa('mail'), { size: 'story' });
-    cards.register('w3-psa-id', drawPsa('id'), { size: 'story' });
+    cards.register('w3-dates', drawCard('both'), { size: 'story' });
+    cards.register('w3-psa-mail', drawCard('mail'), { size: 'story' });
+    cards.register('w3-psa-id', drawCard('id'), { size: 'story' });
     // render the default card early (idle), so the share click has a canvas ready (browsers need a fresh gesture)
     var warm = function () { renderCard(kind, dsize); };
     if (w.requestIdleCallback) w.requestIdleCallback(warm, { timeout: 2500 }); else setTimeout(warm, 1200);

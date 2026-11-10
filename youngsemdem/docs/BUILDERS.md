@@ -42,12 +42,14 @@ Every class below is shown there in light and dark with copy-paste markup. Highl
 
 | Group | Classes | Watch out |
 |---|---|---|
-| Layout | `.wrap` `.section` (`--violet --celery --pink --sky --night --cream`) `.band--serious` `.section-head` `.stack` `.cluster` `.grid` `.snap` `.prose` | Bright and cream bands force light colours, night forces dark. `.band--serious` (+ `data-tone="calm"`): no stickers, emoji, rotation or confetti |
+| Layout | `.wrap` `.section` (`--violet --celery --pink`/`--bubblegum --sky --night --cream`, round 1: `--lake --sun --mint --teal --orange --tangerine`) `.band--serious` `.section-head` `.stack` `.cluster` `.grid` `.snap` `.prose` | Bright and cream bands force light colours (light islands), night forces dark; violet and lake keep the page theme. Each world sets `--world`, `--world-pop` (a fill under ink) and `--world-note` (hand-written words). `.band--serious` (+ `data-tone="calm"`): no stickers, emoji, rotation or confetti |
+| Heroes (round 1) | `.hero` `.hero__grid` `.hero__copy` `.hero__title` `.hero__sub` `.hero__actions` `.hero__object` `.hero__pill` `.hero__note` `.hero__fine`; shapes `.hero--split --flip --center --object-first --bleed --compact --poster`; edges `.edge--scallop --zigzag --tilt --arch`; objects `.fan` (a fanned stack), `.device` + `.device__screen` (phone frame) | One world + one shape + one edge + your own hero object per page, so no two first screens share a fill or an outline (genz-brand-01; worlds table in docs/reviews/round-1/PLAN.md). Home stays flat violet |
 | Atoms | `.btn` (`--primary --violet --ink --ghost --quiet --sm --lg --block --icon --wrap`, `[data-state]`) `.link` `.eyebrow` `.tag` (`--demo --real --new --serious --stock --wrap`; `.tags--wrap` on a container) `.chip` (`.chip__dot` + `style="--dot: …"`) `.seg` `.switch` `.avatar` `.facepile` | One `.btn--primary` + one other action fully visible at 390 x 664 (B6). `.btn` and `.tag` don't wrap unless you opt in (`--wrap`); every `.btn` inside `.form`, `.sheet` and success panels wraps already |
 | Forms | `.form` `.form__row` (`--2`, `--3`) `.field` (`__label __hint __error`) `.field--check` `.choice` `.form__summary` `.consent` | Wrap consent text in a `<span>`; at most 3 required fields; no pre-checked boxes |
 | Brand | `.brand` `.sticker[data-sticker]` `.word-sticker` | A `<button>` sticker gets a sourced fact; a `<span>` is decorative. Hand-font word stickers stay out of the first screen (keeps first-view fonts under 80 KB) |
 | Cards | `.ticket` `.invite` `.pin` (`--deadline --rule --hangout`, civic pins `data-civic`) `.stat` `.tier` `.story` `.bubble` `.step` `.issue` `.team-card` `.notice` | `.story`: the DEMO clip tag goes in `.story__meta` beside the handle, never on the poster (it hides burned-in titles). `.story__captions` (44 px summary) and `.story__report` (44 px link) are core now |
-| Overlays, motion | `.sheet` (`<dialog>`) `.toast` `.kinetic` `.rotor` `.ticker` `.countdown` `.confetti` `.reveal` | Anything that loops past 5 s sits next to a Pause motion button |
+| Overlays, motion | `.sheet` (`<dialog>`) `.toast` `.unlock` (sticker reveal) `.landing` ("who sent this") `.kinetic` `.rotor` `.ticker` `.countdown` `.confetti` `.reveal` (scroll reveal) | Anything that loops past 5 s sits next to a Pause motion button. Toasts and confetti draw above an open sheet on their own |
+| Brand (round 1) | `.brand` `.brand__mark` `.brand__word` (inline SVG in the header partial; `#ysd-word` and `#ysd-swoosh` are reusable with `<use>`) | The Saved Seat ticket + lettered wordmark. Canvas: `YSD.cards.brand`. Files: `assets/img/brand/` (`node tools/make_brand.js`) |
 
 Need a shared component changed? Ask the lead (section 6) and meanwhile style an `x-` prefixed class in
 your page CSS. State lives in attributes (`aria-pressed`, `data-state`, `hidden`), never `.is-*`; JS
@@ -60,7 +62,26 @@ selects `data-*` hooks, never styling classes.
 {tone})` (through the one status region) · `YSD.ui.sheet.open(el, {opener})` · `YSD.ui.countdown(el)`
 · `YSD.ui.confetti(el)` (no-op under reduced motion, Pause motion and civic or serious content) ·
 `YSD.ui.form.errors(form, {field: code})` / `.clear(form)` · `YSD.ui.prettyLink(url)` · `YSD.ui.share()` ·
-`YSD.ui.stickers(root)` / `.stickerFacts(root)` · `YSD.ui.ready(fn)`. Declarative hooks: `[data-share]`,
+`YSD.ui.stickers(root)` / `.stickerFacts(root)` · `YSD.ui.ready(fn)`.
+
+Round 1 additions (G-CORE, Nov 10, 2026):
+
+- `YSD.ui.toast(text, {tone, priority, replace})` queues instead of replacing. `priority: 'high'` for share,
+  copy and error results (interrupts; the interrupted toast comes back), `'low'` for sticker notes (waits).
+  `replace: true` swaps at once (sticker facts). Toasts asked for in the same task come out most important first.
+- `YSD.ui.reveal({sticker, title, body, actions: [{label, href | onClick, primary}], ring, civic})` -> Promise:
+  the sticker unlock moment (centred, sized to the art, focus-managed, Escape or tap outside closes, static
+  under reduced motion, queued). `civic: true` falls back to a toast: nothing celebrates a civic step.
+- `YSD.ui.landing()` runs on every page opened with `?ref` or `?from`: "Kira sent you this · Join free".
+  Opt out with `<body data-landing="custom">` (quiz results that say "Kira got The Hype Captain") or by
+  keeping rsvp.js's `[data-invite-landing]` box (events, home).
+- `YSD.ui.jump(el | '#id')` scrolls, opens any closed `<details>` around the target and moves focus to it (or
+  its first heading). Same-page links do this on their own; `[data-no-jump]` opts out. Collapsed sections keep
+  working anchors (a `#renew-mail-ballot` link opens its disclosure).
+- `YSD.ui.langHref()` and the header ES/EN link keep the query and the place on the page.
+- `YSD.ui.topDialog()` -> the open modal `<dialog>`.
+- Links: `YSD.share.url()` adds `from=<FirstName>` for adult members (journeys-08); `YSD.members.reset()`
+  is "Start over" (journeys-06). See `docs/infra/README.md`. Declarative hooks: `[data-share]`,
 `[data-countdown]`, `[data-sheet-open]`, `[data-rotor]`, `[data-ticker]`, `[data-sticker]`,
 `[data-cfg-href="links.x"]`, `[data-year]`. Infra calls (`YSD.share.url()`, `YSD.cal`, `YSD.cards`,
 `YSD.members`, `YSD.store`): `docs/infra/README.md`. Share links always come from `YSD.share.url()`.
@@ -107,8 +128,8 @@ npm test                                                     # infra: see the kn
 Quick loop while styling: `node tools/qa.js --pages PAGE.html --widths 390 --no-axe --no-perf --no-share`.
 Then shoot it (`node tools/shoot.js --pages PAGE.html,es/PAGE.html`), look at the contact sheets at 390
 and 1440 in both themes, fix, and look again. Home also needs `data-qa="mail-ballot"` and `data-qa="reel"`.
-Known as of Nov 9: `npm test` tooling has 2 infra failures (manifest drift, one missing photo credit)
-that the lead is fixing; `check_site` lists links to pages other builders haven't landed yet.
+`npm test` also runs the shared UI suite (`tests/infra/ui.test.js`, chained from core.test.js). Brand assets:
+`node tools/make_brand.js` (and `--check`).
 
 ## 6. The ownership and Lead request rule
 

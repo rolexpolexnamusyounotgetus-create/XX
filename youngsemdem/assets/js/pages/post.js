@@ -2,8 +2,12 @@
  * assets/js/pages/post.js (W4): the "post a clip" flow and the "Pending review" cards.    YSD.post
  * Used by post.html (as a page) and clips.html (inside the post sheet). BRIEF §6 "Posting".
  *
- *   YSD.post.mount(form, { mode: 'page' | 'sheet', tag, onDone(record) })  -> { reset(), setTag(tag) }
- *     form = <form data-post-form> with the markup in post.html (fields carry data-post-* hooks).
+ *   YSD.post.mount(form, { mode: 'page' | 'sheet', tag, onDone(record) })  -> { reset({keep}), setTag(tag), step(n, {focus}), current() }
+ *     form = <form data-post-form> with the markup in post.html (fields carry data-post-* hooks). Round 1:
+ *     three steps (your clip, caption, safety check), each validated on Next, so the error summary only
+ *     lists that step's problems and every consent names its box (journeys-20); a phone-frame preview of
+ *     the picked file (object URL, never uploaded) or the link, with the caption typed live (genz-brand-19);
+ *     "Post another" keeps this visit's age and guardian contact in memory only (journeys-21).
  *     Upload: YSD.clips.validate(file) then YSD.clips.add(file, {caption, tags}). Link: TikTok,
  *     Instagram or YouTube only, saved locally under YSD.store 'clips:links' as
  *     {id, source:'local', link, host, caption, tags, status:'pending', minors, guardian, captions, consents, createdAt, demo}.
@@ -122,6 +126,9 @@
     }
   }
 
+  // Answers kept for this visit only (journeys-21): never written to storage, gone on reload.
+  var session = { age: '', guardian: '', minors: '' };
+
   function mount(form, opts) {
     if (!form || form.__ysdPost) return form && form.__ysdPost;
     opts = opts || {};
@@ -131,6 +138,7 @@
     var tagsIn = $('[name="tags"]', form), ageIn = $('[name="age"]', form), guard = $('[name="guardian"]', form);
     var countEl = $('[data-post-count]', form), chosen = $('[data-post-chosen]', form), submit = $('[type="submit"]', form);
     var ageBox = $('[data-post-age]', form), guardBox = $('[data-post-guardian]', form), promptBox = $('[data-post-prompt]', form);
+    var steps = $$('[data-step]', form), dots = $$('[data-step-dot]', form), current = 1;
     var L = limits();
     var currentTag = '';
 
@@ -138,6 +146,7 @@
     function syncHow() {
       var m = howMode();
       $$('[data-post-when]', form).forEach(function (b) { b.hidden = b.getAttribute('data-post-when') !== m; });
+      syncPreview();
     }
     function ageNow() {
       var a = memberAge();
@@ -182,13 +191,95 @@
       promptBox.hidden = false;
     }
 
+    // ---------------------------------------------------------------- the phone-frame preview (genz-brand-19)
+    // The picked file plays from an object URL inside the frame (muted, never uploaded); the caption shows as you type.
+    var pv = $('[data-post-preview]', form), pvVideo = null, pvEmpty = pv && $('[data-preview-empty]', pv);
+    function previewVideo() {
+      // made only once a file is picked, so the page never holds a <video> with nothing to show
+      if (!pvVideo && pv) {
+        var scr = $('.x-phone__screen', pv);
+        pvVideo = el('video', { 'data-preview-video': true, muted: true, playsinline: true, loop: true, 'aria-hidden': 'true' });
+        pvVideo.muted = true;
+        if (scr) scr.insertBefore(pvVideo, scr.firstChild);
+      }
+      return pvVideo;
+    }
+    var pvLink = pv && $('[data-preview-link]', pv), pvHost = pv && $('[data-preview-host]', pv), pvCap = pv && $('[data-preview-caption]', pv);
+    var objUrl = null;
+    function reducedMotion() { try { return w.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+    function clearObj() {
+      if (pvVideo) { try { pvVideo.pause(); } catch (e) {} pvVideo.removeAttribute('src'); try { pvVideo.load(); } catch (e) {} }
+      if (objUrl) { try { URL.revokeObjectURL(objUrl); } catch (e) {} objUrl = null; }
+    }
+    function syncPreview() {
+      if (!pv) return;
+      var m = howMode(), f = fileIn && fileIn.files && fileIn.files[0], lk = m === 'link' ? checkLink(linkIn && linkIn.value) : null;
+      var hasFile = m === 'upload' && f && YSD.clips && YSD.clips.validate(f).ok;
+      if (hasFile && previewVideo()) {
+        if (!objUrl || pvVideo.__file !== f) {
+          clearObj();
+          try { objUrl = URL.createObjectURL(f); } catch (e) { objUrl = null; }
+          if (objUrl) {
+            pvVideo.__file = f;
+            pvVideo.muted = true;
+            pvVideo.setAttribute('src', objUrl);
+            if (!reducedMotion()) { var pr = pvVideo.play(); if (pr && pr.catch) pr.catch(function () {}); }
+          }
+        }
+      } else clearObj();
+      if (pvEmpty) pvEmpty.hidden = !!(hasFile || (lk && lk.ok));
+      if (pvLink) {
+        pvLink.hidden = !(lk && lk.ok);
+        if (pvHost && lk && lk.ok) pvHost.textContent = { 'tiktok.com': 'TikTok', 'instagram.com': 'Instagram', 'youtube.com': 'YouTube' }[lk.host] || lk.host;
+      }
+      if (pvCap && cap) pvCap.textContent = cap.value.trim().slice(0, L.captionMax);
+      if (hasFile || (lk && lk.ok)) pv.removeAttribute('data-empty'); else pv.setAttribute('data-empty', '');
+    }
+
+    // ---------------------------------------------------------------- steps (journeys-20: one step's errors at a time)
+    var STEP_OF = { file: 1, link: 1, hasCaptions: 2, caption: 2, tags: 2, age: 3, minors: 3, guardian: 3 };
+    function stepOfField(name) { return STEP_OF[name] || (/^consent-/.test(name) ? 3 : 3); }
+    function step(n, o) {
+      o = o || {};
+      if (!steps.length) return;
+      current = Math.max(1, Math.min(steps.length, n));
+      steps.forEach(function (s) { s.hidden = +s.getAttribute('data-step') !== current; });
+      dots.forEach(function (dt) {
+        var k = +dt.getAttribute('data-step-dot');
+        if (k === current) dt.setAttribute('aria-current', 'step'); else dt.removeAttribute('aria-current');
+        if (k < current) dt.setAttribute('data-done', ''); else dt.removeAttribute('data-done');
+      });
+      if (o.focus !== false) {
+        // bring the step dots (and the preview under them on phones) back into view, then focus the step title
+        var title = $('[data-step-title]', steps[current - 1]), nav = $('[data-post-steps]', form);
+        var body = form.closest('.sheet__body');
+        if (body && body.scrollTo) body.scrollTo({ top: 0 });
+        else if (nav) { try { nav.scrollIntoView({ block: 'start' }); } catch (e) {} }
+        if (title) title.focus({ preventScroll: true });
+      }
+    }
+    if (steps.length) { form.setAttribute('data-stepper', ''); step(1, { focus: false }); }
+    $$('[data-step-next]', form).forEach(function (b) {
+      b.addEventListener('click', function () {
+        var r = validate(current);
+        if (Object.keys(r.errs).length) { showErrors(r.errs, r.msgs); return; }
+        if (YSD.ui && YSD.ui.form) YSD.ui.form.clear(form);
+        step(current + 1);
+      });
+    });
+    $$('[data-step-back]', form).forEach(function (b) {
+      b.addEventListener('click', function () { if (YSD.ui && YSD.ui.form) YSD.ui.form.clear(form); step(current - 1); });
+    });
+
     if (ageBox && !isNaN(memberAge())) ageBox.hidden = true;
     $$('[name="how"]', form).forEach(function (r) { r.addEventListener('change', function () { syncHow(); if (YSD.ui && YSD.ui.form) clearField(r.value === 'upload' ? linkIn : fileIn); }); });
     $$('[name="minors"]', form).forEach(function (r) { r.addEventListener('change', syncGuardian); });
     if (ageIn) ageIn.addEventListener('input', syncGuardian);
-    if (cap) cap.addEventListener('input', syncCount);
+    if (cap) cap.addEventListener('input', function () { syncCount(); syncPreview(); });
+    if (linkIn) linkIn.addEventListener('input', syncPreview);
     if (fileIn) fileIn.addEventListener('change', function () {
       var f = fileIn.files && fileIn.files[0];
+      syncPreview();
       if (!chosen) return;
       if (!f) { chosen.hidden = true; return; }
       var v = YSD.clips ? YSD.clips.validate(f) : { ok: true };
@@ -213,34 +304,71 @@
       if (YSD.ui && YSD.ui.form) YSD.ui.form.errors(form, errs, { messages: msgs });
     }
 
-    function validate() {
+    // only: a step number (1 to 3) checks that step's fields; no argument checks everything
+    function validate(only) {
       var errs = {}, msgs = {}, m = howMode();
-      if (m === 'upload') {
-        var f = fileIn && fileIn.files && fileIn.files[0];
-        if (!f) { errs.file = 'empty'; msgs.file = p('post.err.empty'); }
-        else { var v = YSD.clips.validate(f); if (!v.ok) { errs.file = v.code; msgs.file = clipMessage(v.code, v); } }
-      } else {
-        var c = checkLink(linkIn && linkIn.value);
-        if (!c.ok) { errs.link = c.code; msgs.link = p(c.code === 'host' ? 'post.err.host' : c.code === 'url' ? 'post.err.url' : 'post.err.empty'); }
+      function want(name) { return !only || stepOfField(name) === only; }
+      if (want('file')) {
+        if (m === 'upload') {
+          var f = fileIn && fileIn.files && fileIn.files[0];
+          if (!f) { errs.file = 'empty'; msgs.file = p('post.err.empty'); }
+          else { var v = YSD.clips.validate(f); if (!v.ok) { errs.file = v.code; msgs.file = clipMessage(v.code, v); } }
+        } else {
+          var c = checkLink(linkIn && linkIn.value);
+          if (!c.ok) { errs.link = c.code; msgs.link = p(c.code === 'host' ? 'post.err.host' : c.code === 'url' ? 'post.err.url' : 'post.err.empty'); }
+        }
       }
-      var capBox = $('[name="hasCaptions"]', form);
-      if (capBox && !capBox.checked) { errs.hasCaptions = 'required'; msgs.hasCaptions = p('post.err.captions'); }
-      if (cap && cap.value.length > L.captionMax) { errs.caption = 'long'; msgs.caption = p('post.err.caption'); }
-      if (tagsIn && parseTags(tagsIn.value).length > L.tagsMax) { errs.tags = 'many'; msgs.tags = p('post.err.tags'); }
+      if (want('caption')) {
+        if (cap && cap.value.length > L.captionMax) { errs.caption = 'long'; msgs.caption = p('post.err.caption'); }
+        if (tagsIn && parseTags(tagsIn.value).length > L.tagsMax) { errs.tags = 'many'; msgs.tags = p('post.err.tags'); }
+        var capBox = $('[name="hasCaptions"]', form);
+        if (capBox && !capBox.checked) { errs.hasCaptions = 'required'; msgs.hasCaptions = p('post.err.captions'); }
+      }
       var a = ageNow();
-      if (ageIn && ageBox && !ageBox.hidden && isNaN(a)) { errs.age = 'required'; msgs.age = p('post.err.age'); }
-      if (!$('[name="minors"]:checked', form)) { errs.minors = 'required'; msgs.minors = p('post.err.minors'); }
-      if (needGuardian() && guard && !String(guard.value || '').trim()) { errs.guardian = 'required'; msgs.guardian = p('post.err.guardian'); }
-      $$('[data-post-consent]', form).forEach(function (b) { if (!b.checked) { errs[b.name] = 'required'; msgs[b.name] = t('error.consent.required'); } });
+      if (want('age')) {
+        if (ageIn && ageBox && !ageBox.hidden && isNaN(a)) { errs.age = 'required'; msgs.age = p('post.err.age'); }
+        if (!$('[name="minors"]:checked', form)) { errs.minors = 'required'; msgs.minors = p('post.err.minors'); }
+        if (needGuardian() && guard && !String(guard.value || '').trim()) { errs.guardian = 'required'; msgs.guardian = p('post.err.guardian'); }
+        // each consent names its own box (journeys-20), never three identical lines
+        $$('[data-post-consent]', form).forEach(function (b) {
+          if (b.checked) return;
+          var id = b.name.replace(/^consent-/, '');
+          errs[b.name] = 'required';
+          msgs[b.name] = p('post.err.consent.' + id) || t('error.consent.required');
+        });
+      }
       return { errs: errs, msgs: msgs, age: a };
     }
+    function firstStepWith(errs) {
+      var k = Object.keys(errs).map(stepOfField);
+      return k.length ? Math.min.apply(Math, k) : 0;
+    }
+    function onlyStep(r, n) {
+      var e = {}, mm = {};
+      Object.keys(r.errs).forEach(function (k) { if (stepOfField(k) === n) { e[k] = r.errs[k]; mm[k] = r.msgs[k]; } });
+      return { errs: e, msgs: mm };
+    }
 
-    function reset() {
+    function reset(o) {
+      o = o || {};
       form.reset();
+      clearObj();
       if (chosen) chosen.hidden = true;
       if (YSD.ui && YSD.ui.form) YSD.ui.form.clear(form);
-      syncHow(); syncGuardian(); syncCount();
+      // journeys-21: "Post another" keeps this visit's age and guardian contact (memory only). A "yes" to the
+      // minors question carries over too; a "no" never does, because each clip has different people in it.
+      var kept = false;
+      if (o.keep && isNaN(memberAge())) {
+        if (ageIn && session.age) { ageIn.value = session.age; kept = true; }
+        if (guard && session.guardian) guard.value = session.guardian;
+        if (session.minors === 'yes') { var y = $('[name="minors"][value="yes"]', form); if (y) y.checked = true; }
+      }
+      var note = $('[data-post-kept]', form);
+      if (kept && ageBox && !note) { note = el('p', { class: 'field__hint', 'data-post-kept': true, text: p('post.keptAge') }); var hint = $('.field__hint', ageBox); if (hint) hint.parentNode.insertBefore(note, hint.nextSibling); }
+      if (note) note.hidden = !kept;
+      syncHow(); syncGuardian(); syncCount(); syncPreview();
       if (currentTag) setTag(currentTag);
+      step(1, { focus: false });
     }
 
     var busy = false;
@@ -249,16 +377,25 @@
       if (busy) return;
       var r = validate();
       if (!isNaN(r.age) && r.age < 14) {
-        // Under 14: store nothing, keep nothing they typed (legal teen safety rules).
-        form.reset(); syncHow(); syncGuardian(); syncCount();
+        // Under 14: store nothing, keep nothing they typed (legal teen safety rules), forget this visit's answers too.
+        session = { age: '', guardian: '', minors: '' };
+        form.reset(); clearObj(); syncHow(); syncGuardian(); syncCount(); syncPreview();
+        step(3, { focus: false });
         showErrors({ age: 'too_young' }, { age: p('post.tooYoung') });
         return;
       }
-      if (Object.keys(r.errs).length) { showErrors(r.errs, r.msgs); return; }
+      if (Object.keys(r.errs).length) {
+        var n = firstStepWith(r.errs);
+        if (n && n !== current) step(n, { focus: false });
+        var o2 = onlyStep(r, n || current);
+        showErrors(o2.errs, o2.msgs);
+        return;
+      }
       if (YSD.ui && YSD.ui.form) YSD.ui.form.clear(form);
       var caption = cap ? cap.value.trim() : '', tags = tagsIn ? parseTags(tagsIn.value).slice(0, L.tagsMax) : [];
       var consents = $$('[data-post-consent]', form).map(function (b) { return b.name.replace(/^consent-/, ''); });
       var minors = minorsYes() ? 'yes' : 'no', guardian = needGuardian();
+      session = { age: ageIn && isNaN(memberAge()) ? String(ageIn.value || '').trim() : '', guardian: guard ? String(guard.value || '').trim() : '', minors: minors };
       busy = true;
       if (submit) { submit.setAttribute('data-state', 'loading'); submit.setAttribute('aria-disabled', 'true'); }
       var job;
@@ -282,7 +419,7 @@
         try { if (YSD.counters && YSD.counters.bump) YSD.counters.bump('clips'); } catch (x) {}
         busy = false;
         if (submit) { submit.removeAttribute('data-state'); submit.removeAttribute('aria-disabled'); }
-        reset();
+        reset({ keep: true });
         toast(pick(legal().uploadPending) || t('success.clip.body'));
         if (typeof opts.onDone === 'function') opts.onDone(res);
       }, function (err) {
@@ -290,15 +427,16 @@
         if (submit) { submit.removeAttribute('data-state'); submit.removeAttribute('aria-disabled'); }
         var code = err && err.code || 'upload-failed';
         if (code === 'demo') return; // demo mode never uploads: the clip is saved locally
+        step(1, { focus: false });
         showErrors({ file: code }, { file: clipMessage(code, err && err.result) });
       });
     });
 
-    syncHow(); syncGuardian(); syncCount();
+    syncHow(); syncGuardian(); syncCount(); syncPreview();
     var q = '';
     try { q = new URL(w.location.href).searchParams.get('tag') || ''; } catch (e) {}
     setTag(opts.tag || q.replace(/[^a-z0-9-]/gi, '').toLowerCase());
-    var api = { reset: reset, setTag: setTag, form: form };
+    var api = { reset: reset, setTag: setTag, form: form, step: step, current: function () { return current; } };
     form.__ysdPost = api;
     return api;
   }
@@ -381,9 +519,10 @@
     if (again) again.addEventListener('click', function () {
       if (done) done.hidden = true;
       form.hidden = false;
-      var first = $('[name="how"]:checked', form) || $('input, textarea', form);
-      if (first) first.focus();
+      if (form.__ysdPost && form.__ysdPost.step) form.__ysdPost.step(1);
+      else { var first = $('[name="how"]:checked', form) || $('input, textarea', form); if (first) first.focus(); }
     });
   }
+  if (!d) return;
   if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', boot); else boot();
 })(window);

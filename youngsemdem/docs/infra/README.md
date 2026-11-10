@@ -134,6 +134,8 @@ YSD.share.utm()                 // {utm_source, ...} of the last visit with tags
 YSD.share.url('join.html', {utm_medium: 'sms'})   // absolute URL with MY refCode + default utm
 YSD.share.url()                 // this page, own query kept, ref/utm/click ids dropped
 YSD.share.url(path, {ref: false, utm: false})     // plain link
+// adults' links also carry from=<FirstName> (members.setShareName(false) or {from: false} turns it off;
+// never for members under 18). YSD.share.from() -> 'Sam' | ''
 await YSD.share.native({title, text, url, files}) // 'shared' | 'copied' | 'cancelled' | 'failed'
 await YSD.share.copy(text) -> boolean
 YSD.share.links(text, url, {subject, hashtags, via})
@@ -152,6 +154,10 @@ await me.submitted;                    // {ok, mode: 'demo'|'form'|'actionnetwor
 YSD.members.current()  .isMember()  .referredBy()
 YSD.members.squad() -> [{id, name, firstName, joinedAt, demo, simulated, source}]
 YSD.members.onSquad((squad, added) => {}) -> off      YSD.members.forget()
+YSD.members.reset() -> archived entry   // "Not Sam? Start over": keeps the join log, clears ref, stickers, streak,
+                                        // RSVPs and rsvp:last, re-captures ?ref (round 1, journeys-06)
+YSD.members.archived()  .resume(id)     // "Back to Sam" on the same device (one-device squad demo)
+YSD.members.shareName() .setShareName(on) .shareParams() -> {ref, from}
 ```
 
 `join()` throws an Error with `code: 'YSD_INVALID'` and `.errors` when the profile is invalid, so
@@ -188,6 +194,12 @@ await YSD.cards.toBlob(canvas)   YSD.cards.download(canvas, 'card.png')   YSD.ca
 Theme: each key reads `--ysd-card-<key>`, then `--ysd-<key>`, then `YSD_CONFIG.theme`. The keys are
 `bg fg brand accent pop muted ink paper font-display font-body`. The built-in `joined` and `pledge`
 templates are placeholders: register your own under the same names.
+
+Brand (round 1, genz-brand-20): `YSD.cards.brand.mark(ctx, x, y, size, {body, ink, edge, mono})`,
+`.word(ctx, x, y, height, {fill, swoosh}) -> width`, `.lockup(ctx, x, y, height, {mark, word}) -> width` and
+`.paths` draw the Saved Seat ticket and the lettered wordmark with Path2D (no fonts, no images). Card
+templates use these instead of drawing their own "YD" bubble. `tools/make_brand.js` builds the icons, the
+brand SVG files and the default OG image from the same paths.
 
 ### YSD.track (track.js)
 
@@ -251,7 +263,8 @@ also has `enabled()`, `register()`, `unregister()`, `update()` and `applyUpdate(
 |---|---|
 | share | `ref`, `copied`, `share` |
 | store | `counter`, `storage-full`, `store-error`, `db-fallback` |
-| members | `joined`, `member-submitted`, `member-submit-failed`, `squad`, `forgot` |
+| members | `joined`, `member-submitted`, `member-submit-failed`, `squad`, `forgot`, `member-reset`, `member-updated` |
+| ui | `toast`, `sheet-open`, `sheet-close`, `menu`, `theme`, `motion`, `sticker-fact`, `reveal`, `reveal-close`, `landing`, `ui-ready` |
 | cards | `card-rendered`, `card-share`, `card-error` |
 | cal | `calendar`, `calendar-error` |
 | track | `track` |
@@ -262,7 +275,9 @@ also has `enabled()`, `register()`, `unregister()`, `update()` and `applyUpdate(
 ## Storage names already taken
 
 - **localStorage** (prefix `ysd:`): `member`, `joins`, `squad:remote`, `ref`, `utm`, `utm:first`,
-  `counter:*`, `clips:local`, `clips:liked`, `clips:views`, `clips:hidden`.
+  `counter:*`, `clips:local`, `clips:liked`, `clips:views`, `clips:hidden`, `prefs:theme`, `prefs:motion`,
+  `invite:seen:<ref | from-name>` (a dismissed "who sent this" line; rsvp.js and ui.js share it). Cleared by
+  `members.reset()`: `stickers`, `streak`, `stickers:log`, `rsvp:<id>`, `rsvp:last`.
 - **sessionStorage:** `ysd:debug`, `ysd:clip-viewed:*`.
 - **IndexedDB:** `ysd` (store `blobs`, buckets `clips` and `clip-posters`). `ysd-clips` is only
   used when a page loads clips.js without store.js.

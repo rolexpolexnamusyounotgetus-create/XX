@@ -45,8 +45,15 @@
     a.style.setProperty('--fill', fillVar(it));
     a.setAttribute('data-on', serious(it) || it.onColor === 'paper' ? 'light' : 'dark');
     var f = it.facts.filter(function (x) { return x.stat && fresh(x) && !/^\d$/.test(x.stat.value); })[0]; // skip bare digits ("4") on tiles
-    if (f) a.insertBefore(el('span', 'x-chip__n', sv(f.stat)), a.firstChild);
-    else a.setAttribute('data-nonum', ''); // no sourced number: the name itself becomes the headline
+    if (f) {
+      var n = el('span', 'x-chip__n', sv(f.stat));
+      if (/\bU\.S\./.test(f.stat.label.en || '')) n.appendChild(el('span', 'x-chip__scope', t('js.tileUS'))); // national, not Seminole: say so on the tile
+      a.insertBefore(n, a.firstChild);
+    } else { // no sourced number: a deliberate words tile (heart + "Come as you are"), never a blank where a number should be
+      a.setAttribute('data-nonum', '');
+      var wd = el('span', 'x-chip__w', t('js.tileWords')); wd.setAttribute('aria-hidden', 'true');
+      a.insertBefore(wd, a.firstChild);
+    }
   });
 
   /* ---------- one issue ---------- */

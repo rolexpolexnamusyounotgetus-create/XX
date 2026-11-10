@@ -327,6 +327,8 @@ async function render(root, jobs, opts) {
     if (!ogPage) throw new Error('tools/og.html is missing under ' + root);
     await page.goto(base + ogPage, { waitUntil: 'load', timeout: opts.timeout || 30000 });
     if (fs.existsSync(path.join(root, 'data', 'stickers.js'))) await page.addScriptTag({ url: base + 'data/stickers.js' }).catch(() => notes.push('data/stickers.js did not load; drawn stickers used'));
+    // quiz result characters (genz-brand-15): og-quiz draws data.character from this bundle
+    if (fs.existsSync(path.join(root, 'assets', 'img', 'characters', 'characters.js'))) await page.addScriptTag({ url: base + 'assets/img/characters/characters.js' }).catch(() => notes.push('characters.js did not load; og-quiz draws without art'));
     const ready = await page.evaluate(async () => {
       const specs = ['800 100px "Bricolage Grotesque"', '400 30px "Atkinson Hyperlegible Next"', '800 30px "Atkinson Hyperlegible Next"'];
       try { await Promise.all(specs.map((s) => document.fonts.load(s))); await document.fonts.ready; } catch (e) { /* reported below */ }

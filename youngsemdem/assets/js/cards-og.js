@@ -5,7 +5,9 @@
  *   og-page   { kicker, title, accent?, sub?, color?, sticker?, lang? }
  *   og-event  { kicker?, title, start? (ISO, New York time) | month, day, weekday, time, place?, meta?,
  *               cta?, color?, sticker?, lang?, demoEvent? (default true in demo) }
- *   og-quiz   { kicker, title, sub?, cta?, color?, lang? }
+ *   og-quiz   { kicker, title, sub?, cta?, color?, lang?, character? ('show-up/hype-captain'),
+ *               characters? ([up to 3 paths]) }  art from assets/img/characters/characters.js (make_og loads it);
+ *               the subline gets two lines and its height reserved, so it is never cut mid-sentence
  * Shared fields: color = a brand colour world (violet, violet-deep, night, lake, celery, bubblegum,
  *   pink/hotpink, sky, tangerine, orange, teal, lime/mint, sun); 'lake' is the serious template
  *   (no stickers, no tilt). accent = words of the title drawn in the pop colour (or on a marker).
@@ -433,42 +435,81 @@
     });
   }
 
+  /** Character art (assets/img/characters/characters.js, loaded by make_og.js) as an Image, or null. */
+  function characterArt(p) {
+    var X = w.YSD_DATA && w.YSD_DATA.characters, it = X && X.items && X.items[p];
+    var svg = it ? (typeof it === 'string' ? it : it.svg) : '';
+    if (!svg || !YSD.cards.h || !YSD.cards.h.loadImage) return Promise.resolve(null);
+    return YSD.cards.h.loadImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)).then(null, function () { return null; });
+  }
+  /** Draw a character with a white die-cut edge and a hard ink shadow, keeping its aspect ratio. */
+  function drawCharacter(ctx, img, cx, cy, size, rot) {
+    var iw = img.naturalWidth || img.width || 256, ih = img.naturalHeight || img.height || 264, k = size / Math.max(iw, ih);
+    var dw = iw * k, dh = ih * k, edge = Math.round(size * 0.03), pad = edge + 10;
+    var c = canvasOf(dw + pad * 2, dh + pad * 2), x = c.getContext('2d');
+    x.drawImage(img, pad, pad, dw, dh);
+    var white = silhouette(c, C.white), o = canvasOf(c.width, c.height), ox = o.getContext('2d');
+    for (var a = 0; a < 24; a++) { var ang = a / 24 * Math.PI * 2; ox.drawImage(white, Math.cos(ang) * edge, Math.sin(ang) * edge); }
+    ox.drawImage(c, 0, 0);
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate((rot || 0) * Math.PI / 180);
+    ctx.drawImage(silhouette(o, C.night), -o.width / 2 + 8, -o.height / 2 + 8);
+    ctx.drawImage(o, -o.width / 2, -o.height / 2);
+    ctx.restore();
+  }
+  /**
+   * og-quiz (round 1, genz-brand-15): the result's own character at about 300 px on the right (or a fanned trio
+   * from `characters` for the quiz page), the title in two lines at most, and the subline whole: up to two lines,
+   * height reserved, fitted down before it is ever cut. Serious results (color 'lake') stay upright and calm.
+   */
   function ogQuiz(ctx, data, env) {
     env.data = data;
     var c = copy(data), wd = world(data.color || 'violet'), W = env.width, pad = 60;
-    bg(ctx, env, wd);
-    var bandY = band(ctx, env, wd, data, 'DEMO');
-    brand(ctx, env, wd, pad, 46, 1);
-    // decorative answer chips (no text)
-    var chips = [[C.bubblegum, -8, 820, 150], [C.sky, 5, 870, 262], [C.celery, -3, 800, 372]];
-    if (!wd.serious) for (var i = 0; i < chips.length; i++) {
-      ctx.save();
-      ctx.translate(chips[i][2] + 150, chips[i][3] + 40);
-      ctx.rotate(chips[i][1] * Math.PI / 180);
-      ctx.fillStyle = C.night; rr(ctx, -150 + 7, -40 + 7, 300, 80, 40); ctx.fill();
-      ctx.fillStyle = chips[i][0] === wd.bg ? C.cream : chips[i][0]; rr(ctx, -150, -40, 300, 80, 40); ctx.fill();
-      ctx.lineWidth = 3; ctx.strokeStyle = C.night; ctx.stroke();
-      ctx.fillStyle = C.cream; ctx.beginPath(); ctx.arc(-102, 0, 22, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      if (i === 1) check(ctx, -113, 1, 22, C.violet, 7);
-      ctx.fillStyle = 'rgba(23,11,51,.35)'; rr(ctx, -62, -9, 170 - i * 30, 18, 9); ctx.fill();
-      ctx.restore();
-    }
-    var colW = wd.serious ? W - pad * 2 : 680, y = 146;
-    if (data.kicker) { pill(ctx, env, String(data.kicker).toUpperCase(), pad, y, { size: 22, bg: wd.pill, fg: wd.pillFg, rotate: wd.serious ? 0 : -1.5, shadow: wd.dark && !wd.serious ? C.night : null }); y += 74; }
-    var subH = data.sub ? 54 : 0;
-    var f = fit(ctx, String(data.title || ''), colW, { max: 140, min: 56, maxLines: 2, lh: 0.92, maxH: bandY - 120 - y - subH, family: fam(env, 'display'), stretch: 'condensed' });
-    var used = drawLines(ctx, f, pad, y, colW, wd, data.accent);
-    var yy = y + used;
-    if (data.sub) {
-      setFont(ctx, 28, 500, fam(env, 'body'));
-      ctx.fillStyle = wd.fg; ctx.textBaseline = 'alphabetic';
-      ctx.fillText(wrap(ctx, String(data.sub), colW)[0] || '', pad, yy + 42);
-      yy += 54;
-    }
-    pill(ctx, env, String(data.cta || c.whatsYours), pad, Math.min(bandY - 80, yy + 26), {
-      size: 26, bg: wd.dark ? C.celery : C.night, fg: wd.dark ? C.night : C.cream, edge: C.night, shadow: C.night, rotate: wd.serious ? 0 : -2, track: 0, height: 58
+    var one = data.character ? [data.character] : [], many = Array.isArray(data.characters) ? data.characters.slice(0, 3) : [];
+    return Promise.all((one.length ? one : many).map(characterArt)).then(function (imgs) {
+      imgs = imgs.filter(Boolean);
+      bg(ctx, env, wd);
+      var bandY = band(ctx, env, wd, data, 'DEMO');
+      brand(ctx, env, wd, pad, 46, 1);
+      var hasArt = imgs.length > 0;
+      if (hasArt && imgs.length === 1) drawCharacter(ctx, imgs[0], W - pad - 170, bandY / 2 + 14, 330, wd.serious ? 0 : 5);
+      else if (hasArt) {
+        var spots = [[W - 330, bandY / 2 + 40, 230, -9], [W - 130, bandY / 2 + 50, 230, 9], [W - 230, bandY / 2 + 6, 260, -1]];
+        for (var i = 0; i < imgs.length; i++) { var sp = spots[imgs.length === 2 ? i : i]; drawCharacter(ctx, imgs[i], sp[0], sp[1], sp[2], wd.serious ? 0 : sp[3]); }
+      } else if (!wd.serious) {
+        // decorative answer chips (no text) when there's no art
+        var chips = [[C.bubblegum, -8, 820, 150], [C.sky, 5, 870, 262], [C.celery, -3, 800, 372]];
+        for (var j = 0; j < chips.length; j++) {
+          ctx.save();
+          ctx.translate(chips[j][2] + 150, chips[j][3] + 40);
+          ctx.rotate(chips[j][1] * Math.PI / 180);
+          ctx.fillStyle = C.night; rr(ctx, -150 + 7, -40 + 7, 300, 80, 40); ctx.fill();
+          ctx.fillStyle = chips[j][0] === wd.bg ? C.cream : chips[j][0]; rr(ctx, -150, -40, 300, 80, 40); ctx.fill();
+          ctx.lineWidth = 3; ctx.strokeStyle = C.night; ctx.stroke();
+          ctx.fillStyle = C.cream; ctx.beginPath(); ctx.arc(-102, 0, 22, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          if (j === 1) check(ctx, -113, 1, 22, C.violet, 7);
+          ctx.fillStyle = 'rgba(23,11,51,.35)'; rr(ctx, -62, -9, 170 - j * 30, 18, 9); ctx.fill();
+          ctx.restore();
+        }
+      }
+      var colW = hasArt ? W - pad * 2 - (imgs.length === 1 ? 360 : 440) : (wd.serious ? W - pad * 2 : 680), y = 140;
+      if (data.kicker) { pill(ctx, env, String(data.kicker).toUpperCase(), pad, y, { size: 22, bg: wd.pill, fg: wd.pillFg, rotate: wd.serious ? 0 : -1.5, shadow: wd.dark && !wd.serious ? C.night : null }); y += 72; }
+      // reserve the subline's two lines and the CTA before the title takes its share
+      var sub = String(data.sub || ''), sf = null;
+      if (sub) sf = fit(ctx, sub, colW, { max: 30, min: 21, maxLines: 2, lh: 1.22, weight: 600, family: fam(env, 'body') });
+      var subH = sf ? sf.lines.length * sf.lh + 14 : 0, ctaH = 76;
+      var f = fit(ctx, String(data.title || ''), colW, { max: 132, min: 52, maxLines: 2, lh: 0.92, maxH: bandY - 24 - y - subH - ctaH, family: fam(env, 'display'), stretch: 'condensed' });
+      var used = drawLines(ctx, f, pad, y, colW, wd, data.accent);
+      var yy = y + used;
+      if (sf) {
+        setFont(ctx, sf.size, 600, fam(env, 'body'));
+        ctx.fillStyle = wd.fg; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+        for (var k = 0; k < sf.lines.length; k++) ctx.fillText(sf.lines[k], pad, yy + 14 + sf.size * 0.85 + k * sf.lh);
+        yy += subH;
+      }
+      pill(ctx, env, String(data.cta || c.whatsYours), pad, Math.min(bandY - 76, yy + 18), {
+        size: 26, bg: wd.dark ? C.celery : C.night, fg: wd.dark ? C.night : C.cream, edge: C.night, shadow: C.night, rotate: wd.serious ? 0 : -2, track: 0, height: 58
+      });
     });
-    return Promise.resolve();
   }
 
   YSD.cards.register('og-page', ogPage, { size: 'wide' });

@@ -135,7 +135,7 @@ SERIES = [
      'cadence': {'en': 'New on Tuesdays (DEMO)', 'es': 'Nuevos los martes (DEMO)'}},
     {'id': 'crew-cam', 'sticker': 'camera', 'color': 'celery',
      'name': {'en': 'Crew Cam', 'es': 'Cámara del grupo'},
-     'blurb': {'en': 'Filmed by whoever showed up: hangouts, shifts, rides.', 'es': 'Lo graba quien vino: encuentros, turnos, paseos.'},
+     'blurb': {'en': 'Filmed by whoever showed up: hangouts, shifts, rides.', 'es': 'Lo graba quien estuvo ahí: encuentros, turnos, paseos.'},
      'cadence': {'en': 'After every hangout (DEMO)', 'es': 'Después de cada encuentro (DEMO)'}},
     {'id': 'en-espanol', 'sticker': 'bubbles', 'color': 'bubblegum',
      'name': {'en': 'En español', 'es': 'En español'},
@@ -587,9 +587,8 @@ def entry(spec):
     photos = []
     for k in photos_used(spec):
         p = PHOTOS[k]
-        photos.append({'url': 'https://images.unsplash.com/photo-' + p['id'], 'downloadUrl': photo_url(p['id']), 'page': p['page'],
-                       'photographer': p['photographer'], 'photographerHandle': p['handle'], 'license': 'Unsplash License',
-                       'licenseUrl': 'https://unsplash.com/license', 'description': p['description']})
+        photos.append({'url': 'https://images.unsplash.com/photo-' + p['id'], 'page': p['page'], 'photographer': p['photographer'],
+                       'photographerHandle': p['handle'], 'license': 'Unsplash License', 'description': p['description']})
     tracks = {lang: {'src': write_vtt(spec, lang), 'label': 'English' if lang == 'en' else 'Español',
                      'translated': spec['lang'] != lang,
                      'cues': [[c[0], c[1], c[2 if lang == 'en' else 3]] for c in spec['cues']]} for lang in ('en', 'es')}

@@ -325,6 +325,12 @@ window.YSD_DATA.sharekit = {
       bubble: { en: "How it lands in the chat", es: "Así llega al chat" },
       preview: { en: "Card preview: {summary}", es: "Vista previa de la tarjeta: {summary}" },
       previewLoading: { en: "Making your card…", es: "Haciendo tu tarjeta…" },
+      // quick mode (YSD.maker.mountQuick, home; round 1, Nov 10, 2026)
+      quickPick: { en: "Pick a card", es: "Elige una tarjeta" },
+      quickSwipe: { en: "Swipe for more cards", es: "Desliza para ver más tarjetas" },
+      quickName: { en: "Your first name (optional)", es: "Tu nombre (opcional)" },
+      quickHint: { en: "It goes on the card. Leave it blank and the card still works.", es: "Va en la tarjeta. Si lo dejas en blanco, la tarjeta igual funciona." },
+      customizeTitle: { en: "Make it yours", es: "Hazla a tu manera" },
       slide: { en: "Slide", es: "Lámina" },
       demoNote: { en: "DEMO: every card says DEMO until the chapter signs off.", es: "DEMO: cada tarjeta dice DEMO hasta que el grupo la apruebe." }
     },
@@ -333,7 +339,8 @@ window.YSD_DATA.sharekit = {
       save: { en: "Save image", es: "Guardar imagen" },
       sms: { en: "Text it", es: "Mándalo por SMS" },
       whatsapp: { en: "WhatsApp", es: "WhatsApp" },
-      copy: { en: "Copy link", es: "Copiar enlace" }
+      copy: { en: "Copy link", es: "Copiar enlace" },
+      customize: { en: "Customize", es: "Personalizar" }
     },
     toast: {
       ready: { en: "Your card's ready. Send it to one person you'd actually text.", es: "Tu tarjeta está lista. Mándasela a una persona a quien de verdad le escribirías." },

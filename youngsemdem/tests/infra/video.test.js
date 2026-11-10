@@ -387,11 +387,40 @@ window.__canLoad = function (src) { return new Promise(function (res) { var v = 
         ok(p.photographer && p.description, n + ': photographer + description');
       });
       (it.facts || []).forEach((f) => ok(/^https:\/\//.test(f.source) && f.claim, n + ': fact has a source'));
-      ok(Array.isArray(it.burnedInText) && it.burnedInText.length >= 2, n + ': burned-in text recorded');
-      ok(it.burnedInText.every((l) => !/\n/.test(l) && !/\.(gov|com|org)\s+[A-Z]/.test(l)), n + ': one on-screen sentence per transcript line', it.burnedInText);
+      // round 1 (G-VIDEO): captions are data + WebVTT in EN and ES, never burned in (the only burned-in word is DEMO)
+      ok(Array.isArray(it.burnedIn) && it.burnedIn.join() === 'DEMO', n + ': nothing burned in but the DEMO bug', it.burnedIn);
+      ok(/^(en|es)$/.test(it.lang), n + ': original language recorded', it.lang);
+      ok(it.title && it.title.en && it.title.es && it.captionI18n && it.captionI18n.en && it.captionI18n.es, n + ': title and caption in EN and ES');
+      eq(it.caption, it.captionI18n[it.lang], n + ': caption is the original-language text');
+      ['en', 'es'].forEach((lg) => {
+        const tr = it.captions && it.captions[lg];
+        ok(tr && Array.isArray(tr.cues) && tr.cues.length >= 2, n + ': ' + lg + ' caption cues');
+        if (!tr) return;
+        ok(tr.cues[0][0] === 0 && tr.cues[0][1] <= 2.5, n + ': ' + lg + ' hook within the first 2.5 s', tr.cues[0]);
+        ok(tr.cues.every((c, i) => c.length === 3 && c[1] > c[0] && typeof c[2] === 'string' && c[2].length > 1 && !/\n/.test(c[2]) && (i === 0 || Math.abs(c[0] - tr.cues[i - 1][1]) < 1e-6)), n + ': ' + lg + ' cues contiguous, one line each');
+        ok(Math.abs(tr.cues[tr.cues.length - 1][1] - it.duration) < 0.2, n + ': ' + lg + ' cues cover the clip', [tr.cues[tr.cues.length - 1][1], it.duration]);
+        eq(tr.translated, it.lang !== lg, n + ': ' + lg + ' translated flag');
+        const vttPath = path.join(ROOT, tr.src || '');
+        ok(/^assets\/video\/[a-z0-9-]+\.(en|es)\.vtt$/.test(tr.src || '') && fs.existsSync(vttPath), n + ': ' + lg + ' .vtt file exists', tr.src);
+        if (fs.existsSync(vttPath)) {
+          const vtt = fs.readFileSync(vttPath, 'utf8');
+          ok(/^WEBVTT\n/.test(vtt), n + ': ' + lg + ' .vtt starts with WEBVTT');
+          ok(tr.cues.every((c) => vtt.indexOf(c[2]) >= 0), n + ': ' + lg + ' .vtt carries every cue');
+        }
+      });
+      eq(it.captions.en.cues.length, it.captions.es.cues.length, n + ': EN and ES cues line up');
+      ok(/^#[0-9A-F]{6}$/.test(it.color || ''), n + ': placeholder colour', it.color);
+      ok(/^data:image\/jpeg;base64,/.test(it.lqip || '') && it.lqip.length < 1200, n + ': tiny placeholder image', (it.lqip || '').length);
+      ok(Array.isArray(data.series) && data.series.some((sr) => sr.id === it.series), n + ': belongs to a named series', it.series);
     });
+    ok(Array.isArray(data.series) && data.series.length >= 3, 'named recurring formats (series)');
+    (data.series || []).forEach((sr) => ok(sr.name && sr.name.en && sr.name.es && sr.cadence && /DEMO/.test(sr.cadence.en) && /DEMO/.test(sr.cadence.es), 'series ' + sr.id + ': EN/ES name and a DEMO cadence'));
     const mail = data.items.find((i) => i.id === 'demo-mail-ballot-renew');
-    eq(mail.burnedInText.slice(-2).join(' | '), 'Ask again: voteseminole.gov | Should last through 2028', 'mail-ballot: the last box is two transcript lines');
+    const mailEn = mail.captions.en.cues.map((c) => c[2]).join(' ');
+    ok(/before Nov 3\?/.test(mailEn) && /ends Dec 31\./.test(mailEn) && /set through 2028\./.test(mailEn) && /Check My Voter Record to be sure\./.test(mailEn), 'mail-ballot: captions follow the required copy shape (ruling 00)', mailEn);
+    ok(mail.showUntil && Date.parse(mail.showUntil) === Date.parse('2027-01-01T00:00:00-05:00'), 'mail-ballot: retires Jan 1, 2027 (showUntil)');
+    const sun = data.items.find((i) => /sunrail/.test(i.id));
+    ok(sun && sun.facts.some((f) => /Monday to Friday/.test(f.claim) && /sunrail\.com/.test(f.source)), 'sunrail: the weekday-only fact is sourced');
     const topics = data.items.map((i) => i.id).join(' ');
     ['mail-ballot', 'sunrail', 'first-time-voter', 'lake-monroe', 'precinct-captain', 'trivia'].forEach((t) => ok(topics.indexOf(t) >= 0, 'topic present: ' + t));
   });
@@ -502,16 +531,21 @@ async function browserTests() {
         const tag = await YSD.clips.list({ tag: '#explainer' });
         const load = await __canLoad(all[0].src);
         return { n: all.length, srcs: all.map((c) => c.src), posters: all.map((c) => c.poster), demo: all.every((c) => c.demo && c.source === 'demo'),
-          topLikes: top.map((c) => c.likes), tagIds: tag.map((c) => c.id), load, first: all[0], expectN: YSD_DATA.clips.items.length };
+          topLikes: top.map((c) => c.likes), tagIds: tag.map((c) => c.id), load, first: all[0],
+          // clips past their showUntil date retire on their own (round 1), so expectations come from the data
+          live: YSD_DATA.clips.items.filter((i) => !i.showUntil || Date.parse(i.showUntil) > Date.now()) };
       });
+      r.expectN = r.live.length;
+      const expTag = r.live.filter((i) => i.tags.indexOf('explainer') >= 0).map((i) => i.id).sort();
+      const newest = r.live.slice().sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0].id;
       eq(r.n, r.expectN, 'all demo clips listed');
       ok(r.srcs.every((s) => s.indexOf(base + '/assets/video/') === 0 && /\.mp4$/.test(s)), 'src resolved against site root', r.srcs[0]);
       ok(r.posters.every((s) => /\/assets\/video\/.+\.jpg$/.test(s)), 'posters resolved');
       ok(r.demo, 'flagged demo');
       ok(r.topLikes.every((v, i, a) => i === 0 || a[i - 1] >= v), 'sort top = likes desc', r.topLikes);
-      ok(r.tagIds.length === 2 && r.tagIds.indexOf('demo-precinct-captain') >= 0, 'tag filter', r.tagIds);
+      eq(r.tagIds.slice().sort().join(','), expTag.join(','), 'tag filter');
       ok(r.load.ok && r.load.h === 1280 && Math.abs(r.load.duration - r.first.duration) < 0.2, 'first clip plays in Chromium', r.load);
-      eq(r.first.id, 'demo-trivia-night-recap', 'default sort newest first');
+      eq(r.first.id, newest, 'default sort newest first');
     });
 
     await section('browser: validate() types, sizes and limits', async () => {

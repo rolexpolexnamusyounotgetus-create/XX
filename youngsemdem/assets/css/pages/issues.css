@@ -33,8 +33,12 @@
 .p-issues .x-sheet__list li:nth-child(3n) .x-chip:not([data-on="light"]) { rotate:1.2deg; }
 .p-issues .x-chip__n { font:800 clamp(24px, 19cqi, 44px)/.9 var(--font-display-76);font-stretch:76%;letter-spacing:-.02em; }
 .p-issues .x-chip__t { font:700 13px/1.2 var(--font-body);text-wrap:balance; }
-.p-issues .x-chip[data-nonum] { justify-content:flex-end; }
-.p-issues .x-chip[data-nonum] .x-chip__t { font:800 clamp(17px, 14cqi, 28px)/.95 var(--font-display-76);font-stretch:76%;letter-spacing:-.01em; }
+.p-issues .x-chip__scope { display:inline-block;margin-left:.25em;padding:2px 5px;border:1.5px solid currentColor;border-radius:6px;font:700 12px/1 var(--font-body);letter-spacing:.02em;vertical-align:.5em; }
+/* no sourced number (genz-brand-24 fallback): a heart and "Come as you are", drawn on purpose */
+.p-issues .x-chip[data-nonum] { --fill:var(--bubblegum);color:var(--night); }
+.p-issues .x-chip__w { display:flex;align-items:center;gap:6px;font:800 clamp(16px, 13cqi, 26px)/.95 var(--font-display-76);font-stretch:76%; }
+.p-issues .x-chip__w::before { content:"";flex:none;width:1em;height:.9em;background:var(--hotpink);border:1.5px solid var(--night);
+  clip-path:path("M8 14 C2 9.5 0 7 0 4.2 0 1.8 1.9 0 4.2 0 5.8 0 7.2 .9 8 2.2 8.8 .9 10.2 0 11.8 0 14.1 0 16 1.8 16 4.2 16 7 14 9.5 8 14Z");mask:none; }
 @media (min-width: 640px) { .p-issues .x-chip { min-height:128px;padding:16px; } .p-issues .x-chip__t { font-size:var(--fs-small); } }
 @media (min-width: 960px) { .p-issues .x-hero__grid { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); } }
 

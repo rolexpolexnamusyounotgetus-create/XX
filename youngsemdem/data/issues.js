@@ -106,6 +106,7 @@
  * Dates: calendar dates are 'YYYY-MM-DD' (no time, so no offset). Any date-time added later must
  * be ISO 8601 with the America/New_York offset, e.g. '2026-11-12T19:00:00-05:00'.
  *
+ * LGBTQ+ Gallup fact added Tue, Nov 10, 2026 (round 1, genz-brand-24).
  * Checked: Mon, Nov 9, 2026 (content pass, then an independent re-check of every number and date
  * against the source files: SOE PDFs, Census Reporter API, NWS, OIR, EDR, MIT, bill texts).
  * Re-check every fact before launch and after each legislative session.
@@ -523,6 +524,21 @@ window.YSD_DATA.issues = {
           asOf: '2025-08-21',
           confidence: 'high',
           note: 'Article dated Thu, Aug 21, 2025; the crosswalk was removed overnight. Mayor Buddy Dyer said the city was not informed beforehand. FDOT cited its policy against "political" banners and markings on state roads. Pulse is in Orlando (Orange County), not Seminole: keep it framed as Central Florida.'
+        },
+        {
+          id: 'gallup-under-30',
+          text: {
+            en: 'In Gallup’s 2025 polling, 23% of U.S. adults under 30 said they’re LGBTQ+, compared with 10% of adults 30 to 49. These laws land on a lot of people our age.',
+            es: 'En las encuestas de Gallup de 2025, el 23% de los adultos de EE. UU. menores de 30 años dijo ser LGBTQ+, frente al 10% de los adultos de 30 a 49. Estas leyes afectan a mucha gente de nuestra edad.'
+          },
+          stat: { value: '23%', label: { en: 'of U.S. adults under 30 identify as LGBTQ+', es: 'de los adultos de EE. UU. menores de 30 se identifica como LGBTQ+' } },
+          source: 'https://news.gallup.com/poll/702206/lgbtq-identification-holds.aspx',
+          sourceName: 'Gallup, "LGBTQ+ Identification Holds at 9% in U.S." by Jeffrey M. Jones (Feb 16, 2026); 2025 telephone interviews with 13,454 U.S. adults',
+          verified: '2026-11-10',
+          asOf: '2025',
+          confidence: 'high',
+          staleAfter: '2027-04-30',
+          note: 'National, not Seminole: label says "U.S.". Gallup quote: "In the latest data, 23% of adults under age 30 identify as LGBTQ+, compared with 10% of those aged 30 to 49" (3% or less at 50+). Gallup publishes the next update around February each year; recheck then (staleAfter hides the tile number, and the tile falls back to the deliberate words design). Kept last in facts[] so quiz results (first 3 facts) are unchanged. genz-brand-24.'
         }
       ],
       ydsc: [
@@ -894,6 +910,7 @@ window.YSD_DATA.issues = {
             en: 'From June through September, Seminole County allows no nitrogen or phosphorus fertilizer on lawns, because summer storms wash it into lakes. All seven cities have similar rules.',
             es: 'De junio a septiembre, el condado de Seminole no permite fertilizantes con nitrógeno ni fósforo en el césped, porque las tormentas de verano los arrastran a los lagos. Las siete ciudades tienen reglas parecidas.'
           },
+          stat: { value: 'Jun–Sep', valueEs: 'jun.–sep.', label: { en: 'no nitrogen or phosphorus fertilizer on Seminole lawns', es: 'sin fertilizante con nitrógeno ni fósforo en el césped de Seminole' } },
           source: 'https://seminolecountyfl.gov/departments-services/environmental-services/watershed-management/fertilizer-ordinance',
           sourceName: 'Seminole County, Fertilizer Ordinance',
           verified: '2026-11-09',

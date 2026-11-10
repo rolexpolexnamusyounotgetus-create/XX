@@ -2764,7 +2764,7 @@ window.YSD_DATA.civic = {
             en: "Mail your voted ballot today. It has to reach the elections office by 7 pm on Election Day; postmarks don't count. From here on, dropping it off in person is the safer bet: the elections office in Sanford during business hours, or a secure ballot intake station at an early-voting site during early-voting hours. Check details at voteseminole.gov or call 407-585-8683.",
             es: "Envía hoy tu boleta votada. Tiene que llegar a la oficina electoral antes de las 7 p. m. del día de las elecciones; el matasellos no cuenta. A partir de ahora, es más seguro entregarla en persona: en la oficina electoral en Sanford en horario de oficina, o en una estación segura de recepción de boletas en un sitio de votación anticipada, durante ese horario. Revisa los detalles en voteseminole.gov o llama al 407-585-8683."
           },
-          remindersMinutesBefore: [0]
+          remindersMinutesBefore: [15]
         },
         rule: "Election event from the date entry (date to end). Add a second event for the deadline picked for {deadlineTitle}. Respect each entry's allDay flag. For mail voters, the election event is the return deadline (7 pm Election Day), titled with titleMail ('must ARRIVE by 7 pm') and described with descriptionMail, and a third event, mailEvent, lands daysBefore days earlier at its time (New York time) so the reminder to mail it comes a week ahead, never on the deadline itself (journeys-17)."
       },

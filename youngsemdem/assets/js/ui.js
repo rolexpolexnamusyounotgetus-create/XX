@@ -20,8 +20,9 @@
  *                                     tone 'success' | 'info' | 'error'; priority 'high' (share/copy results,
  *                                     errors: interrupts and the interrupted one comes back) | 'normal' | 'low'
  *                                     (sticker notes: waits); replace: true swaps out a same-or-lower toast at
- *                                     once. With a modal <dialog> open, the toast shows inside it (top layer,
- *                                     announced). .clear() / .pending() -> [texts]
+ *                                     once. Toasts asked for in the same task come out most important first
+ *                                     (they appear a microtask later). With a modal <dialog> open, the toast
+ *                                     shows inside it (top layer, announced). .clear() / .pending() -> [texts]
  *   YSD.ui.reveal({sticker, art, title, body, kicker, actions:[{label, href|onClick, primary}], closeLabel,
  *                 ring, civic})       sticker unlock moment (centred, sized to the art, modal <dialog>,
  *                                     focus in/out, Escape or tap outside closes, static under reduced motion,
@@ -288,6 +289,13 @@
     setTimeout(function () { if (el.getAttribute('data-state') === 'out') detach(el); toastNext(); }, 240);
   }
   function toastNext() { if (!tcur && tq.length) toastShow(tq.shift()); }
+  var flushing = false;
+  function toastFlush() {
+    if (flushing) return;
+    flushing = true;
+    var go = function () { flushing = false; toastNext(); };
+    if (typeof Promise === 'function') Promise.resolve().then(go); else setTimeout(go, 0);
+  }
   // Something is waiting: let the visible toast go once it has been readable for its minimum time.
   function toastHurry() {
     if (!tcur || !tq.length || !tcur.shownAt) return;
@@ -312,10 +320,13 @@
     var timeout = opts.timeout || Math.max(4200, Math.min(9000, txt.length * 60));
     var item = { el: el, text: txt, tone: opts.tone || 'success', pri: PRI[priName], priName: priName, timeout: timeout,
       min: Math.min(timeout, Math.max(2200, Math.min(5000, txt.length * 45))) };
-    // The same words already showing or waiting: keep that one (and give it its full time again).
-    if (tcur && tcur.text === txt) { if (tcur.shownAt) toastArm(tcur, tcur.timeout); return tcur.el; }
+    // The same words already showing or waiting: keep that one (and give it its full time again, unless
+    // something is waiting behind it).
+    if (tcur && tcur.text === txt) { if (tcur.shownAt) { toastArm(tcur, tcur.timeout); toastHurry(); } return tcur.el; }
     for (var q = 0; q < tq.length; q++) if (tq[q].text === txt) return tq[q].el;
-    if (!tcur) { toastShow(item); return el; }
+    // Nothing on screen: queue it and show the most important one at the end of this task, so a sticker note and
+    // "Link copied" fired by the same tap come out copy first (and screen readers hear them in that order).
+    if (!tcur) { toastQueue(item); toastFlush(); return el; }
     if ((opts.replace && item.pri >= tcur.pri) || item.pri > tcur.pri) {
       var c = tcur;
       if (!opts.replace && (!c.shownAt || Date.now() - c.shownAt < c.min)) {
@@ -826,7 +837,7 @@
     dlg.setAttribute('aria-labelledby', uid + '-t');
     if (o.body) dlg.setAttribute('aria-describedby', uid + '-b');
     if (o.ring) dlg.style.setProperty('--unlock-ring', String(o.ring).indexOf('var(') === 0 ? o.ring : 'var(--' + String(o.ring).replace(/^--/, '') + ')');
-    var card = d.createElement('div'); card.className = 'unlock__card';
+    var card = d.createElement('div'); card.className = 'unlock__card theme-light';
     var art = d.createElement('div'); art.className = 'unlock__art'; art.setAttribute('aria-hidden', 'true');
     var svg = svgArt(o);
     if (svg) art.insertAdjacentHTML('afterbegin', svg.replace('<svg ', '<svg aria-hidden="true" focusable="false" ')); // trusted: our own data/art
@@ -1033,7 +1044,7 @@
       a.addEventListener('focus', fresh);
       a.addEventListener('click', function () { fresh(); track('lang_switch', { to: to }); });
     });
-    w.addEventListener('hashchange', langLinks);
+    w.addEventListener('hashchange', function () { langLinks(); setTimeout(langLinks, 900); }); // again once the jump has scrolled
     wireConfig(d);
     ui.joinCta();
     ui.stopLive();

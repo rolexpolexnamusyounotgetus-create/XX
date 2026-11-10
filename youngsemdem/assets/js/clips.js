@@ -520,6 +520,10 @@
       if (rec.photos) c.photos = copy(rec.photos);
       if (rec.facts) c.facts = copy(rec.facts);
       if (rec.burnedInText) c.burnedInText = rec.burnedInText.slice();
+      // round 1 (G-VIDEO): caption cues per language, the format (series), the language it was made in,
+      // a placeholder colour + tiny image for the card, and an optional end date
+      ['captions', 'captionI18n', 'title'].forEach(function (k) { if (rec[k]) c[k] = copy(rec[k]); });
+      ['series', 'lang', 'color', 'lqip', 'showUntil'].forEach(function (k) { if (rec[k]) c[k] = String(rec[k]); });
     }
     return c;
   }
@@ -586,8 +590,8 @@
   };
   /**
    * All clips. opts: {sort: 'new'|'top'|'trending'|'views'|'oldest' (default 'new'), tag, author,
-   * orientation, mine: true (only this browser's), includeDemo (default: YSD_CONFIG.demo),
-   * includeHidden, includeUnavailable, limit, refresh (bypass the useSource cache)}.
+   * orientation, series, mine: true (only this browser's), includeDemo (default: YSD_CONFIG.demo),
+   * includeHidden, includeUnavailable, includeExpired (clips past showUntil), limit, refresh (bypass the useSource cache)}.
    * Resolves to an array of clip objects with playable src/poster URLs.
    */
   function list(opts) {
@@ -614,6 +618,8 @@
         if (opts.tag && c.tags.indexOf(String(opts.tag).replace(/^#/, '').toLowerCase()) < 0) return false;
         if (opts.author && (c.author.handle || '').toLowerCase() !== String(opts.author).toLowerCase()) return false;
         if (opts.orientation && c.orientation !== opts.orientation) return false;
+        if (opts.series && c.series !== opts.series) return false;
+        if (c.showUntil && !opts.includeExpired && Date.parse(c.showUntil) <= now()) return false; // time-bound clips retire on their date
         return true;
       });
       all.sort(SORTS[opts.sort] || SORTS['new']);

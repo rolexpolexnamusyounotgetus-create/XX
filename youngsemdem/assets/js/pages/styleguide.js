@@ -6,8 +6,24 @@
   function $$(s, r) { return Array.prototype.slice.call((r || d).querySelectorAll(s)); }
 
   d.addEventListener('click', function (e) {
-    var b = e.target.closest && e.target.closest('[data-sg-toast], [data-sg-confetti], [data-sg-chip], [data-sg-loading]');
+    var b = e.target.closest && e.target.closest('[data-sg-toast], [data-sg-confetti], [data-sg-chip], [data-sg-loading], [data-sg-queue], [data-sg-reveal]');
     if (!b) return;
+    if (b.hasAttribute('data-sg-queue')) {
+      // The journeys-14 case: a sticker note is waiting when "Link copied" arrives; the copy wins, the note follows.
+      ui.toast && ui.toast('New sticker: Card Maker.', { priority: 'low' });
+      ui.toast && ui.toast(YSD.t ? YSD.t('toast.linkCopied') || 'Link copied.' : 'Link copied.', { priority: 'high' });
+      return;
+    }
+    if (b.hasAttribute('data-sg-reveal')) {
+      var id = b.getAttribute('data-sg-reveal'), st = ui.sticker ? ui.sticker(id) : null, es = YSD.lang === 'es';
+      ui.reveal && ui.reveal({
+        sticker: id, ring: 'sky',
+        title: es ? 'Escuadrón de tres' : 'Squad of Three',
+        body: (YSD.t && YSD.t('reveal.onCard')) || (st && st.fact ? (st.fact[YSD.lang] || st.fact.en) : ''),
+        actions: [{ label: (YSD.t && YSD.t('reveal.seeStickers')) || 'See your stickers', href: '#brand', primary: true }]
+      });
+      return;
+    }
     if (b.hasAttribute('data-sg-toast')) {
       ui.toast && ui.toast(b.getAttribute('data-sg-toast'), { tone: b.getAttribute('data-tone') || 'success' });
     } else if (b.hasAttribute('data-sg-confetti')) {

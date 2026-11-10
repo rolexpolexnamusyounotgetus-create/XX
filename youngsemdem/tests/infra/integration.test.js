@@ -499,6 +499,7 @@ async function main() {
         const Y = window.YSD, out = {};
         const all = await Y.clips.list({ sort: 'new' });
         out.count = all.length;
+        out.expect = (window.YSD_DATA && YSD_DATA.clips && YSD_DATA.clips.items || []).filter((c) => c.demo !== false).length;
         out.demoFlags = all.every((c) => c.demo === true && c.source === 'demo');
         out.first = all[0] && { id: all[0].id, src: all[0].src, poster: all[0].poster, author: all[0].author, orientation: all[0].orientation };
         out.sorted = all.every((c, i) => i === 0 || Date.parse(all[i - 1].createdAt) >= Date.parse(c.createdAt));
@@ -535,7 +536,7 @@ async function main() {
         out.track = Y.track.history().map((x) => x.event).filter((e) => /^clip_/.test(e));
         return out;
       });
-      eq(r.count, 6, 'six demo clips list in demo mode');
+      ok(r.count === r.expect && r.count >= 6 && r.count <= 8, 'every demo clip in data/clips.js lists in demo mode (6 to 8)', r.count + ' of ' + r.expect);
       ok(r.demoFlags, 'demo clips are flagged demo');
       ok(r.sorted, "list({sort:'new'}) is newest first");
       ok(r.first.src.startsWith(base + '/assets/video/') && r.first.poster.startsWith(base + '/assets/video/'), 'clip src/poster resolve against the site root', r.first);
@@ -662,6 +663,7 @@ async function main() {
         out.card = [card.width, card.height, (await Y.cards.toBlob(card)).size];
         const clips = await Y.clips.list();
         out.clips = clips.length;
+        out.expect = (window.YSD_DATA && YSD_DATA.clips && YSD_DATA.clips.items || []).length;
         out.poster = await new Promise((res) => { const i = new Image(); i.onload = () => res(i.naturalWidth); i.onerror = () => res(0); i.src = clips[0].poster; });
         window.__feed = Y.feed.attach('#feed');
         return out;
@@ -676,7 +678,7 @@ async function main() {
       ok(r.url.startsWith(rootUrl + 'join.html?') && r.url.includes('ref=' + r.me[0]), 'share.url on file://', r.url);
       ok(icsProblems(r.ics).length === 0, 'ics validates on file://', icsProblems(r.ics));
       ok(r.card[0] === 1080 && r.card[1] === 1920 && r.card[2] > 20000, 'card renders and exports on file://', r.card);
-      eq(r.clips, 6, 'demo clips list on file://');
+      ok(r.clips === r.expect && r.clips >= 6, 'every demo clip lists on file://', r.clips + ' of ' + r.expect);
       eq(r.poster, 540, 'poster loads on file:// (540x960)');
       ok(r.feed[0] >= 0 && r.feed[1] === 2 && String(r.feed[2]).startsWith(rootUrl + 'assets/video/'), 'feed attaches on file://', r.feed);
       checkSink(s, 'file://');

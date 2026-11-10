@@ -37,6 +37,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const zlib = require('zlib');
 
 const ROOT = path.resolve(__dirname, '..');
 const AXE_VERSION = '4.10.2';
@@ -53,6 +54,8 @@ const MIME = {
   '.vtt': 'text/vtt; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8',
   '.ics': 'text/calendar; charset=utf-8', '.md': 'text/markdown; charset=utf-8', '.pdf': 'application/pdf'
 };
+
+const GZIP_TYPES = /^(text\/|application\/(json|manifest\+json|xml|javascript)|image\/svg\+xml)/;
 
 // ------------------------------------------------------------------------------------------
 // _headers emulation (Netlify / Cloudflare Pages syntax)
@@ -139,7 +142,7 @@ function resolveFile(root, pathname) {
   return null;
 }
 
-/** Static file server for root. opts.headers: parsed _headers rules (or null). */
+/** Static file server for root. opts.headers: parsed _headers rules (or null); opts.gzip: gzip text responses. */
 function createServer(root, opts) {
   root = path.resolve(root);
   opts = opts || {};
@@ -153,7 +156,9 @@ function createServer(root, opts) {
       return res.end('method not allowed');
     }
     if (!file) {
-      const nf = path.join(root, '404.html');
+      // Missing /es/* paths get the Spanish 404, like netlify.toml's /es/* rule in production (review journeys-26).
+      const esNf = path.join(root, 'es', '404.html');
+      const nf = /^\/es(\/|$)/.test(pathname) && fs.existsSync(esNf) ? esNf : path.join(root, '404.html');
       const body = fs.existsSync(nf) ? fs.readFileSync(nf) : Buffer.from('Not found');
       res.writeHead(404, Object.assign({ 'Content-Type': fs.existsSync(nf) ? MIME['.html'] : 'text/plain' }, extra));
       return res.end(req.method === 'HEAD' ? undefined : body);
@@ -165,6 +170,13 @@ function createServer(root, opts) {
       'Cache-Control': 'no-cache'
     }, extra);
     const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    // opts.gzip: compress text the way a real host does (gzip level 6), so transfer sizes compare fairly with
+    // live sites (bench_compare.js; review right-wing-bench-artifacts). Off by default: other tools read raw bytes.
+    if (opts.gzip && !range && GZIP_TYPES.test(headers['Content-Type']) && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+      const gz = zlib.gzipSync(fs.readFileSync(file), { level: 6 });
+      res.writeHead(200, Object.assign(headers, { 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding', 'Content-Length': gz.length }));
+      return res.end(req.method === 'HEAD' ? undefined : gz);
+    }
     if (range && (range[1] || range[2])) {
       let start = range[1] ? parseInt(range[1], 10) : stat.size - parseInt(range[2], 10);
       let end = range[1] && range[2] ? parseInt(range[2], 10) : stat.size - 1;

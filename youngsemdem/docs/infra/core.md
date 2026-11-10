@@ -161,6 +161,14 @@ Core bumps `members` on a first join, `shares` when `share.native` returns share
   Empty `path` means the current page, which keeps its own query minus ref, utm, debug and ad click
   ids. In `params`, a value of `null` or `false` removes that param. `ref: false` drops my code,
   `ref: 'X'` uses another code, and `utm: false` drops the default utm tags.
+  - **`from=<FirstName>` (round 1, journeys-08).** When the link carries MY code and I'm 18 or older
+    with a first name, `url()` adds `from=<FirstName>` on its own, so a friend lands on "Sam invited
+    you". Off when `member.shareName === false` (`members.setShareName(false)`), with `from: false`,
+    for an unknown age, and always for members under 18, even when `from` is passed explicitly on my
+    own link. `from: 'Dani'` on a plain link (no code: an RSVP +1 without membership) is kept. The
+    current page's own `from` (the sender's) is never passed on. Names are cleaned to letters, marks,
+    spaces, `'` and `-`, at most 20 characters.
+- `from() -> 'Sam' | ''`: the first name my links carry. `cleanName(s)`.
 - `native({title, text, url, files, count, channel}) -> 'shared' | 'copied' | 'cancelled' | 'failed'`.
   Uses Web Share; files the browser cannot share are dropped. With no Web Share, or on any error
   other than AbortError, it copies `"text url"` instead. `'failed'` (an addition to the contract)
@@ -272,6 +280,22 @@ demo mode must still say DEMO.
   simulated members.
 - `refreshSquad() -> Promise<squad>`, `onSquad(cb(squad, added)) -> unsubscribe`
 - `submit(member) -> Promise`, `retry()`, `makeRefCode(profile)`, `forget()`, `shareUrl(path, params)`
+- **`reset(opts) -> archived entry | null` (round 1, journeys-06): "Not {name}? Start over".** Unlike
+  `forget()` (privacy "Forget me", which also wipes the join log), it archives the current member into
+  `joins` (their entry gets `archivedAt`, plus `age` and `shareName` so a resume keeps the under-18
+  rules; no contact details), so their squad history survives. It clears `member`, `squad:remote`,
+  the arrival `ref` and `utm`/`utm:first` (the next join is not credited to the old member's
+  referrer), the person's own `stickers`, `streak`, `stickers:log`, RSVP records `rsvp:<id>` and the
+  RSVP prefill `rsvp:last` (the unsent `rsvp:queue` stays). Then `share.captureRef()` runs again, so a
+  `?ref=` in the URL (Sam's own link, ignored while Sam was the member) now credits the next person
+  to Sam. `opts.also`: more keys (`'quiz:*'` prefixes allowed); `opts.keep`: keys to keep. Emits
+  `ysd:member-reset {previous, recaptured}` and `ysd:forgot {reset: true}`.
+- `archived() -> [{id, refCode, firstName, joinedAt, archivedAt}]` and `resume(id) -> member | null`:
+  switch back to someone `reset()` archived on this device ("Back to Sam"). The demo path that moves
+  the squad meter on one device: Sam opens his own link, taps Start over, Ana joins (credited to Sam),
+  then "Back to Sam" shows 1 of 3. Emits `ysd:joined {resumed: true}`.
+- `shareName() -> boolean`, `setShareName(on)`: the "Show my first name on my link" switch (default on
+  for adults; always off under 18). `shareParams() -> {ref, from}`.
 
 **RefCodes.** Up to 5 ASCII letters of the first name plus 3 characters, for example `KIRA7QX`.
 With the `random` style it is 6 characters, for example `B7KQ2M`. Members under 18 (by `age` or
@@ -319,6 +343,8 @@ Events core sends:
 | `member-submitted`, `member-submit-failed` | The network submit finished |
 | `squad` | The squad grew: `{squad, added}` |
 | `forgot` | `members.forget()` ran |
+| `member-reset` | `members.reset()` archived the member: `{previous: {id, refCode, firstName}, recaptured}` (followed by `forgot`) |
+| `member-updated` | `members.setShareName()` changed the member: `{member, field}` |
 | `card-rendered`, `card-share`, `card-error` | Card render, share or export events |
 | `calendar`, `calendar-error` | An .ics download started or failed |
 | `track` | `YSD.track` was called |
