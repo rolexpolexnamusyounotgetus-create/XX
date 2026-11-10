@@ -1,6 +1,8 @@
+preview.html
 node_modules/
 __pycache__/
 .DS_Store
+out/
 
 # agent worktrees
 .claude/worktrees/
