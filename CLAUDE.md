@@ -17,6 +17,10 @@ src/ml/pagepredict.js; forward-test ledger: data/predictions/README.md, versions
 audits are spent (research/vault_audit_v5.md, research/vault_audit_v10.md); the forward ledger is the only clean test
 left. docs/BACKLOG.md holds every verified result and decision.
 
+> **Separate project in this repo:** `youngsemdem/` is the Young Democrats of Seminole County (YDSC) demo
+> website (Nov 9-10, 2026). It is unrelated to the fight simulator. Read `youngsemdem/HANDOFF.md` and
+> `youngsemdem/CLAUDE.md` before working there; the fight-simulator rules below don't apply to it.
+
 ## Read first
 
 - HANDOFF.md: findings, final numbers, decisions, research and sources, open threads.
