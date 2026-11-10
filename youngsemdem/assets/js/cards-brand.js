@@ -1,17 +1,23 @@
-/*! YDSC · assets/js/cards-brand.js (W5). Brand share-card templates for YSD.cards (BRIEF 5.2, 5.5, 5.6).
+/*! YDSC · assets/js/cards-brand.js (W5; G-GROWTH round 1, Nov 10, 2026). Brand share-card templates for YSD.cards
+ * (BRIEF 5.2, 5.5, 5.6).
  *
- * CONTRACT (Home W1, Join W6 and the quiz page use it; load after assets/js/cards.js and ui.js, with
- * data/slices/growth.js or data/sharekit.js + data/levels.js, plus data/issues.js or its slice for cover
- * and quiz-issue, data/quiz.js for the quiz cards and events data for invite):
+ * CONTRACT (Home, Join, Events, About/404 and the quiz page use it). Load after assets/js/cards.js and ui.js.
+ * Data each template needs: data/slices/growth.js (or data/sharekit.js + data/levels.js) for copy (every template
+ * has an English/Spanish fallback built in, so `going` and `laptop` need nothing else), data/stickers.js (the
+ * scripts partial loads it), data/issues.js or its slice for cover and quiz-issue, data/quiz.js for the quiz
+ * cards, assets/img/characters/characters.js for the quiz characters, and events data for invite.
  *
- *   YSD.brandCards.render(name, data, { size: 'portrait' | 'story' }) -> Promise<canvas>
- *       portrait = 4:5, 1080 x 1350; story = 9:16, 1080 x 1920. Wraps YSD.cards.render.
- *   YSD.brandCards.templates        ['invite','psa-mail','psa-id','join','cover','quiz-show-up',
- *                                    'quiz-issue','membercard','rewind'] (registered with YSD.cards)
+ *   YSD.brandCards.render(name, data, { size: 'portrait' | 'story' | 'square' }) -> Promise<canvas>
+ *       portrait = 4:5, 1080 x 1350; story = 9:16, 1080 x 1920; square = 1:1, 1080 x 1080. Wraps YSD.cards.render.
+ *   YSD.cards.render(name, data, { width, height }) works too (every template is registered with YSD.cards), and
+ *   YSD.cards.has(name) tells a page whether this file loaded (guard: YSD.cards.has('going')).
+ *   YSD.brandCards.templates        ['invite','psa-mail','psa-id','join','cover','quiz-show-up','quiz-issue',
+ *                                    'membercard','rewind','going','laptop']
  *   YSD.brandCards.available(name, now?) -> false outside a template's window (psa-mail ends
  *                                    Jan 1, 2027; rewind opens Thu, Dec 17, 2026, 7 am, or with ?preview=rewind)
  *   YSD.brandCards.path(name, data)  -> site path the card links to ('join.html', 'quiz/show-up/x.html'...)
- *   YSD.brandCards.sizes, .colorways(), .cities(), .stickers(), .issues(), .event(id), .marks(canvas)
+ *   YSD.brandCards.character(kind, resultId) -> 'show-up/hype-captain' | 'issue/rent' | '' (no art)
+ *   YSD.brandCards.sizes, .colorways(), .cities(), .stickers(), .issues(), .event(id), .marks(canvas), .copy(key, lang)
  *
  *   data (all optional unless noted): { lang 'en'|'es', name (first name; generic copy without it),
  *     url (absolute share URL from YSD.share.url; else built from path()), colorway, sticker (data/stickers.js
@@ -21,14 +27,33 @@
  *       membercard    { since (ISO), stickers [ids], supporter (bool: 40+, prints "Supporter", not "Member") }
  *       rewind        { slide 1|2|3|'summary', counts { rsvps, cards, friends, stickers }, stickers [ids] }
  *
+ *   NEW TEMPLATES FOR OTHER GROUPS (round 1):
+ *     going   "I'm going" story card for the RSVP peak (G-EVENTS, genz-brand-09). Sizes story 1080 x 1920 and
+ *             portrait 1080 x 1350.
+ *             data = { first, eventTitle, when, place, link, colorToken, lang?, demo?, sticker? }
+ *               first       first name (adults; leave it '' for under-18s or when unknown: "I'm going.")
+ *               eventTitle  the event title in the page language       when   preformatted ("Thu, Nov 19 · 7 pm")
+ *               place       preformatted venue/city ("Casselberry")    link   absolute URL from YSD.share.url(...)
+ *               colorToken  'sky' | '--sky' | 'var(--sky)' | 'issue-sky' (falls back to violet)
+ *               demo        false only for a real event (default true: prints "DEMO EVENT")
+ *             e.g. YSD.brandCards.render('going', {...}, { size: 'story' }).then(c => YSD.cards.share(c, {...}))
+ *     laptop  the 404 decorated laptop (G-ABOUT, genz-brand-28). Sizes portrait 1080 x 1350 and square 1080 x 1080.
+ *             data = { stickers: [{ id, x, y, r, size? }], link, total? (default 10), lang? }
+ *               id = a data/stickers.js id; x, y = sticker centre on the lid from 0 to 1 (over 1 reads as
+ *               percent); r = degrees; size = share of the lid width (default 0.2). Prints "6 of 10 Seminole
+ *               stickers found" from stickers.length and total.
+ *   Both carry the link, the DEMO mark and the paid-for line like every other template.
+ *
  * Every card, every size, prints the link (YSD.ui.prettyLink: no protocol, no utm, keeps ref), a DEMO mark
  * while YSD_CONFIG.demo is on, and the paid-for line (legal.cardFooter). PSA cards print "Official info:
  * voteseminole.gov" and use the required wording from docs/research/00. psa-id and serious issues
- * (data/issues.js tone 'serious') use the serious template: no stickers, no tilt. Colours are brand
- * constants (never theme tokens), so a card looks the same in light or dark. The selfie on the cover is
- * drawn as a two-colour halftone, never stored and never uploaded. YSD.brandCards.marks(canvas) returns
- * the boxes of the link, paid-for line and DEMO mark (for the pixel tests).
- * No AI, no network: sticker art comes from data/stickers.js as data: URLs.
+ * (data/issues.js tone 'serious') use the serious template: no stickers, no tilt. Quiz cards are posters
+ * (genz-brand-12): the result's character big, the name at Wrapped scale, the top two mix shares as numerals
+ * (computed from the answers), the tagline in a chat bubble; issue cards lead with the identity name
+ * (genz-brand-14) and the sourced number. Colours are brand constants (never theme tokens), so a card looks the
+ * same in light or dark. The selfie on the cover is drawn as a two-colour halftone, never stored and never
+ * uploaded. YSD.brandCards.marks(canvas) returns the boxes of the link, paid-for line and DEMO mark (for the
+ * pixel tests). No AI, no network: sticker and character art come from data files as data: URLs.
  */
 (function (w) {
   'use strict';
