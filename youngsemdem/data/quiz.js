@@ -26,6 +26,7 @@
  *                                 data/events.js (the same ids data/levels.js badges use); used by
  *                                 result.eventSeries and events.html?series=<id>
  *   eventKinds: { kind: { label {en,es} } }  labels for events.js `kind` (events.html?kind=<kind>)
+ *   icons: { id: svg }            picture-tile art for options that carry `icon` (Nov 10, 2026)
  *   issueFinder: Quiz,
  *   organizerEra: Quiz
  * }
@@ -40,7 +41,8 @@
  *     id, core?: bool             core = asked in quick mode
  *     weight?: number             multiplies every score of the chosen option (default 1)
  *     prompt {en,es}
- *     options: [{ id, label {en,es}, scores: { resultId: points } }]   scores may be {} (neutral)
+ *     options: [{ id, label {en,es}, icon?, scores: { resultId: points } }]   scores may be {} (neutral);
+ *                               icon = a key of quiz.icons: the question renders as picture tiles
  *   }],
  *   shuffleOptions: bool          front ends may shuffle option order (scoring doesn't care)
  *   scoring: {
@@ -54,7 +56,12 @@
  *                                 (Spanish shorts carry their article: "el alquiler"), organizerEra
  *                                 with the result `name`. Capitalize the first letter when a
  *                                 template starts with a placeholder.
- *   results: ...                  issueFinder: { [issueId]: { slug, card } }  (issue content comes
+ *   results: ...                  issueFinder: { [issueId]: { slug, identity?, character?, card } }
+ *                                 identity { name {en,es} }: the shareable name above the plain issue
+ *                                 ("The Rent Realist"; genz-brand-14). Serious issues keep the calm template;
+ *                                 reproductive freedom has no identity and no character (stays plain).
+ *                                 character: false = no art (else assets/img/characters/issue/<slug>.svg)
+ *                                 (issue content comes
  *                                 from YSD_DATA.issues.items: title, short, color, facts, actions)
  *                                 organizerEra: [Result]
  * }
@@ -73,8 +80,12 @@
  *   strengths { en: [3], es: [3] }
  *   actions [Action]              3 per type (BRIEF 4.7), same Action shape as data/issues.js (type, label, labelAfter?,
  *                                 page, hash, query, official?, demo?)
- *   eventSeries [series]          keys of quiz.eventSeries, best fit first
+ *   eventSeries [series]          keys of quiz.eventSeries, best fit first. Front ends show a chip only
+ *                                 for a series with a visible upcoming event; a series that exists only
+ *                                 behind the January drop gets the drop line + Notify me; no chips at all
+ *                                 falls back to eventKinds (journeys-05)
  *   card { headline, subline }    share card copy
+ *   Character art: assets/img/characters/show-up/<slug>.svg (and characters.js for canvas cards).
  * }
  *
  * Page map: actions use page keys from YSD_DATA.issues.pages (home, issues, quiz, vote, events,
@@ -153,7 +164,7 @@
 window.YSD_DATA = window.YSD_DATA || {};
 window.YSD_DATA.quiz = {
   version: 1,
-  updated: '2026-11-09',
+  updated: '2026-11-10',
   lang: ['en', 'es'],
   demo: false,
 
@@ -168,7 +179,19 @@ window.YSD_DATA.quiz = {
     copyLink: { en: 'Copy link', es: 'Copiar enlace' },
     otherQuiz: { en: 'Try the other quiz', es: 'Prueba el otro quiz' },
     source: { en: 'Source', es: 'Fuente' },
-    demoTag: { en: 'DEMO', es: 'DEMO' }
+    demoTag: { en: 'DEMO', es: 'DEMO' },
+    // Nov 10, 2026 (round 1): honest live lean, sender lines, the January drop line
+    leaning: { en: 'Leaning: {name}', es: 'Por ahora: {name}' },
+    sentBy: { en: '{name} sent you this one. Your turn.', es: '{name} te mandó esto. Te toca.' },
+    sentByFriend: { en: 'A friend sent you this one. Your turn.', es: 'Alguien te mandó esto. Te toca.' },
+    fromShowUp: { en: '{name} got {match}. Your turn: 8 questions, about a minute.', es: '{name} sacó {match}. Te toca: 8 preguntas, como un minuto.' },
+    fromIssue: { en: '{name} got {match}. Your turn: 4 taps, about a minute.', es: '{name} sacó {match}. Te toca: 4 toques, como un minuto.' },
+    fromIssuePlain: { en: '{name}’s issue is {match}. Find yours: 4 taps, about a minute.', es: 'El tema de {name} es {match}. Encuentra el tuyo: 4 toques, como un minuto.' },
+    dropSeries: { en: '{series}: in January’s lineup.', es: '{series}: en la programación de enero.' },
+    dropTag: { en: 'JAN', es: 'ENE' },
+    notify: { en: 'Notify me', es: 'Avísame' },
+    notifyDone: { en: 'Calendar file ready. It pings you at noon on Dec 15.', es: 'Archivo de calendario listo. Te avisa el 15 de dic. a las 12 p. m.' },
+    picked: { en: 'Picked', es: 'Elegida' }
   },
 
   // Keys = data/events.js `series` ids (checked against events.js on Nov 9, 2026).
@@ -190,6 +213,28 @@ window.YSD_DATA.quiz = {
     learn: { label: { en: 'Learn something', es: 'Para aprender' } },
     volunteer: { label: { en: 'Pitch in', es: 'Para echar una mano' } },
     create: { label: { en: 'Make something', es: 'Para crear' } }
+  },
+
+  // Picture-tile art (genz-brand-11): sticker-style pictograms drawn for the quiz (viewBox 0 0 64 64, no ids, no
+  // text, no external refs). An option with `icon` renders as a picture tile; its label stays the accessible name.
+  icons: {
+    car: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#FFD23F" stroke-width="3.5"/><path d="M12 40 L14 30 C15 26 18 24 22 24 L42 24 C46 24 49 26 50 30 L52 40 Z" fill="#FF6B1A" stroke-width="3"/><path d="M18 30 L21 26 L43 26 L46 30Z" fill="#4FD6FF" stroke-width="2.5"/><rect x="10" y="36" width="44" height="10" rx="4" fill="#FF6B1A" stroke-width="3"/><circle cx="20" cy="46" r="5" fill="#170B33" stroke-width="2"/><circle cx="44" cy="46" r="5" fill="#170B33" stroke-width="2"/><circle cx="14" cy="40" r="2" fill="#FFD23F"/><circle cx="50" cy="40" r="2" fill="#FFD23F"/></g></svg>',
+    train: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#4FD6FF" stroke-width="3.5"/><rect x="18" y="12" width="28" height="34" rx="8" fill="#FFF6EA" stroke-width="3"/><rect x="22" y="17" width="20" height="12" rx="3" fill="#4FD6FF" stroke-width="2.5"/><rect x="18" y="33" width="28" height="5" fill="#6A2BFF"/><circle cx="24" cy="41" r="2.5" fill="#170B33"/><circle cx="40" cy="41" r="2.5" fill="#170B33"/><path d="M22 46 L16 54 M42 46 L48 54 M19 51 H45" fill="none" stroke-width="3"/></g></svg>',
+    bike: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#7EE081" stroke-width="3.5"/><circle cx="20" cy="40" r="9" fill="none" stroke-width="3.5"/><circle cx="44" cy="40" r="9" fill="none" stroke-width="3.5"/><path d="M20 40 L28 26 L40 26 L44 40 M28 26 L34 40 L40 26 M26 22 H32 M38 22 L42 20" fill="none" stroke-width="3.5"/><circle cx="34" cy="40" r="2.5" fill="#170B33"/></g></svg>',
+    carpool: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#FF7AC6" stroke-width="3.5"/><path d="M12 40 L14 30 C15 26 18 24 22 24 L42 24 C46 24 49 26 50 30 L52 40 Z" fill="#6A2BFF" stroke-width="3"/><path d="M18 30 L21 26 L43 26 L46 30Z" fill="#4FD6FF" stroke-width="2.5"/><rect x="10" y="36" width="44" height="10" rx="4" fill="#6A2BFF" stroke-width="3"/><circle cx="20" cy="46" r="5" fill="#170B33" stroke-width="2"/><circle cx="44" cy="46" r="5" fill="#170B33" stroke-width="2"/><circle cx="14" cy="40" r="2" fill="#FFD23F"/><circle cx="50" cy="40" r="2" fill="#FFD23F"/><path d="M32 18 C29 14 24 16 26 20 L32 25 L38 20 C40 16 35 14 32 18Z" fill="#FF4D4D" stroke-width="2.5"/></g></svg>',
+    laptop: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#C8F03C" stroke-width="3.5"/><rect x="16" y="18" width="32" height="22" rx="3" fill="#FFF6EA" stroke-width="3"/><rect x="20" y="22" width="24" height="14" rx="2" fill="#4FD6FF"/><path d="M10 44 L54 44 L50 48 L14 48Z" fill="#6A2BFF" stroke-width="3"/><path d="M26 30 C28 26 36 26 38 30" fill="none" stroke-width="2.5"/></g></svg>',
+    kayak: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#4FD6FF" stroke-width="3.5"/><path d="M6 40 C20 34 44 34 58 40" fill="none" stroke-width="3"/><path d="M12 38 C22 46 42 46 52 38 C40 34 24 34 12 38Z" fill="#FF8B3D" stroke-width="3"/><path d="M18 16 L46 46" fill="none" stroke-width="4"/><path d="M14 12 C12 16 16 20 20 18 L18 14Z" fill="#FFD23F" stroke-width="2.5"/><path d="M50 50 C52 46 48 42 44 44 L46 48Z" fill="#FFD23F" stroke-width="2.5"/><path d="M10 50 C16 48 20 52 26 50 M34 52 C40 50 44 54 50 52" fill="none" stroke="#2236C9" stroke-width="2.5"/></g></svg>',
+    sunset: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#FF7AC6" stroke-width="3.5"/><path d="M14 36 A18 18 0 0 1 50 36Z" fill="#FFD23F" stroke-width="3"/><path d="M32 10 V14 M16 18 L19 21 M48 18 L45 21 M8 30 H12 M52 30 H56" fill="none" stroke-width="3"/><rect x="6" y="36" width="52" height="4" fill="#170B33"/><path d="M14 44 H30 M36 44 H50 M20 50 H44" fill="none" stroke="#2236C9" stroke-width="3"/></g></svg>',
+    books: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#C8F03C" stroke-width="3.5"/><rect x="14" y="40" width="36" height="8" rx="2" fill="#6A2BFF" stroke-width="3"/><rect x="17" y="32" width="32" height="8" rx="2" fill="#FF8B3D" stroke-width="3"/><rect x="13" y="24" width="34" height="8" rx="2" fill="#4FD6FF" stroke-width="3"/><path d="M36 10 L44 10 L44 24 L40 20 L36 24Z" fill="#FF4D4D" stroke-width="2.5"/></g></svg>',
+    pride: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#4FD6FF" stroke-width="3.5"/><path d="M32 52 L12 32 C4 22 14 8 26 14 L32 18 L38 14 C50 8 60 22 52 32Z" fill="#FFFFFF" stroke-width="3.5"/><path d="M16 24 H48" stroke="#FF7AC6" stroke-width="6"/><path d="M15 31 H49" stroke="#FFD23F" stroke-width="6"/><path d="M20 38 H44" stroke="#7EE081" stroke-width="6"/><path d="M26 44 H38" stroke="#6A2BFF" stroke-width="6"/><path d="M32 52 L12 32 C4 22 14 8 26 14 L32 18 L38 14 C50 8 60 22 52 32Z" fill="none" stroke-width="3.5"/></g></svg>',
+    apron: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#FFD23F" stroke-width="3.5"/><path d="M22 14 L22 22 M42 14 L42 22" stroke-width="3"/><path d="M18 22 L46 22 L48 52 L16 52Z" fill="#4FD6FF" stroke-width="3"/><rect x="24" y="38" width="16" height="10" rx="2" fill="#4FD6FF" stroke-width="2.5"/><rect x="22" y="26" width="20" height="8" rx="2" fill="#FFF6EA" stroke-width="2.5"/></g></svg>',
+    snowflake: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#4FD6FF" stroke-width="3.5"/><path d="M32 10 V54 M13 21 L51 43 M13 43 L51 21" fill="none" stroke="#FFFFFF" stroke-width="4"/><path d="M32 10 V54 M13 21 L51 43 M13 43 L51 21" fill="none" stroke-width="0.01"/><g fill="none" stroke-width="4"><path d="M32 10 V54 M13 21 L51 43 M13 43 L51 21"/><path d="M26 14 L32 19 L38 14 M26 50 L32 45 L38 50"/></g><circle cx="32" cy="32" r="5" fill="#FFF6EA" stroke-width="3"/></g></svg>',
+    music: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#FF7AC6" stroke-width="3.5"/><path d="M26 44 V18 L46 14 V40" fill="none" stroke-width="4"/><ellipse cx="21" cy="44" rx="7" ry="5.5" fill="#FFD23F" stroke-width="3"/><ellipse cx="41" cy="40" rx="7" ry="5.5" fill="#FFD23F" stroke-width="3"/><path d="M26 24 L46 20" fill="none" stroke-width="4"/></g></svg>',
+    messages: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#4FD6FF" stroke-width="3.5"/><path d="M14 16 H46 a6 6 0 0 1 6 6 V36 a6 6 0 0 1 -6 6 H30 L20 50 L22 42 H14 a6 6 0 0 1 -6 -6 V22 a6 6 0 0 1 6 -6Z" fill="#FFFFFF" stroke-width="3"/><circle cx="20" cy="29" r="3" fill="#170B33"/><circle cx="30" cy="29" r="3" fill="#170B33"/><circle cx="40" cy="29" r="3" fill="#170B33"/></g></svg>',
+    grid: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#C8F03C" stroke-width="3.5"/><rect x="14" y="14" width="36" height="36" rx="4" fill="#FFF6EA" stroke-width="3"/><path d="M14 26 H50 M14 38 H50 M26 14 V50 M38 14 V50" fill="none" stroke-width="2.5"/><rect x="27" y="27" width="10" height="10" fill="#6A2BFF"/><rect x="39" y="39" width="10" height="10" fill="#FF7AC6"/><rect x="15" y="39" width="10" height="10" fill="#4FD6FF"/></g></svg>',
+    pin: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#7EE081" stroke-width="3.5"/><path d="M32 54 C24 42 16 34 16 26 A16 16 0 0 1 48 26 C48 34 40 42 32 54Z" fill="#FF6B1A" stroke-width="3"/><circle cx="32" cy="26" r="6" fill="#FFF6EA" stroke-width="3"/></g></svg>',
+    camera: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#FFD23F" stroke-width="3.5"/><rect x="10" y="20" width="44" height="30" rx="6" fill="#6A2BFF" stroke-width="3"/><path d="M22 20 L26 14 L38 14 L42 20Z" fill="#6A2BFF" stroke-width="3"/><circle cx="32" cy="35" r="9" fill="#4FD6FF" stroke-width="3"/><circle cx="32" cy="35" r="3" fill="#170B33"/><circle cx="47" cy="26" r="2.5" fill="#FF4D4D"/></g></svg>',
+    contacts: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><circle cx="32" cy="32" r="29" fill="#00B3A6" stroke-width="3.5"/><circle cx="26" cy="24" r="8" fill="#FFF6EA" stroke-width="3"/><path d="M12 50 C12 38 20 34 26 34 C32 34 40 38 40 50Z" fill="#FFD23F" stroke-width="3"/><circle cx="46" cy="38" r="9" fill="#FF7AC6" stroke-width="3"/><path d="M46 33 V43 M41 38 H51" fill="none" stroke-width="3.5"/></g></svg>'
   },
 
   // =========================================================================== FIND YOUR ISSUE
@@ -221,11 +266,11 @@ window.YSD_DATA.quiz = {
         core: true,
         prompt: { en: 'How do you mostly get around Seminole?', es: '¿Cómo te mueves casi siempre por Seminole?' },
         options: [
-          { id: 'drive', label: { en: 'I drive everywhere, and gas adds up', es: 'Manejo a todos lados, y la gasolina suma' }, scores: { wages: 2, transit: 1 } },
-          { id: 'transit', label: { en: 'SunRail or the bus when I can', es: 'SunRail o el autobús cuando puedo' }, scores: { transit: 3 } },
-          { id: 'wheels', label: { en: 'Bike, scooter or my own two feet', es: 'Bici, scooter o a pie' }, scores: { transit: 2, heat: 1 } },
-          { id: 'rides', label: { en: 'Rides from friends or family', es: 'Me llevan amistades o familia' }, scores: { transit: 2, wages: 1 } },
-          { id: 'home', label: { en: 'I mostly work or study from home', es: 'Casi siempre trabajo o estudio desde casa' }, scores: { heat: 2, housing: 1 } }
+          { id: 'drive', icon: 'car', label: { en: 'I drive everywhere, and gas adds up', es: 'Manejo a todos lados, y la gasolina suma' }, scores: { wages: 2, transit: 1 } },
+          { id: 'transit', icon: 'train', label: { en: 'SunRail or the bus when I can', es: 'SunRail o el autobús cuando puedo' }, scores: { transit: 3 } },
+          { id: 'wheels', icon: 'bike', label: { en: 'Bike, scooter or my own two feet', es: 'Bici, scooter o a pie' }, scores: { transit: 2, heat: 1 } },
+          { id: 'rides', icon: 'carpool', label: { en: 'Rides from friends or family', es: 'Me llevan amistades o familia' }, scores: { transit: 2, wages: 1 } },
+          { id: 'home', icon: 'laptop', label: { en: 'I mostly work or study from home', es: 'Casi siempre trabajo o estudio desde casa' }, scores: { heat: 2, housing: 1 } }
         ]
       },
       {
@@ -261,12 +306,12 @@ window.YSD_DATA.quiz = {
         core: true,
         prompt: { en: 'Pick your perfect Saturday.', es: 'Elige tu sábado ideal.' },
         options: [
-          { id: 'kayak', label: { en: 'Kayaking the Wekiva', es: 'Kayak en el Wekiva' }, scores: { water: 3 } },
-          { id: 'riverwalk', label: { en: 'Sunset on the Sanford Riverwalk', es: 'Atardecer en el Riverwalk de Sanford' }, scores: { water: 2, transit: 1 } },
-          { id: 'library', label: { en: 'A library haul, then coffee', es: 'Sacar libros de la biblioteca y luego un café' }, scores: { schools: 3 } },
-          { id: 'pride', label: { en: 'Pride brunch or a drag show', es: 'Un brunch de Pride o un show de drag' }, scores: { lgbtq: 3 } },
-          { id: 'shift', label: { en: 'Picking up an extra shift', es: 'Tomar un turno extra' }, scores: { wages: 3 } },
-          { id: 'ac', label: { en: 'Staying in with the AC on full blast', es: 'Quedarme en casa con el aire acondicionado al máximo' }, scores: { heat: 3 } }
+          { id: 'kayak', icon: 'kayak', label: { en: 'Kayaking the Wekiva', es: 'Kayak en el Wekiva' }, scores: { water: 3 } },
+          { id: 'riverwalk', icon: 'sunset', label: { en: 'Sunset on the Sanford Riverwalk', es: 'Atardecer en el Riverwalk de Sanford' }, scores: { water: 2, transit: 1 } },
+          { id: 'library', icon: 'books', label: { en: 'A library haul, then coffee', es: 'Sacar libros de la biblioteca y luego un café' }, scores: { schools: 3 } },
+          { id: 'pride', icon: 'pride', label: { en: 'Pride brunch or a drag show', es: 'Un brunch de Pride o un show de drag' }, scores: { lgbtq: 3 } },
+          { id: 'shift', icon: 'apron', label: { en: 'Picking up an extra shift', es: 'Tomar un turno extra' }, scores: { wages: 3 } },
+          { id: 'ac', icon: 'snowflake', label: { en: 'Staying in with the AC on full blast', es: 'Quedarme en casa con el aire acondicionado al máximo' }, scores: { heat: 3 } }
         ]
       },
       {
@@ -336,12 +381,15 @@ window.YSD_DATA.quiz = {
       actionsTitle: { en: '3 things you can do this month', es: '3 cosas que puedes hacer este mes' },
       factsTitle: { en: 'The Seminole receipts', es: 'Los datos de Seminole' },
       seeAll: { en: 'See all 9 issues', es: 'Mira los 9 temas' },
-      shareText: { en: 'My Seminole issue is {match}. Find yours:', es: 'Mi tema en Seminole es {match}. Encuentra el tuyo:' }
+      shareText: { en: 'My Seminole issue is {match}. Find yours:', es: 'Mi tema en Seminole es {match}. Encuentra el tuyo:' },
+      shareIdentity: { en: 'Took the Young Dems issue quiz: I’m {identity} ({issue}). What are you? Takes about a minute.', es: 'Hice el quiz de temas de los Young Dems: me salió {identity} ({issue}). ¿Y a ti? Toma como un minuto.' },
+      identityLabel: { en: 'Your Seminole issue', es: 'Tu tema en Seminole' }
     },
 
     results: {
       housing: {
         slug: 'rent',
+        identity: { name: { en: 'The Rent Realist', es: 'Ojo al Alquiler' } },
         card: {
           headline: { en: 'My Seminole issue: rent.', es: 'Mi tema en Seminole: el alquiler.' },
           subline: { en: 'Median rent here: $1,890 a month. Find your issue.', es: 'Alquiler mediano aquí: $1,890 al mes. Encuentra tu tema.' },
@@ -350,6 +398,7 @@ window.YSD_DATA.quiz = {
       },
       heat: {
         slug: 'heat-insurance',
+        identity: { name: { en: 'The Shade Seeker', es: 'Sombrita, Por Favor' } },
         card: {
           headline: { en: 'My Seminole issue: heat and insurance.', es: 'Mi tema en Seminole: el calor y los seguros.' },
           subline: { en: 'Average home insurance here: $3,545 a year. Find your issue.', es: 'Seguro de vivienda promedio aquí: $3,545 al año. Encuentra tu tema.' },
@@ -358,6 +407,7 @@ window.YSD_DATA.quiz = {
       },
       repro: {
         slug: 'reproductive-freedom',
+        character: false,   // stays plain, calm template, no identity (genz-brand-14)
         card: {
           headline: { en: 'My Seminole issue: reproductive freedom.', es: 'Mi tema en Seminole: la libertad reproductiva.' },
           subline: { en: 'More than 60% of Seminole voters said yes to protecting abortion access in 2024. Find your issue.', es: 'Más del 60% de los votantes de Seminole dijo sí a proteger el acceso al aborto en 2024. Encuentra tu tema.' },
@@ -366,6 +416,7 @@ window.YSD_DATA.quiz = {
       },
       lgbtq: {
         slug: 'lgbtq-freedom',
+        identity: { name: { en: 'Come As You Are', es: 'Ven Como Eres' } },
         card: {
           headline: { en: 'My Seminole issue: LGBTQ+ freedom.', es: 'Mi tema en Seminole: la libertad LGBTQ+.' },
           subline: { en: 'Safe, respected and left alone to live. Find your issue.', es: 'Seguridad, respeto y libertad para vivir en paz. Encuentra tu tema.' }
@@ -373,6 +424,7 @@ window.YSD_DATA.quiz = {
       },
       schools: {
         slug: 'freedom-to-read',
+        identity: { name: { en: 'The Card-Carrying Reader', es: 'Ratón de Biblioteca' } },
         card: {
           headline: { en: 'My Seminole issue: the freedom to read.', es: 'Mi tema en Seminole: la libertad para leer.' },
           subline: { en: 'Seminole schools pulled 30+ books in 2023. Find your issue.', es: 'Las escuelas de Seminole retiraron más de 30 libros en 2023. Encuentra tu tema.' },
@@ -381,6 +433,7 @@ window.YSD_DATA.quiz = {
       },
       wages: {
         slug: 'wages',
+        identity: { name: { en: 'The Living-Wage Legend', es: 'Quincena Digna' } },
         card: {
           headline: { en: 'My Seminole issue: wages.', es: 'Mi tema en Seminole: los sueldos.' },
           subline: { en: '$15 minimum. $25.52 living wage. Find your issue.', es: 'Mínimo: $15. Salario digno: $25.52. Encuentra tu tema.' },
@@ -389,6 +442,7 @@ window.YSD_DATA.quiz = {
       },
       transit: {
         slug: 'transit',
+        identity: { name: { en: 'The SunRail Romantic', es: 'Modo SunRail' } },
         card: {
           headline: { en: 'My Seminole issue: transit.', es: 'Mi tema en Seminole: el transporte.' },
           subline: { en: '4 SunRail stations. 0.5% of us take transit to work. Find your issue.', es: '4 estaciones de SunRail. Solo el 0.5% va al trabajo en transporte público. Encuentra tu tema.' },
@@ -397,6 +451,7 @@ window.YSD_DATA.quiz = {
       },
       water: {
         slug: 'clean-water',
+        identity: { name: { en: 'The Lake Keeper', es: 'Alma de Manantial' } },
         card: {
           headline: { en: 'My Seminole issue: clean water.', es: 'Mi tema en Seminole: el agua limpia.' },
           subline: { en: 'Lake Jesup has had a state cleanup plan since 2010. Find your issue.', es: 'El lago Jesup tiene un plan estatal de limpieza desde 2010. Encuentra tu tema.' },
@@ -405,6 +460,7 @@ window.YSD_DATA.quiz = {
       },
       voting: {
         slug: 'voting-rights',
+        identity: { name: { en: 'Ballot Ready', es: 'Boleta Lista' } },
         card: {
           headline: { en: 'My Seminole issue: voting rights.', es: 'Mi tema en Seminole: el derecho al voto.' },
           // first two sentences of the required mail-ballot shape (docs/research/00), verbatim
@@ -490,12 +546,12 @@ window.YSD_DATA.quiz = {
         id: 'app',
         prompt: { en: 'Your most-used app is probably…', es: 'Tu app más usada probablemente es…' },
         options: [
-          { id: 'music', label: { en: 'Music, always on', es: 'La música, siempre sonando' }, scores: { hype: 2, plusone: 1 } },
-          { id: 'messages', label: { en: 'Messages, obviously', es: 'Los mensajes, obvio' }, scores: { chat: 2, hype: 1 } },
-          { id: 'spreadsheets', label: { en: 'Notes and spreadsheets', es: 'Notas y hojas de cálculo' }, scores: { data: 2, chat: 1 } },
-          { id: 'maps', label: { en: 'Maps, because I’m always out', es: 'El mapa, porque siempre ando en la calle' }, scores: { doors: 2, data: 1 } },
-          { id: 'camera', label: { en: 'Camera, no contest', es: 'La cámara, sin duda' }, scores: { creator: 2, doors: 1 } },
-          { id: 'contacts', label: { en: 'Contacts (it’s packed)', es: 'Los contactos (está lleno)' }, scores: { plusone: 2, creator: 1 } }
+          { id: 'music', icon: 'music', label: { en: 'Music, always on', es: 'La música, siempre sonando' }, scores: { hype: 2, plusone: 1 } },
+          { id: 'messages', icon: 'messages', label: { en: 'Messages, obviously', es: 'Los mensajes, obvio' }, scores: { chat: 2, hype: 1 } },
+          { id: 'spreadsheets', icon: 'grid', label: { en: 'Notes and spreadsheets', es: 'Notas y hojas de cálculo' }, scores: { data: 2, chat: 1 } },
+          { id: 'maps', icon: 'pin', label: { en: 'Maps, because I’m always out', es: 'El mapa, porque siempre ando en la calle' }, scores: { doors: 2, data: 1 } },
+          { id: 'camera', icon: 'camera', label: { en: 'Camera, no contest', es: 'La cámara, sin duda' }, scores: { creator: 2, doors: 1 } },
+          { id: 'contacts', icon: 'contacts', label: { en: 'Contacts (it’s packed)', es: 'Los contactos (está lleno)' }, scores: { plusone: 2, creator: 1 } }
         ]
       },
       {

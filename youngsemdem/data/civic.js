@@ -432,6 +432,18 @@ window.YSD_DATA.civic = {
       url: "https://dos.fl.gov/elections/for-voters/voting/vote-by-mail/",
       label: { en: "Florida's vote-by-mail rules (state)", es: "Reglas del voto por correo en Florida (estado)" },
       note: "Division of Elections page; states that a request covers elections from the date it was submitted through the end of the calendar year of the next general election. Has a Spanish page selector."
+    },
+    electionWorkers: {
+      key: "links.vote.electionWorkers",
+      url: "https://voteseminole.gov/elections/become-an-election-worker/",
+      label: { en: "Become an election worker (Seminole)", es: "Trabajar en las elecciones (Seminole, en inglés)" },
+      note: "voteseminole.gov/ElectionWorkers redirects here (checked 2026-11-10). The page lists training and a full Election Day; the 2026 Voter Guide (p. 26) adds 'a registered or pre-registered voter in Seminole County'. No minimum hiring age is stated anywhere, so copy says 'ask'. Not in config yet: lead request to add links.vote.electionWorkers."
+    },
+    schoolPrograms: {
+      key: "links.vote.schoolPrograms",
+      url: "https://voteseminole.gov/community-news-and-the-office/school-programs/",
+      label: { en: "School programs (Seminole elections office)", es: "Programas escolares (oficina electoral de Seminole, en inglés)" },
+      note: "Says the office registers and pre-registers high school students 'starting at age 16' and 'can present to your class or set up a registration station at your school' (checked 2026-11-10). Not in config yet: lead request to add links.vote.schoolPrograms."
     }
   },
 
@@ -2743,7 +2755,18 @@ window.YSD_DATA.civic = {
           description: { en: "{deadlineShort}", es: "{deadlineShort}" },
           remindersMinutesBefore: [10080, 1440]
         },
-        rule: "Election event from the date entry (date to end). Add a second event for the deadline picked for {deadlineTitle}. Respect each entry's allDay flag. For mail voters, the election event is the return deadline (7 pm Election Day) and uses descriptionMail instead of description."
+        mailEvent: {
+          daysBefore: 7,
+          time: "10:00",
+          minutes: 30,
+          title: { en: "Mail your ballot today ({electionTitle})", es: "Envía hoy tu boleta por correo ({electionTitle})" },
+          description: {
+            en: "Mail your voted ballot today. It has to reach the elections office by 7 pm on Election Day; postmarks don't count. From here on, dropping it off in person is the safer bet: the elections office in Sanford during business hours, or a secure ballot intake station at an early-voting site during early-voting hours. Check details at voteseminole.gov or call 407-585-8683.",
+            es: "Envía hoy tu boleta votada. Tiene que llegar a la oficina electoral antes de las 7 p. m. del día de las elecciones; el matasellos no cuenta. A partir de ahora, es más seguro entregarla en persona: en la oficina electoral en Sanford en horario de oficina, o en una estación segura de recepción de boletas en un sitio de votación anticipada, durante ese horario. Revisa los detalles en voteseminole.gov o llama al 407-585-8683."
+          },
+          remindersMinutesBefore: [0]
+        },
+        rule: "Election event from the date entry (date to end). Add a second event for the deadline picked for {deadlineTitle}. Respect each entry's allDay flag. For mail voters, the election event is the return deadline (7 pm Election Day), titled with titleMail ('must ARRIVE by 7 pm') and described with descriptionMail, and a third event, mailEvent, lands daysBefore days earlier at its time (New York time) so the reminder to mail it comes a week ahead, never on the deadline itself (journeys-17)."
       },
       textToSelf: {
         en: "My voting plan for {election} ({electionDate}): {method}, {when}, {with}. Bring photo and signature ID. {url}",
@@ -2837,6 +2860,10 @@ window.YSD_DATA.civic = {
     "https://dos.fl.gov/elections/contacts/frequently-asked-questions/faq-voter-registration/": { en: "Division of Elections: voter registration FAQ", es: "División de Elecciones: preguntas frecuentes sobre inscripción (en inglés)", publisher: "Florida Department of State" },
     "https://866ourvote.org/": { en: "Election Protection: 866-OUR-VOTE", es: "Protección Electoral: 866-OUR-VOTE y 888-VE-Y-VOTA", publisher: "Election Protection coalition (Lawyers' Committee for Civil Rights Under Law)" },
     "https://doi.org/10.1177/0956797609359326": { en: "Nickerson & Rogers, Do You Have a Voting Plan? (Psychological Science, 2010)", es: "Nickerson y Rogers, Do You Have a Voting Plan? (Psychological Science, 2010)", publisher: "SAGE / Association for Psychological Science" },
-    "https://pmc.ncbi.nlm.nih.gov/articles/PMC5973556/": { en: "Costa, Schaffner & Prevost, Walking the walk? (PLOS ONE, 2018)", es: "Costa, Schaffner y Prevost, Walking the walk? (PLOS ONE, 2018)", publisher: "PLOS ONE via PubMed Central" }
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC5973556/": { en: "Costa, Schaffner & Prevost, Walking the walk? (PLOS ONE, 2018)", es: "Costa, Schaffner y Prevost, Walking the walk? (PLOS ONE, 2018)", publisher: "PLOS ONE via PubMed Central" },
+    "https://www.flsenate.gov/Laws/Statutes/2026/102.012": { en: "Fla. Stat. 102.012(2) (2026), who can serve on an election board (includes pre-registered voters)", es: "Estatuto de Florida 102.012(2) (2026), quién puede trabajar en una mesa electoral (incluye a los preinscritos)", publisher: "The Florida Senate" },
+    "https://voteseminole.gov/wp-content/uploads/2026/07/Seminole-County-2026-Voter-Guide-Update-1.pdf": { en: "Seminole County 2026 Voter Guide (PDF), p. 26: Become an Election Worker", es: "Guía del votante 2026 del Condado de Seminole (PDF), p. 26: trabajar en las elecciones", publisher: "Seminole County Supervisor of Elections" },
+    "https://voteseminole.gov/elections/become-an-election-worker/": { en: "Become an election worker", es: "Trabajar en las elecciones (en inglés)", publisher: "Seminole County Supervisor of Elections" },
+    "https://voteseminole.gov/community-news-and-the-office/school-programs/": { en: "Community engagement and school programs", es: "Programas escolares y comunitarios (en inglés)", publisher: "Seminole County Supervisor of Elections" }
   }
 };

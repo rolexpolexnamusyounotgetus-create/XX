@@ -4,7 +4,9 @@
  *   captureRef()              runs on load: stores ?ref= (referral code) and utm_* params
  *   ref()                     the captured referral code still inside the attribution window, or null
  *   utm()                     last captured utm_* params ({} when none)
- *   url(path, params)         absolute URL carrying MY refCode and default utm_* tags
+ *   url(path, params)         absolute URL carrying MY refCode, default utm_* tags and, for adult members,
+ *                             from=<FirstName> (params.from: false turns it off; never for minors)
+ *   from()                    the first name my links carry ('' for minors, unknown ages, shareName off)
  *   native({title,text,url,files})  Web Share API, copy fallback -> 'shared'|'copied'|'cancelled'|'failed'
  *   copy(text)                clipboard write -> Promise<boolean>
  *   links(text, url, opts)    {sms, whatsapp, x, threads, bluesky, facebook, email, telegram}
@@ -47,6 +49,31 @@
   function myCode() {
     var m = sget('member', null);
     return m && m.refCode ? String(m.refCode).toUpperCase() : '';
+  }
+  /** First names in links: letters (any script), marks, spaces, ' and -, at most 20 characters. */
+  function cleanName(s) {
+    var v = String(s == null ? '' : s);
+    try { v = v.replace(/[^\p{L}\p{M} '-]/gu, ''); } catch (e) { v = v.replace(/[^A-Za-zÀ-ɏ '-]/g, ''); }
+    return v.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '').slice(0, 20);
+  }
+  /** Known to be 18 or older (age, or birthYear). Unknown age is never treated as an adult here. */
+  function memberAge(m) {
+    if (!m) return NaN;
+    var a = m.age != null && m.age !== '' ? parseInt(m.age, 10) : NaN;
+    if (isNaN(a) && m.birthYear) a = new Date().getFullYear() - parseInt(m.birthYear, 10);
+    return a;
+  }
+  /**
+   * The first name my links carry as ?from= (review journeys-08, BRIEF 5.1): the member's first name when they
+   * are 18 or older and haven't turned it off (member.shareName === false). '' for minors, unknown ages, no
+   * name, or no member. A friend then lands on "Sam invited you" instead of "A friend invited you".
+   */
+  function myFrom() {
+    var m = sget('member', null);
+    if (!m || !m.refCode || m.shareName === false) return '';
+    var a = memberAge(m);
+    if (isNaN(a) || a < 18) return '';
+    return cleanName(m.firstName);
   }
   function loc() { try { return w.location || null; } catch (e) { return null; } }
   function parseQuery(q) {
@@ -176,7 +203,12 @@
    *   params  extra query params; a value of null/undefined/false removes that param. Special keys:
    *           ref: false  -> no referral code;  ref: 'CODE' -> that code instead of mine
    *           utm: false  -> no default utm_* tags (explicit utm_* keys still apply)
-   * The current page keeps its own query (minus ref, utm_*, debug and ad click ids).
+   *           from: false -> no first name;  from: 'Sam' -> that name (cleaned)
+   * from: when the link carries MY code and I'm 18 or older with a first name (and haven't switched it off,
+   * member.shareName === false), from=<FirstName> is added automatically. Never for a member under 18 or of
+   * unknown age, not even when passed explicitly (BRIEF 5.1; teen links carry a random code and no name).
+   * The current page keeps its own query (minus ref, from, utm_*, debug and ad click ids): the sender's own
+   * from never leaks into the links I share.
    */
   function url(path, params) {
     params = params || {};
@@ -200,7 +232,7 @@
     var sp = target.searchParams, k;
     if (keepQuery) {
       for (k in keepQuery) {
-        if (k === cfg('share.refParam', 'ref') || UTM_KEYS.indexOf(k) >= 0 || STRIP_KEYS.indexOf(k) >= 0) continue;
+        if (k === cfg('share.refParam', 'ref') || k === 'from' || UTM_KEYS.indexOf(k) >= 0 || STRIP_KEYS.indexOf(k) >= 0) continue;
         sp.set(k, keepQuery[k]);
       }
     }
@@ -212,8 +244,16 @@
     var code = params.ref === undefined ? myCode() : (params.ref ? normCode(params.ref) : '');
     if (code && cfg('features.referrals', true) !== false) sp.set(refParam, code);
     else sp['delete'](refParam);
+    // from=<FirstName>: only on links that carry my own code, only for adults (see the doc comment above).
+    var mine = myCode(), isMine = !!code && code === mine, me = sget('member', null), minor = false;
+    if (me && me.refCode) { var age = memberAge(me); minor = isNaN(age) || age < 18; }
+    var from = '';
+    if (params.from === false || params.from === null) from = '';
+    else if (typeof params.from === 'string') from = isMine && minor ? '' : cleanName(params.from);
+    else if (isMine) from = myFrom();
+    if (from) sp.set('from', from); else sp['delete']('from');
     for (k in params) {
-      if (k === 'ref' || k === 'utm' || !Object.prototype.hasOwnProperty.call(params, k)) continue;
+      if (k === 'ref' || k === 'utm' || k === 'from' || !Object.prototype.hasOwnProperty.call(params, k)) continue;
       var v = params[k];
       if (v === null || v === undefined || v === false) sp['delete'](k);
       else sp.set(k, String(v));
@@ -390,6 +430,8 @@
     ref: ref,
     utm: getUtm,
     myCode: myCode,
+    from: myFrom,
+    cleanName: cleanName,
     normCode: normCode,
     root: siteRoot,
     url: url,

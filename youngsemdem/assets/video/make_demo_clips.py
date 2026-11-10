@@ -1,89 +1,87 @@
 #!/usr/bin/env python3
 """
-Young Seminole Democrats: demo clip generator (video workstream).
+Young Democrats of Seminole County: DEMO creator clips (video workstream, G-VIDEO round 1).
 
-Builds the short vertical DEMO creator clips in assets/video/ (720x1280 H.264 MP4, no audio track,
-plus a JPEG poster per clip) from Unsplash photos, and writes data/clips.js with their metadata.
+Builds the short vertical DEMO clips in assets/video/ and writes data/clips.js:
+  <file>.mp4       720x1280 H.264, no audio, faststart, at most 1.5 MB
+  <file>.jpg       540x960 progressive JPEG poster, at most 60 KB, with NO words in it
+  <file>.en.vtt    WebVTT captions in English
+  <file>.es.vtt    WebVTT captions in Spanish
 
-  python3 assets/video/make_demo_clips.py [--cache DIR] [--only ID] [--no-data]
-  python3 assets/video/make_demo_clips.py --posters-only [--only ID] [--no-data]
+  python3 assets/video/make_demo_clips.py [--cache DIR] [--only ID] [--no-data] [--keep-tmp]
+  python3 assets/video/make_demo_clips.py --data-only     # rewrite data/clips.js + VTT from SPECS and the files on disk
 
---posters-only redraws only the JPEG posters (frame 0 of each clip, from the same photos, scrims and
-text) and never runs the video encoder or touches the MP4s. It checks each new poster against the
-MP4's own first frame and refuses one that does not match (pass --force to write it anyway). It
-then updates data/clips.js in place: posterBytes/posterWidth/posterHeight for every item, bytes
-and duration re-read from the MP4s, and burnedInText only where a spec sets it explicitly. Every
-other field in data/clips.js is kept as it is, including hand edits.
+What changed in round 1 (findings genz-brand-06, genz-brand-23 and the "English on Spanish posters" item)
+  - Creator formats, not slideshows: a phone screen recording with tap dots, a green-screen style map with a
+    facecam bubble, a POV with jump cuts and punch-ins, a listicle, a scoreboard reveal, a train-line map.
+    Hard cuts every 1 to 2.5 seconds, a hook in the first 2 seconds, brand stickers (data/stickers.js art,
+    white die-cut edge) popping in.
+  - No burned-in titles or captions. Captions are WebVTT and data (EN and ES) that assets/js/reel.js draws
+    as TikTok-style boxed captions in the page language, and the transcript is built from the same cues.
+    The only word in the picture is a small "DEMO" bug in the video (the same word in both languages), so a
+    clip saved on its own can't pass as real. Posters carry no words at all; the page draws the DEMO chip.
+  - Every clip belongs to a named recurring format (SERIES below), shown as badges and shelves on the Reel.
 
 How a clip is made
-  - Each photo is downloaded from images.unsplash.com (the script checks for HTTP 200 and an image
-    content type; it stops otherwise). Every photo used here is under the Unsplash License, which
-    allows copying and modifying without permission; see the per-photo credits in data/clips.js.
-  - Slow Ken Burns pans/zooms are rendered frame by frame with sub-pixel affine sampling (smooth,
-    no zoompan jitter), with a brand-neutral colour tint, legibility scrims, bold burned-in
-    captions that pop in, a "@demo.handle" line and a DEMO tag so a clip can never pass as real.
-  - Frames are piped to ffmpeg (libx264, CRF tuned per clip so each file stays under ~1.5 MB).
-  - The poster is frame 0, downscaled to 540x960 (pages show posters at 469x836 CSS px at most:
-    clips.html at desktop widths) and saved as a progressive JPEG of at most 60 KB: the highest
-    quality that fits, softening only the photo layer of busy photos so the type stays sharp.
+  1. Photos (all already credited on the site, Unsplash License) download from images.unsplash.com into --cache.
+  2. assets/video/render_clips.js (Node + Playwright) renders every frame of the shot list with
+     assets/video/stage.js and pipes it into ffmpeg as a near-lossless master, plus a poster frame.
+  3. This script encodes the final MP4 (CRF stepped up until it fits MAX_BYTES), the poster JPEG (best
+     quality that fits POSTER_MAX_BYTES), a tiny blurred placeholder (lqip) and the dominant colour, the two
+     VTT files, and data/clips.js.
 
-Facts burned into clips were checked on Mon Nov 9, 2026; sources are listed per clip in `facts`
-and copied into data/clips.js. Edit SPECS below (not data/clips.js) and re-run to change a clip.
+Facts said in captions were checked on Tue Nov 10, 2026; sources are listed per clip in `facts` and copied
+into data/clips.js. Edit SPECS here (not data/clips.js) and re-run to change a clip.
 
-Requires: Python 3.9+, Pillow, ffmpeg on PATH, network access to images.unsplash.com.
+Requires: Python 3.9+, Pillow, ffmpeg/ffprobe on PATH, Node 22 with Playwright (Chromium), network access
+to images.unsplash.com.
 """
 import argparse
+import base64
 import io
 import json
-import math
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 import urllib.request
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageStat
+from PIL import Image, ImageFilter, ImageStat
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(os.path.dirname(HERE))          # youngsemdem/
 DATA_FILE = os.path.join(SITE, 'data', 'clips.js')
+RENDERER = os.path.join(HERE, 'render_clips.js')
 
 W, H, FPS = 720, 1280, 30
 MAX_BYTES = 1_500_000
-# Posters: pages show them at 469x836 CSS px at most (clips.html, 1440 px and up; 302x540 on a phone),
-# so 540x960 covers every layout at 1x and phones at about 1.8x. Progressive JPEG, best quality <= 60 KB.
-POSTER_W, POSTER_H = 540, 960
-POSTER_MAX_BYTES = 60_000           # 60 KB
-# Busy photos (water, grass) cost the most bytes. Rather than drop the JPEG quality (which blurs the
-# burned-in type), the photo layer alone gets a slight blur first; the title, captions and DEMO chrome
-# are composited on top unblurred. Tried in order: the first (blur, quality) that fits wins.
-POSTER_STEPS = [(blur, q) for blur in (0, 0.6, 0.9, 1.2) for q in range(88, 71, -2)] + [(1.2, q) for q in range(70, 59, -2)]
-FONT_DIRS = ['/usr/share/fonts/opentype/inter', '/usr/share/fonts/truetype/inter',
-             os.path.expanduser('~/.fonts'), '/Library/Fonts', 'C:/Windows/Fonts']
+POSTER_W, POSTER_H = 540, 960          # pages show posters at 469x836 CSS px at most
+POSTER_MAX_BYTES = 60_000
+LQIP_W, LQIP_H = 12, 21
 
 # ------------------------------------------------------------------------------------- photos
-# Every entry was opened on unsplash.com on 2026-11-09 and shows "Free to use under the Unsplash
-# License" (none are Unsplash+). `focus` = start/end crop centres as fractions of the photo.
+# Every entry was opened on unsplash.com on 2026-11-09 and shows "Free to use under the Unsplash License"
+# (none are Unsplash+). They are the photos the site already credits (CREDITS.md); no new photo was added
+# because a credit could not be re-confirmed from this machine (unsplash.com pages sit behind a bot check).
 PHOTOS = {
     'envelope': {
         'id': '1595265616362-0d9558d774db',
         'page': 'https://unsplash.com/photos/purple-envelope-on-white-table-9A5uvtrO1Vw',
         'photographer': 'Tiffany Tertipes', 'handle': '@tiffanytertipes',
-        'description': 'Election mail return envelopes on a white table (photographer caption: '
-                       '"Election mail envelopes"). Not a Florida envelope.',
+        'description': 'Election mail return envelopes on a white table. Not a Florida envelope.',
     },
     'laptops': {
         'id': '1522202176988-66273c2fd55f',
         'page': 'https://unsplash.com/photos/three-people-sitting-in-front-of-table-laughing-together-g1Kr4Ozfoac',
         'photographer': 'Brooke Cagle', 'handle': '@brookecagle',
-        'description': 'Three young people laughing at a cafe table with laptops.',
+        'description': 'Three young people laughing at a cafe table with laptops (clips crop to faces, away from the table).',
     },
     'tracks': {
         'id': '1676304437086-ad9db3b3df66',
         'page': 'https://unsplash.com/photos/cs18eMhnmxI',
         'photographer': 'Komorebi Photo', 'handle': '@komophoto',
-        'description': 'Railroad track running to the horizon at sunset (tagged California). '
-                       'Stand-in, not SunRail.',
+        'description': 'Railroad track running to the horizon at sunset (tagged California). Stand-in, not SunRail.',
     },
     'park': {
         # Replaced the rooftop-party selfie (1758272134088, drink in hand), banned by docs/BRIEF.md 0.
@@ -102,8 +100,7 @@ PHOTOS = {
         'id': '1783676056910-e5f3b27bdcbd',
         'page': 'https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo',
         'photographer': 'Richard Burlton', 'handle': '@richardworks',
-        'description': 'People watching the sunset over a calm lake from a waterfront path. '
-                       'Location not stated; stand-in, not Lake Monroe.',
+        'description': 'People watching the sunset over a calm lake from a waterfront path. Stand-in, not Lake Monroe.',
     },
     'street': {
         'id': '1555636222-cae831e670b3',
@@ -115,177 +112,326 @@ PHOTOS = {
         'id': '1646934280686-768a69c444eb',
         'page': 'https://unsplash.com/photos/a-group-of-people-sitting-around-a-wooden-table-WciYmqSwNAA',
         'photographer': 'Jametlene Reskp', 'handle': '@reskp',
-        'description': 'Friends laughing around a wooden table during a card game.',
+        'description': 'Friends laughing around a wooden table during a card game (no drinks on the table).',
+    },
+    'crowd': {
+        'id': '1529333166437-7750a6dd5a70',
+        'page': 'https://unsplash.com/photos/photo-of-three-women-lifting-there-hands-tXiMrX3Gc-g',
+        'photographer': 'Simon Maage', 'handle': '',
+        'description': 'Three friends seen from behind, arms up, watching the sun set from a rooftop (also on the home page).',
     },
 }
 
+# ------------------------------------------------------------------------------------- series
+# Named recurring formats (finding right-wing-shows). Cadences are DEMO: the chapter sets the real ones.
+SERIES = [
+    {'id': 'seminole-60', 'sticker': 'megaphone', 'color': 'sun',
+     'name': {'en': 'Seminole in 60', 'es': 'Seminole en 60'},
+     'blurb': {'en': 'One local thing, explained in a minute or less.', 'es': 'Una cosa local, explicada en un minuto o menos.'},
+     'cadence': {'en': 'New on Thursdays (DEMO)', 'es': 'Nuevos los jueves (DEMO)'}},
+    {'id': 'first-time', 'sticker': 'calendar', 'color': 'sky',
+     'name': {'en': 'First Time?', 'es': '¿Primera vez?'},
+     'blurb': {'en': 'First vote, first meetup, first anything. Perfect.', 'es': 'Primer voto, primer encuentro, primera vez en lo que sea. Perfecto.'},
+     'cadence': {'en': 'New on Tuesdays (DEMO)', 'es': 'Nuevos los martes (DEMO)'}},
+    {'id': 'crew-cam', 'sticker': 'camera', 'color': 'celery',
+     'name': {'en': 'Crew Cam', 'es': 'Cámara del grupo'},
+     'blurb': {'en': 'Filmed by whoever showed up: hangouts, shifts, rides.', 'es': 'Lo graba quien vino: encuentros, turnos, paseos.'},
+     'cadence': {'en': 'After every hangout (DEMO)', 'es': 'Después de cada encuentro (DEMO)'}},
+    {'id': 'en-espanol', 'sticker': 'bubbles', 'color': 'bubblegum',
+     'name': {'en': 'En español', 'es': 'En español'},
+     'blurb': {'en': 'Made in Spanish first, with English captions.', 'es': 'Hechos primero en español, con subtítulos en inglés.'},
+     'cadence': {'en': 'New on Sundays (DEMO)', 'es': 'Nuevos los domingos (DEMO)'}},
+    {'id': 'open-mic', 'sticker': 'heart', 'color': 'tangerine',
+     'name': {'en': 'Open Mic', 'es': 'Micrófono abierto'},
+     'blurb': {'en': 'Your take, 60 seconds, filmed vertical. The weekly prompt lives here.', 'es': 'Tu opinión, 60 segundos, en vertical. Aquí vive el tema de la semana.'},
+     'cadence': {'en': 'New prompt every Monday (DEMO)', 'es': 'Tema nuevo cada lunes (DEMO)'}},
+]
+
 # ------------------------------------------------------------------------------------- clips
-# segments: photo, seconds, focus [(fx, fy), (fx, fy)], zoom (start, end)
-# lines: (text, start, end, style)   styles: light (white box), dark (black box), pop (yellow box)
-# linesY: optional vertical centre of the caption lines (default 760)
+# cues: (start, end, en, es). `lang` is the language the creator made it in; the other is a translation.
+# shots: render_clips.js / stage.js layers (coordinates in the 720x1280 frame). Keep the middle-low band
+# (about y 700 to 880) clear: the page draws the captions there.
+def P(photo, focus, zoom, **kw):
+    d = {'type': 'photo', 'photo': photo, 'focus': focus if isinstance(focus[0], list) else [focus], 'zoom': zoom}
+    d.update(kw)
+    return d
+
+
+def S(*items):
+    return {'type': 'stickers', 'items': [dict(zip(('id', 'x', 'y', 't', 'size', 'rot'), it)) for it in items]}
+
+
 SPECS = [
     {
-        'id': 'demo-mail-ballot-renew',
-        'file': 'mail-ballot-renew',
+        'id': 'demo-mail-ballot-renew', 'file': 'mail-ballot-renew', 'series': 'seminole-60', 'lang': 'en',
         'author': {'handle': '@demo.maria', 'name': 'Maria (DEMO creator)'},
-        'caption': 'PSA: Asked for a Florida mail ballot before Nov 3? That request ends Dec 31. '
-                   'Ask again and you should be set through 2028. Check My Voter Record to be sure.',
+        'title': {'en': 'Renew your mail ballot request', 'es': 'Renueva tu solicitud de boleta por correo'},
+        'caption': {'en': 'PSA: Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set '
+                          'through 2028. Check My Voter Record to be sure.',
+                    'es': 'Aviso: ¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. '
+                          'Pídela otra vez y debería cubrirte hasta 2028. Revisa tu registro de votante para confirmarlo.'},
         'tags': ['vote-by-mail', 'explainer', 'psa'],
         'likes': 412, 'views': 3870, 'createdAt': '2026-11-06T18:20:00-05:00',
-        'tint': (106, 92, 214, 34),
-        'title': 'Mail ballot PSA',
-        'segments': [
-            {'photo': 'envelope', 'seconds': 5.2, 'focus': [(0.40, 0.52), (0.56, 0.48)], 'zoom': (1.0, 1.12)},
-            {'photo': 'laptops', 'seconds': 5.2, 'focus': [(0.52, 0.42), (0.66, 0.40)], 'zoom': (1.08, 1.0)},
+        'showUntil': '2027-01-01T00:00:00-05:00',
+        'posterAt': 0.75,
+        'cues': [
+            (0.0, 2.1, 'Asked for a mail ballot before Nov 3?', '¿Pediste la boleta por correo antes del 3 de noviembre?'),
+            (2.1, 3.9, 'That request ends Dec 31.', 'Esa solicitud vence el 31 de diciembre.'),
+            (3.9, 6.3, 'Ask again at voteseminole.gov', 'Pídela otra vez en voteseminole.gov'),
+            (6.3, 8.3, 'and you should be set through 2028.', 'y debería cubrirte hasta 2028.'),
+            (8.3, 10.4, 'Check My Voter Record to be sure.', 'Revisa tu registro de votante para confirmarlo.'),
         ],
-        'lines': [
-            ('Asked for a mail ballot\nbefore Nov 3?', 0.7, 4.9, 'light'),
-            ('That request ends\nDec 31, 2026', 5.0, 7.5, 'pop'),
-            ('Ask again: voteseminole.gov\nShould last through 2028', 7.6, 10.0, 'light'),
+        'shots': [
+            {'seconds': 1.1, 'layers': [P('envelope', [0.46, 0.5], [1.12, 1.24], grade='cool'), S(('envelope', 540, 300, 0.12, 220, 10))]},
+            {'seconds': 1.0, 'transition': 'punch', 'layers': [{'type': 'phone', 'views': [{'t': 0, 'view': 'home'}], 'taps': [{'t': 0.45, 'x': 360, 'y': 422}]}]},
+            {'seconds': 1.8, 'transition': 'flash', 'layers': [{'type': 'date', 'num': '31', 'bg': '#FF8B3D', 'band': '#FF4FA3', 'rays': True, 'top': 250, 'rot': -5},
+                                                              S(('envelope', 590, 250, 0.5, 170, 14))]},
+            {'seconds': 2.4, 'transition': 'punch', 'layers': [{'type': 'phone', 'views': [{'t': 0, 'view': 'form'}, {'t': 2.05, 'view': 'done'}],
+                                                              'taps': [{'t': 0.1, 'x': 360, 'y': 418}, {'t': 1.4, 'x': 56, 'y': 848}, {'t': 1.85, 'x': 360, 'y': 975}]}]},
+            {'seconds': 2.0, 'transition': 'whip', 'layers': [{'type': 'date', 'num': '2028', 'size': 210, 'w': 560, 'bg': '#C8F03C', 'band': '#6A2BFF', 'rays': True, 'top': 260, 'rot': 4},
+                                                             S(('calendar', 130, 230, 0.45, 170, -12))]},
+            {'seconds': 2.1, 'transition': 'punch', 'layers': [{'type': 'phone', 'views': [{'t': 0, 'view': 'record'}], 'taps': [{'t': 0.55, 'x': 300, 'y': 589}]},
+                                                              S(('heart', 600, 330, 1.2, 160, 12))]},
         ],
-        # The last box holds two sentences on two rows: the transcript keeps them as two lines.
-        # (Other boxes wrap one sentence, so their rows are joined with a space.)
-        'burnedInText': ['Mail ballot PSA', 'Asked for a mail ballot before Nov 3?', 'That request ends Dec 31, 2026',
-                         'Ask again: voteseminole.gov', 'Should last through 2028'],
         'facts': [
-            {'claim': 'One Florida vote-by-mail request covers elections "through the end of the calendar '
-                      'year of the next regularly scheduled general election" (so requests made before the Nov 3, 2026 '
-                      'general election end Dec 31, 2026, and one made after it should run through Dec 31, 2028).',
+            {'claim': 'One Florida vote-by-mail request covers elections "through the end of the calendar year of the next regularly '
+                      'scheduled general election", so requests made before the Nov 3, 2026 general election end Dec 31, 2026, and one made '
+                      'after it should run through Dec 31, 2028.',
              'source': 'https://www.flsenate.gov/Laws/Statutes/2025/101.62'},
-            {'claim': 'Seminole voters request/renew online or by phone at 407-585-8683.',
+            {'claim': 'Seminole voters request or renew online at voteseminole.gov or by phone at 407-585-8683.',
              'source': 'https://voteseminole.gov/how-to-vote/vote-by-mail/'},
         ],
     },
     {
-        'id': 'demo-sunrail-rally',
-        'file': 'sunrail-rally',
+        'id': 'demo-sunrail-rally', 'file': 'sunrail-rally', 'series': 'crew-cam', 'lang': 'en',
         'author': {'handle': '@demo.jordan', 'name': 'Jordan (DEMO creator)'},
-        'caption': 'Took SunRail to the rally. No parking, no stress. Who is riding next time?',
-        'tags': ['sunrail', 'rally', 'transit', 'squad'],
-        'likes': 287, 'views': 2410, 'createdAt': '2026-11-01T12:05:00-04:00',
-        'tint': (255, 140, 60, 22),
-        'title': 'SunRail to the rally',
-        'segments': [
-            {'photo': 'tracks', 'seconds': 5.4, 'focus': [(0.50, 0.58), (0.50, 0.62)], 'zoom': (1.0, 1.22)},
-            {'photo': 'park', 'seconds': 5.0, 'focus': [(0.46, 0.46), (0.58, 0.44)], 'zoom': (1.0, 1.06)},
+        'title': {'en': 'The squad takes SunRail', 'es': 'El grupo se va en SunRail'},
+        'caption': {'en': 'Took SunRail with the squad. No parking, no stress. Trains run weekdays only, so we made it a weeknight. '
+                          'Who is riding next time?',
+                    'es': 'Fuimos en SunRail con el grupo. Sin buscar estacionamiento, sin estrés. Los trenes solo pasan de lunes a '
+                          'viernes, así que lo hicimos entre semana. ¿Quién viene la próxima vez?'},
+        'tags': ['sunrail', 'transit', 'squad'],
+        'likes': 287, 'views': 2410, 'createdAt': '2026-11-05T19:05:00-05:00',
+        'posterAt': 0.7,
+        'cues': [
+            (0.0, 2.0, 'POV: the squad takes SunRail', 'POV: el grupo se va en SunRail'),
+            (2.0, 3.8, 'No parking. No stress.', 'Sin buscar estacionamiento. Sin estrés.'),
+            (3.8, 6.8, '4 stops in Seminole County', '4 paradas en el condado de Seminole'),
+            (6.8, 8.6, 'Trains run weekdays only', 'Los trenes solo pasan de lunes a viernes'),
+            (8.6, 10.6, "Who's riding next time?", '¿Quién viene la próxima vez?'),
         ],
-        'lines': [
-            ('4 Seminole stops:\nSanford, Lake Mary,\nLongwood, Altamonte Springs', 0.8, 5.0, 'light'),
-            ('Squad: assembled', 5.4, 10.0, 'pop'),
+        'shots': [
+            {'seconds': 1.0, 'layers': [P('park', [0.5, 0.36], [1.0, 1.07]), S(('train', 575, 230, 0.12, 200, 10))]},
+            {'seconds': 1.0, 'layers': [P('park', [0.27, 0.45], [1.62, 1.68], seed=2), S(('heart', 600, 240, 0.12, 150, -10))]},
+            {'seconds': 1.8, 'transition': 'whip', 'layers': [P('tracks', [0.5, 0.62], [1.0, 1.38], grade='golden', ease='linear', shake=4)]},
+            {'seconds': 3.0, 'transition': 'flash', 'layers': [{'type': 'route', 'stops': ['Sanford', 'Lake Mary', 'Longwood', 'Altamonte Springs'],
+                                                              't0': 0.25, 't1': 2.6, 'top': 170, 'bottom': 660}]},
+            {'seconds': 1.8, 'transition': 'punch', 'layers': [{'type': 'week', 'top': 470}]},
+            {'seconds': 2.0, 'transition': 'punch', 'layers': [P('park', [0.5, 0.4], [1.22, 1.28], seed=3), S(('bubbles', 590, 250, 0.15, 170, 8), ('train', 140, 260, 0.35, 160, -12))]},
         ],
         'facts': [
-            {'claim': 'SunRail stations in Seminole County: Sanford, Lake Mary, Longwood, Altamonte Springs.',
+            {'claim': 'SunRail stations in Seminole County: Sanford, Lake Mary, Longwood and Altamonte Springs.',
              'source': 'https://corporate.sunrail.com/stations-trains/phase-1-stations/'},
+            {'claim': 'SunRail currently runs Monday to Friday only (checked Nov 10, 2026).',
+             'source': 'https://sunrail.com/help-center/support/maps-schedules/how-often-does-sunrail-run/'},
         ],
     },
     {
-        'id': 'demo-first-time-voter',
-        'file': 'first-time-voter',
+        'id': 'demo-first-time-voter', 'file': 'first-time-voter', 'series': 'first-time', 'lang': 'en',
         'author': {'handle': '@demo.ava', 'name': 'Ava (DEMO creator)'},
-        'caption': 'POV: you just voted for the first time and the sticker hits different.',
+        'title': {'en': 'POV: first time voting', 'es': 'POV: votas por primera vez'},
+        'caption': {'en': 'POV: you just voted for the first time and the sticker is going on everything.',
+                    'es': 'POV: acabas de votar por primera vez y el sticker va a ir en todo.'},
         'tags': ['first-time-voter', 'pov', 'how-to-vote'],
         'likes': 655, 'views': 5120, 'createdAt': '2026-11-03T16:42:00-05:00',
-        'tint': (255, 214, 120, 14),
-        'title': 'POV: first time voter',
-        'linesY': 930,
-        'segments': [
-            {'photo': 'sticker', 'seconds': 9.0, 'focus': [(0.55, 0.50), (0.60, 0.46)], 'zoom': (1.0, 1.16)},
+        'posterAt': 0.5,
+        'cues': [
+            (0.0, 2.2, 'POV: you just voted for the first time', 'POV: acabas de votar por primera vez'),
+            (2.2, 4.6, "Step 1: check that you're registered", 'Paso 1: confirma que estás inscrito'),
+            (4.6, 7.2, 'Step 2: bring a current photo ID with your signature', 'Paso 2: lleva una identificación vigente con foto y con tu firma'),
+            (7.2, 10.4, 'Step 3: the sticker is going on everything', 'Paso 3: el sticker va a ir en todo'),
         ],
-        'lines': [
-            ('Step 1: check that\nyou are registered', 0.8, 3.5, 'light'),
-            ('Step 2: bring a current\nphoto ID with your signature', 3.6, 6.3, 'light'),
-            ('Step 3: get the sticker', 6.4, 9.0, 'pop'),
+        'shots': [
+            {'seconds': 1.1, 'layers': [P('sticker', [0.55, 0.44], [1.0, 1.06], shake=4), S(('sun', 170, 250, 0.2, 170, -10))]},
+            {'seconds': 1.1, 'transition': 'punch', 'layers': [P('sticker', [0.62, 0.37], [1.5, 1.55], shake=5, seed=2)]},
+            {'seconds': 2.4, 'transition': 'flash', 'layers': [{'type': 'phone', 'views': [{'t': 0, 'view': 'record'}], 'taps': [{'t': 0.4, 'x': 300, 'y': 589}]},
+                                                              {'type': 'badge', 'n': 1, 'x': 600, 'y': 330, 'size': 170, 'at': 0.05}]},
+            {'seconds': 2.6, 'transition': 'whip', 'layers': [{'type': 'solid', 'bg': '#4FD6FF', 'dots': 'rgba(23,11,51,.12)'}, {'type': 'ids', 'mode': 'one', 'ok': 1.5},
+                                                             {'type': 'badge', 'n': 2, 'x': 130, 'y': 190, 'size': 160, 'at': 0.05, 'color': '#FFD23F'}]},
+            {'seconds': 3.2, 'transition': 'flash', 'layers': [P('crowd', [0.5, 0.42], [1.0, 1.1], grade='golden'),
+                                                              {'type': 'burst', 'ids': ['celery', 'gator', 'chicken', 'sun', 'heart', 'train', 'manatee', 'palm'], 'x': 360, 'y': 420, 'at': 0.3}]},
         ],
         'facts': [
-            {'claim': 'Florida polls ask for a current, valid picture ID, and the signature is compared.',
+            {'claim': 'Florida polls ask for a current, valid picture ID with a signature (more than one ID can cover both).',
              'source': 'https://www.flsenate.gov/Laws/Statutes/2025/101.043'},
             {'claim': 'Registration status lookup (Florida Division of Elections).',
              'source': 'https://registration.dos.fl.gov/CheckVoterStatus'},
         ],
     },
     {
-        'id': 'demo-lake-monroe-canvass',
-        'file': 'lake-monroe-canvass',
+        'id': 'demo-lake-monroe-canvass', 'file': 'lake-monroe-canvass', 'series': 'crew-cam', 'lang': 'en',
         'author': {'handle': '@demo.luis', 'name': 'Luis (DEMO creator)'},
-        'caption': 'Sunset canvass by Lake Monroe. Knocked doors, met neighbors, caught the sky.',
+        'title': {'en': 'My first canvass, ranked', 'es': 'Mi primer puerta a puerta'},
+        'caption': {'en': 'Sunset canvass by Lake Monroe. Knocked doors, met neighbors, stayed for the sky.',
+                    'es': 'Puerta a puerta al atardecer junto al lago Monroe. Tocamos puertas, conocimos vecinos y nos quedamos para ver el cielo.'},
         'tags': ['canvass', 'sanford', 'volunteer'],
         'likes': 198, 'views': 1640, 'createdAt': '2026-10-29T19:10:00-04:00',
-        'tint': (230, 90, 140, 26),
-        'title': 'Lake Monroe sunset canvass',
-        'segments': [
-            {'photo': 'lake', 'seconds': 10.0, 'focus': [(0.47, 0.46), (0.53, 0.40)], 'zoom': (1.14, 1.0)},
+        'posterAt': 0.6,
+        'cues': [
+            (0.0, 2.3, "Things I didn't expect at my first canvass:", 'Cosas que no esperaba en mi primer puerta a puerta:'),
+            (2.3, 4.7, '1. People actually want to talk', '1. La gente sí quiere conversar'),
+            (4.7, 7.1, '2. You never knock alone', '2. Nunca tocas puertas sin compañía'),
+            (7.1, 10.2, '3. This sunset', '3. Este atardecer'),
         ],
-        'lines': [
-            ('Knock doors. Meet neighbors.', 1.0, 5.4, 'light'),
-            ('Stay for the sunset.', 5.5, 10.0, 'pop'),
+        'shots': [
+            {'seconds': 1.2, 'layers': [P('lake', [0.5, 0.42], [1.22, 1.28], grade='golden'), S(('gator', 590, 300, 0.15, 180, 8))]},
+            {'seconds': 1.1, 'transition': 'punch', 'layers': [P('street', [0.72, 0.55], [1.12, 1.2], seed=2), S(('palm', 150, 280, 0.1, 170, -10))]},
+            {'seconds': 2.4, 'layers': [P('street', [0.36, 0.6], [1.35, 1.44], seed=3), {'type': 'badge', 'n': 1, 'x': 160, 'y': 300, 'size': 180, 'at': 0.05},
+                                        S(('bubbles', 570, 430, 0.5, 190, 10))]},
+            {'seconds': 2.4, 'transition': 'whip', 'layers': [P('park', [0.28, 0.46], [1.34, 1.4], seed=4), {'type': 'badge', 'n': 2, 'x': 570, 'y': 300, 'size': 180, 'at': 0.05, 'color': '#FF7AC6'},
+                                                             S(('heart', 150, 430, 0.55, 160, -12))]},
+            {'seconds': 3.1, 'transition': 'flash', 'layers': [P('lake', [0.47, 0.4], [1.0, 1.12], grade='golden', ease='linear'),
+                                                              {'type': 'badge', 'n': 3, 'x': 160, 'y': 300, 'size': 180, 'at': 0.05, 'color': '#FFD23F'},
+                                                              S(('sun', 570, 250, 0.5, 190, 10), ('lake', 590, 600, 0.9, 150, -8))]},
         ],
         'facts': [],
     },
     {
-        'id': 'demo-precinct-captain',
-        'file': 'precinct-captain',
+        'id': 'demo-precinct-captain', 'file': 'precinct-captain', 'series': 'seminole-60', 'lang': 'en',
         'author': {'handle': '@demo.priya', 'name': 'Priya (DEMO creator)'},
-        'caption': 'What is a precinct captain? Your neighborhood Dem who organizes, informs and gets out the vote.',
+        'title': {'en': "What's a precinct captain?", 'es': '¿Qué es un capitán de precinto?'},
+        'caption': {'en': "What's a precinct captain? An official Democratic Party rep for your precinct who organizes neighbors and "
+                          'does voter outreach. Could be you.',
+                    'es': '¿Qué es un capitán de precinto? Representa oficialmente al Partido Demócrata en tu precinto, organiza a sus '
+                          'vecinos y habla con los votantes. Podrías ser tú.'},
         'tags': ['precinct-captain', 'explainer', 'organizing'],
         'likes': 341, 'views': 2980, 'createdAt': '2026-11-07T10:30:00-05:00',
-        'tint': (40, 170, 160, 22),
-        'title': "What's a precinct captain?",
-        'segments': [
-            {'photo': 'street', 'seconds': 10.0, 'focus': [(0.76, 0.55), (0.62, 0.52)], 'zoom': (1.0, 1.1)},
+        'posterAt': 0.6,
+        'cues': [
+            (0.0, 2.2, "What's a precinct captain?", '¿Qué es un capitán de precinto?'),
+            (2.2, 5.0, 'An official Democratic Party rep for your precinct', 'Representa oficialmente al Partido Demócrata en tu precinto'),
+            (5.0, 7.9, 'They organize neighbors and do voter outreach', 'Organiza a sus vecinos y habla con los votantes'),
+            (7.9, 10.6, 'Could be you.', 'Podrías ser tú.'),
         ],
-        'lines': [
-            ('Official Democratic Party\nreps for your precinct', 0.9, 4.6, 'light'),
-            ('Front-facing voter outreach\nin your neighborhood', 4.7, 7.6, 'light'),
-            ('Could be you', 7.7, 10.0, 'pop'),
+        'shots': [
+            {'seconds': 1.2, 'layers': [P('laptops', [0.55, 0.25], [2.0, 2.05], shake=3), S(('megaphone', 570, 300, 0.15, 190, 10))]},
+            {'seconds': 1.0, 'transition': 'punch', 'layers': [P('laptops', [0.555, 0.27], [2.45, 2.5], shake=3, seed=2)]},
+            {'seconds': 2.8, 'transition': 'flash', 'layers': [{'type': 'map', 'bg': '#4FD6FF', 'top': 360,
+                                                              'pins': [{'x': 0.56, 'y': 0.16, 't': 0.5}, {'x': 0.30, 'y': 0.26, 't': 0.75}, {'x': 0.26, 'y': 0.48, 't': 1.0},
+                                                                       {'x': 0.56, 'y': 0.60, 't': 1.25}, {'x': 0.76, 'y': 0.70, 't': 1.5}, {'x': 0.38, 'y': 0.74, 't': 1.75}],
+                                                              'facecam': {'photo': 'laptops', 'fx': 0.55, 'fy': 0.26, 'span': 0.13, 'x': 34, 'y': 60, 'size': 260}}]},
+            {'seconds': 2.9, 'transition': 'punch', 'layers': [{'type': 'map', 'bg': '#FF7AC6', 'top': 360,
+                                                              'pins': [{'x': 0.45, 'y': 0.35, 't': 0.2, 'color': '#C8F03C'}, {'x': 0.66, 'y': 0.30, 't': 0.4, 'color': '#C8F03C'},
+                                                                       {'x': 0.18, 'y': 0.64, 't': 0.6, 'color': '#C8F03C'}, {'x': 0.62, 'y': 0.84, 't': 0.8, 'color': '#C8F03C'}],
+                                                              'facecam': {'photo': 'laptops', 'fx': 0.555, 'fy': 0.27, 'span': 0.11, 'x': 34, 'y': 60, 'size': 260}},
+                                                             S(('bubbles', 580, 200, 1.1, 170, 10), ('chicken', 600, 1000, 1.5, 150, -8))]},
+            {'seconds': 2.7, 'transition': 'flash', 'layers': [P('laptops', [0.55, 0.26], [1.8, 1.88], shake=3, seed=3),
+                                                              S(('heart', 160, 300, 0.2, 170, -10), ('megaphone', 580, 330, 0.45, 180, 12))]},
         ],
         'facts': [
-            {'claim': 'Seminole County Democratic Party: precinct captains "are the people power behind the scenes, '
-                      'as well as the front-facing voter outreach teams in their communities. As official Democratic '
-                      'Party representatives they organize activities to help get Democrats elected up and down the ballot."',
+            {'claim': 'Seminole County Democratic Party: precinct captains "are the people power behind the scenes, as well as the '
+                      'front-facing voter outreach teams in their communities. As official Democratic Party representatives they '
+                      'organize activities to help get Democrats elected up and down the ballot."',
              'source': 'https://form.jotform.com/250016464253045'},
         ],
     },
     {
-        'id': 'demo-trivia-night-recap',
-        'file': 'trivia-night-recap',
+        'id': 'demo-trivia-night-recap', 'file': 'trivia-night-recap', 'series': 'first-time', 'lang': 'en',
         'author': {'handle': '@demo.sam', 'name': 'Sam (DEMO creator)'},
-        'caption': 'Trivia night recap: new friends, questionable team names, zero regrets.',
+        'title': {'en': 'POV: your first trivia night', 'es': 'POV: tu primera noche de trivia'},
+        'caption': {'en': 'Trivia night recap: new friends, questionable team names, one very loud tiebreaker.',
+                    'es': 'Resumen de la noche de trivia: amistades nuevas, nombres de equipo cuestionables y un desempate muy ruidoso.'},
         'tags': ['trivia', 'social', 'meetup'],
         'likes': 233, 'views': 1990, 'createdAt': '2026-11-08T21:15:00-05:00',
-        'tint': (140, 90, 230, 20),
-        'title': 'Trivia night recap',
-        'segments': [
-            {'photo': 'cards', 'seconds': 9.0, 'focus': [(0.28, 0.45), (0.74, 0.42)], 'zoom': (1.04, 1.04)},
+        'posterAt': 0.5,
+        'cues': [
+            (0.0, 2.0, 'POV: your first trivia night', 'POV: tu primera noche de trivia'),
+            (2.0, 4.4, 'You came alone. You left with a team.', 'Llegaste sin conocer a nadie. Te fuiste con un equipo.'),
+            (4.4, 7.4, 'Final round: one very loud tiebreaker', 'Última ronda: un desempate muy ruidoso'),
+            (7.4, 10.0, 'See you at the next one', 'Nos vemos en la próxima'),
         ],
-        'lines': [
-            ('New friends.\nQuestionable team names.', 1.0, 5.0, 'light'),
-            ('See you at the next one', 5.1, 9.0, 'pop'),
+        'shots': [
+            {'seconds': 1.0, 'layers': [P('cards', [0.5, 0.7], [1.5, 1.58], shake=4), S(('celery', 580, 300, 0.12, 190, 10))]},
+            {'seconds': 1.0, 'transition': 'punch', 'layers': [P('cards', [0.45, 0.62], [2.0, 2.05], shake=4, seed=2), S(('library', 150, 290, 0.15, 160, -10))]},
+            {'seconds': 2.4, 'transition': 'whip', 'layers': [P('cards', [0.5, 0.45], [1.0, 1.06], grade='golden', seed=3)]},
+            {'seconds': 3.0, 'transition': 'flash', 'layers': [P('cards', [0.5, 0.5], [1.1, 1.1], filter='blur(10px)', grade='dim', shake=0),
+                                                              {'type': 'score', 'top': 150, 'max': 10, 'rows': [
+                                                                  {'sticker': 'gator', 'score': 8, 'color': '#C8F03C'},
+                                                                  {'sticker': 'chicken', 'score': 9, 'color': '#FF7AC6', 'bump': 1.9},
+                                                                  {'sticker': 'manatee', 'score': 6, 'color': '#4FD6FF'},
+                                                                  {'sticker': 'celery', 'score': 9, 'color': '#FF8B3D'}]},
+                                                              {'type': 'burst', 'ids': ['heart', 'sun', 'chicken', 'heart', 'sun', 'chicken'], 'x': 360, 'y': 330, 'at': 2.0}]},
+            {'seconds': 2.6, 'transition': 'flash', 'layers': [P('cards', [0.62, 0.42], [1.16, 1.22], seed=4), S(('heart', 150, 280, 0.2, 170, -10), ('calendar', 590, 300, 0.5, 170, 10))]},
+        ],
+        'facts': [],
+    },
+    {
+        'id': 'demo-student-id-2027', 'file': 'student-id-2027', 'series': 'en-espanol', 'lang': 'es',
+        'author': {'handle': '@demo.vale', 'name': 'Vale (DEMO creator)'},
+        'title': {'en': 'Student IDs stop counting Jan 1', 'es': 'La ID de estudiante deja de servir el 1 de enero'},
+        'caption': {'es': '¿Votas con tu ID de estudiante? Desde el 1 de enero de 2027, Florida deja de aceptarla para votar (la medida '
+                          'está impugnada en los tribunales). Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte, y '
+                          'revisa voteseminole.gov antes de ir.',
+                    'en': "Do you vote with your student ID? Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's "
+                          "being challenged in court). Bring a driver's license, state ID, or passport, and check voteseminole.gov before you go."},
+        'tags': ['student-id', 'explainer', 'how-to-vote', 'en-espanol'],
+        'likes': 389, 'views': 3015, 'createdAt': '2026-11-09T12:10:00-05:00',
+        'posterAt': 0.6,
+        'cues': [
+            (0.0, 2.4, 'Do you vote with your student ID?', '¿Votas con tu ID de estudiante?'),
+            (2.4, 5.2, 'Starting Jan 1, 2027, Florida stops accepting it at the polls', 'Desde el 1 de enero de 2027, Florida deja de aceptarla para votar'),
+            (5.2, 6.8, "(it's being challenged in court)", '(la medida está impugnada en los tribunales)'),
+            (6.8, 9.4, "Bring a driver's license, state ID, or passport", 'Lleva tu licencia de conducir, tu identificación estatal o tu pasaporte'),
+            (9.4, 11.6, 'and check voteseminole.gov before you go', 'y revisa voteseminole.gov antes de ir'),
+        ],
+        'shots': [
+            {'seconds': 1.2, 'layers': [P('laptops', [0.76, 0.27], [1.85, 1.9], shake=3), S(('library', 160, 300, 0.15, 180, -10))]},
+            {'seconds': 1.2, 'transition': 'punch', 'layers': [{'type': 'solid', 'bg': '#6A2BFF', 'dots': 'rgba(255,246,234,.14)'}, {'type': 'ids', 'mode': 'student', 'x': 0.55}]},
+            {'seconds': 2.8, 'transition': 'flash', 'layers': [{'type': 'date', 'num': '1', 'sub': '2027', 'bg': '#FFD23F', 'band': '#2236C9', 'rays': True, 'top': 200, 'size': 280, 'rot': -4},
+                                                              S(('calendar', 590, 230, 0.6, 160, 12))]},
+            {'seconds': 1.6, 'transition': 'punch', 'layers': [P('laptops', [0.765, 0.29], [2.3, 2.35], shake=3, seed=2), S(('bubbles', 580, 300, 0.15, 170, 10))]},
+            {'seconds': 2.6, 'transition': 'whip', 'layers': [{'type': 'solid', 'bg': '#7EE081', 'dots': 'rgba(23,11,51,.12)'}, {'type': 'ids', 'mode': 'others'}]},
+            {'seconds': 2.2, 'transition': 'punch', 'layers': [{'type': 'phone', 'views': [{'t': 0, 'view': 'home'}], 'taps': [{'t': 0.5, 'x': 360, 'y': 422}]},
+                                                              S(('calendar', 600, 1010, 0.4, 150, 10))]},
+        ],
+        'facts': [
+            {'claim': 'HB 991 (Ch. 2026-26), signed Apr 1, 2026, removes student IDs (and some others) from the photo IDs accepted at '
+                      'the polls in s. 101.043, starting Jan 1, 2027.',
+             'source': 'https://flsenate.gov/Committees/BillSummaries/2026/html/991'},
+            {'claim': 'A federal lawsuit filed Oct 16, 2026 challenges the student-ID change.',
+             'source': 'https://www.democracydocket.com/wp-content/uploads/2026/10/2026-10-16-Complaint.pdf'},
+        ],
+    },
+    {
+        'id': 'demo-why-i-showed-up', 'file': 'why-i-showed-up', 'series': 'open-mic', 'lang': 'en',
+        'author': {'handle': '@demo.nia', 'name': 'Nia (DEMO creator)'},
+        'title': {'en': 'Why I showed up', 'es': 'Por qué participé'},
+        'caption': {'en': 'Why I showed up: someone saved me a seat. Now I save one for someone else. Your turn.',
+                    'es': 'Por qué participé: alguien me guardó un lugar. Ahora yo le guardo uno a alguien más. Te toca.'},
+        'tags': ['why-i-showed-up', 'open-mic', 'social'],
+        'likes': 506, 'views': 4210, 'createdAt': '2026-11-09T20:40:00-05:00',
+        'posterAt': 0.55,
+        'cues': [
+            (0.0, 2.0, '60 seconds on why I showed up:', '60 segundos sobre por qué participé:'),
+            (2.0, 4.4, "At my first meetup, I didn't know anyone", 'En mi primer encuentro no conocía a nadie'),
+            (4.4, 6.6, 'Someone saved me a seat', 'Alguien me guardó un lugar'),
+            (6.6, 9.0, 'Now I save one for someone else', 'Ahora yo le guardo uno a alguien más'),
+            (9.0, 11.0, 'Your turn: why did you show up?', 'Te toca: ¿por qué participaste tú?'),
+        ],
+        'shots': [
+            {'seconds': 1.0, 'layers': [P('park', [0.62, 0.24], [2.0, 2.05], shake=3), S(('megaphone', 160, 300, 0.12, 180, -10))]},
+            {'seconds': 1.0, 'transition': 'punch', 'layers': [P('park', [0.625, 0.26], [2.5, 2.55], shake=3, seed=2)]},
+            {'seconds': 2.4, 'transition': 'whip', 'layers': [P('crowd', [0.32, 0.5], [1.3, 1.36], grade='cool', seed=3)]},
+            {'seconds': 2.2, 'transition': 'flash', 'layers': [{'type': 'solid', 'bg': '#4FD6FF', 'dots': 'rgba(23,11,51,.12)'}, {'type': 'seats', 'top': 330, 'saved': 2, 'heart': 0.7}]},
+            {'seconds': 2.4, 'transition': 'punch', 'layers': [P('park', [0.55, 0.36], [1.3, 1.38], grade='golden', seed=4), S(('heart', 160, 300, 0.25, 170, -10), ('calendar', 590, 330, 0.55, 170, 10))]},
+            {'seconds': 2.0, 'transition': 'flash', 'layers': [P('park', [0.62, 0.24], [1.85, 1.9], shake=3, seed=5), S(('camera', 590, 290, 0.15, 180, 10))]},
         ],
         'facts': [],
     },
 ]
 
-STYLES = {
-    'light': {'box': (255, 255, 255, 240), 'text': (17, 17, 20, 255)},
-    'dark': {'box': (12, 12, 16, 210), 'text': (255, 255, 255, 255)},
-    'pop': {'box': (255, 225, 77, 245), 'text': (17, 17, 20, 255)},
-}
-
 
 # ------------------------------------------------------------------------------------- helpers
-def find_font(name):
-    for d in FONT_DIRS:
-        p = os.path.join(d, name)
-        if os.path.exists(p):
-            return p
-    raise SystemExit('font not found: %s (install Inter: https://rsms.me/inter/)' % name)
-
-
-FONT_BLACK = find_font('Inter-Black.otf')
-FONT_XBOLD = find_font('Inter-ExtraBold.otf')
-FONT_BOLD = find_font('Inter-Bold.otf')
-
-
 def photo_url(pid, width=2400):
     return 'https://images.unsplash.com/photo-%s?w=%d&q=85&fm=jpg' % (pid, width)
 
@@ -296,8 +442,7 @@ def download(key, cache):
     if os.path.exists(path) and os.path.getsize(path) > 10000:
         return path
     url = photo_url(info['id'])
-    req = urllib.request.Request(url)
-    with urllib.request.urlopen(req, timeout=60) as r:
+    with urllib.request.urlopen(urllib.request.Request(url), timeout=60) as r:
         status = getattr(r, 'status', r.getcode())
         ctype = r.headers.get('Content-Type', '')
         body = r.read()
@@ -309,353 +454,191 @@ def download(key, cache):
     return path
 
 
-def ease_in_out(t):
-    return 0.5 - 0.5 * math.cos(math.pi * max(0.0, min(1.0, t)))
+def photos_used(spec):
+    keys = []
+    for sh in spec['shots']:
+        for L in sh['layers']:
+            for k in (L.get('photo'), (L.get('facecam') or {}).get('photo')):
+                if k and k not in keys:
+                    keys.append(k)
+    return keys
 
 
-def ease_out_back(t, s=1.70158):
-    t = max(0.0, min(1.0, t)) - 1
-    return t * t * ((s + 1) * t + s) + 1
+def duration_of(spec):
+    return round(sum(sh['seconds'] for sh in spec['shots']), 3)
 
 
-def wrap(draw, text, font, max_w):
-    """Greedy word wrap; an explicit newline in `text` always breaks."""
-    lines = []
-    for para in text.split('\n'):
-        cur = ''
-        for wd in para.split():
-            trial = (cur + ' ' + wd).strip()
-            if draw.textlength(trial, font=font) <= max_w or not cur:
-                cur = trial
-            else:
-                lines.append(cur)
-                cur = wd
-        if cur:
-            lines.append(cur)
-    return lines
-
-
-def text_sprite(text, font_path, size, style, max_w=664, pad=(22, 12), radius=16, gap=6):
-    """TikTok-style caption: each wrapped line in its own rounded box, centred."""
-    font = ImageFont.truetype(font_path, size)
-    probe = ImageDraw.Draw(Image.new('RGBA', (8, 8)))
-    lines = wrap(probe, text, font, max_w - 2 * pad[0])
-    asc, desc = font.getmetrics()
-    lh = asc + desc
-    widths = [probe.textlength(l, font=font) for l in lines]
-    box_w = int(max(widths) + 2 * pad[0])
-    total_h = int(len(lines) * (lh + 2 * pad[1]) + (len(lines) - 1) * gap)
-    im = Image.new('RGBA', (box_w + 8, total_h + 8), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    st = STYLES[style]
-    y = 4
-    for line, lw in zip(lines, widths):
-        bw = int(lw + 2 * pad[0])
-        x = 4 + (box_w - bw) // 2
-        d.rounded_rectangle([x, y, x + bw, y + lh + 2 * pad[1]], radius=radius, fill=st['box'])
-        d.text((x + pad[0], y + pad[1]), line, font=font, fill=st['text'])
-        y += lh + 2 * pad[1] + gap
-    return im
-
-
-def title_sprite(text):
-    """Big white title with a soft dark outline (sits on the top scrim)."""
-    font = ImageFont.truetype(FONT_BLACK, 62)
-    probe = ImageDraw.Draw(Image.new('RGBA', (8, 8)))
-    lines = wrap(probe, text, font, 620)
-    asc, desc = font.getmetrics()
-    lh = asc + desc
-    wmax = int(max(probe.textlength(l, font=font) for l in lines))
-    im = Image.new('RGBA', (wmax + 24, len(lines) * (lh + 4) + 24), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    y = 12
-    for l in lines:
-        lw = probe.textlength(l, font=font)
-        x = 12 + (wmax - lw) / 2
-        d.text((x, y), l, font=font, fill=(255, 255, 255, 255), stroke_width=4, stroke_fill=(0, 0, 0, 150))
-        y += lh + 4
-    return im
-
-
-def chrome_layer(handle, tint):
-    """Static layer: tint, top/bottom scrims, @handle and DEMO tag."""
-    layer = Image.new('RGBA', (W, H), tint)
-    grad = Image.new('L', (1, H))
-    for y in range(H):
-        a = 0
-        if y < 330:
-            a = int(120 * (1 - y / 330) ** 1.6)
-        elif y > 860:
-            a = int(150 * ((y - 860) / (H - 860)) ** 1.4)
-        grad.putpixel((0, y), a)
-    scrim = Image.new('RGBA', (W, H), (0, 0, 0, 255))
-    scrim.putalpha(grad.resize((W, H)))
-    layer = Image.alpha_composite(layer, scrim)
-    d = ImageDraw.Draw(layer)
-    f = ImageFont.truetype(FONT_BOLD, 26)
-    d.text((36, 44), handle, font=f, fill=(255, 255, 255, 235), stroke_width=2, stroke_fill=(0, 0, 0, 110))
-    tag = 'DEMO CLIP'
-    ft = ImageFont.truetype(FONT_XBOLD, 20)
-    tw = d.textlength(tag, font=ft)
-    x1 = W - 36
-    x0 = x1 - tw - 28
-    d.rounded_rectangle([x0, 40, x1, 78], radius=19, fill=(0, 0, 0, 120), outline=(255, 255, 255, 200), width=2)
-    d.text((x0 + 14, 47), tag, font=ft, fill=(255, 255, 255, 240))
-    return layer
-
-
-class Segment:
-    def __init__(self, img, seconds, focus, zoom):
-        self.img = img.convert('RGB')
-        self.seconds = seconds
-        self.focus = focus
-        self.zoom = zoom
-        iw, ih = self.img.size
-        # largest 9:16 box that fits the photo
-        if iw / ih > W / H:
-            self.base_h = ih
-            self.base_w = ih * W / H
-        else:
-            self.base_w = iw
-            self.base_h = iw * H / W
-
-    def frame(self, t):
-        p = ease_in_out(t / self.seconds)
-        z = self.zoom[0] + (self.zoom[1] - self.zoom[0]) * p
-        fx = self.focus[0][0] + (self.focus[1][0] - self.focus[0][0]) * p
-        fy = self.focus[0][1] + (self.focus[1][1] - self.focus[0][1]) * p
-        iw, ih = self.img.size
-        bw, bh = self.base_w / z, self.base_h / z
-        cx = min(max(fx * iw, bw / 2), iw - bw / 2)
-        cy = min(max(fy * ih, bh / 2), ih - bh / 2)
-        x0, y0 = cx - bw / 2, cy - bh / 2
-        s = bw / W
-        return self.img.transform((W, H), Image.AFFINE, (s, 0, x0, 0, s, y0), resample=Image.BICUBIC)
-
-
-def faded(sprite, alpha, scale=1.0):
-    if scale != 1.0:
-        sw, sh = sprite.size
-        sprite = sprite.resize((max(1, int(sw * scale)), max(1, int(sh * scale))), Image.BILINEAR)
-    if alpha < 1.0:
-        a = sprite.getchannel('A').point(lambda v: int(v * alpha))
-        sprite = sprite.copy()
-        sprite.putalpha(a)
-    return sprite
-
-
-def build_scene(spec, cache):
-    """Everything a frame needs: photo segments, start times, chrome, title and caption sprites."""
-    segs = []
-    for sg in spec['segments']:
-        img = Image.open(download(sg['photo'], cache))
-        segs.append(Segment(img, sg['seconds'], sg['focus'], sg['zoom']))
-    xfade = 0.5
-    duration = sum(s.seconds for s in segs) - xfade * (len(segs) - 1)
-    chrome = chrome_layer(spec['author']['handle'], spec['tint'])
-    title = title_sprite(spec['title'])
-    title_pos = ((W - title.size[0]) // 2, 108)
-    sprites = []
-    for text, a, b, style in spec['lines']:
-        sp = text_sprite(text, FONT_XBOLD, 40, style)
-        cy = spec.get('linesY', 760)
-        sprites.append((sp, a, min(b, duration), ((W - sp.size[0]) // 2, cy - sp.size[1] // 2)))
-    starts, acc = [], 0.0
-    for sg in segs:
-        starts.append(acc)
-        acc += sg.seconds - xfade
-    return {'segs': segs, 'xfade': xfade, 'duration': duration, 'chrome': chrome, 'title': title,
-            'title_pos': title_pos, 'sprites': sprites, 'starts': starts}
-
-
-def compose_frame(scene, t, photo_blur=0):
-    """One RGB frame at time t (seconds). photo_blur softens only the photo layer (posters)."""
-    segs, starts, xfade, duration = scene['segs'], scene['starts'], scene['xfade'], scene['duration']
-    # photo layer (with crossfade)
-    idx = max(i for i, st in enumerate(starts) if st <= t + 1e-9)
-    frame = segs[idx].frame(min(t - starts[idx], segs[idx].seconds))
-    # crossfade window: the first `xfade` seconds of every segment after the first
-    if idx > 0 and t - starts[idx] < xfade:
-        prev = segs[idx - 1].frame(min(t - starts[idx - 1], segs[idx - 1].seconds))
-        frame = Image.blend(prev, frame, ease_in_out((t - starts[idx]) / xfade))
-    if photo_blur:
-        frame = frame.filter(ImageFilter.GaussianBlur(photo_blur))
-    im = frame.convert('RGBA')
-    im.alpha_composite(scene['chrome'])
-    im.alpha_composite(scene['title'], dest=scene['title_pos'])
-    for sp, a, b, (x, y) in scene['sprites']:
-        if t < a or t > b:
-            continue
-        k_in = (t - a) / 0.28
-        k_out = (b - t) / 0.2 if b < duration - 0.01 else 1.0
-        alpha = max(0.0, min(1.0, k_in / 0.65, k_out))
-        scale = 0.86 + 0.14 * ease_out_back(k_in) if k_in < 1 else 1.0
-        s2 = faded(sp, alpha, scale)
-        dx = x + (sp.size[0] - s2.size[0]) // 2
-        dy = y + (sp.size[1] - s2.size[1]) // 2
-        im.alpha_composite(s2, dest=(max(0, dx), max(0, dy)))
-    return im.convert('RGB')
-
-
-def poster_image(rgb):
-    """Frame -> poster pixels: Lanczos down to POSTER_W x POSTER_H plus a light unsharp mask for crisp type."""
-    img = rgb.resize((POSTER_W, POSTER_H), Image.LANCZOS)
-    return img.filter(ImageFilter.UnsharpMask(radius=0.7, percent=35, threshold=3))
-
-
-def save_poster(scene, path):
-    """Frame 0 as a progressive JPEG of at most POSTER_MAX_BYTES (see POSTER_STEPS). Returns (blur, quality, bytes)."""
-    frames = {}
-    for blur, q in POSTER_STEPS:
-        if blur not in frames:
-            frames[blur] = poster_image(compose_frame(scene, 0.0, blur))
-        buf = io.BytesIO()
-        frames[blur].save(buf, 'JPEG', quality=q, optimize=True, progressive=True, subsampling='4:2:0')
-        data = buf.getvalue()
-        if len(data) <= POSTER_MAX_BYTES:
-            with open(path, 'wb') as f:
-                f.write(data)
-            return blur, q, len(data)
-    raise SystemExit('poster %s does not fit %d bytes' % (path, POSTER_MAX_BYTES))
-
-
-def render_clip(spec, cache, outdir, crf=27):
-    scene = build_scene(spec, cache)
-    nframes = int(round(scene['duration'] * FPS))
-    mp4 = os.path.join(outdir, spec['file'] + '.mp4')
-    poster = os.path.join(outdir, spec['file'] + '.jpg')
-    cmd = ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
-           '-s', '%dx%d' % (W, H), '-r', str(FPS), '-i', '-',
-           '-c:v', 'libx264', '-preset', 'slow', '-crf', str(crf), '-maxrate', '1300k', '-bufsize', '2600k',
-           '-profile:v', 'high', '-level', '4.0', '-pix_fmt', 'yuv420p', '-g', str(FPS * 2),
-           '-movflags', '+faststart', '-an', '-metadata', 'title=%s (DEMO)' % spec['title'],
-           '-metadata', 'comment=Young Seminole Democrats demo clip; photos under the Unsplash License', mp4]
-    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    for n in range(nframes):
-        proc.stdin.write(compose_frame(scene, n / FPS).tobytes())
-    save_poster(scene, poster)
-    proc.stdin.close()
-    if proc.wait() != 0:
-        raise SystemExit('ffmpeg failed for ' + spec['id'])
-    return mp4, poster, scene['duration']
-
-
-def mp4_first_frame(mp4):
-    """The MP4's own first frame as an RGB image (ffmpeg decodes one frame; nothing is encoded)."""
-    out = subprocess.run(['ffmpeg', '-v', 'error', '-i', mp4, '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'],
-                         capture_output=True, check=True).stdout
-    return Image.frombytes('RGB', (W, H), out[:W * H * 3])
-
-
-def render_poster(spec, cache, outdir, force=False):
-    """Poster only: frame 0 from the spec, checked against the existing MP4's first frame."""
-    scene = build_scene(spec, cache)
-    rgb = compose_frame(scene, 0.0)
-    mp4 = os.path.join(outdir, spec['file'] + '.mp4')
-    if os.path.exists(mp4):
-        ref = mp4_first_frame(mp4).resize((POSTER_W, POSTER_H), Image.LANCZOS)
-        diff = sum(ImageStat.Stat(ImageChops.difference(rgb.resize((POSTER_W, POSTER_H), Image.LANCZOS), ref)).mean) / 3
-        if diff > 6 and not force:
-            raise SystemExit('%s: frame 0 differs from the MP4 (mean %.1f/255); SPECS changed since the clip was '
-                             'rendered. Re-render the clip, or pass --force.' % (spec['id'], diff))
-    else:
-        diff = None
-    blur, q, size = save_poster(scene, os.path.join(outdir, spec['file'] + '.jpg'))
-    return blur, q, size, diff
+def check_spec(spec):
+    d = duration_of(spec)
+    cues = spec['cues']
+    assert 6 <= d <= 12, '%s: duration %.2f outside 6-12 s' % (spec['id'], d)
+    assert abs(cues[-1][1] - d) < 0.05, '%s: last cue ends at %.2f but the clip is %.2f s' % (spec['id'], cues[-1][1], d)
+    assert cues[0][0] == 0 and cues[0][1] <= 2.5, '%s: the hook must be in the first 2.5 seconds' % spec['id']
+    for a, b in zip(cues, cues[1:]):
+        assert abs(a[1] - b[0]) < 1e-6, '%s: cue gap at %.2f' % (spec['id'], a[1])
+    assert spec['series'] in [s['id'] for s in SERIES], spec['id'] + ': unknown series'
+    assert len(spec['caption']['en']) <= 300 and len(spec['caption']['es']) <= 300, spec['id'] + ': caption over 300'
 
 
 def probe(path):
-    out = subprocess.run(['ffprobe', '-v', 'error', '-show_entries',
-                          'format=duration,size:stream=codec_type,codec_name,width,height',
+    out = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration,size:stream=codec_type,codec_name,width,height',
                           '-of', 'json', path], capture_output=True, text=True, check=True).stdout
     return json.loads(out)
 
 
-def burned_in(spec):
-    """Transcript lines: the spec's own list when it has one, else the title plus each box (rows joined)."""
-    if spec.get('burnedInText'):
-        return list(spec['burnedInText'])
-    return [spec['title']] + [l[0].replace('\n', ' ') for l in spec['lines']]
+def encode(master, out, title, crf):
+    cmd = ['ffmpeg', '-y', '-loglevel', 'error', '-i', master,
+           '-c:v', 'libx264', '-preset', 'slow', '-crf', str(crf), '-maxrate', '1250k', '-bufsize', '2500k',
+           '-profile:v', 'high', '-level', '4.0', '-pix_fmt', 'yuv420p', '-g', str(FPS * 2), '-movflags', '+faststart', '-an',
+           '-metadata', 'title=%s (DEMO)' % title,
+           '-metadata', 'comment=Young Democrats of Seminole County DEMO clip; photos under the Unsplash License', out]
+    subprocess.run(cmd, check=True)
+    return os.path.getsize(out)
 
 
-def poster_facts(spec):
-    path = os.path.join(HERE, spec['file'] + '.jpg')
-    with Image.open(path) as im:
-        w, h = im.size
-    return {'posterBytes': os.path.getsize(path), 'posterWidth': w, 'posterHeight': h}
+def save_poster(png, path):
+    """540x960 progressive JPEG, the best quality that fits POSTER_MAX_BYTES. Returns (quality, bytes, image)."""
+    img = Image.open(png).convert('RGB').resize((POSTER_W, POSTER_H), Image.LANCZOS)
+    img = img.filter(ImageFilter.UnsharpMask(radius=0.7, percent=30, threshold=3))
+    for blur in (0, 0.5, 0.8):
+        src = img.filter(ImageFilter.GaussianBlur(blur)) if blur else img
+        for q in range(90, 55, -2):
+            buf = io.BytesIO()
+            src.save(buf, 'JPEG', quality=q, optimize=True, progressive=True, subsampling='4:2:0')
+            if buf.tell() <= POSTER_MAX_BYTES:
+                with open(path, 'wb') as f:
+                    f.write(buf.getvalue())
+                return q, buf.tell(), img
+    raise SystemExit('poster %s does not fit %d bytes' % (path, POSTER_MAX_BYTES))
 
 
-def read_data():
-    """data/clips.js as a dict (the JSON after `window.YSD_DATA.clips = `)."""
-    with open(DATA_FILE, encoding='utf-8') as f:
-        src = f.read()
-    mark = 'window.YSD_DATA.clips = '
-    body = src[src.index(mark) + len(mark):].rstrip()
-    if body.endswith(';'):
-        body = body[:-1]
-    return json.loads(body)
+def placeholder(img):
+    """A tiny blurred JPEG as a data: URL (the card shows it until the poster arrives) and the dominant colour."""
+    small = img.resize((LQIP_W, LQIP_H), Image.BOX).filter(ImageFilter.GaussianBlur(0.6))
+    buf = io.BytesIO()
+    small.save(buf, 'JPEG', quality=42, optimize=True)
+    mean = ImageStat.Stat(img.resize((24, 42), Image.BOX)).mean
+    color = '#%02X%02X%02X' % tuple(int(round(c * 0.8)) for c in mean[:3])   # a little darker, so white chips sit well
+    return 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode('ascii'), color
 
 
-def merge_posters_into_data(specs):
-    """--posters-only: update poster facts, MP4 bytes/duration and explicit transcripts; keep every other field."""
-    data = read_data()
-    by_id = {s['id']: s for s in specs}
-    for it in data['items']:
-        spec = by_id.get(it['id'])
-        if not spec:
-            continue
-        before = dict(it)
-        it.update(poster_facts(spec))
-        mp4 = os.path.join(HERE, spec['file'] + '.mp4')
-        if os.path.exists(mp4):
-            info = probe(mp4)
-            it['bytes'] = int(info['format']['size'])
-            it['duration'] = round(float(info['format']['duration']), 2)
-        if spec.get('burnedInText'):
-            it['burnedInText'] = list(spec['burnedInText'])
-        changed = sorted(k for k in it if before.get(k) != it[k])
-        print('  %s: %s' % (it['id'], ', '.join(changed) if changed else 'no change'))
-    write_data(data['items'], data)
+def vtt_time(s):
+    ms = int(round(s * 1000))
+    return '%02d:%02d:%02d.%03d' % (ms // 3600000, ms // 60000 % 60, ms // 1000 % 60, ms % 1000)
 
 
-def write_data(entries, existing=None):
-    if existing:   # keep the file's own top-level fields (a merge never resets them)
-        payload = dict(existing)
-        payload['items'] = entries
-        return dump_data(payload)
+def write_vtt(spec, lang):
+    idx = 2 if lang == 'en' else 3
+    lines = ['WEBVTT', '', 'NOTE %s · DEMO clip by %s · %s captions%s' % (
+        spec['id'], spec['author']['handle'], 'English' if lang == 'en' else 'Spanish',
+        '' if spec['lang'] == lang else ' (translated)'), '']
+    for n, c in enumerate(spec['cues'], 1):
+        lines += [str(n), '%s --> %s line:62%% align:center' % (vtt_time(c[0]), vtt_time(c[1])), c[idx], '']
+    path = os.path.join(HERE, '%s.%s.vtt' % (spec['file'], lang))
+    body = '\n'.join(lines)
+    old = open(path, encoding='utf-8').read() if os.path.exists(path) else None
+    if old != body:
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(body)
+    return 'assets/video/%s.%s.vtt' % (spec['file'], lang)
+
+
+def render(specs, cache, tmp):
+    job = {'fps': FPS, 'tmp': tmp, 'photos': {}, 'clips': []}
+    for spec in specs:
+        for k in photos_used(spec):
+            p = download(k, cache)
+            with Image.open(p) as im:
+                job['photos'][k] = {'path': p, 'w': im.size[0], 'h': im.size[1]}
+        job['clips'].append({'id': spec['id'], 'file': spec['file'], 'posterAt': spec.get('posterAt', 0.5),
+                             'duration': duration_of(spec), 'shots': spec['shots']})
+    jf = os.path.join(tmp, 'job.json')
+    with open(jf, 'w') as f:
+        json.dump(job, f)
+    out = subprocess.run(['node', RENDERER, jf], capture_output=True, text=True, cwd=SITE)
+    if out.returncode != 0:
+        sys.stderr.write(out.stderr)
+        raise SystemExit('render_clips.js failed')
+    if out.stderr.strip():
+        sys.stderr.write(out.stderr)
+    return {r['id']: r for r in (json.loads(l) for l in out.stdout.splitlines() if l.strip().startswith('{'))}
+
+
+def finish(spec, res):
+    mp4 = os.path.join(HERE, spec['file'] + '.mp4')
+    crf = 26
+    while True:
+        size = encode(res['master'], mp4, spec['title']['en'], crf)
+        if size <= MAX_BYTES or crf >= 36:
+            break
+        crf += 1
+    q, psize, img = save_poster(res['poster'], os.path.join(HERE, spec['file'] + '.jpg'))
+    print('  %s: %d KB at crf %d, poster q%d %d KB' % (spec['file'], size // 1024, crf, q, psize // 1024))
+
+
+def entry(spec):
+    mp4 = os.path.join(HERE, spec['file'] + '.mp4')
+    poster = os.path.join(HERE, spec['file'] + '.jpg')
+    info = probe(mp4)
+    v = [s for s in info['streams'] if s['codec_type'] == 'video'][0]
+    with Image.open(poster) as im:
+        pw, ph = im.size
+        lqip, color = placeholder(im.convert('RGB'))
+    photos = []
+    for k in photos_used(spec):
+        p = PHOTOS[k]
+        photos.append({'url': 'https://images.unsplash.com/photo-' + p['id'], 'downloadUrl': photo_url(p['id']), 'page': p['page'],
+                       'photographer': p['photographer'], 'photographerHandle': p['handle'], 'license': 'Unsplash License',
+                       'licenseUrl': 'https://unsplash.com/license', 'description': p['description']})
+    tracks = {lang: {'src': write_vtt(spec, lang), 'label': 'English' if lang == 'en' else 'Español',
+                     'translated': spec['lang'] != lang,
+                     'cues': [[c[0], c[1], c[2 if lang == 'en' else 3]] for c in spec['cues']]} for lang in ('en', 'es')}
+    e = {
+        'id': spec['id'], 'demo': True,
+        'src': 'assets/video/%s.mp4' % spec['file'], 'poster': 'assets/video/%s.jpg' % spec['file'], 'type': 'video/mp4',
+        'width': v['width'], 'height': v['height'], 'orientation': 'vertical' if v['height'] > v['width'] else 'horizontal',
+        'duration': round(float(info['format']['duration']), 2), 'bytes': int(info['format']['size']),
+        'posterBytes': os.path.getsize(poster), 'posterWidth': pw, 'posterHeight': ph,
+        'color': color, 'lqip': lqip,
+        'audio': any(s['codec_type'] == 'audio' for s in info['streams']),
+        'burnedIn': ['DEMO'],
+        'lang': spec['lang'],
+        'series': spec['series'],
+        'title': spec['title'],
+        'caption': spec['caption'][spec['lang']],
+        'captionI18n': spec['caption'],
+        'captions': tracks,
+        'author': spec['author'], 'tags': spec['tags'], 'likes': spec['likes'], 'views': spec['views'], 'createdAt': spec['createdAt'],
+        'facts': spec['facts'], 'photos': photos,
+    }
+    if spec.get('showUntil'):
+        e['showUntil'] = spec['showUntil']
+    return e
+
+
+def write_data(entries):
     payload = {
-        'demo': True,
-        'version': 1,
-        'generated': '2026-11-09',
-        'generator': 'assets/video/make_demo_clips.py',
-        'note': 'DEMO CONTENT. Fake creator handles (@demo.*), invented like/view counts and staged captions '
-                'for the demo site only. Photos are Unsplash stand-ins (people shown are not members and do '
-                'not endorse anything). Hidden automatically when YSD_CONFIG.demo is false.',
+        'demo': True, 'version': 2, 'generated': '2026-11-10', 'generator': 'assets/video/make_demo_clips.py',
+        'note': 'DEMO CONTENT. Fake creator handles (@demo.*), invented like/view counts (never shown) and staged captions for the '
+                'demo site only. Photos are Unsplash stand-ins (people shown are not members and do not endorse anything). '
+                'Captions are data and WebVTT, not burned in: the only word in a video is a small DEMO bug. Hidden automatically '
+                'when YSD_CONFIG.demo is false.',
         'license': 'Photos: Unsplash License (https://unsplash.com/license). Clips: derived works made for this demo.',
+        'series': SERIES,
         'items': entries,
     }
-    return dump_data(payload)
-
-
-def dump_data(payload):
     body = json.dumps(payload, indent=2, ensure_ascii=False)
     header = (
         '/*!\n'
-        ' * Young Seminole Democrats: demo video clips (DEMO DATA, flagged demo:true).\n'
-        ' * GENERATED by assets/video/make_demo_clips.py: edit SPECS there and re-run instead of\n'
-        ' * editing this file by hand. Paths are relative to the site root (YSD.clips resolves them).\n'
-        ' * Each item records the Unsplash photo URLs it was built from and the sources for any facts\n'
-        ' * burned into the clip (checked Mon Nov 9, 2026).\n'
+        ' * Young Democrats of Seminole County: demo video clips (DEMO DATA, flagged demo:true).\n'
+        ' * GENERATED by assets/video/make_demo_clips.py: edit SPECS there and re-run instead of editing this file.\n'
+        ' * Paths are relative to the site root (YSD.clips resolves them). Each item records its series (a named\n'
+        ' * recurring format, listed in `series`), its captions in EN and ES (cues + a .vtt file; `lang` is the\n'
+        ' * language it was made in), a tiny placeholder (lqip) and colour for the card before the poster loads,\n'
+        ' * the Unsplash photos it was built from and the sources for any facts in its captions (checked Nov 10, 2026).\n'
         ' */\n'
     )
     js = header + 'window.YSD_DATA = window.YSD_DATA || {};\nwindow.YSD_DATA.clips = ' + body + ';\n'
-    try:
-        with open(DATA_FILE, encoding='utf-8') as f:
-            if f.read() == js:
-                print('unchanged', os.path.relpath(DATA_FILE, SITE))
-                return
-    except OSError:
-        pass
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
         f.write(js)
     print('wrote', os.path.relpath(DATA_FILE, SITE))
@@ -663,85 +646,35 @@ def dump_data(payload):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--cache', default=os.path.join(tempfile.gettempdir(), 'ysd-demo-photos'),
-                    help='where downloaded photos are kept between runs')
-    ap.add_argument('--only', help='render a single clip id')
+    ap.add_argument('--cache', default=os.path.join(tempfile.gettempdir(), 'ysd-demo-photos'), help='downloaded photos, kept between runs')
+    ap.add_argument('--only', help='render a single clip id (comma list allowed)')
     ap.add_argument('--no-data', action='store_true', help='do not rewrite data/clips.js')
-    ap.add_argument('--posters-only', action='store_true',
-                    help='redraw only the posters (no video encoding) and merge poster facts into data/clips.js')
-    ap.add_argument('--force', action='store_true', help='--posters-only: write a poster even if frame 0 differs from the MP4')
+    ap.add_argument('--data-only', action='store_true', help='skip rendering: rewrite VTT files and data/clips.js from SPECS and the files on disk')
+    ap.add_argument('--keep-tmp', action='store_true', help='keep the masters and poster frames')
     args = ap.parse_args()
-    os.makedirs(args.cache, exist_ok=True)
-    if args.posters_only:
-        todo = [sp for sp in SPECS if not args.only or args.only == sp['id']]
-        for spec in todo:
-            blur, q, size, diff = render_poster(spec, args.cache, HERE, args.force)
-            print('poster %s: %dx%d q%d photo blur %s, %d bytes%s' % (spec['file'], POSTER_W, POSTER_H, q, blur, size,
-                                                                     '' if diff is None else ' (frame 0 vs MP4: %.1f/255)' % diff))
-        if not args.no_data:
-            merge_posters_into_data(SPECS)
-        return
-    entries = []
     for spec in SPECS:
-        mp4 = os.path.join(HERE, spec['file'] + '.mp4')
-        if not args.only or args.only == spec['id']:
-            print('rendering', spec['id'])
-            crf = 27
-            while True:
-                mp4, poster, _ = render_clip(spec, args.cache, HERE, crf)
-                size = os.path.getsize(mp4)
-                if size <= MAX_BYTES or crf >= 34:
-                    break
-                crf += 2
-                print('  %d bytes > %d, retrying at crf %d' % (size, MAX_BYTES, crf))
-        if not os.path.exists(mp4):
-            print('  skipping %s (not rendered yet)' % spec['id'])
-            continue
-        info = probe(mp4)
-        v = [s for s in info['streams'] if s['codec_type'] == 'video'][0]
-        has_audio = any(s['codec_type'] == 'audio' for s in info['streams'])
-        dur = round(float(info['format']['duration']), 2)
-        poster_path = os.path.join(HERE, spec['file'] + '.jpg')
-        print('  %s: %dx%d %s %.2fs %d KB audio=%s poster %d KB' % (
-            spec['file'], v['width'], v['height'], v['codec_name'], dur, int(info['format']['size']) // 1024,
-            has_audio, os.path.getsize(poster_path) // 1024))
-        photos = []
-        for sg in spec['segments']:
-            p = PHOTOS[sg['photo']]
-            photos.append({
-                'url': 'https://images.unsplash.com/photo-' + p['id'],
-                'downloadUrl': photo_url(p['id']),
-                'page': p['page'],
-                'photographer': p['photographer'],
-                'photographerHandle': p['handle'],
-                'license': 'Unsplash License',
-                'licenseUrl': 'https://unsplash.com/license',
-                'description': p['description'],
-            })
-        entries.append({
-            'id': spec['id'],
-            'demo': True,
-            'src': 'assets/video/%s.mp4' % spec['file'],
-            'poster': 'assets/video/%s.jpg' % spec['file'],
-            'type': 'video/mp4',
-            'width': v['width'], 'height': v['height'],
-            'orientation': 'vertical' if v['height'] > v['width'] else ('square' if v['height'] == v['width'] else 'horizontal'),
-            'duration': dur,
-            'bytes': int(info['format']['size']),
-            **poster_facts(spec),
-            'audio': has_audio,
-            'caption': spec['caption'],
-            'author': spec['author'],
-            'tags': spec['tags'],
-            'likes': spec['likes'],
-            'views': spec['views'],
-            'createdAt': spec['createdAt'],
-            'burnedInText': burned_in(spec),
-            'facts': spec['facts'],
-            'photos': photos,
-        })
+        check_spec(spec)
+    os.makedirs(args.cache, exist_ok=True)
+    if not args.data_only:
+        only = set(args.only.split(',')) if args.only else None
+        todo = [s for s in SPECS if not only or s['id'] in only]
+        tmp = tempfile.mkdtemp(prefix='ysd-clips-')
+        try:
+            print('rendering %d clip(s) in %s' % (len(todo), tmp))
+            results = render(todo, args.cache, tmp)
+            for spec in todo:
+                finish(spec, results[spec['id']])
+        finally:
+            if not args.keep_tmp:
+                shutil.rmtree(tmp, ignore_errors=True)
     if not args.no_data:
+        entries = [entry(s) for s in SPECS if os.path.exists(os.path.join(HERE, s['file'] + '.mp4'))]
         write_data(entries)
+        keep = {s['file'] for s in SPECS}
+        for f in os.listdir(HERE):
+            base = f.split('.')[0]
+            if f.endswith(('.mp4', '.jpg', '.vtt')) and base not in keep:
+                print('  stale file (not in SPECS):', f)
 
 
 if __name__ == '__main__':

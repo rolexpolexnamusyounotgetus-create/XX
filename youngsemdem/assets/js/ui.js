@@ -16,16 +16,38 @@
  *   YSD.fmt.time(iso)                 '7 pm', '10:30 am'
  *   YSD.fmt.when(start, end)          'Thu, Nov 19 · 7 to 9 pm'
  *   YSD.fmt.days(ymd)                 whole days from today (New York) to 'YYYY-MM-DD'
- *   YSD.ui.toast(text, {tone, timeout})        tone 'success' | 'info' | 'error'; via the role=status region
+ *   YSD.ui.toast(text, {tone, timeout, priority, replace})   one at a time through a role=status region, QUEUED:
+ *                                     tone 'success' | 'info' | 'error'; priority 'high' (share/copy results,
+ *                                     errors: interrupts and the interrupted one comes back) | 'normal' | 'low'
+ *                                     (sticker notes: waits); replace: true swaps out a same-or-lower toast at
+ *                                     once. With a modal <dialog> open, the toast shows inside it (top layer,
+ *                                     announced). .clear() / .pending() -> [texts]
+ *   YSD.ui.reveal({sticker, art, title, body, kicker, actions:[{label, href|onClick, primary}], closeLabel,
+ *                 ring, civic})       sticker unlock moment (centred, sized to the art, modal <dialog>,
+ *                                     focus in/out, Escape or tap outside closes, static under reduced motion,
+ *                                     queued). Promise -> 'dismiss' | 'action:<i>' | 'toast' (civic/calm/no
+ *                                     dialog support: a low-priority toast instead)
+ *   YSD.ui.landing({force})           "Kira sent you this · Join free" line on any page opened with ?ref/?from
+ *                                     (runs on load). Opt out: <body data-landing="custom">, or a
+ *                                     [data-invite-landing] box that rsvp.js fills.
+ *   YSD.ui.jump(el | '#id', {focus, scroll, smooth})  open any closed <details> around it, scroll (respects
+ *                                     scroll-padding and motion), move focus (target, its first heading, or
+ *                                     tabindex=-1). Same-page links do this on their own (journeys-19).
+ *   YSD.ui.topDialog()                the open modal <dialog>, or null
  *   YSD.ui.sheet.open(el | id, {opener}) / .close(el?) / .current()   native <dialog>, focus returns
  *   YSD.ui.menu.open() / .close({focus}) / .toggle() / .isOpen()
  *   YSD.ui.theme.get() / .set('auto'|'light'|'dark') / .cycle()        stored in ysd:prefs:theme
  *   YSD.ui.motion.paused() / .toggle() / .set(bool)                    stored in ysd:prefs:motion
  *   YSD.ui.countdown(el)              reads data-countdown="YYYY-MM-DD" (New York days)
  *   YSD.ui.confetti(el)               CSS burst < 1 s; no-op under reduced motion, Pause motion,
- *                                     or inside .band--serious / [data-tone="calm"] / [data-civic]
+ *                                     or inside .band--serious / [data-tone="calm"] / [data-civic]. Above an
+ *                                     open modal <dialog> it draws in the top layer (a manual popover).
  *   YSD.ui.prettyLink(url)            no protocol, no index.html, no utm_* or click ids; keeps ref
- *   YSD.ui.langHref(lang?)            URL of this page in the other language (es/ tree)
+ *   YSD.ui.langHref(lang?, {bare})    URL of this page in the other language (es/ tree), keeping the query (minus
+ *                                     utm_*, click ids, debug, and ref when from is present) and the place: the
+ *                                     #hash when its target is on screen, else the section being read. {bare}:
+ *                                     no query, no hash. [data-lang-link] hrefs recompute on hashchange,
+ *                                     pointerdown, focus and click. YSD.ui.langLinks() refreshes them.
  *   YSD.ui.stickers(root)             draws data/stickers.js art into empty [data-sticker] elements
  *   YSD.ui.stickerFacts(root)         wires button[data-sticker]: wiggle + sourced fact toast
  *   YSD.ui.sticker(id) / .stickerSvg(id) / .stickerDataUrl(id)   art for canvas (W5 cards)
@@ -40,7 +62,8 @@
  * Declarative hooks (wired on DOMContentLoaded): [data-theme-toggle], [data-motion-toggle],
  * [data-menu-toggle], [data-sheet-open="id"], [data-sheet-close], [data-countdown], [data-rotor],
  * [data-ticker], [data-sticker], [data-lang-link], [data-share], [data-cfg-href="links.x"],
- * [data-social], [data-year], [data-reload], [data-join-cta].
+ * [data-social], [data-year], [data-reload], [data-join-cta], same-page a[href*="#"] (focus moves to the
+ * target; [data-no-jump] on a link or ancestor opts out), body[data-landing="custom"].
  * There is no AI feature here, and no network call.
  */
 (function (w, d) {
@@ -174,33 +197,148 @@
   ui.fill = function (tpl, vars) { return typeof YSD.fill === 'function' ? YSD.fill(tpl, vars) : String(tpl == null ? '' : tpl); };
   ui.ready = function (fn) { if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', fn); else fn(); };
 
-  /* ------------------------------------------------------------------ toast */
-  var toastTimer = 0;
-  function region() {
-    var r = d.querySelector('[data-toast-region]');
-    if (!r) {
-      r = d.createElement('div');
-      r.className = 'toast-region'; r.setAttribute('role', 'status'); r.setAttribute('aria-live', 'polite'); r.setAttribute('data-toast-region', '');
-      d.body.appendChild(r);
+  /* ------------------------------------------------------------------ overlays above an open <dialog> */
+  // A modal <dialog> sits in the top layer and makes the rest of the page inert, so anything appended to <body>
+  // (toasts, confetti) draws under it and screen readers never hear it (review genz-brand-08). topDialog() finds
+  // the open modal dialog, if any; toasts then use a live region inside it, confetti a manual popover above it.
+  function isModal(dl) { try { return dl.matches(':modal'); } catch (e) { return !dl.hasAttribute('data-nonmodal'); } }
+  function topDialog() {
+    var all = $$('dialog[open]');
+    for (var i = all.length - 1; i >= 0; i--) if (isModal(all[i])) return all[i];
+    return null;
+  }
+  function detach(n) { if (n && n.parentNode) n.parentNode.removeChild(n); }
+  // Mount a fixed-position overlay (confetti) where it will be seen: <body> normally; with a modal dialog open, a
+  // manual popover (top layer, above the dialog; decorative, so inertness doesn't matter), else inside the dialog,
+  // offset so viewport coordinates still land in the right place.
+  function mountOverlay(box) {
+    var dlg = topDialog();
+    if (!dlg) { d.body.appendChild(box); return box; }
+    if (typeof box.showPopover === 'function') {
+      box.setAttribute('popover', 'manual');
+      d.body.appendChild(box);
+      try { box.showPopover(); return box; } catch (e) { box.removeAttribute('popover'); }
     }
+    var x = parseFloat(box.style.left) || 0, y = parseFloat(box.style.top) || 0;
+    box.style.left = '0px'; box.style.top = '0px';
+    dlg.appendChild(box);
+    var o = box.getBoundingClientRect();
+    box.style.left = (x - o.left) + 'px'; box.style.top = (y - o.top) + 'px';
+    return box;
+  }
+  ui.topDialog = topDialog;
+
+  /* ------------------------------------------------------------------ toast (queued, with priority) */
+  // One toast at a time through a role="status" region. New toasts queue instead of replacing the one on screen
+  // (review journeys-14: "Link copied" was wiped by "New sticker: Card Maker"). priority: 'high' (share and copy
+  // results, errors) interrupts a lower one, which comes back after; 'normal' (default) and 'low' wait their turn.
+  // A waiting toast cuts the one on screen short, but never before it has been readable (2.2 s or more).
+  // replace: true swaps out a toast of the same or lower priority at once (sticker facts: tap, tap, tap).
+  var PRI = { low: 0, normal: 1, high: 2 };
+  var tq = [], tcur = null, TQ_MAX = 4;
+  function newRegion(cls) {
+    var r = d.createElement('div');
+    r.className = cls; r.setAttribute('role', 'status'); r.setAttribute('aria-live', 'polite'); r.setAttribute('data-toast-region', '');
     return r;
+  }
+  function region() {
+    var dlg = topDialog(), r;
+    if (dlg) {
+      r = dlg.querySelector('[data-toast-region]');
+      if (!r) {
+        r = newRegion('toast-region toast-region--dialog');
+        r.__ysdFresh = Date.now(); // a brand-new live region needs a beat before content, or it isn't announced
+        dlg.appendChild(r);
+      }
+      return r;
+    }
+    var all = $$('[data-toast-region]');
+    for (var i = 0; i < all.length; i++) if (!all[i].closest('dialog')) return all[i];
+    r = newRegion('toast-region');
+    d.body.appendChild(r);
+    return r;
+  }
+  function toastArm(item, ms) {
+    clearTimeout(item.timer);
+    ms = Math.max(0, ms);
+    item.dueAt = Date.now() + ms;
+    item.timer = setTimeout(function () { toastHide(item); }, ms);
+  }
+  function toastShow(item) {
+    var r = region();
+    tcur = item;
+    function go() {
+      if (tcur !== item) return;
+      $$('.toast', r).forEach(function (n) { if (n !== item.el) detach(n); });
+      if (item.el.parentNode !== r) { item.el.removeAttribute('data-state'); r.appendChild(item.el); }
+      item.shownAt = Date.now();
+      toastArm(item, item.timeout);
+      toastHurry();
+      emit('toast', { text: item.text, tone: item.tone, priority: item.priName });
+    }
+    var wait = r.__ysdFresh ? 120 - (Date.now() - r.__ysdFresh) : 0;
+    if (wait > 0) setTimeout(go, wait); else go();
+  }
+  function toastHide(item) {
+    clearTimeout(item.timer);
+    if (tcur === item) tcur = null;
+    var el = item.el;
+    if (!el.parentNode) { toastNext(); return; }
+    el.setAttribute('data-state', 'out');
+    setTimeout(function () { if (el.getAttribute('data-state') === 'out') detach(el); toastNext(); }, 240);
+  }
+  function toastNext() { if (!tcur && tq.length) toastShow(tq.shift()); }
+  // Something is waiting: let the visible toast go once it has been readable for its minimum time.
+  function toastHurry() {
+    if (!tcur || !tq.length || !tcur.shownAt) return;
+    var left = tcur.min - (Date.now() - tcur.shownAt);
+    if (Date.now() + left < tcur.dueAt) toastArm(tcur, left);
+  }
+  function toastQueue(item) {
+    var i = 0;
+    while (i < tq.length && tq[i].pri >= item.pri) i++;
+    tq.splice(i, 0, item);
+    while (tq.length > TQ_MAX) tq.pop(); // the least important waiting toast goes first
   }
   ui.toast = function (text, opts) {
     opts = opts || {};
-    var r = region(), el = d.createElement('p');
+    var txt = String(text == null ? '' : text);
+    var priName = PRI[opts.priority] != null ? opts.priority : (opts.tone === 'error' ? 'high' : 'normal');
+    var el = d.createElement('p');
     el.className = 'toast';
     if (opts.tone) el.setAttribute('data-tone', opts.tone);
-    el.textContent = String(text == null ? '' : text);
-    r.textContent = '';
-    r.appendChild(el);
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () {
-      el.setAttribute('data-state', 'out');
-      setTimeout(function () { if (el.parentNode === r) r.removeChild(el); }, 260);
-    }, opts.timeout || Math.max(4200, Math.min(9000, el.textContent.length * 60)));
-    emit('toast', { text: el.textContent, tone: opts.tone || 'success' });
+    if (priName !== 'normal') el.setAttribute('data-priority', priName);
+    el.textContent = txt;
+    var timeout = opts.timeout || Math.max(4200, Math.min(9000, txt.length * 60));
+    var item = { el: el, text: txt, tone: opts.tone || 'success', pri: PRI[priName], priName: priName, timeout: timeout,
+      min: Math.min(timeout, Math.max(2200, Math.min(5000, txt.length * 45))) };
+    // The same words already showing or waiting: keep that one (and give it its full time again).
+    if (tcur && tcur.text === txt) { if (tcur.shownAt) toastArm(tcur, tcur.timeout); return tcur.el; }
+    for (var q = 0; q < tq.length; q++) if (tq[q].text === txt) return tq[q].el;
+    if (!tcur) { toastShow(item); return el; }
+    if ((opts.replace && item.pri >= tcur.pri) || item.pri > tcur.pri) {
+      var c = tcur;
+      if (!opts.replace && (!c.shownAt || Date.now() - c.shownAt < c.min)) {
+        c.timeout = Math.max(c.min, c.timeout - (c.shownAt ? Date.now() - c.shownAt : 0));
+        c.shownAt = 0;
+        tq.unshift(c); // interrupted before it was read: it comes back right after
+      }
+      clearTimeout(c.timer); tcur = null;
+      detach(c.el);
+      toastShow(item);
+      return el;
+    }
+    toastQueue(item);
+    toastHurry();
     return el;
   };
+  /** Drop the visible toast and everything waiting (tests, page resets). */
+  ui.toast.clear = function () {
+    tq = [];
+    if (tcur) { var c = tcur; clearTimeout(c.timer); tcur = null; detach(c.el); }
+  };
+  /** Texts of the visible toast (first) and the waiting ones, in order. */
+  ui.toast.pending = function () { return (tcur ? [tcur.text] : []).concat(tq.map(function (x) { return x.text; })); };
 
   /* ------------------------------------------------------------------ sheet (<dialog>) */
   var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -402,7 +540,7 @@
       b.style.setProperty('--r', Math.round(Math.random() * 540 - 270) + 'deg');
       box.appendChild(b);
     }
-    d.body.appendChild(box);
+    mountOverlay(box);
     setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 1000);
     return true;
   };
@@ -422,7 +560,45 @@
     if (/^[^/]+\/$/.test(s)) s = s.slice(0, -1); // bare host: drop the lone slash
     return s + (keep.length ? '?' + keep.join('&') : '') + hash;
   };
-  ui.langHref = function (lang) {
+  // The other language keeps where you are (review journeys-04): the query (minus utm_*, ad click ids and debug,
+  // and minus ref when from is there too, since ref was captured on arrival; a ref-only invite keeps it so the
+  // "A friend sent you this" landing survives) and the place on the page: the current #hash when its target is on
+  // screen, else the id of the section you're reading. The header links recompute on hashchange, pointerdown,
+  // focus and click, so the href is current when it's followed.
+  var LANG_DROP = /^(utm_[a-z]+|fbclid|gclid|dclid|msclkid|mc_eid|mc_cid|igshid|twclid|ttclid|debug)$/i;
+  function langQuery(search) {
+    var parts = String(search || '').replace(/^\?/, '').split('&').filter(Boolean), keys = {};
+    parts.forEach(function (kv) { try { keys[decodeURIComponent(kv.split('=')[0]).toLowerCase()] = 1; } catch (e) {} });
+    var keep = parts.filter(function (kv) {
+      var k = ''; try { k = decodeURIComponent(kv.split('=')[0]); } catch (e) { return false; }
+      if (LANG_DROP.test(k)) return false;
+      if (k.toLowerCase() === 'ref' && keys.from) return false;
+      return true;
+    });
+    return keep.length ? '?' + keep.join('&') : '';
+  }
+  var ANCHORS = 'main section[id], main article[id], main [data-anchor][id], main :is(h2, h3)[id], main .section[id], main [id].step, main details[id]';
+  function inView(el) {
+    if (!el || !el.getClientRects().length) return false;
+    var r = el.getBoundingClientRect(), vh = w.innerHeight || html.clientHeight;
+    return r.bottom > 80 && r.top < vh * 0.6;
+  }
+  function langHash() {
+    var h = String(w.location.hash || '');
+    if (h.length > 1) {
+      var tgt = null; try { tgt = d.getElementById(decodeURIComponent(h.slice(1))); } catch (e) {}
+      if (tgt && inView(tgt)) return h;
+    }
+    if ((w.scrollY || html.scrollTop || 0) < 120) return ''; // at the top: no anchor needed
+    var line = (parseFloat(getComputedStyle(html).scrollPaddingTop) || 80) + 24, best = null;
+    $$(ANCHORS).forEach(function (el) {
+      if (/^f-/.test(el.id) || el.closest('dialog, [hidden], [data-no-anchor]')) return; // JS-made ids have no twin
+      var top = el.getBoundingClientRect().top;
+      if (top <= line && el.getClientRects().length) best = el; // the last anchor above the reading line
+    });
+    return best ? '#' + encodeURIComponent(best.id) : '';
+  }
+  ui.langHref = function (lang, opts) {
     var to = lang || (YSD.lang === 'es' ? 'en' : 'es');
     if (html.getAttribute('data-es') === 'none') return (YSD.root || '') + (to === 'es' ? 'es/index.html' : 'index.html'); // page has no twin
     var root = YSD.root || '', here = String(w.location.href).split('#')[0].split('?')[0];
@@ -431,8 +607,16 @@
     var isEs = /^es\//.test(rel);
     if (to === 'es' && !isEs) rel = 'es/' + rel;
     if (to === 'en' && isEs) rel = rel.slice(3);
-    return root ? root + rel : (to === 'es' ? 'es/index.html' : '../index.html');
+    var base = root ? root + rel : (to === 'es' ? 'es/index.html' : '../index.html');
+    if (opts && opts.bare) return base;
+    return base + langQuery(w.location.search) + langHash();
   };
+  function langLinks() {
+    $$('[data-lang-link]').forEach(function (a) {
+      a.href = ui.langHref(a.getAttribute('hreflang') || (YSD.lang === 'es' ? 'en' : 'es'));
+    });
+  }
+  ui.langLinks = langLinks;
 
   /* ------------------------------------------------------------------ stickers */
   function stickerItem(id) {
@@ -473,7 +657,7 @@
         if (!s) return;
         b.removeAttribute('data-state'); void b.offsetWidth; b.setAttribute('data-state', 'wiggle');
         setTimeout(function () { b.removeAttribute('data-state'); }, 650);
-        ui.toast(factText(s), { tone: 'info' });
+        ui.toast(factText(s), { tone: 'info', replace: true });
         track('sticker_fact', { id: s.id });
         emit('sticker-fact', { id: s.id });
       });
@@ -544,13 +728,247 @@
     text = String(text).replace(/\s*\{(?:link|url)\}\s*$/, '');
     var title = opts.title || t('seo.' + page + '.ogTitle') || meta('og:title') || d.title;
     var done = function (res) {
-      if (res === 'copied') ui.toast(t('toast.linkCopied') || 'Link copied.');
+      if (res === 'copied') ui.toast(t('toast.linkCopied') || 'Link copied.', { priority: 'high' });
       else if (res === 'failed') ui.toast(t('toast.shareFailed') || t('error.share.failed'), { tone: 'error' });
       return res;
     };
     if (YSD.share && YSD.share.native) return YSD.share.native({ title: title, text: text, url: url }).then(done);
     if (navigator.share) return navigator.share({ title: title, text: text, url: url }).then(function () { return 'shared'; }, function () { return 'cancelled'; });
     return Promise.resolve(done('failed'));
+  };
+
+  /* ------------------------------------------------------------------ in-page jumps (journeys-19) */
+  // A same-page link ("See your card", "Make my plan", the header's "Your card" on join.html) scrolls and then
+  // moves focus to its target, so keyboard and screen reader users continue from there instead of the top.
+  // Focus goes to the target when it can take it, else to its first heading (h1-h4), else to the target itself
+  // (tabindex="-1" is added when needed). A target inside a closed <details> opens it first, on clicks and on
+  // load or hashchange, so collapsed sections keep working anchors.
+  var FOCUS_OK = /^(A|BUTTON|INPUT|SELECT|TEXTAREA|SUMMARY)$/;
+  function openDetails(el) {
+    for (var p = el; p && p !== d.body; p = p.parentElement) if (p.tagName === 'DETAILS' && !p.open) p.open = true;
+  }
+  function focusTarget(el) {
+    var f = el;
+    if (!(FOCUS_OK.test(el.tagName) || el.hasAttribute('tabindex') || /^(H[1-4]|MAIN)$/.test(el.tagName))) {
+      var h = el.querySelector('h1, h2, h3, h4');
+      if (h && h.getClientRects().length) f = h;
+    }
+    if (!(FOCUS_OK.test(f.tagName) || f.hasAttribute('tabindex'))) f.setAttribute('tabindex', '-1');
+    try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); }
+    return f;
+  }
+  function byHash(hash) {
+    var id = String(hash || '').replace(/^#/, '');
+    if (!id) return null;
+    try { id = decodeURIComponent(id); } catch (e) {}
+    return d.getElementById(id);
+  }
+  /**
+   * Scroll to an element (or #id) and move focus there. opts: { focus: true, scroll: true, smooth: auto }.
+   * Respects scroll-padding-top (sticky header) and reduced motion / Pause motion. Returns the focused element.
+   * Pages use it after a lazy mount (Join free -> the form) or for their own jump controls.
+   */
+  ui.jump = function (x, opts) {
+    opts = opts || {};
+    var el = typeof x === 'string' ? byHash(x) : x;
+    if (!el) return null;
+    openDetails(el);
+    if (opts.scroll !== false) {
+      try { el.scrollIntoView({ block: 'start', behavior: ui.motion.paused() ? 'auto' : (opts.smooth === false ? 'auto' : 'smooth') }); } catch (e) { el.scrollIntoView(); }
+    }
+    return opts.focus === false ? el : focusTarget(el);
+  };
+  function samePageHash(a) {
+    var href = a.getAttribute('href') || '';
+    if (!href || href === '#' || a.hasAttribute('download') || (a.target && a.target !== '_self')) return '';
+    if (href.charAt(0) === '#') return href;
+    var u = String(a.href || ''), here = String(w.location.href).split('#')[0];
+    var hi = u.indexOf('#');
+    return hi > 0 && u.slice(0, hi) === here ? u.slice(hi) : '';
+  }
+  function onJumpClick(e, a) {
+    var hash = samePageHash(a), el = byHash(hash);
+    if (!el || a.closest('[data-no-jump]')) return;
+    openDetails(el);
+    setTimeout(function () { // after every other click handler and the browser's own jump
+      if (e.defaultPrevented) return;
+      if (el.getClientRects().length) focusTarget(el);
+    }, 0);
+  }
+  function onHashArrive() {
+    var el = byHash(w.location.hash);
+    if (!el) return;
+    var closed = false;
+    for (var p = el; p && p !== d.body; p = p.parentElement) if (p.tagName === 'DETAILS' && !p.open) closed = true;
+    if (!closed) return;
+    openDetails(el);
+    try { el.scrollIntoView({ block: 'start' }); } catch (e) {}
+  }
+  w.addEventListener('hashchange', onHashArrive);
+
+  /* ------------------------------------------------------------------ sticker unlock reveal (genz-brand-10) */
+  // A small centred collectible moment, sized to the sticker art: the sticker slaps down, then its name, one line
+  // and up to two actions. It's a modal <dialog> (focus moves in, Escape or a tap outside closes, focus returns),
+  // never a full-screen takeover, and it is static under reduced motion or Pause motion. Several unlocks queue.
+  // Civic steps never get one (opts.civic: true falls back to a plain toast), and neither does calm content.
+  var revealQ = [], revealOpen = null;
+  function svgArt(opts) {
+    if (opts.art) return String(opts.art);
+    var s = stickerItem(opts.sticker);
+    return s ? s.svg : '';
+  }
+  function revealNext() {
+    if (revealOpen || !revealQ.length) return;
+    var job = revealQ.shift(), o = job.opts;
+    var dlg = d.createElement('dialog');
+    var uid = 'ysd-unlock-' + Date.now().toString(36);
+    dlg.className = 'unlock';
+    dlg.setAttribute('aria-labelledby', uid + '-t');
+    if (o.body) dlg.setAttribute('aria-describedby', uid + '-b');
+    if (o.ring) dlg.style.setProperty('--unlock-ring', String(o.ring).indexOf('var(') === 0 ? o.ring : 'var(--' + String(o.ring).replace(/^--/, '') + ')');
+    var card = d.createElement('div'); card.className = 'unlock__card';
+    var art = d.createElement('div'); art.className = 'unlock__art'; art.setAttribute('aria-hidden', 'true');
+    var svg = svgArt(o);
+    if (svg) art.insertAdjacentHTML('afterbegin', svg.replace('<svg ', '<svg aria-hidden="true" focusable="false" ')); // trusted: our own data/art
+    card.appendChild(art);
+    var kick = d.createElement('p'); kick.className = 'unlock__kicker';
+    kick.textContent = o.kicker || t('reveal.kicker') || (YSD.lang === 'es' ? 'Sticker nuevo' : 'New sticker');
+    card.appendChild(kick);
+    var h = d.createElement('h2'); h.className = 'unlock__title'; h.id = uid + '-t'; h.textContent = String(o.title || '');
+    card.appendChild(h);
+    if (o.body) { var p = d.createElement('p'); p.className = 'unlock__body'; p.id = uid + '-b'; p.textContent = String(o.body); card.appendChild(p); }
+    var acts = d.createElement('div'); acts.className = 'unlock__actions';
+    var list = Array.isArray(o.actions) ? o.actions.slice(0, 2) : [];
+    var result = 'dismiss', first = null;
+    list.forEach(function (a, i) {
+      var b;
+      if (a.href) { b = d.createElement('a'); b.href = a.href; }
+      else { b = d.createElement('button'); b.type = 'button'; }
+      b.className = 'btn ' + (a.primary || (i === 0 && list.length > 1 && a.primary !== false) ? 'btn--primary' : 'btn--ghost');
+      b.textContent = String(a.label || '');
+      b.addEventListener('click', function (ev) {
+        result = 'action:' + i;
+        if (typeof a.onClick === 'function') { try { a.onClick(ev); } catch (x) {} }
+        if (!a.href || a.close !== false) dlg.close();
+      });
+      acts.appendChild(b);
+      if (!first) first = b;
+    });
+    var done = d.createElement('button'); done.type = 'button'; done.className = 'btn ' + (list.length ? 'btn--quiet' : 'btn--primary');
+    done.textContent = o.closeLabel || t('reveal.close') || (YSD.lang === 'es' ? 'Genial' : 'Nice');
+    done.addEventListener('click', function () { dlg.close(); });
+    acts.appendChild(done);
+    card.appendChild(acts);
+    dlg.appendChild(card);
+    var opener = d.activeElement;
+    dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); }); // tap outside the card
+    dlg.addEventListener('close', function () {
+      revealOpen = null;
+      detach(dlg);
+      if (opener && typeof opener.focus === 'function' && d.contains(opener)) { try { opener.focus({ preventScroll: true }); } catch (e) { opener.focus(); } }
+      emit('reveal-close', { sticker: o.sticker || null, result: result });
+      job.resolve(result);
+      setTimeout(revealNext, 120);
+    });
+    d.body.appendChild(dlg);
+    revealOpen = dlg;
+    if (!ui.motion.paused()) dlg.setAttribute('data-anim', '');
+    try { dlg.showModal(); } catch (e) { dlg.setAttribute('open', ''); }
+    (first || done).focus();
+    emit('reveal', { sticker: o.sticker || null, title: o.title || '' });
+    track('sticker_reveal', { id: o.sticker || '' });
+  }
+  /**
+   * Show a sticker unlock. opts = { sticker: 'manatee' (data/stickers.js id) | art: '<svg…>', title, body,
+   * kicker ('New sticker'), actions: [{ label, href } | { label, onClick, primary }] (max 2), closeLabel ('Nice'),
+   * ring: 'celery' (token for the glow), civic: false }. Resolves 'dismiss' | 'action:<i>' when it closes.
+   * Without <dialog> support, or for civic/calm moments, it shows a toast instead and resolves 'toast'.
+   */
+  ui.reveal = function (opts) {
+    opts = opts || {};
+    var calm = opts.civic || opts.calm || (opts.from && opts.from.closest && opts.from.closest('.band--serious, [data-tone="calm"], [data-civic]'));
+    if (calm || typeof d.createElement('dialog').showModal !== 'function') {
+      var k = opts.kicker || t('reveal.kicker') || (YSD.lang === 'es' ? 'Sticker nuevo' : 'New sticker');
+      ui.toast(k + ': ' + (opts.title || '') + '.', { priority: 'low' });
+      return Promise.resolve('toast');
+    }
+    return new Promise(function (resolve) { revealQ.push({ opts: opts, resolve: resolve }); revealNext(); });
+  };
+
+  /* ------------------------------------------------------------------ "who sent this" landing (journeys-18) */
+  // Any page opened from a shared link (?ref and/or ?from) says who sent it, in one slim dismissible line at the
+  // top of <main>: "Kira sent you this · Join free" (ES "Kira te mandó esto · Únete gratis"). Pages with their own
+  // landing opt out: <body data-landing="custom">, or a [data-invite-landing] box that rsvp.js fills (events,
+  // home). Hidden for your own link, once dismissed (same 'invite:seen:<ref>' key as rsvp.js), and the Join
+  // button is left out when this browser already has a member. from is cleaned to letters, spaces, - and '.
+  function cleanFrom(s) {
+    var v = String(s == null ? '' : s);
+    try { v = v.replace(/[^\p{L}\p{M} '-]/gu, ''); } catch (e) { v = v.replace(/[^A-Za-zÀ-ɏ '-]/g, ''); }
+    return v.replace(/\s+/g, ' ').trim().slice(0, 20);
+  }
+  function qs() {
+    var out = {};
+    String(w.location.search || '').replace(/^\?/, '').split('&').forEach(function (kv) {
+      if (!kv) return;
+      var i = kv.indexOf('='), k = i < 0 ? kv : kv.slice(0, i), v = i < 0 ? '' : kv.slice(i + 1);
+      try { k = decodeURIComponent(k.replace(/\+/g, ' ')); v = decodeURIComponent(v.replace(/\+/g, ' ')); } catch (x) { return; }
+      if (!(k in out)) out[k] = v;
+    });
+    return out;
+  }
+  ui.landing = function (opts) {
+    opts = opts || {};
+    var body = d.body, main = d.querySelector('main');
+    if (!body || !main || d.querySelector('[data-landing-banner]')) return null;
+    if (!opts.force) {
+      if (body.getAttribute('data-landing') === 'custom') return null;
+      if (d.querySelector('[data-invite-landing]') && YSD.invite && typeof YSD.invite.landing === 'function') return null;
+    }
+    var p = qs();
+    var ref = /^[A-Za-z0-9_-]{2,32}$/.test(p.ref || '') ? String(p.ref).toUpperCase() : '';
+    var from = cleanFrom(p.from);
+    if (!ref && !from) return null;
+    var mine = YSD.share && YSD.share.myCode ? YSD.share.myCode() : '';
+    if (ref && mine && ref === mine) return null;
+    var seenKey = 'invite:seen:' + (ref || 'from-' + from.toLowerCase());
+    if (store(seenKey)) return null;
+    var box = d.createElement('aside');
+    box.className = 'landing'; box.setAttribute('data-landing-banner', '');
+    box.setAttribute('aria-label', t('landing.aria') || (YSD.lang === 'es' ? 'Quién te mandó esto' : 'Who sent this'));
+    var inner = d.createElement('div'); inner.className = 'wrap landing__inner';
+    var av = d.createElement('span'); av.setAttribute('aria-hidden', 'true');
+    if (from) { av.className = 'landing__avatar'; av.textContent = from.charAt(0).toUpperCase(); }
+    else { av.className = 'sticker landing__sticker'; av.setAttribute('data-sticker', 'heart'); }
+    inner.appendChild(av);
+    var txt = d.createElement('p'); txt.className = 'landing__text';
+    var who = d.createElement('strong');
+    who.textContent = from ? (t('landing.sentBy', { name: from }) || (YSD.lang === 'es' ? from + ' te mandó esto' : from + ' sent you this'))
+      : (t('landing.sentAnon') || (YSD.lang === 'es' ? 'Te mandaron esto' : 'A friend sent you this'));
+    txt.appendChild(who);
+    inner.appendChild(txt);
+    if (!currentMember()) {
+      var join = d.createElement('a');
+      join.className = 'btn btn--primary btn--sm landing__join';
+      join.href = (YSD.root || '') + (YSD.lang === 'es' ? 'es/' : '') + 'join.html#join-form';
+      join.textContent = t('cta.join') || (YSD.lang === 'es' ? 'Únete gratis' : 'Join free');
+      inner.appendChild(join);
+    }
+    var x = d.createElement('button'); x.type = 'button'; x.className = 'landing__close';
+    x.setAttribute('aria-label', t('landing.dismiss') || t('a11y.close') || (YSD.lang === 'es' ? 'Cerrar' : 'Close'));
+    x.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg>';
+    x.addEventListener('click', function () {
+      store(seenKey, Date.now());
+      box.hidden = true;
+      var h = main.querySelector('h1');
+      if (h) focusTarget(h);
+    });
+    inner.appendChild(x);
+    box.appendChild(inner);
+    main.insertBefore(box, main.firstChild);
+    ui.stickers(box);
+    track('landing_shown', { referred: !!ref, named: !!from });
+    emit('landing', { ref: ref || null, from: from || null });
+    return box;
   };
 
   /* ------------------------------------------------------------------ header CTA */
@@ -607,14 +1025,20 @@
     $$('[data-countdown]').forEach(ui.countdown);
     $$('[data-ticker]').forEach(ticker);
     $$('[data-rotor]').forEach(function (el) { var r = Rotor(el); if (r) { rotors.push(r); r.start(); } });
+    langLinks();
     $$('[data-lang-link]').forEach(function (a) {
       var to = a.getAttribute('hreflang') || (YSD.lang === 'es' ? 'en' : 'es');
-      a.href = ui.langHref(to);
-      a.addEventListener('click', function () { track('lang_switch', { to: to }); });
+      var fresh = function () { a.href = ui.langHref(to); };
+      a.addEventListener('pointerdown', fresh);
+      a.addEventListener('focus', fresh);
+      a.addEventListener('click', function () { fresh(); track('lang_switch', { to: to }); });
     });
+    w.addEventListener('hashchange', langLinks);
     wireConfig(d);
     ui.joinCta();
     ui.stopLive();
+    try { ui.landing(); } catch (e) { if (YSD.log) YSD.log('ui: landing failed', e); }
+    onHashArrive();
     html.setAttribute('data-ui', 'ready');
     emit('ui-ready', {});
   }
@@ -634,6 +1058,7 @@
       ui.share({ page: b.getAttribute('data-share') || undefined });
       return;
     }
+    if ((b = el.closest('a[href*="#"]')) && !e.defaultPrevented && e.button === 0 && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) onJumpClick(e, b);
     // menu: a link inside closes it; a click outside closes it
     if (ui.menu.isOpen()) {
       var m = menuParts();

@@ -779,6 +779,16 @@ window.YSD_DATA.strings = {
     "toast.clipSent": { en: "Clip sent for review.", es: "Clip enviado a revisión." },
     "toast.subscribed": { en: "You're on the list.", es: "Ya estás en la lista." },
     "toast.unsubscribed": { en: "You're unsubscribed. The door stays open.", es: "Te diste de baja. La puerta sigue abierta." },
+
+    // ---- "who sent this" landing (YSD.ui.landing, round 1 journeys-18) and the sticker reveal (YSD.ui.reveal, genz-brand-10)
+    "landing.aria": { en: "Who sent this", es: "Quién te mandó esto", note: "aria-label of the slim landing line on pages opened from a shared link." },
+    "landing.sentBy": { en: "{name} sent you this", es: "{name} te mandó esto", note: "{name} is the sender's first name from ?from= (adults only; cleaned to letters)." },
+    "landing.sentAnon": { en: "A friend sent you this", es: "Alguien te mandó esto", note: "Shared link with a ref but no name (every under-18 link)." },
+    "landing.dismiss": { en: "Hide this note", es: "Ocultar este aviso" },
+    "reveal.kicker": { en: "New sticker", es: "Sticker nuevo", note: "Eyebrow on the sticker unlock moment. Stickers celebrate organizing; never shown for civic steps." },
+    "reveal.close": { en: "Nice", es: "Genial", note: "Dismiss button on the sticker unlock moment." },
+    "reveal.seeStickers": { en: "See your stickers", es: "Ver tus stickers" },
+    "reveal.onCard": { en: "It's on your member card now.", es: "Ya está en tu tarjeta de miembro." },
     "toast.offline": { en: "You're offline.", es: "No tienes conexión." },
     "toast.online": { en: "You're back online.", es: "Volviste a tener conexión." },
     "toast.demoNotSent": { en: "DEMO: nothing was sent. It's saved in this browser only.", es: "DEMO: no se envió nada. Solo se guardó en este navegador.", demo: true },
@@ -1365,8 +1375,10 @@ window.YSD_DATA.strings = {
     // ==================================================================================== SEO
     // ---- home
     "seo.home.title": {
-      en: "Young Democrats of Seminole County · Ages 14 to 39", es: "Young Democrats of Seminole County · De 14 a 39 años",
-      source: "https://secure.actblue.com/donate/ydscdues", verified: "2026-11-09", confidence: "high"
+      en: "Young Democrats of Seminole County · Local politics is a group project",
+      es: "Young Democrats of Seminole County · La política local es un trabajo en equipo",
+      max: 80,
+      note: "Brand first (lead, round 1 plan, Nov 10, 2026): the name leads so it survives truncation in search results and tabs; the H1 line follows. Longer than the usual 60, on purpose. The ages moved to seo.home.description."
     },
     "seo.home.description": {
       en: "Seminole County's Young Democrats: meetups, plain-words voting help in English and Spanish, issue quizzes and clips from people who live here.",

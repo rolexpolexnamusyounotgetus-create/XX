@@ -32,8 +32,13 @@
  *   Ids are stable: data/events.js xpActions[] lists the action ids an event can log (the field name
  *   is historical; nothing awards points).
  *
- * STICKER  { id, art (a data/stickers.js item id), ring (colour token), name{}, desc{}, unlock{},
- *            rule{}, perk?{} (DEMO example, organizing only), share{ text{} } }
+ * STICKER  { id, art (a data/stickers.js item id; all 15 are different pieces since Nov 10, 2026),
+ *            artFallback? (an older art id, drawn if a page's stickers data lacks `art`), ring (colour
+ *            token), name{}, desc{}, unlock{}, rule{}, perk?{} (DEMO example, organizing only: the perk
+ *            ladder below), share{ text{} } }
+ *   Perk ladder (DEMO examples pending counsel; organizing only, never a civic step, never tied to a
+ *   friend registering or voting): First Night (a welcome sticker), Squad of Three (the tee from the next
+ *   merch drop), Shift Done (the celery tote), The Long Game (first pick of seats at the next big night).
  *   rule.type:
  *     'count'            { action, min }          logged organizing actions of that kind
  *     'attend-series'    { series, min }          attended events whose events.js series matches
@@ -84,7 +89,19 @@ window.YSD_DATA.levels = {
       es: "Los pasos para votar nunca dan stickers ni nada más. Tienen una marca privada en la página de votación, solo para ti."
     },
     activeWeeks: { en: "Active weeks", es: "Semanas activas" },
-    streak: { en: "In a row", es: "Seguidas" }
+    streak: { en: "In a row", es: "Seguidas" },
+    // the public, pre-join rules panel (YSD.membercard.rulesPanel, Join and Home)
+    rulesEyebrow: { en: "THE STICKER BOOK", es: "EL ÁLBUM DE STICKERS" },
+    rulesTitle: { en: "How stickers work", es: "Cómo funcionan los stickers" },
+    rulesSub: { en: "15 county stickers, each with a public rule. Organizing earns them. Voting never does.", es: "15 stickers del condado, cada uno con una regla pública. Se ganan organizando. Votar nunca da stickers." },
+    rulesFair: { en: "The fine print, in plain words", es: "La letra pequeña, en palabras simples" },
+    rulesLocked: { en: "Locked", es: "Bloqueado" },
+    rulesPerks: { en: "Perks for organizing (DEMO)", es: "Beneficios por organizar (DEMO)" },
+    rulesPerksNote: { en: "Examples the chapter hasn't approved yet, pending a lawyer's check. Perks only ever come from organizing: showing up, volunteering, bringing friends.", es: "Ejemplos que el grupo todavía no aprueba, pendientes de revisión legal. Los beneficios solo salen de organizar: llegar, ser voluntario, traer gente." },
+    rulesCta: { en: "Start your book: join free", es: "Empieza tu álbum: únete gratis" },
+    rulesAll: { en: "See all 15 stickers and the rules", es: "Mira los 15 stickers y las reglas" },
+    rulesYours: { en: "See your stickers", es: "Mira tus stickers" },
+    onYourCard: { en: "{sticker} · on your card", es: "{sticker} · en tu tarjeta" }
   },
 
   demoMode: {
@@ -340,7 +357,7 @@ window.YSD_DATA.levels = {
     },
     {
       id: "golden-hour",
-      art: "sun",
+      art: "lake", artFallback: "sun",
       ring: "sun",
       name: { en: "Golden Hour", es: "Hora dorada" },
       desc: { en: "Sunset on Lake Monroe, in good company.", es: "Atardecer en el lago Monroe, en buena compañía." },
@@ -400,12 +417,13 @@ window.YSD_DATA.levels = {
     },
     {
       id: "squad-of-three",
-      art: "heart",
+      art: "megaphone", artFallback: "heart",
       ring: "hotpink",
       name: { en: "Squad of Three", es: "Grupo de tres" },
       desc: { en: "Three friends in. You're the group chat's favorite person.", es: "Tres amistades adentro. Eres la persona favorita del chat." },
       unlock: { en: "Three friends join through your link.", es: "Tres personas se unen con tu enlace." },
       rule: { type: "count", action: "bring-friend", min: 3 },
+      perk: { en: "The Young Dems tee from the next merch drop", es: "La camiseta de los Young Dems del próximo lanzamiento" },
       share: {
         text: {
           en: "Three of my friends joined Young Dems through my link. Make it four? {url}",
@@ -430,12 +448,13 @@ window.YSD_DATA.levels = {
     },
     {
       id: "shift-done",
-      art: "cypress",
+      art: "palm", artFallback: "cypress",
       ring: "orange",
       name: { en: "Shift Done", es: "Turno cumplido" },
       desc: { en: "Your first volunteer shift. The clipboard suits you.", es: "Tu primer turno de voluntariado. La tablilla te queda bien." },
       unlock: { en: "Finish your first volunteer shift: a text bank, door-knocking or a table.", es: "Completa tu primer turno: jornada de mensajes, visitas a vecinos o una mesa." },
       rule: { type: "count", action: "volunteer-shift", min: 1 },
+      perk: { en: "The celery tote from the next merch drop", es: "La bolsa color apio del próximo lanzamiento" },
       share: {
         text: {
           en: "Did my first volunteer shift with the Young Dems. Two hours, good people, real snacks. Come to the next one: {url}",
@@ -445,7 +464,7 @@ window.YSD_DATA.levels = {
     },
     {
       id: "city-hopper",
-      art: "train",
+      art: "bike", artFallback: "train",
       ring: "teal",
       name: { en: "City Hopper", es: "De ciudad en ciudad" },
       desc: { en: "Three Seminole cities and counting.", es: "Tres ciudades de Seminole, y contando." },
@@ -460,7 +479,7 @@ window.YSD_DATA.levels = {
     },
     {
       id: "bridge-builder",
-      art: "heart",
+      art: "bubbles", artFallback: "heart",
       ring: "teal",
       name: { en: "Bridge Builder", es: "Puentes" },
       desc: { en: "You showed up for the Spanish-language side of the work.", es: "Te sumaste al trabajo en español." },
@@ -475,7 +494,7 @@ window.YSD_DATA.levels = {
     },
     {
       id: "card-maker",
-      art: "camera",
+      art: "sun",
       ring: "bubblegum",
       name: { en: "Card Maker", es: "Hiciste tu tarjeta" },
       desc: { en: "You made a card and sent it to someone you'd actually text.", es: "Hiciste una tarjeta y se la mandaste a alguien a quien de verdad le escribes." },
@@ -490,7 +509,7 @@ window.YSD_DATA.levels = {
     },
     {
       id: "quiz-done",
-      art: "sun",
+      art: "library", artFallback: "sun",
       ring: "celery",
       name: { en: "Called It", es: "Le atinó" }, // was the placeholder "Know Thyself" (lead, Nov 9, 2026)
       desc: { en: "You took a quiz and it called you out, kindly.", es: "Hiciste un quiz y te describió, con cariño." },
@@ -511,6 +530,7 @@ window.YSD_DATA.levels = {
       desc: { en: "Ten weeks of showing up, at your own pace.", es: "Diez semanas participando, a tu ritmo." },
       unlock: { en: "Be active in 10 different weeks. Any 10, in any order. Breaks never reset this one.", es: "Participa en 10 semanas distintas. Cualquier 10, en cualquier orden. Los descansos nunca reinician esta." },
       rule: { type: "active-weeks", min: 10 },
+      perk: { en: "First pick of seats at the next big night", es: "Primera opción de lugar en la próxima gran noche" },
       share: {
         text: {
           en: "Ten weeks of showing up with the Young Dems, at my own pace. Here's to the long game: {url}",

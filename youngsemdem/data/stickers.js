@@ -22,6 +22,23 @@
  * Oviedo, Big Tree Park, minimum wage), docs/research/03 §5 (Celery City, UCF RICHES), 04 Part C
  * (CDC) and docs/research/00 (the mail-ballot rule and its required wording).
  *
+ * Facts marked verified "2026-11-10" (round 1, right-wing-sticker-art: eight new pieces so the sticker book
+ * has 15 distinct arts) were checked by G-CORE against the cited page that day: FWC (Lake Monroe acreage),
+ * Save the Manatee Club (Oct 2024 sightings: a Blue Spring manatee at the Sanford Marina), the county's 2023
+ * trails guide (Cross Seminole Trail, about 30 miles), F.S. 286.0114 (public comment), the county library's
+ * card page (free for residents, owners and county public-school students; five branches), Florida EDR's
+ * county profile (23.1% speak a language other than English at home, Census ACS), US Fish & Wildlife
+ * (Wekiva: Wild and Scenic since Oct 13, 2000) and F.S. 15.031 (sabal palm, 1953).
+ * Not drawn: a sky lantern. Sky lanterns are a fire and litter hazard and we found no county source to cite,
+ * so the two bilingual speech bubbles (a county language fact) took that slot.
+ *
+ * The 18 arts: celery gator train chicken cypress sun envelope heart calendar camera lake manatee bike
+ * megaphone library bubbles wekiva palm. Suggested one-art-per-sticker map for data/levels.js (15 distinct,
+ * envelope kept off rewards because it is a civic step): doors-open heart · saved-seat calendar ·
+ * first-night celery · golden-hour lake · on-the-platform train · trivia-brain gator · plus-one chicken ·
+ * squad-of-three manatee · on-camera camera · shift-done megaphone · city-hopper bike · bridge-builder
+ * bubbles · card-maker library · quiz-done sun · long-game cypress. Spares: wekiva, palm, envelope.
+ *
  * Word stickers (Caveat Brush on a pill, .word-sticker): English pages use `en`, Spanish pages use
  * `es`. Never show a Spanish word sticker on an English page or the reverse. Lowercase on purpose:
  * they are handwritten notes, not branding.
@@ -30,8 +47,8 @@
  */
 window.YSD_DATA = window.YSD_DATA || {};
 window.YSD_DATA.stickers = {
-  version: 1,
-  updated: "2026-11-09",
+  version: 2,
+  updated: "2026-11-10",
   reviewedSpanish: false,
   items: [
     {
@@ -170,6 +187,110 @@ window.YSD_DATA.stickers = {
       source: { url: "https://www.cdc.gov/disability-and-health/articles-documents/disability-impacts-all-of-us-infographic.html", label: { en: "CDC: Disability Impacts All of Us", es: "CDC: La discapacidad nos afecta a todos (en inglés)" } },
       verified: "2026-11-09", confidence: "high",
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#FF4FA3" stroke="#170B33" stroke-width="4"/><g stroke="#170B33" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"><rect x="36" y="16" width="48" height="88" rx="12" fill="#FFF6EA"/><rect x="42" y="26" width="36" height="64" rx="5" fill="#6A2BFF"/><path d="M54 46L70 56L54 66Z" fill="#C8F03C"/></g><circle cx="71" cy="33" r="4" fill="#FF8B3D" stroke="#170B33" stroke-width="2"/><rect x="45" y="74" width="30" height="11" rx="3" fill="#170B33"/><path d="M49 78H71M49 82H64" stroke="#FFF6EA" stroke-width="2" stroke-linecap="round"/></svg>'
+    },
+    {
+      id: "lake",
+      name: { en: "Lake Monroe sunset", es: "atardecer en el lago Monroe" },
+      motif: "Sunset over Lake Monroe, with a pier",
+      kind: "fact",
+      fact: {
+        en: "The St. Johns River flows through 9,406-acre Lake Monroe, and Sanford sits on its southern shore. Golden hour here is a local sport.",
+        es: "El río St. Johns atraviesa el lago Monroe, de 9,406 acres, y Sanford está en su orilla sur. Ver el atardecer aquí es deporte local."
+      },
+      source: { url: "https://myfwc.com/fishing/freshwater/sites-forecasts/ne/lake-monroe", label: { en: "FWC: Lake Monroe", es: "FWC: lago Monroe (en inglés)" } },
+      verified: "2026-11-10", confidence: "high",
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#FFD23F"/><g stroke="#FF8B3D" stroke-width="3" stroke-linecap="round" opacity=".9"><path d="M60 22V30M36 30l5 6M84 30l-5 6M22 48h8M90 48h8"/></g><path d="M30 66A30 30 0 0 1 90 66Z" fill="#FF6B1A" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><path d="M4.3 66H115.7A56 56 0 0 1 4.3 66Z" fill="#2236C9"/><g stroke="#FFD23F" stroke-width="3.5" stroke-linecap="round"><path d="M38 75H82M46 84H74M53 93H67"/></g><g stroke="#FFF6EA" stroke-width="2.5" stroke-linecap="round" opacity=".55"><path d="M16 80H28M94 88H104M20 96H30"/></g><path d="M4.3 66H115.7" stroke="#170B33" stroke-width="3.5"/><g stroke="#170B33" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="#FFF6EA"><path d="M84 60H112V66H84Z"/><path d="M88 66V80M100 66V82M110 66V76" fill="none"/></g><circle cx="60" cy="60" r="56" fill="none" stroke="#170B33" stroke-width="4"/></svg>'
+    },
+    {
+      id: "manatee",
+      name: { en: "manatee", es: "manatí" },
+      motif: "A manatee with a paddle tail",
+      kind: "fact",
+      fact: {
+        en: "In warm months, manatees from Blue Spring swim up the St. Johns. One was spotted at the Sanford Marina on Lake Monroe in July 2024.",
+        es: "En los meses cálidos, los manatíes de Blue Spring remontan el río St. Johns. En julio de 2024 vieron uno en la marina de Sanford, en el lago Monroe."
+      },
+      source: { url: "https://savethemanatee.org/manatee-sightings-october-2024/", label: { en: "Save the Manatee Club", es: "Save the Manatee Club (en inglés)" } },
+      verified: "2026-11-10", confidence: "high",
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#00B3A6"/><g fill="none" stroke="#FFF6EA" stroke-width="3" stroke-linecap="round" opacity=".55"><path d="M18 40q8-5 16 0M84 96q8-5 16 0"/></g><path d="M30 64C24 50 10 50 9 62C8 76 22 80 32 70Z" fill="#A9B8C8" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><path d="M30 60C36 48 54 40 74 42C94 44 104 54 103 66C102 78 90 86 72 86C54 86 40 82 31 72C29 68 29 64 30 60Z" fill="#A9B8C8" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><path d="M93 52C102 50 108 56 106 66C104 72 98 74 94 72" fill="#C4D0DC" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><circle cx="88" cy="56" r="3" fill="#170B33"/><g stroke="#170B33" stroke-width="2" stroke-linecap="round"><path d="M104 63l6-2M104 67l6 1M103 70l5 3"/></g><path d="M66 78C64 88 58 94 52 94C50 90 54 84 60 78" fill="#C4D0DC" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><path d="M46 56C52 52 60 50 66 51" fill="none" stroke="#FFF6EA" stroke-width="3" stroke-linecap="round" opacity=".7"/><g fill="#FFF6EA" stroke="#170B33" stroke-width="2.5"><circle cx="96" cy="34" r="5"/><circle cx="86" cy="26" r="3.5"/></g><circle cx="60" cy="60" r="56" fill="none" stroke="#170B33" stroke-width="4"/></svg>'
+    },
+    {
+      id: "bike",
+      name: { en: "trail bike", es: "bici del sendero" },
+      motif: "A bicycle on a trail line",
+      kind: "fact",
+      fact: {
+        en: "The paved Cross Seminole Trail runs about 30 miles across the county, through downtown Oviedo and Lake Mary, and crosses I-4 on a footbridge.",
+        es: "El Cross Seminole Trail, un sendero pavimentado, recorre unas 30 millas del condado, pasa por el centro de Oviedo y por Lake Mary, y cruza la I-4 por un puente peatonal."
+      },
+      source: { url: "https://www.seminolecountyfl.gov/docs/default-source/pdf/nl-trails-parks-and-natural-lands-brochure-2023-for-web.pdf", label: { en: "Seminole County trails guide (2023)", es: "Guía de senderos del condado de Seminole, 2023 (en inglés)" } },
+      verified: "2026-11-10", confidence: "high",
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#6A2BFF"/><path d="M10 86H110" stroke="#FFF6EA" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 7" opacity=".6"/><g fill="#FFF6EA" stroke="#170B33" stroke-width="3.5"><circle cx="34" cy="72" r="17"/><circle cx="86" cy="72" r="17"/></g><g fill="#6A2BFF" stroke="#170B33" stroke-width="2.5"><circle cx="34" cy="72" r="5"/><circle cx="86" cy="72" r="5"/></g><path d="M34 72L50 46H80L86 72M50 46L60 72L80 46M60 72H34" fill="none" stroke="#170B33" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/><path d="M34 72L50 46H80L86 72M50 46L60 72L80 46M60 72H34" fill="none" stroke="#C8F03C" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><path d="M48 40H60" stroke="#170B33" stroke-width="6" stroke-linecap="round"/><path d="M50 46L48 40" stroke="#170B33" stroke-width="4" stroke-linecap="round"/><path d="M80 46L77 34H86" fill="none" stroke="#170B33" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="60" cy="72" r="4" fill="#FFD23F" stroke="#170B33" stroke-width="2.5"/><circle cx="60" cy="60" r="56" fill="none" stroke="#170B33" stroke-width="4"/></svg>'
+    },
+    {
+      id: "megaphone",
+      name: { en: "megaphone", es: "megáfono" },
+      motif: "A megaphone with sound waves",
+      kind: "fact",
+      fact: {
+        en: "Florida law gives the public a reasonable chance to be heard before most city and county board decisions (F.S. 286.0114). Public comment is yours.",
+        es: "La ley de Florida le da al público una oportunidad razonable de hablar antes de la mayoría de las decisiones de las juntas municipales y del condado (F.S. 286.0114). El comentario público es tuyo."
+      },
+      source: { url: "https://www.flsenate.gov/Laws/Statutes/2025/286.0114", label: { en: "Florida Statutes 286.0114", es: "Estatutos de Florida 286.0114 (en inglés)" } },
+      verified: "2026-11-10", confidence: "high",
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#FF4FA3"/><g transform="rotate(-14 60 60)"><path d="M28 52H40L76 34V86L40 68H28Z" fill="#FFF6EA" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><path d="M28 52V68H22C19 68 18 66 18 64V56C18 54 19 52 22 52Z" fill="#6A2BFF" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><path d="M40 52V68" stroke="#170B33" stroke-width="3"/><path d="M54 45V75" stroke="#6A2BFF" stroke-width="7"/><ellipse cx="76" cy="60" rx="6" ry="26" fill="#FFD23F" stroke="#170B33" stroke-width="3.5"/><path d="M38 68L44 84H52L48 72" fill="#FFF6EA" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><g fill="none" stroke="#170B33" stroke-width="4" stroke-linecap="round"><path d="M90 46q8 14 0 28M98 38q14 22 0 44"/></g></g><circle cx="60" cy="60" r="56" fill="none" stroke="#170B33" stroke-width="4"/></svg>'
+    },
+    {
+      id: "library",
+      name: { en: "library card", es: "tarjeta de la biblioteca" },
+      motif: "A library card with a book and a barcode",
+      kind: "fact",
+      fact: {
+        en: "Seminole County library cards are free if you live here, own property here or go to a county public school, and they work at all five branches.",
+        es: "La tarjeta de la biblioteca del condado de Seminole es gratis si vives aquí, tienes una propiedad aquí o estudias en una escuela pública del condado, y sirve en las cinco sucursales."
+      },
+      source: { url: "https://www.seminolecountyfl.gov/departments-services/parks-recreation/seminole-county-library/library-information/library-cards", label: { en: "Seminole County Library", es: "Biblioteca del condado de Seminole (en inglés)" } },
+      verified: "2026-11-10", confidence: "high",
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#FF6B1A"/><g transform="rotate(-10 60 60)"><rect x="18" y="34" width="84" height="54" rx="8" fill="#FFF6EA" stroke="#170B33" stroke-width="3.5"/><path d="M20 36H100V48H20Z" fill="#6A2BFF"/><path d="M18 48H102" stroke="#170B33" stroke-width="3"/><rect x="18" y="34" width="84" height="54" rx="8" fill="none" stroke="#170B33" stroke-width="3.5"/><path d="M28 56C34 54 40 54 44 57C48 54 54 54 60 56V76C54 74 48 74 44 77C40 74 34 74 28 76Z" fill="#C8F03C" stroke="#170B33" stroke-width="3" stroke-linejoin="round"/><path d="M44 57V77" stroke="#170B33" stroke-width="2.5"/><g stroke="#170B33" stroke-width="2.6"><path d="M68 58V78M72 58V78M77 58V78M80 58V78M85 58V78M88 58V78M92 58V78"/></g><circle cx="92" cy="42" r="3" fill="#C8F03C"/></g><circle cx="60" cy="60" r="56" fill="none" stroke="#170B33" stroke-width="4"/></svg>'
+    },
+    {
+      id: "bubbles",
+      name: { en: "two speech bubbles", es: "dos burbujas de diálogo" },
+      motif: "Two speech bubbles: typing dots, and ¡!",
+      kind: "fact",
+      fact: {
+        en: "Almost 1 in 4 people in Seminole County (23.1%) speak a language other than English at home. Every page here has a Spanish twin.",
+        es: "Casi 1 de cada 4 personas en el condado de Seminole (23.1 %) habla en casa un idioma que no es el inglés. Cada página aquí tiene su versión en español."
+      },
+      source: { url: "https://www.edr.state.fl.us/content/area-profiles/county/seminole.pdf", label: { en: "Florida EDR county profile (Census data)", es: "Perfil del condado, Florida EDR, datos del Censo (en inglés)" } },
+      verified: "2026-11-10", confidence: "high",
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#4FD6FF"/><path d="M18 30H66Q74 30 74 38V58Q74 66 66 66H36L24 78L27 66H18Q12 66 12 58V38Q12 30 18 30Z" fill="#FFF6EA" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><g fill="#6A2BFF"><circle cx="30" cy="48" r="4.5"/><circle cx="43" cy="48" r="4.5"/><circle cx="56" cy="48" r="4.5"/></g><path d="M54 56H100Q108 56 108 64V82Q108 90 100 90H92L96 102L82 90H54Q46 90 46 82V64Q46 56 54 56Z" fill="#C8F03C" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><g fill="#170B33"><circle cx="69" cy="66" r="2.8"/><path d="M72 84h-6l1-12h4Z"/><path d="M78 66h6l-1 12h-4Z"/><circle cx="81" cy="83" r="2.8"/></g><circle cx="60" cy="60" r="56" fill="none" stroke="#170B33" stroke-width="4"/></svg>'
+    },
+    {
+      id: "wekiva",
+      name: { en: "Wekiva kayak", es: "kayak en el Wekiva" },
+      motif: "A kayak on a clear spring run",
+      kind: "fact",
+      fact: {
+        en: "The Wekiva River, along Seminole's western edge, has been a National Wild and Scenic River since Oct 13, 2000.",
+        es: "El río Wekiva, en el borde oeste de Seminole, es Río Nacional Salvaje y Escénico desde el 13 de octubre de 2000."
+      },
+      source: { url: "https://www.fws.gov/rivers/river/wekiva", label: { en: "US Fish & Wildlife Service: Wekiva River", es: "Servicio de Pesca y Vida Silvestre de EE. UU.: río Wekiva (en inglés)" } },
+      verified: "2026-11-10", confidence: "high",
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#7EE081"/><path d="M8 50C30 42 42 56 60 50C78 44 92 56 112 48V78C92 86 78 72 60 78C42 84 30 70 8 78Z" fill="#4FD6FF" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><g fill="none" stroke="#FFF6EA" stroke-width="2.5" stroke-linecap="round" opacity=".8"><path d="M20 62q6-3 12 0M84 70q6-3 12 0M74 56q5-2 10 0"/></g><path d="M30 66C44 72 76 72 92 64C80 60 44 60 30 66Z" fill="#FF8B3D" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="61" cy="65" rx="9" ry="3" fill="#170B33"/><path d="M44 82L80 46" stroke="#170B33" stroke-width="3.5" stroke-linecap="round"/><g fill="#FFD23F" stroke="#170B33" stroke-width="3" stroke-linejoin="round"><path d="M38 86L44 80L48 84L42 90Z"/><path d="M76 50L82 44L86 48L80 54Z"/></g><g fill="none" stroke="#2F7A14" stroke-width="3" stroke-linecap="round"><path d="M28 40L24 26M32 40V24M36 40L40 27M84 98L80 86M88 98V84M92 98L96 87"/></g><g fill="#B07A45" stroke="#170B33" stroke-width="2"><rect x="29.5" y="20" width="5" height="10" rx="2.5"/><rect x="85.5" y="80" width="5" height="10" rx="2.5"/></g><circle cx="60" cy="60" r="56" fill="none" stroke="#170B33" stroke-width="4"/></svg>'
+    },
+    {
+      id: "palm",
+      name: { en: "sabal palm", es: "palma sabal" },
+      motif: "A sabal palm at sunset",
+      kind: "fact",
+      fact: {
+        en: "The sabal palm, also called the cabbage palm, has been Florida's state tree since 1953.",
+        es: "La palma sabal, también llamada palma de col, es el árbol oficial de Florida desde 1953."
+      },
+      source: { url: "https://www.flsenate.gov/Laws/Statutes/2025/15.031", label: { en: "Florida Statutes 15.031", es: "Estatutos de Florida 15.031 (en inglés)" } },
+      verified: "2026-11-10", confidence: "high",
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#FF7AC6"/><circle cx="84" cy="80" r="14" fill="#FFD23F" stroke="#170B33" stroke-width="3"/><path d="M10.5 88H109.5A56 56 0 0 1 10.5 88Z" fill="#45B649" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><path d="M56 98C58 80 60 62 58 44L64 44C66 62 66 80 64 98Z" fill="#B07A45" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/><g stroke="#170B33" stroke-width="2" stroke-linecap="round" opacity=".7"><path d="M58 58h6M58 70h6M58 82h6"/></g><g fill="#2F9A3A" stroke="#170B33" stroke-width="3" stroke-linejoin="round"><path d="M61 44C50 30 34 28 20 34C34 34 44 38 50 46Z"/><path d="M61 44C72 30 88 28 102 34C88 34 78 38 72 46Z"/><path d="M61 44C54 32 52 22 56 14C58 24 62 32 66 40Z"/><path d="M61 44C48 42 34 48 26 60C38 52 48 50 56 50Z"/><path d="M61 44C74 42 88 48 96 60C84 52 74 50 66 50Z"/></g><circle cx="61" cy="45" r="4.5" fill="#B07A45" stroke="#170B33" stroke-width="2.5"/><circle cx="60" cy="60" r="56" fill="none" stroke="#170B33" stroke-width="4"/></svg>'
     }
   ],
   words: [

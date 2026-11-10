@@ -46,7 +46,7 @@
     tangerine: [C.tangerine, 0], orange: [C.orange, 0], teal: [C.teal, 0], lime: [C.mint, 0], mint: [C.mint, 0],
     sun: [C.sun, 0], cream: [C.cream, 0]
   };
-  var SIZES = { portrait: { width: 1080, height: 1350 }, story: { width: 1080, height: 1920 } };
+  var SIZES = { portrait: { width: 1080, height: 1350 }, story: { width: 1080, height: 1920 }, square: { width: 1080, height: 1080 } };
   var DISPLAY = '"Bricolage Grotesque", "Bricolage fb", "Arial Narrow", sans-serif';
   var BODY = '"Atkinson Hyperlegible Next", "Atkinson fb", system-ui, sans-serif';
   var BUBBLE = 'M10 3 H54 a8 8 0 0 1 8 8 V35 a8 8 0 0 1 -8 8 H28 L14 54 L16 43 H10 a8 8 0 0 1 -8 -8 V11 a8 8 0 0 1 8 -8 Z';
@@ -63,7 +63,24 @@
   function fill(s, vars) { return String(s == null ? '' : s).replace(/\{(\w+)\}/g, function (m, k) { return vars && vars[k] != null ? String(vars[k]) : m; }); }
   var FALLBACK = {
     'common.paidFor': { en: 'Paid for by [committee name and address placeholder]', es: 'Pagado por [nombre y dirección del comité]' },
-    'common.demo': { en: 'DEMO', es: 'DEMO' }
+    'common.demo': { en: 'DEMO', es: 'DEMO' },
+    'common.whatsYours': { en: "What's yours?", es: '¿Y el tuyo?' },
+    'invite.fallbackTitle': { en: 'A free Young Dems hangout', es: 'Un plan gratis de los Young Dems' },
+    // going and laptop carry their own copy, so event pages and the 404 need no growth slice
+    'going.kicker': { en: "I'M GOING", es: 'VOY' },
+    'going.withName': { en: '{first} is going.', es: '{first} va.' },
+    'going.generic': { en: "I'm going.", es: 'Voy.' },
+    'going.lead': { en: 'Come with me', es: 'Ven conmigo' },
+    'going.bubble': { en: 'Saving you a seat.', es: 'Te guardo un lugar.' },
+    'going.demoEvent': { en: 'DEMO EVENT', es: 'EVENTO DEMO' },
+    'laptop.kicker': { en: 'THE 404 STICKER HUNT', es: 'STICKERS DEL 404' },
+    'laptop.title': { en: 'My laptop, Seminole edition', es: 'Mi laptop, edición Seminole' },
+    'laptop.found': { en: '{n} of {total} Seminole stickers found', es: '{n} de {total} stickers de Seminole encontrados' },
+    'laptop.lead': { en: 'Decorate yours', es: 'Decora la tuya' },
+    'quizShowUp.kicker': { en: 'HOW I SHOW UP', es: 'MI MODO DE ORGANIZAR' },
+    'quizIssue.kicker': { en: 'MY SEMINOLE ISSUE', es: 'MI TEMA EN SEMINOLE' },
+    'quizIssue.source': { en: 'Source: {source}', es: 'Fuente: {source}' },
+    'quizIssue.findYours': { en: 'Find yours', es: 'Encuentra el tuyo' }
   };
   function K(path, L, vars) {
     var o = kit().cards, parts = path.split('.');
@@ -387,7 +404,79 @@
   }
   function done(env) { return env.marks; }
 
-  // ---------------------------------------------------------------- template: quiz-show-up
+  // ---------------------------------------------------------------- characters (assets/img/characters)
+  // Canvas art comes from assets/img/characters/characters.js (data: URLs, no tainting on file://). Without it
+  // the SVG file is tried by URL (fine on http; on file:// the card falls back to the type's sticker).
+  var charCache = {};
+  function charSvg(p) { var X = D().characters, it = X && X.items && X.items[p]; return it ? (typeof it === 'string' ? it : it.svg) : ''; }
+  function character(p) {
+    if (!p) return Promise.resolve(null);
+    if (!charCache[p]) {
+      var svg = charSvg(p), url = svg ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) : '';
+      var isFile = false; try { isFile = w.location.protocol === 'file:'; } catch (e) {}
+      if (!url && !isFile) url = (YSD.root || '') + 'assets/img/characters/' + p + '.svg';
+      charCache[p] = url ? YSD.cards.h.loadImage(url).then(function (img) { return YSD.cards.isTainted && YSD.cards.isTainted(img) ? null : img; }, function () { return null; }) : Promise.resolve(null);
+    }
+    return charCache[p];
+  }
+  /** Character path for a quiz result ('show-up/hype-captain', 'issue/rent'), or '' when it has none. */
+  function charPath(kind, id) {
+    var Q = quiz();
+    if (kind === 'show-up') { var r = resultOf(id); return r && r.character !== false ? 'show-up/' + r.slug : ''; }
+    var res = Q.issueFinder && Q.issueFinder.results && Q.issueFinder.results[id];
+    return res && res.character !== false ? 'issue/' + res.slug : '';
+  }
+  /** Character art drawn flat (no die-cut tilt): upright, with a hard ink shadow, centred on (cx, cy). */
+  function drawChar(ctx, img, cx, cy, size, rot, white) {
+    if (!img) return;
+    var iw = img.naturalWidth || img.width || 256, ih = img.naturalHeight || img.height || 264, k = size / Math.max(iw, ih), dw = iw * k, dh = ih * k;
+    var edge = Math.round(size * 0.03), pad = edge + 12;
+    var c = canvasOf(dw + pad * 2, dh + pad * 2), x = c.getContext('2d');
+    x.drawImage(img, pad, pad, dw, dh);
+    var o = c;
+    if (white !== false) {
+      var wh = silhouette(c, C.white); o = canvasOf(c.width, c.height); var ox = o.getContext('2d');
+      for (var a = 0; a < 24; a++) { var g = a / 24 * Math.PI * 2; ox.drawImage(wh, Math.cos(g) * edge, Math.sin(g) * edge); }
+      ox.drawImage(c, 0, 0);
+    }
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate((rot || 0) * Math.PI / 180);
+    ctx.drawImage(silhouette(o, C.night), -o.width / 2 + 10, -o.height / 2 + 10);
+    ctx.drawImage(o, -o.width / 2, -o.height / 2);
+    ctx.restore();
+  }
+  /** The two biggest mix shares as giant numerals (honest: computed from the answers). Returns height. */
+  function numerals(ctx, env, wd, items, x, y, width, o) {
+    o = o || {};
+    var top = items.slice(0, 2);
+    if (!top.length) return 0;
+    var gap = 28, colW = top.length > 1 ? (width - gap) / 2 : width, maxH = 0;
+    for (var i = 0; i < top.length; i++) {
+      var cx = x + i * (colW + gap), big = i === 0 ? (o.max || 170) : Math.round((o.max || 170) * 0.72);
+      var nf = fit(ctx, top[i].pct + '%', colW, { max: big, min: 60, maxLines: 1, lh: 0.86, family: fam(env, 'display'), stretch: 'condensed' });
+      var hgt = draw(ctx, nf, cx, y + (i === 0 ? 0 : nf.size * 0.25), wd.fg, 'left');
+      var lf = fit(ctx, top[i].label, colW, { max: o.label || 32, min: 22, maxLines: 2, lh: 1.12, weight: 800, family: fam(env, 'body') });
+      // a dot in the result's colour ties the numeral to the mix
+      var ly = y + (i === 0 ? 0 : nf.size * 0.25) + hgt + 12;
+      ctx.fillStyle = String(top[i].color).toLowerCase() === String(wd.bg).toLowerCase() ? C.cream : top[i].color;
+      ctx.beginPath(); ctx.arc(cx + 12, ly + lf.size * 0.5, 12, 0, Math.PI * 2); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = C.night; ctx.stroke();
+      setFont(ctx, lf.size, 800, fam(env, 'body'));
+      draw(ctx, { lines: lf.lines, lh: lf.lh, size: lf.size, height: lf.height }, cx + 34, ly - lf.size * 0.12, wd.fg, 'left');
+      maxH = Math.max(maxH, ly + lf.height - y);
+    }
+    return maxH;
+  }
+  /** "What's yours?" sticker: a tilted cream pill with an ink edge (9:16 cards, over the link panel). */
+  function yoursSticker(ctx, env, text, cx, cy) {
+    setFont(ctx, 40, 800, fam(env, 'display'), 'semi-condensed');
+    var tw = textW(ctx, text) + 70, th = 92;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(-8 * Math.PI / 180);
+    ctx.fillStyle = C.night; rr(ctx, -tw / 2 + 8, -th / 2 + 8, tw, th, th / 2); ctx.fill();
+    ctx.fillStyle = C.sun; rr(ctx, -tw / 2, -th / 2, tw, th, th / 2); ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = C.night; ctx.stroke();
+    ctx.fillStyle = C.night; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 0, 3);
+    ctx.restore();
+  }
+
+  // ---------------------------------------------------------------- template: quiz-show-up (poster)
   function resultOf(id) { var Q = quiz().organizerEra; return Q ? byId(Q.results, id) : null; }
   function mixItems(data, L, kind) {
     var mix = data.mix || {}, out = [];
@@ -399,101 +488,235 @@
     out.sort(function (a, b) { return b.pct - a.pct; });
     return out.slice(0, 5);
   }
+  /**
+   * Poster layout (genz-brand-12): kicker, the tagline in a chat bubble and the top two mix numerals in the left
+   * column, the character big on the right (about 45% of the width), the name at Wrapped scale across the card,
+   * then the link panel, DEMO and the paid-for line. 9:16 adds a "What's yours?" sticker over the link.
+   */
   function quizShowUp(ctx, data, env) {
     var L = langOf(data), r = resultOf(data.resultId) || (quiz().organizerEra || { results: [] }).results[0];
     if (!r) return Promise.reject(new Error('cards-brand: quiz data missing'));
     var wd = world(r.color), W = env.width, H = env.height, tall = H > 1500, pad = 64;
-    var ids = [RESULT_ART[r.id] || 'sun', data.sticker || 'celery'];
-    return arts(ids).then(function (im) {
+    return Promise.all([character(charPath('show-up', r.id)), art(RESULT_ART[r.id] || 'sun')]).then(function (im) {
       base(ctx, env, wd);
-      var y = top(ctx, env, wd, data);
-      y += tall ? 70 : 20;
-      var kickY = y;
+      var y = top(ctx, env, wd, data) + (tall ? 70 : 16);
       kicker(ctx, env, wd, K('quizShowUp.kicker', L), pad, y);
-      y += tall ? 120 : 96;
-      var name = pick(r.name, L), bandY = H - BAND, line = pick(r.card && r.card.subline, L);
-      if (data.name) line = data.name + ': \u201c' + line + '\u201d';
-      // plan bottom-up (link panel, mix strip, bubble), then give the name what's left
-      var linkBottom = bandY - (tall ? 120 : 48);
+      var colTop = y + (tall ? 110 : 92);
+      var charSize = Math.round(W * (tall ? 0.52 : 0.46)), charCx = W - pad - charSize / 2 + 26, charCy = y + 24 + charSize / 2;
+      var leftW = W - pad * 2 - charSize + 30;
+      // left column: the tagline as a chat bubble (with the first name when given), then the numerals
+      var line = pick(r.card && r.card.subline, L);
+      if (data.name) line = data.name + ': “' + line + '”';
+      var bubO = { max: tall ? 40 : 34, maxLines: 4, rotate: -2 };
+      var bubH = bubble(ctx, env, line, pad, colTop, leftW, bubO);
+      var items = mixItems(data, L, 'show-up');
+      var numTop = colTop + bubH + (tall ? 44 : 28);
+      if (items.length) numerals(ctx, env, wd, items, pad, numTop, leftW, { max: tall ? 190 : 150, label: tall ? 32 : 28 });
+      if (im[0]) drawChar(ctx, im[0], charCx, charCy, charSize, 4);
+      else dieCut(ctx, im[1], charCx, charCy, charSize * 0.8, 10);
+      // the name, huge, under the art
+      var bandY = H - BAND, linkBottom = bandY - (tall ? 120 : 40);
+      setFont(ctx, 32, 800, fam(env, 'body'));
       var linkH = linkPanel(ctx, env, data, 'quiz-show-up', K('common.whatsYours', L), pad, linkBottom, W - pad * 2 - 10);
-      var items = mixItems(data, L, 'show-up'), mixH = items.length > 1 ? 150 : 0;
-      var mixY = linkBottom - linkH - (tall ? 60 : 40) - mixH;
-      if (mixH) mixStrip(ctx, env, wd, K('quizShowUp.mix', L), items, pad, mixY, W - pad * 2);
-      var bubW = W - pad * 2 - (tall ? 250 : 230), bubO = { max: tall ? 46 : 38, maxLines: 3, rotate: -1.5 };
-      var bubH = bubbleSize(ctx, env, line, bubW, bubO).h;
-      var bubTop = mixY - (tall ? 70 : 40) - bubH;
-      var und = data.undertone && resultOf(data.undertone);
-      var undTxt = und ? K('quizShowUp.undertone', L, { undertone: pick(und.name, L) }) : '';
-      var uf = und ? fit(ctx, undTxt, W - pad * 2, { max: 40, min: 28, maxLines: 2, lh: 1.2, weight: 700, family: fam(env, 'body') }) : null;
-      var room = bubTop - (tall ? 60 : 30) - y - (uf ? uf.height + 22 : 0);
-      var nf = fit(ctx, name, W - pad * 2, { max: tall ? 270 : 190, min: 70, maxLines: 3, lh: 0.88, maxH: room, family: fam(env, 'display'), stretch: 'condensed' });
-      y += draw(ctx, nf, pad, y, wd.fg, 'left', wd.mark);
-      if (uf) { y += 22; setFont(ctx, uf.size, 700, fam(env, 'body')); y += draw(ctx, uf, pad, y, wd.fg, 'left'); }
-      bubble(ctx, env, line, pad, bubTop, bubW, bubO);
-      dieCut(ctx, im[0], W - pad - (tall ? 110 : 95), bubTop + bubH / 2, tall ? 220 : 180, 10);
-      if (tall) dieCut(ctx, im[1], W - pad - 70, kickY + 30, 130, -12);
+      var nameTop = Math.max(charCy + charSize / 2 + (tall ? 20 : 6), numTop + (tall ? 300 : 230));
+      var room = linkBottom - linkH - (tall ? 60 : 30) - nameTop;
+      var nf = fit(ctx, pick(r.name, L), W - pad * 2, { max: tall ? 250 : 200, min: 80, maxLines: tall ? 3 : 2, lh: 0.86, maxH: room, family: fam(env, 'display'), stretch: 'condensed' });
+      draw(ctx, nf, pad, nameTop + Math.max(0, (room - nf.height) / 2), wd.fg, 'left', wd.mark);
+      if (tall) yoursSticker(ctx, env, K('common.whatsYours', L), W - pad - 150, linkBottom - linkH - 10);
       band(ctx, env, data);
       return done(env);
     });
   }
 
-  // ---------------------------------------------------------------- template: quiz-issue
+  // ---------------------------------------------------------------- template: quiz-issue (poster)
   function issueFact(it, ref) {
     if (!it || !ref) return null;
     var fid = String(ref).split('.')[1];
     return byId(it.facts, fid);
   }
+  /**
+   * Identity poster (genz-brand-14): kicker, the plain issue as a chip, the sourced number big with its label and
+   * source, the identity character on the right, then the identity name ("The Rent Realist") huge. Serious issues
+   * stay calm (no tilt, no marker, no extra sticker); reproductive freedom has no identity and no character, so it
+   * keeps the plain calm layout.
+   */
   function quizIssue(ctx, data, env) {
     var L = langOf(data), it = byId(issues(), data.resultId) || issues()[0];
     if (!it) return Promise.reject(new Error('cards-brand: issues data missing'));
     var Q = quiz().issueFinder || {}, res = (Q.results || {})[it.id] || {}, card = res.card || {};
-    var serious = it.tone === 'serious', wd = world(it.color), W = env.width, H = env.height, tall = H > 1500, pad = 64;
+    var serious = it.tone === 'serious', ident = res.identity ? pick(res.identity.name, L) : '';
+    var wd = world(it.color), W = env.width, H = env.height, tall = H > 1500, pad = 64;
     var useAfter = card.sublineAfter && now() >= Date.parse(card.sublineAfter.date + 'T00:00:00-05:00');
-    var sub = useAfter ? pick(card.sublineAfter, L) : pick(card.subline, L);
-    sub = sub.replace(/\s*(Find your issue\.|Encuentra tu tema\.)\s*$/, '');
+    var sub = (useAfter ? pick(card.sublineAfter, L) : pick(card.subline, L)).replace(/\s*(Find your issue\.|Encuentra tu tema\.)\s*$/, '');
     var fact = issueFact(it, useAfter ? card.sublineAfter.factRef : card.factRef);
-    var ids = serious ? [] : [ISSUE_ART[it.id] || 'celery', data.sticker || 'gator'];
-    return arts(ids).then(function (im) {
+    var statTxt = fact && fact.stat ? ((L === 'es' && fact.stat.valueEs) || fact.stat.value) : '', statLbl = fact && fact.stat ? pick(fact.stat.label, L) : '';
+    var src = fact && fact.sourceName ? K('quizIssue.source', L, { source: String(fact.sourceName).split(/[,:]/)[0].trim() }) : '';
+    var short = pick(it.short, L), Short = short.charAt(0).toUpperCase() + short.slice(1);
+    return Promise.all([character(charPath('issue', it.id)), serious ? null : art(ISSUE_ART[it.id] || 'celery')]).then(function (im) {
       base(ctx, env, wd);
-      var y = top(ctx, env, wd, data);
-      y += tall ? 70 : 20;
+      var y = top(ctx, env, wd, data) + (tall ? 70 : 16);
       kicker(ctx, env, wd, K('quizIssue.kicker', L), pad, y, serious);
-      y += tall ? 120 : 96;
-      var title = pick(it.short, L); title = title.charAt(0).toUpperCase() + title.slice(1) + '.';
-      var tf = fit(ctx, title, W - pad * 2 - (serious ? 0 : 60), { max: tall ? 230 : 190, min: 90, maxLines: 3, lh: 0.9, family: fam(env, 'display'), stretch: 'condensed' });
-      y += draw(ctx, tf, pad, y, wd.fg, 'left', serious ? null : wd.mark);
-      var und = data.undertone && byId(issues(), data.undertone);
-      if (und) {
-        y += 20;
-        var uf = fit(ctx, K('quizIssue.undertone', L, { undertone: pick(und.short, L) }), W - pad * 2, { max: 40, min: 28, maxLines: 2, lh: 1.2, weight: 700, family: fam(env, 'body') });
-        y += draw(ctx, uf, pad, y, wd.fg, 'left');
+      var bandY = H - BAND, linkBottom = bandY - (tall ? 120 : 40);
+      if (!ident || !im[0]) {
+        // plain calm layout: the issue name, then the fact panel
+        y += tall ? 120 : 96;
+        var tf = fit(ctx, Short + '.', W - pad * 2, { max: tall ? 210 : 170, min: 80, maxLines: 3, lh: 0.9, family: fam(env, 'display'), stretch: 'condensed' });
+        y += draw(ctx, tf, pad, y, wd.fg, 'left', serious ? null : wd.mark) + (tall ? 70 : 40);
+        var lh0 = linkPanel(ctx, env, data, 'quiz-issue', K('quizIssue.findYours', L), pad, linkBottom, W - pad * 2 - 10);
+        factPanel(ctx, env, pad, y, W - pad * 2 - 10, linkBottom - lh0 - 40, statTxt, statLbl || sub, src, tall);
+        if (!serious && im[1]) dieCut(ctx, im[1], W - 150, y - 20, tall ? 200 : 160, 12);
+        band(ctx, env, data);
+        return done(env);
       }
-      var bandY = H - BAND;
-      var linkH = linkPanel(ctx, env, data, 'quiz-issue', K('quizIssue.findYours', L), pad, bandY - (tall ? 120 : 48), W - pad * 2 - 10);
-      var bottom = bandY - (tall ? 120 : 48) - linkH - (tall ? 60 : 36);
-      var items = mixItems(data, L, 'issue');
-      if (items.length > 1 && tall) { bottom -= 170; mixStrip(ctx, env, wd, K('quizShowUp.mix', L), items, pad, bottom + 20, W - pad * 2); bottom -= 30; }
-      // fact block: panel with stat or the subline, and its source
-      var panelW = W - pad * 2 - (serious ? 0 : (tall ? 0 : 170)), px = pad, inner = panelW - 64;
-      var statTxt = fact && fact.stat ? ((L === 'es' && fact.stat.valueEs) || fact.stat.value) : '', statLbl = fact && fact.stat ? pick(fact.stat.label, L) : '';
-      var src = fact && fact.sourceName ? K('quizIssue.source', L, { source: String(fact.sourceName).split(/[,:]/)[0].trim() }) : '';
-      var sf = statTxt ? fit(ctx, statTxt, inner, { max: tall ? 150 : 120, min: 60, maxLines: 1, lh: 0.95, family: fam(env, 'display'), stretch: 'condensed' }) : null;
-      var lf = fit(ctx, statTxt ? statLbl : sub, inner, { max: 38, min: 26, maxLines: 3, lh: 1.2, weight: 700, family: fam(env, 'body') });
-      var srcF = src ? fit(ctx, src, inner, { max: 24, min: 18, maxLines: 2, lh: 1.25, weight: 600, family: fam(env, 'body') }) : null;
-      var ph = 48 + (sf ? sf.height + 6 : 0) + lf.height + (srcF ? srcF.height + 14 : 0);
-      // never let the fact panel slide over the link panel: drop the source line first (it is on the result page)
-      if (srcF && y + 40 + ph > bottom) { ph -= srcF.height + 14; srcF = null; }
-      var py = Math.max(y + 40, bottom - ph);
-      ctx.fillStyle = C.night; rr(ctx, px + 9, py + 9, panelW, ph, 26); ctx.fill();
-      ctx.fillStyle = C.cream; rr(ctx, px, py, panelW, ph, 26); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = C.night; ctx.stroke();
-      var ty = py + 26;
-      if (sf) { setFont(ctx, sf.size, 800, fam(env, 'display'), 'condensed'); ty += draw(ctx, sf, px + 32, ty, C.violetDeep, 'left') + 6; }
-      setFont(ctx, lf.size, 700, fam(env, 'body')); ty += draw(ctx, lf, px + 32, ty, C.night, 'left');
-      if (srcF) { setFont(ctx, srcF.size, 600, fam(env, 'body')); draw(ctx, srcF, px + 32, ty + 14, '#574D70', 'left'); }
-      if (!serious) {
-        dieCut(ctx, im[0], W - 150, py - (tall ? 40 : 10), tall ? 200 : 170, 12);
-        if (tall) dieCut(ctx, im[1], W - 140, y - 30, 130, -10);
+      var colTop = y + (tall ? 110 : 92);
+      var charSize = Math.round(W * (tall ? 0.5 : 0.44)), charCx = W - pad - charSize / 2 + 24, charCy = y + 20 + charSize / 2;
+      var leftW = W - pad * 2 - charSize + 30;
+      // the plain issue as a chip
+      var chip = pill(ctx, env, Short, pad, colTop, { size: tall ? 34 : 30, bg: C.cream, fg: C.night, edge: C.night, shadow: C.night, track: 0, rotate: serious ? 0 : -1.5 });
+      var sy = colTop + chip.h + (tall ? 36 : 24);
+      // the sourced number, big
+      if (statTxt) {
+        var sf = fit(ctx, statTxt, leftW, { max: tall ? 190 : 150, min: 64, maxLines: 1, lh: 0.88, family: fam(env, 'display'), stretch: 'condensed' });
+        sy += draw(ctx, sf, pad, sy, wd.fg, 'left') + 12;
       }
+      var lf = fit(ctx, statTxt ? statLbl : sub, leftW, { max: tall ? 38 : 32, min: 24, maxLines: statTxt ? 3 : 5, lh: 1.18, weight: 800, family: fam(env, 'body') });
+      sy += draw(ctx, lf, pad, sy, wd.fg, 'left');
+      if (src) {
+        var srcF = fit(ctx, src, leftW, { max: 24, min: 20, maxLines: 2, lh: 1.2, weight: 600, family: fam(env, 'body') });
+        setFont(ctx, srcF.size, 600, fam(env, 'body'));
+        sy += 12 + draw(ctx, srcF, pad, sy + 12, wd.fg, 'left');
+      }
+      drawChar(ctx, im[0], charCx, charCy, charSize, serious ? 0 : 4);
+      var linkH = linkPanel(ctx, env, data, 'quiz-issue', K('quizIssue.findYours', L), pad, linkBottom, W - pad * 2 - 10);
+      var nameTop = Math.max(charCy + charSize / 2 + (tall ? 20 : 4), sy + 24);
+      var room = linkBottom - linkH - (tall ? 60 : 30) - nameTop;
+      var nf = fit(ctx, ident, W - pad * 2, { max: tall ? 250 : 190, min: 76, maxLines: tall ? 3 : 2, lh: 0.86, maxH: room, family: fam(env, 'display'), stretch: 'condensed' });
+      draw(ctx, nf, pad, nameTop + Math.max(0, (room - nf.height) / 2), wd.fg, 'left', serious ? null : wd.mark);
+      if (tall) {
+        var items = mixItems(data, L, 'issue');
+        if (!serious) yoursSticker(ctx, env, K('quizIssue.findYours', L), W - pad - 150, linkBottom - linkH - 10);
+        void items;
+      }
+      band(ctx, env, data);
+      return done(env);
+    });
+  }
+  function factPanel(ctx, env, x, yTop, width, yBottom, statTxt, label, src, tall) {
+    var inner = width - 64;
+    var sf = statTxt ? fit(ctx, statTxt, inner, { max: tall ? 150 : 120, min: 60, maxLines: 1, lh: 0.95, family: fam(env, 'display'), stretch: 'condensed' }) : null;
+    var lf = fit(ctx, label, inner, { max: 38, min: 26, maxLines: 3, lh: 1.2, weight: 700, family: fam(env, 'body') });
+    var srcF = src ? fit(ctx, src, inner, { max: 24, min: 18, maxLines: 2, lh: 1.25, weight: 600, family: fam(env, 'body') }) : null;
+    var ph = 48 + (sf ? sf.height + 6 : 0) + lf.height + (srcF ? srcF.height + 14 : 0);
+    if (srcF && yTop + ph > yBottom) { ph -= srcF.height + 14; srcF = null; }
+    var py = Math.max(yTop, yBottom - ph);
+    ctx.fillStyle = C.night; rr(ctx, x + 9, py + 9, width, ph, 26); ctx.fill();
+    ctx.fillStyle = C.cream; rr(ctx, x, py, width, ph, 26); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = C.night; ctx.stroke();
+    var ty = py + 26;
+    if (sf) { setFont(ctx, sf.size, 800, fam(env, 'display'), 'condensed'); ty += draw(ctx, sf, x + 32, ty, C.violetDeep, 'left') + 6; }
+    setFont(ctx, lf.size, 700, fam(env, 'body')); ty += draw(ctx, lf, x + 32, ty, C.night, 'left');
+    if (srcF) { setFont(ctx, srcF.size, 600, fam(env, 'body')); draw(ctx, srcF, x + 32, ty + 14, '#574D70', 'left'); }
+    return ph;
+  }
+
+  // ---------------------------------------------------------------- template: going ("I'm going" story card)
+  function colorOf(tok) {
+    tok = String(tok || '').replace(/^var\(\s*/, '').replace(/\s*\)$/, '').replace(/^--/, '').replace(/^(issue|city)-/, '');
+    return FILL[tok] ? tok : 'violet';
+  }
+  function prettyOf(link) { return link ? (YSD.ui && YSD.ui.prettyLink ? YSD.ui.prettyLink(link) : String(link).replace(/^[a-z]+:\/\//i, '')) : ''; }
+  /**
+   * going: { first, eventTitle, when, place, link, colorToken, lang?, demo? (default true), sticker? }
+   * The RSVP peak (genz-brand-09): "Kira is going." huge, a ticket with the event, when and place, a "Come with
+   * me" link panel, DEMO and the paid-for line. 9:16 (story) and 4:5 (portrait).
+   */
+  function going(ctx, data, env) {
+    var L = langOf(data), wd = world(colorOf(data.colorToken)), W = env.width, H = env.height, tall = H > 1500, pad = 64;
+    var first = String(data.first || data.name || '').trim().slice(0, 20), demoEv = data.demo !== false;
+    var d2 = {}; for (var k in data) d2[k] = data[k];
+    d2.link = prettyOf(data.link || data.url) || null;
+    return arts([data.sticker || 'calendar', 'celery']).then(function (im) {
+      base(ctx, env, wd);
+      var y = top(ctx, env, wd, data, demoEv ? K('going.demoEvent', L) : null) + (tall ? 90 : 26);
+      kicker(ctx, env, wd, K('going.kicker', L), pad, y);
+      y += tall ? 140 : 104;
+      var head = first ? K('going.withName', L, { first: first }) : K('going.generic', L);
+      var hf = fit(ctx, head, W - pad * 2, { max: tall ? 230 : 170, min: 84, maxLines: 3, lh: 0.88, family: fam(env, 'display'), stretch: 'condensed' });
+      y += draw(ctx, hf, pad, y, wd.fg, 'left', wd.mark) + (tall ? 80 : 44);
+      // the ticket
+      var tw = W - pad * 2 - 10, title = String(data.eventTitle || K('invite.fallbackTitle', L));
+      var tf = fit(ctx, title, tw - 80, { max: tall ? 84 : 66, min: 40, maxLines: 3, lh: 1, family: fam(env, 'display'), stretch: 'semi-condensed' });
+      var meta = [data.when, data.place].filter(Boolean);
+      var th = 60 + tf.height + 24 + meta.length * (tall ? 52 : 46) + 30, tx = pad, ty = y;
+      ctx.save(); ctx.translate(tx + tw / 2, ty + th / 2); ctx.rotate(-1.5 * Math.PI / 180); ctx.translate(-tw / 2, -th / 2);
+      ctx.fillStyle = C.night; rr(ctx, 10, 10, tw, th, 28); ctx.fill();
+      ctx.fillStyle = C.cream; rr(ctx, 0, 0, tw, th, 28); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = C.night; ctx.stroke();
+      // ticket notches
+      ctx.fillStyle = wd.bg; ctx.beginPath(); ctx.arc(0, th * 0.62, 22, -Math.PI / 2, Math.PI / 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(tw, th * 0.62, 22, Math.PI / 2, Math.PI * 1.5); ctx.fill(); ctx.stroke();
+      setFont(ctx, tf.size, 800, fam(env, 'display'), 'semi-condensed');
+      var used = draw(ctx, tf, 40, 40, C.night, 'left');
+      var my = 40 + used + 30;
+      setFont(ctx, tall ? 38 : 34, 800, fam(env, 'body')); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      for (var i = 0; i < meta.length; i++) {
+        var mf = fit(ctx, String(meta[i]), tw - 120, { max: tall ? 38 : 34, min: 24, maxLines: 1, lh: 1.2, weight: i ? 700 : 800, family: fam(env, 'body') });
+        ctx.fillStyle = i ? '#574D70' : C.violetDeep;
+        ctx.fillText(mf.lines[0], 40, my + mf.size * 0.85);
+        my += tall ? 52 : 46;
+      }
+      ctx.restore();
+      dieCut(ctx, im[0], W - pad - 50, ty - 10, tall ? 190 : 150, 14);
+      var bandY = H - BAND, linkBottom = bandY - (tall ? 140 : 44);
+      var linkH = linkPanel(ctx, env, d2, 'join', K('going.lead', L), pad, linkBottom, W - pad * 2 - 10);
+      if (tall) {
+        var by = ty + th + 90;
+        if (by + 160 < linkBottom - linkH - 40) bubble(ctx, env, K('going.bubble', L), pad, by, W - pad * 2 - 220, { max: 48, maxLines: 2, rotate: -2 });
+        dieCut(ctx, im[1], W - pad - 90, linkBottom - linkH - 110, 170, -10);
+      }
+      band(ctx, env, data);
+      return done(env);
+    });
+  }
+
+  // ---------------------------------------------------------------- template: laptop (the 404 sticker toy)
+  /**
+   * laptop: { stickers: [{ id, x, y, r, size? }], link, total? (default 10), lang? }
+   * x and y are the sticker's centre on the lid, 0 to 1 (values over 1 read as percent); r is degrees; size is a
+   * share of the lid width (default 0.2). Draws the decorated lid, "6 of 10 Seminole stickers found", the link,
+   * DEMO and the paid-for line. 4:5 (portrait) and 1:1 (square).
+   */
+  function laptop(ctx, data, env) {
+    var L = langOf(data), wd = world(data.colorToken ? colorOf(data.colorToken) : 'orange'), W = env.width, H = env.height, pad = 64, square = H < 1200;
+    var list = (data.stickers || []).filter(function (s) { return s && s.id; }).slice(0, 24);
+    var total = Math.max(list.length, +data.total || 10);
+    var d2 = {}; for (var k in data) d2[k] = data[k];
+    d2.link = prettyOf(data.link || data.url) || null;
+    return arts(list.map(function (s) { return s.id; })).then(function (im) {
+      base(ctx, env, wd);
+      var y = top(ctx, env, wd, data) + (square ? 6 : 24);
+      kicker(ctx, env, wd, K('laptop.kicker', L), pad, y);
+      y += square ? 84 : 100;
+      var hf = fit(ctx, K('laptop.title', L), W - pad * 2, { max: square ? 96 : 120, min: 60, maxLines: 2, lh: 0.9, family: fam(env, 'display'), stretch: 'condensed' });
+      y += draw(ctx, hf, pad, y, wd.fg, 'left', wd.mark) + (square ? 22 : 36);
+      var bandY = H - BAND, linkBottom = bandY - (square ? 28 : 44);
+      var linkH = linkPanel(ctx, env, d2, 'join', K('laptop.lead', L), pad, linkBottom, W - pad * 2 - 10);
+      var countH = square ? 44 : 56;
+      var avail = linkBottom - linkH - 34 - countH - 20 - y;
+      // the lid: 16:10.5, as big as the room allows
+      var lw = Math.min(W - pad * 2 - 20, avail * 1.52), lh = lw / 1.52, lx = (W - lw) / 2, ly = y;
+      ctx.fillStyle = C.night; rr(ctx, lx + 12, ly + 12, lw, lh, 34); ctx.fill();
+      ctx.fillStyle = '#3A3550'; rr(ctx, lx, ly, lw, lh, 34); ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = C.night; ctx.stroke();
+      ctx.fillStyle = '#4A4466'; rr(ctx, lx + 18, ly + 18, lw - 36, lh - 36, 22); ctx.fill();
+      ctx.save(); rr(ctx, lx, ly, lw, lh, 34); ctx.clip();
+      for (var i = 0; i < list.length; i++) {
+        var s = list[i], sx = +s.x, sy = +s.y, sz = (+s.size || 0.2);
+        if (sx > 1) sx /= 100; if (sy > 1) sy /= 100; if (sz > 1) sz /= 100;
+        if (!(sx >= 0 && sx <= 1)) sx = 0.5; if (!(sy >= 0 && sy <= 1)) sy = 0.5;
+        dieCut(ctx, im[i], lx + sx * lw, ly + sy * lh, lw * sz, +s.r || 0);
+      }
+      ctx.restore();
+      var cy = ly + lh + 30;
+      var cf = fit(ctx, K('laptop.found', L, { n: list.length, total: total }), W - pad * 2, { max: square ? 40 : 46, min: 28, maxLines: 1, lh: 1.1, weight: 800, family: fam(env, 'body') });
+      draw(ctx, cf, pad, cy, wd.fg, 'left');
       band(ctx, env, data);
       return done(env);
     });
@@ -852,7 +1075,8 @@
   // ---------------------------------------------------------------- registry and public API
   var DRAW = {
     invite: invite, 'psa-mail': psaMail, 'psa-id': psaId, join: join, cover: cover,
-    'quiz-show-up': quizShowUp, 'quiz-issue': quizIssue, membercard: membercard, rewind: rewind
+    'quiz-show-up': quizShowUp, 'quiz-issue': quizIssue, membercard: membercard, rewind: rewind,
+    going: going, laptop: laptop
   };
   var FONTS = ['800 64px "Bricolage Grotesque"', '700 32px "Atkinson Hyperlegible Next"', '800 32px "Atkinson Hyperlegible Next"'];
   Object.keys(DRAW).forEach(function (n) { YSD.cards.register(n, DRAW[n], { size: 'story', fonts: FONTS }); });
@@ -867,6 +1091,8 @@
     if (name === 'quiz-show-up') { var r = resultOf(data.resultId); return es + (r ? 'quiz/show-up/' + r.slug + '.html' : 'quiz.html#show-up'); }
     if (name === 'quiz-issue') { var res = Q.issueFinder && Q.issueFinder.results && Q.issueFinder.results[data.resultId]; return es + (res ? 'quiz/issue/' + res.slug + '.html' : 'quiz.html#issue'); }
     if (name === 'rewind') return es + 'index.html';
+    if (name === 'going') return es + 'events.html';
+    if (name === 'laptop') return es + '404.html';
     return es + 'join.html';
   }
   function available(name, t) {
@@ -894,6 +1120,8 @@
     event: eventById,
     copy: K,
     marks: function (canvas) { return (canvas && canvas.__ysdMarks) || null; },
-    world: world
+    world: world,
+    character: charPath,
+    characterSvg: charSvg
   };
 })(typeof window !== 'undefined' ? window : this);

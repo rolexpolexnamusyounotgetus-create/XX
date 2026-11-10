@@ -392,6 +392,99 @@ async function nodeTests() {
     w.YSD.counters.stopLive(); pz.YSD.counters.stopLive();
   });
 
+  // Round 1, journeys-08: adult members' links carry from=<FirstName>; never a minor's, never someone else's.
+  await section('node: share.url adds from= for adult members only (journeys-08)', async () => {
+    const w = sandbox({ href: 'https://ysd.example/quiz.html?ref=KIRA7QX&from=Kira&e=trivia' });
+    const sh = w.YSD.share, M = w.YSD.members;
+    const anon = new URL(sh.url());
+    eq(anon.searchParams.get('from'), null, "no member: the sender's from is not passed on");
+    eq(anon.searchParams.get('e'), 'trivia', 'own query kept (e)');
+    const sam = M.join({ firstName: 'Sam', email: 'sam@example.com', age: 22 });
+    const u = new URL(sh.url('join.html'));
+    eq(u.searchParams.get('ref'), sam.refCode, 'adult: ref');
+    eq(u.searchParams.get('from'), 'Sam', 'adult: from=Sam added automatically');
+    eq(new URL(sh.url()).searchParams.get('from'), 'Sam', "current page: my from replaces Kira's");
+    eq(new URL(sh.url('join.html', { from: false })).searchParams.get('from'), null, 'from:false turns it off');
+    eq(new URL(sh.url('join.html', { ref: false })).searchParams.get('from'), null, 'no code (plain link): no from');
+    eq(new URL(sh.url('join.html', { ref: 'OTHER1' })).searchParams.get('from'), null, "someone else's code: no automatic from");
+    eq(sh.from(), 'Sam', 'share.from()');
+    eq(M.shareName(), true, 'shareName() on by default for adults');
+    eq(M.setShareName(false), false, 'setShareName(false)');
+    eq(new URL(sh.url('join.html')).searchParams.get('from'), null, 'switched off: no from');
+    eq(M.shareParams().from, '', 'shareParams().from empty when off');
+    M.setShareName(true);
+    eq(M.shareParams().ref, sam.refCode, 'shareParams().ref');
+    eq(M.shareParams().from, 'Sam', 'shareParams().from');
+    w.YSD.counters.stopLive();
+
+    const t = sandbox({ href: 'https://ysd.example/join.html' });
+    const teen = t.YSD.members.join({ firstName: 'Ana', email: 'ana@example.com', age: 16 });
+    const tu = new URL(t.YSD.share.url('join.html'));
+    eq(tu.searchParams.get('ref'), teen.refCode, 'minor: ref (random style)');
+    ok(!/ANA/.test(teen.refCode), 'minor: code has no name', teen.refCode);
+    eq(tu.searchParams.get('from'), null, 'minor: never from');
+    eq(new URL(t.YSD.share.url('join.html', { from: 'Ana' })).searchParams.get('from'), null, 'minor: explicit from on my link is dropped too');
+    t.YSD.members.setShareName(true);
+    eq(t.YSD.members.shareName(), false, 'minor: shareName() stays false');
+    t.YSD.counters.stopLive();
+
+    const x = sandbox({ href: 'https://ysd.example/join.html' });
+    x.YSD.members.join({ firstName: 'Lee', email: 'lee@example.com' });
+    eq(new URL(x.YSD.share.url('join.html')).searchParams.get('from'), null, 'unknown age: no from');
+    const xs = sandbox({ href: 'https://ysd.example/join.html' });
+    xs.YSD.members.join({ firstName: '<img src=x onerror=1>Jo', email: 'jo@example.com', age: 30 });
+    eq(new URL(xs.YSD.share.url('a.html')).searchParams.get('from'), 'img srcx onerrorJo', 'from is cleaned to letters, spaces, hyphens and apostrophes');
+    eq(new URL(x.YSD.share.url('a.html', { ref: false, from: 'Dani' })).searchParams.get('from'), 'Dani', 'explicit from on a plain link (RSVP +1 without membership) is kept');
+    x.YSD.counters.stopLive(); xs.YSD.counters.stopLive();
+  });
+
+  // Round 1, journeys-06: "Not Sam? Start over" keeps the join log and credits the next join to the right link.
+  await section('node: members.reset archives, clears per-person state, re-captures ref (journeys-06)', async () => {
+    // Sam arrived through Kira's link, joined, then opens his own link on the same device.
+    const w = sandbox({ href: 'https://ysd.example/join.html?ref=KIRA7QX' });
+    const M = w.YSD.members, S = w.YSD.store;
+    const sam = M.join({ firstName: 'Sam', email: 'sam@example.com', age: 22 });
+    eq(sam.referredBy, 'KIRA7QX', 'Sam credited to Kira');
+    S.set('stickers', [{ id: 'doors-open' }]); S.set('streak', { weeks: ['2026-11-09'] }); S.set('stickers:log', [{ action: 'join' }]);
+    S.set('rsvp:trivia', { status: 'going' }); S.set('rsvp:queue', [{ id: 'q1' }]); S.set('rsvp:last', { firstName: 'Sam', contact: 'sam@example.com' });
+    S.set('quiz:show-up', { type: 'x' });
+    w.location.search = '?ref=' + sam.refCode; w.location.href = 'https://ysd.example/join.html?ref=' + sam.refCode;
+    w.YSD.share.captureRef();
+    eq(w.YSD.share.ref(), 'KIRA7QX', "while Sam is the member his own code is ignored");
+    const events = [];
+    const entry = M.reset();
+    ok(entry && entry.id === sam.id && entry.archivedAt > 0, 'reset() returns the archived entry', entry);
+    eq(M.current(), null, 'member cleared');
+    const joins = S.get('joins');
+    ok(Array.isArray(joins) && joins.some((j) => j.id === sam.id && j.archivedAt), 'Sam stays in the join log (archived)', joins);
+    ok(!joins.find((j) => j.id === sam.id).email, 'archive keeps no contact details');
+    eq(S.get('stickers', null), null, 'stickers cleared'); eq(S.get('streak', null), null, 'streak cleared');
+    eq(S.get('stickers:log', null), null, 'sticker log cleared'); eq(S.get('rsvp:trivia', null), null, 'RSVP records cleared');
+    eq(S.get('rsvp:last', null), null, 'RSVP prefill cleared');
+    ok(Array.isArray(S.get('rsvp:queue', null)), 'unsent RSVP queue kept');
+    ok(S.get('quiz:show-up', null) !== null, 'keys outside the list are kept');
+    eq(w.YSD.share.ref(), sam.refCode, "ref re-captured from the URL: Sam's link now counts");
+    const ana = M.join({ firstName: 'Ana', email: 'ana@example.com', age: 20 });
+    eq(ana.referredBy, sam.refCode, "Ana is credited to Sam, not to Kira's old arrival ref");
+    // Back to Sam: his meter now shows Ana.
+    eq(M.archived().length, 1, 'archived(): Sam is listed');
+    const back = M.resume(sam.id);
+    ok(back && back.id === sam.id && back.refCode === sam.refCode && !back.email, 'resume(): Sam is back, without contact details', back);
+    const sq = M.squad();
+    ok(sq.length === 1 && sq[0].firstName === 'Ana' && sq[0].simulated === false, "Sam's squad counts Ana (a real local join, not simulated)", sq);
+    ok(M.archived().some((a) => a.firstName === 'Ana'), 'Ana archived when Sam resumed');
+    eq(new URL(w.YSD.share.url('join.html')).searchParams.get('from'), 'Sam', 'resumed adult keeps from=');
+    eq(M.reset({ keep: ['stickers'] }) && true, true, 'reset again');
+    eq(M.reset(), null, 'reset() with no member returns null');
+    // forget() still wipes everything (privacy "Forget me").
+    const f = sandbox({ href: 'https://ysd.example/join.html?ref=KIRA7QX' });
+    f.YSD.members.join({ firstName: 'Lu', email: 'lu@example.com', age: 19 });
+    f.YSD.members.forget();
+    eq(f.YSD.store.get('joins', null), null, 'forget() still removes the join log');
+    w.YSD.counters.stopLive(); f.YSD.counters.stopLive();
+    void events;
+  });
+
   await section('node: production submit seam (formEndpoint, Action Network, failure)', async () => {
     const calls = [];
     function fakeFetch(status, json) {

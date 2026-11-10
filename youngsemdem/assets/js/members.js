@@ -16,6 +16,14 @@
  *   retry()                -> re-send an unsynced join (runs on load and on 'online')
  *   makeRefCode(profile)   -> a new readable code (always the random style when profile.age < 18)
  *   forget()               -> remove my member data, squad cache and captured ref from this browser
+ *                             (privacy "Forget me": the join log goes too)
+ *   reset(opts)            -> "Not {name}? Start over": archive me into the join log (kept), clear my record,
+ *                             arrival ref/utm, stickers, streak, RSVPs and RSVP prefill, re-capture ?ref from the
+ *                             URL. -> archived join entry | null. Emits ysd:member-reset and ysd:forgot.
+ *   archived() / resume(id) -> people reset() archived on this device; switch back to one ("Back to Sam") so a
+ *                             one-device demo can show a friend's join landing in Sam's squad meter
+ *   shareName() / setShareName(on)   "Show my first name on my link" (adults only; default on)
+ *   shareParams()          -> { ref, from } my links carry (YSD.share.url adds them on its own)
  *
  * Demo mode (YSD_CONFIG.demo): nothing leaves the browser; simulated squad members appear on a
  * fixed schedule after joining, each flagged { demo: true, simulated: true } so pages can label
@@ -486,10 +494,134 @@
     track('forget', {});
   }
 
+  /**
+   * "Not Sam? Start over" on a shared device (review journeys-06). Unlike forget(), the join log survives:
+   *  - the current member is archived into 'joins' (their entry is kept, or added if missing, with archivedAt),
+   *    so their squad history and the friends credited to their code still count on this device;
+   *  - 'member' and the cached remote squad go;
+   *  - the arrival ref and utm tags go too, so the next join is not credited to the old member's referrer; then
+   *    YSD.share.captureRef() runs again, so a ?ref= in the current URL (say, Sam's own link, which was ignored
+   *    while Sam was the member) now credits the next person to Sam;
+   *  - the previous person's own state goes: stickers, streak and sticker log ('stickers', 'streak',
+   *    'stickers:log'), their RSVP records ('rsvp:<eventId>'; the unsent 'rsvp:queue' is kept so nothing is
+   *    lost), and the RSVP prefill 'rsvp:last'. opts.also: more keys to clear ('quiz:*' style prefixes allowed);
+   *    opts.keep: keys from the default list to keep.
+   * Emits ysd:member-reset {previous: {id, refCode, firstName}, recaptured: 'CODE'|null} and ysd:forgot (so the
+   * header CTA flips back to "Join free"). Returns the archived entry, or null when there was no member.
+   */
+  var RESET_KEYS = ['member', 'squad:remote', 'ref', 'utm', 'utm:first', 'stickers', 'streak', 'stickers:log', 'rsvp:last', 'rsvp:*'];
+  var RESET_KEEP = { 'rsvp:queue': 1 };
+  function storeKeys() {
+    try { if (YSD.store && YSD.store.keys) return YSD.store.keys(); } catch (e) {}
+    return Object.keys(mem);
+  }
+  function reset(opts) {
+    opts = opts || {};
+    var me = current();
+    if (!me) return null;
+    var now = Date.now(), joins = sget('joins', []), entry = null, i;
+    if (!Array.isArray(joins)) joins = [];
+    for (i = 0; i < joins.length; i++) if (joins[i] && joins[i].id === me.id) { entry = joins[i]; break; }
+    if (!entry) {
+      entry = { id: me.id, refCode: me.refCode, referredBy: me.referredBy || null, firstName: me.firstName,
+        lastInitial: me.lastName ? String(me.lastName).charAt(0).toUpperCase() : '', joinedAt: me.joinedAt, demo: !!me.demo };
+      joins.push(entry);
+    }
+    entry.archivedAt = now;
+    // Just enough to resume() this person later on the same device (demo loop for the squad meter): no contact
+    // details, no last name; the age keeps the under-18 rules (no from=, random code) intact after a resume.
+    if (me.age != null) entry.age = me.age;
+    if (me.shareName === false) entry.shareName = false;
+    sset('joins', joins);
+    var keep = {}, k;
+    for (k in RESET_KEEP) keep[k] = 1;
+    (opts.keep || []).forEach(function (x) { keep[x] = 1; });
+    var list = RESET_KEYS.concat(opts.also || []).filter(function (x) { return !keep[x]; });
+    var all = null;
+    list.forEach(function (x) {
+      if (/\*$/.test(x)) {
+        var pre = x.slice(0, -1);
+        all = all || storeKeys();
+        all.forEach(function (key) { if (key.indexOf(pre) === 0 && !keep[key] && key !== 'joins') sremove(key); });
+      } else sremove(x);
+    });
+    if (squadTimer) { clearTimeout(squadTimer); squadTimer = null; }
+    lastSquadIds = null;
+    var recaptured = null;
+    try { if (YSD.share && YSD.share.captureRef) recaptured = YSD.share.captureRef().ref || null; } catch (e) {}
+    var prev = { id: me.id, refCode: me.refCode, firstName: me.firstName || '' };
+    emit('member-reset', { previous: prev, recaptured: recaptured });
+    emit('forgot', { reset: true });
+    track('member_reset', { recaptured: !!recaptured });
+    return clone(entry);
+  }
+
+  /** People who used reset() on this device, newest first: [{id, refCode, firstName, joinedAt, archivedAt}]. */
+  function archived() {
+    var j = sget('joins', []), me = current(), out = [];
+    if (Array.isArray(j)) for (var i = 0; i < j.length; i++) {
+      var e = j[i];
+      if (e && e.archivedAt && (!me || e.id !== me.id)) out.push({ id: e.id, refCode: e.refCode, firstName: e.firstName || '', joinedAt: e.joinedAt, archivedAt: e.archivedAt });
+    }
+    return out.sort(function (a, b) { return b.archivedAt - a.archivedAt; });
+  }
+  /**
+   * Switch back to someone archived by reset() ("Back to Sam"), so a demo on one device can show a friend's join
+   * landing in Sam's squad meter. The current member (if any) is archived first. Only the fields reset() kept come
+   * back (no email, phone or last name). -> the member, or null for an unknown id. Emits ysd:joined {resumed}.
+   */
+  function resume(id) {
+    var j = sget('joins', []), e = null, i;
+    if (Array.isArray(j)) for (i = 0; i < j.length; i++) if (j[i] && j[i].id === id && j[i].archivedAt) { e = j[i]; break; }
+    if (!e) return null;
+    if (current()) reset({ keep: ['ref', 'utm', 'utm:first'] });
+    j = sget('joins', []);
+    for (i = 0; i < j.length; i++) if (j[i] && j[i].id === id) { delete j[i].archivedAt; e = j[i]; }
+    sset('joins', j);
+    var m = { id: e.id, refCode: e.refCode, referredBy: e.referredBy || null, firstName: e.firstName || '', joinedAt: e.joinedAt,
+      updatedAt: Date.now(), demo: isDemo(), synced: true, resumed: true };
+    if (e.age != null) m.age = e.age;
+    if (e.shareName === false) m.shareName = false;
+    sset('member', m);
+    lastSquadIds = null;
+    emit('joined', { member: clone(m), isNew: false, resumed: true });
+    track('member_resume', {});
+    scheduleSquad();
+    return clone(m);
+  }
+
+  /** Whether my links carry my first name (from=): false for minors or unknown ages, else member.shareName !== false. */
+  function shareName() {
+    try { if (YSD.share && YSD.share.from) return !!YSD.share.from(); } catch (e) {}
+    var m = current();
+    return !!(m && m.firstName && !isMinor(m) && m.age != null && m.shareName !== false);
+  }
+  /** Turn "Show my first name on my link" on or off (stored on the member). Minors stay off whatever is passed. */
+  function setShareName(on) {
+    var m = current();
+    if (!m) return false;
+    m.shareName = !!on;
+    m.updatedAt = Date.now();
+    sset('member', m);
+    emit('member-updated', { member: clone(m), field: 'shareName' });
+    return shareName();
+  }
+  /** {ref, from} my links carry right now (from is '' when it's off or I'm under 18). */
+  function shareParams() {
+    var m = current();
+    return { ref: m && m.refCode ? m.refCode : '', from: YSD.share && YSD.share.from ? YSD.share.from() : '' };
+  }
+
   YSD.members = {
     validate: validate,
     join: join,
     current: current,
+    reset: reset,
+    archived: archived,
+    resume: resume,
+    shareName: shareName,
+    setShareName: setShareName,
+    shareParams: shareParams,
     isMember: function () { return !!current(); },
     referredBy: referredBy,
     squad: squad,
