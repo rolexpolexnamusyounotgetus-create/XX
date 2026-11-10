@@ -1,3 +1,0 @@
-check 1: stored targets reproduced from stored inputs on 275 fights (95600 values): max rel diff 0.00e+0
-check 2: embed.js winLogit vs stored snapshot win_logit on 200 2025 fights: max abs diff 1.93e-3
-targets: 373 vault fights, 0 errors, 34 sides without a 2026-01-01 embedding -> /tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault/audit2/statlines_targets_vault.json

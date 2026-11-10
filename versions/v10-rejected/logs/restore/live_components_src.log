@@ -1,7 +1,0 @@
-engine 4.0.0 (src), params 4.0.0-selfcal-pre2024
-PASS  embed: off (nothing to ship)
-PASS  retarget: off (nothing to ship)
-PASS  tdIntent: off (nothing to ship)
-PASS  ctrlSpread: off (nothing to ship)
-PASS  blend_anchor: off (nothing to ship)
-5 passed, 0 failed

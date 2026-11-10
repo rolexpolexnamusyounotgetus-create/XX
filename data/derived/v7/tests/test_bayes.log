@@ -1,4 +1,0 @@
-bayes.json: 2864 fights, config main|month|varaware, invariants ok
-symmetry: filter 155 fights, EP over 155 fights, 25 predictions mirrored (max |p+p'-1| 2.2e-16)
-ok
-rc=0

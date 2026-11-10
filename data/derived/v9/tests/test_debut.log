@@ -1,2 +1,0 @@
-ledger hook: Mitch Raposo (a) vs debutant Marcos Degli (b): P(a) no line 0.6133, open 0.6157 (stack [open, debut]), close 0.6262 (stack [close, debut]); adopted: no line 0.3478 (ledger fallback (seeded Elo)), method 0.253/0.175/0.572 (debut method model, P(a) = close)
-ok 23/23 checks; fixtures 30; winner cols 16; decisions {"noline":"raw debut","open":true,"close":true}

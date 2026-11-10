@@ -1,6 +1,0 @@
-parsed 8974 fights; kept 8974 before 2026-11-01 (hidden-data protocol)
-priors by year 2008-2026; elo K=44 boost=1.5
-fight rows with stats since 2008: 8125 (2.3s)
-/home/user/XX/tools/vault_audit1/mlrates_vault.py:51: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
-  "built": dt.datetime.utcnow().isoformat() + "Z", "wall_s": round(time.time() - t0, 1)},
-wrote /tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault/audit1/mlrates_vault.json fights 373 of 373 missing vault ids 0 orientation mismatches 0

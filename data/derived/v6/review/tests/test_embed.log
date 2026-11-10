@@ -1,9 +1,0 @@
-embed.js: 30 check matchups reproduce the Python outputs (max rel. error on rates 1.9e-15)
-Volkanovski vs Gaethje (embedding head only): P(Volkanovski) = 0.672; per-minute sig. landed 6.11 vs 4.63, takedowns landed 0.057 vs 0.011
-nearest to Volkanovski: bo-nickal (3.44), chris-padilla (4.39), jared-cannonier (4.44), john-castaneda (4.60), rinat-fakhretdinov (4.63)
-blendMLRates: 12 validation rows reproduce the Python recipe
-pipeline tie: 2864 backtest snapshots reproduce the walk's win logits (max abs diff 2.4e-3, export rounding)
-style twins of alexander-volkanovski: dricus-du-plessis (0.94), da-mon-blackshear (0.92), jean-matsumoto (0.89), zach-reese (0.86), tim-elliott (0.86)
-style twins of justin-gaethje: tai-tuivasa (0.95), sumudaerji (0.94), luana-carolina (0.92), cub-swanson (0.92), shara-magomedov (0.92)
-OK
-rc=0

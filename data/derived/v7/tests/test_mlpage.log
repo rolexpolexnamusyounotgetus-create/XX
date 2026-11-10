@@ -1,7 +1,0 @@
-PASS full roster: matches the Python test vectors (max |diff| 4.92e-5 on 7 vectors stored to 4 dp)
-PASS full roster: corner symmetric (max |pA(A,B) + pA(B,A) - 1| 0.00e+0)
-PASS compact roster: matches the Python test vectors (max |diff| 4.92e-5 on 7 vectors stored to 4 dp)
-PASS compact roster: corner symmetric (max |pA(A,B) + pA(B,A) - 1| 0.00e+0)
-PASS unknown fighter gives null
-5 passed, 0 failed
-rc=0
