@@ -15,7 +15,7 @@
   <meta property="og:image:alt" content="Esta página no llegó a la reunión. Young Democrats of Seminole County. Vista previa DEMO." data-t-content="notFound:og.alt">
   <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
   <meta property="og:locale" content="es_US"><meta property="og:locale:alternate" content="en_US">
-  <meta name="ysd:og" content='{"template":"og-page","kicker":"ERROR 404","title":"Página no encontrada","color":"bubblegum","sticker":"chicken","keys":{"kicker":"notFound:og.kicker","title":"seo.notFound.ogTitle"},"lang":"es"}'>
+  <meta name="ysd:og" content='{"template":"og-page","kicker":"ERROR 404","title":"Página no encontrada","color":"orange","sticker":"chicken","keys":{"kicker":"notFound:og.kicker","title":"seo.notFound.ogTitle"},"lang":"es"}'>
   <!-- @head --><meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#6A2BFF">
 <script src="../assets/boot.js"></script>
@@ -33,7 +33,7 @@
 <link rel="stylesheet" href="../assets/css/base.css">
 <link rel="stylesheet" href="../assets/css/components.css">
 <link rel="stylesheet" href="../assets/css/utilities.css"><!-- /@head -->
-  <link rel="stylesheet" href="../assets/css/pages/about.css">
+  <link rel="stylesheet" href="../assets/css/pages/notfound.css">
 </head>
 <body class="p-notfound">
   <!-- @demo-banner-es --><a class="skip-link" href="#main">Saltar al contenido principal</a>
@@ -98,34 +98,31 @@
   </div>
 </header><!-- /@header-es -->
   <main id="main">
-    <section class="section section--violet x-nf" aria-labelledby="nf-title">
-      <div class="wrap stack stack--lg x-nf__wrap">
-        <span class="sticker x-nf__mascot" data-sticker="chicken" aria-hidden="true"></span>
-        <p class="eyebrow eyebrow--pill" data-t="notFound:eyebrow">404 · PÁGINA NO ENCONTRADA</p>
-        <h1 class="x-nf__h1" id="nf-title" data-t="state.notFound.title">Esta página no llegó a la reunión.</h1>
-        <p class="lead x-nf__sub" data-t="state.notFound.body">Quizás cambió de dirección o el enlace tiene un error. Te llevamos a algo útil.</p>
-        <nav class="x-go" aria-labelledby="nf-go">
-          <h2 class="u-visually-hidden" id="nf-go" data-t="state.notFound.suggest">O prueba una de estas:</h2>
-          <ul class="x-go__list">
-            <li><a class="btn x-go__tile x-go__tile--celery" href="index.html"><span class="x-go__label" data-t="nav.home">Inicio</span><span class="x-go__desc" data-t="notFound:go.home">Empieza desde el principio.</span></a></li>
-            <li><a class="btn x-go__tile x-go__tile--sky" href="events.html"><span class="x-go__label" data-t="nav.events">Eventos</span><span class="x-go__desc" data-t="notFound:go.events">Planes gratis por todo Seminole.</span></a></li>
-            <li><a class="btn x-go__tile x-go__tile--pink" href="vote.html"><span class="x-go__label" data-t="nav.vote">Votar</span><span class="x-go__desc" data-t="notFound:go.vote">Tu lista para votar en 2027.</span></a></li>
-            <li><a class="btn x-go__tile x-go__tile--sun" href="join.html"><span class="x-go__label" data-t="cta.join">Únete gratis</span><span class="x-go__desc" data-t="notFound:go.join">Gratis, para cualquier persona de 14 a 39.</span></a></li>
-          </ul>
-        </nav>
-      </div>
-    </section>
-
-    <section class="section section--sky x-toysec u-js-only" aria-labelledby="toy-title">
-      <div class="wrap x-toy" data-toy>
-        <div class="x-toy__copy">
-          <h2 class="x-toy__title" id="toy-title" data-t="notFound:toy.title">Ya que estás aquí, decora la laptop.</h2>
-          <p class="x-toy__sub" data-t="notFound:toy.sub">Toca el sticker para pegarlo. Cada uno trae un dato real de Seminole.</p>
+    <section class="section section--orange hero hero--split edge--tilt x-nf" aria-labelledby="nf-title">
+      <div class="wrap hero__grid">
+        <div class="hero__copy">
+          <p class="hero__pill" data-t="notFound:eyebrow">404 · PÁGINA NO ENCONTRADA</p>
+          <h1 class="hero__title x-nf__h1" id="nf-title" data-t="state.notFound.title">Esta página no llegó a la reunión.</h1>
+          <p class="hero__sub" data-t="state.notFound.body">Quizás cambió de dirección o el enlace tiene un error. Te llevamos a algo útil.</p>
+          <nav class="x-go" aria-labelledby="nf-go">
+            <h2 class="u-visually-hidden" id="nf-go" data-t="state.notFound.suggest">O prueba una de estas:</h2>
+            <ul class="x-go__list">
+              <li><a class="btn x-go__tile x-go__tile--celery" href="index.html"><span class="x-go__label" data-t="nav.home">Inicio</span><span class="x-go__desc" data-t="notFound:go.home">Empieza desde el principio.</span></a></li>
+              <li><a class="btn x-go__tile x-go__tile--sky" href="events.html"><span class="x-go__label" data-t="nav.events">Eventos</span><span class="x-go__desc" data-t="notFound:go.events">Planes gratis por todo Seminole.</span></a></li>
+              <li><a class="btn x-go__tile x-go__tile--pink" href="vote.html"><span class="x-go__label" data-t="nav.vote">Votar</span><span class="x-go__desc" data-t="notFound:go.vote">Tu lista para votar en 2027.</span></a></li>
+              <li><a class="btn x-go__tile x-go__tile--sun" href="join.html"><span class="x-go__label" data-t="cta.join">Únete gratis</span><span class="x-go__desc" data-t="notFound:go.join">Gratis, para cualquier persona de 14 a 39.</span></a></li>
+            </ul>
+          </nav>
         </div>
-        <div class="x-toy__stage">
+
+        <div class="hero__object x-toy u-js-only" data-toy role="region" aria-labelledby="toy-title">
+          <div class="x-toy__copy">
+            <h2 class="x-toy__title" id="toy-title" data-t="notFound:toy.title">Ya que estás aquí, decora la laptop.</h2>
+            <p class="x-toy__sub" data-t="notFound:toy.sub">Toca el sticker para pegarlo. Cada uno trae un dato real de Seminole.</p>
+          </div>
           <div class="x-laptop">
             <div class="x-laptop__lid" data-toy-lid role="img" aria-label="La tapa de una laptop cubierta con los stickers que encontraste" data-t-aria-label="notFound:toy.lid">
-              <svg class="x-laptop__mark" viewBox="0 0 64 56" aria-hidden="true" focusable="false"><path d="M15 41 13 54 31 41Z" fill="#C8F03C" stroke="#FFF6EA" stroke-width="3" stroke-linejoin="round"/><rect x="2.5" y="3" width="59" height="39" rx="9" fill="#6A2BFF" stroke="#FFF6EA" stroke-width="3"/><path fill="#C8F03C" d="M21.94 31.5V25.49L15.93 12.5H21.5L24.27 22.36H24.51L27.18 12.5H32.44L26.63 25.47V31.5ZM36.34 31.5V27.92H40.23Q41.33 27.92 42.06 27.27Q42.78 26.62 43.15 25.3Q43.52 23.98 43.52 22.02Q43.52 20.47 43.31 19.34Q43.1 18.22 42.67 17.49Q42.25 16.77 41.57 16.42Q40.88 16.08 39.94 16.08H36.34V12.5H39.87Q42.38 12.5 44.23 13.61Q46.08 14.72 47.07 16.84Q48.07 18.96 48.07 21.99Q48.07 24.45 47.55 26.13Q47.02 27.81 46.14 28.87Q45.26 29.92 44.23 30.5Q43.19 31.07 42.18 31.28Q41.17 31.5 40.37 31.5ZM34.14 31.5V12.5H38.63V31.5Z"/></svg>
+              <svg class="x-laptop__mark" viewBox="0 9 64 46" aria-hidden="true" focusable="false"><g transform="rotate(-8 32 32)"><path d="M9 15H55Q59 15 59 19V27A5 5 0 0 0 59 37V45Q59 49 55 49H9Q5 49 5 45V37A5 5 0 0 0 5 27V19Q5 15 9 15Z" fill="#C8F03C" stroke="#FFF6EA" stroke-width="3" stroke-linejoin="round"/><path d="M15.9 20.3h2.2v2.6h-2.2ZM15.9 25.5h2.2v2.6h-2.2ZM15.9 30.7h2.2v2.6h-2.2ZM15.9 35.9h2.2v2.6h-2.2ZM15.9 41.1h2.2v2.6h-2.2ZM27.3 42.5V35.8L21 21.5H27.2L29.9 32.7H30.1L32.7 21.5H38.4L32.4 35.8V42.5ZM39.6 42.5V21.5H45.5Q47.8 21.5 49.7 22.7Q51.6 24 52.7 26.3Q53.8 28.7 53.8 32.1Q53.8 34.8 53.2 36.7Q52.7 38.6 51.7 39.7Q50.7 40.9 49.7 41.5Q48.6 42.1 47.6 42.3Q46.6 42.5 45.9 42.5ZM44.5 38.6H45.7Q46.8 38.6 47.5 37.9Q48.2 37.2 48.5 35.7Q48.9 34.2 48.9 32Q48.9 30.3 48.7 29Q48.5 27.8 48.1 27Q47.7 26.2 47.1 25.8Q46.4 25.4 45.5 25.4H44.5Z" fill="#170B33"/></g></svg>
             </div>
             <div class="x-laptop__base" aria-hidden="true"></div>
           </div>
@@ -134,15 +131,17 @@
             <div class="x-toy__side">
               <p class="x-toy__count" data-toy-count></p>
               <p class="x-toy__done" data-toy-done hidden data-t="notFound:toy.done">Los 10. Conoces Seminole mejor que casi todos nosotros.</p>
-              <button class="btn btn--ink btn--sm" type="button" data-toy-reset hidden data-t="notFound:toy.again">Despegarlos todos</button>
+              <button class="btn btn--ink btn--sm" type="button" data-toy-reset hidden data-t="notFound:toy.again">Despégalos y salen 10 más</button>
             </div>
           </div>
           <p class="bubble x-toy__fact" data-toy-fact aria-live="polite"></p>
-          <p class="x-toy__share"><button class="btn btn--ink" type="button" data-share data-nf-share><span data-t="notFound:share.cta">Manda al grupo un enlace que sí funcione</span></button></p>
+          <div class="x-toy__share">
+            <button class="btn btn--primary" type="button" data-toy-send hidden data-t="notFound:toy.send">Manda mi laptop</button>
+            <button class="btn btn--ink" type="button" data-share data-nf-share><span data-t="notFound:share.cta">Manda un enlace que sí funcione</span></button>
+          </div>
         </div>
       </div>
     </section>
-
   </main>
   <!-- @footer-es --><footer class="site-footer" id="site-footer">
   <div class="wrap">

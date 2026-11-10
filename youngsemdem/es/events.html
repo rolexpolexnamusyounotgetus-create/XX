@@ -11,7 +11,7 @@
   <meta property="og:image:alt" content="Una tarjeta de los Young Dems que dice Lo que viene en Seminole, con un boleto de fecha y una etiqueta DEMO" data-t-content="events:og.alt">
   <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
   <meta property="og:locale" content="es_US"><meta property="og:locale:alternate" content="en_US">
-  <meta name="ysd:og" content='{"template":"og-page","kicker":"ESTE MES EN SEMINOLE","title":"Lo que viene en Seminole","color":"violet","sticker":"calendar","keys":{"kicker":"events:og.kicker","title":"seo.events.ogTitle"},"lang":"es"}'>
+  <meta name="ysd:og" content='{"template":"og-page","kicker":"ESTE MES EN SEMINOLE","title":"Lo que viene en Seminole","color":"celery","sticker":"calendar","keys":{"kicker":"events:og.kicker","title":"seo.events.ogTitle"},"lang":"es"}'>
   <!-- @head --><meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#6A2BFF">
 <script src="../assets/boot.js"></script>
@@ -100,26 +100,28 @@
   <main id="main">
     <div data-invite-landing hidden></div>
 
-    <section class="section section--violet ev-hero" aria-labelledby="events-title">
-      <div class="wrap ev-hero__grid">
-        <div class="ev-hero__copy">
-          <p class="eyebrow eyebrow--pill" data-t="events:hero.eyebrow">Eventos · condado de Seminole</p>
-          <h1 class="h-hero kinetic ev-hero__title" id="events-title"><span class="kinetic__line" data-t="events:hero.title1">Te</span> <span class="kinetic__line kinetic__hi" data-t="events:hero.title2">invitamos.</span></h1>
-          <p class="lead ev-hero__sub" data-t="events:hero.sub">Encuentros gratis, noches de voluntariado y conversaciones de verdad, de Sanford a Oviedo. Elige una noche. Trae a alguien.</p>
-          <div class="btn-row">
-            <a class="btn btn--primary btn--lg" href="#lineup" data-t="cta.seeWhatsOn">Mira qué hay</a>
-            <a class="btn btn--ghost btn--lg" href="#host" data-t="events:hero.host">Organiza uno</a>
+    <section class="section section--celery hero hero--split edge--zigzag ev-hero" aria-labelledby="events-title">
+      <div class="wrap hero__grid">
+        <div class="hero__copy ev-hero__copy">
+          <p class="hero__pill" data-t="events:hero.eyebrow">Eventos · condado de Seminole</p>
+          <h1 class="h-hero hero__title ev-hero__title" id="events-title"><span class="ev-hero__l1" data-t="events:hero.title1">Te</span> <span class="ev-hero__l2" data-t="events:hero.title2">invitamos.</span></h1>
+          <p class="hero__sub ev-hero__sub" data-t="events:hero.sub">Encuentros gratis, noches de voluntariado y conversaciones de verdad, de Sanford a Oviedo. Elige una noche. Trae a alguien.</p>
+          <div class="hero__actions">
+            <a class="btn btn--ink btn--lg" href="#lineup" data-t="cta.seeWhatsOn">Mira qué hay</a>
+            <a class="btn btn--ghost btn--lg" href="host.html" data-t="events:hero.host">Organiza una noche</a>
           </div>
-          <ul class="ev-rail" data-rail data-needs-js></ul>
-          <p class="small ev-hero__reassure" data-t="events:hero.reassure">Gratis y abiertos a cualquier persona desde los 14 años, de cualquier partido o de ninguno.</p>
+          <p class="hero__fine ev-hero__reassure" data-t="events:hero.reassure">Gratis y abiertos a cualquier persona desde los 14 años, de cualquier partido o de ninguno.</p>
         </div>
-        <div class="ev-hero__art">
-          <span class="sticker sticker--lg ev-hero__s1" data-sticker="celery" aria-hidden="true"></span>
-          <span class="sticker ev-hero__s2" data-sticker="train" aria-hidden="true"></span>
-          <span class="ev-word" data-t="events:hero.sticker">¿primera vez? perfecto</span>
-          <div class="ev-hero__next" data-hero-next></div>
+        <div class="hero__object ev-hero__object">
+          <span class="ev-word" aria-hidden="true" data-t="events:hero.sticker">¿primera vez? perfecto</span>
+          <ol class="fan ev-stack" data-stack aria-label="Las próximas noches" data-t-aria-label="events:hero.stack"></ol>
+          <span class="sticker ev-hero__s1" data-sticker="celery" aria-hidden="true"></span>
         </div>
       </div>
+    </section>
+
+    <section class="section ev-big" id="big-one" aria-label="El grande" data-t-aria-label="events:hero.bigOne" data-tentpole-band hidden>
+      <div class="wrap" data-tentpole></div>
     </section>
 
     <section class="section ev-lineup" id="lineup" aria-labelledby="lineup-title">
@@ -139,10 +141,17 @@
               <label class="chip"><input type="radio" name="kind" value="learn"><span data-t="events:filter.learn">Aprender</span></label>
               <label class="chip"><input type="radio" name="kind" value="volunteer"><span data-t="events:filter.volunteer">Voluntariado</span></label>
               <label class="chip"><input type="radio" name="kind" value="create"><span data-t="events:filter.create">Crear</span></label>
-              <label class="chip ev-filters__es"><input type="checkbox" name="lang" value="es"><span data-t="events:filter.spanish">En español</span></label>
             </div>
           </fieldset>
           <fieldset class="ev-filters__group">
+            <legend class="ev-filters__legend" data-t="events:filter.who">Para quién</legend>
+            <div class="ev-filters__row">
+              <label class="chip ev-filters__teen"><input type="checkbox" name="teen" value="1" aria-describedby="teen-hint"><span data-t="events:filter.teen">Ideal para menores de 18</span></label>
+              <label class="chip ev-filters__es"><input type="checkbox" name="lang" value="es"><span data-t="events:filter.spanish">En español</span></label>
+            </div>
+            <p class="ev-filters__hint" id="teen-hint" data-t="events:filter.teenHint">Eventos de día: los menores de 18 vienen sin el formulario del tutor.</p>
+          </fieldset>
+          <fieldset class="ev-filters__group ev-filters__group--wide">
             <legend class="ev-filters__legend" data-t="events:filter.city">Dónde</legend>
             <div class="ev-filters__row ev-filters__scroll" data-city-chips>
               <label class="chip"><input type="radio" name="city" value="" checked><span data-t="events:filter.anyCity">Donde sea</span></label>
@@ -153,14 +162,26 @@
         <div class="grid grid--3 ev-grid" data-lineup></div>
         <div class="ev-empty" data-empty hidden>
           <span class="sticker" data-sticker="heart" aria-hidden="true"></span>
-          <p class="h4" data-t="events:empty.title">No hay nada con esos filtros</p>
-          <p class="ev-empty__line" data-empty-line></p>
+          <p class="h4" data-empty-title data-t="events:empty.title">Todavía no hay nada así en el calendario</p>
+          <p class="ev-empty__line" data-empty-line data-t="events:empty.line">Prueba otro filtro u organiza la noche que te gustaría que existiera. Te ayudamos a planearla.</p>
+          <div class="ev-empty__drop" data-empty-drop hidden></div>
           <div class="btn-row">
             <button class="btn btn--ink" type="button" data-clear><span data-t="events:filter.clear">Quitar filtros</span></button>
-            <a class="btn btn--ghost" href="#host" data-t="events:empty.host">Organiza el próximo</a>
+            <a class="btn btn--ghost" href="host.html" data-t="events:empty.host">Organiza el próximo</a>
           </div>
         </div>
         <noscript><p class="notice" data-t="events:noscript">Activa JavaScript para ver la programación y confirmar. Cada evento también tiene su propia página, que funciona sin JavaScript.</p></noscript>
+      </div>
+    </section>
+
+    <section class="section section--violet ev-series" id="series" aria-labelledby="series-title" data-series-shelf hidden>
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow" data-t="events:series.eyebrow">Mismo nombre, gente nueva</p>
+          <h2 id="series-title" data-t="events:series.title">Encuentra tu noche</h2>
+          <p class="section-head__sub" data-t="events:series.sub">Cada noche tiene nombre, para que encuentres la que va contigo y vuelvas.</p>
+        </div>
+        <ul class="ev-series__list" data-series-list></ul>
       </div>
     </section>
 
@@ -170,7 +191,7 @@
           <p class="eyebrow ev-drop__eyebrow"><span data-t="events:drop.eyebrow">Lo que sale pronto</span> <span class="tag tag--demo" data-t="events:drop.demo">Fecha DEMO</span></p>
           <h2 id="drop-title" data-drop-title data-t="events:drop.title">La programación de enero sale el mar. 15 de dic. a las 12 p. m.</h2>
           <p class="section-head__sub" data-drop-sub data-t="events:drop.sub">Enero y febrero salen de una vez. Ponte un recordatorio y elige lugar antes que nadie.</p>
-          <p class="countdown ev-drop__count" data-countdown="2026-12-15" data-countdown-unit-key="events:drop.unit" data-countdown-hide><span class="countdown__n" data-countdown-n>36</span> <span class="countdown__unit" data-countdown-unit data-t="events:drop.unit.other">días para que salga</span></p>
+          <p class="countdown ev-drop__count" data-countdown="2026-12-15" data-countdown-unit-key="events:drop.unit" data-countdown-hide><span class="countdown__n" data-countdown-n>35</span> <span class="countdown__unit" data-countdown-unit data-t="events:drop.unit.other">días para que salga</span></p>
           <div class="btn-row">
             <button class="btn btn--primary btn--lg" type="button" data-drop-notify aria-pressed="false"><span data-drop-notify-label data-t="events:drop.notify">Avísame</span></button>
           </div>
@@ -194,28 +215,35 @@
       </div>
     </section>
 
-    <section class="section section--celery ev-host" id="host" aria-labelledby="host-title">
+    <section class="section section--tangerine ev-host" id="host" aria-labelledby="host-title">
       <div class="wrap ev-host__grid">
         <div class="ev-host__head">
-          <p class="eyebrow" data-t="events:host.eyebrow">Organiza uno</p>
-          <h2 id="host-title" data-t="events:host.title">¿Quieres organizar el próximo?</h2>
-          <p class="section-head__sub" data-t="events:host.sub">¿Tienes una idea? Te ayudamos a planearla. Todos los eventos de los Young Dems cumplen con estas cuatro cosas.</p>
+          <p class="eyebrow" data-t="events:host.eyebrow">Organiza una noche</p>
+          <h2 id="host-title" data-t="events:host.title">¿Tienes una idea? Organízala.</h2>
+          <p class="section-head__sub" data-t="events:host.sub">Te damos todo en una caja: un plan de 3 semanas, la lista de pendientes, mensajes para invitar y tarjetas para compartir. Tú pones la idea y dos amistades.</p>
+          <ul class="ev-host__rules">
+            <li data-t="events:host.r1">Lugar público</li>
+            <li data-t="events:host.r2">Sin alcohol</li>
+            <li data-t="events:host.r3">Desde 14 años</li>
+            <li data-t="events:host.r4">Nota de accesibilidad</li>
+          </ul>
           <div class="btn-row">
-            <a class="btn btn--ink btn--lg" href="join.html" data-t="events:host.cta">Únete gratis y propónlo</a>
-            <a class="link" href="teen-safety.html" data-t="events:host.rules">Lee las reglas para menores</a>
+            <a class="btn btn--ink btn--lg" href="host.html" data-t="events:host.cta">Ver el kit para organizar</a>
+            <a class="btn btn--ghost btn--lg" href="join.html?intent=host" data-t="events:host.pitch">Propón una noche</a>
           </div>
-          <span class="sticker sticker--lg ev-host__sticker" data-sticker="heart" aria-hidden="true"></span>
         </div>
-        <ol class="ev-host__list">
-          <li><h3 class="ev-host__t" data-t="events:host.c1.t">Un lugar público</h3><p data-t="events:host.c1.d">Un parque, una sala de biblioteca, un café donde cualquiera puede entrar. Nunca la casa de alguien.</p></li>
-          <li><h3 class="ev-host__t" data-t="events:host.c2.t">Sin alcohol</h3><p data-t="events:host.c2.d">Siempre. Hay miembros desde los 14 años.</p></li>
-          <li><h3 class="ev-host__t" data-t="events:host.c3.t">Una nota de accesibilidad</h3><p data-t="events:host.c3.d">Entrada sin escalones, dónde sentarse, un rincón tranquilo y a quién avisar lo que necesitas.</p></li>
-          <li><h3 class="ev-host__t" data-t="events:host.c4.t">Nuestras reglas para menores</h3><p data-t="events:host.c4.d">Dos adultos en el lugar, de día para tocar puertas, y permiso de un tutor si termina de noche.</p></li>
-        </ol>
+        <div class="ev-host__box" aria-hidden="true">
+          <span class="ev-host__flap ev-host__flap--l"></span><span class="ev-host__flap ev-host__flap--r"></span>
+          <span class="ev-host__item ev-host__item--1" data-t="events:host.box1">Plan de 3 semanas</span>
+          <span class="ev-host__item ev-host__item--2" data-t="events:host.box2">Volante y tarjetas</span>
+          <span class="ev-host__item ev-host__item--3" data-t="events:host.box3">Mensajes</span>
+          <span class="sticker ev-host__sticker" data-sticker="megaphone"></span>
+          <span class="ev-host__crate"></span>
+        </div>
       </div>
     </section>
 
-    <section class="section section--pink ev-share" aria-labelledby="share-title">
+    <section class="section section--bubblegum ev-share" aria-labelledby="share-title">
       <div class="wrap ev-share__inner">
         <h2 id="share-title" data-t="events:share.title">¿Conoces a alguien que necesita plan para el jueves?</h2>
         <p class="section-head__sub" data-t="events:share.sub">Manda la programación a tu grupo. Es más fácil ir cuando va alguien que conoces.</p>
@@ -301,7 +329,6 @@
 <script src="../assets/js/ui.js"></script>
 <script src="../assets/js/sw-register.js"></script><!-- /@scripts -->
   <script src="../data/slices/events.js"></script>
-  <script src="../data/events.js"></script>
   <script src="../data/pages/events.js"></script>
   <script src="../assets/js/eventcard.js"></script>
   <script src="../assets/js/rsvp.js"></script>

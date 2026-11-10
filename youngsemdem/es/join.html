@@ -11,7 +11,7 @@
   <meta property="og:image:alt" content="Únete a los Young Dems. Ven como eres. Trae a alguien. Young Democrats of Seminole County, de 14 a 39 años. Vista previa DEMO." data-t-content="join:og.alt">
   <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
   <meta property="og:locale" content="es_US"><meta property="og:locale:alternate" content="en_US">
-  <meta name="ysd:og" content='{"template":"og-page","kicker":"ÚNETE GRATIS","title":"Ven como eres. Trae a alguien.","sticker":"heart","keys":{"kicker":"join:og.kicker","title":"seo.join.ogTitle"},"lang":"es"}'>
+  <meta name="ysd:og" content='{"template":"og-page","kicker":"ÚNETE GRATIS","title":"Ven como eres. Trae a alguien.","color":"sky","sticker":"heart","keys":{"kicker":"join:og.kicker","title":"seo.join.ogTitle"},"lang":"es"}'>
   <!-- @head --><meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#6A2BFF">
 <script src="../assets/boot.js"></script>
@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="../assets/css/maker.css">
   <link rel="stylesheet" href="../assets/css/pages/join.css">
 </head>
-<body class="p-join">
+<body class="p-join" data-landing="custom">
   <!-- @demo-banner-es --><a class="skip-link" href="#main">Saltar al contenido principal</a>
 <aside class="demo-banner" aria-label="Aviso DEMO">
   <div class="wrap demo-banner__inner">
@@ -98,29 +98,38 @@
   </div>
 </header><!-- /@header-es -->
   <main id="main">
-    <div class="x-landing" data-invite-landing hidden></div>
-
-    <section class="section section--violet x-hero" aria-labelledby="join-title">
-      <div class="wrap x-hero__grid">
-        <div class="x-hero__copy">
-          <p class="eyebrow eyebrow--pill" data-t="join:hero.eyebrow">YOUNG DEMS · DE 14 A 39 AÑOS</p>
-          <h1 class="x-hero__title" id="join-title"><span class="x-hero__big" data-t="join:hero.title">Únete gratis.</span> <span class="x-hero__kicker" data-t="join:hero.kicker">Te guardamos un lugar.</span></h1>
-          <p class="lead x-hero__lead" data-t="brand.welcome">Ven como eres. Trae a alguien.</p>
-          <ul class="x-receipts" aria-label="Unirte, en resumen" data-t-aria-label="join:hero.receiptsLabel">
+    <section class="section section--sky hero hero--split edge--scallop x-hero" aria-labelledby="join-title">
+      <div class="wrap hero__grid x-hero__grid">
+        <div class="hero__copy x-hero__copy">
+          <p class="x-invited" data-invite-landing hidden></p>
+          <p class="hero__pill x-hero__pill" data-hero-eyebrow data-t="join:hero.eyebrow">YOUNG DEMS · DE 14 A 39 AÑOS</p>
+          <h1 class="hero__title x-hero__title" id="join-title"><span class="x-hero__big" data-hero-title data-t="join:hero.title">Únete gratis.</span> <span class="x-hero__kicker" data-hero-kicker data-t="join:hero.kicker">Te guardamos un lugar.</span></h1>
+          <p class="hero__sub x-hero__lead" data-hero-lead data-t="brand.welcome">Ven como eres. Trae a alguien.</p>
+          <div class="x-event" data-join-event hidden></div>
+          <ul class="x-receipts" data-hero-receipts aria-label="Unirte, en resumen" data-t-aria-label="join:hero.receiptsLabel">
             <li><span data-t="join:hero.r1">Menos de un minuto</span></li>
             <li><span data-t="join:hero.r2">3 preguntas</span></li>
             <li><span data-t="join:hero.r3">El dinero es opcional</span></li>
           </ul>
-          <div class="x-hero__more">
-            <a class="btn btn--ghost" href="#tiers" data-t="join:hero.secondary">Mira cómo va la cuota</a>
-            <span class="sticker sticker--md x-hero__sticker" data-sticker="heart" aria-hidden="true"></span>
+          <div class="hero__actions x-hero__more">
+            <a class="btn btn--ghost" href="#what-you-get" data-hero-secondary data-t="join:hero.secondary">Mira lo que te llevas</a>
+            <a class="btn btn--ink" href="#card" data-hero-card hidden data-t="join:hero.cardCta">Ver tu tarjeta</a>
           </div>
+          <a class="x-teaser" href="#how-stickers-work" data-hero-teaser>
+            <span class="x-teaser__stickers" aria-hidden="true"><span class="sticker" data-sticker="heart" style="--rot: -9deg"></span><span class="sticker" data-sticker="calendar" style="--rot: 6deg"></span><span class="sticker" data-sticker="chicken" style="--rot: -4deg"></span><span class="sticker" data-sticker="megaphone" style="--rot: 8deg"></span><span class="sticker" data-sticker="palm" style="--rot: -6deg"></span></span>
+            <span class="x-teaser__text"><strong data-t="join:teaser.title">15 stickers para coleccionar</strong> <span data-t="join:teaser.body">Por ir, traer gente y organizar. Nunca por votar.</span></span>
+          </a>
         </div>
 
-        <div class="x-ticket theme-light" data-join>
+        <div class="hero__object x-ticket theme-light" data-join>
+          <div class="x-crew" aria-hidden="true">
+            <svg class="x-crew__face x-crew__face--a" viewBox="0 0 256 264" width="88" height="91" aria-hidden="true" focusable="false"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><g transform="translate(8 0)"><circle cx="120" cy="156" r="96" fill="#FF7AC6" stroke-width="6"/><clipPath id="kshowupplusone"><circle cx="120" cy="156" r="93"/></clipPath><path d="M70 104 C58 92 64 70 78 66 C80 46 104 40 116 48 C128 38 154 44 158 62 C176 66 182 90 170 104 C182 116 176 138 162 140 C156 150 140 150 136 142 L104 142 C98 150 82 150 78 140 C62 138 58 116 70 104Z" fill="#6A2BFF" stroke-width="5"/><g clip-path="url(#kshowupplusone)"><path d="M22 262 C24 204 62 176 120 176 C178 176 216 204 218 262Z" fill="#FFD23F" stroke-width="5"/><path d="M100 178 C106 190 134 190 140 178" fill="none" stroke-width="4.5"/></g><path d="M104 138 L104 182 C112 190 128 190 136 182 L136 138Z" fill="#FFDBB0" stroke-width="5"/><circle cx="77" cy="108" r="9" fill="#FFDBB0" stroke-width="4.5"/><circle cx="163" cy="108" r="9" fill="#FFDBB0" stroke-width="4.5"/><ellipse cx="120" cy="104" rx="43" ry="47" fill="#FFDBB0" stroke-width="5"/><circle cx="91" cy="124" r="6.5" fill="#FF9BCF" opacity=".7"/><circle cx="149" cy="124" r="6.5" fill="#FF9BCF" opacity=".7"/><circle cx="94" cy="118" r="1.6" fill="#170B33" opacity=".55"/><circle cx="99" cy="122" r="1.6" fill="#170B33" opacity=".55"/><circle cx="90" cy="123" r="1.6" fill="#170B33" opacity=".55"/><circle cx="146" cy="118" r="1.6" fill="#170B33" opacity=".55"/><circle cx="141" cy="122" r="1.6" fill="#170B33" opacity=".55"/><circle cx="150" cy="123" r="1.6" fill="#170B33" opacity=".55"/><path d="M98 110 Q104 102 110 110" fill="none" stroke-width="4.5"/><path d="M130 110 Q136 102 142 110" fill="none" stroke-width="4.5"/><path d="M97 96 Q104 92 111 96" fill="none" stroke-width="4"/><path d="M129 96 Q136 92 143 96" fill="none" stroke-width="4"/><path d="M118 114 Q122 120 117 121" fill="none" stroke-width="3.5"/><path d="M104 124 C106 142 134 142 136 124Z" fill="#FFFFFF" stroke-width="4.5"/><path d="M110 134 C116 138 124 138 130 134" fill="none" stroke="#FF4D4D" stroke-width="4"/><path d="M78 100 C78 78 96 64 120 64 C144 64 162 78 162 100 C154 92 146 90 140 92 C134 84 124 84 118 90 C110 84 98 86 94 94 C88 92 82 94 78 100Z" fill="#6A2BFF" stroke-width="5"/><path d="M186 224 Q216 204 192 170" fill="none" stroke-width="30"/><path d="M186 224 Q216 204 192 170" fill="none" stroke="#FFD23F" stroke-width="20"/><circle cx="192" cy="170" r="12" fill="#FFDBB0" stroke-width="4.5"/><g transform="rotate(-14 196 140)"><rect x="168" y="112" width="60" height="38" rx="6" fill="#C8F03C" stroke-width="5"/><path d="M184 112 V150" stroke-width="3.5" stroke-dasharray="4 4"/><path d="M194 126 h14 M201 119 v14" stroke-width="5"/></g><g transform="rotate(10 196 150)"><rect x="170" y="130" width="60" height="38" rx="6" fill="#FF7AC6" stroke-width="5"/><path d="M186 130 V168" stroke-width="3.5" stroke-dasharray="4 4"/><path d="M196 149 h14 M203 142 v14" stroke-width="5"/></g><circle cx="192" cy="170" r="12" fill="#FFDBB0" stroke-width="4.5"/></g></g></svg>
+            <svg class="x-crew__face x-crew__face--b" viewBox="0 0 256 264" width="104" height="107" aria-hidden="true" focusable="false"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><g transform="translate(8 0)"><circle cx="120" cy="156" r="96" fill="#6A2BFF" stroke-width="6"/><clipPath id="kshowuphypecaptain"><circle cx="120" cy="156" r="93"/></clipPath><circle cx="120" cy="56" r="40" fill="#170B33" stroke-width="5"/><circle cx="84" cy="74" r="22" fill="#170B33" stroke-width="5"/><circle cx="156" cy="74" r="22" fill="#170B33" stroke-width="5"/><g clip-path="url(#kshowuphypecaptain)"><path d="M22 262 C24 204 62 176 120 176 C178 176 216 204 218 262Z" fill="#FFD23F" stroke-width="5"/><path d="M100 178 C106 190 134 190 140 178" fill="none" stroke-width="4.5"/><path d="M112 206 L128 206 L118 224 L132 224 L108 252 L114 230 L102 230Z" fill="#FF8B3D" stroke-width="4"/></g><path d="M104 138 L104 182 C112 190 128 190 136 182 L136 138Z" fill="#6B3E26" stroke-width="5"/><circle cx="77" cy="108" r="9" fill="#6B3E26" stroke-width="4.5"/><circle cx="163" cy="108" r="9" fill="#6B3E26" stroke-width="4.5"/><ellipse cx="120" cy="104" rx="43" ry="47" fill="#6B3E26" stroke-width="5"/><circle cx="91" cy="124" r="6.5" fill="#E0628F" opacity=".7"/><circle cx="149" cy="124" r="6.5" fill="#E0628F" opacity=".7"/><ellipse cx="104" cy="108" rx="5" ry="6.5" fill="#170B33"/><circle cx="105.6" cy="105.6" r="1.8" fill="#FFFFFF"/><ellipse cx="136" cy="108" rx="5" ry="6.5" fill="#170B33"/><circle cx="137.6" cy="105.6" r="1.8" fill="#FFFFFF"/><path d="M97 92 Q104 88 111 92" fill="none" stroke-width="4"/><path d="M129 92 Q136 88 143 92" fill="none" stroke-width="4"/><path d="M118 114 Q122 120 117 121" fill="none" stroke-width="3.5"/><path d="M108 124 C108 144 132 144 132 124Z" fill="#170B33" stroke-width="4.5"/><path d="M112 136 C116 141 124 141 128 136" fill="none" stroke="#FF4D4D" stroke-width="4.5"/><path d="M77 100 C76 70 98 56 120 56 C142 56 164 70 163 100 C150 88 134 82 120 82 C104 82 90 88 77 100Z" fill="#170B33" stroke-width="5"/><path d="M186 222 Q214 196 196 150" fill="none" stroke-width="30"/><path d="M186 222 Q214 196 196 150" fill="none" stroke="#FFD23F" stroke-width="20"/><circle cx="196" cy="150" r="12" fill="#6B3E26" stroke-width="4.5"/><g transform="rotate(-38 196 140)"><path d="M190 128 L238 106 L238 166 L190 150Z" fill="#FF8B3D" stroke-width="5"/><rect x="176" y="126" width="18" height="28" rx="5" fill="#FFF6EA" stroke-width="5"/><ellipse cx="238" cy="136" rx="8" ry="30" fill="#FFF6EA" stroke-width="5"/></g><circle cx="196" cy="150" r="12" fill="#6B3E26" stroke-width="4.5"/><path d="M228 52 L236 40 M212 44 L214 30 M240 68 L252 64" fill="none" stroke-width="5"/></g></g></svg>
+            <svg class="x-crew__face x-crew__face--c" viewBox="0 0 256 264" width="88" height="91" aria-hidden="true" focusable="false"><g stroke="#170B33" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"><g transform="translate(8 0)"><circle cx="120" cy="156" r="96" fill="#FFD23F" stroke-width="6"/><clipPath id="kshowupgroupchatgeneral"><circle cx="120" cy="156" r="93"/></clipPath><path d="M156 78 C196 70 204 120 186 158 C182 168 170 170 168 160 C178 130 172 104 152 96Z" fill="#2E1A12" stroke-width="5"/><g clip-path="url(#kshowupgroupchatgeneral)"><path d="M22 262 C24 204 62 176 120 176 C178 176 216 204 218 262Z" fill="#FF7AC6" stroke-width="5"/><path d="M104 177 L120 200 L136 177Z" fill="#E0A96B" stroke-width="4"/></g><path d="M104 138 L104 182 C112 190 128 190 136 182 L136 138Z" fill="#E0A96B" stroke-width="5"/><circle cx="77" cy="108" r="9" fill="#E0A96B" stroke-width="4.5"/><circle cx="163" cy="108" r="9" fill="#E0A96B" stroke-width="4.5"/><ellipse cx="120" cy="104" rx="43" ry="47" fill="#E0A96B" stroke-width="5"/><circle cx="91" cy="124" r="6.5" fill="#FF9BCF" opacity=".7"/><circle cx="149" cy="124" r="6.5" fill="#FF9BCF" opacity=".7"/><ellipse cx="104" cy="108" rx="5" ry="6.5" fill="#170B33"/><circle cx="105.6" cy="105.6" r="1.8" fill="#FFFFFF"/><ellipse cx="136" cy="108" rx="5" ry="6.5" fill="#170B33"/><circle cx="137.6" cy="105.6" r="1.8" fill="#FFFFFF"/><path d="M97 96 Q104 92 111 96" fill="none" stroke-width="4"/><path d="M129 96 Q136 92 143 96" fill="none" stroke-width="4"/><path d="M118 114 Q122 120 117 121" fill="none" stroke-width="3.5"/><path d="M108 128 C116 132 126 130 134 122" fill="none" stroke-width="4.5"/><path d="M77 102 C74 72 98 56 122 56 C148 56 166 74 163 102 C150 84 136 78 116 80 C98 82 86 90 77 102Z" fill="#2E1A12" stroke-width="5"/><path d="M60 224 Q34 206 64 168" fill="none" stroke-width="30"/><path d="M60 224 Q34 206 64 168" fill="none" stroke="#FF7AC6" stroke-width="20"/><circle cx="64" cy="168" r="12" fill="#E0A96B" stroke-width="4.5"/><rect x="46" y="128" width="40" height="64" rx="9" transform="rotate(-10 66 160)" fill="#170B33" stroke-width="5"/><rect x="52" y="136" width="28" height="44" rx="5" transform="rotate(-10 66 160)" fill="#4FD6FF"/><circle cx="64" cy="178" r="12" fill="#E0A96B" stroke-width="4.5"/><path d="M150 22 H206 a12 12 0 0 1 12 12 V58 a12 12 0 0 1 -12 12 H182 L168 84 L170 70 H150 a12 12 0 0 1 -12 -12 V34 a12 12 0 0 1 12 -12Z" fill="#FFFFFF" stroke-width="5"/><circle cx="162" cy="46" r="5" fill="#170B33"/><circle cx="178" cy="46" r="5" fill="#170B33"/><circle cx="194" cy="46" r="5" fill="#170B33"/><circle cx="214" cy="24" r="11" fill="#FF4D4D" stroke-width="4"/><path d="M214 18 L214 26" stroke="#FFFFFF" stroke-width="3.5"/><circle cx="214" cy="30.5" r="1.8" fill="#FFFFFF"/></g></g></svg>
+          </div>
           <div class="x-pass" data-join-pass aria-hidden="true">
             <div class="x-pass__row">
-              <span class="x-pass__brand"><svg class="x-pass__mark" viewBox="0 0 64 56" focusable="false"><path d="M15 41 13 54 31 41Z" fill="#C8F03C" stroke="#170B33" stroke-width="3" stroke-linejoin="round"/><rect x="2.5" y="3" width="59" height="39" rx="9" fill="#6A2BFF" stroke="#170B33" stroke-width="3"/><path fill="#C8F03C" d="M21.94 31.5V25.49L15.93 12.5H21.5L24.27 22.36H24.51L27.18 12.5H32.44L26.63 25.47V31.5ZM36.34 31.5V27.92H40.23Q41.33 27.92 42.06 27.27Q42.78 26.62 43.15 25.3Q43.52 23.98 43.52 22.02Q43.52 20.47 43.31 19.34Q43.1 18.22 42.67 17.49Q42.25 16.77 41.57 16.42Q40.88 16.08 39.94 16.08H36.34V12.5H39.87Q42.38 12.5 44.23 13.61Q46.08 14.72 47.07 16.84Q48.07 18.96 48.07 21.99Q48.07 24.45 47.55 26.13Q47.02 27.81 46.14 28.87Q45.26 29.92 44.23 30.5Q43.19 31.07 42.18 31.28Q41.17 31.5 40.37 31.5ZM34.14 31.5V12.5H38.63V31.5Z"/></svg><span translate="no">Young Dems</span></span>
+              <span class="x-pass__brand"><svg class="x-pass__mark" viewBox="0 9 64 46" focusable="false"><g transform="rotate(-8 32 32)"><path d="M9 15H55Q59 15 59 19V27A5 5 0 0 0 59 37V45Q59 49 55 49H9Q5 49 5 45V37A5 5 0 0 0 5 27V19Q5 15 9 15Z" fill="#C8F03C" stroke="#170B33" stroke-width="3" stroke-linejoin="round"/><path d="M15.9 20.3h2.2v2.6h-2.2ZM15.9 25.5h2.2v2.6h-2.2ZM15.9 30.7h2.2v2.6h-2.2ZM15.9 35.9h2.2v2.6h-2.2ZM15.9 41.1h2.2v2.6h-2.2ZM27.3 42.5V35.8L21 21.5H27.2L29.9 32.7H30.1L32.7 21.5H38.4L32.4 35.8V42.5ZM39.6 42.5V21.5H45.5Q47.8 21.5 49.7 22.7Q51.6 24 52.7 26.3Q53.8 28.7 53.8 32.1Q53.8 34.8 53.2 36.7Q52.7 38.6 51.7 39.7Q50.7 40.9 49.7 41.5Q48.6 42.1 47.6 42.3Q46.6 42.5 45.9 42.5ZM44.5 38.6H45.7Q46.8 38.6 47.5 37.9Q48.2 37.2 48.5 35.7Q48.9 34.2 48.9 32Q48.9 30.3 48.7 29Q48.5 27.8 48.1 27Q47.7 26.2 47.1 25.8Q46.4 25.4 45.5 25.4H44.5Z" fill="#170B33"/></g></svg><span translate="no">Young Dems</span></span>
               <span class="x-pass__kind" data-pass-kind data-t="join:pass.kind">MIEMBRO</span>
               <span class="x-pass__stamp" data-pass-stamp hidden><span data-t="join:pass.stamp">Ya eres parte</span></span>
             </div>
@@ -134,10 +143,10 @@
           </div>
 
           <div class="x-ticket__body">
-            <form class="form x-form" id="join-form" name="join" method="post" action="join.html" data-join-form data-heading="2" data-card-href="#card" data-join-card="#join-card" novalidate data-netlify="true" netlify-honeypot="_hp" aria-labelledby="join-title">
+            <form class="form x-form" id="join-form" name="join" method="post" action="join.html" data-join-form data-heading="2" data-card-href="#card" data-join-card="#join-card" data-step2-host="#join-more" data-more-href="#more" data-title-done="join:done.live" data-title-already="join:done.back" novalidate data-netlify="true" netlify-honeypot="_hp" aria-labelledby="join-title">
               <input type="hidden" name="form-name" value="join">
               <!-- Netlify Forms only keeps fields it saw in this static form: these mirror members.js formPayload (JS fills nothing here; members.submit posts the real values). "id" and "lang" are left out because they would shadow form.id and form.lang. -->
-              <input type="hidden" name="refCode"><input type="hidden" name="referredBy"><input type="hidden" name="email"><input type="hidden" name="phone"><input type="hidden" name="zip"><input type="hidden" name="interests"><input type="hidden" name="emailOptIn"><input type="hidden" name="smsOptIn"><input type="hidden" name="joinedAt"><input type="hidden" name="source"><input type="hidden" name="city"><input type="hidden" name="langPref"><input type="hidden" name="access"><input type="hidden" name="guardianEmail"><input type="hidden" name="smsConsentVersion"><input type="hidden" name="smsConsentAt"><input type="hidden" name="joinSource"><input type="hidden" name="contactType"><input type="hidden" name="utm_source"><input type="hidden" name="utm_medium"><input type="hidden" name="utm_campaign"><input type="hidden" name="utm_content"><input type="hidden" name="utm_term">
+              <input type="hidden" name="refCode"><input type="hidden" name="referredBy"><input type="hidden" name="email"><input type="hidden" name="phone"><input type="hidden" name="zip"><input type="hidden" name="interests"><input type="hidden" name="emailOptIn"><input type="hidden" name="smsOptIn"><input type="hidden" name="joinedAt"><input type="hidden" name="source"><input type="hidden" name="city"><input type="hidden" name="langPref"><input type="hidden" name="access"><input type="hidden" name="guardianEmail"><input type="hidden" name="smsConsentVersion"><input type="hidden" name="smsConsentAt"><input type="hidden" name="joinSource"><input type="hidden" name="contactType"><input type="hidden" name="intent"><input type="hidden" name="crew"><input type="hidden" name="crews"><input type="hidden" name="utm_source"><input type="hidden" name="utm_medium"><input type="hidden" name="utm_campaign"><input type="hidden" name="utm_content"><input type="hidden" name="utm_term">
               <div class="form__summary" hidden>
                 <p class="form__summary-title" data-summary-title></p>
                 <ul></ul>
@@ -158,6 +167,7 @@
                 <input id="join-age" name="age" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" required aria-describedby="join-age-hint">
                 <p class="field__hint" id="join-age-hint" data-t="form.age.hint">Te lo preguntamos para seguir nuestras reglas de seguridad para adolescentes.</p>
                 <p class="field__error" id="join-age-error" hidden></p>
+                <a class="link x-teenlink" href="#under-18" data-t="join:hero.teen">¿De 14 a 17? Así funciona</a>
               </div>
               <div class="u-visually-hidden" aria-hidden="true">
                 <label for="join-hp" data-t="form.honeypot">Deja esto vacío</label>
@@ -171,6 +181,59 @@
         </div>
       </div>
     </section>
+
+    <section class="section x-more" id="more" data-join-more hidden>
+      <div class="wrap">
+        <p class="eyebrow x-more__eyebrow" data-t="join:more.eyebrow">UN PASO MÁS</p>
+        <div class="x-more__host" id="join-more"></div>
+      </div>
+    </section>
+
+    <section class="section section--night x-get" id="what-you-get" aria-labelledby="get-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow" data-t="join:get.eyebrow">LO QUE TE LLEVAS</p>
+          <h2 id="get-title" data-t="join:get.title">Una tarjeta, un enlace y un álbum de stickers.</h2>
+          <p class="section-head__sub" data-t="join:get.sub">Gratis desde que te unes. Tu enlace te da crédito cuando alguien se une. Los stickers son por ir y por traer gente, nunca por votar.</p>
+        </div>
+        <div class="x-get__grid" id="card">
+          <div class="x-get__mine">
+            <div class="x-card__host" id="join-card" hidden></div>
+            <div class="x-card__locked" data-card-locked>
+              <div class="x-pass x-pass--locked" aria-hidden="true">
+                <div class="x-pass__row"><span class="x-pass__brand"><span translate="no">Young Dems</span></span><span class="x-pass__kind" data-t="join:pass.kind">MIEMBRO</span></div>
+                <p class="x-pass__name" data-t="join:pass.name">Tu nombre</p>
+                <div class="x-pass__row x-pass__foot"><span data-t="join:pass.county">Condado de Seminole</span><span data-t="join:pass.sinceStatic">Miembro desde nov. 2026</span></div>
+              </div>
+              <p class="small muted" data-t="join:card.lockedNote">Vista previa. Tu tarjeta aparece aquí cuando te unes.</p>
+              <p><a class="btn btn--primary" href="#join-form" data-join-jump data-t="join:card.lockedCta">Únete y es tuya</a></p>
+            </div>
+            <div class="x-squad" data-squad-demo hidden>
+              <h3 class="x-squad__title"><span data-t="join:squad.title">Prueba el medidor de tu grupo (DEMO)</span></h3>
+              <p class="small" data-t="join:squad.body">En esta demo, el medidor cuenta a las personas que se unieron con tu enlace en este navegador. Para verlo moverse en un solo teléfono:</p>
+              <ol class="x-squad__steps">
+                <li data-squad-step="1"></li>
+                <li data-squad-step="2"></li>
+                <li data-squad-step="3"></li>
+              </ol>
+              <p><a class="btn btn--ghost btn--sm" href="join.html" data-squad-open data-t="join:squad.open">Abrir mi enlace</a></p>
+              <p class="small muted" data-t="join:squad.live">En el sitio real, cuenta cualquier persona que se una desde cualquier teléfono.</p>
+            </div>
+          </div>
+          <div class="x-pack">
+            <h3 class="x-pack__title" data-t="join:pack.title">El paquete de stickers del condado</h3>
+            <p class="muted" data-t="join:pack.body">Stickers troquelados inspirados en Seminole: apio, un caimán, SunRail, una gallina de Oviedo, un manatí, un kayak en Wekiva y más. Toca uno para ver un dato local.</p>
+            <div class="x-pack__grid" data-sticker-shelf></div>
+            <p><button class="btn btn--primary" type="button" data-sticker-pack aria-disabled="true" aria-describedby="pack-note" data-t="join:pack.cta">Descargar el paquete (PNG)</button></p>
+            <p class="small muted" id="pack-note" data-pack-note data-t="join:pack.locked">Se desbloquea al unirte. Es gratis.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="section x-rules">
+      <div class="wrap" data-rules-host></div>
+    </div>
 
     <section class="section section--pink" id="tiers" aria-labelledby="tiers-title">
       <div class="wrap">
@@ -197,7 +260,7 @@
             <ul class="tier__list">
               <li><span data-t="join.votingMembers">Los miembros con voto pagan la cuota y viven en el condado de Seminole o estudian aquí (escuela secundaria, college o universidad).</span></li>
             </ul>
-            <p class="tier__cta"><a class="btn btn--ink btn--block" href="https://secure.actblue.com/donate/ydscdues" data-cfg-href="links.dues" rel="noopener" data-t="join:tier2.cta">Paga la cuota en ActBlue</a></p>
+            <p class="tier__cta"><a class="btn btn--ink btn--block" href="https://secure.actblue.com/donate/ydscdues" data-cfg-href="links.dues" rel="noopener" data-dues-link data-t="join:tier2.cta">Paga la cuota en ActBlue</a></p>
           </article>
           <article class="tier tier--violet" aria-labelledby="tier3-name">
             <h3 class="tier__name" id="tier3-name" data-t="join:tier3.name">Miembro sin voto</h3>
@@ -213,6 +276,40 @@
           <p data-t="join.eligibility">Los miembros tienen de 14 a 39 años y comparten los principios del Partido Demócrata.</p>
           <p data-t="join.noRegistration">¿Tu inscripción electoral no dice demócrata? La regla de membresía pide respaldar los principios del Partido Demócrata, y no menciona con qué partido te inscribiste.</p>
           <p class="small"><span data-t="join:tiers.source">Según la página de cuotas de YDSC en ActBlue, revisada el 9 de noviembre de 2026.</span> <a class="link link--out" href="https://secure.actblue.com/donate/ydscdues" data-cfg-href="links.dues" rel="noopener" data-t="join:tiers.sourceLink">Ver la página de cuotas</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--sun x-teen" id="under-18" aria-labelledby="teen-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow" data-t="join:teen.eyebrow">¿MENOS DE 18?</p>
+          <h2 id="teen-title" data-t="join:teen.title">¿De 14 a 17? Así funciona.</h2>
+          <p class="section-head__sub" data-t="join:teen.sub">El mismo club, el mismo formulario corto y unas protecciones extra. Te unes gratis desde los 14.</p>
+        </div>
+        <ul class="x-teen__grid">
+          <li class="x-note">
+            <h3 class="x-note__t" data-t="join:teen.code.t">Tu enlace no lleva tu nombre</h3>
+            <p data-t="join:teen.code.p">Si tienes menos de 18, tu enlace de invitación lleva un código al azar, nunca tu nombre.</p>
+          </li>
+          <li class="x-note">
+            <h3 class="x-note__t" data-t="join:teen.texts.t">Correo, no mensajes de texto</h3>
+            <p data-t="join:teen.texts.p">Sin mensajes de texto del club antes de los 18. Ningún organizador adulto te escribe a solas: los chats de grupo siempre tienen dos personas adultas.</p>
+          </li>
+          <li class="x-note">
+            <h3 class="x-note__t" data-t="join:teen.guardian.t">El permiso de una persona adulta cuando importa</h3>
+            <p data-t="join:teen.guardian.p">Tu madre, padre o tutor dice que sí antes de cualquier actividad fuera del local, de noche o en una marcha, y antes de publicar una foto o clip donde se te reconozca.</p>
+          </li>
+          <li class="x-note x-note--vote">
+            <h3 class="x-note__t" data-t="join:teen.vote.t">Preinscríbete a los 16</h3>
+            <p data-t="join:teen.vote.p">Florida te deja preinscribirte para votar desde el día en que cumples 16. Ese paso es tuyo: nunca damos stickers, puntos ni premios por eso.</p>
+            <p class="x-note__act"><a class="btn btn--ink btn--sm" href="vote.html#under-18" data-t="join:teen.vote.cta">Cómo funciona la preinscripción</a></p>
+          </li>
+        </ul>
+        <div class="x-teen__foot">
+          <a class="btn btn--primary" href="#join-form" data-join-jump data-t="join:teen.join">Únete gratis</a>
+          <a class="link" href="teen-safety.html" data-t="join:teen.parents">Para madres, padres y tutores: nuestras reglas de seguridad</a>
+          <p class="small"><span data-t="join:teen.source">Preinscripción a los 16:</span> <a class="link link--out" href="https://www.flsenate.gov/Laws/Statutes/2026/97.041" rel="noopener" translate="no" data-t="join:teen.sourceLink">F.S. 97.041(1)(b)</a></p>
         </div>
       </div>
     </section>
@@ -245,37 +342,6 @@
           <span class="word-sticker word-sticker--celery x-next__sticker" aria-hidden="true" data-hand data-t="join:next.sticker">¿primera vez? perfecto</span>
           <p class="lead" data-t="join:next.shareLead">¿Conoces a alguien que vendría contigo? Mándale esta página.</p>
           <p><button class="btn btn--ink" type="button" data-share><span data-t="cta.shareGroup">Mándalo al grupo</span></button></p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section--night x-card" id="card" aria-labelledby="card-title">
-      <div class="wrap">
-        <div class="section-head">
-          <p class="eyebrow" data-t="join:card.eyebrow">TUYO AL UNIRTE</p>
-          <h2 id="card-title" data-t="join:card.title">Tu tarjeta, tu enlace, tus stickers.</h2>
-          <p class="section-head__sub" data-t="join:card.sub">Una tarjeta de miembro con tu nombre, un enlace de invitación que te da crédito cuando alguien se une y un álbum de stickers. Los stickers son por ir y por traer gente, nunca por votar.</p>
-        </div>
-        <div class="x-card__grid">
-          <div class="x-card__mine">
-            <div class="x-card__host" id="join-card" hidden></div>
-            <div class="x-card__locked" data-card-locked>
-              <div class="x-pass x-pass--locked" aria-hidden="true">
-                <div class="x-pass__row"><span class="x-pass__brand"><span translate="no">Young Dems</span></span><span class="x-pass__kind" data-t="join:pass.kind">MIEMBRO</span></div>
-                <p class="x-pass__name" data-t="join:pass.name">Tu nombre</p>
-                <div class="x-pass__row x-pass__foot"><span data-t="join:pass.county">Condado de Seminole</span><span data-t="join:pass.sinceStatic">Miembro desde nov. 2026</span></div>
-              </div>
-              <p class="small muted" data-t="join:card.lockedNote">Vista previa. Tu tarjeta aparece aquí cuando te unes.</p>
-              <p><a class="btn btn--primary" href="#join-form" data-join-jump data-t="join:card.lockedCta">Únete y es tuya</a></p>
-            </div>
-          </div>
-          <div class="x-pack">
-            <h3 class="x-pack__title" data-t="join:pack.title">El paquete de stickers del condado</h3>
-            <p class="muted" data-t="join:pack.body">Diez stickers troquelados inspirados en Seminole: apio, un caimán, SunRail, una gallina de Oviedo y más. Toca uno para ver un dato local.</p>
-            <div class="x-pack__grid" data-sticker-shelf></div>
-            <p><button class="btn btn--primary" type="button" data-sticker-pack aria-disabled="true" aria-describedby="pack-note" data-t="join:pack.cta">Descargar el paquete (PNG)</button></p>
-            <p class="small muted" id="pack-note" data-pack-note data-t="join:pack.locked">Se desbloquea al unirte. Es gratis.</p>
-          </div>
         </div>
       </div>
     </section>

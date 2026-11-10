@@ -176,7 +176,24 @@ window.YSD_DATA.newsletter = {
       wordCount: { en: 197, es: 241, note: "Counted with the sign-off (ritual + signature) on Nov 9, 2026: body 178 EN." },
       ritual: { en: "That's it from me. Text one friend, drink some water. See you Thursday.", es: "Eso es todo de mi parte. Escríbele a alguien, tómate un vaso de agua. Nos vemos el jueves." },
       signature: { en: "Dani, for the Young Dems xo", es: "Un abrazo, Dani, de parte de los Young Dems" },
-      factIds: ["seminole-governor-unofficial", "official-returns-nov-16", "mail-requests-expire-2026"]
+      factIds: ["seminole-governor-unofficial", "official-returns-nov-16", "mail-requests-expire-2026"],
+      // Page rhythm (genz-brand-26, round 1): how newsletter.html breaks the letter up. The email keeps the plain
+      // paragraphs; the page adds a pull quote (a repeat of paragraph 1, hidden from screen readers), a One Thing
+      // card after the mail-ballot paragraph, and shows paragraph 4 ("Also inside") as three cards. Still calm:
+      // no stickers, no rotation, no emoji, no exclamation mark.
+      rhythm: {
+        pullQuote: { after: 0, en: "He stayed until the polls closed.", es: "Se quedó hasta que cerraron las urnas." },
+        oneThing: { after: 2, kicker: { en: "ONE THING", es: "UNA SOLA COSA" }, title: { en: "Put the January reminder on your calendar", es: "Pon el recordatorio de enero en tu calendario" }, cta: { en: "It's below, one tap", es: "Está abajo, a un toque" } },
+        alsoInside: {
+          replace: 3,
+          label: { en: "Also inside", es: "Además" },
+          items: [
+            { kicker: { en: "SAT, NOV 14 · DEMO EVENT", es: "SÁB 14 DE NOV · EVENTO DEMO" }, title: { en: "A sunset walk on Lake Monroe", es: "Una caminata al atardecer en el lago Monroe" }, event: "sunset-walk-lake-monroe", tone: "bubblegum" },
+            { kicker: { en: "THE PICKS", es: "RECOMENDADOS" }, title: { en: "Five picks for a slow weekend", es: "Cinco planes para un fin de semana tranquilo" }, anchor: "picks", tone: "sky" },
+            { kicker: { en: "SPOTLIGHT · DEMO MEMBER", es: "EN PRIMER PLANO · MIEMBRO DEMO" }, title: { en: "Marisol rewrote our text-bank script her first night", es: "Marisol reescribió nuestro guion de mensajes en su primera noche" }, anchor: "spotlight", tone: "mint" }
+          ]
+        }
+      }
     },
 
     inside: [

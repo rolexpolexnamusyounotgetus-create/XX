@@ -11,7 +11,7 @@
   <meta property="og:image:alt" content="A Young Dems card that reads What's coming up in Seminole, with a date ticket and a DEMO tag" data-t-content="events:og.alt">
   <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
   <meta property="og:locale" content="en_US"><meta property="og:locale:alternate" content="es_US">
-  <meta name="ysd:og" content='{"template":"og-page","kicker":"THIS MONTH IN SEMINOLE","title":"What&#39;s coming up in Seminole","color":"violet","sticker":"calendar","keys":{"kicker":"events:og.kicker","title":"seo.events.ogTitle"}}'>
+  <meta name="ysd:og" content='{"template":"og-page","kicker":"THIS MONTH IN SEMINOLE","title":"What&#39;s coming up in Seminole","color":"celery","sticker":"calendar","keys":{"kicker":"events:og.kicker","title":"seo.events.ogTitle"}}'>
   <!-- @head --><meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#6A2BFF">
 <script src="assets/boot.js"></script>
@@ -100,26 +100,28 @@
   <main id="main">
     <div data-invite-landing hidden></div>
 
-    <section class="section section--violet ev-hero" aria-labelledby="events-title">
-      <div class="wrap ev-hero__grid">
-        <div class="ev-hero__copy">
-          <p class="eyebrow eyebrow--pill" data-t="events:hero.eyebrow">Events · Seminole County</p>
-          <h1 class="h-hero kinetic ev-hero__title" id="events-title"><span class="kinetic__line" data-t="events:hero.title1">You're</span> <span class="kinetic__line kinetic__hi" data-t="events:hero.title2">invited.</span></h1>
-          <p class="lead ev-hero__sub" data-t="events:hero.sub">Free hangouts, volunteer nights and real talk, from Sanford to Oviedo. Pick a night. Bring a friend.</p>
-          <div class="btn-row">
-            <a class="btn btn--primary btn--lg" href="#lineup" data-t="cta.seeWhatsOn">See what's on</a>
-            <a class="btn btn--ghost btn--lg" href="#host" data-t="events:hero.host">Host one</a>
+    <section class="section section--celery hero hero--split edge--zigzag ev-hero" aria-labelledby="events-title">
+      <div class="wrap hero__grid">
+        <div class="hero__copy ev-hero__copy">
+          <p class="hero__pill" data-t="events:hero.eyebrow">Events · Seminole County</p>
+          <h1 class="h-hero hero__title ev-hero__title" id="events-title"><span class="ev-hero__l1" data-t="events:hero.title1">You're</span> <span class="ev-hero__l2" data-t="events:hero.title2">invited.</span></h1>
+          <p class="hero__sub ev-hero__sub" data-t="events:hero.sub">Free hangouts, volunteer nights and real talk, from Sanford to Oviedo. Pick a night. Bring a friend.</p>
+          <div class="hero__actions">
+            <a class="btn btn--ink btn--lg" href="#lineup" data-t="cta.seeWhatsOn">See what's on</a>
+            <a class="btn btn--ghost btn--lg" href="host.html" data-t="events:hero.host">Host a night</a>
           </div>
-          <ul class="ev-rail" data-rail data-needs-js></ul>
-          <p class="small ev-hero__reassure" data-t="events:hero.reassure">Free and open to everyone 14 and up, in any party or none.</p>
+          <p class="hero__fine ev-hero__reassure" data-t="events:hero.reassure">Free and open to everyone 14 and up, in any party or none.</p>
         </div>
-        <div class="ev-hero__art">
-          <span class="sticker sticker--lg ev-hero__s1" data-sticker="celery" aria-hidden="true"></span>
-          <span class="sticker ev-hero__s2" data-sticker="train" aria-hidden="true"></span>
-          <span class="ev-word" data-t="events:hero.sticker">first time? perfect</span>
-          <div class="ev-hero__next" data-hero-next></div>
+        <div class="hero__object ev-hero__object">
+          <span class="ev-word" aria-hidden="true" data-t="events:hero.sticker">first time? perfect</span>
+          <ol class="fan ev-stack" data-stack aria-label="The next nights" data-t-aria-label="events:hero.stack"></ol>
+          <span class="sticker ev-hero__s1" data-sticker="celery" aria-hidden="true"></span>
         </div>
       </div>
+    </section>
+
+    <section class="section ev-big" id="big-one" aria-label="The big one" data-t-aria-label="events:hero.bigOne" data-tentpole-band hidden>
+      <div class="wrap" data-tentpole></div>
     </section>
 
     <section class="section ev-lineup" id="lineup" aria-labelledby="lineup-title">
@@ -139,10 +141,17 @@
               <label class="chip"><input type="radio" name="kind" value="learn"><span data-t="events:filter.learn">Learn</span></label>
               <label class="chip"><input type="radio" name="kind" value="volunteer"><span data-t="events:filter.volunteer">Volunteer</span></label>
               <label class="chip"><input type="radio" name="kind" value="create"><span data-t="events:filter.create">Make stuff</span></label>
-              <label class="chip ev-filters__es"><input type="checkbox" name="lang" value="es"><span data-t="events:filter.spanish">In Spanish</span></label>
             </div>
           </fieldset>
           <fieldset class="ev-filters__group">
+            <legend class="ev-filters__legend" data-t="events:filter.who">Who</legend>
+            <div class="ev-filters__row">
+              <label class="chip ev-filters__teen"><input type="checkbox" name="teen" value="1" aria-describedby="teen-hint"><span data-t="events:filter.teen">Good for under-18s</span></label>
+              <label class="chip ev-filters__es"><input type="checkbox" name="lang" value="es"><span data-t="events:filter.spanish">In Spanish</span></label>
+            </div>
+            <p class="ev-filters__hint" id="teen-hint" data-t="events:filter.teenHint">Daytime events: under-18s come without a guardian form.</p>
+          </fieldset>
+          <fieldset class="ev-filters__group ev-filters__group--wide">
             <legend class="ev-filters__legend" data-t="events:filter.city">Where</legend>
             <div class="ev-filters__row ev-filters__scroll" data-city-chips>
               <label class="chip"><input type="radio" name="city" value="" checked><span data-t="events:filter.anyCity">Anywhere</span></label>
@@ -153,14 +162,26 @@
         <div class="grid grid--3 ev-grid" data-lineup></div>
         <div class="ev-empty" data-empty hidden>
           <span class="sticker" data-sticker="heart" aria-hidden="true"></span>
-          <p class="h4" data-t="events:empty.title">Nothing matches that one</p>
-          <p class="ev-empty__line" data-empty-line></p>
+          <p class="h4" data-empty-title data-t="events:empty.title">Nothing on the calendar for that one yet</p>
+          <p class="ev-empty__line" data-empty-line data-t="events:empty.line">Try another filter, or host the night you wish existed. We'll help you plan it.</p>
+          <div class="ev-empty__drop" data-empty-drop hidden></div>
           <div class="btn-row">
             <button class="btn btn--ink" type="button" data-clear><span data-t="events:filter.clear">Clear filters</span></button>
-            <a class="btn btn--ghost" href="#host" data-t="events:empty.host">Host the next one</a>
+            <a class="btn btn--ghost" href="host.html" data-t="events:empty.host">Host the next one</a>
           </div>
         </div>
         <noscript><p class="notice" data-t="events:noscript">Turn on JavaScript to see the lineup and RSVP. Every event also has its own page that works without it.</p></noscript>
+      </div>
+    </section>
+
+    <section class="section section--violet ev-series" id="series" aria-labelledby="series-title" data-series-shelf hidden>
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow" data-t="events:series.eyebrow">Same name, new crowd</p>
+          <h2 id="series-title" data-t="events:series.title">Find your night</h2>
+          <p class="section-head__sub" data-t="events:series.sub">Every night here has a name, so you can find the one that feels like yours and come back to it.</p>
+        </div>
+        <ul class="ev-series__list" data-series-list></ul>
       </div>
     </section>
 
@@ -170,7 +191,7 @@
           <p class="eyebrow ev-drop__eyebrow"><span data-t="events:drop.eyebrow">Next drop</span> <span class="tag tag--demo" data-t="events:drop.demo">DEMO date</span></p>
           <h2 id="drop-title" data-drop-title data-t="events:drop.title">January's lineup drops Tue, Dec 15 at noon</h2>
           <p class="section-head__sub" data-drop-sub data-t="events:drop.sub">January and February land all at once. Set a reminder and get first pick of the seats.</p>
-          <p class="countdown ev-drop__count" data-countdown="2026-12-15" data-countdown-unit-key="events:drop.unit" data-countdown-hide><span class="countdown__n" data-countdown-n>36</span> <span class="countdown__unit" data-countdown-unit data-t="events:drop.unit.other">days to go</span></p>
+          <p class="countdown ev-drop__count" data-countdown="2026-12-15" data-countdown-unit-key="events:drop.unit" data-countdown-hide><span class="countdown__n" data-countdown-n>35</span> <span class="countdown__unit" data-countdown-unit data-t="events:drop.unit.other">days to go</span></p>
           <div class="btn-row">
             <button class="btn btn--primary btn--lg" type="button" data-drop-notify aria-pressed="false"><span data-drop-notify-label data-t="events:drop.notify">Notify me</span></button>
           </div>
@@ -194,28 +215,35 @@
       </div>
     </section>
 
-    <section class="section section--celery ev-host" id="host" aria-labelledby="host-title">
+    <section class="section section--tangerine ev-host" id="host" aria-labelledby="host-title">
       <div class="wrap ev-host__grid">
         <div class="ev-host__head">
-          <p class="eyebrow" data-t="events:host.eyebrow">Host one</p>
-          <h2 id="host-title" data-t="events:host.title">Want to host the next one?</h2>
-          <p class="section-head__sub" data-t="events:host.sub">Got an idea for a night? We'll help you plan it. Every Young Dems event checks these four boxes.</p>
+          <p class="eyebrow" data-t="events:host.eyebrow">Host a night</p>
+          <h2 id="host-title" data-t="events:host.title">Got a night in mind? Host it.</h2>
+          <p class="section-head__sub" data-t="events:host.sub">We hand you the chapter in a box: a 3-week plan, the checklist, invite texts and share cards. You bring the idea and two friends.</p>
+          <ul class="ev-host__rules">
+            <li data-t="events:host.r1">Public place</li>
+            <li data-t="events:host.r2">Alcohol-free</li>
+            <li data-t="events:host.r3">Open to 14+</li>
+            <li data-t="events:host.r4">Access note</li>
+          </ul>
           <div class="btn-row">
-            <a class="btn btn--ink btn--lg" href="join.html" data-t="events:host.cta">Join free to pitch it</a>
-            <a class="link" href="teen-safety.html" data-t="events:host.rules">Read the teen safety rules</a>
+            <a class="btn btn--ink btn--lg" href="host.html" data-t="events:host.cta">Get the host kit</a>
+            <a class="btn btn--ghost btn--lg" href="join.html?intent=host" data-t="events:host.pitch">Pitch a night</a>
           </div>
-          <span class="sticker sticker--lg ev-host__sticker" data-sticker="heart" aria-hidden="true"></span>
         </div>
-        <ol class="ev-host__list">
-          <li><h3 class="ev-host__t" data-t="events:host.c1.t">A public place</h3><p data-t="events:host.c1.d">A park, a library room, a café anyone can walk into. Never someone’s home.</p></li>
-          <li><h3 class="ev-host__t" data-t="events:host.c2.t">Alcohol-free</h3><p data-t="events:host.c2.d">Always. Members start at 14.</p></li>
-          <li><h3 class="ev-host__t" data-t="events:host.c3.t">An access note</h3><p data-t="events:host.c3.d">Step-free entry, seating, a quiet corner, and who to tell what you need.</p></li>
-          <li><h3 class="ev-host__t" data-t="events:host.c4.t">Our teen safety rules</h3><p data-t="events:host.c4.d">Two adults on site, daytime for door-knocking, a guardian’s OK when it ends after dark.</p></li>
-        </ol>
+        <div class="ev-host__box" aria-hidden="true">
+          <span class="ev-host__flap ev-host__flap--l"></span><span class="ev-host__flap ev-host__flap--r"></span>
+          <span class="ev-host__item ev-host__item--1" data-t="events:host.box1">3-week plan</span>
+          <span class="ev-host__item ev-host__item--2" data-t="events:host.box2">Flyer + cards</span>
+          <span class="ev-host__item ev-host__item--3" data-t="events:host.box3">Invite texts</span>
+          <span class="sticker ev-host__sticker" data-sticker="megaphone"></span>
+          <span class="ev-host__crate"></span>
+        </div>
       </div>
     </section>
 
-    <section class="section section--pink ev-share" aria-labelledby="share-title">
+    <section class="section section--bubblegum ev-share" aria-labelledby="share-title">
       <div class="wrap ev-share__inner">
         <h2 id="share-title" data-t="events:share.title">Know someone who needs a Thursday plan?</h2>
         <p class="section-head__sub" data-t="events:share.sub">Send the lineup to your group chat. It's easier to show up when someone you know is going.</p>
@@ -301,7 +329,6 @@
 <script src="assets/js/ui.js"></script>
 <script src="assets/js/sw-register.js"></script><!-- /@scripts -->
   <script src="data/slices/events.js"></script>
-  <script src="data/events.js"></script>
   <script src="data/pages/events.js"></script>
   <script src="assets/js/eventcard.js"></script>
   <script src="assets/js/rsvp.js"></script>

@@ -15,6 +15,12 @@
  * (data: URL) plus Google and Outlook links, and I'm in as a plain link to join.html?e=<id> that
  * assets/js/rsvp.js upgrades to the RSVP sheet. Copy comes from data/events.js, data/pages/events.js and
  * data/strings.js; nothing is invented here. Times are New York time, written "7 pm" / "7 p. m.".
+ * Round 1 (G-EVENTS, Tue Nov 10, 2026): on phones the invite art comes first as a 180 px strip with the date stub,
+ * then the title and the RSVP row (genz-brand-16); photos use the two-tone map (the SVG filters are written into the
+ * page, so it works with JavaScript off); the series name and cadence, the Seminole Sunday flag and "Good for
+ * under-18s" show beside the title; the .ics LOCATION skips the city when the place already names it (journeys-24);
+ * pages load data/slices/events.js instead of the full data/events.js, and their own stylesheet,
+ * assets/css/pages/event.css.
  * Exit codes: 0 ok, 1 --check found problems, 2 crash.
  */
 'use strict';
@@ -96,6 +102,35 @@ function dateFns(T, L) {
   return { time, date, when, parts: (iso) => parts(iso, L) };
 }
 
+/* ------------------------------------------------------------------ two-tone photo map (same as eventcard.js duoMarkup) */
+const DUO = { celery: '#C8F03C', sky: '#4FD6FF', bubblegum: '#FF7AC6', violet: '#6A2BFF', tangerine: '#FF8B3D', sun: '#FFD23F',
+  mint: '#7EE081', teal: '#00B3A6', orange: '#FF6B1A', hotpink: '#FF4FA3', lake: '#2236C9' };
+function duoMarkup() {
+  const night = [23, 11, 51];
+  const rgb = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  let f = '';
+  for (const k of Object.keys(DUO)) {
+    const c = rgb(DUO[k]), hi = c.map((v) => Math.round(v + (255 - v) * 0.62));
+    const t = [0, 1, 2].map((i) => [night[i], c[i], hi[i]].map((v) => (v / 255).toFixed(3)).join(' '));
+    f += '<filter id="ysd-duo-' + k + '" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0"/>' +
+      '<feComponentTransfer><feFuncR type="table" tableValues="' + t[0] + '"/><feFuncG type="table" tableValues="' + t[1] + '"/><feFuncB type="table" tableValues="' + t[2] + '"/></feComponentTransfer></filter>';
+  }
+  return '<svg id="ysd-duo-defs" width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden"><defs>' + f + '</defs></svg>';
+}
+function calLocation(e, T, city) {
+  const name = T.tx(e.place.name);
+  if (!city || name.toLowerCase().indexOf(city.toLowerCase()) >= 0) return name || city;
+  return [name, city].filter(Boolean).join(', ');
+}
+const isTeen = (e) => !!(e.ages && e.ages.guardian === false && (+e.ages.min || 14) < 18);
+function seriesInfo(e, D, T) {
+  const S = D.E.series || {}, r = S[e.series];
+  const tp = D.E.tentpole;
+  const name = r ? T.tx(r.short || r.name) : '';
+  const recurs = r && r.recurs ? T.l('recurs', { recurs: T.tx(r.recurs) }) : '';
+  return { id: e.series, name, fullName: r ? T.tx(r.name) : '', recurs, tentpole: !!(e.tentpole && tp), tpName: tp ? T.tx(tp.name) : '', tpRecurs: tp ? T.l('recurs', { recurs: T.tx(tp.recurs) }) : '', tpId: tp ? tp.id : '' };
+}
+
 /* ------------------------------------------------------------------ html helpers */
 const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const attr = (s) => esc(s).replace(/"/g, '&quot;');
@@ -144,18 +179,22 @@ function card(e, D, T, F, rel, L) {
   const href = e.id + '.html';
   const C = D.E.cities || {}, V = D.E.vibes || {};
   let cover = '<div class="invite__cover">';
-  if (cv.photo) {
-    cover += '<figure class="photo photo--duo"><img src="' + attr(photoUrl(cv.photo.id, 640)) + '" srcset="' + [320, 640, 960, 1280].map((w) => attr(photoUrl(cv.photo.id, w)) + ' ' + w + 'w').join(', ') +
+  if (cv.photo && cv.photo.card !== false) {
+    cover += '<figure class="photo photo--duo" data-duo="' + attr(duo) + '"' + (cv.photo.lift ? ' style="--duo-lift: ' + attr(cv.photo.lift) + '"' : '') + '><img src="' + attr(photoUrl(cv.photo.id, 640)) + '" srcset="' + [320, 640, 960, 1280].map((w) => attr(photoUrl(cv.photo.id, w)) + ' ' + w + 'w').join(', ') +
       '" sizes="(min-width: 1000px) 380px, (min-width: 700px) 46vw, 92vw" width="' + (cv.photo.width || 640) + '" height="' + (cv.photo.height || 427) + '" loading="lazy" decoding="async" alt="' + attr(T.tx(cv.photo.alt)) +
       '" data-photographer="' + attr(cv.photo.photographer) + '" data-source="' + attr(cv.photo.page) + '"><span class="tag tag--stock photo__tag">' + esc(T.s('tag.stock')) + '</span></figure>';
   } else cover += '<p class="invite__cover-title" aria-hidden="true">' + esc(T.tx(cv.short)) + '</p>';
   if (cv.sticker) cover += '<span class="sticker" data-sticker="' + attr(cv.sticker) + '" aria-hidden="true"></span>';
   cover += '<span class="invite__date">' + ticket(e, F) + '</span><span class="invite__tags"><span class="tag tag--demo">' + esc(T.l('demoEvent')) + '</span></span></div>';
   const place = e.place.kind === 'public' ? T.tx(e.place.name).split(',')[0] : T.l('demoVenue');
-  const vibes = (e.vibes || []).slice(0, 3).map((v) => V[v] ? '<li>' + esc(T.tx(V[v])) + '</li>' : '').join('');
+  const teen = isTeen(e);
+  const vibes = (teen ? '<li class="invite__teen">' + esc(T.l('teen')) + '</li>' : '') + (e.vibes || []).slice(0, teen ? 2 : 3).map((v) => V[v] ? '<li>' + esc(T.tx(V[v])) + '</li>' : '').join('');
+  const si = seriesInfo(e, D, T);
+  const kick = si.name ? '<p class="invite__series' + (si.tentpole ? ' invite__series--tentpole' : '') + '"><span class="invite__series-name">' + esc(si.tentpole ? si.tpName : si.name) + '</span>' +
+    ((si.tentpole ? si.tpRecurs : si.recurs) ? '<span class="invite__series-recurs">' + esc(si.tentpole ? si.tpRecurs : si.recurs) + '</span>' : '') + '</p>' : '';
   const cta = isFull(e) ? T.l('waitlist') : T.s('cta.imIn');
   return '<article class="invite" style="--duo: var(' + tok + ')" data-duo="' + duo + '" data-event="' + attr(e.id) + '" data-kind="' + attr(e.kind) + '" data-city="' + attr(e.city) + '">' + cover +
-    '<div class="invite__body"><h3 class="invite__title"><a href="' + attr(href) + '">' + esc(T.tx(e.title)) + '</a></h3>' +
+    '<div class="invite__body">' + kick + '<h3 class="invite__title"><a href="' + attr(href) + '">' + esc(T.tx(e.title)) + '</a></h3>' +
     '<ul class="invite__meta"><li>' + esc(F.when(e.start, e.end)) + '</li><li>' + esc(T.tx(C[e.city]) + ' · ' + place) + '</li><li>' + esc(T.tx(e.cost.label)) + '</li></ul>' +
     (vibes ? '<ul class="invite__vibes">' + vibes + '</ul>' : '') + goingRow(e, T, 'sm') +
     '<div class="invite__rsvp"><a class="btn btn--primary" href="' + rel + 'join.html?e=' + attr(e.id) + '" data-rsvp="' + attr(e.id) + '">' + esc(cta) + '</a>' +
@@ -175,7 +214,9 @@ function page(e, D, L, all) {
   const city = T.tx(C[e.city]);
   const title = T.tx(e.title);
   const dateStr = F.date(e.start), timeStr = F.time(e.start), whenStr = F.when(e.start, e.end);
-  const placeShort = e.place.kind === 'public' ? T.tx(e.place.name).split(',')[0] + ', ' + city : city;
+  const pubName = T.tx(e.place.name).split(',')[0];
+  const placeShort = e.place.kind === 'public' ? (pubName.toLowerCase().indexOf(city.toLowerCase()) >= 0 ? pubName : pubName + ', ' + city) : city;
+  const costShort = T.tx(e.cost.label).replace(/\s*\(.*\)\s*$/, '');
   const vars = { event: title, date: dateStr, time: timeStr, place: placeShort };
   const demoTail = e.demo ? ' (' + T.l('demoEvent') + ')' : '';
   const seoTitle = T.s('seo.eventInvite.title', vars);
@@ -184,7 +225,7 @@ function page(e, D, L, all) {
   const ogDesc = T.s('seo.eventInvite.ogDescription', vars) + demoTail;
   const ogAlt = T.p('ev.ogAlt', vars);
   const ogImg = rel + 'assets/img/og/' + (es ? 'es/' : '') + 'events/' + e.id + '.png';
-  const og = { template: 'og-event', kicker: T.p('ev.kicker'), title, start: e.start, place: city, color: duo, sticker: cv.sticker || 'calendar', lang: L };
+  const og = { template: 'og-event', kicker: e.tentpole && D.E.tentpole ? T.tx(D.E.tentpole.name).toUpperCase() : T.p('ev.kicker'), title, start: e.start, place: city, color: duo, sticker: cv.sticker || 'calendar', lang: L };
   const ogJson = JSON.stringify(og).replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/</g, '&lt;');
   const enHref = es ? '../../events/' + e.id + '.html' : e.id + '.html';
   const esHref = es ? e.id + '.html' : '../es/events/' + e.id + '.html';
@@ -194,7 +235,7 @@ function page(e, D, L, all) {
   const absPage = site ? site + (es ? '/es' : '') + '/events/' + e.id : '';
 
   // calendar (static fallbacks; rsvp.js rebuilds them with the real page URL)
-  const calEv = { id: 'ydsc-' + e.id, title: title + (e.demo ? ' (DEMO)' : ''), start: e.start, end: e.end, location: [T.tx(e.place.name), city].filter(Boolean).join(', '), address: e.place.address || '', description: T.tx(e.calDescription), url: absPage, alarm: 180 };
+  const calEv = { id: 'ydsc-' + e.id, title: title + (e.demo ? ' (DEMO)' : ''), start: e.start, end: e.end, location: calLocation(e, T, city), address: e.place.address || '', description: T.tx(e.calDescription), url: absPage, alarm: 180 };
   // a fixed DTSTAMP (the data's verified date) keeps the pages byte-stable between runs
   const stamp = 'DTSTAMP:' + String(D.E.verified || '2026-11-09').replace(/-/g, '') + 'T120000Z';
   const icsText = D.YSD.cal.text(calEv).replace(/^DTSTAMP:.*$/m, stamp);
@@ -206,8 +247,8 @@ function page(e, D, L, all) {
   // poster
   let poster = '<div class="ev-poster">';
   if (cv.photo) {
-    poster += '<figure class="photo photo--duo"><img src="' + attr(photoUrl(cv.photo.id, 960)) + '" srcset="' + [640, 960, 1280].map((w) => attr(photoUrl(cv.photo.id, w)) + ' ' + w + 'w').join(', ') +
-      '" sizes="(min-width: 960px) 700px, 92vw" width="' + (cv.photo.width || 640) + '" height="' + (cv.photo.height || 427) + '" loading="lazy" decoding="async" alt="' + attr(T.tx(cv.photo.alt)) +
+    poster += '<figure class="photo photo--duo" data-duo="' + attr(duo) + '"' + (cv.photo.lift ? ' style="--duo-lift: ' + attr(cv.photo.lift) + '"' : '') + '><img src="' + attr(photoUrl(cv.photo.id, 960)) + '" srcset="' + [640, 960, 1280].map((w) => attr(photoUrl(cv.photo.id, w)) + ' ' + w + 'w').join(', ') +
+      '" sizes="(min-width: 960px) 700px, 92vw" width="' + (cv.photo.width || 640) + '" height="' + (cv.photo.height || 427) + '" fetchpriority="high" decoding="async" alt="' + attr(T.tx(cv.photo.alt)) +
       '" data-photographer="' + attr(cv.photo.photographer) + '" data-source="' + attr(cv.photo.page) + '"><span class="tag tag--stock photo__tag">' + esc(T.s('tag.stock')) + '</span></figure>';
   } else poster += '<p class="ev-poster__title" aria-hidden="true">' + esc(T.tx(cv.short)) + '</p>';
   if (cv.sticker) poster += '<span class="sticker" data-sticker="' + attr(cv.sticker) + '" aria-hidden="true"></span>';
@@ -224,7 +265,7 @@ function page(e, D, L, all) {
   where += '</dd>';
   const langs = e.language || [];
   let langLabel = langs.length > 1 ? T.p('ev.lang.both') : T.p('ev.lang.' + (langs[0] || 'en'));
-  const guardian = e.ages && e.ages.guardian ? '<p class="small">' + esc(T.tx(D.E.policy.guardian)) + '</p>' : '';
+  const guardian = e.ages && e.ages.guardian ? '<p class="small">' + esc(T.tx(D.E.policy.guardian)) + '</p>' : isTeen(e) ? '<p class="small ev-teen">' + esc(T.p('ev.teen')) + '</p>' : '';
   const dl = [
     ['event.when', '<dd>' + esc(whenStr) + '</dd>'],
     ['event.where', where],
@@ -260,6 +301,11 @@ function page(e, D, L, all) {
   const related = after.concat(before).slice(0, 2);
 
   const calm = e.tone === 'calm' ? ' data-tone="calm"' : '';
+  const si = seriesInfo(e, D, T);
+  const seriesHref = (sid) => pageRel + 'events.html?series=' + encodeURIComponent(sid) + '#lineup';
+  const seriesLine = si.tentpole
+    ? '<p class="ev-series ev-series--tentpole"><a href="' + attr(seriesHref(si.tpId)) + '"><span class="ev-series__name">' + esc(si.tpName) + '</span> <span class="ev-series__recurs">' + esc(T.p('ev.tentpole')) + '</span></a></p>'
+    : si.name ? '<p class="ev-series"><a href="' + attr(seriesHref(si.id)) + '"><span class="ev-series__label">' + esc(T.p('ev.series')) + '</span> <span class="ev-series__name">' + esc(si.fullName || si.name) + '</span>' + (si.recurs ? ' <span class="ev-series__recurs">' + esc(si.recurs) + '</span>' : '') + '</a></p>' : '';
   const sec = (id, h, body) => '<section class="ev-sec" aria-labelledby="' + id + '"><h2 id="' + id + '">' + esc(h) + '</h2>' + body + '</section>';
   const main = [
     sec('ev-plan', T.p('ev.about'), '<p class="ev-desc">' + esc(T.tx(e.description)) + '</p>' +
@@ -277,7 +323,7 @@ function page(e, D, L, all) {
 
   const html = `<!doctype html>
 <!-- ${MARK} from data/events.js (+ data/pages/events.js, data/strings.js). Do not edit by hand: node tools/make_event_pages.js -->
-<html lang="${L}" data-page="event" data-event="${attr(e.id)}">
+<html lang="${L}" data-page="event" data-event="${attr(e.id)}"${cv.photo ? ' data-duo-map' : ''}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -295,12 +341,13 @@ function page(e, D, L, all) {
   <link rel="alternate" hreflang="es" href="${attr(esHref)}">
   <link rel="alternate" hreflang="x-default" href="${attr(enHref)}">
   <link rel="stylesheet" href="${root('assets/css/rsvp.css')}">
-  <link rel="stylesheet" href="${root('assets/css/pages/events.css')}">
+  <link rel="stylesheet" href="${root('assets/css/pages/event.css')}">
 </head>
 <body class="p-event" data-duo="${duo}">
   <!-- @demo-banner${es ? '-es' : ''} --><!-- /@demo-banner${es ? '-es' : ''} -->
   <!-- @header${es ? '-es' : ''} --><!-- /@header${es ? '-es' : ''} -->
   <main id="main">
+    ${cv.photo ? duoMarkup() : ''}
     <div data-invite-landing hidden></div>
     <article class="ev-page" style="--duo: var(${tok})"${calm}>
       <header class="ev-head theme-light" data-duo="${duo}">
@@ -308,9 +355,10 @@ function page(e, D, L, all) {
           <p class="ev-back-row"><a class="ev-back" href="${pageRel}events.html">${esc(T.p('ev.back'))}</a><span class="ev-back-row__date">${ticket(e, F)}</span></p>
           ${poster}
           <div class="ev-info">
-            <p class="ev-tags"><span class="tag tag--demo">${esc(T.l('demoEvent'))}</span> <span class="tag tag--outline">${esc(kindLabel)}</span> <span class="tag tag--outline">${esc(T.l('alcoholFree'))}</span></p>
+            <p class="ev-tags"><span class="tag tag--demo">${esc(T.l('demoEvent'))}</span> <span class="tag tag--outline">${esc(kindLabel)}</span>${isTeen(e) ? ' <span class="tag ev-tag-teen">' + esc(T.l('teen')) + '</span>' : ''} <span class="tag tag--outline ev-tag-af">${esc(T.l('alcoholFree'))}</span></p>
+            ${seriesLine}
             <h1 class="ev-title">${esc(title)}</h1>
-            <ul class="ev-meta"><li>${esc(whenStr)}</li><li>${esc(placeShort)} · ${esc(T.tx(e.cost.label))}</li></ul>
+            <ul class="ev-meta"><li>${esc(whenStr)}</li><li>${esc(placeShort)} · ${esc(costShort)}</li></ul>
             <div class="rsvp-row" data-rsvp-state="${attr(e.id)}">
               <p class="rsvp-row__q" id="rsvp-q">${esc(T.p('ev.question'))}</p>
               ${full ? '<p class="rsvp-row__note">' + esc(T.p('ev.full')) + '</p>' : ''}
@@ -363,7 +411,6 @@ function page(e, D, L, all) {
   <!-- @footer${es ? '-es' : ''} --><!-- /@footer${es ? '-es' : ''} -->
   <!-- @scripts --><!-- /@scripts -->
   <script src="${root('data/slices/events.js')}"></script>
-  <script src="${root('data/events.js')}"></script>
   <script src="${root('data/pages/events.js')}"></script>
   <script src="${root('assets/js/eventcard.js')}"></script>
   <script src="${root('assets/js/rsvp.js')}"></script>

@@ -1,0 +1,133 @@
+/* YDSC · assets/css/pages/host.css (G-EVENTS, round 1, Tue Nov 10, 2026). host.html, "Host a night (chapter in a
+   box)". World: tangerine (genz-brand-01); hero object: an open box whose items link to the kit's sections; edge: arch.
+   Every rule sits under .p-host. Bright bands are light islands (ink text in both themes). */
+
+/* ---- hero ---- */
+.p-host .hk-hero { padding-block:clamp(24px, 4vw, 80px) calc(clamp(32px, 5vw, 88px) + 24px); }
+.p-host .hk-hero__title { font-size:clamp(64px, 17vw + 4px, 152px); }
+.p-host .hk-hero__l2 { display:inline-block;padding:0 .08em;background:var(--night);color:var(--tangerine);border-radius:14px;rotate:-2deg;box-shadow:6px 6px 0 var(--sky); }
+.p-host .hero__fine { color:var(--text-muted); }
+
+/* the open box: flaps, a crate and five kit items that pop out (each one is a jump link) */
+.p-host .hk-box { --hero-object:440px;position:relative;height:300px;margin-top:var(--sp-2); }
+.p-host .hk-box__items { position:absolute;inset:0 2% 32% 2%;z-index:1;display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-end;gap:12px 10px;list-style:none;margin:0;padding:0 4% 6px; }
+.p-host .hk-box__item a {
+  display:inline-grid;place-items:center;min-height:48px;padding:10px 16px;border:var(--bw) solid var(--night);border-radius:12px;
+  background:var(--white);color:var(--night);font:800 19px/1 var(--font-display-84);font-stretch:84%;text-decoration:none;box-shadow:4px 4px 0 var(--night);
+  transition:translate var(--dur-3) var(--ease-pop), rotate var(--dur-3) var(--ease-pop);
+}
+.p-host .hk-box__item a:hover, .p-host .hk-box__item a:focus-visible { translate:0 -8px;rotate:0deg; }
+.p-host .hk-box__item a:focus-visible { outline:3px solid var(--night);outline-offset:3px; }
+.p-host .hk-box__item--1 a { rotate:-8deg;background:var(--sky); }
+.p-host .hk-box__item--2 a { rotate:5deg;background:var(--celery); }
+.p-host .hk-box__item--3 a { rotate:-3deg;background:var(--bubblegum); }
+.p-host .hk-box__item--4 a { rotate:7deg; }
+.p-host .hk-box__item--5 a { rotate:-6deg;background:var(--sun); }
+.p-host .hk-box__crate { position:absolute;left:6%;right:6%;bottom:0;z-index:3;height:36%;background:var(--sun);border:var(--bw) solid var(--night);border-radius:8px 8px 22px 22px;box-shadow:8px 8px 0 var(--night); }
+.p-host .hk-box__crate::before { content:"";position:absolute;left:10%;right:10%;top:22%;height:3px;border-top:3px dashed var(--night);opacity:.6; }
+.p-host .hk-box__crate::after { content:"YD";position:absolute;inset:auto 0 16% 0;text-align:center;font:800 44px/1 var(--font-display-76);font-stretch:76%;color:var(--night); }
+.p-host .hk-box__flap { position:absolute;bottom:34%;z-index:2;width:40%;height:16%;background:var(--sun);border:var(--bw) solid var(--night); }
+.p-host .hk-box__flap--l { left:0;transform-origin:right bottom;rotate:-26deg;border-radius:12px 4px 4px 12px; }
+.p-host .hk-box__flap--r { right:0;transform-origin:left bottom;rotate:26deg;border-radius:4px 12px 12px 4px; }
+.p-host .hk-box__sticker { position:absolute;z-index:4;right:-2%;bottom:-4%;--sticker-size:84px;--rot:12deg; }
+@media (min-width: 900px) {
+  .p-host .hk-box { height:420px; }
+  .p-host .hk-box__item a { font-size:22px;padding:12px 18px; }
+  .p-host .hk-box__sticker { --sticker-size:112px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .p-host .hk-box__item a { animation:hk-pop .6s var(--ease-pop) both; }
+  .p-host .hk-box__item--2 a { animation-delay:.08s; } .p-host .hk-box__item--3 a { animation-delay:.16s; }
+  .p-host .hk-box__item--4 a { animation-delay:.24s; } .p-host .hk-box__item--5 a { animation-delay:.32s; }
+  @keyframes hk-pop { from { opacity:0;translate:0 60px;scale:.6; } }
+}
+
+/* ---- what hosting means ---- */
+.p-host .hk-means__list { display:grid;gap:var(--sp-4);list-style:none;margin:0;padding:0;counter-reset:m; }
+.p-host .hk-means__item { position:relative;display:grid;gap:var(--sp-2);align-content:start;padding:var(--sp-5);background:var(--surface);border:var(--bw) solid var(--edge);border-radius:var(--r-lg); }
+.p-host .hk-means__item .sticker { --sticker-size:56px;--rot:-6deg;margin-bottom:var(--sp-1); }
+.p-host .hk-means__item h3 { font:800 var(--fs-h4)/1.05 var(--font-display-88);font-stretch:88%; }
+.p-host .hk-means__item p { color:var(--text-muted); }
+@media (min-width: 760px) { .p-host .hk-means__list { grid-template-columns:repeat(3, minmax(0, 1fr)); } }
+
+/* ---- house rules (night) ---- */
+.p-host .hk-rules__list { display:grid;gap:var(--sp-3);list-style:none;margin:0;padding:0; }
+.p-host .hk-rules__list li { display:grid;grid-template-columns:40px minmax(0, 1fr);gap:4px var(--sp-3);padding:var(--sp-4);border:1.5px solid rgba(255, 246, 234, .22);border-radius:var(--r-md); }
+.p-host .hk-rules__list li::before { content:"";grid-row:span 2;width:36px;height:36px;border-radius:50%;background:var(--celery) center / 18px no-repeat url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%23170B33' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/></svg>"); }
+.p-host .hk-rules__list h3 { font:800 var(--fs-h4)/1.05 var(--font-display-88);font-stretch:88%;color:var(--celery); }
+.p-host .hk-rules__list p { color:var(--text-muted); }
+.p-host .hk-rules__links { display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3);margin-top:var(--sp-5);font-weight:700; }
+.p-host .hk-rules__links .link { display:inline-flex;align-items:center;min-height:44px; }
+@media (min-width: 760px) { .p-host .hk-rules__list { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .p-host .hk-rules__list { grid-template-columns:repeat(3, minmax(0, 1fr)); } }
+
+/* ---- the 3-week plan: a ticket-stub timeline ---- */
+.p-host .hk-plan__list { display:grid;gap:var(--sp-4);list-style:none;margin:0;padding:0;counter-reset:wk; }
+.p-host .hk-plan__step { counter-increment:wk;position:relative;display:grid;gap:var(--sp-2);padding:var(--sp-5) var(--sp-5) var(--sp-5) 84px;background:var(--surface);border:var(--bw) solid var(--edge);border-radius:var(--r-lg);box-shadow:var(--sh-card) var(--shadow); }
+.p-host .hk-plan__step::before { content:counter(wk);position:absolute;left:18px;top:18px;display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--tangerine);color:var(--night);border:var(--bw) solid var(--night);font:800 28px/1 var(--font-display-76);font-stretch:76%;rotate:-6deg; }
+.p-host .hk-plan__step:nth-child(2)::before { background:var(--sky); } .p-host .hk-plan__step:nth-child(3)::before { background:var(--celery); }
+.p-host .hk-plan__step:nth-child(4)::before { background:var(--bubblegum); } .p-host .hk-plan__step:nth-child(5)::before { background:var(--sun); }
+.p-host .hk-plan__when { font:700 var(--fs-tag)/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted); }
+.p-host .hk-plan__step h3 { font:800 var(--fs-h3)/1 var(--font-display-84);font-stretch:84%; }
+@media (min-width: 1000px) {
+  .p-host .hk-plan__list { grid-template-columns:repeat(5, minmax(0, 1fr));gap:var(--sp-3); }
+  .p-host .hk-plan__step { padding:76px var(--sp-4) var(--sp-5);align-content:start; }
+  .p-host .hk-plan__step h3 { font-size:var(--fs-h4); }
+}
+
+/* ---- checklist (sun) ---- */
+.p-host .hk-check__grid { display:grid;gap:var(--sp-6); }
+.p-host .hk-check__grid .section-head { justify-items:start;text-align:left; }
+.p-host .hk-check__progress { margin-top:var(--sp-4);font:800 var(--fs-h3)/1 var(--font-display-84);font-stretch:84%; }
+.p-host .hk-check__progress:empty { display:none; }
+.p-host .hk-check__list { display:grid;gap:var(--sp-2);list-style:none;margin:0;padding:0; }
+.p-host .hk-check__list li { background:var(--white);color:var(--night);border:var(--bw) solid var(--night);border-radius:var(--r-md);padding:4px var(--sp-4); }
+.p-host .hk-check__list .choice { font-weight:700; }
+.p-host .hk-check__list input { width:24px;height:24px;flex:none;accent-color:var(--violet); }
+.p-host .hk-check__list li:has(input:checked) { background:var(--mint); }
+.p-host .hk-check__list li:has(input:checked) span { text-decoration:line-through;text-decoration-thickness:2px; }
+@media (min-width: 900px) { .p-host .hk-check__grid { grid-template-columns:minmax(0, .8fr) minmax(0, 1.2fr);align-items:start; } }
+
+/* ---- flyer and cards ---- */
+.p-host .hk-cards__grid { display:grid;gap:var(--sp-6); }
+.p-host .hk-form { padding:var(--sp-5);background:var(--surface);border:var(--bw) solid var(--edge);border-radius:var(--r-lg);box-shadow:var(--sh-card) var(--shadow);align-content:start; }
+.p-host .hk-form input[type="date"], .p-host .hk-form input[type="time"] { min-height:48px; }
+.p-host .hk-previews { display:grid;grid-auto-flow:column;grid-auto-columns:minmax(200px, 62vw);gap:var(--sp-4);margin:0 calc(var(--gutter-l) * -1);padding:4px var(--gutter-l) 12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none; }
+.p-host .hk-previews::-webkit-scrollbar { display:none; }
+.p-host .hk-prev { display:grid;gap:var(--sp-3);align-content:start;margin:0;scroll-snap-align:start; }
+.p-host .hk-prev__img { display:grid;place-items:center;aspect-ratio:4 / 5;border:var(--bw) solid var(--edge);border-radius:var(--r-md);background:var(--tangerine);overflow:hidden;box-shadow:var(--sh-card) var(--shadow); }
+.p-host .hk-prev[data-card="story"] .hk-prev__img { aspect-ratio:9 / 16; }
+.p-host .hk-prev[data-card="tags"] .hk-prev__img { background:var(--cream); }
+.p-host .hk-prev__img img, .p-host .hk-prev__img canvas { display:block;width:100%;height:100%;object-fit:contain; }
+.p-host .hk-prev__cap { display:grid;gap:var(--sp-2); }
+.p-host .hk-prev__name { font:800 var(--fs-h4)/1 var(--font-display-88);font-stretch:88%; }
+.p-host .hk-prev__btns { display:flex;flex-wrap:wrap;gap:var(--sp-2); }
+.p-host .hk-prev__btns .btn { flex:1 1 auto; }
+@media (min-width: 1000px) {
+  .p-host .hk-cards__grid { grid-template-columns:minmax(0, .85fr) minmax(0, 1.15fr);align-items:start; }
+  .p-host .hk-previews { grid-auto-flow:row;grid-template-columns:1.05fr .8fr 1.05fr;align-items:start;margin:0;padding:0;overflow:visible; }
+}
+
+/* ---- invite texts (violet) ---- */
+.p-host .hk-texts__list { display:grid;gap:var(--sp-4);list-style:none;margin:0;padding:0; }
+.p-host .hk-text { display:grid;gap:var(--sp-2);justify-items:start; }
+.p-host .hk-text__label { font:700 var(--fs-tag)/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted); }
+.p-host .hk-text__bubble { max-width:46ch;padding:14px 18px;border-radius:22px 22px 22px 6px;background:var(--white);color:var(--night);border:var(--bw) solid var(--night);box-shadow:4px 4px 0 var(--night);line-height:1.45;overflow-wrap:anywhere; }
+.p-host .hk-text__bubble:empty { min-height:72px;width:min(100%, 46ch); }
+@media (min-width: 900px) { .p-host .hk-texts__list { grid-template-columns:repeat(2, minmax(0, 1fr));gap:var(--sp-5); } }
+
+/* ---- perks ---- */
+.p-host .hk-perks__list { display:grid;gap:var(--sp-4);list-style:none;margin:0;padding:0; }
+.p-host .hk-perk { display:grid;grid-template-columns:72px minmax(0, 1fr);gap:4px var(--sp-4);align-items:start;padding:var(--sp-4);border:var(--bw) dashed var(--control);border-radius:var(--r-lg); }
+.p-host .hk-perk .sticker { grid-row:span 2;--sticker-size:72px;--rot:-6deg; }
+.p-host .hk-perk h3 { font:800 var(--fs-h4)/1.05 var(--font-display-88);font-stretch:88%; }
+.p-host .hk-perks__fine { display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center;margin-top:var(--sp-4); }
+@media (min-width: 900px) { .p-host .hk-perks__list { grid-template-columns:repeat(3, minmax(0, 1fr)); } }
+
+/* ---- pitch (tangerine) ---- */
+.p-host .hk-pitch__inner { display:grid;grid-template-columns:minmax(0, 1fr);justify-items:center;gap:var(--sp-4);text-align:center; }
+.p-host .hk-pitch__inner > * { max-width:100%; }
+.p-host .hk-pitch__inner h2 { max-width:min(20ch, 100%);text-wrap:balance;overflow-wrap:anywhere; }
+.p-host .hk-pitch__inner .section-head__sub { max-width:52ch; }
+.p-host .hk-pitch__inner .btn-row { justify-content:center; }
+.p-host .btn { transition-property:transform, box-shadow; }

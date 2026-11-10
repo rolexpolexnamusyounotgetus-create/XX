@@ -196,19 +196,22 @@ window.YSD_DATA.quiz = {
     picked: { en: 'Picked', es: 'Elegida' }
   },
 
-  // Keys = data/events.js `series` ids (checked against events.js on Nov 9, 2026).
+  // Keys = data/events.js `series` ids; labels = the series' brand names in data/events.js series{} (renamed by
+  // G-EVENTS, Nov 10, 2026: genz-brand-27; ids unchanged, open-mic and seminole-sunday added).
   eventSeries: {
-    'sunset-walk': { label: { en: 'Sunset walks', es: 'Caminatas al atardecer' } },
-    trivia: { label: { en: 'Trivia nights', es: 'Noches de trivia' } },
-    'text-bank': { label: { en: 'Text-a-friend nights', es: 'Noches de mensajes' } },
-    'creator-night': { label: { en: 'Creator nights', es: 'Noches de video' } },
-    'renew-ready': { label: { en: 'Renewal parties', es: 'Fiestas para renovar' } },
-    'workshop-es': { label: { en: 'Workshops in Spanish', es: 'Talleres en español' } },
-    mixer: { label: { en: 'Member mixers', es: 'Encuentros de miembros' } },
-    sunrail: { label: { en: 'SunRail socials', es: 'Salidas en SunRail' } },
-    canvass: { label: { en: 'Neighbor check-ins', es: 'Visitas al vecindario' } },
-    karaoke: { label: { en: 'Karaoke nights', es: 'Noches de karaoke' } },
-    picnic: { label: { en: 'Picnics', es: 'Pícnics' } }
+    'sunset-walk': { label: { en: 'Sunset Walk Club', es: 'Club del atardecer' } },
+    trivia: { label: { en: 'Trivia Thursday', es: 'Jueves de trivia' } },
+    'text-bank': { label: { en: 'Heads-Up Tuesday', es: 'Martes de avisos' } },
+    'creator-night': { label: { en: 'Creator Night', es: 'Noche de creadores' } },
+    'renew-ready': { label: { en: 'Renew-Ready Party', es: 'Fiesta lista para renovar' } },
+    'workshop-es': { label: { en: 'Taller en Español', es: 'Taller en español' } },
+    mixer: { label: { en: 'Welcome Wednesday', es: 'Miércoles de bienvenida' } },
+    sunrail: { label: { en: 'SunRail Social', es: 'Salida en SunRail' } },
+    canvass: { label: { en: 'Neighbor Saturday', es: 'Sábado de vecinos' } },
+    karaoke: { label: { en: 'Love & Protest Karaoke', es: 'Karaoke de amor y protesta' } },
+    picnic: { label: { en: 'Big Tree Picnic Club', es: 'Club del pícnic en Big Tree' } },
+    'open-mic': { label: { en: 'Open Mic Live', es: 'Micrófono abierto en vivo' } },
+    'seminole-sunday': { label: { en: 'Seminole Sunday', es: 'Domingo en Seminole' } }
   },
   eventKinds: {
     social: { label: { en: 'Hang out', es: 'Para pasarla bien' } },

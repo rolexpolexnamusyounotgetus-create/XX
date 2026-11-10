@@ -4,7 +4,11 @@
  * (calm: no stickers, no confetti, no emoji), One Thing (the mail-ballot reminder .ics for Mon, Jan 4,
  * 2027, 10 am New York time, plus the official links from YSD.cfg), The Picks, Spotlight, Ask the
  * Group Chat, the footer and the archive stubs. Every fact links its source. All text goes in with
- * textContent. The signup form at the bottom is the shared join form (assets/js/joinform.js, compact).
+ * textContent. The signup form at the bottom is the shared join form (assets/js/joinform.js, compact, with step
+ * two inline so "Pick your city and issues" never leaves the page: journeys-11).
+ * Round 1 (genz-brand-26): the letter gets rhythm from data/newsletter.js issue.letter.rhythm: a pull quote, a One
+ * Thing card after the mail-ballot paragraph and "Also inside" as three cards. It stays calm (no stickers, rotation
+ * or emoji).
  */
 (function (w, d) {
   'use strict';
@@ -82,14 +86,56 @@
         el('span', { class: 'x-byline__date' }, [el('time', { datetime: I.date, text: fmtDate(I.date, true) }), ' ', el('span', { class: 'tag tag--demo', text: L(N.labels.demoWriter) })])
       ]));
     }
-    var body = slot('letter');
-    if (body) (Lt.paragraphs || []).forEach(function (p) { body.appendChild(el('p', { text: L(p) })); });
+    var body = slot('letter'), R = Lt.rhythm || {};
+    if (body) (Lt.paragraphs || []).forEach(function (p, i) {
+      var also = R.alsoInside;
+      if (also && also.replace === i && also.items && also.items.length) body.appendChild(alsoInside(also));
+      else body.appendChild(el('p', { text: L(p) }));
+      if (R.pullQuote && R.pullQuote.after === i) {
+        // a visual repeat of a line from the letter: hidden from screen readers so it isn't read twice
+        body.appendChild(el('blockquote', { class: 'x-pull', 'aria-hidden': 'true' }, [el('p', { text: L(R.pullQuote) })]));
+      }
+      if (R.oneThing && R.oneThing.after === i) body.appendChild(oneThingCard(R.oneThing));
+    });
     var sign = slot('sign');
     if (sign) {
       sign.appendChild(el('p', { text: L(Lt.ritual) }));
       sign.appendChild(el('p', { class: 'x-sign__name', 'data-hand': true, text: L(Lt.signature) }));
     }
     sources(d.querySelector('[data-nl-sources="letter"]'), Lt.factIds);
+  }
+
+  /** The One Thing, as a card inside the letter (jumps to the section with the reminder). */
+  function oneThingCard(o) {
+    var O = I.oneThing || {}, dl = new Date(Date.parse(O.deadline || '2026-12-31T23:59:00-05:00') + 12 * 3600e3), mon = '', day = '';
+    try {
+      mon = new Intl.DateTimeFormat(lang() === 'es' ? 'es-US' : 'en-US', { month: 'short', timeZone: 'America/New_York' }).format(dl).replace('.', '');
+      day = new Intl.DateTimeFormat('en-US', { day: 'numeric', timeZone: 'America/New_York' }).format(dl);
+    } catch (e) {}
+    return el('a', { class: 'x-onecard', href: '#one-thing' }, [
+      el('span', { class: 'x-onecard__date', 'aria-hidden': 'true' }, [el('span', { class: 'x-onecard__mon', text: mon }), el('span', { class: 'x-onecard__day', translate: 'no', text: day })]),
+      el('span', { class: 'x-onecard__text' }, [
+        el('span', { class: 'x-onecard__kicker', text: L(o.kicker) }),
+        el('span', { class: 'x-onecard__title', text: L(o.title) }),
+        el('span', { class: 'x-onecard__cta', text: L(o.cta) })
+      ])
+    ]);
+  }
+  /** "Also inside": the letter's round-up paragraph as three cards. */
+  function alsoInside(a) {
+    var wrap = el('div', { class: 'x-also' }, [el('p', { class: 'x-also__label', text: L(a.label) })]);
+    var list = el('ul', { class: 'x-also__list' });
+    a.items.forEach(function (it) {
+      var href = it.event ? pageHref('events/' + it.event + '.html') : '#' + (it.anchor || '');
+      var li = el('li', { class: 'x-also__item' }, [el('a', { class: 'x-also__card', href: href }, [
+        el('span', { class: 'x-also__kicker', text: L(it.kicker) }),
+        el('span', { class: 'x-also__title', text: L(it.title) })
+      ])]);
+      li.style.setProperty('--also', 'var(--' + (it.tone || 'celery') + ')');
+      list.appendChild(li);
+    });
+    wrap.appendChild(list);
+    return wrap;
   }
 
   // ---------------------------------------------------------------- one thing

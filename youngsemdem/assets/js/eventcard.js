@@ -22,11 +22,30 @@
  *   drop: { cutoff(), opensAt(), isOpen(), isDropEvent(event), events() }
  *   isPast(event), isFull(event), when(event, lang), place(event, lang), city(event, lang)
  *   label(key, vars, lang)      -> data/events.js labels.<key> in the page language, {n} etc. filled
+ *   ROUND 1 (G-EVENTS, Tue Nov 10, 2026):
+ *   series(idOrEvent)           -> { id, name, short, recurs, blurb } in the page language (recurs already
+ *                                  carries "(DEMO)"; '' for a one-off), or null. seriesName(idOrEvent, {short})
+ *   seriesList({ withDates })   -> every series that has a visible upcoming event (or every one): [{ ...series,
+ *                                  next: event | null, dates: [event], locked: bool (only drop events left) }]
+ *   tentpole()                  -> { id, name, recurs, tagline, eyebrow, next: event | null, editions: [event] }
+ *                                  (next = the next visible edition by the visitor's clock; null when none)
+ *   renderTentpole(event, { level, lang, eager }) -> <article class="tentpole"> the poster-grade band (CSS in
+ *                                  rsvp.css): duotone type lock-up, date ticket, DEMO seats bar, countdown, I'm in
+ *   isTeen(event)               -> true when under-18s need no guardian form (ages.guardian false): "Good for
+ *                                  under-18s" (filter + tag; right-wing-teen-path)
+ *   duoDefs()                   -> injects the two-tone photo map (SVG feComponentTransfer filters, one per cover
+ *                                  colour: shadows to --night, highlights to the event colour) once and sets
+ *                                  <html data-duo-map>; rsvp.css applies it to .photo--duo[data-duo]
+ *                                  (genz-brand-16). Static event pages ship the same defs in their HTML.
+ *   cover.photo.card false      -> cards use the type poster instead of the photo (subject too small at card size);
+ *                                  the event page still shows the photo
  *
  * Fields an event needs (keep these in any slice, e.g. W1's data/slices/home.js):
- *   id, demo, status, kind, tone, title{}, start, end, city, place{ kind, name{} }, language[],
- *   vibes[], cost{ label{} }, capacity, going, cover{ token, sticker, short{}, photo? }, share{ title{},
- *   text{} }, calDescription{}, ages{ guardian }; plus labels{}, cities{}, vibes{}, schedule.drop.
+ *   id, demo, status, series, tentpole, kind, tone, title{}, start, end, city, place{ kind, name{}, address },
+ *   language[], vibes[], cost{ label{} }, capacity, going, cover{ token, sticker, short{}, photo? }, share{ title{},
+ *   text{} }, bringFriend{}, calDescription{}, ages{ guardian }; plus labels{}, cities{}, vibes{}, policy{},
+ *   rsvpForm{}, schedule.drop, series{}, tentpole{}. data/slices/events.js carries exactly this (load it, not
+ *   data/events.js, on any page that only lists events or opens the RSVP sheet).
  *
  * MARKUP CONTRACT (what render() returns; copy it for static HTML, see styleguide.html "Ticket and invite")
  *   <article class="invite [invite--compact|invite--hero]" style="--duo: var(--sky)" data-event="<id>"
@@ -59,9 +78,12 @@
   function fill(s, vars) {
     return String(s == null ? '' : s).replace(/\{(\w+)\}/g, function (m, k) { return vars && vars[k] != null ? String(vars[k]) : m; });
   }
+  var FALLBACK = { recurs: '{recurs} (DEMO)', teen: 'Good for under-18s', teenHint: "It's in the daytime, so under-18s don't need a guardian form.",
+    seats: '{n} of {cap} seats saved (DEMO)', daysToGo: '{n} days to go', dayToGo: '1 day to go', today: "It's today", demoEvent: 'DEMO event',
+    going: '{n} going (DEMO)', dropSeries: "{series} is in January's lineup. It drops Tue, Dec 15 at noon (DEMO)." };
   function label(key, vars, l) {
     var L = data().labels || {};
-    return fill(tx(L[key], l), vars);
+    return fill(tx(L[key], l) || FALLBACK[key] || '', vars);
   }
   function el(tag, cls, text) {
     var n = d.createElement(tag);
@@ -149,6 +171,13 @@
   function url(e, opts) { return rootPrefix() + path(e, opts); }
   function joinHref(e) { return rootPrefix() + (lang() === 'es' ? 'es/' : '') + 'join.html?e=' + encodeURIComponent(e.id); }
 
+  /** "Central Winds Park, Winter Springs"; the city is left off when the place name already says it (journeys-24:
+      "A board-game café in Casselberry (DEMO venue)" stays as it is). */
+  function calLocation(e, l) {
+    var name = tx((e.place || {}).name, l), c = city(e, l);
+    if (!c || name.toLowerCase().indexOf(c.toLowerCase()) >= 0) return name || c;
+    return [name, c].filter(Boolean).join(', ');
+  }
   function cal(e, l) {
     l = lang(l);
     var link = '';
@@ -159,7 +188,7 @@
       title: tx(e.title, l) + (e.demo ? ' (DEMO)' : ''),
       start: e.start,
       end: e.end,
-      location: [tx(p.name, l), city(e, l)].filter(Boolean).join(', '),
+      location: calLocation(e, l),
       address: p.address || '',
       description: tx(e.calDescription, l),
       url: link,
@@ -248,8 +277,12 @@
   function cover(e, opts) {
     var c = el('div', 'invite__cover');
     var cv = e.cover || {}, l = lang(opts.lang);
-    if (cv.photo && cv.photo.id) {
+    var usePhoto = cv.photo && cv.photo.id && !(cv.photo.card === false && opts.variant !== 'page');
+    if (usePhoto) {
+      duoDefs();
       var fig = el('figure', 'photo photo--duo');
+      fig.setAttribute('data-duo', String(cv.token || '--violet').replace(/^--/, ''));
+      if (cv.photo.lift) fig.style.setProperty('--duo-lift', String(cv.photo.lift));
       var img = d.createElement('img');
       var src = photoUrl(cv.photo.id, 640), srcset = [320, 640, 960, 1280].map(function (wd) { return photoUrl(cv.photo.id, wd) + ' ' + wd + 'w'; }).join(', ');
       img.sizes = opts.variant === 'hero' ? '(min-width: 1000px) 440px, 92vw' : '(min-width: 1000px) 380px, (min-width: 700px) 46vw, 92vw';
@@ -315,10 +348,21 @@
     art.setAttribute('data-city', e.city || '');
     art.setAttribute('data-lang', (e.language || []).join(' '));
     if (e.tone === 'calm') art.setAttribute('data-tone', 'calm');
+    if (e.series) art.setAttribute('data-series', e.series);
+    if (e.tentpole) art.setAttribute('data-tentpole', '');
+    if (isTeen(e)) art.setAttribute('data-teen', '');
     if (opts.anchor) art.id = e.id;
     if (isPast(e)) art.setAttribute('data-state', 'past');
     art.appendChild(cover(e, opts));
     var body = el('div', 'invite__body');
+    var sr = series(e, l);
+    if (sr && variant !== 'compact') {
+      var kick = el('p', 'invite__series' + (e.tentpole ? ' invite__series--tentpole' : ''));
+      kick.appendChild(el('span', 'invite__series-name', e.tentpole && data().tentpole ? tx(data().tentpole.name, l) : (sr.short || sr.name)));
+      var rec = e.tentpole && data().tentpole ? label('recurs', { recurs: tx(data().tentpole.recurs, l) }, l) : sr.recurs;
+      if (rec) kick.appendChild(el('span', 'invite__series-recurs', rec));
+      body.appendChild(kick);
+    }
     var h = el('h' + Math.min(6, Math.max(2, opts.level || 3)), 'invite__title');
     var link = el('a', null, tx(e.title, l));
     link.href = url(e, { lang: l });
@@ -331,7 +375,8 @@
     body.appendChild(meta);
     if (variant !== 'compact') {
       var vibes = el('ul', 'invite__vibes'), V = data().vibes || {};
-      (e.vibes || []).slice(0, variant === 'hero' ? 2 : 3).forEach(function (v) { if (V[v]) vibes.appendChild(el('li', null, tx(V[v], l))); });
+      if (isTeen(e)) { var tli = el('li', 'invite__teen', label('teen', null, l)); tli.title = label('teenHint', null, l); vibes.appendChild(tli); }
+      (e.vibes || []).slice(0, (variant === 'hero' ? 2 : 3) - (isTeen(e) ? 1 : 0)).forEach(function (v) { if (V[v]) vibes.appendChild(el('li', null, tx(V[v], l))); });
       if (vibes.childNodes.length) body.appendChild(vibes);
     }
     body.appendChild(goingRow(e, { size: 'sm' }));
@@ -341,9 +386,153 @@
     return art;
   }
 
+
+  /* ------------------------------------------------------------------ round 1: series, tentpole, teen, two-tone map */
+  function isTeen(e) { return !!(e && e.ages && e.ages.guardian === false && (+e.ages.min || 14) < 18); }
+
+  function series(x, l) {
+    var id = typeof x === 'string' ? x : (x && x.series);
+    var S = data().series || {}, r = id && S[id];
+    if (!r) return null;
+    var name = tx(r.name, l);
+    return { id: id, name: name, short: tx(r.short, l) || name, recurs: r.recurs ? label('recurs', { recurs: tx(r.recurs, l) }, l) : '', blurb: tx(r.blurb, l) };
+  }
+  function seriesName(x, opts) { var r = series(x, opts && opts.lang); return r ? (opts && opts.short ? r.short : r.name) : ''; }
+  /** Series with their dates. Default: only series with a visible upcoming event (the drop rules apply);
+      { all: true } also returns series whose only dates are locked behind the drop (locked: true). */
+  function seriesList(opts) {
+    opts = opts || {};
+    var S = data().series || {}, out = [];
+    var vis = upcoming({}), every = all().filter(function (e) { return e.status !== 'cancelled' && !isPast(e); });
+    Object.keys(S).forEach(function (id) {
+      var r = series(id, opts.lang);
+      var dates = vis.filter(function (e) { return e.series === id; });
+      var later = every.filter(function (e) { return e.series === id && dates.indexOf(e) < 0; });
+      if (!dates.length && !(opts.all && later.length)) return;
+      r.dates = dates; r.next = dates[0] || null; r.locked = !dates.length; r.later = later;
+      out.push(r);
+    });
+    out.sort(function (a, b) { var x = a.next || a.later[0], y = b.next || b.later[0]; return Date.parse(x.start) - Date.parse(y.start); });
+    return out;
+  }
+  function tentpole(l) {
+    var T = data().tentpole;
+    if (!T) return null;
+    var eds = all().filter(function (e) { return e.tentpole && e.status !== 'cancelled' && !isPast(e); })
+      .sort(function (a, b) { return Date.parse(a.start) - Date.parse(b.start); });
+    var open = drop.isOpen();
+    var vis = eds.filter(function (e) { return open || !drop.isDropEvent(e); });
+    return { id: T.id, name: tx(T.name, l), recurs: tx(T.recurs, l), tagline: tx(T.tagline, l), eyebrow: tx(T.eyebrow, l), next: vis[0] || null, editions: eds, demo: T.demo !== false };
+  }
+
+  /** Two-tone photo map (genz-brand-16): shadows go to --night, mid-tones to the event colour, highlights to a pale
+      tint of it, so a dark interior no longer turns to olive mud under a multiply. One filter per cover colour. */
+  var DUO = { celery: '#C8F03C', sky: '#4FD6FF', bubblegum: '#FF7AC6', violet: '#6A2BFF', tangerine: '#FF8B3D', sun: '#FFD23F',
+    mint: '#7EE081', teal: '#00B3A6', orange: '#FF6B1A', hotpink: '#FF4FA3', lake: '#2236C9' };
+  var NIGHT = [23, 11, 51];
+  function rgb(hex) { var n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  function duoTable(hex) {
+    var c = rgb(hex), hi = c.map(function (v) { return Math.round(v + (255 - v) * 0.62); });
+    return [0, 1, 2].map(function (i) { return [NIGHT[i], c[i], hi[i]].map(function (v) { return (v / 255).toFixed(3); }).join(' '); });
+  }
+  function duoMarkup() {
+    var f = '';
+    Object.keys(DUO).forEach(function (k) {
+      var t = duoTable(DUO[k]);
+      f += '<filter id="ysd-duo-' + k + '" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0"/>' +
+        '<feComponentTransfer><feFuncR type="table" tableValues="' + t[0] + '"/><feFuncG type="table" tableValues="' + t[1] + '"/><feFuncB type="table" tableValues="' + t[2] + '"/></feComponentTransfer></filter>';
+    });
+    return '<svg id="ysd-duo-defs" width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden"><defs>' + f + '</defs></svg>';
+  }
+  function duoDefs() {
+    try {
+      if (!d.getElementById('ysd-duo-defs') && d.body) {
+        var box = d.createElement('div');
+        box.innerHTML = duoMarkup(); // static markup built from the constants above, no outside text
+        d.body.appendChild(box.firstChild);
+      }
+      if (d.getElementById('ysd-duo-defs')) d.documentElement.setAttribute('data-duo-map', '');
+    } catch (x) {}
+  }
+
+  function tokenOf(e) { return (e.cover && e.cover.token) || '--violet'; }
+  function inkOn(token) { return /violet|lake|night/.test(token) ? 'light' : 'dark'; }
+
+  /** The poster-grade tentpole band (right-wing-no-tentpole): a duotone type lock-up with the date ticket, the DEMO
+      seats bar, a countdown and I'm in. Home and events both mount it; rsvp.js keeps the seats and the button live. */
+  function renderTentpole(e, opts) {
+    opts = opts || {};
+    var l = lang(opts.lang), T = tentpole(l), tok = (data().tentpole && data().tentpole.token) || tokenOf(e);
+    var art = el('article', 'tentpole');
+    art.style.setProperty('--duo', 'var(' + tok + ')');
+    art.setAttribute('data-duo', tok.replace(/^--/, ''));
+    art.setAttribute('data-ink', inkOn(tok));
+    art.setAttribute('data-event', e.id);
+    var poster = el('div', 'tentpole__poster');
+    poster.setAttribute('aria-hidden', 'true');
+    var brand = el('p', 'tentpole__brand');
+    String(T ? T.name : tx(e.title, l)).split(' ').forEach(function (w) { brand.appendChild(el('span', null, w)); });
+    poster.appendChild(brand);
+    var sr = series(e, l);
+    poster.appendChild(el('p', 'tentpole__edition', sr && sr.id !== (T && T.id) ? sr.name : tx(e.cover && e.cover.short, l)));
+    var tk = el('span', 'tentpole__ticket'); tk.appendChild(ticket(e, { lang: l })); poster.appendChild(tk);
+    if (e.cover && e.cover.sticker) { var st = el('span', 'sticker tentpole__sticker'); st.setAttribute('data-sticker', e.cover.sticker); st.setAttribute('aria-hidden', 'true'); poster.appendChild(st); }
+    art.appendChild(poster);
+
+    var body = el('div', 'tentpole__body');
+    var eb = el('p', 'tentpole__eyebrow');
+    eb.appendChild(el('span', null, T ? T.eyebrow : ''));
+    if (e.demo) { eb.appendChild(d.createTextNode(' ')); eb.appendChild(el('span', 'tag tag--demo', label('demoEvent', null, l))); }
+    body.appendChild(eb);
+    var h = el('h' + Math.min(6, Math.max(2, opts.level || 3)), 'tentpole__title');
+    var a = el('a', null, tx(e.title, l)); a.href = url(e, { lang: l });
+    h.appendChild(a);
+    body.appendChild(h);
+    if (T && T.tagline) body.appendChild(el('p', 'tentpole__tagline', T.tagline));
+    var meta = el('ul', 'tentpole__meta');
+    meta.appendChild(el('li', null, when(e, l)));
+    meta.appendChild(el('li', null, [city(e, l), place(e, l)].filter(Boolean).join(' · ')));
+    meta.appendChild(el('li', null, [tx(e.cost && e.cost.label, l) || t('event.free'), isTeen(e) ? label('teen', null, l) : ''].filter(Boolean).join(' · ')));
+    body.appendChild(meta);
+    var seats = el('div', 'tentpole__seats');
+    seats.setAttribute('data-rsvp-seats', e.id);
+    fillSeats(seats, e, l);
+    body.appendChild(seats);
+    var n = YSD.fmt && YSD.fmt.days ? YSD.fmt.days(String(e.start).slice(0, 10)) : NaN;
+    if (!isNaN(n) && n >= 0) body.appendChild(el('p', 'tentpole__count', n === 0 ? label('today', null, l) : n === 1 ? label('dayToGo', null, l) : label('daysToGo', { n: n }, l)));
+    var acts = rsvpRow(e, { variant: 'tentpole', lang: l });
+    acts.className = 'tentpole__actions';
+    var first = acts.querySelector('.btn--primary'); if (first) first.classList.add('btn--lg');
+    var det = acts.querySelector('.btn--ghost'); if (det) det.classList.add('btn--lg');
+    body.appendChild(acts);
+    if (T && T.editions.length > 1) {
+      var more = T.editions.filter(function (x) { return x.id !== e.id; }).slice(0, 2).map(function (x) {
+        var f = YSD.fmt && YSD.fmt.date ? YSD.fmt.date(x.start, { lang: l }) : tx(x.when, l);
+        return f + ' · ' + city(x, l);
+      });
+      body.appendChild(el('p', 'tentpole__recurs', label('recurs', { recurs: T.recurs }, l) + (more.length ? ' · ' + more.join(', ') : '')));
+    }
+    art.appendChild(body);
+    if (YSD.ui && YSD.ui.stickers) YSD.ui.stickers(art);
+    return art;
+  }
+  /** (Re)fills a [data-rsvp-seats] box: a bar and "{n} of {cap} seats saved (DEMO)". */
+  function fillSeats(box, e, l) {
+    box.textContent = '';
+    var n = going(e), cap = +e.capacity || 0;
+    if (!cap) return;
+    var bar = el('span', 'tentpole__bar'); bar.setAttribute('aria-hidden', 'true');
+    var fillEl = el('span'); fillEl.style.setProperty('--fill', Math.max(4, Math.min(100, Math.round(n / cap * 100))) + '%');
+    bar.appendChild(fillEl);
+    box.appendChild(bar);
+    box.appendChild(el('span', 'tentpole__seats-label', label('seats', { n: n, cap: cap }, l)));
+  }
+
   YSD.events = {
     all: all, get: get, upcoming: upcoming, render: render, ticket: ticket, cal: cal, url: url, path: path,
     drop: drop, isPast: isPast, isFull: isFull, when: when, place: place, city: city, label: label,
-    fillGoing: fillGoing, facepile: facepile, photoUrl: photoUrl, joinHref: joinHref, rootPrefix: rootPrefix
+    fillGoing: fillGoing, facepile: facepile, photoUrl: photoUrl, joinHref: joinHref, rootPrefix: rootPrefix,
+    series: series, seriesName: seriesName, seriesList: seriesList, tentpole: tentpole, renderTentpole: renderTentpole,
+    fillSeats: fillSeats, isTeen: isTeen, duoDefs: duoDefs, duoMarkup: duoMarkup, calLocation: calLocation
   };
 })(window, document);

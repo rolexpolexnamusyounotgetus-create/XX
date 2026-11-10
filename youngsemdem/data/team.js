@@ -1,7 +1,11 @@
 /*!
  * data/team.js: the chapter team page for the Young Democrats of Seminole County (YDSC), EN + ES.
  *
- * DEMO DATA (demo:true). Nov 9, 2026 (W7): the treasurer no longer promises a public receipts page
+ * DEMO DATA (demo:true). Round 1, Nov 10, 2026 (G-ABOUT, genz-brand-18): about.html no longer shows the placeholder
+ * names. It renders a compact "Find your seat" grid of role tiles (title, officer or chair, monogram, bio and does[]
+ * in a disclosure) and a short "Run for a role" block (runForRole; its button goes to join.html?intent=role while
+ * links.contact is ''). name{} stays here for a future filled-seat view and is never shown without consent.
+ * Nov 9, 2026 (W7): the treasurer no longer promises a public receipts page
  * (BRIEF 4.9: only if the chapter agrees to publish one). Checker, Nov 9: the president's bio no longer
  * implies a chapter group chat (BRIEF 9), and demoNote no longer repeats the DEMO tag it sits beside.
  * Every name here is an obvious placeholder ("Your President Here"). No real

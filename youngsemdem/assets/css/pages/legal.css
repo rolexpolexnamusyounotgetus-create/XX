@@ -1,7 +1,9 @@
-/* YDSC · assets/css/pages/legal.css (W7). The five policy pages (body.p-legal; main.legal[data-legal]).
-   Legal is the calm register (BRIEF 2.5, 3.1): one flat colour band for the title, then cream and ink
-   with hairlines. No stickers, no rotation, no confetti, no emoji. Each policy gets its own colour world
-   (--lc) so the five pages read as a set. Page-only classes use the x- prefix; .legal is W7's component. */
+/* YDSC · assets/css/pages/legal.css (W7; G-ABOUT round 1, Nov 10, 2026). The five policy pages (body.p-legal;
+   main.legal[data-legal]). Legal is the calm register (BRIEF 2.5, 3.1) and the cream world (round 1 worlds table): a
+   quiet paper band for the title (cream in light, the theme's paper in dark), then cream and ink with hairlines. No
+   stickers, no rotation, no confetti, no emoji. Each policy keeps its own colour (--lc) as an accent only (the top rule,
+   the eyebrow pill, the TL;DR numbers), so the five pages read as a set without five loud bands. Page-only classes use
+   the x- prefix; .legal is W7's component. */
 
 .p-legal .legal { --lc:var(--violet);--lc-ink:var(--white);--lc-muted:#E9E2FF;--lc-focus:var(--celery); }
 .p-legal .legal[data-legal="accessibility"] { --lc:var(--sky);--lc-ink:var(--night);--lc-muted:#0F3240;--lc-focus:var(--night); }
@@ -10,17 +12,18 @@
 .p-legal .legal[data-legal="conduct"] { --lc:var(--celery);--lc-ink:var(--night);--lc-muted:#2F3A0E;--lc-focus:var(--night); }
 
 /* ---- title band */
-.p-legal .x-lhero { padding-block:clamp(40px, 7vw, 104px) clamp(36px, 5vw, 72px);background:var(--lc);color:var(--lc-ink);border-bottom:var(--bw) solid var(--night);--focus:var(--lc-focus);--link:var(--lc-ink); }
+.p-legal .x-lhero { padding-block:clamp(32px, 6vw, 88px) clamp(32px, 5vw, 64px);background:var(--surface-2);color:var(--text);border-top:10px solid var(--lc);border-bottom:1px solid var(--line); }
 .p-legal .x-lhero__inner { display:grid;grid-template-columns:minmax(0, 1fr);gap:var(--sp-5); }
 .p-legal .x-lhero__main { display:grid;gap:var(--sp-4); }
-.p-legal .x-lhero .x-draft { background:var(--cream);color:var(--night);border-color:var(--night);--focus:var(--violet-deep); }
+.p-legal .x-lhero .x-draft { background:var(--surface);color:var(--text);border-color:var(--edge); }
 @media (min-width: 1024px) {
   .p-legal .x-lhero__inner { grid-template-columns:minmax(0, 1fr) 340px;column-gap:var(--sp-8);align-items:end; }
 }
-.p-legal .x-lhero__eyebrow { width:fit-content;padding:7px 12px;border-radius:var(--r-pill);background:var(--night);color:var(--cream);font:700 var(--fs-tag)/1.25 var(--font-body);letter-spacing:.08em;text-transform:uppercase; }
-.p-legal .x-lhero__title { max-width:15ch;font:800 clamp(48px, 7vw + 18px, 124px)/.88 var(--font-display-76);font-stretch:76%;letter-spacing:-.025em;text-wrap:balance; }
+.p-legal .x-lhero__eyebrow { width:fit-content;padding:7px 12px;border:1.5px solid var(--night);border-radius:var(--r-pill);background:var(--lc);color:var(--lc-ink);font:700 var(--fs-tag)/1.25 var(--font-body);letter-spacing:.08em;text-transform:uppercase; }
+.p-legal .x-lhero__title { max-width:15ch;font:800 clamp(44px, 6vw + 18px, 104px)/.9 var(--font-display-76);font-stretch:76%;letter-spacing:-.025em;text-wrap:balance; }
 .p-legal .x-lhero__lede { max-width:46ch;font-size:var(--fs-lead);line-height:1.45; }
-.p-legal .x-lhero__btn { --btn-bg:var(--night);--btn-fg:var(--cream);--btn-edge:var(--night);--btn-sh:rgba(23, 11, 51, .35);white-space:normal; }
+.p-legal .x-lhero__lede { color:var(--text-muted); }
+.p-legal .x-lhero__btn { --btn-bg:var(--inverse-bg);--btn-fg:var(--inverse-text);--btn-edge:var(--inverse-bg);--btn-sh:transparent;white-space:normal; }
 .p-legal .x-lmeta { margin-bottom:calc(-1 * var(--sp-4));font-size:var(--fs-small);font-weight:700;color:var(--text-muted); }
 .p-legal .x-lmeta:empty { display:none; }
 

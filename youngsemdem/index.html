@@ -1,17 +1,18 @@
 <!doctype html>
 <!--
-  Home (BRIEF §4.1, W1). Built from docs/TEMPLATE.html. Page copy: data/pages/home.js (static, read by
-  tools/make_es.js); runtime data: data/slices/home.js (regenerate with node tools/slice_data.js --rerun
-  data/slices/home.js). Behaviour: assets/js/pages/home.js, which renders the next DEMO event with W2's
-  eventcard.js (the ticket, the pinned hangout card and the invites share rsvp.js state) and lazy-loads
-  W4's reel.js, W5's maker.js/membercard.js and W6's joinform.js when their sections come near the
-  viewport, so the first view stays under the home budget. Facts: docs/research/00 rulings. No AI.
+  Home (BRIEF §4.1; W1, rebuilt by G-HOME in round 1). Built from docs/TEMPLATE.html. Page copy: data/pages/home.js
+  (static, read by tools/make_es.js); runtime data: data/slices/home.js (regenerate with node tools/slice_data.js
+  --rerun data/slices/home.js). Behaviour: assets/js/pages/home.js. Nine moments: hero (H1 + hand note, chat-bubble
+  rotor, two buttons, the invite: people photo + next-up ticket), do one thing, the Reel, come to something
+  (tentpole poster + invites + January drop), quick card maker, quiz, collect (sticker rules + DEMO Drop 01),
+  real (chapter proof + Nov 3 + scoreboard), join; then a closing strip (the Letter + share). No event repeats.
+  Lazy groups keep the first view under the home budget. Facts: docs/research/00 rulings. No AI.
 -->
 <html lang="en" data-page="home">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title data-t="home:seo.title">Local politics is a group project · Young Democrats of Seminole County</title>
+  <title data-t="seo.home.title">Young Democrats of Seminole County · Local politics is a group project</title>
   <meta name="description" content="Seminole County's Young Democrats: meetups, plain-words voting help in English and Spanish, issue quizzes and clips from people who live here." data-t-content="seo.home.description">
   <meta property="og:title" content="Local politics is a group project" data-t-content="seo.home.ogTitle">
   <meta property="og:description" content="Seminole County's Young Democrats, ages 14 to 39. Meetups, voting help that makes sense, and a seat saved for you." data-t-content="seo.home.ogDescription">
@@ -108,29 +109,33 @@
   <main id="main">
     <div data-invite-landing hidden></div>
 
-    <!-- 1 + 2. Hero (flat ultraviolet) with the invite ticket -->
+    <!-- 1. Hero (flat ultraviolet): H1 + hand note, the chat-bubble rotor, two buttons, then the invite (people photo + next-up ticket) -->
     <section class="section section--violet x-hero" aria-labelledby="home-title">
       <div class="wrap x-hero__grid">
         <div class="x-hero__copy">
-          <p class="eyebrow eyebrow--pill x-hero__eyebrow" data-t="home:hero.eyebrow">YOUNG DEMOCRATS OF SEMINOLE COUNTY · AGES 14 TO 39</p>
+          <p class="eyebrow eyebrow--pill x-hero__eyebrow" data-t="home:hero.eyebrow">Young Democrats of Seminole County · ages 14 to 39</p>
           <div class="x-hero__title">
             <h1 class="h-hero kinetic x-hero__h1" id="home-title"><span class="kinetic__line" data-t="home:hero.l1">Local politics</span> <span class="kinetic__line"><span data-t="home:hero.l2">is a</span> <span class="x-hi" data-t="home:hero.l2hi">group</span></span> <span class="kinetic__line kinetic__hi" data-t="home:hero.l3">project.</span></h1>
-            <figure class="x-polaroid">
-              <span class="photo photo--golden x-polaroid__photo"><img src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=320&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1000px) 340px, (min-width: 700px) 200px, 30vw" width="640" height="428" fetchpriority="high" decoding="async" alt="Three friends seen from behind, arms up, watching the sun set from a rooftop" data-t-alt="home:hero.photoAlt" data-photographer="Simon Maage" data-source="https://unsplash.com/photos/photo-of-three-women-lifting-there-hands-tXiMrX3Gc-g"></span>
-              <figcaption class="x-polaroid__cap"><span class="tag tag--stock" data-t="tag.stock">Stock photo · not members</span></figcaption>
-            </figure>
-            <button class="sticker x-hero__sticker" type="button" data-sticker="sun" aria-label="Sticker: sun in sunglasses. Tap for a Seminole fact" data-t-aria-label="home:sticker.sun"></button>
+            <span class="x-note" role="img" aria-label="the fun kind" data-t-aria-label="home:hero.hand"><svg class="x-note__word x-note__word--en" viewBox="-3 -72 432 82" aria-hidden="true" focusable="false"><path d="M11 -35 12 -36Q9 -36 9 -37Q8 -37 6 -37Q4 -37 3 -38Q1 -38 0 -41Q0 -44 2 -45Q4 -45 5 -45Q6 -45 8 -46Q9 -46 11 -46L13 -47Q13 -46 13 -47L14 -49Q14 -50 15 -52Q15 -53 16 -56Q16 -56 18 -62Q18 -62 21 -64Q22 -65 25 -63Q27 -62 28 -61Q27 -60 27 -58Q27 -58 26 -51V-48Q26 -48 28 -48Q30 -47 33 -47Q38 -46 39 -43Q40 -40 39 -40Q38 -39 35 -38Q33 -38 30 -38Q26 -38 24 -38Q24 -36 24 -35L24 -33Q24 -33 23 -26Q23 -25 22 -17V-9Q22 -8 22 -6Q23 -4 23 -3Q23 -2 24 1Q22 4 20 4Q17 4 15 2L14 0Q13 -1 13 -1Q13 -1 13 -2Q12 -4 12 -4Q11 -5 11 -5Q11 -6 11 -6Q11 -8 11 -9Q10 -10 10 -13Q10 -18 10 -19Q10 -19 10 -22L11 -25Q11 -25 11 -28Q11 -28 11 -30Q11 -32 11 -32Q11 -34 11 -35ZM52 -39 50 -25 51 -27Q51 -28 54 -31Q54 -31 57 -36L59 -38L60 -40Q62 -41 63 -41Q66 -42 69 -40Q69 -39 70 -38Q72 -37 72 -34Q72 -34 72 -34Q70 -18 70 -12Q70 -6 71 -1Q72 2 68 4Q67 4 65 4Q64 4 63 3Q62 3 61 1L61 -1Q60 -2 60 -3L60 -6Q60 -6 60 -8L60 -11Q60 -12 60 -17L60 -21V-23Q60 -24 60 -25Q57 -23 54 -11L51 -3Q50 3 47 4L46 4Q45 4 42 3Q41 1 41 -1Q41 -2 41 -2Q40 -4 41 -6Q41 -6 41 -7L41 -8Q41 -9 40 -11Q40 -13 40 -14Q40 -15 41 -17Q40 -18 40 -20Q40 -24 40 -26Q40 -28 40 -30Q40 -32 40 -34L41 -42L41 -48Q41 -49 41 -50Q40 -52 41 -54Q41 -56 41 -56Q41 -57 42 -59Q42 -61 42 -62L43 -64Q43 -65 46 -66H47Q50 -66 52 -65Q53 -64 53 -62Q52 -57 52 -56Q52 -55 52 -48Q52 -40 52 -39ZM102 -32Q103 -34 102 -36Q101 -36 100 -36Q99 -36 98 -34Q96 -31 95 -28H95Q94 -24 94 -24Q96 -23 96 -23Q98 -24 99 -24Q101 -27 102 -32ZM102 -18 98 -17Q95 -17 93 -18L94 -16Q94 -8 98 -5Q99 -5 100 -5Q101 -5 102 -5Q103 -6 103 -6Q103 -7 104 -7Q108 -12 110 -11Q112 -10 112 -9Q112 -9 112 -8V-8Q112 -7 111 -4Q109 -2 108 0Q107 2 106 2Q103 4 99 4Q98 4 98 4Q97 3 97 4L96 3Q95 3 95 3Q94 2 93 2Q91 1 90 1Q90 0 89 0Q89 0 87 -2Q86 -3 86 -3Q85 -4 85 -5Q84 -5 84 -6Q84 -7 84 -8L83 -8Q83 -9 83 -10Q82 -10 82 -11V-12Q82 -12 82 -13V-16L82 -17V-17Q82 -18 82 -19L82 -20Q82 -20 82 -22Q83 -24 83 -24V-25Q83 -25 83 -26Q83 -26 84 -27Q84 -28 85 -31L87 -35Q87 -36 89 -38Q89 -39 90 -40L91 -41Q92 -42 93 -42Q94 -43 95 -43L98 -44Q98 -44 98 -44H100Q102 -43 103 -43Q106 -42 108 -40Q111 -37 111 -34Q111 -30 110 -28Q107 -22 106 -21Q104 -18 102 -18ZM143 -35 142 -35H141Q138 -35 137 -36Q136 -37 137 -39Q138 -41 139 -41Q141 -41 142 -42Q142 -42 144 -42Q146 -42 146 -42V-43Q146 -44 147 -46Q147 -47 148 -48Q148 -49 148 -51L150 -55Q150 -56 150 -57Q150 -57 150 -58Q151 -59 151 -59L151 -61L152 -62Q152 -63 153 -64Q154 -65 154 -65Q159 -69 160 -69H162Q165 -69 166 -69Q169 -69 171 -68L172 -67Q176 -64 176 -61Q176 -60 175 -59Q174 -58 172 -58Q170 -58 167 -59Q165 -60 163 -60Q162 -60 161 -58Q160 -56 159 -49Q157 -43 158 -43H159Q160 -42 161 -42L164 -42Q166 -42 169 -41Q172 -40 171 -38Q171 -36 168 -36Q162 -36 158 -34Q157 -34 157 -30L157 -21Q157 -19 157 -19Q156 -19 157 -18Q157 -17 156 -16Q156 -15 157 -14Q156 -14 156 -11Q157 -7 157 -6Q156 -6 157 -5V-4Q157 1 157 2Q156 5 152 6Q150 6 148 5Q147 5 147 4Q146 2 145 0V-2L145 -3Q145 -4 145 -5Q145 -6 145 -6V-9Q145 -10 145 -13V-15Q145 -16 145 -19Q145 -20 145 -22Q145 -28 145 -30Q145 -30 145 -31V-32Q145 -33 145 -34Q145 -34 145 -35Q144 -35 143 -35ZM206 -28 206 -26Q206 -26 207 -20V-18Q207 -16 208 -11Q208 -9 210 -4Q210 -4 210 -2L210 -1Q210 -1 210 0Q210 0 208 0Q206 0 205 1Q205 1 204 0Q203 1 201 0Q200 -1 200 -2L199 -4Q199 -6 198 -7Q198 -8 198 -9Q197 -10 197 -10Q196 -6 195 -4Q195 -4 194 -3L193 -1Q193 -1 192 0Q192 1 189 1Q188 1 185 0Q184 0 182 -1Q181 -1 180 -1Q179 -2 179 -2Q178 -2 177 -2L176 -4Q176 -4 175 -5Q175 -6 175 -6Q175 -7 175 -8Q175 -8 175 -9Q175 -11 176 -13Q176 -14 176 -14Q176 -14 176 -16Q176 -16 176 -16L176 -20Q176 -22 176 -22V-24Q176 -24 176 -25L177 -30Q177 -31 177 -31V-32Q177 -32 177 -34L178 -36L179 -38Q179 -38 180 -38Q182 -39 185 -39Q186 -39 187 -38Q188 -38 189 -38Q191 -37 189 -33Q188 -30 188 -30Q188 -29 188 -29Q187 -26 187 -25Q188 -26 187 -24L187 -20Q186 -18 186 -15L186 -14Q186 -13 186 -11Q186 -10 186 -10L186 -9Q186 -9 186 -9Q186 -8 187 -9Q188 -9 189 -9Q190 -11 191 -13Q191 -14 191 -15Q193 -19 193 -20Q194 -22 195 -26Q195 -26 195 -28L196 -33Q197 -35 197 -35Q197 -35 198 -38Q198 -38 199 -39Q200 -40 202 -42H202Q204 -42 206 -41Q206 -40 206 -40Q206 -38 206 -36V-35L206 -33Q207 -30 206 -28ZM241 -4 241 -5 240 -12Q239 -14 239 -16L240 -20Q240 -21 240 -21Q238 -21 236 -18Q236 -18 235 -17Q231 -10 230 -1Q230 1 228 1Q226 0 225 0L225 0H223Q221 0 220 -2Q220 -2 220 -4V-6L220 -11V-19Q220 -21 219 -23Q219 -25 219 -30Q219 -35 219 -35Q219 -36 219 -36Q219 -37 219 -38Q220 -38 222 -39Q223 -40 224 -40Q226 -39 228 -38Q229 -38 229 -36Q230 -31 229 -29Q229 -28 229 -22Q237 -36 243 -39Q243 -39 244 -39Q245 -39 246 -38Q248 -37 248 -37Q249 -37 249 -36Q250 -35 250 -35Q252 -33 251 -26Q251 -25 251 -24Q251 -23 251 -20Q251 -17 251 -16Q251 -13 251 -12L252 -8Q252 -6 253 -5Q253 -4 254 -1Q255 1 254 2Q252 3 252 2Q251 2 250 3Q249 3 247 3Q246 2 244 1L243 0Q242 -2 242 -3Q241 -3 241 -4ZM285 -37 285 -38Q285 -38 285 -39Q285 -40 285 -41Q285 -44 285 -45Q285 -45 285 -49Q284 -52 285 -55Q285 -56 286 -61Q287 -63 287 -63Q287 -64 289 -66L291 -67Q292 -67 296 -66L298 -66Q298 -64 298 -62Q298 -59 297 -54Q296 -43 296 -32L296 -30Q299 -32 301 -34Q304 -37 304 -37Q304 -37 307 -39Q309 -41 310 -42Q311 -44 314 -45Q316 -45 317 -44Q319 -43 319 -42Q319 -41 319 -41Q318 -40 318 -39Q317 -38 317 -37Q315 -35 311 -31Q309 -28 307 -27Q306 -26 303 -23Q303 -23 303 -23Q303 -22 304 -21Q308 -17 311 -15Q312 -14 314 -14Q314 -14 315 -13L315 -13Q317 -12 318 -12Q321 -11 321 -9Q321 -8 320 -7Q320 -7 317 -5Q316 -5 315 -4Q311 -3 307 -5Q304 -7 302 -9L300 -11Q300 -11 296 -15L297 -12L297 -9Q297 -6 298 -4Q298 -2 297 -1Q296 0 293 0Q290 0 288 -1Q288 -2 288 -4Q287 -6 287 -7Q285 -13 285 -18L285 -21Q285 -21 285 -23Q286 -28 285 -37ZM330 -63Q337 -63 340 -60Q340 -58 338 -53Q337 -51 336 -50L335 -49Q334 -49 334 -49Q330 -48 328 -50Q328 -51 327 -51Q327 -51 327 -53Q326 -54 326 -55Q326 -61 330 -63ZM330 -39Q331 -40 334 -38Q335 -38 336 -37L337 -36Q338 -36 338 -35V-26Q338 -24 337 -22V-22Q337 -18 338 -3Q338 0 337 0Q335 0 334 0Q334 0 334 0H333L332 0Q332 0 331 -1Q330 -1 330 -2Q330 -2 329 -2Q328 -3 328 -4Q327 -6 327 -7Q327 -8 326 -8L326 -17Q326 -18 326 -19V-22Q326 -23 326 -26Q326 -28 327 -30Q326 -33 326 -34Q326 -35 326 -35Q325 -36 327 -38Q328 -39 329 -39ZM371 -4 371 -5 370 -12Q369 -14 369 -16L369 -20Q369 -21 370 -21Q368 -21 366 -18Q366 -18 365 -17Q361 -10 360 -1Q360 1 358 1Q356 0 355 0L355 0H353Q351 0 350 -2Q350 -2 350 -4V-6L350 -11V-19Q350 -21 349 -23Q349 -25 349 -30Q349 -35 349 -35Q349 -36 349 -36Q349 -37 349 -38Q350 -38 352 -39Q353 -40 354 -40Q356 -39 358 -38Q359 -38 359 -36Q359 -31 359 -29Q359 -28 359 -22Q367 -36 373 -39Q373 -39 374 -39Q375 -39 376 -38Q378 -37 378 -37Q379 -37 379 -36Q380 -35 380 -35Q382 -33 381 -26Q381 -25 381 -24Q381 -23 381 -20Q381 -17 381 -16Q381 -13 381 -12L381 -8Q382 -6 382 -5Q383 -4 384 -1Q385 1 384 2Q382 3 381 2Q381 2 380 3Q379 3 377 3Q375 2 374 1L373 0Q372 -2 372 -3Q371 -3 371 -4ZM412 -25 412 -27Q412 -27 412 -28Q412 -29 412 -30Q412 -32 411 -33Q410 -34 408 -34Q407 -32 405 -26Q405 -26 405 -25Q404 -24 404 -22Q403 -20 403 -20Q403 -19 403 -19Q403 -18 403 -17L402 -15Q402 -15 402 -14V-12Q402 -12 402 -11V-9L402 -6Q402 -5 404 -2Q405 -2 405 -2Q407 -4 408 -6L408 -8Q408 -8 409 -11L409 -12Q409 -13 410 -14Q410 -15 410 -16Q410 -16 411 -20Q411 -20 411 -20V-21Q412 -25 412 -25ZM425 -58Q425 -54 425 -53L424 -47V-44Q424 -42 424 -38Q424 -35 424 -33Q424 -30 424 -29Q424 -29 424 -28L424 -28L424 -25V-21Q424 -20 424 -17Q424 -15 424 -14Q424 -12 425 -11V-9L425 -5V-2Q425 -1 425 -1Q425 0 426 2Q426 3 426 4Q423 8 419 6Q418 6 417 5Q416 4 416 3L416 1Q415 1 415 0Q415 -1 415 -1Q415 -2 414 -3L413 -1Q413 0 412 0L412 1Q410 2 410 4L408 5Q406 5 402 4Q401 4 400 4H400Q399 4 397 3Q396 2 396 2L396 2Q395 1 395 0Q394 0 394 -2L393 -6Q393 -7 393 -8Q393 -9 393 -11L393 -12L393 -14Q393 -14 393 -16L392 -16Q392 -20 393 -21L393 -23Q392 -24 393 -26L394 -31Q394 -31 395 -32Q395 -35 396 -36L398 -39Q398 -39 399 -40Q400 -42 403 -42Q406 -42 414 -41V-45L413 -49Q413 -52 413 -54Q413 -57 413 -58Q413 -58 414 -62Q415 -66 417 -68Q418 -69 420 -69Q422 -69 422 -69Q422 -68 423 -68Q426 -68 426 -63Z"/></svg><svg class="x-note__word x-note__word--es" viewBox="1 -72 441 82" aria-hidden="true" focusable="false"><path d="M25 -25 25 -27Q24 -27 24 -28Q24 -29 24 -30Q24 -32 23 -33Q23 -34 21 -34Q19 -32 17 -26Q17 -26 17 -25Q17 -24 16 -22Q16 -20 16 -20Q16 -19 16 -19Q15 -18 15 -17L15 -15Q14 -15 15 -14V-12Q15 -12 15 -11V-9L15 -6Q15 -5 17 -2Q18 -2 18 -2Q20 -4 20 -6L20 -8Q21 -8 21 -11L22 -12Q22 -13 22 -14Q22 -15 22 -16Q22 -16 24 -20Q24 -20 24 -20V-21Q25 -25 25 -25ZM38 -58Q38 -54 37 -53L36 -47V-44Q36 -42 36 -38Q36 -35 36 -33Q37 -30 36 -29Q36 -29 36 -28L36 -28L36 -25V-21Q36 -20 36 -17Q37 -15 37 -14Q37 -12 37 -11V-9L37 -5V-2Q38 -1 38 -1Q38 0 38 2Q38 3 38 4Q36 8 31 6Q30 6 29 5Q28 4 28 3L28 1Q28 1 28 0Q27 -1 27 -1Q28 -2 27 -3L26 -1Q25 0 25 0L24 1Q23 2 22 4L21 5Q18 5 14 4Q13 4 13 4H12Q12 4 10 3Q8 2 8 2L9 2Q7 1 8 0Q6 0 6 -2L5 -6Q5 -7 5 -8Q5 -9 6 -11L6 -12L5 -14Q5 -14 5 -16L5 -16Q5 -20 5 -21L5 -23Q5 -24 6 -26L7 -31Q7 -31 7 -32Q8 -35 8 -36L10 -39Q11 -39 11 -40Q12 -42 16 -42Q19 -42 26 -41V-45L26 -49Q26 -52 26 -54Q26 -57 26 -58Q26 -58 27 -62Q28 -66 30 -68Q30 -69 32 -69Q34 -69 34 -69Q35 -68 36 -68Q38 -68 38 -63ZM68 -32Q69 -34 68 -36Q68 -36 66 -36Q65 -36 64 -34Q62 -31 61 -28H61Q60 -24 60 -24Q62 -23 63 -23Q64 -24 65 -24Q67 -27 68 -32ZM68 -18 64 -17Q61 -17 59 -18L60 -16Q60 -8 64 -5Q66 -5 66 -5Q67 -5 68 -5Q69 -6 69 -6Q69 -7 70 -7Q74 -12 76 -11Q78 -10 78 -9Q78 -9 78 -8V-8Q78 -7 77 -4Q75 -2 74 0Q73 2 72 2Q69 4 65 4Q65 4 64 4Q64 3 63 4L62 3Q61 3 61 3Q60 2 59 2Q57 1 56 1Q56 0 55 0Q55 0 53 -2Q52 -3 52 -3Q51 -4 51 -5Q50 -5 50 -6Q50 -7 50 -8L50 -8Q50 -9 49 -10Q48 -10 48 -11V-12Q48 -12 48 -13V-16L48 -17V-17Q48 -18 48 -19L48 -20Q48 -20 48 -22Q49 -24 49 -24V-25Q49 -25 49 -26Q49 -26 50 -27Q50 -28 51 -31L53 -35Q54 -36 55 -38Q55 -39 56 -40L57 -41Q58 -42 59 -42Q60 -43 61 -43L64 -44Q64 -44 64 -44H66Q68 -43 69 -43Q72 -42 74 -40Q77 -37 77 -34Q77 -30 76 -28Q73 -22 72 -21Q70 -18 68 -18ZM89 -54 90 -59 90 -62Q90 -64 91 -64L92 -66Q94 -68 95 -68Q96 -69 98 -68Q99 -68 99 -68L101 -67Q101 -66 101 -65Q102 -64 102 -64Q101 -64 100 -52L99 -39L98 -36Q98 -35 99 -35V-33Q98 -31 98 -30Q98 -30 98 -29Q98 -29 98 -28Q98 -26 98 -26Q98 -24 98 -23Q98 -22 98 -20Q98 -18 98 -17L98 -13V-12Q99 -10 99 -9L99 -4L100 -1Q100 1 99 3Q99 4 98 4Q95 6 91 3H90Q89 2 89 1Q88 0 88 -1Q88 -2 88 -3Q87 -3 87 -4Q87 -5 87 -6L87 -7Q87 -7 87 -8L87 -10V-11Q87 -11 87 -12Q87 -12 87 -13Q87 -13 87 -16Q87 -23 87 -26L88 -29V-32Q88 -34 88 -38Q88 -41 88 -42L88 -42Q88 -45 89 -49Q89 -53 89 -54ZM152 -25 151 -27Q151 -27 151 -28Q151 -29 151 -30Q151 -32 150 -33Q150 -34 147 -34Q146 -32 144 -26Q144 -26 144 -25Q143 -24 143 -22Q143 -20 142 -20Q142 -19 142 -19Q142 -18 142 -17L142 -15Q141 -15 142 -14V-12Q142 -12 141 -11V-9L142 -6Q142 -5 144 -2Q144 -2 145 -2Q147 -4 147 -6L147 -8Q148 -8 148 -11L148 -12Q148 -13 149 -14Q149 -15 149 -16Q149 -16 151 -20Q150 -20 150 -20V-21Q152 -25 152 -25ZM164 -58Q164 -54 164 -53L163 -47V-44Q163 -42 163 -38Q163 -35 163 -33Q163 -30 163 -29Q163 -29 163 -28L163 -28L163 -25V-21Q163 -20 163 -17Q164 -15 164 -14Q164 -12 164 -11V-9L164 -5V-2Q164 -1 164 -1Q164 0 165 2Q165 3 165 4Q162 8 158 6Q157 6 156 5Q155 4 155 3L155 1Q154 1 154 0Q154 -1 154 -1Q154 -2 154 -3L152 -1Q152 0 151 0L151 1Q150 2 149 4L148 5Q145 5 141 4Q140 4 140 4H139Q139 4 137 3Q135 2 135 2L135 2Q134 1 134 0Q133 0 133 -2L132 -6Q132 -7 132 -8Q132 -9 133 -11L132 -12L132 -14Q132 -14 132 -16L132 -16Q132 -20 132 -21L132 -23Q132 -24 132 -26L134 -31Q134 -31 134 -32Q134 -35 135 -36L137 -39Q138 -39 138 -40Q139 -42 142 -42Q146 -42 153 -41V-45L153 -49Q153 -52 152 -54Q152 -57 152 -58Q153 -58 154 -62Q154 -66 156 -68Q157 -69 159 -69Q161 -69 161 -69Q162 -68 162 -68Q165 -68 165 -63ZM180 -63Q187 -63 190 -60Q190 -58 188 -53Q187 -51 186 -50L185 -49Q184 -49 184 -49Q180 -48 178 -50Q178 -51 177 -51Q177 -51 176 -53Q176 -54 176 -55Q175 -61 180 -63ZM180 -39Q181 -40 184 -38Q185 -38 186 -37L187 -36Q188 -36 188 -35V-26Q188 -24 187 -22V-22Q187 -18 188 -3Q188 0 186 0Q185 0 184 0Q184 0 184 0H183L182 0Q182 0 181 -1Q180 -1 180 -2Q180 -2 179 -2Q178 -3 178 -4Q177 -6 177 -7Q177 -8 176 -8L176 -17Q176 -18 176 -19V-22Q176 -23 176 -26Q176 -28 176 -30Q176 -33 176 -34Q176 -35 176 -35Q175 -36 176 -38Q178 -39 179 -39ZM211 -11 213 -18Q213 -19 213 -19Q213 -20 213 -20Q213 -21 213 -23Q213 -24 214 -24Q214 -26 216 -30Q217 -32 218 -33Q218 -33 218 -34L219 -36Q219 -36 220 -38Q221 -38 221 -39Q221 -40 222 -41Q222 -42 224 -43H226L228 -42L230 -41Q230 -40 230 -40Q231 -40 231 -40Q231 -39 229 -35Q228 -32 228 -30Q228 -29 227 -28Q227 -28 226 -25Q226 -22 225 -21L223 -14Q222 -12 222 -10Q219 0 219 1Q219 1 219 3Q218 5 215 5Q215 4 214 4Q214 4 211 4Q207 4 204 3Q203 2 203 -1Q201 -3 201 -4L200 -6Q200 -8 200 -9Q199 -10 199 -11Q199 -12 199 -12Q199 -13 199 -14Q198 -16 198 -18Q199 -20 198 -23Q198 -25 198 -25L198 -28Q198 -30 198 -30Q198 -32 198 -33L198 -35Q198 -36 198 -37Q197 -38 198 -39Q199 -40 199 -41Q201 -42 203 -41L205 -40L206 -39Q207 -39 206 -38L207 -33Q207 -31 207 -27Q208 -24 208 -21Q208 -19 209 -15Q209 -11 210 -10Q210 -8 210 -8Q211 -9 211 -11ZM256 -32Q257 -34 256 -36Q256 -36 254 -36Q253 -36 252 -34Q250 -31 249 -28H249Q248 -24 248 -24Q250 -23 251 -23Q252 -24 253 -24Q255 -27 256 -32ZM256 -18 252 -17Q249 -17 248 -18L248 -16Q248 -8 252 -5Q254 -5 254 -5Q255 -5 257 -5Q257 -6 257 -6Q257 -7 258 -7Q262 -12 264 -11Q267 -10 267 -9Q267 -9 266 -8V-8Q266 -7 265 -4Q264 -2 262 0Q262 2 260 2Q257 4 254 4Q253 4 252 4Q252 3 251 4L250 3Q250 3 249 3Q248 2 248 2Q245 1 244 1Q244 0 244 0Q243 0 242 -2Q240 -3 240 -3Q240 -4 239 -5Q239 -5 238 -6Q238 -7 238 -8L238 -8Q238 -9 237 -10Q236 -10 236 -11V-12Q236 -12 236 -13V-16L236 -17V-17Q236 -18 236 -19L236 -20Q236 -20 237 -22Q237 -24 238 -24V-25Q238 -25 238 -26Q238 -26 238 -27Q238 -28 239 -31L241 -35Q242 -36 243 -38Q243 -39 244 -40L245 -41Q246 -42 247 -42Q248 -43 249 -43L252 -44Q252 -44 253 -44H254Q256 -43 258 -43Q261 -42 262 -40Q265 -37 265 -34Q265 -30 264 -28Q262 -22 260 -21Q259 -18 256 -18ZM275 -30Q275 -30 275 -32V-32Q275 -33 275 -34Q275 -35 275 -36Q275 -38 275 -38Q275 -39 277 -40Q277 -41 278 -42Q280 -42 280 -42Q281 -43 283 -42Q284 -42 286 -41Q287 -41 288 -40Q288 -39 287 -37Q287 -34 287 -33Q288 -33 289 -35Q291 -36 291 -36Q293 -38 296 -38Q300 -38 301 -38Q302 -37 302 -37Q303 -36 304 -34Q304 -32 303 -32Q303 -31 299 -31Q299 -31 298 -30L293 -26Q291 -25 291 -24L289 -21Q289 -21 288 -18Q288 -16 288 -15Q289 -14 288 -8V-4Q288 0 288 0Q288 1 288 2Q287 3 286 3Q282 6 281 2L279 2Q279 1 278 0Q278 -1 278 -1L277 -2L277 -3Q276 -4 276 -7Q276 -11 276 -12Q276 -13 276 -14Q276 -14 276 -16Q276 -18 276 -19Q276 -20 276 -20Q276 -20 276 -23Q276 -23 276 -24ZM315 -35 315 -36Q313 -36 312 -37Q312 -37 310 -37Q308 -37 307 -38Q304 -38 304 -41Q304 -44 306 -45Q308 -45 309 -45Q310 -45 312 -46Q313 -46 315 -46L316 -47Q316 -46 317 -47L318 -49Q318 -50 319 -52Q319 -53 320 -56Q320 -56 322 -62Q322 -62 325 -64Q326 -65 329 -63Q331 -62 331 -61Q331 -60 331 -58Q331 -58 329 -51V-48Q330 -48 332 -48Q334 -47 336 -47Q342 -46 343 -43Q343 -40 343 -40Q342 -39 339 -38Q337 -38 333 -38Q330 -38 328 -38Q328 -36 328 -35L328 -33Q328 -33 327 -26Q326 -25 326 -17V-9Q326 -8 326 -6Q326 -4 327 -3Q327 -2 327 1Q326 4 323 4Q321 4 318 2L317 0Q317 -1 317 -1Q317 -1 317 -2Q316 -4 316 -4Q315 -5 315 -5Q315 -6 315 -6Q315 -8 314 -9Q314 -10 314 -13Q314 -18 314 -19Q314 -19 314 -22L314 -25Q314 -25 315 -28Q315 -28 315 -30Q315 -32 315 -32Q315 -34 315 -35ZM349 -63Q355 -63 358 -60Q358 -58 356 -53Q355 -51 355 -50L353 -49Q353 -49 352 -49Q349 -48 347 -50Q346 -51 346 -51Q345 -51 345 -53Q344 -54 344 -55Q344 -61 348 -63ZM348 -39Q349 -40 353 -38Q353 -38 354 -37L355 -36Q356 -36 356 -35V-26Q356 -24 356 -22V-22Q355 -18 356 -3Q356 0 355 0Q353 0 353 0Q352 0 352 0H351L351 0Q350 0 350 -1Q349 -1 348 -2Q348 -2 348 -2Q347 -3 346 -4Q345 -6 345 -7Q345 -8 345 -8L344 -17Q344 -18 344 -19V-22Q344 -23 344 -26Q345 -28 345 -30Q345 -33 345 -34Q345 -35 345 -35Q344 -36 345 -38Q346 -39 347 -39ZM386 -25 386 -27Q386 -27 386 -28Q386 -29 385 -30Q385 -32 384 -33Q384 -34 382 -34Q381 -32 379 -26Q379 -26 378 -25Q378 -24 378 -22Q377 -20 377 -20Q377 -19 377 -19Q377 -18 377 -17L376 -15Q376 -15 376 -14V-12Q376 -12 376 -11V-9L376 -6Q376 -5 378 -2Q379 -2 379 -2Q381 -4 381 -6L382 -8Q382 -8 383 -11L383 -12Q383 -13 383 -14Q384 -15 384 -16Q384 -16 385 -20Q385 -20 385 -20V-21Q386 -25 386 -25ZM399 -58Q399 -54 399 -53L398 -47V-44Q398 -42 398 -38Q398 -35 398 -33Q398 -30 398 -29Q398 -29 398 -28L398 -28L398 -25V-21Q398 -20 398 -17Q398 -15 398 -14Q398 -12 398 -11V-9L399 -5V-2Q399 -1 399 -1Q399 0 399 2Q400 3 400 4Q397 8 393 6Q392 6 391 5Q390 4 390 3L390 1Q389 1 389 0Q389 -1 389 -1Q389 -2 388 -3L387 -1Q387 0 386 0L386 1Q384 2 384 4L382 5Q380 5 376 4Q375 4 374 4H373Q373 4 371 3Q370 2 369 2L370 2Q369 1 369 0Q368 0 368 -2L367 -6Q366 -7 367 -8Q367 -9 367 -11L367 -12L367 -14Q366 -14 367 -16L366 -16Q366 -20 367 -21L367 -23Q366 -24 367 -26L368 -31Q368 -31 369 -32Q369 -35 370 -36L372 -39Q372 -39 373 -40Q374 -42 377 -42Q380 -42 388 -41V-45L387 -49Q387 -52 387 -54Q387 -57 387 -58Q387 -58 388 -62Q389 -66 391 -68Q392 -69 394 -69Q396 -69 396 -69Q396 -68 397 -68Q400 -68 400 -63ZM428 -30Q427 -34 424 -33Q422 -33 421 -31Q419 -27 419 -22Q420 -16 420 -14Q421 -11 422 -10Q423 -8 424 -8Q427 -8 428 -13L429 -15Q430 -16 430 -16Q430 -19 431 -22Q430 -23 429 -24Q429 -25 429 -26Q428 -26 428 -28Q428 -29 428 -30ZM410 -20 410 -25Q411 -32 414 -37Q418 -41 424 -41H424Q430 -41 433 -39Q436 -36 437 -34Q438 -31 439 -30Q439 -29 439 -27Q439 -22 437 -22Q439 -12 436 -7Q435 -4 433 -2Q431 0 428 0Q424 0 422 0Q419 0 416 -3Q412 -5 411 -10Q410 -14 410 -20Z"/></svg></span>
           </div>
-          <p class="x-hero__rotor"><span class="u-visually-hidden" data-t="home:hero.rotorSr">We're the friend who always knows the deadline, has a plan for Thursday, saves you a seat, explains the acronyms and remembers your name.</span><span aria-hidden="true"><span class="x-hero__lead" data-t="home:hero.rotorLead">We're the friend who</span> <span class="rotor rotor--bubble" data-rotor><span class="rotor__item" data-t="home:hero.rotor1">always knows the deadline.</span><span class="rotor__item" data-t="home:hero.rotor2">has a plan for Thursday.</span><span class="rotor__item" data-t="home:hero.rotor3">saves you a seat.</span><span class="rotor__item" data-t="home:hero.rotor4">explains the acronyms.</span><span class="rotor__item" data-t="home:hero.rotor5">remembers your name.</span></span></span><button class="x-motion" type="button" data-motion-toggle aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg><span class="u-visually-hidden" data-motion-label data-t="cta.pauseMotion">Pause motion</span></button></p>
-          <p class="x-hero__sub" data-t="home:hero.sub">Free hangouts, straight answers about voting, and a crew from Sanford to Oviedo. Come as you are. Bring a friend.</p>
+          <div class="x-bubble">
+            <p class="x-bubble__msg"><span class="u-visually-hidden" data-t="home:hero.rotorSr">We're the friend who always knows the deadline, has a plan for Thursday, saves you a seat, explains the acronyms and remembers your name.</span><span aria-hidden="true"><span class="x-bubble__lead" data-t="home:hero.rotorLead">We're the friend who</span> <span class="rotor x-bubble__rotor" data-rotor><span class="rotor__item" data-t="home:hero.rotor1">always knows the deadline.</span><span class="rotor__item" data-t="home:hero.rotor2">has a plan for Thursday.</span><span class="rotor__item" data-t="home:hero.rotor3">saves you a seat.</span><span class="rotor__item" data-t="home:hero.rotor4">explains the acronyms.</span><span class="rotor__item" data-t="home:hero.rotor5">remembers your name.</span></span></span></p>
+            <button class="x-motion" type="button" data-motion-toggle aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg><span class="u-visually-hidden" data-motion-label data-t="cta.pauseMotion">Pause motion</span></button>
+          </div>
           <div class="btn-row x-hero__ctas">
-            <a class="btn btn--primary btn--lg" href="#join" data-t="cta.join">Join free</a>
-            <a class="btn btn--ghost btn--lg" href="#invites" data-t="cta.seeWhatsOn">See what's on</a>
+            <a class="btn btn--primary btn--lg" href="#join" data-no-jump data-x-jump="join" data-t="cta.join">Join free</a>
+            <a class="btn btn--ghost btn--lg" href="#invites" data-no-jump data-x-jump="invites" data-t="cta.seeWhatsOn">See what's on</a>
           </div>
+          <p class="x-hero__sub" data-t="home:hero.sub">Free hangouts, straight answers about voting, and a crew from Sanford to Oviedo. Come as you are. Bring a friend.</p>
           <p class="x-hero__note" data-t="home:hero.note">Events are free and open to everyone, in any party or none.</p>
         </div>
         <div class="x-hero__art">
-          <button class="sticker sticker--lg x-hero__art-sticker" type="button" data-sticker="celery" aria-label="Sticker: celery. Tap for a Seminole fact" data-t-aria-label="home:sticker.celery"></button>
+          <figure class="x-polaroid">
+            <span class="photo photo--golden x-polaroid__photo"><img src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=480&amp;q=60&amp;auto=format&amp;fit=crop 480w, https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1000px) 440px, 88vw" width="640" height="428" fetchpriority="high" decoding="async" alt="Three friends seen from behind, arms up, watching the sun set from a rooftop" data-t-alt="home:hero.photoAlt" data-photographer="Simon Maage" data-source="https://unsplash.com/photos/photo-of-three-women-lifting-there-hands-tXiMrX3Gc-g"></span>
+            <figcaption class="x-polaroid__cap"><span class="tag tag--stock" data-t="tag.stock">Stock photo · not members</span></figcaption>
+          </figure>
+          <button class="sticker x-hero__sticker" type="button" data-sticker="sun" aria-label="Sticker: sun in sunglasses. Tap for a Seminole fact" data-t-aria-label="home:sticker.sun"></button>
+          <button class="sticker x-hero__art-sticker" type="button" data-sticker="celery" aria-label="Sticker: celery. Tap for a Seminole fact" data-t-aria-label="home:sticker.celery"></button>
           <div class="x-ticket">
             <p class="x-ticket__label" data-t="home:ticket.eyebrow">NEXT UP</p>
             <div class="x-ticket__slot" data-x-ticket>
@@ -144,10 +149,10 @@
       </div>
     </section>
 
-    <!-- 3. Pinned: the next thing to do (data/civic.js nextActions; required wording from ruling 00) -->
+    <!-- 2. Pinned: the next thing to do (data/civic.js nextActions; required wording from ruling 00) -->
     <section class="section x-pins" id="next" aria-labelledby="pins-title">
       <div class="wrap">
-        <div class="x-head">
+        <div class="x-head x-pins__head">
           <p class="eyebrow" data-t="home:pins.eyebrow">DO ONE THING</p>
           <h2 class="x-head__title x-head__title--sm" id="pins-title" data-t="home:pins.title">The next thing to do</h2>
         </div>
@@ -156,7 +161,7 @@
         <div class="snap x-pins__strip" role="region" aria-label="The next thing to do: three cards" data-t-aria-label="home:pins.strip" tabindex="0">
           <article class="pin pin--deadline x-pin" id="mail-ballot" data-civic data-qa="mail-ballot" data-x-pin="na-renew-reminder-2026" data-show-until="2027-01-01T00:00:00-05:00">
             <span class="sticker" data-sticker="envelope" aria-hidden="true"></span>
-            <p class="countdown x-pin__count" data-countdown="2026-12-31" data-countdown-unit-key="home:count.unit" data-countdown-hide data-mail-now><span class="countdown__n" data-countdown-n translate="no">52</span> <span class="countdown__unit" data-countdown-unit data-t="home:count.unit.other">days left</span></p>
+            <p class="countdown x-pin__count" data-countdown="2026-12-31" data-countdown-unit-key="home:count.unit" data-countdown-hide data-mail-now><span class="countdown__n" data-countdown-n translate="no">51</span> <span class="countdown__unit" data-countdown-unit data-t="home:count.unit.other">days left</span></p>
             <p class="x-pin__until" data-mail-now data-t="home:mail.until">until requests from before Nov 3 end on Thu, Dec 31</p>
             <p class="pin__kicker"><span class="tag tag--real" data-t="tag.real">REAL</span></p>
             <h3 class="pin__title" data-t="home:mail.title">Mail ballot? Renew it.</h3>
@@ -177,7 +182,7 @@
           </article>
           <article class="pin pin--hangout x-pin" data-x-hangout>
             <span class="sticker" data-sticker="calendar" aria-hidden="true"></span>
-            <p class="pin__kicker"><span class="tag" data-t="home:hangout.tag">Next hangout</span></p>
+            <p class="pin__kicker"><span class="tag" data-t="home:hangout.tag">Coming up</span></p>
             <h3 class="pin__title" data-x-hangout-title data-t="home:hangout.title">Free hangouts all over Seminole</h3>
             <p class="pin__body" data-x-hangout-body data-t="home:hangout.body">Walks, trivia, creator nights and volunteer shifts. First time? Perfect.</p>
             <div class="pin__actions" data-x-hangout-actions><a class="btn btn--ink btn--sm" href="events.html" data-t="cta.seeWhatsOn">See what's on</a></div>
@@ -186,24 +191,24 @@
       </div>
     </section>
 
-    <!-- 4. City ticker (after the pinned strip) with Pause motion -->
+    <!-- City ticker with a Pause motion button beside it (never over the names) -->
     <div class="ticker x-ticker" data-ticker>
       <div class="ticker__viewport">
         <ul class="ticker__track" aria-label="Cities we cover" data-t-aria-label="home:ticker.label">
           <li translate="no">Sanford</li><li translate="no">Lake Mary</li><li translate="no">Oviedo</li><li translate="no">Winter Springs</li><li translate="no">Altamonte Springs</li><li translate="no">Casselberry</li><li translate="no">Longwood</li><li translate="no">Geneva</li><li translate="no">Chuluota</li><li data-t="home:ticker.unincorporated">Unincorporated Seminole</li>
         </ul>
       </div>
-      <button class="btn btn--sm ticker__pause" type="button" data-motion-toggle aria-pressed="false"><span data-motion-label data-t="cta.pauseMotion">Pause motion</span></button>
+      <button class="ticker__pause x-ticker__pause" type="button" data-motion-toggle aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg><span class="u-visually-hidden" data-motion-label data-t="cta.pauseMotion">Pause motion</span></button>
     </div>
 
-    <!-- 5. The Reel (W4 reel.js, lazy) -->
+    <!-- 3. The Reel (G-VIDEO reel.js, lazy) -->
     <section class="section section--night x-reel" id="reel" data-qa="reel" aria-labelledby="reel-title" data-x-lazy="reel">
       <div class="wrap">
         <div class="x-head x-head--row">
           <div class="x-head__text">
             <p class="eyebrow" data-t="home:reel.eyebrow">CLIPS FROM THE GROUP · DEMO</p>
             <h2 class="x-head__title" id="reel-title" data-t="home:reel.title">Why we show up.</h2>
-            <p class="x-head__sub"><span data-t="home:reel.sub">Short clips from people around Seminole. Captions on, always.</span> <a class="link" href="clips.html" data-t="home:reel.more">See all clips</a></p>
+            <p class="x-head__sub"><span class="x-reel__subtext" data-t="home:reel.sub">Short clips from people around Seminole. Captions on, always.</span> <a class="link" href="clips.html" data-t="home:reel.more">See all clips</a></p>
           </div>
           <p class="x-prompt"><span class="x-prompt__k" data-t="home:reel.prompt">This week’s prompt</span> <span class="x-prompt__t" data-x-prompt data-t="home:reel.promptText">60 seconds on why you showed up.</span></p>
         </div>
@@ -215,7 +220,7 @@
       </div>
     </section>
 
-    <!-- 6. You're invited (W2 eventcard.js + rsvp.js) and the January drop -->
+    <!-- 4. Come to something: the tentpole band, the other invites (never the hero's or the pinned one), the drop: January's lineup + DEMO Drop 01 merch, earned by organizing only (ruling 00) -->
     <section class="section x-invites" id="invites" aria-labelledby="invites-title">
       <div class="wrap">
         <div class="x-head x-head--row">
@@ -226,6 +231,7 @@
           </div>
           <span class="word-sticker word-sticker--celery x-hand" aria-hidden="true" data-t="home:invites.sticker">first time? perfect</span>
         </div>
+        <div class="x-tent-slot" data-x-tent hidden></div>
       </div>
       <div class="wrap x-invites__wrap">
         <div class="snap x-invites__strip" data-x-invites role="region" aria-label="Upcoming DEMO events" data-t-aria-label="home:invites.strip" tabindex="0">
@@ -233,27 +239,47 @@
         </div>
       </div>
       <div class="wrap">
-        <div class="x-drop" data-x-drop>
-          <span class="x-drop__ticket" aria-hidden="true"><span class="x-drop__m" data-t="home:drop.kicker">NEXT DROP</span></span>
-          <div class="x-drop__copy">
-            <p class="x-drop__line" data-t="home:drop.line">January’s lineup drops Tue, Dec 15 at noon (DEMO)</p>
-            <p class="x-drop__sub" data-t="home:drop.sub">Get a calendar reminder so you hear about it first.</p>
+        <article class="x-drop" data-x-drop aria-labelledby="drop-title">
+          <div class="x-drop__head">
+            <span class="x-drop__ticket" aria-hidden="true"><span class="x-drop__m" data-t="home:drop.kicker">NEXT DROP</span></span>
+            <div class="x-drop__copy">
+              <h3 class="x-drop__line" id="drop-title" data-t="home:drop.line">January’s lineup drops Tue, Dec 15 at noon (DEMO)</h3>
+              <p class="x-drop__sub" data-x-drop-sub data-t="home:drop.sub">Drop 01 lands with it. One reminder covers both.</p>
+            </div>
+          </div>
+          <div class="x-drop1" role="group" aria-labelledby="drop1-title">
+            <div class="x-drop1__art" role="img" aria-label="Drawings of the Drop 01 pieces: a violet tee with the Young Dems ticket logo, a celery-green tote bag and a sheet of county stickers. DEMO designs." data-t-aria-label="home:drop1.artAlt">
+              <svg class="x-drop1__tee" viewBox="0 0 220 200" aria-hidden="true" focusable="false"><path class="x-drop1__cloth" d="M70 14 40 26 6 58l26 34 18-12v104h120V80l18 12 26-34-34-32-30-12c-4 16-20 26-40 26S74 30 70 14Z"/><path class="x-drop1__seam" d="M70 14c4 16 20 26 40 26s36-10 40-26"/><g transform="translate(64 66) scale(1.4) rotate(-8 32 32)"><path class="x-drop1__tk" d="M9 15H55Q59 15 59 19V27A5 5 0 0 0 59 37V45Q59 49 55 49H9Q5 49 5 45V37A5 5 0 0 0 5 27V19Q5 15 9 15Z"/><path class="x-drop1__tk-ink" d="M15.9 20.3h2.2v2.6h-2.2ZM15.9 25.5h2.2v2.6h-2.2ZM15.9 30.7h2.2v2.6h-2.2ZM15.9 35.9h2.2v2.6h-2.2ZM15.9 41.1h2.2v2.6h-2.2ZM27.3 42.5V35.8L21 21.5H27.2L29.9 32.7H30.1L32.7 21.5H38.4L32.4 35.8V42.5ZM39.6 42.5V21.5H45.5Q47.8 21.5 49.7 22.7Q51.6 24 52.7 26.3Q53.8 28.7 53.8 32.1Q53.8 34.8 53.2 36.7Q52.7 38.6 51.7 39.7Q50.7 40.9 49.7 41.5Q48.6 42.1 47.6 42.3Q46.6 42.5 45.9 42.5ZM44.5 38.6H45.7Q46.8 38.6 47.5 37.9Q48.2 37.2 48.5 35.7Q48.9 34.2 48.9 32Q48.9 30.3 48.7 29Q48.5 27.8 48.1 27Q47.7 26.2 47.1 25.8Q46.4 25.4 45.5 25.4H44.5Z"/></g></svg>
+              <svg class="x-drop1__tote" viewBox="0 0 160 200" aria-hidden="true" focusable="false"><path class="x-drop1__strap" d="M48 70V40a32 32 0 0 1 64 0v30"/><path class="x-drop1__bag" d="M18 66h124l-8 124H26Z"/><circle class="x-drop1__dot" cx="80" cy="126" r="30"/><path class="x-drop1__stalk" d="M80 150v-38M80 120l-12-14M80 116l12-16M80 128l14-10"/></svg>
+              <span class="x-drop1__sheet" data-x-sheet aria-hidden="true"></span>
+            </div>
+            <div class="x-drop1__body">
+              <p class="x-drop1__kick"><span class="tag tag--demo" data-t="home:drop1.kicker">DROP 01 · DEMO</span></p>
+              <h3 class="x-drop1__title" id="drop1-title" data-t="home:drop1.title">Can’t buy it. Earn it.</h3>
+              <ul class="x-drop1__list">
+                <li><b data-t="home:drop1.tee">The Young Dems tee</b> <span data-t="home:drop1.teeHow">Bring 3 friends: three join with your link.</span></li>
+                <li><b data-t="home:drop1.tote">The celery tote</b> <span data-t="home:drop1.toteHow">Finish one volunteer shift.</span></li>
+                <li><b data-t="home:drop1.sheet">The county sticker sheet</b> <a class="link" href="host.html" data-t="home:drop1.sheetHow">Host a night.</a></li>
+              </ul>
+              <p class="x-drop1__meta" data-t="home:drop1.meta">Edition of 100 each, tees XS to 4XL, designed by a member, our line on the back in English and Spanish. All DEMO, pending the chapter’s lawyer.</p>
+              <p class="x-drop1__fine" data-t="home:drop1.fine">Nothing is ever given for registering, renewing or voting.</p>
+            </div>
           </div>
           <div class="x-drop__acts">
             <button class="btn btn--violet u-js-only" type="button" data-x-notify data-t="cta.notifyMe">Notify me</button>
             <a class="link x-more__link" href="events.html" data-t="home:invites.all">See all events</a>
           </div>
-        </div>
+        </article>
       </div>
     </section>
 
-    <!-- 7. Send it to the group chat (W5 maker.js + squad meter, lazy) -->
+    <!-- 5. Send it to the group chat: G-GROWTH maker quick mode (three ready-made 4:5 cards, one name, one Send), lazy -->
     <section class="section section--sky x-maker" id="card" data-qa="maker" aria-labelledby="maker-title" data-x-lazy="maker">
       <div class="wrap">
         <div class="x-head">
           <p class="eyebrow" data-t="home:maker.eyebrow">MAKE A CARD</p>
           <h2 class="x-head__title" id="maker-title" data-t="cta.shareGroup">Send it to the group chat</h2>
-          <p class="x-head__sub" data-t="home:maker.sub">Pick a card, add your first name, and send it to one person you’d actually text. Your name stays on your phone until you share.</p>
+          <p class="x-head__sub" data-t="home:maker.sub">Swipe to a card, add your first name, send it to one person you’d actually text. Your name stays on your phone until you share.</p>
         </div>
         <div class="x-maker__slot" data-x-maker>
           <p class="x-fallback x-nojs"><span data-t="home:maker.fallback">The card maker needs JavaScript. You can still share this page.</span></p>
@@ -261,8 +287,8 @@
       </div>
     </section>
 
-    <!-- 8. Quiz teaser -->
-    <section class="section x-quiz" id="quiz" aria-labelledby="quiz-title">
+    <!-- 6. Quiz teaser (the type deck) + the public sticker rules: three stickers, every rule, voting never earns anything (G-GROWTH rulesPanel, lazy) -->
+    <section class="section x-quiz" id="quiz" aria-labelledby="quiz-title" data-x-lazy="stickers">
       <div class="wrap">
         <div class="x-quiz__card">
           <div class="x-quiz__copy">
@@ -275,51 +301,54 @@
             </div>
             <p class="x-quiz__note" data-t="home:quiz.note">No sign-up, no wrong answers, nothing saved but your result.</p>
           </div>
-          <div class="x-quiz__types">
-            <p class="x-quiz__peek" data-t="home:quiz.peek">You might be</p>
-            <ul class="x-quiz__list">
-              <li class="x-type x-type--celery"><span data-t="home:quiz.t1">The Hype Captain</span></li>
-              <li class="x-type x-type--violet"><span data-t="home:quiz.t2">The Spreadsheet Witch</span></li>
-              <li class="x-type x-type--teal"><span data-t="home:quiz.t3">The Plus-One</span></li>
-            </ul>
+          <ul class="x-deck" aria-label="Three of the six types" data-t-aria-label="home:quiz.deck">
+            <li class="x-deck__card x-deck__card--1"><img src="assets/img/characters/show-up/hype-captain.svg" width="256" height="264" alt="" loading="lazy" decoding="async"><span data-t="home:quiz.t1">The Hype Captain</span></li>
+            <li class="x-deck__card x-deck__card--2"><img src="assets/img/characters/show-up/spreadsheet-witch.svg" width="256" height="264" alt="" loading="lazy" decoding="async"><span data-t="home:quiz.t2">The Spreadsheet Witch</span></li>
+            <li class="x-deck__card x-deck__card--3"><img src="assets/img/characters/show-up/plus-one.svg" width="256" height="264" alt="" loading="lazy" decoding="async"><span data-t="home:quiz.t3">The Plus-One</span></li>
+          </ul>
+        </div>
+        <div class="x-stickers" data-x-rules>
+          <p class="x-stickers__fallback"><a class="link" href="join.html#how-stickers-work" data-t="home:collect.rulesLink">See all 15 stickers and the rules</a></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Real, sourced: this chapter is real + Nov 3, debriefed + the real scoreboard (serious template: no stickers, rotation or confetti) -->
+    <section class="section band--serious x-real" id="real" data-tone="calm" aria-labelledby="real-title">
+      <div class="wrap">
+        <div class="x-head">
+          <p class="eyebrow" data-t="home:real.eyebrow">REAL · NO DEMO IN THIS ONE</p>
+          <h2 class="x-head__title" id="real-title" data-t="home:real.title">This chapter is real.</h2>
+        </div>
+        <div class="snap x-proof-strip" role="region" aria-label="Proof this chapter is real" data-t-aria-label="home:real.strip" tabindex="0">
+        <ul class="x-proof">
+          <li class="x-proof__item"><p class="x-proof__text" data-t="home:real.p1">A chapter of the Florida Young Democrats.</p><a class="x-proof__src" href="https://www.floridayoungdems.com/current-chapters" rel="noopener" data-t="home:real.p1src">FYD chapter list</a></li>
+          <li class="x-proof__item"><p class="x-proof__text" data-t="home:real.p2">Dues are $20 a year on ActBlue. Can’t pay? You can still be a member.</p><a class="x-proof__src" href="https://secure.actblue.com/donate/ydscdues" data-cfg-href="links.dues" rel="noopener" data-t="home:real.p2src">YDSC dues page</a></li>
+          <li class="x-proof__item"><p class="x-proof__text" data-t="home:real.p3">It has hosted a musical theatre night in Oviedo to raise money for LGBTQ+ youth.</p><a class="x-proof__src" href="https://secure.actblue.com/donate/ydscmusicaltheatre" rel="noopener" data-t="home:real.p3src">The night’s ActBlue page</a></li>
+        </ul>
+        </div>
+        <p class="x-proof__checked" data-t="home:real.checked">All three checked Tue, Nov 10, 2026.</p>
+        <div class="x-real__grid">
+          <div class="x-debrief" id="debrief" data-show-until="2027-01-01T00:00:00-05:00">
+            <h3 class="x-real__h" data-t="home:debrief.title">Nov 3, debriefed.</h3>
+            <p><b class="x-debrief__lead" data-t="home:debrief.p1">Seminole picked the Democrat for governor, about 54% to 45% (unofficial until the county certifies, due Nov 16). Statewide, the Republican won by about a point.</b> <span data-t="home:debrief.p2">If you’re tired, that’s fair. One thing that helps right now: set your January mail-ballot reminder.</span></p>
+            <p class="btn-row"><button class="btn btn--ink u-js-only" type="button" data-x-remind data-t="cta.januaryReminder">Add the January reminder</button></p>
+            <p class="x-debrief__src"><span data-t="home:debrief.sources">Sources:</span> <a href="https://floridaphoenix.com/2026/11/03/donalds-defeats-jolly-becoming-floridas-first-black-governor/" rel="noopener" data-t="home:debrief.src1">Florida Phoenix, Nov 3</a> · <a href="https://www.wftv.com/news/local/florida-election-results-by-county-explore-governor-us-senate-races/M4I4A3YEGJH6BJ3TSVPISSSXHA/" rel="noopener" data-t="home:debrief.src2">WFTV county results</a> · <a href="https://www.flsenate.gov/Laws/Statutes/2025/102.112" rel="noopener" data-t="home:debrief.src3">F.S. 102.112 (certification)</a></p>
+          </div>
+          <div class="x-score" id="scoreboard">
+            <h3 class="x-real__h" id="score-title" data-t="home:score.title">The real scoreboard: no demo numbers in this one</h3>
+            <div class="snap x-score__grid" role="region" aria-labelledby="score-title" tabindex="0">
+              <article class="stat stat--celery"><p class="stat__n" data-t="home:score.s1n">1 in 3+</p><p class="stat__label" data-t="home:score.s1">Seminole voters are 18 to 40 (the county’s own age band)</p><p class="stat__src"><a href="https://voteseminole.gov/wp-content/uploads/2026/07/District-Demographic-Analysis.pdf" rel="noopener" data-t="home:score.s1src">SOE data, Jul 1, 2026</a></p></article>
+              <article class="stat stat--pink"><p class="stat__n" translate="no">34.3%</p><p class="stat__label" data-t="home:score.s2">The biggest group of them: no party</p><p class="stat__src"><a href="https://voteseminole.gov/wp-content/uploads/2026/07/District-Demographic-Analysis.pdf" rel="noopener" data-t="home:score.s1src">SOE data, Jul 1, 2026</a></p></article>
+              <article class="stat stat--violet"><p class="stat__n" data-t="home:score.s3n">About 54%</p><p class="stat__label" data-t="home:score.s3">Seminole picked the Democrat for governor</p><p class="stat__note" data-t="home:score.s3note">Unofficial until the county certifies, due Nov 16.</p><p class="stat__src"><a href="https://www.wftv.com/news/local/florida-election-results-by-county-explore-governor-us-senate-races/M4I4A3YEGJH6BJ3TSVPISSSXHA/" rel="noopener" data-t="home:score.s3src">WFTV county results</a></p></article>
+              <article class="stat x-stat--sky"><p class="stat__n" data-t="home:score.s4n">About 27%</p><p class="stat__label" data-t="home:score.s4">National youth turnout</p><p class="stat__note" data-t="home:score.s4note">An early CIRCLE estimate.</p><p class="stat__src"><a href="https://circle.tufts.edu/2026-election" rel="noopener" data-t="home:score.s4src">CIRCLE 2026</a></p></article>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 9. Nov 3, debriefed (serious template: no stickers, emoji, rotation or confetti; hides after Dec 31) -->
-    <section class="section band--serious x-debrief" id="debrief" data-tone="calm" aria-labelledby="debrief-title" data-show-until="2027-01-01T00:00:00-05:00">
-      <div class="wrap x-debrief__grid">
-        <div class="x-debrief__head">
-          <p class="eyebrow" data-t="home:debrief.eyebrow">ELECTION RESULTS</p>
-          <h2 class="x-head__title" id="debrief-title" data-t="home:debrief.title">Nov 3, debriefed.</h2>
-        </div>
-        <div class="x-debrief__body">
-          <p class="x-debrief__lead" data-t="home:debrief.p1">Seminole picked the Democrat for governor, about 54% to 45% (unofficial until the county certifies, due Nov 16). Statewide, the Republican won by about a point.</p>
-          <p data-t="home:debrief.p2">If you’re tired, that’s fair. One thing that helps right now: set your January mail-ballot reminder.</p>
-          <p class="btn-row"><button class="btn btn--ink u-js-only" type="button" data-x-remind data-t="cta.januaryReminder">Add the January reminder</button></p>
-          <p class="x-debrief__src"><span data-t="home:debrief.sources">Sources:</span> <a href="https://floridaphoenix.com/2026/11/03/donalds-defeats-jolly-becoming-floridas-first-black-governor/" rel="noopener" data-t="home:debrief.src1">Florida Phoenix, Nov 3</a> · <a href="https://www.wftv.com/news/local/florida-election-results-by-county-explore-governor-us-senate-races/M4I4A3YEGJH6BJ3TSVPISSSXHA/" rel="noopener" data-t="home:debrief.src2">WFTV county results</a> · <a href="https://www.flsenate.gov/Laws/Statutes/2025/102.112" rel="noopener" data-t="home:debrief.src3">F.S. 102.112 (certification)</a></p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 10. The real scoreboard (sourced numbers only) -->
-    <section class="section x-score" id="scoreboard" aria-labelledby="score-title">
-      <div class="wrap">
-        <div class="x-head">
-          <p class="eyebrow" data-t="home:score.eyebrow">REAL NUMBERS, SOURCED</p>
-          <h2 class="x-head__title" id="score-title" data-t="home:score.title">The real scoreboard: no demo numbers in this one</h2>
-        </div>
-        <div class="snap x-score__grid" role="region" aria-label="Four sourced numbers" data-t-aria-label="home:score.strip" tabindex="0">
-          <article class="stat stat--celery"><p class="stat__n" data-t="home:score.s1n">1 in 3+</p><p class="stat__label" data-t="home:score.s1">Seminole voters are 18 to 40 (the county’s own age band)</p><p class="stat__src"><a href="https://voteseminole.gov/wp-content/uploads/2026/07/District-Demographic-Analysis.pdf" rel="noopener" data-t="home:score.s1src">SOE data, Jul 1, 2026</a></p></article>
-          <article class="stat stat--pink"><p class="stat__n" translate="no">34.3%</p><p class="stat__label" data-t="home:score.s2">The biggest group of them: no party</p><p class="stat__src"><a href="https://voteseminole.gov/wp-content/uploads/2026/07/District-Demographic-Analysis.pdf" rel="noopener" data-t="home:score.s1src">SOE data, Jul 1, 2026</a></p></article>
-          <article class="stat stat--violet"><p class="stat__n" data-t="home:score.s3n">About 54%</p><p class="stat__label" data-t="home:score.s3">Seminole picked the Democrat for governor</p><p class="stat__note" data-t="home:score.s3note">Unofficial until the county certifies, due Nov 16.</p><p class="stat__src"><a href="https://www.wftv.com/news/local/florida-election-results-by-county-explore-governor-us-senate-races/M4I4A3YEGJH6BJ3TSVPISSSXHA/" rel="noopener" data-t="home:score.s3src">WFTV county results</a></p></article>
-          <article class="stat x-stat--sky"><p class="stat__n" data-t="home:score.s4n">About 27%</p><p class="stat__label" data-t="home:score.s4">National youth turnout</p><p class="stat__note" data-t="home:score.s4note">An early CIRCLE estimate.</p><p class="stat__src"><a href="https://circle.tufts.edu/2026-election" rel="noopener" data-t="home:score.s4src">CIRCLE 2026</a></p></article>
-        </div>
-      </div>
-    </section>
-
-    <!-- 11. Join: three tiers + the short join form (W6 joinform.js, lazy) + member card -->
+    <!-- 8. Join: the short join form (G-JOIN joinform.js, lazy) + member card, three tiers -->
     <section class="section section--pink x-join" id="join" aria-labelledby="join-title" data-x-lazy="join">
       <div class="wrap">
         <div class="x-head">
@@ -332,48 +361,36 @@
         <div class="x-join__form-card" id="join-form">
           <span class="word-sticker word-sticker--sun x-hand x-join__sticker" aria-hidden="true" data-t="home:form.sticker">come as you are</span>
           <h3 class="x-join__h" data-t="home:form.title">Join free</h3>
-          <p class="x-join__sub" data-t="home:form.sub">Three quick questions. No dues, no pressure.</p>
           <form class="form x-join__form" name="join" data-join-form data-compact data-join-manual data-heading="3" data-card-href="#member-card"></form>
           <p class="x-nojs" data-x-nojs><span data-t="home:form.fallback">The quick form needs JavaScript. The join page works either way.</span> <a href="join.html" data-t="home:form.fallbackLink">Go to the join page</a></p>
           <div class="x-join__card" id="member-card" data-x-card></div>
         </div>
         <div class="x-join__tiers">
           <div class="snap x-tiers" role="region" aria-label="Three ways to be a member" data-t-aria-label="home:join.tiers" tabindex="0">
-            <article class="tier"><h3 class="tier__name" data-t="home:tier1.name">Come to things</h3><p class="tier__price" translate="no">$0</p><p class="tier__what" data-t="home:tier1.what">Join the list, come to every event, make cards, post clips.</p><p class="tier__cta"><a class="btn btn--primary btn--block" href="#join-form" data-t="cta.join">Join free</a></p></article>
+            <article class="tier"><h3 class="tier__name" data-t="home:tier1.name">Come to things</h3><p class="tier__price" translate="no">$0</p><p class="tier__what" data-t="home:tier1.what">Join the list, come to every event, make cards, post clips.</p><p class="tier__cta"><a class="btn btn--primary btn--block" href="#join-form" data-no-jump data-x-jump="join-form" data-t="cta.join">Join free</a></p></article>
             <article class="tier tier--sky"><h3 class="tier__name" data-t="home:tier2.name">Voting member</h3><p class="tier__price"><span translate="no">$20</span><small data-t="home:tier2.per">a year, due in January</small></p><p class="tier__what" data-t="home:tier2.what">Vote and make motions at chapter meetings. Voting members live in Seminole County or go to school here.</p><p class="tier__cta"><a class="btn btn--ink btn--block" href="https://secure.actblue.com/donate/ydscdues" data-cfg-href="links.dues" rel="noopener" data-t="home:tier2.cta">Pay dues on ActBlue</a></p></article>
-            <article class="tier tier--violet"><h3 class="tier__name" data-t="home:tier3.name">Non-voting member</h3><p class="tier__price" translate="no">$0</p><p class="tier__what" data-t="home:tier3.what">For anyone who qualifies but can’t pay dues, whatever the reason, money or citizenship status.</p><p class="tier__cta"><a class="btn btn--block" href="#join-form" data-t="cta.join">Join free</a></p></article>
+            <article class="tier tier--violet"><h3 class="tier__name" data-t="home:tier3.name">Non-voting member</h3><p class="tier__price" translate="no">$0</p><p class="tier__what" data-t="home:tier3.what">For anyone who qualifies but can’t pay dues, whatever the reason, money or citizenship status.</p><p class="tier__cta"><a class="btn btn--block" href="#join-form" data-no-jump data-x-jump="join-form" data-t="cta.join">Join free</a></p></article>
           </div>
           <p class="x-join__source"><a href="https://secure.actblue.com/donate/ydscdues" data-cfg-href="links.dues" rel="noopener" data-t="home:tiers.source">From YDSC’s dues page on ActBlue, checked Nov 9, 2026.</a></p>
           <div class="x-chip">
-            <p class="x-chip__copy"><b data-t="home:chip.title">Got $5 to spare?</b> <span data-t="home:chip.body">That’s coffee for one volunteer night. Don’t have it? Come anyway.</span></p>
+            <p class="x-chip__copy"><b data-t="home:chip.title">Got $5 to spare?</b> <span class="x-chip__body" data-t="home:chip.body">That’s coffee for one volunteer night. Don’t have it? Come anyway.</span></p>
             <a class="btn btn--ink btn--sm" href="https://secure.actblue.com/donate/youngsemdems" data-x-chip rel="noopener" data-t="home:chip.cta">Chip in $5</a>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 12. The Thursday Letter -->
-    <section class="section x-letter" id="letter" aria-labelledby="letter-title">
-      <div class="wrap x-letter__grid">
-        <div class="x-head">
-          <p class="eyebrow" data-t="home:letter.eyebrow">THE THURSDAY LETTER</p>
-          <h2 class="x-head__title" id="letter-title" data-t="home:letter.title">One letter a week. Written by a person.</h2>
-          <p class="x-head__sub" data-t="home:letter.sub">The date you need, the plan for this week, a few good things. Never more than once a week.</p>
-        </div>
-        <a class="x-mail" href="newsletter.html">
-          <span class="x-mail__top"><span class="x-mail__dot" aria-hidden="true"></span><span class="x-mail__from" data-t="home:letter.from">Dani from Casselberry (DEMO writer)</span><span class="x-mail__when" data-t="home:letter.when">Thu, 7 am</span></span>
-          <span class="x-mail__subject" data-t="home:letter.subject">Asked for a mail ballot before Nov 3? That request ends Dec 31 (plus a sunset walk Saturday)</span>
-          <span class="x-mail__preview" data-t="home:letter.preview">Hi, it’s Dani from Casselberry (DEMO writer). On election night a guy who’d voted for the first time that morning asked if he could help at our text-bank table.</span>
-          <span class="x-mail__foot"><span class="tag tag--demo" data-t="home:letter.demo">DEMO sample</span> <span class="x-mail__cta" data-t="home:letter.cta">Read the sample issue</span></span>
+    <!-- Closing strip: the Thursday Letter (one line) + send this page to one friend -->
+    <section class="section x-outro" id="letter" aria-label="The Thursday Letter, and sharing this page" data-t-aria-label="home:outro.label">
+      <div class="wrap x-outro__grid">
+        <a class="x-letter" href="newsletter.html">
+          <span class="x-letter__icon" aria-hidden="true"></span>
+          <span class="x-letter__text"><b class="x-letter__name" data-t="home:letter.eyebrow">THE THURSDAY LETTER</b> <span class="x-letter__line" data-t="home:letter.title">One letter a week. Written by a person.</span></span>
+          <span class="x-letter__cta"><span data-t="home:letter.cta">Read the sample issue</span> <span class="tag tag--demo" data-t="home:letter.demo">DEMO sample</span></span>
         </a>
-      </div>
-      <div class="wrap">
         <div class="x-share">
-          <div>
-            <h3 class="x-share__title" data-t="home:share.title">Know one person who’d come?</h3>
-            <p class="x-share__sub" data-t="home:share.sub">Three friends, not 300. Send them this page.</p>
-          </div>
-          <button class="btn btn--primary btn--lg" type="button" data-share><span data-t="cta.shareGroup">Send it to the group chat</span></button>
+          <p class="x-share__title" data-t="home:share.title">Know one person who’d come?</p>
+          <button class="btn btn--primary" type="button" data-share><span data-t="cta.shareGroup">Send it to the group chat</span></button>
         </div>
       </div>
     </section>

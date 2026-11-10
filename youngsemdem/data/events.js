@@ -57,14 +57,18 @@
  *
  * TOP LEVEL (window.YSD_DATA.events)
  *   version, demo, verified, timezone, note{}, labels{}, policy{}, rsvpForm{}, vibes{}, cities{},
- *   coverRules{}, skipDates[], schedule{} (+ schedule.drop: the January drop), partners[] (REAL
- *   SemDems events, link out only), items[] (EVENT, sorted by start)
+ *   coverRules{}, skipDates[], schedule{} (+ schedule.drop: the January drop), series{} (named
+ *   recurring formats: name{}, short{}?, recurs{}|null, blurb{}), tentpole{} (Seminole Sunday, the
+ *   monthly big one: id, name{}, recurs{}, tagline{}, eyebrow{}), partners[] (REAL SemDems events,
+ *   link out only), items[] (EVENT, sorted by start)
  *
  * EVENT
  *   id            stable slug; use it for URLs (events.html#<id> or /events/<id>/) and as the YSD.cal id
  *   demo          true
  *   status        'scheduled' (demo) | 'full' | 'cancelled'
- *   series        repeatable format ('sunset-walk', 'trivia', ...). levels.js badges key off it.
+ *   series        repeatable format ('sunset-walk', 'trivia', ...), a key of series{} (its brand name).
+ *                 levels.js badges and quiz.js eventSeries key off it, so ids never change.
+ *   tentpole      true on the month's Seminole Sunday edition (one per month; any series)
  *   kind          'social' | 'learn' | 'volunteer' | 'create'
  *   tone          'fun' | 'calm' (calm: no confetti, no emoji, no donation module beside it)
  *   title{}, tagline{} (one line), description{} (2-5 sentences), notice{}? (required wording,
@@ -80,7 +84,8 @@
  *   bring[]       [{en,es}] what to bring
  *   accessibility {en,es}
  *   ages          { min: 14, label{}, guardian (bool: under-18s need a guardian's OK; true for every
- *                 afterDark event and every door-knocking shift) }
+ *                 afterDark event and every door-knocking shift) }. guardian: false = "Good for under-18s"
+ *                 (the events filter and tag read it; right-wing-teen-path)
  *   alcoholFree   true
  *   cost          { amount: 0, label{} }
  *   host          { label{} (DEMO host, always the same as labels.demoHost), team: role id in data/team.js }
@@ -89,8 +94,10 @@
  *   cover         { query (stock-photo search hint), alt{} (for the hinted photo), token (CSS colour
  *                 token: the event's --duo colour), sticker (data/stickers.js id drawn on the cover),
  *                 short{} (2 or 3 words for the poster-style cover), photo? { id, photographer,
- *                 photographerHandle, page, width, height, alt{}, verified } (Unsplash photos viewed
- *                 and credited by W2 on Nov 9, 2026; no photo = a solid --duo block with the sticker) }
+ *                 photographerHandle, page, width, height, alt{}, verified, card? (false: cards use the
+ *                 type poster, the subject doesn't read at card size; genz-brand-16), lift? (brightness
+ *                 before the two-tone map, default 1.12) } (Unsplash photos viewed and credited by W2 on
+ *                 Nov 9, 2026; no photo = a solid --duo block with the sticker) }
  *   share         { text{} (friend-text style, ends with {url}), title{} (short, for Web Share title) }
  *   bringFriend   {en,es}: the "+1" line under the RSVP button
  *   calDescription {en,es}: body for the .ics/Google event
@@ -102,7 +109,8 @@
  *
  * CALENDAR: build the YSD.cal event per language like this:
  *   { id: e.id, title: e.title[lang] + ' (DEMO)', start: e.start, end: e.end,
- *     location: e.place.name[lang] + ', ' + events.cities[e.city][lang],
+ *     location: e.place.name[lang] + ', ' + events.cities[e.city][lang] (the city only when the place
+ *               name doesn't already say it, journeys-24),
  *     address: e.place.address || '', description: e.calDescription[lang], url: <event page URL> }
  */
 window.YSD_DATA = window.YSD_DATA || {};
@@ -180,7 +188,33 @@ window.YSD_DATA.events = {
     dismiss: { en: "Dismiss the invite", es: "Cerrar la invitación" },
     newTag: { en: "Just dropped", es: "Recién salido" },
     spotsLeftDemo: { en: "{n} spots left (DEMO)", es: "Quedan {n} lugares (DEMO)" },
-    fullDemo: { en: "Full (DEMO)", es: "Lleno (DEMO)" }
+    fullDemo: { en: "Full (DEMO)", es: "Lleno (DEMO)" },
+    /* Round 1 (G-EVENTS, Nov 10, 2026): series and tentpole badges, the under-18 tag, the RSVP age screen, the ticket
+       success state, the I'm-going card, the join-from-RSVP block, the compact invite line and drop teasers. */
+    recurs: { en: "{recurs} (DEMO)", es: "{recurs} (DEMO)" },
+    teen: { en: "Good for under-18s", es: "Ideal para menores de 18" },
+    teenHint: { en: "It's in the daytime, so under-18s don't need a guardian form.", es: "Es de día, así que los menores de 18 no necesitan el formulario del tutor." },
+    seats: { en: "{n} of {cap} seats saved (DEMO)", es: "{n} de {cap} lugares apartados (DEMO)" },
+    daysToGo: { en: "{n} days to go", es: "Faltan {n} días" },
+    dayToGo: { en: "1 day to go", es: "Falta 1 día" },
+    today: { en: "It's today", es: "Es hoy" },
+    ageGuardian: { en: "Under 18? This one ends after dark or involves door-knocking, so we'll send a quick guardian form after you RSVP.", es: "¿Tienes menos de 18? Este termina de noche o incluye visitas a vecinos, así que te mandamos un formulario corto para tu tutor después de confirmar." },
+    stamp: { en: "Seat saved", es: "Lugar guardado" },
+    admit: { en: "Admit", es: "Pase para" },
+    plus: { en: "+{n}", es: "+{n}" },
+    joinFace: { en: "You just joined the pile.", es: "Ya estás en la lista." },
+    goingTitle: { en: "Tell your people", es: "Cuéntale a tu gente" },
+    goingBtn: { en: "Share my I'm-going card", es: "Compartir mi tarjeta" },
+    goingAlt: { en: "Your I'm-going card for {event}: {when}, {place}", es: "Tu tarjeta para {event}: {when}, {place}" },
+    goingFile: { en: "im-going", es: "voy" },
+    joinTitle: { en: "Want credit when friends come?", es: "¿Quieres que cuente cuando vengan tus amigos?" },
+    joinSub: { en: "Get your own invite link. We'll use the name and contact you just gave, so it takes 10 seconds.", es: "Consigue tu propio enlace para invitar. Usamos el nombre y el contacto que acabas de dar, así que toma 10 segundos." },
+    joinBtn: { en: "Join free, get my link", es: "Únete gratis y recibe tu enlace" },
+    joinMore: { en: "More options on the join page", es: "Más opciones en la página para unirte" },
+    joinDone: { en: "You're in. Your +1 link and your text now carry your own code.", es: "Ya te uniste. Tu enlace para invitar y tu mensaje ya llevan tu código." },
+    invitedLineSub: { en: "Free, no account. Save your seat below.", es: "Gratis y sin cuenta. Guarda tu lugar aquí abajo." },
+    dropSeries: { en: "{series} is in January's lineup. It drops Tue, Dec 15 at noon (DEMO).", es: "{series} está en la programación de enero. Sale el mar. 15 de dic. a las 12 p. m. (DEMO)." },
+    tooYoungTitle: { en: "Thanks for wanting to come", es: "Gracias por querer venir" }
   },
 
   policy: {
@@ -295,6 +329,61 @@ window.YSD_DATA.events = {
         es: "Recordatorio DEMO. Los Young Dems publican los eventos de enero hoy a las 12 p. m. Elige uno y trae a alguien."
       }
     }
+  },
+
+  /* NAMED SERIES (round 1: genz-brand-27, right-wing-no-tentpole; G-EVENTS, Tue Nov 10, 2026). Keys are the items'
+     `series` ids, which data/levels.js badges and data/quiz.js eventSeries also use, so the ids never change; only
+     the names do. name: the ownable name on cards, chips, the drop, the quiz and the share text; short: a chip-sized
+     version (falls back to name); recurs: how often it runs, a DEMO cadence shown as "Trivia Thursday · one Thursday a
+     month (DEMO)" (null for a one-off); blurb: one line for the series shelf on events.html. Names were checked
+     against report 05 and BRIEF 2.6 (no slang costume, no banned words, plain words that translate). */
+  series: {
+    "sunset-walk": { name: { en: "Sunset Walk Club", es: "Club del atardecer" }, recurs: null,
+      blurb: { en: "A slow lap of the lake at golden hour, with room to talk.", es: "Una vuelta tranquila al lago a la hora dorada, con tiempo para conversar." } },
+    trivia: { name: { en: "Trivia Thursday: Seminole Edition", es: "Jueves de trivia: edición Seminole" }, short: { en: "Trivia Thursday", es: "Jueves de trivia" },
+      recurs: { en: "One Thursday a month", es: "Un jueves al mes" },
+      blurb: { en: "Five rounds about the county you live in. Came alone? We'll find you a team.", es: "Cinco rondas sobre el condado donde vives. ¿Vienes sin equipo? Te conseguimos uno." } },
+    "text-bank": { name: { en: "Heads-Up Tuesday", es: "Martes de avisos" }, recurs: null,
+      blurb: { en: "Two hours of friendly texts so nobody gets surprised by a deadline.", es: "Dos horas de mensajes amables para que a nadie lo sorprenda una fecha límite." } },
+    "creator-night": { name: { en: "Seminole in 60: Creator Night", es: "Seminole en 60: noche de creadores" }, short: { en: "Creator Night", es: "Noche de creadores" }, recurs: null,
+      blurb: { en: "Ring lights, tripods and help turning one thought into 60 seconds.", es: "Aros de luz, trípodes y ayuda para convertir una idea en 60 segundos." } },
+    "renew-ready": { name: { en: "Renew-Ready Party", es: "Fiesta lista para renovar" }, recurs: null,
+      blurb: { en: "Snacks, music and help asking for your mail ballot again, yourself, on the official site.", es: "Comida, música y ayuda para pedir tu boleta por correo otra vez, tú mismo, en el sitio oficial." } },
+    "workshop-es": { name: { en: "Taller en Español", es: "Taller en español" }, recurs: null,
+      blurb: { en: "What changed for 2027, in Spanish and in plain words.", es: "Qué cambió para 2027, en español y con palabras claras." } },
+    mixer: { name: { en: "Welcome Wednesday", es: "Miércoles de bienvenida" }, recurs: null,
+      blurb: { en: "Our big hello for new members: meet people, find your thing, ask anything.", es: "Nuestra gran bienvenida para miembros nuevos: conoce gente, encuentra lo tuyo, pregunta lo que sea." } },
+    sunrail: { name: { en: "SunRail Social", es: "Salida en SunRail" }, recurs: null,
+      blurb: { en: "Ride in after work, meet on the platform, talk about getting around.", es: "Llega en tren después del trabajo, nos vemos en el andén y hablamos de cómo movernos." } },
+    canvass: { name: { en: "Neighbor Saturday", es: "Sábado de vecinos" }, recurs: null,
+      blurb: { en: "Knock doors in pairs with one friendly heads-up. Done by lunch.", es: "Toca puertas en pareja con un aviso amable. Terminamos antes del almuerzo." } },
+    karaoke: { name: { en: "Love & Protest Karaoke", es: "Karaoke de amor y protesta" }, recurs: null,
+      blurb: { en: "Love songs, protest songs, and nobody has to sing to come hang out.", es: "Canciones de amor, canciones de protesta, y nadie tiene que cantar para venir." } },
+    picnic: { name: { en: "Big Tree Picnic Club", es: "Club del pícnic en Big Tree" }, recurs: null,
+      blurb: { en: "Blankets, snacks and sticker design under some very old trees.", es: "Mantas, comida y diseño de stickers bajo unos árboles muy viejos." } },
+    "seminole-sunday": { name: { en: "Seminole Sunday", es: "Domingo en Seminole" }, recurs: { en: "One big Sunday a month", es: "Un domingo grande al mes" },
+      blurb: { en: "The monthly big one: a different park, the whole crew, daytime so everyone 14 and up can come.", es: "El grande del mes: un parque distinto, todo el grupo y de día, para que venga cualquier persona desde los 14." } },
+    "open-mic": { name: { en: "Open Mic: 3 Minutes, Your Take", es: "Micrófono abierto: 3 minutos, tu opinión" }, short: { en: "Open Mic Live", es: "Micrófono abierto en vivo" },
+      recurs: { en: "One Saturday afternoon a month", es: "Un sábado por la tarde al mes" },
+      blurb: { en: "Sign up at the door, take the mic for up to 3 minutes, say what you think. Or just come listen.", es: "Anótate al llegar, toma el micrófono hasta 3 minutos y di lo que piensas. O ven solo a escuchar." } }
+  },
+
+  /* THE TENTPOLE (right-wing-no-tentpole): one big, free, daytime Sunday a month, in a different park each time.
+     Daytime on purpose: under-18s can come without a guardian form (MINORS_POLICY: the form is for events that end
+     after dark and for door-knocking). Items with tentpole: true are that month's edition, whatever their series:
+     Dec 13 (Renew-Ready Party, Winter Springs), Jan 24 (Oviedo), Feb 21 (Big Tree Picnic Club, Longwood). Pages show
+     the next edition as a poster-grade band (YSD.events.tentpole(), .renderTentpole()). DEMO cadence. */
+  tentpole: {
+    id: "seminole-sunday",
+    demo: true,
+    token: "--sun",
+    name: { en: "Seminole Sunday", es: "Domingo en Seminole" },
+    recurs: { en: "One big Sunday a month, 2 to 4 pm", es: "Un domingo grande al mes, de 2 a 4 p. m." },
+    tagline: {
+      en: "One big free Sunday a month. A different park each time, the whole crew there, and daytime so everyone 14 and up can come.",
+      es: "Un domingo grande y gratis cada mes. Un parque distinto cada vez, todo el grupo reunido y de día, para que pueda venir cualquier persona desde los 14 años."
+    },
+    eyebrow: { en: "This month's big one", es: "El grande del mes" }
   },
 
   /* REAL events hosted by the Seminole County Democrats (not by YDSC), copied from the Florida
@@ -516,6 +605,8 @@ window.YSD_DATA.events = {
             en: "Three friends laughing across a wooden table covered in playing cards",
             es: "Tres amigos se ríen alrededor de una mesa de madera llena de cartas de juego"
           },
+          card: false,
+          lift: 1.3,
           verified: "2026-11-09"
         }
       },
@@ -772,6 +863,82 @@ window.YSD_DATA.events = {
     },
 
     {
+      id: "open-mic-oviedo",
+      demo: true,
+      status: "scheduled",
+      series: "open-mic",
+      kind: "create",
+      tone: "fun",
+      title: { en: "Open mic: 3 minutes, your take", es: "Micrófono abierto: 3 minutos, tu opinión" },
+      tagline: {
+        en: "Three minutes on the mic, about the Seminole thing you'd fix first. Or just come listen.",
+        es: "Tres minutos con el micrófono sobre lo primero que arreglarías en Seminole. O ven solo a escuchar."
+      },
+      description: {
+        en: "Sign up at the door, take the mic for up to 3 minutes, and say what you think: a story, a rant about the bus, a poem, a question for the room. This month's prompt is the Seminole thing you'd fix first, but any take works. No experience needed, no heckling, and the mic is for neighbors, not politicians. Not into talking? Come listen. The snacks are free and so is the applause.",
+        es: "Anótate al llegar, toma el micrófono hasta 3 minutos y di lo que piensas: una historia, una queja sobre el autobús, un poema, una pregunta para el grupo. El tema de este mes es lo primero que arreglarías en Seminole, pero cualquier opinión vale. No hace falta experiencia, nadie abuchea y el micrófono es para los vecinos, no para los políticos. ¿No quieres hablar? Ven a escuchar. La comida es gratis y los aplausos también."
+      },
+      extraNote: {
+        en: "We only film people who say yes, and anyone under 18 needs a guardian's yes first. Rather not be filmed? Tell us when you sign up and the camera stays off for you.",
+        es: "Solo grabamos a quien dice que sí, y para menores de 18 primero tiene que decir que sí su tutor. ¿Prefieres que no te graben? Avísanos al anotarte y la cámara se queda apagada para ti."
+      },
+      start: "2026-12-05T14:00:00-05:00",
+      end: "2026-12-05T16:00:00-05:00",
+      when: { en: "Sat, Dec 5, 2 to 4 pm", es: "Sáb., 5 de dic., de 2 a 4 p. m." },
+      afterDark: false,
+      city: "oviedo",
+      place: {
+        kind: "generic",
+        name: { en: "A community room in Oviedo (DEMO venue)", es: "Un salón comunitario en Oviedo (lugar DEMO)" },
+        address: null,
+        mapQuery: null,
+        remote: false
+      },
+      vibes: ["first-timers", "create", "social"],
+      language: ["en", "es"],
+      bring: [
+        { en: "Your take (notes on your phone are fine)", es: "Tu opinión (puedes leerla del celular)" },
+        { en: "A friend to cheer", es: "Alguien que te aplauda" },
+        { en: "Water", es: "Agua" }
+      ],
+      accessibility: {
+        en: "Step-free room with chairs (DEMO venue). You can speak sitting down, read from your phone, or have a friend read your take for you. The sign-up list goes up on the wall so you always know who's next. Tell us what you need when you RSVP.",
+        es: "Salón sin escalones y con sillas (lugar DEMO). Puedes hablar sentado, leer del celular o pedirle a alguien que lea tu opinión por ti. La lista de turnos se pega en la pared para que siempre sepas quién sigue. Cuéntanos qué necesitas al confirmar."
+      },
+      ages: { min: 14, label: { en: "14 and up", es: "Desde 14 años" }, guardian: false },
+      alcoholFree: true,
+      cost: { amount: 0, label: { en: "Free", es: "Gratis" } },
+      host: { label: { en: "DEMO host", es: "Equipo anfitrión (DEMO)" }, team: "communications" },
+      capacity: 35,
+      going: 14,
+      cover: {
+        query: "a microphone on a stand in a bright community room",
+        alt: { en: "A microphone on a stand", es: "Un micrófono en su base" },
+        token: "--tangerine",
+        sticker: "megaphone",
+        short: { en: "Open mic", es: "Micrófono abierto" }
+      },
+      share: {
+        title: { en: "Open mic: 3 minutes, your take", es: "Micrófono abierto: 3 minutos, tu opinión" },
+        text: {
+          en: "Open mic Sat Dec 5, 2 pm in Oviedo: 3 minutes, your take. Free, no experience needed. Come cheer me on? {url}",
+          es: "Micrófono abierto el sáb. 5 de dic., 2 p. m., en Oviedo: 3 minutos, tu opinión. Gratis y sin experiencia. ¿Vienes a echarme porras? {url}"
+        }
+      },
+      bringFriend: {
+        en: "Bring the friend who always has a take. Three minutes is plenty.",
+        es: "Trae a esa persona que siempre tiene algo que decir. Tres minutos alcanzan."
+      },
+      calDescription: {
+        en: "DEMO event. Open mic: up to 3 minutes each, your take on the Seminole thing you'd fix first, or come listen. Free, 14 and up, alcohol-free.",
+        es: "Evento DEMO. Micrófono abierto: hasta 3 minutos por persona, tu opinión sobre lo primero que arreglarías en Seminole, o ven a escuchar. Gratis, desde 14 años, sin alcohol."
+      },
+      links: [],
+      xpActions: ["rsvp", "attend"],
+      badgeIds: [],
+      facts: []
+    },
+    {
       id: "renew-ready-party",
       demo: true,
       status: "scheduled",
@@ -794,6 +961,7 @@ window.YSD_DATA.events = {
       start: "2026-12-13T14:00:00-05:00",
       end: "2026-12-13T16:00:00-05:00",
       when: { en: "Sun, Dec 13, 2 to 4 pm", es: "Dom., 13 de dic., de 2 a 4 p. m." },
+      tentpole: true,
       afterDark: false,
       city: "winter-springs",
       place: {
@@ -831,7 +999,7 @@ window.YSD_DATA.events = {
       cover: {
         query: "picnic in a sunny Florida park pavilion with string lights and snacks",
         alt: { en: "A picnic table with snacks under a park pavilion", es: "Una mesa de picnic con comida bajo un pabellón en un parque" },
-        token: "--celery",
+        token: "--sun",
         sticker: "calendar",
         short: { en: "Renew-ready", es: "Lista para renovar" },
         // No photo: the one we had (Unsplash 1595265616362, return envelopes) shows the USPS Official
@@ -840,13 +1008,13 @@ window.YSD_DATA.events = {
       share: {
         title: { en: "Renew-ready party", es: "Fiesta para dejar lista tu renovación" },
         text: {
-          en: "Renew-ready party Sun Dec 13, 2 pm at Central Winds Park in Winter Springs. If you voted by mail this year, your request runs out Dec 31. Snacks, music, and we get ready together. Come? {url}",
-          es: "Fiesta para dejar lista la renovación, dom. 13 de dic., 2 p. m., en Central Winds Park, Winter Springs. Si votaste por correo este año, tu solicitud vence el 31 de diciembre. Comida, música y nos preparamos juntos. ¿Vienes? {url}"
+          en: "Seminole Sunday: the Renew-Ready Party, Sun Dec 13, 2 pm at Central Winds Park in Winter Springs. Asked for a mail ballot before Nov 3? That request ends Dec 31. Snacks, music, and we get ready together. Come? {url}",
+          es: "Domingo en Seminole: la fiesta para renovar, dom. 13 de dic., 2 p. m., en Central Winds Park, Winter Springs. ¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Comida, música y nos preparamos juntos. ¿Vienes? {url}"
         }
       },
       bringFriend: {
-        en: "Bring the friend who voted by mail this year. Their request runs out Dec 31 too.",
-        es: "Trae a quien votó por correo este año. Su solicitud también vence el 31 de diciembre."
+        en: "Bring the friend who asked for a mail ballot before Nov 3. Their request ends Dec 31 too.",
+        es: "Trae a quien pidió la boleta por correo antes del 3 de noviembre. Su solicitud también vence el 31 de diciembre."
       },
       calDescription: {
         en: "DEMO event. Renew your Florida mail-ballot request (requests made before Nov 3 end Dec 31, 2026; ask again and you should be set through 2028). Snacks and music. Free.",
@@ -892,6 +1060,78 @@ window.YSD_DATA.events = {
       ]
     },
 
+    {
+      id: "trivia-lakes-and-landmarks",
+      demo: true,
+      status: "scheduled",
+      series: "trivia",
+      kind: "social",
+      tone: "fun",
+      title: { en: "Trivia night: the lakes and landmarks round", es: "Noche de trivia: ronda de lagos y lugares" },
+      tagline: {
+        en: "Round two of the county quiz. Lakes, landmarks, and one round on how voting here works. Bring a team or join one.",
+        es: "Segunda ronda del quiz del condado. Lagos, lugares y una ronda sobre cómo se vota aquí. Trae a tu equipo o súmate a uno."
+      },
+      description: {
+        en: "Trivia Thursday is back for December. Five rounds about the county you live in: its lakes and rivers, its landmarks, its cities, and one round on how voting here actually works (no gotchas, promise). Teams of up to 6. Came alone? Perfect. We'll put you on a team with people you'll like.",
+        es: "El jueves de trivia vuelve en diciembre. Cinco rondas sobre el condado donde vives: sus lagos y ríos, sus lugares conocidos, sus ciudades y una ronda sobre cómo se vota aquí de verdad (sin trampas, prometido). Equipos de hasta 6. ¿Vienes sin equipo? Perfecto. Te ponemos con gente que te va a caer bien."
+      },
+      start: "2026-12-17T19:00:00-05:00",
+      end: "2026-12-17T21:00:00-05:00",
+      when: { en: "Thu, Dec 17, 7 to 9 pm", es: "Jue., 17 de dic., de 7 a 9 p. m." },
+      afterDark: true,
+      city: "sanford",
+      place: {
+        kind: "generic",
+        name: { en: "A pizza place in downtown Sanford (DEMO venue)", es: "Una pizzería en el centro de Sanford (lugar DEMO)" },
+        address: null,
+        mapQuery: null,
+        remote: false
+      },
+      vibes: ["games", "social", "first-timers"],
+      language: ["en"],
+      bring: [
+        { en: "A team name (puns encouraged, keep it kind)", es: "Un nombre para tu equipo (con juegos de palabras, pero buena onda)" },
+        { en: "Nothing else. Answers go on paper, so phones stay in pockets.", es: "Nada más. Las respuestas van en papel, así que el celular se queda guardado." },
+        { en: "Money for food, if you want some", es: "Dinero para comida, si se te antoja algo" }
+      ],
+      accessibility: {
+        en: "Questions are read out loud and shown on a screen. Large-print answer sheets on request. A quieter table away from the speakers if the room gets loud.",
+        es: "Las preguntas se leen en voz alta y salen en pantalla. Hojas de respuestas en letra grande si las pides. Hay una mesa más tranquila lejos de los altavoces por si hay mucho ruido."
+      },
+      ages: { min: 14, label: { en: "14 and up", es: "Desde 14 años" }, guardian: true },
+      alcoholFree: true,
+      cost: { amount: 0, label: { en: "Free to play", es: "Gratis" } },
+      host: { label: { en: "DEMO host", es: "Equipo anfitrión (DEMO)" }, team: "organizing" },
+      capacity: 48,
+      going: 22,
+      cover: {
+        query: "friends laughing around a table with trivia answer sheets",
+        alt: { en: "Friends around a table with answer sheets", es: "Un grupo de amigos alrededor de una mesa con hojas de respuestas" },
+        token: "--sky",
+        sticker: "lake",
+        short: { en: "Trivia Thursday", es: "Jueves de trivia" }
+      },
+      share: {
+        title: { en: "Trivia Thursday in Sanford", es: "Jueves de trivia en Sanford" },
+        text: {
+          en: "Trivia Thursday in downtown Sanford, Thu Dec 17, 7 pm: lakes, landmarks and one voting round. Free. Be on my team? {url}",
+          es: "Jueves de trivia en el centro de Sanford, jue. 17 de dic., 7 p. m.: lagos, lugares y una ronda sobre el voto. Gratis. ¿Estás en mi equipo? {url}"
+        }
+      },
+      bringFriend: {
+        en: "Bring the friend who knows every lake by name. There are a lot of lakes.",
+        es: "Trae a quien se sabe el nombre de cada lago. Hay muchos lagos."
+      },
+      calDescription: {
+        en: "DEMO event. Trivia Thursday: Seminole County questions, teams of up to 6, solo players welcome. Free, 14 and up, alcohol-free.",
+        es: "Evento DEMO. Jueves de trivia: preguntas sobre el condado de Seminole, equipos de hasta 6, también si vienes sin equipo. Gratis, desde 14 años, sin alcohol."
+      },
+      links: [],
+      xpActions: ["rsvp", "attend"],
+      badgeIds: ["trivia-brain"],
+      facts: []
+    },
     {
       id: "taller-votar-2027",
       demo: true,
@@ -1129,6 +1369,82 @@ window.YSD_DATA.events = {
     },
 
     {
+      id: "open-mic-sanford",
+      demo: true,
+      status: "scheduled",
+      series: "open-mic",
+      kind: "create",
+      tone: "fun",
+      title: { en: "Open mic: 3 minutes, your take", es: "Micrófono abierto: 3 minutos, tu opinión" },
+      tagline: {
+        en: "Three minutes on the mic, about your 2027 wish for your city. Or just come listen.",
+        es: "Tres minutos con el micrófono sobre lo que deseas para tu ciudad en 2027. O ven solo a escuchar."
+      },
+      description: {
+        en: "Sign up at the door, take the mic for up to 3 minutes, and say what you think: a story, a rant about the bus, a poem, a question for the room. This month's prompt is your 2027 wish for your city, but any take works. No experience needed, no heckling, and the mic is for neighbors, not politicians. Not into talking? Come listen. The snacks are free and so is the applause.",
+        es: "Anótate al llegar, toma el micrófono hasta 3 minutos y di lo que piensas: una historia, una queja sobre el autobús, un poema, una pregunta para el grupo. El tema de este mes es lo que deseas para tu ciudad en 2027, pero cualquier opinión vale. No hace falta experiencia, nadie abuchea y el micrófono es para los vecinos, no para los políticos. ¿No quieres hablar? Ven a escuchar. La comida es gratis y los aplausos también."
+      },
+      extraNote: {
+        en: "We only film people who say yes, and anyone under 18 needs a guardian's yes first. Rather not be filmed? Tell us when you sign up and the camera stays off for you.",
+        es: "Solo grabamos a quien dice que sí, y para menores de 18 primero tiene que decir que sí su tutor. ¿Prefieres que no te graben? Avísanos al anotarte y la cámara se queda apagada para ti."
+      },
+      start: "2027-01-16T14:00:00-05:00",
+      end: "2027-01-16T16:00:00-05:00",
+      when: { en: "Sat, Jan 16, 2 to 4 pm", es: "Sáb., 16 de ene., de 2 a 4 p. m." },
+      afterDark: false,
+      city: "sanford",
+      place: {
+        kind: "generic",
+        name: { en: "A community room in downtown Sanford (DEMO venue)", es: "Un salón comunitario en el centro de Sanford (lugar DEMO)" },
+        address: null,
+        mapQuery: null,
+        remote: false
+      },
+      vibes: ["first-timers", "create", "social"],
+      language: ["en", "es"],
+      bring: [
+        { en: "Your take (notes on your phone are fine)", es: "Tu opinión (puedes leerla del celular)" },
+        { en: "A friend to cheer", es: "Alguien que te aplauda" },
+        { en: "Water", es: "Agua" }
+      ],
+      accessibility: {
+        en: "Step-free room with chairs (DEMO venue). You can speak sitting down, read from your phone, or have a friend read your take for you. The sign-up list goes up on the wall so you always know who's next. Tell us what you need when you RSVP.",
+        es: "Salón sin escalones y con sillas (lugar DEMO). Puedes hablar sentado, leer del celular o pedirle a alguien que lea tu opinión por ti. La lista de turnos se pega en la pared para que siempre sepas quién sigue. Cuéntanos qué necesitas al confirmar."
+      },
+      ages: { min: 14, label: { en: "14 and up", es: "Desde 14 años" }, guardian: false },
+      alcoholFree: true,
+      cost: { amount: 0, label: { en: "Free", es: "Gratis" } },
+      host: { label: { en: "DEMO host", es: "Equipo anfitrión (DEMO)" }, team: "communications" },
+      capacity: 35,
+      going: 11,
+      cover: {
+        query: "a microphone on a stand in a bright community room",
+        alt: { en: "A microphone on a stand", es: "Un micrófono en su base" },
+        token: "--tangerine",
+        sticker: "megaphone",
+        short: { en: "Open mic", es: "Micrófono abierto" }
+      },
+      share: {
+        title: { en: "Open mic: 3 minutes, your take", es: "Micrófono abierto: 3 minutos, tu opinión" },
+        text: {
+          en: "Open mic Sat Jan 16, 2 pm in downtown Sanford: 3 minutes, your take. Free, no experience needed. Come cheer me on? {url}",
+          es: "Micrófono abierto el sáb. 16 de ene., 2 p. m., en el centro de Sanford: 3 minutos, tu opinión. Gratis y sin experiencia. ¿Vienes a echarme porras? {url}"
+        }
+      },
+      bringFriend: {
+        en: "Bring the friend who always has a take. Three minutes is plenty.",
+        es: "Trae a esa persona que siempre tiene algo que decir. Tres minutos alcanzan."
+      },
+      calDescription: {
+        en: "DEMO event. Open mic: up to 3 minutes each, your take on your 2027 wish for your city, or come listen. Free, 14 and up, alcohol-free.",
+        es: "Evento DEMO. Micrófono abierto: hasta 3 minutos por persona, tu opinión sobre lo que deseas para tu ciudad en 2027, o ven a escuchar. Gratis, desde 14 años, sin alcohol."
+      },
+      links: [],
+      xpActions: ["rsvp", "attend"],
+      badgeIds: [],
+      facts: []
+    },
+    {
       id: "sunrail-social-lake-mary",
       demo: true,
       status: "scheduled",
@@ -1254,6 +1570,157 @@ window.YSD_DATA.events = {
       ]
     },
 
+    {
+      id: "seminole-sunday-oviedo",
+      demo: true,
+      status: "scheduled",
+      series: "seminole-sunday",
+      kind: "social",
+      tone: "fun",
+      tentpole: true,
+      title: { en: "Seminole Sunday: Oviedo kicks off 2027", es: "Domingo en Seminole: Oviedo arranca 2027" },
+      tagline: {
+        en: "Lawn games, free snacks and a giant wall calendar where you pick what we do this year.",
+        es: "Juegos al aire libre, comida gratis y un calendario gigante en la pared donde eliges qué hacemos este año."
+      },
+      description: {
+        en: "January's big one is in Oviedo. Bring a blanket and whoever you can talk into coming. There's cornhole, a sticker table, snacks (DEMO), and a giant wall calendar: everyone gets three dots to vote for the nights they want in 2027, from more trivia to a bike ride on the Cross Seminole Trail. First time? Perfect. Someone at the welcome table will introduce you to the Oviedo crew.",
+        es: "El grande de enero es en Oviedo. Trae una manta y a quien puedas convencer. Habrá cornhole, una mesa de stickers, comida (DEMO) y un calendario gigante en la pared: cada persona tiene tres puntos para votar por los planes que quiere en 2027, desde más trivia hasta un paseo en bici por el Cross Seminole Trail. ¿Primera vez? Perfecto. En la mesa de bienvenida alguien te presenta al grupo de Oviedo."
+      },
+      start: "2027-01-24T14:00:00-05:00",
+      end: "2027-01-24T16:00:00-05:00",
+      when: { en: "Sun, Jan 24, 2 to 4 pm", es: "Dom., 24 de ene., de 2 a 4 p. m." },
+      afterDark: false,
+      city: "oviedo",
+      place: {
+        kind: "public",
+        name: { en: "Center Lake Park", es: "Center Lake Park" },
+        address: "299 Center Lake Lane, Oviedo, FL 32765",
+        mapQuery: "Center Lake Park, 299 Center Lake Lane, Oviedo, FL 32765",
+        directions: {
+          en: "Look for the celery-green balloons and the giant calendar (DEMO).",
+          es: "Busca los globos verde apio y el calendario gigante (DEMO)."
+        },
+        remote: false,
+        source: "https://cityofoviedo.net/1230/Parks-and-Facilities",
+        verified: "2026-11-09"
+      },
+      vibes: ["outdoors", "social", "first-timers", "kids-welcome"],
+      language: ["en", "es"],
+      bring: [
+        { en: "A blanket or a folding chair", es: "Una manta o una silla plegable" },
+        { en: "Water and sunscreen", es: "Agua y protector solar" },
+        { en: "Whoever you can talk into coming", es: "A quien puedas convencer de venir" }
+      ],
+      accessibility: {
+        en: "We set up close to parking, with folding chairs and a shady spot to sit. Spanish speakers on the welcome team. Kids are welcome. Tell us what you need when you RSVP and we'll plan around it.",
+        es: "Nos ponemos cerca del estacionamiento, con sillas plegables y un lugar con sombra para sentarse. En la mesa de bienvenida hay gente que habla español. Los niños son bienvenidos. Cuéntanos qué necesitas al confirmar y lo planeamos."
+      },
+      ages: { min: 14, label: { en: "14 and up (kids welcome with a grown-up)", es: "Desde 14 años (niños bienvenidos con una persona adulta)" }, guardian: false },
+      alcoholFree: true,
+      cost: { amount: 0, label: { en: "Free", es: "Gratis" } },
+      host: { label: { en: "DEMO host", es: "Equipo anfitrión (DEMO)" }, team: "organizing" },
+      capacity: 80,
+      going: 34,
+      cover: {
+        query: "friends playing lawn games in a sunny Florida park",
+        alt: { en: "Friends playing lawn games in a sunny park", es: "Un grupo de amigos con juegos de jardín en un parque soleado" },
+        token: "--sun",
+        sticker: "chicken",
+        short: { en: "Seminole Sunday", es: "Domingo en Seminole" }
+      },
+      share: {
+        title: { en: "Seminole Sunday in Oviedo", es: "Domingo en Seminole, en Oviedo" },
+        text: {
+          en: "Seminole Sunday in Oviedo, Sun Jan 24, 2 pm at Center Lake Park: lawn games, snacks and picking what we do in 2027. Free. Come with? {url}",
+          es: "Domingo en Seminole en Oviedo, dom. 24 de enero, 2 p. m., en Center Lake Park: juegos, comida y elegimos qué hacer en 2027. Gratis. ¿Vienes? {url}"
+        }
+      },
+      bringFriend: {
+        en: "Bring your Oviedo people. The calendar wall needs more votes than the chickens.",
+        es: "Trae a tu gente de Oviedo. El calendario necesita más votos que gallinas hay."
+      },
+      calDescription: {
+        en: "DEMO event. Seminole Sunday: lawn games, snacks and a calendar wall to pick 2027's nights. Center Lake Park, 299 Center Lake Lane, Oviedo. Free, 14 and up, kids welcome.",
+        es: "Evento DEMO. Domingo en Seminole: juegos, comida y un calendario en la pared para elegir los planes de 2027. Center Lake Park, 299 Center Lake Lane, Oviedo. Gratis, desde 14 años, niños bienvenidos."
+      },
+      links: [],
+      xpActions: ["rsvp", "attend"],
+      badgeIds: [],
+      facts: []
+    },
+    {
+      id: "trivia-city-limits",
+      demo: true,
+      status: "scheduled",
+      series: "trivia",
+      kind: "social",
+      tone: "fun",
+      title: { en: "Trivia night: the city limits round", es: "Noche de trivia: ronda de las siete ciudades" },
+      tagline: {
+        en: "Seven cities, one quiz. How well do you know the place next door? Bring a team or join one.",
+        es: "Siete ciudades, un quiz. ¿Qué tanto conoces la ciudad de al lado? Trae a tu equipo o súmate a uno."
+      },
+      description: {
+        en: "January's Trivia Thursday is all about Seminole's seven cities: who's who, what's where, and which one has the chickens. Plus one round on how city elections work, since Oviedo votes this November. Teams of up to 6. Came alone? Perfect. We'll put you on a team with people you'll like.",
+        es: "El jueves de trivia de enero es sobre las siete ciudades de Seminole: quién es quién, qué está dónde y cuál tiene las gallinas. Además, una ronda sobre cómo funcionan las elecciones municipales, porque Oviedo vota este noviembre. Equipos de hasta 6. ¿Vienes sin equipo? Perfecto. Te ponemos con gente que te va a caer bien."
+      },
+      start: "2027-01-28T19:00:00-05:00",
+      end: "2027-01-28T21:00:00-05:00",
+      when: { en: "Thu, Jan 28, 7 to 9 pm", es: "Jue., 28 de ene., de 7 a 9 p. m." },
+      afterDark: true,
+      city: "altamonte-springs",
+      place: {
+        kind: "generic",
+        name: { en: "A board-game café in Altamonte Springs (DEMO venue)", es: "Un café de juegos de mesa en Altamonte Springs (lugar DEMO)" },
+        address: null,
+        mapQuery: null,
+        remote: false
+      },
+      vibes: ["games", "social", "first-timers"],
+      language: ["en"],
+      bring: [
+        { en: "A team name (puns encouraged, keep it kind)", es: "Un nombre para tu equipo (con juegos de palabras, pero buena onda)" },
+        { en: "Nothing else. Answers go on paper, so phones stay in pockets.", es: "Nada más. Las respuestas van en papel, así que el celular se queda guardado." },
+        { en: "Money for food, if you want some", es: "Dinero para comida, si se te antoja algo" }
+      ],
+      accessibility: {
+        en: "Questions are read out loud and shown on a screen. Large-print answer sheets on request. A quieter table away from the speakers if the room gets loud.",
+        es: "Las preguntas se leen en voz alta y salen en pantalla. Hojas de respuestas en letra grande si las pides. Hay una mesa más tranquila lejos de los altavoces por si hay mucho ruido."
+      },
+      ages: { min: 14, label: { en: "14 and up", es: "Desde 14 años" }, guardian: true },
+      alcoholFree: true,
+      cost: { amount: 0, label: { en: "Free to play", es: "Gratis" } },
+      host: { label: { en: "DEMO host", es: "Equipo anfitrión (DEMO)" }, team: "organizing" },
+      capacity: 48,
+      going: 19,
+      cover: {
+        query: "friends laughing around a table with trivia answer sheets",
+        alt: { en: "Friends around a table with answer sheets", es: "Un grupo de amigos alrededor de una mesa con hojas de respuestas" },
+        token: "--bubblegum",
+        sticker: "gator",
+        short: { en: "Trivia Thursday", es: "Jueves de trivia" }
+      },
+      share: {
+        title: { en: "Trivia Thursday in Altamonte", es: "Jueves de trivia en Altamonte" },
+        text: {
+          en: "Trivia Thursday in Altamonte Springs, Thu Jan 28, 7 pm: all seven Seminole cities in one quiz. Free. Be on my team? {url}",
+          es: "Jueves de trivia en Altamonte Springs, jue. 28 de ene., 7 p. m.: las siete ciudades de Seminole en un quiz. Gratis. ¿Estás en mi equipo? {url}"
+        }
+      },
+      bringFriend: {
+        en: "Bring the friend from the city across the lake. You will need them for round three.",
+        es: "Trae a quien vive en la ciudad del otro lado del lago. Lo vas a necesitar en la tercera ronda."
+      },
+      calDescription: {
+        en: "DEMO event. Trivia Thursday: Seminole County questions, teams of up to 6, solo players welcome. Free, 14 and up, alcohol-free.",
+        es: "Evento DEMO. Jueves de trivia: preguntas sobre el condado de Seminole, equipos de hasta 6, también si vienes sin equipo. Gratis, desde 14 años, sin alcohol."
+      },
+      links: [],
+      xpActions: ["rsvp", "attend"],
+      badgeIds: ["trivia-brain"],
+      facts: []
+    },
     {
       id: "oviedo-2027-neighbor-shift",
       demo: true,
@@ -1486,9 +1953,10 @@ window.YSD_DATA.events = {
         en: "Big Tree Park is where The Senator, a bald cypress about 3,500 years old, stood until it burned in 2012. A clone called The Phoenix grows there now, and Lady Liberty, about 2,000 years old, still stands nearby. It's a good place to talk about the long game. Bring a blanket. We'll bring snacks, markers and blank sticker sheets so you can design a sticker for our 2027 season, and members vote on the winner (DEMO).",
         es: "En Big Tree Park estuvo The Senator, un ciprés calvo de unos 3,500 años, hasta que se quemó en 2012. Hoy crece ahí un clon llamado The Phoenix, y cerca sigue en pie Lady Liberty, de unos 2,000 años. Es buen lugar para hablar de lo que se construye a largo plazo. Trae una manta; nosotros llevamos algo para picar, marcadores y hojas de stickers en blanco para que diseñes un sticker para nuestra temporada 2027, y los miembros votan por el ganador (DEMO)."
       },
-      start: "2027-02-20T10:00:00-05:00",
-      end: "2027-02-20T12:00:00-05:00",
-      when: { en: "Sat, Feb 20, 10 am to noon", es: "Sáb., 20 de feb., de 10 a. m. a 12 del mediodía" },
+      start: "2027-02-21T14:00:00-05:00",
+      end: "2027-02-21T16:00:00-05:00",
+      when: { en: "Sun, Feb 21, 2 to 4 pm", es: "Dom., 21 de feb., de 2 a 4 p. m." },
+      tentpole: true,
       afterDark: false,
       city: "longwood",
       place: {
@@ -1526,15 +1994,15 @@ window.YSD_DATA.events = {
       cover: {
         query: "towering bald cypress trees and a wooden boardwalk in a Florida forest",
         alt: { en: "Tall cypress trees beside a wooden boardwalk", es: "Cipreses altos junto a un sendero de madera" },
-        token: "--celery",
+        token: "--sun",
         sticker: "cypress",
         short: { en: "Big Tree picnic", es: "Picnic en Big Tree" }
       },
       share: {
         title: { en: "Picnic at Big Tree Park", es: "Picnic en Big Tree Park" },
         text: {
-          en: "Picnic at Big Tree Park in Longwood, Sat Feb 20, 10 am: snacks, sticker design and the story of a 3,500-year-old cypress. Come plan 2027 with me? {url}",
-          es: "Picnic en Big Tree Park, Longwood, el sáb. 20 de febrero, 10 a. m.: algo para picar, diseño de stickers y la historia de un ciprés de 3,500 años. ¿Planeamos 2027 juntos? {url}"
+          en: "Seminole Sunday picnic at Big Tree Park in Longwood, Sun Feb 21, 2 pm: snacks, sticker design and the story of a 3,500-year-old cypress. Come plan 2027 with me? {url}",
+          es: "Domingo en Seminole: picnic en Big Tree Park, Longwood, el dom. 21 de febrero, 2 p. m.: algo para picar, diseño de stickers y la historia de un ciprés de 3,500 años. ¿Planeamos 2027 juntos? {url}"
         }
       },
       bringFriend: {
@@ -1542,8 +2010,8 @@ window.YSD_DATA.events = {
         es: "Trae a esa persona que dibuja en todo. Necesitamos su sticker."
       },
       calDescription: {
-        en: "DEMO event. Picnic and sticker design at Big Tree Park, 761 General Hutchison Pkwy., Longwood. Free, kids welcome.",
-        es: "Evento DEMO. Picnic y diseño de stickers en Big Tree Park, 761 General Hutchison Pkwy., Longwood. Gratis, niños bienvenidos."
+        en: "DEMO event. Seminole Sunday: picnic and sticker design at Big Tree Park, 761 General Hutchison Pkwy., Longwood. Free, kids welcome.",
+        es: "Evento DEMO. Domingo en Seminole: picnic y diseño de stickers en Big Tree Park, 761 General Hutchison Pkwy., Longwood. Gratis, niños bienvenidos."
       },
       links: [],
       xpActions: ["rsvp", "attend"],
@@ -1592,6 +2060,82 @@ window.YSD_DATA.events = {
           confidence: "high"
         }
       ]
+    },
+    {
+      id: "open-mic-casselberry",
+      demo: true,
+      status: "scheduled",
+      series: "open-mic",
+      kind: "create",
+      tone: "fun",
+      title: { en: "Open mic: 3 minutes, your take", es: "Micrófono abierto: 3 minutos, tu opinión" },
+      tagline: {
+        en: "Three minutes on the mic: a love letter to a Seminole place. Or just come listen.",
+        es: "Tres minutos con el micrófono: una carta de amor a un lugar de Seminole. O ven solo a escuchar."
+      },
+      description: {
+        en: "Sign up at the door, take the mic for up to 3 minutes, and say what you think: a story, a rant about the bus, a poem, a question for the room. This month's prompt is a love letter to a Seminole place, but any take works. No experience needed, no heckling, and the mic is for neighbors, not politicians. Not into talking? Come listen. The snacks are free and so is the applause.",
+        es: "Anótate al llegar, toma el micrófono hasta 3 minutos y di lo que piensas: una historia, una queja sobre el autobús, un poema, una pregunta para el grupo. El tema de este mes es una carta de amor a un lugar de Seminole, pero cualquier opinión vale. No hace falta experiencia, nadie abuchea y el micrófono es para los vecinos, no para los políticos. ¿No quieres hablar? Ven a escuchar. La comida es gratis y los aplausos también."
+      },
+      extraNote: {
+        en: "We only film people who say yes, and anyone under 18 needs a guardian's yes first. Rather not be filmed? Tell us when you sign up and the camera stays off for you.",
+        es: "Solo grabamos a quien dice que sí, y para menores de 18 primero tiene que decir que sí su tutor. ¿Prefieres que no te graben? Avísanos al anotarte y la cámara se queda apagada para ti."
+      },
+      start: "2027-02-27T14:00:00-05:00",
+      end: "2027-02-27T16:00:00-05:00",
+      when: { en: "Sat, Feb 27, 2 to 4 pm", es: "Sáb., 27 de feb., de 2 a 4 p. m." },
+      afterDark: false,
+      city: "casselberry",
+      place: {
+        kind: "generic",
+        name: { en: "A community room in Casselberry (DEMO venue)", es: "Un salón comunitario en Casselberry (lugar DEMO)" },
+        address: null,
+        mapQuery: null,
+        remote: false
+      },
+      vibes: ["first-timers", "create", "social"],
+      language: ["en", "es"],
+      bring: [
+        { en: "Your take (notes on your phone are fine)", es: "Tu opinión (puedes leerla del celular)" },
+        { en: "A friend to cheer", es: "Alguien que te aplauda" },
+        { en: "Water", es: "Agua" }
+      ],
+      accessibility: {
+        en: "Step-free room with chairs (DEMO venue). You can speak sitting down, read from your phone, or have a friend read your take for you. The sign-up list goes up on the wall so you always know who's next. Tell us what you need when you RSVP.",
+        es: "Salón sin escalones y con sillas (lugar DEMO). Puedes hablar sentado, leer del celular o pedirle a alguien que lea tu opinión por ti. La lista de turnos se pega en la pared para que siempre sepas quién sigue. Cuéntanos qué necesitas al confirmar."
+      },
+      ages: { min: 14, label: { en: "14 and up", es: "Desde 14 años" }, guardian: false },
+      alcoholFree: true,
+      cost: { amount: 0, label: { en: "Free", es: "Gratis" } },
+      host: { label: { en: "DEMO host", es: "Equipo anfitrión (DEMO)" }, team: "communications" },
+      capacity: 35,
+      going: 9,
+      cover: {
+        query: "a microphone on a stand in a bright community room",
+        alt: { en: "A microphone on a stand", es: "Un micrófono en su base" },
+        token: "--tangerine",
+        sticker: "megaphone",
+        short: { en: "Open mic", es: "Micrófono abierto" }
+      },
+      share: {
+        title: { en: "Open mic: 3 minutes, your take", es: "Micrófono abierto: 3 minutos, tu opinión" },
+        text: {
+          en: "Open mic Sat Feb 27, 2 pm in Casselberry: 3 minutes, your take. Free, no experience needed. Come cheer me on? {url}",
+          es: "Micrófono abierto el sáb. 27 de feb., 2 p. m., en Casselberry: 3 minutos, tu opinión. Gratis y sin experiencia. ¿Vienes a echarme porras? {url}"
+        }
+      },
+      bringFriend: {
+        en: "Bring the friend who always has a take. Three minutes is plenty.",
+        es: "Trae a esa persona que siempre tiene algo que decir. Tres minutos alcanzan."
+      },
+      calDescription: {
+        en: "DEMO event. Open mic: up to 3 minutes each, your take on a love letter to a Seminole place, or come listen. Free, 14 and up, alcohol-free.",
+        es: "Evento DEMO. Micrófono abierto: hasta 3 minutos por persona, tu opinión sobre una carta de amor a un lugar de Seminole, o ven a escuchar. Gratis, desde 14 años, sin alcohol."
+      },
+      links: [],
+      xpActions: ["rsvp", "attend"],
+      badgeIds: [],
+      facts: []
     }
   ]
 };

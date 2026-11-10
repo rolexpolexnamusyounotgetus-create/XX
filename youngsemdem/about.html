@@ -11,7 +11,7 @@
   <meta property="og:image:alt" content="Who the Young Dems are. Young Democrats of Seminole County, ages 14 to 39. DEMO preview." data-t-content="about:og.alt">
   <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
   <meta property="og:locale" content="en_US"><meta property="og:locale:alternate" content="es_US">
-  <meta name="ysd:og" content='{"template":"og-page","kicker":"ABOUT US","title":"Who the Young Dems are","color":"violet","sticker":"celery","accent":"Young Dems","keys":{"kicker":"about:og.kicker","title":"seo.about.ogTitle"}}'>
+  <meta name="ysd:og" content='{"template":"og-page","kicker":"ABOUT US","title":"Who the Young Dems are","color":"teal","sticker":"celery","accent":"Young Dems","keys":{"kicker":"about:og.kicker","title":"seo.about.ogTitle"}}'>
   <!-- @head --><meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#6A2BFF">
 <script src="assets/boot.js"></script>
@@ -98,26 +98,405 @@
 </header><!-- /@header -->
   <main id="main">
 
-    <section class="section section--violet x-ahero" aria-labelledby="about-title">
-      <div class="wrap x-ahero__grid">
-        <div class="stack stack--lg x-ahero__copy">
-          <div class="x-ahero__top">
-            <p class="eyebrow eyebrow--pill" data-t="about:hero.eyebrow">ABOUT · AGES 14 TO 39</p>
-            <span class="sticker x-ahero__st1" data-sticker="gator" aria-hidden="true"></span>
-            <span class="sticker x-ahero__st2" data-sticker="heart" aria-hidden="true"></span>
-          </div>
-          <h1 class="x-ahero__h1" id="about-title"><span class="x-ahero__l1" data-t="about:hero.line1">Hi. We're the</span> <span class="x-ahero__l2" translate="no">Young Dems.</span></h1>
-          <p class="lead x-ahero__sub" data-t="about:hero.sub">The Young Democrats of Seminole County, for anyone 14 to 39. Free hangouts, straight answers about voting, and a seat saved for your friend.</p>
-          <div class="btn-row">
+    <section class="section section--teal hero hero--split edge--arch x-ah" aria-labelledby="about-title">
+      <div class="wrap hero__grid">
+        <div class="hero__copy">
+          <p class="hero__pill" data-t="about:hero.eyebrow">ABOUT · AGES 14 TO 39</p>
+          <h1 class="hero__title x-ah__h1" id="about-title"><span class="x-ah__l1" data-t="about:hero.line1">Hi. We're the</span> <span class="x-ah__l2" translate="no">Young Dems.</span></h1>
+          <p class="hero__sub" data-t="about:hero.sub">The Young Democrats of Seminole County, for anyone 14 to 39. Free hangouts, straight answers about voting, and a seat saved for your friend.</p>
+          <div class="hero__actions">
             <a class="btn btn--primary btn--lg" href="join.html" data-t="cta.join">Join free</a>
-            <a class="btn btn--ghost btn--lg" href="#whats-real" data-t="about:hero.real">What's real?</a>
+            <a class="btn btn--ghost btn--lg" href="#crews" data-t="about:hero.crews">Find your crew</a>
           </div>
         </div>
 
-        <section class="x-basics" aria-labelledby="basics-title">
-          <span class="sticker sticker--md x-basics__sticker" data-sticker="celery" aria-hidden="true" style="--rot: 12deg"></span>
+        <div class="hero__object x-game" id="real-or-demo" role="region" aria-labelledby="rd-title">
+          <span class="hero__note x-game__note" aria-hidden="true" data-t="about:hero.note">can you tell?</span>
+          <div class="x-game__top">
+            <h2 class="x-game__title" id="rd-title" data-t="about:rd.title">Real or DEMO?</h2>
+            <p class="x-game__count u-js-only" data-rd-count aria-hidden="true"></p>
+          </div>
+          <p class="x-game__sub" data-t="about:rd.sub">Eight things from this site. Which did we make up?</p>
+          <ol class="x-deck" data-rd-game>
+            <li class="x-rd" data-rd="real">
+              <div class="x-rd__face x-rd__front">
+                <p class="x-rd__q" data-t="about:rd.1.q">Sanford was called the Celery City by about 1900.</p>
+                <span class="sticker x-rd__st" data-sticker="celery" aria-hidden="true"></span>
+                <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
+                  <button class="x-rd__btn x-rd__btn--real" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
+                  <button class="x-rd__btn x-rd__btn--demo" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
+                </div>
+              </div>
+              <div class="x-rd__face x-rd__back" data-rd-back>
+                <p class="x-rd__verdict"><span class="tag tag--real" data-t="tag.real">REAL</span> <span class="x-rd__got" data-rd-verdict></span></p>
+                <p class="x-rd__why"><span data-t="about:rd.1.why">Sanford's celery farms made its name.</span> <a class="x-rd__src" href="https://richesmi.cah.ucf.edu/omeka/exhibits/show/origins_of_the_celery_city" rel="noopener" data-t="about:rd.1.src">Source: UCF RICHES</a></p>
+                <button class="btn btn--ink btn--sm x-rd__next u-js-only" type="button" data-rd-next data-t="about:rd.next">Next card</button>
+              </div>
+            </li>
+            <li class="x-rd" data-rd="demo">
+              <div class="x-rd__face x-rd__front">
+                <p class="x-rd__q" data-t="about:rd.2.q">There’s a trivia night in Casselberry on Thu, Nov 19 at 7 pm.</p>
+                <span class="sticker x-rd__st" data-sticker="calendar" aria-hidden="true"></span>
+                <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
+                  <button class="x-rd__btn x-rd__btn--real" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
+                  <button class="x-rd__btn x-rd__btn--demo" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
+                </div>
+              </div>
+              <div class="x-rd__face x-rd__back" data-rd-back>
+                <p class="x-rd__verdict"><span class="tag tag--demo" data-t="demo.badge">DEMO</span> <span class="x-rd__got" data-rd-verdict></span></p>
+                <p class="x-rd__why"><span data-t="about:rd.2.why">Made up to show how invites work. Every event here is DEMO for now.</span></p>
+                <button class="btn btn--ink btn--sm x-rd__next u-js-only" type="button" data-rd-next data-t="about:rd.next">Next card</button>
+              </div>
+            </li>
+            <li class="x-rd" data-rd="real">
+              <div class="x-rd__face x-rd__front">
+                <p class="x-rd__q" data-t="about:rd.3.q">You can join the Young Dems at 14.</p>
+                <span class="sticker x-rd__st" data-sticker="heart" aria-hidden="true"></span>
+                <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
+                  <button class="x-rd__btn x-rd__btn--real" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
+                  <button class="x-rd__btn x-rd__btn--demo" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
+                </div>
+              </div>
+              <div class="x-rd__face x-rd__back" data-rd-back>
+                <p class="x-rd__verdict"><span class="tag tag--real" data-t="tag.real">REAL</span> <span class="x-rd__got" data-rd-verdict></span></p>
+                <p class="x-rd__why"><span data-t="about:rd.3.why">Members are 14 to 39, per the chapter's dues page.</span> <a class="x-rd__src" href="https://secure.actblue.com/donate/ydscdues" rel="noopener" data-cfg-href="links.dues" data-t="about:rd.3.src">Source: the chapter's dues page</a></p>
+                <button class="btn btn--ink btn--sm x-rd__next u-js-only" type="button" data-rd-next data-t="about:rd.next">Next card</button>
+              </div>
+            </li>
+            <li class="x-rd" data-rd="demo">
+              <div class="x-rd__face x-rd__front">
+                <p class="x-rd__q" data-t="about:rd.4.q">Dani from Casselberry writes The Thursday Letter.</p>
+                <span class="sticker x-rd__st" data-sticker="library" aria-hidden="true"></span>
+                <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
+                  <button class="x-rd__btn x-rd__btn--real" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
+                  <button class="x-rd__btn x-rd__btn--demo" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
+                </div>
+              </div>
+              <div class="x-rd__face x-rd__back" data-rd-back>
+                <p class="x-rd__verdict"><span class="tag tag--demo" data-t="demo.badge">DEMO</span> <span class="x-rd__got" data-rd-verdict></span></p>
+                <p class="x-rd__why"><span data-t="about:rd.4.why">Dani is a DEMO writer. Real bylines need real people's OK.</span></p>
+                <button class="btn btn--ink btn--sm x-rd__next u-js-only" type="button" data-rd-next data-t="about:rd.next">Next card</button>
+              </div>
+            </li>
+            <li class="x-rd" data-rd="real">
+              <div class="x-rd__face x-rd__front">
+                <p class="x-rd__q" data-t="about:rd.5.q">SunRail stops at four stations in Seminole County.</p>
+                <span class="sticker x-rd__st" data-sticker="train" aria-hidden="true"></span>
+                <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
+                  <button class="x-rd__btn x-rd__btn--real" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
+                  <button class="x-rd__btn x-rd__btn--demo" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
+                </div>
+              </div>
+              <div class="x-rd__face x-rd__back" data-rd-back>
+                <p class="x-rd__verdict"><span class="tag tag--real" data-t="tag.real">REAL</span> <span class="x-rd__got" data-rd-verdict></span></p>
+                <p class="x-rd__why"><span data-t="about:rd.5.why">Altamonte Springs, Longwood, Lake Mary and Sanford.</span> <a class="x-rd__src" href="https://sunrail.com/stations/" rel="noopener" data-t="about:rd.5.src">Source: SunRail stations</a></p>
+                <button class="btn btn--ink btn--sm x-rd__next u-js-only" type="button" data-rd-next data-t="about:rd.next">Next card</button>
+              </div>
+            </li>
+            <li class="x-rd" data-rd="demo">
+              <div class="x-rd__face x-rd__front">
+                <p class="x-rd__q" data-t="about:rd.6.q">Thirty-one people say they’re going to trivia night.</p>
+                <span class="sticker x-rd__st" data-sticker="bubbles" aria-hidden="true"></span>
+                <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
+                  <button class="x-rd__btn x-rd__btn--real" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
+                  <button class="x-rd__btn x-rd__btn--demo" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
+                </div>
+              </div>
+              <div class="x-rd__face x-rd__back" data-rd-back>
+                <p class="x-rd__verdict"><span class="tag tag--demo" data-t="demo.badge">DEMO</span> <span class="x-rd__got" data-rd-verdict></span></p>
+                <p class="x-rd__why"><span data-t="about:rd.6.why">Every count here is DEMO. Nothing ticks up by itself, and nobody fake joins.</span></p>
+                <button class="btn btn--ink btn--sm x-rd__next u-js-only" type="button" data-rd-next data-t="about:rd.next">Next card</button>
+              </div>
+            </li>
+            <li class="x-rd" data-rd="real">
+              <div class="x-rd__face x-rd__front">
+                <p class="x-rd__q" data-t="about:rd.7.q">Can't pay the $20 dues? You can still be a member, just without a vote.</p>
+                <span class="sticker x-rd__st" data-sticker="sun" aria-hidden="true"></span>
+                <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
+                  <button class="x-rd__btn x-rd__btn--real" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
+                  <button class="x-rd__btn x-rd__btn--demo" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
+                </div>
+              </div>
+              <div class="x-rd__face x-rd__back" data-rd-back>
+                <p class="x-rd__verdict"><span class="tag tag--real" data-t="tag.real">REAL</span> <span class="x-rd__got" data-rd-verdict></span></p>
+                <p class="x-rd__why"><span data-t="about:rd.7.why">The dues page offers non-voting membership to people who can't pay, whether it's money or citizenship status.</span> <a class="x-rd__src" href="https://secure.actblue.com/donate/ydscdues" rel="noopener" data-cfg-href="links.dues" data-t="about:rd.7.src">Source: the chapter's dues page</a></p>
+                <button class="btn btn--ink btn--sm x-rd__next u-js-only" type="button" data-rd-next data-t="about:rd.next">Next card</button>
+              </div>
+            </li>
+            <li class="x-rd" data-rd="demo">
+              <div class="x-rd__face x-rd__front">
+                <p class="x-rd__q" data-t="about:rd.8.q">Members filmed the clips in the Reel.</p>
+                <span class="sticker x-rd__st" data-sticker="camera" aria-hidden="true"></span>
+                <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
+                  <button class="x-rd__btn x-rd__btn--real" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
+                  <button class="x-rd__btn x-rd__btn--demo" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
+                </div>
+              </div>
+              <div class="x-rd__face x-rd__back" data-rd-back>
+                <p class="x-rd__verdict"><span class="tag tag--demo" data-t="demo.badge">DEMO</span> <span class="x-rd__got" data-rd-verdict></span></p>
+                <p class="x-rd__why"><span data-t="about:rd.8.why">They're demo clips made for this preview, posted under @demo handles.</span></p>
+                <button class="btn btn--ink btn--sm x-rd__next u-js-only" type="button" data-rd-next data-t="about:rd.next">Next card</button>
+              </div>
+            </li>
+          </ol>
+          <div class="x-rd-end" data-rd-end hidden>
+            <p class="x-rd-end__big" data-rd-big tabindex="-1"></p>
+            <p class="x-rd-end__line" data-rd-line></p>
+            <div class="x-rd-end__btns">
+              <button class="btn btn--primary" type="button" data-rd-share data-t="about:rd.share">Dare a friend</button>
+              <button class="btn btn--ink" type="button" data-rd-reset data-t="about:rd.reset">Play again</button>
+            </div>
+          </div>
+          <p class="u-visually-hidden" data-rd-live aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section x-crews" id="crews" aria-labelledby="crews-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow" data-t="about:crews.eyebrow">CREWS · DEMO</p>
+          <h2 id="crews-title" data-t="about:crews.title">Find your crew.</h2>
+          <p class="section-head__sub" data-t="about:crews.sub">Small groups by city and by who you are. All DEMO ideas until someone hosts. No rankings, just neighbors.</p>
+        </div>
+        <div class="x-finder" data-crew-finder>
+          <figure class="x-map" aria-labelledby="map-cap">
+            <div class="x-map__box">
+            <svg class="x-map__art" viewBox="0 0 400 340" aria-hidden="true" focusable="false" translate="no">
+              <path class="x-map__county" d="M40 92C60 74 100 62 140 64C180 66 210 72 250 62C280 54 300 38 340 46C362 52 368 80 372 110C378 150 388 180 380 220C374 250 392 280 390 318L40 318C26 290 46 262 34 232C22 200 46 176 32 146C24 124 30 104 40 92Z"/>
+              <path class="x-map__river" d="M372 118C352 92 322 72 292 66C262 60 246 58 230 54M110 54C90 58 68 66 48 84C36 116 50 158 36 200C26 240 44 272 38 318"/>
+              <ellipse class="x-map__lake" cx="170" cy="50" rx="64" ry="22"/>
+              <ellipse class="x-map__lake" cx="262" cy="126" rx="60" ry="17" transform="rotate(-24 262 126)"/>
+              <ellipse class="x-map__lake" cx="374" cy="132" rx="11" ry="20"/>
+              <text class="x-map__name" x="170" y="55" text-anchor="middle">Lake Monroe</text>
+              <text class="x-map__name" x="262" y="131" text-anchor="middle" transform="rotate(-24 262 126)">Lake Jesup</text>
+              <g class="x-map__n"><path d="M378 300l8-20 8 20-8-5z"/><text x="386" y="276" text-anchor="middle">N</text></g>
+            </svg>
+              <span class="sticker x-map__st x-map__st--manatee" data-sticker="manatee" aria-hidden="true"></span>
+              <span class="sticker x-map__st x-map__st--gator" data-sticker="gator" aria-hidden="true"></span>
+              <ul class="x-map__pins">
+            <li class="x-pin" style="--x:51.25%;--y:24.12%;--pin:var(--celery)" data-state="forming" data-side="right"><a class="x-pin__a" href="#crew-sanford" data-crew-pin="sanford" data-no-jump><span class="x-pin__dot" aria-hidden="true"></span><span class="x-pin__label" translate="no">Sanford</span><span class="u-visually-hidden"> <span translate="no">Celery City Crew</span> <span data-t="about:pin.forming">(forming, DEMO)</span></span></a></li>
+            <li class="x-pin" style="--x:37.50%;--y:32.94%;--pin:var(--sky)" data-state="needs" data-side="left"><a class="x-pin__a" href="#crew-sunrail" data-crew-pin="sunrail" data-no-jump><span class="x-pin__dot" aria-hidden="true"></span><span class="x-pin__label" translate="no">Lake Mary</span><span class="u-visually-hidden"> <span translate="no">SunRail Regulars</span> <span data-t="about:pin.needs">(needs a host)</span></span></a></li>
+            <li class="x-pin" style="--x:31.50%;--y:47.06%;--pin:var(--sky)" data-state="needs" data-side="left"><a class="x-pin__a" href="#crew-sunrail" data-crew-pin="sunrail" data-no-jump><span class="x-pin__dot" aria-hidden="true"></span><span class="x-pin__label" translate="no">Longwood</span><span class="u-visually-hidden"> <span translate="no">SunRail Regulars</span> <span data-t="about:pin.needs">(needs a host)</span></span></a></li>
+            <li class="x-pin" style="--x:26.00%;--y:65.29%;--pin:var(--bubblegum)" data-state="needs" data-side="left"><a class="x-pin__a" href="#crew-altamonte" data-crew-pin="altamonte" data-no-jump><span class="x-pin__dot" aria-hidden="true"></span><span class="x-pin__label" translate="no">Altamonte</span><span class="u-visually-hidden"> <span translate="no">Altamonte Weeknighters</span> <span data-t="about:pin.needs">(needs a host)</span></span></a></li>
+            <li class="x-pin" style="--x:42.50%;--y:72.94%;--pin:var(--hotpink)" data-state="needs" data-side="below"><a class="x-pin__a" href="#crew-cassel" data-crew-pin="cassel" data-no-jump><span class="x-pin__dot" aria-hidden="true"></span><span class="x-pin__label" translate="no">Casselberry</span><span class="u-visually-hidden"> <span translate="no">The Casselberry Table</span> <span data-t="about:pin.needs">(needs a host)</span></span></a></li>
+            <li class="x-pin" style="--x:56.50%;--y:49.41%;--pin:var(--mint)" data-state="needs" data-side="right"><a class="x-pin__a" href="#crew-wsprings" data-crew-pin="wsprings" data-no-jump><span class="x-pin__dot" aria-hidden="true"></span><span class="x-pin__label" translate="no">Winter Springs</span><span class="u-visually-hidden"> <span translate="no">Lake Jesup Lookouts</span> <span data-t="about:pin.needs">(needs a host)</span></span></a></li>
+            <li class="x-pin" style="--x:71.00%;--y:65.88%;--pin:var(--tangerine)" data-state="forming" data-side="right"><a class="x-pin__a" href="#crew-oviedo" data-crew-pin="oviedo" data-no-jump><span class="x-pin__dot" aria-hidden="true"></span><span class="x-pin__label" translate="no">Oviedo</span><span class="u-visually-hidden"> <span translate="no">The Chicken Crossing</span> <span data-t="about:pin.forming">(forming, DEMO)</span></span></a></li>
+            <li class="x-pin" style="--x:86.50%;--y:82.35%;--pin:var(--violet)" data-state="needs" data-side="left"><a class="x-pin__a" href="#crew-chuluota" data-crew-pin="chuluota" data-no-jump><span class="x-pin__dot" aria-hidden="true"></span><span class="x-pin__label" translate="no">Chuluota</span><span class="u-visually-hidden"> <span translate="no">Chuluota Pavilion Club</span> <span data-t="about:pin.needs">(needs a host)</span></span></a></li>
+              </ul>
+            </div>
+            <figcaption class="x-map__cap">
+              <span class="x-map__key"><span class="x-map__dot" data-state="forming" aria-hidden="true"></span><span data-t="about:map.forming">Forming (DEMO)</span></span>
+              <span class="x-map__key"><span class="x-map__dot" aria-hidden="true"></span><span data-t="about:map.needs">Needs a host</span></span>
+              <span class="x-map__note" id="map-cap" data-t="about:map.cap">Stylized map, not to scale. Pins sit at public parks and stations. Tap one.</span>
+            </figcaption>
+          </figure>
+          <ul class="snap x-crewlist" data-crew-list>
+            <li class="x-crew" id="crew-sanford" data-crew="sanford" style="--crew:var(--celery)">
+              <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="celery" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+              <h3 class="x-crew__name" translate="no">Celery City Crew</h3>
+              <p class="x-crew__where" data-t="about:crew.sanford.where">Sanford</p>
+              <p class="x-crew__spot"><span class="x-crew__k" data-t="about:crews.near">Meets near</span> <span data-t="about:crew.sanford.spot">the Sanford Riverwalk</span></p>
+              <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.sanford.idea">A sunset walk on the Riverwalk, then tacos.</span></p>
+              <div class="x-crew__foot">
+                <p class="x-crew__status" data-state="forming" data-t="about:crews.forming">Forming · DEMO</p>
+                <p class="x-crew__note" data-t="about:crews.formingNote">A DEMO host is planning the first hangout.</p>
+                <a class="btn btn--primary btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=sanford" data-t="about:crews.join">Join this crew</a>
+              </div>
+            </li>
+            <li class="x-crew" id="crew-sunrail" data-crew="sunrail" style="--crew:var(--sky)">
+              <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="train" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+              <h3 class="x-crew__name" translate="no">SunRail Regulars</h3>
+              <p class="x-crew__where" data-t="about:crew.sunrail.where">Lake Mary and Longwood</p>
+              <p class="x-crew__spot"><span class="x-crew__k" data-t="about:crews.near">Meets near</span> <span data-t="about:crew.sunrail.spot">the Lake Mary and Longwood SunRail stations</span></p>
+              <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.sunrail.idea">Meet at the station after work and ride one stop together. Weekdays only, like SunRail.</span></p>
+              <div class="x-crew__foot">
+                <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
+                <a class="btn btn--ink btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=sunrail" data-t="about:crews.cta">Start this crew</a>
+              </div>
+            </li>
+            <li class="x-crew" id="crew-altamonte" data-crew="altamonte" style="--crew:var(--bubblegum)">
+              <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="lake" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+              <h3 class="x-crew__name" translate="no">Altamonte Weeknighters</h3>
+              <p class="x-crew__where" data-t="about:crew.altamonte.where">Altamonte Springs</p>
+              <p class="x-crew__spot"><span class="x-crew__k" data-t="about:crews.near">Meets near</span> <span data-t="about:crew.altamonte.spot">Cranes Roost Park</span></p>
+              <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.altamonte.idea">A weeknight lap around the lake, then a what's-on-the-ballot explainer.</span></p>
+              <div class="x-crew__foot">
+                <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
+                <a class="btn btn--ink btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=altamonte" data-t="about:crews.cta">Start this crew</a>
+              </div>
+            </li>
+            <li class="x-crew" id="crew-cassel" data-crew="cassel" style="--crew:var(--hotpink)">
+              <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="calendar" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+              <h3 class="x-crew__name" translate="no">The Casselberry Table</h3>
+              <p class="x-crew__where" data-t="about:crew.cassel.where">Casselberry</p>
+              <p class="x-crew__spot"><span class="x-crew__k" data-t="about:crews.near">Meets near</span> <span data-t="about:crew.cassel.spot">Lake Concord Park</span></p>
+              <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.cassel.idea">Trivia in the park, teams of four. Bring the friend who knows too much.</span></p>
+              <div class="x-crew__foot">
+                <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
+                <a class="btn btn--ink btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=cassel" data-t="about:crews.cta">Start this crew</a>
+              </div>
+            </li>
+            <li class="x-crew" id="crew-wsprings" data-crew="wsprings" style="--crew:var(--mint)">
+              <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="gator" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+              <h3 class="x-crew__name" translate="no">Lake Jesup Lookouts</h3>
+              <p class="x-crew__where" data-t="about:crew.wsprings.where">Winter Springs</p>
+              <p class="x-crew__spot"><span class="x-crew__k" data-t="about:crews.near">Meets near</span> <span data-t="about:crew.wsprings.spot">Central Winds Park</span></p>
+              <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.wsprings.idea">A sunset walk by the lake. Gator-watching from a very safe distance.</span></p>
+              <div class="x-crew__foot">
+                <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
+                <a class="btn btn--ink btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=wsprings" data-t="about:crews.cta">Start this crew</a>
+              </div>
+            </li>
+            <li class="x-crew" id="crew-oviedo" data-crew="oviedo" style="--crew:var(--tangerine)">
+              <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="chicken" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+              <h3 class="x-crew__name" translate="no">The Chicken Crossing</h3>
+              <p class="x-crew__where" data-t="about:crew.oviedo.where">Oviedo</p>
+              <p class="x-crew__spot"><span class="x-crew__k" data-t="about:crews.near">Meets near</span> <span data-t="about:crew.oviedo.spot">Center Lake Park</span></p>
+              <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.oviedo.idea">Coffee downtown and a vote-plan swap. Named for Oviedo's legendary chickens.</span></p>
+              <div class="x-crew__foot">
+                <p class="x-crew__status" data-state="forming" data-t="about:crews.forming">Forming · DEMO</p>
+                <p class="x-crew__note" data-t="about:crews.formingNote">A DEMO host is planning the first hangout.</p>
+                <a class="btn btn--primary btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=oviedo" data-t="about:crews.join">Join this crew</a>
+              </div>
+            </li>
+            <li class="x-crew" id="crew-chuluota" data-crew="chuluota" style="--crew:var(--violet)">
+              <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="palm" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+              <h3 class="x-crew__name" translate="no">Chuluota Pavilion Club</h3>
+              <p class="x-crew__where" data-t="about:crew.chuluota.where">Chuluota and east Seminole</p>
+              <p class="x-crew__spot"><span class="x-crew__k" data-t="about:crews.near">Meets near</span> <span data-t="about:crew.chuluota.spot">Lake Mills Park</span></p>
+              <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.chuluota.idea">Lemonade at a park pavilion and a sign-making afternoon.</span></p>
+              <div class="x-crew__foot">
+                <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
+                <a class="btn btn--ink btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=chuluota" data-t="about:crews.cta">Start this crew</a>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="x-who">
+          <div class="x-who__head">
+            <h3 class="x-who__title" data-t="about:who.title">Crews by who you are</h3>
+            <p class="x-who__sub" data-t="about:who.sub">Countywide, always somewhere public. Pick one, or start one.</p>
+          </div>
+          <ul class="snap x-who__list">
+          <li class="x-crew x-crew--who" style="--crew:var(--sky)">
+            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="library" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+            <h4 class="x-crew__name" data-t="about:crew.students.name">Student crew</h4>
+            <p class="x-crew__where" data-t="about:crew.students.sub">High school, Seminole State, UCF or anywhere</p>
+            <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.students.idea">Coffee near campus and a quick how-to-vote-as-a-student explainer.</span></p>
+            <div class="x-crew__foot">
+              <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
+              <a class="btn btn--ink btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=students" data-t="about:crews.cta">Start this crew</a>
+            </div>
+          </li>
+          <li class="x-crew x-crew--who" style="--crew:var(--tangerine)">
+            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="bubbles" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+            <h4 class="x-crew__name" data-t="about:crew.latine.name">Latine and Boricua crew</h4>
+            <p class="x-crew__where" data-t="about:crew.latine.sub">Spanish first, Spanglish welcome</p>
+            <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.latine.idea">A café meetup and a voting Q&amp;A in Spanish, with English help on hand.</span></p>
+            <div class="x-crew__foot">
+              <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
+              <a class="btn btn--ink btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=latine" data-t="about:crews.cta">Start this crew</a>
+            </div>
+          </li>
+          <li class="x-crew x-crew--who" style="--crew:var(--bubblegum)">
+            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="heart" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+            <h4 class="x-crew__name" data-t="about:crew.lgbtq.name">LGBTQ+ crew</h4>
+            <p class="x-crew__where" data-t="about:crew.lgbtq.sub">Queer, trans, questioning and friends</p>
+            <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.lgbtq.idea">A picnic in a public park and a chat about what's on the next city ballot.</span></p>
+            <div class="x-crew__foot">
+              <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
+              <a class="btn btn--ink btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=lgbtq" data-t="about:crews.cta">Start this crew</a>
+            </div>
+          </li>
+          <li class="x-crew x-crew--who" style="--crew:var(--sun)">
+            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="bike" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+            <h4 class="x-crew__name" data-t="about:crew.parents.name">Young parents</h4>
+            <p class="x-crew__where" data-t="about:crew.parents.sub">Kids welcome, daytime plans</p>
+            <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.parents.idea">A Saturday morning playground meetup. Coffee for the grown-ups, bubbles for the kids.</span></p>
+            <div class="x-crew__foot">
+              <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
+              <a class="btn btn--ink btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=parents" data-t="about:crews.cta">Start this crew</a>
+            </div>
+          </li>
+          <li class="x-crew x-crew--who" style="--crew:var(--mint)">
+            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="sun" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+            <h4 class="x-crew__name" data-t="about:crew.shift.name">Shift workers</h4>
+            <p class="x-crew__where" data-t="about:crew.shift.sub">Service, retail and hospitality: late starts, weekend plans</p>
+            <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.shift.idea">A late breakfast for everyone who closed last night.</span></p>
+            <div class="x-crew__foot">
+              <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
+              <a class="btn btn--ink btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=shift" data-t="about:crews.cta">Start this crew</a>
+            </div>
+          </li>
+          <li class="x-crew x-crew--who" style="--crew:var(--teal)">
+            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="camera" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+            <h4 class="x-crew__name" data-t="about:crew.disability.name">Disability caucus</h4>
+            <p class="x-crew__where" data-t="about:crew.disability.sub">Access first, plans made with you</p>
+            <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.disability.idea">A library meeting room with captions, seating and a quiet corner, planned by the people who'll use it.</span></p>
+            <div class="x-crew__foot">
+              <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
+              <a class="btn btn--ink btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=disability" data-t="about:crews.cta">Start this crew</a>
+            </div>
+          </li>
+          <li class="x-crew x-crew--who" style="--crew:var(--violet)">
+            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="megaphone" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
+            <h4 class="x-crew__name" data-t="about:crew.faith.name">Faith crew</h4>
+            <p class="x-crew__where" data-t="about:crew.faith.sub">Any faith, or still figuring it out</p>
+            <p class="x-crew__idea"><span class="x-crew__label" data-t="about:crews.idea">First hangout idea:</span> <span data-t="about:crew.faith.idea">Coffee and a conversation about values and local issues.</span></p>
+            <div class="x-crew__foot">
+              <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
+              <a class="btn btn--ink btn--sm x-crew__cta" href="join.html?intent=crew&amp;crew=faith" data-t="about:crews.cta">Start this crew</a>
+            </div>
+          </li>
+          <li class="x-crew x-crew--who x-crew--open" style="--crew:var(--sun)">
+            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="cypress" aria-hidden="true"></span><span class="tag tag--new" data-t="about:crew.yours.tag">OPEN SPOT</span></div>
+            <h4 class="x-crew__name" data-t="about:crew.yours.name">Your crew here</h4>
+            <p class="x-crew__where" data-t="about:crew.yours.where">Anywhere in Seminole County</p>
+            <p class="x-crew__idea" data-t="about:crew.yours.idea">Don't see your corner? Pitch a crew for your neighborhood, your school or your bus stop. We'll help you plan the first hangout.</p>
+            <div class="x-crew__foot">
+              <a class="btn btn--primary btn--sm x-crew__cta" href="join.html?intent=crew" data-t="about:crew.yours.cta">Pitch a crew</a>
+            </div>
+          </li>
+          </ul>
+          <p class="x-host"><a class="link" href="host.html" data-t="about:crews.host">Hosting the first hangout? Get the host kit</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section x-do" aria-labelledby="do-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow" data-t="about:do.eyebrow">WHAT WE DO</p>
+          <h2 id="do-title" data-t="about:do.title">Three jobs. All local.</h2>
+          <p class="section-head__sub" data-t="about:do.sub">Straight from the chapter's own ActBlue page.</p>
+        </div>
+        <ol class="snap x-jobs">
+          <li class="x-job" style="--job:var(--celery)">
+            <span class="x-job__n" aria-hidden="true">01</span>
+            <h3 class="x-job__title" data-t="about:do.1.title">Get young people voting</h3>
+            <p class="x-job__body" data-t="about:do.1.body">Straight answers on registering, mail ballots and what changes in 2027, with official links only.</p>
+            <a class="btn btn--ink btn--sm x-job__cta" href="vote.html" data-t="cta.voteHelp">Get voting help</a>
+          </li>
+          <li class="x-job" style="--job:var(--bubblegum)">
+            <span class="x-job__n" aria-hidden="true">02</span>
+            <h3 class="x-job__title" data-t="about:do.2.title">Speak up on what we're living</h3>
+            <p class="x-job__body" data-t="about:do.2.body">Rent, getting around, school, climate, rights. We bring young people's issues to the people making decisions in Seminole.</p>
+            <a class="btn btn--ink btn--sm x-job__cta" href="issues.html" data-t="cta.findIssue">Find your issue</a>
+          </li>
+          <li class="x-job" style="--job:var(--sky)">
+            <span class="x-job__n" aria-hidden="true">03</span>
+            <h3 class="x-job__title" data-t="about:do.3.title">Back Democrats here at home</h3>
+            <p class="x-job__body" data-t="about:do.3.body">From city halls to the statehouse, we help Democrats in Seminole County win, and we have a good time doing it.</p>
+            <a class="btn btn--ink btn--sm x-job__cta" href="events.html" data-t="cta.seeWhatsOn">See what's on</a>
+          </li>
+        </ol>
+        <p class="x-src"><a class="link link--out" href="https://secure.actblue.com/donate/youngsemdems" rel="noopener" data-cfg-href="links.actblue" data-t="about:do.src">Source: the chapter's ActBlue page</a></p>
+
+        <div class="x-basics" role="region" aria-labelledby="basics-title" data-real>
           <div class="x-basics__head">
-            <h2 class="x-basics__title" id="basics-title" data-t="about:basics.title">The basics</h2>
+            <h3 class="x-basics__title" id="basics-title" data-t="about:basics.title">This part is real</h3>
             <span class="tag tag--real" data-t="tag.real">REAL</span>
           </div>
           <dl class="x-basics__list">
@@ -138,147 +517,13 @@
               <dd><a href="https://semdems.com/" rel="noopener" data-cfg-href="links.countyParty" translate="no">Seminole County Democrats</a></dd>
             </div>
           </dl>
-          <p class="x-basics__src" data-t="about:basics.src">Checked against the chapter's dues page and the state chapter list on Nov 9, 2026.</p>
-        </section>
-      </div>
-    </section>
-
-    <section class="section x-do" aria-labelledby="do-title">
-      <div class="wrap">
-        <div class="section-head">
-          <p class="eyebrow" data-t="about:do.eyebrow">WHAT WE DO</p>
-          <h2 id="do-title" data-t="about:do.title">Three jobs. All local.</h2>
-          <p class="section-head__sub" data-t="about:do.sub">The chapter's ActBlue page names three goals. Here's each one, and what it looks like here.</p>
-        </div>
-        <ol class="x-jobs">
-          <li class="x-job x-job--celery">
-            <span class="x-job__n" aria-hidden="true">01</span>
-            <h3 class="x-job__title" data-t="about:do.1.title">Get young people voting</h3>
-            <p class="x-job__body" data-t="about:do.1.body">Straight answers on registering, mail ballots and what changes in 2027, with official links only.</p>
-            <a class="btn btn--ink btn--sm x-job__cta" href="vote.html" data-t="cta.voteHelp">Get voting help</a>
-          </li>
-          <li class="x-job x-job--pink">
-            <span class="x-job__n" aria-hidden="true">02</span>
-            <h3 class="x-job__title" data-t="about:do.2.title">Speak up on what we're living</h3>
-            <p class="x-job__body" data-t="about:do.2.body">Rent, getting around, school, climate, rights. We bring young people's issues to the people making decisions in Seminole.</p>
-            <a class="btn btn--ink btn--sm x-job__cta" href="issues.html" data-t="cta.findIssue">Find your issue</a>
-          </li>
-          <li class="x-job x-job--sky">
-            <span class="x-job__n" aria-hidden="true">03</span>
-            <h3 class="x-job__title" data-t="about:do.3.title">Back Democrats here at home</h3>
-            <p class="x-job__body" data-t="about:do.3.body">From city halls to the statehouse, we help Democrats in Seminole County win, and we have a good time doing it.</p>
-            <a class="btn btn--ink btn--sm x-job__cta" href="events.html" data-t="cta.seeWhatsOn">See what's on</a>
-          </li>
-        </ol>
-        <p class="x-src"><a class="link link--out" href="https://secure.actblue.com/donate/youngsemdems" rel="noopener" data-cfg-href="links.actblue" data-t="about:do.src">Source: the chapter's ActBlue page</a></p>
-
-        <div class="x-fit">
-          <figure class="x-tree" aria-labelledby="tree-title">
-            <h3 class="x-tree__title" id="tree-title" data-t="about:tree.title">Where we fit</h3>
-            <ol class="x-tree__chain">
-              <li class="x-tree__node">
-                <span class="x-tree__k" data-t="about:tree.state">State</span>
-                <a class="x-tree__v" href="https://www.floridayoungdems.com/current-chapters" rel="noopener" translate="no">Florida Young Democrats</a>
-              </li>
-              <li class="x-tree__node x-tree__node--us">
-                <span class="x-tree__k" data-t="about:tree.us">That's us</span>
-                <span class="x-tree__v" translate="no">Young Democrats of Seminole County</span>
-              </li>
-            </ol>
-            <p class="x-tree__node x-tree__node--side">
-              <span class="x-tree__k" data-t="about:tree.county">County party</span>
-              <a class="x-tree__v" href="https://semdems.com/" rel="noopener" data-cfg-href="links.countyParty" translate="no">Seminole County Democrats</a>
-            </p>
-            <figcaption class="x-tree__note" data-t="about:tree.note">Neither of them has approved this preview yet.</figcaption>
-          </figure>
-
-          <article class="x-proof">
-            <figure class="photo photo--golden x-proof__photo"><img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop" srcset="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=320&amp;q=60&amp;auto=format&amp;fit=crop 320w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=640&amp;q=60&amp;auto=format&amp;fit=crop 640w, https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=960&amp;q=60&amp;auto=format&amp;fit=crop 960w" sizes="(min-width: 1024px) 30vw, 92vw" width="640" height="427" loading="lazy" decoding="async" alt="Two people watching the sunset over a calm lake from a waterfront path" data-t-alt="about:photo.alt" data-photographer="Richard Burlton" data-source="https://unsplash.com/photos/people-watching-sunset-over-a-calm-lake-I1-hVKIchQo"><span class="tag tag--stock photo__tag" data-t="tag.stock">Stock photo · not members</span></figure>
-            <div class="x-proof__body">
-              <p class="x-proof__head"><span class="tag tag--real" data-t="tag.real">REAL</span> <span class="x-proof__title" data-t="about:proof.title">A real thing YDSC did</span></p>
-              <p class="x-proof__text" data-t="about:proof.body">YDSC has hosted a musical theatre night in Oviedo to raise money for a local charity that supports LGBTQ+ youth.</p>
-              <p class="x-src"><a class="link link--out" href="https://secure.actblue.com/donate/ydscmusicaltheatre" rel="noopener" data-t="about:proof.src">Source: the chapter's ActBlue page for the night</a></p>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section--celery x-rdsec" aria-labelledby="rd-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="rd-title" data-t="about:rd.title">Real or DEMO? Test yourself.</h2>
-          <p class="section-head__sub" data-t="about:rd.sub">Eight things you'll see on this site. Tap your guess. Your score isn't saved anywhere.</p>
-        </div>
-        <ol class="snap x-rd-list" data-rd-game>
-          <li class="x-rd" data-rd="real">
-            <p class="x-rd__q" data-t="about:rd.1.q">Sanford was called the Celery City by about 1900.</p>
-            <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
-              <button class="x-rd__btn" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
-              <button class="x-rd__btn" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
-            </div>
-            <p class="x-rd__why" data-rd-why><span class="x-rd__verdict" data-rd-verdict></span> <span data-t="about:rd.1.why">Real. Sanford's celery farms made its name.</span> <a class="x-rd__src" href="https://richesmi.cah.ucf.edu/omeka/exhibits/show/origins_of_the_celery_city" rel="noopener" data-t="about:rd.1.src">Source: UCF RICHES</a></p>
-          </li>
-          <li class="x-rd" data-rd="demo">
-            <p class="x-rd__q" data-t="about:rd.2.q">There’s a trivia night in Casselberry on Thu, Nov 19 at 7 pm.</p>
-            <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
-              <button class="x-rd__btn" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
-              <button class="x-rd__btn" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
-            </div>
-            <p class="x-rd__why" data-rd-why><span class="x-rd__verdict" data-rd-verdict></span> <span data-t="about:rd.2.why">DEMO. Made up to show how invites work. Every event here is DEMO for now.</span></p>
-          </li>
-          <li class="x-rd" data-rd="real">
-            <p class="x-rd__q" data-t="about:rd.3.q">You can join the Young Dems at 14.</p>
-            <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
-              <button class="x-rd__btn" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
-              <button class="x-rd__btn" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
-            </div>
-            <p class="x-rd__why" data-rd-why><span class="x-rd__verdict" data-rd-verdict></span> <span data-t="about:rd.3.why">Real. Members are 14 to 39, per the chapter's dues page.</span> <a class="x-rd__src" href="https://secure.actblue.com/donate/ydscdues" rel="noopener" data-cfg-href="links.dues" data-t="about:rd.3.src">Source: the chapter's dues page</a></p>
-          </li>
-          <li class="x-rd" data-rd="demo">
-            <p class="x-rd__q" data-t="about:rd.4.q">Dani from Casselberry writes The Thursday Letter.</p>
-            <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
-              <button class="x-rd__btn" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
-              <button class="x-rd__btn" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
-            </div>
-            <p class="x-rd__why" data-rd-why><span class="x-rd__verdict" data-rd-verdict></span> <span data-t="about:rd.4.why">DEMO. Dani is a DEMO writer. Real bylines need real people's OK.</span></p>
-          </li>
-          <li class="x-rd" data-rd="real">
-            <p class="x-rd__q" data-t="about:rd.5.q">SunRail stops at four stations in Seminole County.</p>
-            <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
-              <button class="x-rd__btn" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
-              <button class="x-rd__btn" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
-            </div>
-            <p class="x-rd__why" data-rd-why><span class="x-rd__verdict" data-rd-verdict></span> <span data-t="about:rd.5.why">Real. Altamonte Springs, Longwood, Lake Mary and Sanford.</span> <a class="x-rd__src" href="https://sunrail.com/stations/" rel="noopener" data-t="about:rd.5.src">Source: SunRail stations</a></p>
-          </li>
-          <li class="x-rd" data-rd="demo">
-            <p class="x-rd__q" data-t="about:rd.6.q">Thirty-one people say they’re going to trivia night.</p>
-            <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
-              <button class="x-rd__btn" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
-              <button class="x-rd__btn" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
-            </div>
-            <p class="x-rd__why" data-rd-why><span class="x-rd__verdict" data-rd-verdict></span> <span data-t="about:rd.6.why">DEMO. Every count here is DEMO. Nothing ticks up by itself, and nobody fake joins.</span></p>
-          </li>
-          <li class="x-rd" data-rd="real">
-            <p class="x-rd__q" data-t="about:rd.7.q">Can't pay the $20 dues? You can still be a member, just without a vote.</p>
-            <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
-              <button class="x-rd__btn" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
-              <button class="x-rd__btn" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
-            </div>
-            <p class="x-rd__why" data-rd-why><span class="x-rd__verdict" data-rd-verdict></span> <span data-t="about:rd.7.why">Real. The dues page offers non-voting membership to people who can't pay, whether it's money or citizenship status.</span> <a class="x-rd__src" href="https://secure.actblue.com/donate/ydscdues" rel="noopener" data-cfg-href="links.dues" data-t="about:rd.7.src">Source: the chapter's dues page</a></p>
-          </li>
-          <li class="x-rd" data-rd="demo">
-            <p class="x-rd__q" data-t="about:rd.8.q">Members filmed the clips in the Reel.</p>
-            <div class="x-rd__btns u-js-only" role="group" aria-label="Your guess" data-t-aria-label="about:rd.group">
-              <button class="x-rd__btn" type="button" data-rd-pick="real" data-t="about:rd.realBtn">Real</button>
-              <button class="x-rd__btn" type="button" data-rd-pick="demo" data-t="about:rd.demoBtn">DEMO</button>
-            </div>
-            <p class="x-rd__why" data-rd-why><span class="x-rd__verdict" data-rd-verdict></span> <span data-t="about:rd.8.why">DEMO. They're demo clips made for this preview, posted under @demo handles.</span></p>
-          </li>
-        </ol>
-        <div class="x-rd-foot u-js-only">
-          <p class="x-rd-score" data-rd-score aria-live="polite"></p>
-          <button class="btn btn--ink btn--sm" type="button" data-rd-reset hidden data-t="about:rd.reset">Play again</button>
+          <div class="x-proof">
+            <span class="sticker x-proof__st" data-sticker="heart" aria-hidden="true"></span>
+            <p class="x-proof__title" data-t="about:proof.title">A real thing YDSC did</p>
+            <p class="x-proof__text" data-t="about:proof.body">YDSC has hosted a musical theatre night in Oviedo to raise money for a local charity that supports LGBTQ+ youth.</p>
+            <p class="x-src"><a class="link link--out" href="https://secure.actblue.com/donate/ydscmusicaltheatre" rel="noopener" data-t="about:proof.src">Source: the chapter's ActBlue page for the night</a></p>
+          </div>
+          <p class="x-basics__src" data-t="about:basics.src">Checked against the chapter's dues page and the state chapter list on Nov 9, 2026. Neither group has approved this preview yet.</p>
         </div>
       </div>
     </section>
@@ -288,23 +533,12 @@
         <div class="section-head">
           <p class="eyebrow x-real__eyebrow" data-t="about:real.eyebrow">THE HONEST PART</p>
           <h2 id="real-title" class="x-real__title" data-t="about:real.title">What's real?</h2>
-          <p class="section-head__sub" data-t="about:real.sub">This site is a demo, built to show the chapter what its website could be. Some of it is checked fact. A lot of it is made up on purpose so you can see how things would work. Here's exactly which is which.</p>
+          <p class="section-head__sub" data-t="about:real.sub">This site is a demo for the chapter. Some of it is checked fact, and a lot is made up on purpose. Open a tile to see which is which.</p>
         </div>
-
-        <div class="x-legend" role="group" aria-labelledby="legend-title">
-          <h3 class="x-legend__title" id="legend-title" data-t="about:legend.title">How to read the tags</h3>
-          <ul class="x-legend__list">
-            <li><span class="tag tag--real" data-t="tag.real">REAL</span> <span data-t="about:legend.real">Checked against a source, with the date.</span></li>
-            <li><span class="tag tag--demo" data-t="demo.badge">DEMO</span> <span data-t="about:legend.demo">Made up for this preview.</span></li>
-            <li><span class="tag x-tag-draft" data-t="about:legend.draftTag">DRAFT</span> <span data-t="about:legend.draft">Written, but not approved or in effect yet.</span></li>
-            <li><span class="tag tag--stock" data-t="tag.stock">Stock photo · not members</span> <span data-t="about:legend.stock">Models, not members.</span></li>
-          </ul>
-        </div>
-
-        <div class="x-cols">
-          <section class="x-col x-col--real" aria-labelledby="col-real">
-            <h3 class="x-col__title" id="col-real"><span class="x-col__icon" aria-hidden="true"></span><span data-t="about:col.real">Real</span></h3>
-            <ul class="x-col__list">
+        <div class="x-truths">
+          <details class="x-truth" data-kind="real">
+            <summary class="x-truth__sum"><span class="x-truth__n" data-truth-n translate="no">6</span><span class="x-truth__txt"><span class="x-truth__k" data-t="about:col.real">Real</span><span class="x-truth__one" data-t="about:col.realOne">Checked against a source, with a date.</span></span><span class="x-truth__more" data-t="about:col.more">See the list</span></summary>
+            <ul class="x-truth__list">
               <li data-t="about:r.1">Voting rules, deadlines, dates and official links, checked Nov 9, 2026.</li>
               <li data-t="about:r.2">Membership rules from the chapter's dues page: ages 14 to 39, $20 a year paid in January, and a non-voting membership for people who can't pay.</li>
               <li data-t="about:r.3">The chapter itself. YDSC is real, and the Florida Young Democrats list it as a chapter.</li>
@@ -312,21 +546,21 @@
               <li data-t="about:r.5">Every sticker fact. Tap a sticker and you get its source.</li>
               <li data-t="about:r.6">Links to the county party, the elections office and ActBlue.</li>
             </ul>
-          </section>
-          <section class="x-col x-col--demo" aria-labelledby="col-demo">
-            <h3 class="x-col__title" id="col-demo"><span class="x-col__icon" aria-hidden="true"></span><span data-t="about:col.demo">Made up</span> <span class="tag tag--demo" data-t="demo.badge">DEMO</span></h3>
-            <ul class="x-col__list">
+          </details>
+          <details class="x-truth" data-kind="demo">
+            <summary class="x-truth__sum"><span class="x-truth__n" data-truth-n translate="no">6</span><span class="x-truth__txt"><span class="x-truth__k"><span data-t="about:col.demo">Made up</span> <span class="tag tag--demo" data-t="demo.badge">DEMO</span></span><span class="x-truth__one" data-t="about:col.demoOne">Events, people, counts, clips, crews and forms.</span></span><span class="x-truth__more" data-t="about:col.more">See the list</span></summary>
+            <ul class="x-truth__list">
               <li data-t="about:d.1">Every event: dates, venues, hosts and how many are going.</li>
-              <li data-t="about:d.2">Every person: names, bylines, quotes, the team below and The Thursday Letter's writer.</li>
+              <li data-t="about:d.2">Every person: names, bylines, quotes and The Thursday Letter's writer.</li>
               <li data-t="about:d.3">Every clip, and every @demo handle.</li>
               <li data-t="about:d.4">Counters and squad numbers. They never tick up by themselves, and each one says DEMO.</li>
-              <li data-t="about:d.5">City crews. They're ideas waiting for a host, not groups that meet yet.</li>
+              <li data-t="about:d.5">Crews, even the ones marked Forming. They're ideas waiting for a host, not groups that meet yet.</li>
               <li data-t="about:d.6">Forms. Nothing you type leaves your browser.</li>
             </ul>
-          </section>
-          <section class="x-col x-col--open" aria-labelledby="col-open">
-            <h3 class="x-col__title" id="col-open"><span class="x-col__icon" aria-hidden="true"></span><span data-t="about:col.open">Not decided yet</span></h3>
-            <ul class="x-col__list">
+          </details>
+          <details class="x-truth" data-kind="open">
+            <summary class="x-truth__sum"><span class="x-truth__n" data-truth-n translate="no">7</span><span class="x-truth__txt"><span class="x-truth__k" data-t="about:col.open">Not decided yet</span><span class="x-truth__one" data-t="about:col.openOne">Waiting on the chapter.</span></span><span class="x-truth__more" data-t="about:col.more">See the list</span></summary>
+            <ul class="x-truth__list">
               <li data-t="about:n.1">The policies (privacy, teen safety, clip rules, conduct, accessibility) are drafts, not legal advice, and not in effect.</li>
               <li data-t="about:n.2">The chapter hasn't signed off on this site yet.</li>
               <li data-t="about:n.3">The "Paid for by" line in the footer is a placeholder until the chapter settles its committee status.</li>
@@ -335,109 +569,45 @@
               <li data-t="about:n.6">Who moderates clips, who's on the safety team, and whether the chapter publishes its money. We don't promise any of it until the chapter does.</li>
               <li data-t="about:n.7">Real photos of real members come later, with everyone’s OK. Until then: stock photos, tagged.</li>
             </ul>
-          </section>
+          </details>
         </div>
+        <details class="x-legend">
+          <summary class="x-legend__sum" data-t="about:legend.title">How to read the tags</summary>
+          <ul class="x-legend__list">
+            <li><span class="tag tag--real" data-t="tag.real">REAL</span> <span data-t="about:legend.real">Checked against a source, with the date.</span></li>
+            <li><span class="tag tag--demo" data-t="demo.badge">DEMO</span> <span data-t="about:legend.demo">Made up for this preview.</span></li>
+            <li><span class="tag x-tag-draft" data-t="about:legend.draftTag">DRAFT</span> <span data-t="about:legend.draft">Written, but not approved or in effect yet.</span></li>
+            <li><span class="tag tag--stock" data-t="tag.stock">Stock photo · not members</span> <span data-t="about:legend.stock">Models, not members.</span></li>
+          </ul>
+        </details>
         <p class="x-real__more"><a class="link" href="privacy.html#this-device" data-t="about:real.privacy">See what this browser saved about you</a></p>
       </div>
     </section>
 
-    <section class="section x-team" aria-labelledby="team-title">
-      <div class="wrap">
-        <div class="section-head">
-          <p class="eyebrow" data-t="about:team.eyebrow">THE TEAM · DEMO</p>
-          <h2 id="team-title" data-t="about:team.title">Who runs this thing</h2>
-          <p class="section-head__sub" data-t="about:team.sub">Here's who does what. Every name is a placeholder until the real board says yes to being listed.</p>
+    <section class="section x-seats" id="roles" aria-labelledby="team-title">
+      <div class="wrap x-seats__grid">
+        <div class="x-seats__copy">
+          <p class="eyebrow" data-t="about:team.eyebrow">ROLES · DEMO</p>
+          <h2 id="team-title" data-t="about:team.title">Find your seat.</h2>
+          <p class="section-head__sub" data-t="about:team.sub">The jobs that keep a chapter running. Real names go up only when the board says yes.</p>
+          <div class="x-faces" aria-hidden="true">
+            <img src="assets/img/characters/show-up/hype-captain.svg" alt="" width="256" height="264" loading="lazy" decoding="async">
+            <img src="assets/img/characters/show-up/spreadsheet-witch.svg" alt="" width="256" height="264" loading="lazy" decoding="async">
+            <img src="assets/img/characters/show-up/creator.svg" alt="" width="256" height="264" loading="lazy" decoding="async">
+            <img src="assets/img/characters/show-up/door-knock-natural.svg" alt="" width="256" height="264" loading="lazy" decoding="async">
+            <img src="assets/img/characters/show-up/plus-one.svg" alt="" width="256" height="264" loading="lazy" decoding="async">
+            <img src="assets/img/characters/show-up/group-chat-general.svg" alt="" width="256" height="264" loading="lazy" decoding="async">
+          </div>
+          <p class="x-seats__quiz"><a class="link" href="quiz.html#show-up" data-t="about:team.quiz">Not sure where you fit? Take the 1-minute quiz</a></p>
         </div>
-        <ul class="snap x-team__grid" data-team></ul>
-        <noscript><p class="x-noscript" data-t="about:team.noscript">Turn on JavaScript to see the eight team roles.</p></noscript>
-
-        <div class="x-run" aria-labelledby="run-title" role="region">
-          <p class="eyebrow" data-t="about:run.eyebrow">SEATS OPEN</p>
-          <h3 class="x-run__title" id="run-title" data-t="about:run.title">Run for a role</h3>
-          <div class="x-run__body" data-run></div>
+        <div class="x-seats__main">
+          <ul class="x-roles" data-roles></ul>
+          <noscript><p class="x-noscript" data-t="about:team.noscript">Turn on JavaScript to see the eight roles.</p></noscript>
+          <div class="x-run" role="region" aria-labelledby="run-title">
+            <h3 class="x-run__title" id="run-title" data-t="about:run.title">Run for a role</h3>
+            <div class="x-run__body" data-run></div>
+          </div>
         </div>
-      </div>
-    </section>
-
-    <section class="section section--pink x-crews" aria-labelledby="crews-title">
-      <div class="wrap">
-        <div class="section-head">
-          <p class="eyebrow" data-t="about:crews.eyebrow">CITY CREWS · DEMO</p>
-          <h2 id="crews-title" data-t="about:crews.title">Find your corner of the county.</h2>
-          <p class="section-head__sub" data-t="about:crews.sub">Crews are small groups by city. These are DEMO ideas waiting for someone to host the first hangout. No rankings, no scoreboards. Just neighbors.</p>
-        </div>
-        <ul class="snap x-crews__list">
-          <li class="x-crew" style="--crew: var(--celery)">
-            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="celery" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
-            <h3 class="x-crew__name" translate="no">Celery City Crew</h3>
-            <p class="x-crew__where" data-t="about:crew.sanford.where">Sanford</p>
-            <p class="x-crew__label" data-t="about:crews.idea">First hangout idea</p>
-            <p class="x-crew__idea" data-t="about:crew.sanford.idea">A sunset walk on the Riverwalk, then tacos.</p>
-            <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
-            <a class="btn btn--ink btn--sm x-crew__cta" href="join.html" data-t="about:crews.cta">Start it with us</a>
-          </li>
-          <li class="x-crew" style="--crew: var(--sky)">
-            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="train" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
-            <h3 class="x-crew__name" translate="no">SunRail Regulars</h3>
-            <p class="x-crew__where" data-t="about:crew.sunrail.where">Lake Mary and Longwood</p>
-            <p class="x-crew__label" data-t="about:crews.idea">First hangout idea</p>
-            <p class="x-crew__idea" data-t="about:crew.sunrail.idea">Meet at the station after work and ride one stop together. Weekdays only, like SunRail.</p>
-            <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
-            <a class="btn btn--ink btn--sm x-crew__cta" href="join.html" data-t="about:crews.cta">Start it with us</a>
-          </li>
-          <li class="x-crew x-crew--violet" style="--crew: var(--violet)">
-            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="sun" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
-            <h3 class="x-crew__name" translate="no">Chuluota Pavilion Club</h3>
-            <p class="x-crew__where" data-t="about:crew.chuluota.where">Chuluota and east Seminole</p>
-            <p class="x-crew__label" data-t="about:crews.idea">First hangout idea</p>
-            <p class="x-crew__idea" data-t="about:crew.chuluota.idea">Lemonade at a park pavilion and a sign-making afternoon.</p>
-            <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
-            <a class="btn btn--ink btn--sm x-crew__cta" href="join.html" data-t="about:crews.cta">Start it with us</a>
-          </li>
-          <li class="x-crew" style="--crew: var(--tangerine)">
-            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="chicken" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
-            <h3 class="x-crew__name" translate="no">The Chicken Crossing</h3>
-            <p class="x-crew__where" data-t="about:crew.oviedo.where">Oviedo</p>
-            <p class="x-crew__label" data-t="about:crews.idea">First hangout idea</p>
-            <p class="x-crew__idea" data-t="about:crew.oviedo.idea">Coffee downtown and a vote-plan swap. Named for Oviedo's legendary chickens.</p>
-            <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
-            <a class="btn btn--ink btn--sm x-crew__cta" href="join.html" data-t="about:crews.cta">Start it with us</a>
-          </li>
-          <li class="x-crew" style="--crew: var(--mint)">
-            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="gator" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
-            <h3 class="x-crew__name" translate="no">Lake Jesup Lookouts</h3>
-            <p class="x-crew__where" data-t="about:crew.wsprings.where">Winter Springs</p>
-            <p class="x-crew__label" data-t="about:crews.idea">First hangout idea</p>
-            <p class="x-crew__idea" data-t="about:crew.wsprings.idea">A sunset walk by the lake. Gator-watching from a very safe distance.</p>
-            <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
-            <a class="btn btn--ink btn--sm x-crew__cta" href="join.html" data-t="about:crews.cta">Start it with us</a>
-          </li>
-          <li class="x-crew" style="--crew: var(--bubblegum)">
-            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="calendar" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
-            <h3 class="x-crew__name" translate="no">Altamonte Weeknighters</h3>
-            <p class="x-crew__where" data-t="about:crew.altamonte.where">Altamonte Springs</p>
-            <p class="x-crew__label" data-t="about:crews.idea">First hangout idea</p>
-            <p class="x-crew__idea" data-t="about:crew.altamonte.idea">Board games and a what's-on-the-ballot explainer night.</p>
-            <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
-            <a class="btn btn--ink btn--sm x-crew__cta" href="join.html" data-t="about:crews.cta">Start it with us</a>
-          </li>
-          <li class="x-crew" style="--crew: var(--hotpink)">
-            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="heart" aria-hidden="true"></span><span class="tag tag--demo" data-t="about:crews.demo">DEMO crew</span></div>
-            <h3 class="x-crew__name" translate="no">The Casselberry Table</h3>
-            <p class="x-crew__where" data-t="about:crew.cassel.where">Casselberry</p>
-            <p class="x-crew__label" data-t="about:crews.idea">First hangout idea</p>
-            <p class="x-crew__idea" data-t="about:crew.cassel.idea">Trivia teams of four. Bring the friend who knows too much.</p>
-            <p class="x-crew__status" data-t="about:crews.status">Needs a host</p>
-            <a class="btn btn--ink btn--sm x-crew__cta" href="join.html" data-t="about:crews.cta">Start it with us</a>
-          </li>
-          <li class="x-crew x-crew--open" style="--crew: var(--sun)">
-            <div class="x-crew__top"><span class="sticker x-crew__sticker" data-sticker="cypress" aria-hidden="true"></span><span class="tag tag--new" data-t="about:crew.yours.tag">OPEN SPOT</span></div>
-            <h3 class="x-crew__name" data-t="about:crew.yours.name">Your crew here</h3>
-            <p class="x-crew__where" data-t="about:crew.yours.where">Anywhere in Seminole County</p>
-            <p class="x-crew__idea" data-t="about:crew.yours.idea">Don't see your corner? Pitch a crew for your neighborhood, your school or your bus stop. We'll help you plan the first hangout.</p>
-            <a class="btn btn--ink btn--sm x-crew__cta" href="join.html" data-t="about:crew.yours.cta">Pitch a crew</a>
-          </li>
-        </ul>
       </div>
     </section>
 
@@ -451,7 +621,7 @@
             <li data-t="about:rules.2">No doxxing, and no lists of private people.</li>
             <li data-t="about:rules.3">Nobody films or posts a minor without a guardian's OK.</li>
           </ol>
-          <a class="btn btn--primary" href="conduct.html" data-t="about:rules.cta">Read the code of conduct</a>
+          <a class="btn btn--ink" href="conduct.html" data-t="about:rules.cta">Read the code of conduct</a>
         </div>
         <div class="x-contact" role="region" aria-labelledby="contact-title">
           <h2 class="x-contact__title" id="contact-title" data-t="about:contact.title">Want to talk to a real person?</h2>
