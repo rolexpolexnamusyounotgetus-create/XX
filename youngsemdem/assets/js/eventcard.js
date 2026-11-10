@@ -471,7 +471,10 @@
     var poster = el('div', 'tentpole__poster');
     poster.setAttribute('aria-hidden', 'true');
     var brand = el('p', 'tentpole__brand');
-    String(T ? T.name : tx(e.title, l)).split(' ').forEach(function (w) { brand.appendChild(el('span', null, w)); });
+    var words = String(T ? T.name : tx(e.title, l)).split(' ');
+    // two lines: everything but the last word, then the last word on its own ink chip ("Seminole / SUNDAY", "Domingo en / SEMINOLE")
+    if (words.length > 1) brand.appendChild(el('span', null, words.slice(0, -1).join(' ')));
+    brand.appendChild(el('span', null, words[words.length - 1]));
     poster.appendChild(brand);
     var sr = series(e, l);
     poster.appendChild(el('p', 'tentpole__edition', sr && sr.id !== (T && T.id) ? sr.name : tx(e.cover && e.cover.short, l)));

@@ -192,15 +192,15 @@ html[data-duo-map] .photo--duo[data-duo]::after { opacity:.55; }
 
 /* ---- the tentpole band (right-wing-no-tentpole): YSD.events.renderTentpole(); events and home mount it ---- */
 .tentpole { position:relative;display:grid;overflow:hidden;background:var(--surface);color:var(--text);border:var(--bw) solid var(--edge);border-radius:var(--r-xl);box-shadow:var(--sh-lift) var(--shadow); }
-.tentpole__poster { position:relative;display:grid;align-content:end;gap:var(--sp-3);min-height:280px;padding:var(--sp-6) var(--sp-5) var(--sp-5);background:var(--duo, var(--sun));color:var(--night);border-bottom:var(--bw) solid var(--night);overflow:hidden;isolation:isolate; }
+.tentpole__poster { position:relative;display:grid;align-content:end;gap:var(--sp-3);min-height:310px;padding:var(--sp-6) var(--sp-5) var(--sp-5);background:var(--duo, var(--sun));color:var(--night);border-bottom:var(--bw) solid var(--night);overflow:hidden;isolation:isolate; }
 .tentpole[data-ink="light"] .tentpole__poster { color:var(--white); }
-.tentpole__brand { display:grid;justify-items:start;gap:4px;margin:0;font:800 clamp(52px, 14vw, 140px)/.8 var(--font-display-76);font-stretch:76%;letter-spacing:-.03em;text-transform:uppercase; }
+.tentpole__brand { display:grid;justify-items:start;gap:4px;margin:0;font:800 clamp(52px, 13vw, 112px)/.8 var(--font-display-76);font-stretch:76%;letter-spacing:-.03em;text-transform:uppercase; }
 .tentpole__brand > span:nth-child(2) { padding:.06em .12em 0;background:var(--night);color:var(--duo, var(--sun));border-radius:12px;rotate:-2deg; }
 .tentpole[data-ink="light"] .tentpole__brand > span:nth-child(2) { background:var(--white);color:var(--night); }
 .tentpole__edition { display:inline-flex;width:fit-content;padding:6px 12px;border:var(--bw) solid currentColor;border-radius:var(--r-pill);font:700 var(--fs-small)/1.2 var(--font-body);background:rgba(255, 255, 255, .6);color:var(--night); }
 .tentpole__ticket { position:absolute;top:16px;right:16px;rotate:8deg; }
 .tentpole__ticket .ticket { scale:1.2;transform-origin:top right;color:var(--night); }
-.tentpole__sticker { position:absolute;right:5%;bottom:18px;--sticker-size:clamp(72px, 14vw, 120px);--rot:-10deg; }
+.tentpole__sticker { position:absolute;left:20px;top:20px;--sticker-size:clamp(68px, 12vw, 112px);--rot:-10deg; }
 .tentpole__body { display:grid;gap:var(--sp-3);align-content:start;padding:var(--sp-5); }
 .tentpole__eyebrow { display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2);font:700 var(--fs-tag)/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted); }
 .tentpole__title { font:800 clamp(30px, 2.4vw + 20px, 48px)/.95 var(--font-display);font-stretch:78%;letter-spacing:-.01em;text-wrap:balance; }

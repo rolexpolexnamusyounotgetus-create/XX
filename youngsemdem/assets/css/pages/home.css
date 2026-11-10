@@ -51,6 +51,8 @@ html[lang="es"] .p-home .x-note { left:4.02em;top:1.72em; }
 }
 .p-home :is(.x-motion, .x-ticker__pause) svg { width:16px;height:16px;fill:currentColor; }
 .p-home .x-motion[aria-pressed="true"] { background:var(--cream);color:var(--night); }
+.p-home .x-ico-play, .p-home [aria-pressed="true"] .x-ico-pause { display:none; }
+.p-home [aria-pressed="true"] .x-ico-play { display:inline; } /* paused: the button offers Play */
 .p-home .x-hero__ctas { gap:var(--sp-3);margin-top:var(--sp-1); }
 .p-home .x-hero__ctas .btn--ghost { --btn-fg:var(--white);--btn-edge:var(--cream); }
 .p-home .x-hero__sub { font-size:var(--fs-body);line-height:1.5;color:var(--text-muted);max-width:42ch;text-wrap:pretty; }
@@ -63,7 +65,7 @@ html[lang="es"] .p-home .x-note { left:4.02em;top:1.72em; }
   border-radius:8px;box-shadow:6px 6px 0 var(--night);rotate:-2deg;
 }
 .p-home .x-polaroid__photo { display:block;--photo-r:4px;aspect-ratio:9 / 5; }
-.p-home .x-polaroid__photo img { display:block;width:100%;height:100%;object-fit:cover;object-position:50% 40%; }
+.p-home .x-polaroid__photo img { display:block;width:100%;height:100%;object-fit:cover;object-position:50% 100%; } /* phones: the heads sit above the ticket clipped onto the foot */
 .p-home .x-polaroid { padding-bottom:7px; }
 .p-home .x-polaroid__cap { position:absolute;left:14px;top:14px;z-index:1;padding:3px 8px;border:1.5px solid var(--night);border-radius:var(--r-pill);background:var(--cream);font-size:12px;line-height:1.15;color:var(--night); } /* a solid chip on the photo, never bare text */
 .p-home .x-polaroid__cap .tag { display:inline;white-space:nowrap;padding:0;min-height:0;border:0;background:none;font-size:12px;line-height:1.15;letter-spacing:0;color:var(--night); }
@@ -93,6 +95,7 @@ html[lang="es"] .p-home .x-note { left:4.02em;top:1.72em; }
 .p-home .x-tk__meta { margin:0;font-size:14px;line-height:1.3;color:var(--text-muted); }
 .p-home .x-tk__foot { position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:4px; }
 .p-home .x-tk__going { font-size:14px;font-weight:700; }
+.p-home .x-tk .btn--ink { --btn-bg:var(--night);--btn-fg:var(--cream);--btn-edge:var(--night); } /* a light island in both themes */
 
 /* ---------- 2. pinned: the next thing to do ---------- */
 .p-home .x-pins { padding-block:var(--sp-4) var(--sp-5); }
@@ -105,6 +108,7 @@ html[lang="es"] .p-home .x-note { left:4.02em;top:1.72em; }
 .p-home .x-pin__link { color:inherit;text-decoration:none; }
 .p-home .x-pin__link::after { content:"";position:absolute;inset:0;z-index:0; }
 .p-home .pin--hangout .pin__actions, .p-home .pin--hangout .tag { position:relative;z-index:1; }
+.p-home .x-pin:has(> .sticker) .pin__title { padding-right:52px; } /* the corner sticker never sits on the title */
 
 /* ---------- ticker: the Pause button sits beside the names, never on them ---------- */
 .p-home .x-ticker { margin:0; }
@@ -152,9 +156,8 @@ html[lang="es"] .p-home .x-note { left:4.02em;top:1.72em; }
   .p-home .x-invites__strip .invite__rsvp { padding-top:0; }
   .p-home .x-invites__strip .invite__rsvp .btn { flex:0 1 auto;min-height:44px;padding-block:8px; }
   /* the tentpole band, shorter on phones (G-EVENTS' component; the tagline lives on its event page) */
-  .p-home .x-tent-slot .tentpole__poster { min-height:160px;padding:var(--sp-5) var(--sp-4) var(--sp-4); }
+  .p-home .x-tent-slot .tentpole__poster { min-height:280px;padding:var(--sp-5) var(--sp-4) var(--sp-4); } /* the brand still clears the date ticket */
   .p-home .x-tent-slot .tentpole__tagline { display:none; }
-  .p-home .x-tent-slot .tentpole__brand { font-size:clamp(46px, 12.6vw, 150px); }
   .p-home .x-tent-slot .tentpole__body { padding:var(--sp-4);gap:var(--sp-2); }
 }
 .p-home .x-drop {
@@ -193,7 +196,7 @@ html[lang="es"] .p-home .x-note { left:4.02em;top:1.72em; }
 .p-home .x-drop1__kick { margin:0; }
 .p-home .x-drop1__title { margin:0;font:800 clamp(30px, 3vw + 20px, 48px)/.92 var(--font-display-76);font-stretch:76%;letter-spacing:-.02em; }
 .p-home .x-drop1__list { display:grid;margin:0;padding:0;list-style:none; }
-.p-home .x-drop1__list li { display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;padding:8px 0;border-top:1.5px dashed var(--night);font-size:var(--fs-small);line-height:1.35; }
+.p-home .x-drop1__list li { display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;padding:6px 0;border-top:1.5px dashed var(--night);font-size:var(--fs-small);line-height:1.35; }
 .p-home .x-drop1__list li:last-child { border-bottom:1.5px dashed var(--night); }
 .p-home .x-drop1__list b { font:800 17px/1.15 var(--font-display-84);font-stretch:84%; }
 .p-home .x-drop1__list .link { display:inline-block;padding-block:12px;margin-block:-12px;font-weight:700; }
@@ -337,6 +340,8 @@ html[lang="es"] .p-home .x-hero__title { font-size:clamp(44px, 11.4vw + 4px, 124
 @media (max-width: 699px) {
   .p-home .x-quiz__note, .p-home .x-chip, .p-home .x-join .x-head__sub, .p-home .x-maker .x-head__sub, .p-home .x-invites .x-head__sub, .p-home .x-reel__subtext, .p-home .x-chip__body { display:none; }
   .p-home .x-reel .x-head { margin-bottom:var(--sp-3); }
+  .p-home .x-drop1__art { grid-template-columns:1fr .8fr .9fr;padding:var(--sp-2) var(--sp-5); }
+  .p-home .x-deck__card img { max-width:64px; }
   .p-home .x-share__title, .p-home .x-prompt { display:none; } /* the Post yours card in the strip carries the prompt */
   .p-home .x-share .btn { width:100%; }
 }
@@ -364,6 +369,7 @@ html[lang="es"] .p-home .x-hero__title { font-size:clamp(44px, 11.4vw + 4px, 124
   .p-home .x-polaroid { width:min(100%, 440px);rotate:3deg; }
   @media (min-width: 1200px) { .p-home .x-polaroid { width:min(100%, 500px); } .p-home .x-ticket { width:min(86%, 420px); } }
   .p-home .x-polaroid__photo { aspect-ratio:4 / 3; }
+  .p-home .x-polaroid__photo img { object-position:50% 50%; }
   .p-home .x-hero__sticker { right:-14px;top:-20px;--sticker-size:84px; }
   .p-home .x-hero__art-sticker { display:block;position:absolute;left:-6px;bottom:-12px;z-index:3;--sticker-size:84px;--rot:-12deg; }
   .p-home .x-ticket { justify-self:start;width:min(88%, 400px);margin:-84px 0 0 0;rotate:-2deg; }

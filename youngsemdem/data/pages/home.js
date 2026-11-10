@@ -77,8 +77,8 @@ window.YSD_DATA.pages.home = {
   'pins.strip': { en: 'The next thing to do: three cards', es: 'Lo próximo que puedes hacer: tres tarjetas' },
   'count.unit.one': { en: 'day left', es: 'día' },
   'count.unit.other': { en: 'days left', es: 'días' },
-  'mail.until': { en: 'until requests from before Nov 3 end on Thu, Dec 31', es: 'hasta el jue. 31 de dic., cuando vencen las solicitudes de antes del 3 de nov.' },
-  'mail.title': { en: 'Mail ballot? Renew it.', es: '¿Votas por correo? Renueva tu solicitud.' },
+  'mail.until': { en: 'until requests from before Nov 3 end on Thu, Dec 31', es: 'hasta el jue. 31 de dic., cuando vencen las de antes del 3 de nov.' },
+  'mail.title': { en: 'Mail ballot? Renew it.', es: '¿Boleta por correo? Renuévala.' },
   'mail.body1': {
     en: 'Asked for a mail ballot before Nov 3? That request ends Dec 31. Ask again and you should be set through 2028.',
     es: '¿Pediste la boleta por correo antes del 3 de noviembre? Esa solicitud vence el 31 de diciembre. Pídela otra vez y debería cubrirte hasta 2028.'
@@ -153,7 +153,7 @@ window.YSD_DATA.pages.home = {
   'drop1.toteHow': { en: 'Finish one volunteer shift.', es: 'Completa un turno de voluntariado.' },
   'drop1.sheet': { en: 'The county sticker sheet', es: 'La hoja de stickers del condado' },
   'drop1.sheetHow': { en: 'Host a night.', es: 'Organiza una noche.' },
-  'drop1.meta': { en: 'Edition of 100 each, tees XS to 4XL, designed by a member, our line on the back in English and Spanish. All DEMO, pending the chapter’s lawyer.', es: 'Edición de 100 de cada una, camisetas de XS a 4XL, diseño de un miembro, nuestra frase en la espalda en inglés y en español. Todo DEMO, pendiente de revisión legal del capítulo.' },
+  'drop1.meta': { en: 'Edition of 100 each, tees XS to 4XL, designed by a member, our line on the back in English and Spanish. All DEMO, pending the chapter’s lawyer.', es: 'Edición de 100 cada una, camisetas de XS a 4XL, diseño de un miembro, nuestra frase en dos idiomas en la espalda. Todo DEMO, pendiente de revisión legal.' },
   'drop1.fine': { en: 'Nothing is ever given for registering, renewing or voting.', es: 'Nunca se da nada por inscribirte, renovar o votar.' },
 
   // ---- 8. real: this chapter is real + Nov 3, debriefed + the real scoreboard
@@ -166,7 +166,7 @@ window.YSD_DATA.pages.home = {
   'real.p3': { en: 'It has hosted a musical theatre night in Oviedo to raise money for LGBTQ+ youth.', es: 'Organizó una noche de teatro musical en Oviedo para recaudar fondos para jóvenes LGBTQ+.' },
   'real.p3src': { en: 'The night’s ActBlue page', es: 'Página de ActBlue de esa noche' },
   'real.strip': { en: 'Proof this chapter is real', es: 'Pruebas de que este capítulo es real' },
-  'real.checked': { en: 'All three checked Tue, Nov 10, 2026.', es: 'Las tres, revisadas el martes 10 de noviembre de 2026.' },
+  'real.checked': { en: 'All three checked Tue, Nov 10, 2026.', es: 'Las tres, revisadas el 10 de nov. de 2026.' },
   'debrief.title': { en: 'Nov 3, debriefed.', es: 'El 3 de noviembre, en resumen.' },
   'debrief.p1': {
     en: 'Seminole picked the Democrat for governor, about 54% to 45% (unofficial until the county certifies, due Nov 16). Statewide, the Republican won by about a point.',
