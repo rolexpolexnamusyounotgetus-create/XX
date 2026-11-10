@@ -179,7 +179,6 @@ function page(kind, id, L) {
       '          <p class="x-rhero__note" data-quiz-someone>' + esc(p('r.someone', L)) + '</p>',
       '        </div>',
       '        <div class="x-rcard" style="--c: ' + cv + '; --fg: ' + fg + '" aria-hidden="true"' + (calm ? ' data-tone="calm"' : '') + '>',
-      !art && sticker ? '          <span class="sticker x-rcard__sticker" data-sticker="' + sticker + '"></span>' : '',
       '          <div class="x-rcard__top"><span class="x-rcard__kicker">' + esc(kicker) + '</span></div>',
       art ? '          <img class="x-rcard__char" src="' + up + 'assets/img/characters/' + art + '.svg" alt="" width="256" height="264" loading="lazy" decoding="async">' : '',
       '          <p class="x-rcard__name"' + (longName ? ' data-len="long"' : '') + '>' + esc(name) + '</p>',

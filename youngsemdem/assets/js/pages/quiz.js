@@ -286,8 +286,8 @@
   }
   /** Full-bleed colour world for the stage (genz-brand-11). Bright worlds are light islands, violet a dark one. */
   function world(name) {
-    if (!name) { stage.removeAttribute('data-world'); stage.classList.remove('theme-light', 'theme-dark'); return; }
-    stage.setAttribute('data-world', name);
+    if (!name) { stage.removeAttribute('data-world'); stage.style.removeProperty('--world'); stage.classList.remove('theme-light', 'theme-dark'); return; }
+    stage.setAttribute('data-world', name); stage.style.setProperty('--world', 'var(--' + name + ')');
     stage.classList.toggle('theme-dark', !!DARK[name]); stage.classList.toggle('theme-light', !DARK[name]);
   }
   function toStage() {
@@ -422,7 +422,6 @@
     var hero = h('div', { cls: 'x-result__hero' + (DARK[color] ? ' theme-dark' : ' theme-light') + (art ? ' x-result__hero--art' : '') });
     hero.appendChild(h('p', { cls: 'x-result__kicker', text: kind === 'issue' && identity(id) ? pick(copy.identityLabel) : pick(copy.matchLabel) }));
     if (art) hero.appendChild(h('img', { cls: 'x-result__char', src: charSrc(art), alt: '', width: '256', height: '264', decoding: 'async' }));
-    else if (!calm && ART[id]) hero.appendChild(h('span', { cls: 'sticker sticker--lg x-result__sticker', 'data-sticker': ART[id], 'aria-hidden': 'true' }));
     hero.appendChild(h('h2', { cls: 'x-result__name', tabindex: '-1', 'data-len': longest(name) > 10 ? 'long' : null, text: name }));
     if (kind === 'issue' && identity(id)) hero.appendChild(h('p', { cls: 'x-result__issue', text: cap(shortName(kind, id)) }));
     if (cur.undertone) {

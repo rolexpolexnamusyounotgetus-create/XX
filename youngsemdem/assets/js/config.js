@@ -160,6 +160,9 @@
         electionProtection: 'https://866ourvote.org/',
         oviedoElections: 'https://cityofoviedo.net/724/Elections',
         hb991: 'https://flsenate.gov/Session/Bill/2026/991',
+        // Added Nov 10, 2026 for the vote hub's Under-18 block (checked by G-VOTE against voteseminole.gov).
+        electionWorkers: 'https://voteseminole.gov/elections/become-an-election-worker/',
+        schoolPrograms: 'https://voteseminole.gov/community-news-and-the-office/school-programs-community-engagement/',
         // Seminole SOE "Find My Polling Location" map (linked from the voter record page).
         // Checked 2026-11-09.
         pollingPlace: 'https://voteseminole.dolphmap.com/',
