@@ -1,9 +1,0 @@
-PASS  S path: computed chin x pow within 2% of the records (2019-2023 backtest sides)  (raw 0.9851, re-levelled 0.9464, records 0.9464)
-PASS  C path: computed chin x pow within 2% of the roster records (live roster)  (raw 0.7907, re-levelled 0.9436, roster 0.9435)
-PASS  params constants = the tool's fit
-PASS  no record: both sides computed
-PASS  the C-path constants multiply chin_re / pow_re exactly
-PASS  full record -> 'record', a missing field -> 'partial'  (record / partial)
-PASS  invalid fields ('x', -1) are missing, not NaN  (0.009780356649295933, 0.014557330808084766)
-PASS  durFallback off = constants 1 (engine 5.0.0)
-8 passed, 0 failed

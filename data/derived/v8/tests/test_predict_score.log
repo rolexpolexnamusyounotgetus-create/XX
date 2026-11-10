@@ -1,9 +1,0 @@
-PASS  vectorised cluster bootstrap = the per-resample loop (B 2000, seed 7)
-PASS  B 2000 reproduces the recorded v6 gate (paired diffs, CIs, package levels)  (3 regimes)
-PASS  marginal bound (within 2 MC SE) is decided by the normal bound  ({"pass": false, "boot_upper": -0.0001, "mcse_upper": 0.0001, "normal_upper": 0.0002, "threshold": 0.0, "marginal": true, "decided_by": "normal"})
-PASS  a clear bound is decided by the bootstrap
-PASS  power: SE_look = SE_gate x sqrt(n_gate / n_look); MDE = 2.8 SE  (SE gate 0.00253, look 0.00305, MDE 0.0085)
-PASS  the v6 primary was underpowered (power < 0.5 at -0.004 on 842 fights)  (power 0.259)
-PASS  B 20,000: the own-input gate passes, the shared-input gate fails (no-line and close winner)
-
-7 passed, 0 failed

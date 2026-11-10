@@ -1,4 +1,0 @@
-harness_vault: tools/predict_harness.js sha256 f1c3c16e94d81ec3, 16 substitutions -> /tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault/audit2/gen/predict_harness_vault_gen.js; packages {"v10":"versions/v10-rejected identical-except-blend true","cmp4":"versions/v7-gate-failed identical-except-blend true","v6":"versions/v6-rejected identical-except-blend true"}
-predict_harness on vault 2026-01-01..2026-11-01: 373 fights, kinds close/open/none, 300 sims per order; v10: engine 10.0.0 params 10.0.0-selfcal-pre2024 (v10); cmp4: engine 7.0.0 params 7.0.0-selfcal-pre2024 (cmp4); v6: engine 6.0.0 params 6.0.0-selfcal-pre2024 (v6)
-  200/373 fights, 26 s
-wrote /tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault/audit2/harness_vault.json: 373 fights, 0 failed, 45 s

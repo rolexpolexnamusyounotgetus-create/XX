@@ -1,29 +1,8 @@
 preview.html
-tests/*.png
 node_modules/
 __pycache__/
 .DS_Store
-
-# regenerable by tools/build_db.py (5 MB)
-data/derived/backtest.json
-tools/__pycache__/
 out/
 
-# reference photos: kept local, never committed or embedded (sources.json files are committed)
-assets/reference/**/*.jpg
-assets/reference/**/*.jpeg
-assets/reference/**/*.png
-assets/reference/**/*.webp
-data/derived/backtest_dev.json
-
-# Sherdog fighter/search pages cached by tools/preufc.py (raw third-party HTML; regenerable)
-data/raw/sherdog_cache/
-
-# raw third-party pages cached by tools/*.py (regenerable)
-data/raw/web_cache/
-
-# agent worktrees (isolated component builds)
+# agent worktrees
 .claude/worktrees/
-
-# prediction lab raw scrape caches (compact extracts are committed instead)
-data/raw/*_cache/

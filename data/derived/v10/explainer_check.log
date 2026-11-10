@@ -1,1 +1,0 @@
-{"tool":"tools/v10_explainer_check.js","engine":"10.0.0","params":"10.0.0-selfcal-pre2024","fights":157,"show_rows":785,"errors":0,"exact_rate":1,"winner_rate":1,"predict_unchanged":157,"mean_tries":10.01,"thresholds":{"exact_rate":">= 0.90","winner_rate":"= 1.00","predict_unchanged":"every fight"},"pass":true,"note":"reads no outcome; capability check only"}

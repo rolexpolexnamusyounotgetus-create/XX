@@ -1,6 +1,0 @@
-1. UFC Fight Night: Royval vs. Kape (2025-12-13): 12 bouts parsed, per-round sums match an independent parse
-2. match_stats: Cesar Almeida vs Cezary Oleksiejczuk, 3 rounds
-3. compute_scores: debut method and stat-line metrics match hand computations
-4. score --no-fetch: scores.json / scores.md carry the fwd-4.2 sections
-5. stat-line CI: the bout-level bootstrap resamples bouts, not fight-sides
-ok 271/271 checks

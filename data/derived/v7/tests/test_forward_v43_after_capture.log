@@ -1,7 +1,0 @@
-1a. fwd-4.1 identity (JS): golden reproduced across the fwd-4.3 re-pin of src/ml/ml2.js, tools/methodround_model.js
-1b-c. fwd-4.2 identity: JS (line, no-line headline) and 3 ledger documents byte-identical
-2. fwd-4.3 vs fwd-4.2: 1 veterans without a line, 2 with, 4 debut bouts; only the pre-registered fields differ
-3. symmetry: JS max 2.22e-16, ledger max 0.00e+0, 98 stat-line entries swap exactly
-4. no-line stack vs Python export: 27 vectors, max |diff| 5.55e-17 (formula 0.00e+0)
-5. fallback: chris-duncan missing from the ML v2 roster -> p_a_noline from the MoE stack, flagged
-ok 434/434 checks
