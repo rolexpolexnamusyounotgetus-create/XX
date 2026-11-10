@@ -640,7 +640,7 @@ window.YSD_DATA.quiz = {
         },
         actions: [
           { type: 'event', label: { en: 'Find a room to fill', es: 'Busca un evento para animar' }, page: 'events', query: 'kind=social', demo: true },
-          { type: 'join', label: { en: 'Offer to host or emcee a night', es: 'Ofrécete para organizar o animar una noche' }, page: 'join' },
+          { type: 'join', label: { en: 'Offer to host or emcee a night', es: 'Ofrécete para organizar o animar una noche' }, page: 'join', query: 'intent=host' },
           { type: 'event', label: { en: 'Bring a team to trivia night', es: 'Arma un equipo para la noche de trivia' }, page: 'events', query: 'series=trivia', demo: true }
         ],
         eventSeries: ['trivia', 'karaoke', 'mixer'],
@@ -700,7 +700,7 @@ window.YSD_DATA.quiz = {
           es: ['Convertir un desorden en un plan', 'Ver el número que importa', 'Listas de asistencia que sí funcionan']
         },
         actions: [
-          { type: 'join', label: { en: 'Help run RSVPs and sign-ins', es: 'Ayuda con las confirmaciones y la lista de asistencia' }, page: 'join' },
+          { type: 'join', label: { en: 'Help run RSVPs and sign-ins', es: 'Ayuda con las confirmaciones y la lista de asistencia' }, page: 'join', query: 'intent=volunteer' },
           { type: 'vote', label: { en: 'Learn the 2027-28 election dates', es: 'Conoce las fechas de elecciones de 2027-28' }, page: 'vote', hash: 'dates', official: 'links.vote.upcomingElections' },
           { type: 'event', label: { en: 'Help set up a renewal party', es: 'Ayuda a preparar una fiesta para renovar' }, page: 'events', query: 'series=renew-ready', demo: true }
         ],

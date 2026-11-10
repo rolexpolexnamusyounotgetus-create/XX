@@ -164,7 +164,8 @@ window.YSD_DATA = window.YSD_DATA || {};
       "name": {"en":"Seminole Sunday","es":"Domingo en Seminole"},
       "recurs": {"en":"One big Sunday a month, 2 to 4 pm","es":"Un domingo grande al mes, de 2 a 4 p. m."},
       "tagline": {"en":"One big free Sunday a month. A different park each time, the whole crew there, and daytime so everyone 14 and up can come.","es":"Un domingo grande y gratis cada mes. Un parque distinto cada vez, todo el grupo reunido y de día, para que pueda venir cualquier persona desde los 14 años."},
-      "eyebrow": {"en":"This month's big one","es":"El grande del mes"}
+      "eyebrow": {"en":"This month's big one","es":"El grande del mes"},
+      "eyebrowNext": {"en":"Next big one","es":"La próxima grande"}
     },
     "policy": {
       "ages": {"en":"You don't have to be a member, and you don't have to be registered with any party.","es":"No tienes que ser miembro ni estar inscrito en ningún partido."},

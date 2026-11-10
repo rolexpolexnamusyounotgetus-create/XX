@@ -117,6 +117,8 @@ window.YSD_DATA.pages.about = {
   'crews.cta': { en: 'Start this crew', es: 'Empieza este grupo' },
   'crews.join': { en: 'Join this crew', es: 'Súmate a este grupo' },
   'crews.host': { en: 'Hosting the first hangout? Get the host kit', es: '¿Vas a organizar el primer encuentro? Mira el kit' },
+  'crews.hostLead': { en: 'Every crew starts with one host.', es: 'Cada grupo empieza con una persona que organiza.' },
+  'crews.hostKit': { en: 'Host a night with the host kit', es: 'Organiza una noche con el kit' },
   'crew.sanford.where': { en: 'Sanford', es: 'Sanford' },
   'crew.sanford.spot': { en: 'the Sanford Riverwalk', es: 'el Sanford Riverwalk' },
   'crew.sanford.idea': { en: 'A sunset walk on the Riverwalk, then tacos.', es: 'Una caminata al atardecer por el Riverwalk y luego tacos.' },

@@ -15,7 +15,7 @@
  *
  * Rules it follows (docs/BRIEF.md 3.2, 3.6, 5.8): brand colours are constants, so a card looks the
  * same whatever theme made it; text always sits on a flat fill; no photos or faces; every card
- * carries the paid-for line, and a DEMO tag while YSD_CONFIG.demo is on. Nothing here fetches
+ * carries the Saved Seat lockup (YSD.cards.brand, round 1), the paid-for line, and a DEMO tag while YSD_CONFIG.demo is on. Nothing here fetches
  * anything: stickers come from data/stickers.js (inline SVG) when it is loaded, else they are drawn.
  * tools/make_og.js renders these into assets/img/og/ (+ og/es/) from each page's ysd:og meta.
  */
@@ -169,33 +169,27 @@
   }
 
   // ---------------------------------------------------------------- brand mark and band
-  var BUBBLE = 'M10 3 H54 a8 8 0 0 1 8 8 V35 a8 8 0 0 1 -8 8 H28 L14 54 L16 43 H10 a8 8 0 0 1 -8 -8 V11 a8 8 0 0 1 8 -8 Z';
+  /** The brand lockup (genz-brand-20): the Saved Seat ticket and the lettered "Young Dems" wordmark from
+   *  YSD.cards.brand (assets/js/cards.js, the same paths as the header, icons and default OG), with "of Seminole
+   *  County" under the wordmark. (x, y) is the top-left of the old 64 x 54 slot: the ticket spans about y - 11 to
+   *  y + 49, the wordmark's baseline sits at y + 26 and the county line at y + 50. Colours as in cards-brand.js:
+   *  a celery ticket (cream on celery) with a night outline (cream on night); swoosh bubblegum on dark worlds,
+   *  violet on bright ones. */
   function brand(ctx, env, wd, x, y, scale) {
-    var s = scale || 1;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(s, s);
-    var path = typeof w.Path2D === 'function' ? new w.Path2D(BUBBLE) : null;
-    if (path) {
-      ctx.fillStyle = wd.name === 'violet' ? C.night : C.violet;
-      ctx.fill(path);
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = wd.dark ? C.cream : C.night;
-      ctx.stroke(path);
+    var s = scale || 1, B = YSD.cards.brand, bg = String(wd.bg).toLowerCase();
+    var tx = x + 80 * s;
+    if (B && typeof B.mark === 'function' && typeof w.Path2D === 'function') {
+      B.mark(ctx, x - 3 * s, y - 14 * s, 76 * s, { body: bg === C.celery.toLowerCase() ? C.cream : C.celery, ink: C.night, edge: bg === C.night.toLowerCase() ? C.cream : C.night });
+      B.word(ctx, x + 78 * s, y - 2 * s, 36 * s, { fill: wd.fg, swoosh: wd.dark ? C.bubblegum : C.violet });
+    } else {
+      setFont(ctx, 34 * s / 1.05, 800, fam(env, 'display'));
+      ctx.fillStyle = wd.fg; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('Young Dems', tx, y + 26 * s);
     }
-    setFont(ctx, 21, 800, fam(env, 'display'));
-    ctx.fillStyle = C.celery;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText('YD', 32, 31);
-    ctx.restore();
-    setFont(ctx, 34 * s / 1.05, 800, fam(env, 'display'));
+    setFont(ctx, 17 * s / 1.05, 700, fam(env, 'body'));
     ctx.fillStyle = wd.fg;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    var tx = x + 72 * s;
-    ctx.fillText('Young Dems', tx, y + 27 * s);
-    setFont(ctx, 17 * s / 1.05, 700, fam(env, 'body'));
     ctx.fillText(copy(env.data).county, tx, y + 50 * s);
   }
   function band(ctx, env, wd, data, label) {

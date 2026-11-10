@@ -232,7 +232,16 @@
     </section>
 
     <div class="section x-rules">
-      <div class="wrap" data-rules-host></div>
+      <div class="wrap" data-rules-host>
+        <!-- The no-JS anchor for #how-stickers-work (hero teaser, home's sticker teaser): YSD.membercard.rulesPanel
+             replaces this section with the full panel under the same id. -->
+        <section class="rules" id="how-stickers-work" aria-labelledby="how-stickers-work-title">
+          <div class="rules__head">
+            <h2 class="rules__title" id="how-stickers-work-title" data-t="join:teaser.title">15 stickers para coleccionar</h2>
+            <p class="rules__sub" data-t="join:teaser.body">Por ir, traer gente y organizar. Nunca por votar.</p>
+          </div>
+        </section>
+      </div>
     </div>
 
     <section class="section section--pink" id="tiers" aria-labelledby="tiers-title">
@@ -374,6 +383,7 @@
         <ul>
           <li><a href="../es/join.html" aria-current="page">Únete gratis</a></li>
           <li><a href="../es/events.html">Eventos</a></li>
+          <li><a href="../es/host.html">Organiza una noche</a></li>
           <li><a href="../es/clips.html">Clips</a></li>
           <li><a href="../es/post.html">Sube un clip</a></li>
           <li><a href="../es/quiz.html">Quiz</a></li>
@@ -412,11 +422,10 @@
       </div>
     </nav>
     <div class="site-footer__legal">
-      <p><span>Pagado por [nombre y dirección del comité: pendiente]</span> <span class="tag tag--demo">DEMO</span></p>
+      <p class="site-footer__paid"><span>Pagado por [nombre y dirección del comité: pendiente]</span> <span class="tag tag--demo">DEMO</span></p>
       <p>Ningún candidato aprobó este contenido. [Texto provisional: depende del estatus de comité del capítulo.]</p>
-      <p>Vista previa para los Young Democrats of Seminole County. El capítulo todavía no la aprueba. No es un sitio oficial de los Seminole County Democrats, de los Florida Young Democrats ni de ninguna organización del partido.</p>
-      <p>Las personas de las fotos de archivo no son miembros y no respaldan nada.</p>
-      <p><span>Hecho en el condado de Seminole.</span> <span data-year translate="no">2026</span></p>
+      <p class="site-footer__status">Vista previa para los Young Democrats of Seminole County. El capítulo todavía no la aprueba. No es un sitio oficial de los Seminole County Democrats, de los Florida Young Democrats ni de ninguna organización del partido.</p>
+      <p><span>Las personas de las fotos de archivo no son miembros y no respaldan nada.</span> <span>Hecho en el condado de Seminole.</span> <span data-year translate="no">2026</span></p>
     </div>
   </div>
   <div class="toast-region" role="status" aria-live="polite" data-toast-region></div>

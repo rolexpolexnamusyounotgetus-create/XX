@@ -394,7 +394,12 @@ window.YSD_DATA.sharekit = {
   meter: {
     text: { en: "Friends who joined with your link: {n} of 3. Three friends, not 300.", es: "Personas que se unieron con tu enlace: {n} de 3. Tres, no 300." },
     full: { en: "Friends who joined with your link: {n}. That's a squad.", es: "Personas que se unieron con tu enlace: {n}. Eso ya es un grupo." },
-    demoHint: { en: "DEMO: only joins on this device count, and nobody here is simulated.", es: "DEMO: solo cuentan las personas que se unen en este dispositivo, y aquí nadie es simulado." }
+    /** {name} = the member's first name, filled where the meter renders. The quoted labels match joinform's done.reset and
+     *  done.switch buttons (data/pages/join.js), so the steps can be followed on one phone (journeys-06). */
+    demoHint: {
+      en: "DEMO: counts friends who joined with your link in this browser. Try it: open your link, tap “Not {name}? Start over”, join as a friend, then “Back to {name}”.",
+      es: "DEMO: cuenta a quienes se unieron con tu enlace en este navegador. Pruébalo: abre tu enlace, toca “¿No eres {name}? Empezar de nuevo”, únete como otra persona y luego toca “Volver a {name}”."
+    }
   },
 
   cities: [

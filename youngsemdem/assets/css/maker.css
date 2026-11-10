@@ -97,6 +97,7 @@
 .membercard__head { display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-4) var(--sp-5);background:var(--mc-bg);color:var(--mc-fg);border-bottom:var(--bw) solid var(--night); }
 .membercard__brand { color:var(--mc-fg); }
 .membercard__brand .brand__mark { color:var(--night); }
+.membercard__brand .brand__word { color:var(--mc-fg); } /* <use href="#ysd-word"> from the header partial takes the card's text colour */
 .membercard__kicker { font:700 var(--fs-tag)/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase; }
 .membercard__body { display:grid;gap:var(--sp-2);padding:var(--sp-5); }
 .membercard__name { margin:0;font:800 clamp(48px, 9vw, 84px)/.9 var(--font-display-76);font-stretch:76%;letter-spacing:-.01em;overflow-wrap:anywhere; }

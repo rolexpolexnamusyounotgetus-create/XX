@@ -175,6 +175,21 @@
     box.hidden = false;
   }
 
+  // sharekit meter.demoHint walks through the "Not {name}? Start over" and "Back to {name}" buttons. membercard.js
+  // prints it as is, so the member's first name goes in here whenever the meter paints (a no-op once nothing is left
+  // to fill, e.g. when membercard.js fills {name} itself).
+  function meterHintNames() {
+    var host = $('#join-card') || d.body;
+    function fillHints() {
+      var m = member(), nm = m && m.firstName ? cleanName(m.firstName) : '';
+      Array.prototype.forEach.call(host.querySelectorAll('.meter__hint'), function (p) {
+        if (p.textContent.indexOf('{name}') >= 0) p.textContent = p.textContent.split('{name}').join(nm || '\u2026');
+      });
+    }
+    fillHints();
+    if ('MutationObserver' in w) new MutationObserver(fillHints).observe(host, { childList: true, subtree: true });
+  }
+
   // ------------------------------------------------------------- jumps to the form
   function jump(e) {
     var m = member();
@@ -286,7 +301,9 @@
     // place, so it gives the attribute up first (B20 is checked on the plain page, without ?e).
     if (H.invited) H.invited.removeAttribute('data-invite-landing');
     loadCss('assets/css/rsvp.css');
-    chain(['data/slices/events.js', 'data/events.js', 'data/pages/events.js', 'assets/js/eventcard.js', 'assets/js/rsvp.js']).then(function () {
+    // The events slice carries everything eventcard.js and rsvp.js read (labels, RSVP form, policy, cities, series,
+    // the drop and each event's card fields), so the full data/events.js and the events page copy stay unloaded.
+    chain(['data/slices/events.js', 'assets/js/eventcard.js', 'assets/js/rsvp.js']).then(function () {
       var e = YSD.events && YSD.events.get ? YSD.events.get(eventId) : null;
       if (!e) { eventMissing(false); return; }
       if (YSD.events.isPast && YSD.events.isPast(e)) { eventMissing(true); return; }
@@ -348,9 +365,12 @@
     var x = c.getContext('2d');
     x.fillStyle = '#FFF6EA'; x.fillRect(0, 0, W, Hh);
     x.fillStyle = '#170B33';
-    x.font = '800 72px "Bricolage Grotesque", "Bricolage fb", sans-serif';
     x.textBaseline = 'alphabetic';
-    x.fillText('Young Dems', pad, 112);
+    // the Saved Seat ticket + wordmark (YSD.cards.brand, the header's paths); plain type if cards.js is missing
+    var B = YSD.cards && YSD.cards.brand;
+    if (B && typeof B.lockup === 'function' && typeof w.Path2D === 'function') B.lockup(x, pad - 6, 22, 108, { word: { fill: '#170B33', swoosh: '#C8F03C' } });
+    else { x.font = '800 72px "Bricolage Grotesque", "Bricolage fb", sans-serif'; x.fillText('Young Dems', pad, 112); }
+    x.fillStyle = '#170B33';
     x.font = '700 32px "Atkinson Hyperlegible Next", "Atkinson fb", sans-serif';
     x.fillStyle = '#574D70';
     x.fillText(t('join:pack.title'), pad, 162);
@@ -423,7 +443,7 @@
         return;
       } catch (e) {}
     }
-    var sec = host.closest('.x-rules'); if (sec) sec.hidden = true;
+    // no panel API: the static "15 stickers to collect" section stays, so #how-stickers-work still lands somewhere
   }
 
   // Hand face: switch it on only when a [data-hand] element nears the viewport (see the page CSS).
@@ -474,6 +494,7 @@
     shelf();
     chipIn();
     rules();
+    meterHintNames();
     lazyHand();
     eventBoot();
     if (m && m.firstName) lateCardTools();

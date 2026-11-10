@@ -232,7 +232,6 @@ function seriesState(s) { let st = 'none'; EV.forEach((e) => { if (e.series !== 
 function kindOpen(k) { return EV.some((e) => e.kind === k && upcoming(e) && !hiddenByDrop(e)); }
 function kindOfSeries(s) { const e = EV.find((x) => x.series === s); return e ? e.kind : ''; }
 function listJoin(items, L) { return items.length > 1 ? items.slice(0, -1).join(', ') + (L === 'es' ? ' y ' : ' and ') + items[items.length - 1] : (items[0] || ''); }
-function lowerFirst(s) { return /^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s|$)/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s; }
 /** The no-JS version of the "Events made for you" block: same rules as quiz.js seriesBlock(). */
 function seriesStatic(series, kinds, L, pg) {
   const chips = [], dropped = [];
@@ -240,7 +239,7 @@ function seriesStatic(series, kinds, L, pg) {
   if (!chips.length) kinds.forEach((k) => { if (kindOpen(k.id)) chips.push('<a class="chip" href="' + pg + 'events.html?kind=' + encodeURIComponent(k.id) + '">' + esc(k.label) + '</a>'); });
   let out = chips.length ? '<div class="chip-row">' + chips.join('') + '</div>' : '';
   if (dropped.length && DROP) {
-    const names = listJoin(dropped.map((x, i) => (i ? lowerFirst(x) : x)), L);
+    const names = listJoin(dropped, L);   // series names are proper names: never lowercased (round 1)
     out += '<div class="x-drop" data-quiz-drop><p class="x-drop__text"><b>' + esc(fill(pick(Q.ui.dropSeries, L), { series: names })) + '</b> <span>' + esc(pick(Q.ui.dropWhen, L)) + '</span></p></div>';
   }
   return out;

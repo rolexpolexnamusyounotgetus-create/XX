@@ -356,9 +356,35 @@ test('qa: scenarios measure post-interaction states (overflow, text size, target
   assert.strictEqual(row('defect-scenario.html', 'SC').score, 0);
   const ok = qaRun().report.pages.find((x) => x.page === 'states.html');
   assert.strictEqual(row('states.html', 'SC').score, 2, row('states.html', 'SC').result);
-  assert.deepStrictEqual(ok.scenarios.map((x) => x.id + ':' + x.status), ['panel:ok', 'not-built:skipped']);
+  assert.deepStrictEqual(ok.scenarios.map((x) => x.id + ':' + x.status), ['panel:ok', 'from:ok', 'not-built:skipped']);
   assert.ok(ok.v['390-dark@panel'] && ok.v['390-dark@panel'].texts > 0, 'measured in dark too');
   assert.strictEqual(row('good.html', 'SC').score, 'n/a');
+});
+test('qa: a dismiss step closes a reveal that opens on its own; a scenario query loads ?from=Kira', () => {
+  const ok = qaRun().report.pages.find((x) => x.page === 'states.html');
+  assert.deepStrictEqual(ok.scenarios.map((x) => x.id + ':' + x.status), ['panel:ok', 'from:ok', 'not-built:skipped']);
+  assert.strictEqual(row('states.html', 'SC').score, 2, 'the reveal (11 px fine print inside) is gone before measuring: ' + details(row('states.html', 'SC')));
+  assert.ok(ok.v['390-light@from'] && ok.v['390-light@from'].texts > 0, 'the ?from state is measured');
+  // negative control: the same panel scenario without the dismiss step measures the open reveal and fails
+  const d = copyFixture('qa');
+  copyFromSite(d, ['assets/js/config.js', 'assets/js/store.js', 'assets/js/share.js']);
+  const tf = path.join(d, 'nodismiss.json'), out = path.join(d, 'nodismiss-report.json');
+  fs.writeFileSync(tf, JSON.stringify({ 'states.html': { scenarios: [{ id: 'panel', steps: [{ click: '[data-open-panel]' }, { waitFor: '[data-panel]' }, { wait: 1800 }] }] } }));
+  tool('qa.js', ['--root', d, '--pages', 'states.html', '--targets', tf, '--widths', '390', '--no-perf', '--no-share', '--no-axe', '--out', out, '--quiet']);
+  const raw = JSON.parse(read(out)).pages[0].rows;
+  assert.strictEqual(raw.SC.score, 0, 'without dismiss: ' + raw.SC.result);
+  assert.ok(/@panel.*11 px text/.test(details(raw.B31)), details(raw.B31));
+});
+test('qa: a desktop fold target fails B6 when the hero actions sit below 1366 x 768', () => {
+  const ok = row('good.html', 'B6');
+  assert.strictEqual(ok.score, 2, ok.result + details(ok));
+  assert.ok(/hero actions on screen at 1366 x 768/.test(ok.result), ok.result);
+  const bad = row('defect-fold.html', 'B6');
+  assert.strictEqual(bad.score, 0, bad.result);
+  assert.ok(/\[1366x768\] .*"Join free" is cut off by the fold \(bottom \d+ px, screen 768 px\) at 1366 x 768/.test(details(bad)), details(bad));
+  assert.ok(!/390 x 664/.test(details(bad)), 'the phone first screen is fine: ' + details(bad));
+  const f = qaRun().report.pages.find((x) => x.page === 'defect-fold.html').dom.folds[0];
+  assert.ok(f && f.sel && f.actions.length === 2 && f.actions.every((a) => !a.ok), JSON.stringify(f));
 });
 test('qa: a bottom bar hidden until scroll and under 25% passes B6; one covering 35% fails', () => {
   const ok = row('states.html', 'B6');
@@ -374,7 +400,7 @@ test('qa: each defect page fails only where its defect is', () => {
     'defect-gradient.html': ['B8', 'N4', 'N5'], 'defect-animation.html': ['N4'], 'defect-demo-count.html': ['B30', 'N3'],
     'defect-share-localhost.html': ['N10'], 'defect-outside-host.html': [],
     'defect-marker.html': ['B8', 'N4'], 'defect-sticky-bar.html': ['B6'], 'defect-scenario.html': ['B31', 'N4'], 'defect-source-path.html': [],
-    'es/defect-english.html': ['N8'], 'sampled.html': [], 'states.html': []
+    'es/defect-english.html': ['N8'], 'sampled.html': [], 'states.html': [], 'defect-fold.html': ['B6']
   };
   for (const [p, gates] of Object.entries(expect)) {
     const pg = qaRun().report.pages.find((x) => x.page === p);
@@ -398,6 +424,16 @@ test('qa: unit helpers (contrast matches BRIEF 3.2, English detector)', () => {
   assert.ok(!qa.englishLeft('TEXAS es grande'), 'allowlisted words match whole words only');
   assert.deepStrictEqual(qa.sourcePaths('Loaded from data/civic.js, see assets/img/ and home.css'), ['data/civic.js', 'assets/img/', 'home.css']);
   assert.deepStrictEqual(qa.sourcePaths('See the .js file'), ['.js']);
+  // round-1 targets: home fold + maker quick mode, the quiz reveal dismissed, result pages opened from a friend
+  const home = qa.targetsFor(qa.DEFAULT_TARGETS, 'index.html');
+  assert.ok(home.fold.some((f) => f.width === 1366 && f.height === 768), 'home fold 1366 x 768');
+  assert.ok(home.scenarios[0].steps.some((st) => st.waitFor === '[data-maker], [data-maker-quick]'), 'home maker waits for either hook');
+  assert.ok(qa.targetsFor(qa.DEFAULT_TARGETS, 'es/quiz.html').scenarios.find((x) => x.id === 'quiz-done').steps.some((st) => st.dismiss === 'dialog.unlock[open]'), 'quiz-done dismisses the sticker reveal');
+  for (const p of ['quiz/show-up/hype-captain.html', 'es/quiz/issue/rent.html']) {
+    const sc = (qa.targetsFor(qa.DEFAULT_TARGETS, p).scenarios || []).find((x) => x.id === 'from');
+    assert.ok(sc && sc.query === '?from=Kira', p + ' has the ?from=Kira scenario');
+  }
+  assert.ok(!(qa.targetsFor(qa.DEFAULT_TARGETS, 'quiz.html').scenarios || []).some((x) => x.id === 'from'), 'quiz.html itself does not');
   assert.deepStrictEqual(qa.sourcePaths('voteseminole.gov/vote.html · 127.0.0.1:8000/join.html · https://x.org/a.js · Node.js · a@b.com'), []);
   // targets: wildcard keys and es/ twins; scenarios for the post-interaction states the checkers asked for
   const T = { '*': { budgetKB: 500 }, 'events/*.html': { scenarios: ['x'] }, 'join.html': { maxHeight: 1 } };

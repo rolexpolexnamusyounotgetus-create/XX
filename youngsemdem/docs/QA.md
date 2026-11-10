@@ -134,6 +134,7 @@ CSP is on), blocks service workers, and opens each page in fresh contexts:
 | reduced motion | `prefers-reduced-motion: reduce`: running animations and playing video must be 0 |
 | 4g | LCP, CLS (largest session window) and TBT at 170 ms RTT, 9 Mbps (the bench's `4g`) |
 | scenarios | Post-interaction states from the targets (below): a fresh 390 px load, the scenario's steps, then overflow, text size, targets, contrast (computed and pixel-sampled), English left (es pages) and source paths, in light and dark. Findings show up under B8, B31, N4 and N5 tagged `390-light@<id>`; row SC sums them up |
+| fold | Desktop first screens from the targets' `fold` list (home: 1366 x 768). A fresh load at that size, scrolled to the top: qa.js finds the hero's action row (`FOLD_SELECTORS`: `[data-qa="hero-ctas"]`, then `.hero__actions`, then the first `main .btn-row`, then a `main` paragraph holding a `.btn--primary`; the first visible match outside the header, footer and dialogs that holds a button or link). Every `.btn` in it must sit fully on screen with nothing painted over its centre, and one must be a `.btn--primary`. A miss fails B6 |
 | share | `site.url` forced to `https://qa.invalid`; every share link (`sms:`, `mailto:` with a body, WhatsApp, X, Threads, Bluesky, Facebook, Telegram), `data-share-url`, Web Share payload and copied text after clicking each `[data-share]` must not point at localhost, 127.0.0.1, the page's own origin, `file://` or youngsemdems.com. Pages with `[data-invite-landing]` also get `?ref=QATEST7&from=Kira&e=<first data-rsvp>` and must show the landing with "Kira" and capture the ref |
 
 **Contrast.** Colours are read only after they settle: before measuring, qa.js adds a constructed
@@ -159,10 +160,16 @@ shows before any scroll scores 1; one over 25% at any point is an overlay (B6 = 
 
 **Scenarios.** Targets can list post-interaction states for a page (`es/<page>` reuses them; a `*`
 in a key is a wildcard, `"events/*.html"`). Defaults: quiz.html answers the whole show-up quiz
-(`quiz-done`) and mounts the cover maker (`maker`); events.html and every `events/*.html` open the
-RSVP sheet (`rsvp`); join.html fills and sends the form (`joined`); index.html mounts the maker when
-the page has `data-qa="maker"` (`maker`, optional). Steps: `{click}`, `{fill, value}`, `{press}`,
-`{scrollTo}`, `{waitFor, timeout}`, `{wait}`, `{repeat, click, until, wait}`; any step can be
+and closes the sticker reveal that opens about 1.8 s after the result (`quiz-done`), and mounts the cover
+maker (`maker`); every result page (`quiz/*/*.html`) loads with `?from=Kira` and waits for the friend
+landing (`from`); events.html and every `events/*.html` open the RSVP sheet (`rsvp`); join.html fills and
+sends the form (`joined`); index.html mounts the maker when the page has `data-qa="maker"` and waits for
+`[data-maker], [data-maker-quick]` (`maker`, optional). Steps: `{click}`, `{fill, value}`, `{press}`,
+`{scrollTo}`, `{waitFor, timeout}` (a selector list waits for any visible match), `{wait}`,
+`{repeat, click, until, wait}`, and `{dismiss, close, appear}` for a layer that opens on its own a moment
+later: it waits up to `appear` ms (default 4000) for `dismiss` to show, then clicks `close` inside it
+(Escape when `close` is left out or not found) until it is gone, queued ones too (up to 5); nothing showing
+is fine. A scenario's `query` (`"?from=Kira"`) is added to the page URL before it loads. Any step can be
 `optional`, and an `optional` scenario is skipped quietly when its first step finds nothing:
 
 ```json
@@ -192,7 +199,7 @@ and N8 to N10:
 | N10 | a share payload built from the origin, localhost or a hard-coded domain |
 | B1 | over 350 KB (home) or 500 KB, or over 30 requests |
 | B2 | 4G LCP over 2.5 s, CLS over 0.05 or TBT over 150 ms (`--no-throttle` measures without the throttle and says so; `--no-perf` skips it and scores "review") |
-| B6 | at 390 x 664 there isn't a fully visible `.btn--primary` plus a second, different action, or an overlay covers the screen |
+| B6 | at 390 x 664 there isn't a fully visible `.btn--primary` plus a second, different action, or an overlay covers the screen; or a `fold` target (home at 1366 x 768) finds a hero action off screen or covered, or none that is primary |
 | B8 | any contrast failure, or (home) fewer than 3 saturated full-bleed blocks at 390 |
 | B30 | a `[data-demo]` element or a count ("23 going", "120 members") with no DEMO beside it; a view count; a number that changes on its own; no demo banner; a claim to avoid |
 | B31 | text under 12 px, targets under 44 px, overflow, axe serious/critical (390 and 1440, light and dark), zoom disabled, no skip link, broken `aria-invalid`; scores 1 for no status region, not exactly one h1, or no visible focus ring |
@@ -206,8 +213,9 @@ and whether it ran.
 
 **Targets.** Defaults live in `DEFAULT_TARGETS` at the top of `qa.js` (`es/<page>` uses the English
 page's entry). Home: 350 KB, mail-ballot card top at most 1,000 px and Reel top at most 1,688 px at
-390, page at most 9,500 px, 3 colour blocks, a people photo in the first 844 px. Every page: 500 KB
-and 30 requests. Override or add with `--targets file.json`, same shape:
+390, page at most 9,500 px, 3 colour blocks, a people photo in the first 844 px, and a `fold` target
+(`fold-1366`: hero actions at 1366 x 768; entries are `{ id, label, width, height, selectors? }`). Every
+page: 500 KB and 30 requests. Override or add with `--targets file.json`, same shape:
 `{"events.html": {"maxHeight": 7000, "positions": [{"id": "B9", "label": "First invite", "selectors": ["[data-qa=\"first-invite\"]"], "maxTop": 900}]}}`.
 
 **Output.** A scored table per page, then a summary; the full report (every finding with selector and
@@ -258,7 +266,10 @@ Errors exit 1; warnings ("the base", "hurry", "7pm", "receipts page"...) are for
   invite landing read with words apart, and a scenario panel; seeded defects: low contrast over a marker
   (B8), a bottom bar covering 35% after a scroll (B6), 11 px text and a 30 px button only inside an
   opened panel (B31 via a scenario), a source path written by JS (B37), and English written by JS on a
-  Spanish page (N8, with "My Voter Record" and DEMO allowed);
+  Spanish page (N8, with "My Voter Record" and DEMO allowed); `states.html` also opens a reveal dialog
+  with 11 px fine print by itself, so its `panel` scenario passes only with its `dismiss` step (a re-run
+  without the step must fail), and its `from` scenario loads with `query: "?from=Kira"`; `defect-fold.html`
+  pushes the hero actions below a 1366 x 768 screen, so its `fold` target fails B6 while `good.html` passes;
 - `voice_lint.js` flags every banned term in the EN, ES and data fixtures on its line, every rule fires
   somewhere, skip lists hold, and the brief's approved lines (2.7) pass with 0 errors and 0 warnings;
   `sources[].name` is skipped while a "Sources" label and the rest of a sources entry are linted; it

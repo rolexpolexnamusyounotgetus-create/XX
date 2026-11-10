@@ -1,12 +1,14 @@
 {
-  "good.html": { "maxHeight": 4000, "positions": [ { "id": "B9", "label": "Invite card top", "selectors": ["[data-qa=\"invite\"]"], "maxTop": 1000 } ] },
+  "good.html": {"maxHeight": 4000, "positions": [{"id": "B9", "label": "Invite card top", "selectors": ["[data-qa=\"invite\"]"], "maxTop": 1000}], "fold": [{"id": "fold-1366", "label": "Hero actions at 1366 x 768", "width": 1366, "height": 768}]},
   "states.html": {
     "scenarios": [
-      { "id": "panel", "label": "Plan panel open", "steps": [ { "click": "[data-open-panel]" }, { "waitFor": "[data-panel]" } ] },
-      { "id": "not-built", "label": "A hook the page does not have yet", "optional": true, "steps": [ { "click": "[data-not-built]" } ] }
+      {"id": "panel", "label": "Plan panel open, reveal dismissed", "steps": [{"click": "[data-open-panel]"}, {"waitFor": "[data-panel]"}, {"dismiss": "[data-reveal]", "close": "[data-reveal-close]", "appear": 3000}]},
+      {"id": "from", "label": "Opened from ?from=Kira", "query": "?from=Kira", "steps": [{"waitFor": "[data-invite-landing]:not([hidden]), [data-landing-banner]"}]},
+      {"id": "not-built", "label": "A hook the page does not have yet", "optional": true, "steps": [{"click": "[data-not-built]"}]}
     ]
   },
   "defect-scenario.html": {
-    "scenarios": [ { "id": "panel", "label": "Plan panel open", "steps": [ { "click": "[data-open-panel]" }, { "waitFor": "[data-panel]" } ] } ]
-  }
+    "scenarios": [ {"id": "panel", "label": "Plan panel open", "steps": [{"click": "[data-open-panel]"}, {"waitFor": "[data-panel]"}]} ]
+  },
+  "defect-fold.html": {"fold": [{"id": "fold-1366", "label": "Hero actions at 1366 x 768", "width": 1366, "height": 768}]}
 }

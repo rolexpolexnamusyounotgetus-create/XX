@@ -112,7 +112,7 @@
     if (chips.children.length) frag.appendChild(chips);
     var dr = drop();
     if (dropped.length && dr) {
-      dropped = dropped.map(function (x, i) { return i && /^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s|$)/.test(x) ? x.charAt(0).toLowerCase() + x.slice(1) : x; });
+      // series names are proper names ("Trivia Thursday"): keep their capitals in the list
       var list = dropped.length > 1 ? dropped.slice(0, -1).join(', ') + (L === 'es' ? ' y ' : ' and ') + dropped[dropped.length - 1] : dropped[0];
       var btn = h('button', { type: 'button', cls: 'btn btn--ink btn--sm', 'data-quiz-notify': '', text: ui.notify });
       frag.appendChild(h('div', { cls: 'x-drop', 'data-quiz-drop': '' }, [
@@ -142,7 +142,8 @@
   /** Character art marked data-src loads when it nears the screen (keeps the first view under 30 requests). */
   function lazyArt() {
     var imgs = $$('img[data-src]').filter(function (i) { return !i.getAttribute('src'); });
-    var load = function (img) { img.src = root() + img.getAttribute('data-src'); };
+    // data-src is site-root-relative, except where make_es already rewrote it page-relative ("../assets/..." on es/quiz.html)
+    var load = function (img) { var s = img.getAttribute('data-src') || ''; img.src = /^(\.\.\/|\/|[a-z][a-z0-9+.-]*:)/i.test(s) ? s : root() + s; };
     if (!('IntersectionObserver' in w)) { imgs.forEach(load); return; }
     var io = new IntersectionObserver(function (es) { es.forEach(function (x) { if (x.isIntersecting) { io.unobserve(x.target); load(x.target); } }); }, { rootMargin: '0px 0px 240px 0px' });
     imgs.forEach(function (i) { io.observe(i); });

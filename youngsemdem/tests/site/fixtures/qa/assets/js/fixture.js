@@ -38,6 +38,19 @@
   // A panel that opens on a click (qa scenarios measure it open).
   var opener = document.querySelector('[data-open-panel]');
   if (opener) opener.addEventListener('click', function () { var p = document.querySelector('[data-panel]'); if (p) p.hidden = false; opener.setAttribute('aria-expanded', 'true'); });
+  // A reveal that opens on its own a moment after the panel (like the quiz's sticker reveal), with 11 px fine
+  // print inside: a scenario that forgets to dismiss it measures the dialog and fails (states.html).
+  if (opener && opener.hasAttribute('data-reveal-after')) opener.addEventListener('click', function () {
+    setTimeout(function () {
+      var dlg = document.createElement('dialog');
+      dlg.className = 'x-reveal'; dlg.setAttribute('data-reveal', ''); dlg.setAttribute('aria-label', 'New sticker');
+      dlg.innerHTML = '<p>New sticker: the plan reader.</p><p class="x-tiny">Fine print that only shows while the reveal is open.</p><button type="button" class="btn" data-reveal-close>Nice</button>';
+      dlg.querySelector('[data-reveal-close]').addEventListener('click', function () { dlg.close(); });
+      dlg.addEventListener('close', function () { if (dlg.parentNode) dlg.parentNode.removeChild(dlg); });
+      document.body.appendChild(dlg);
+      dlg.showModal();
+    }, +opener.getAttribute('data-reveal-after') || 900);
+  });
   // Text that only JS writes, late (English left on a Spanish page; a source path).
   Array.prototype.forEach.call(document.querySelectorAll('[data-late-text]'), function (el) {
     setTimeout(function () { el.textContent = el.getAttribute('data-late-text'); }, 1200);

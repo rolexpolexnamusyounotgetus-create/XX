@@ -58,3 +58,8 @@ a { color: inherit; }
 /* scenario panel (states.html, defect-scenario.html) */
 .x-panel { margin: 16px 0; padding: 16px; background: var(--surface); border: 2px solid var(--edge); border-radius: 16px; }
 .x-panel .x-tiny-btn { width: 30px; height: 30px; min-height: 0; padding: 0; }
+/* desktop fold (defect-fold.html): a hero art block that only grows from 1024 px up */
+.x-fold-art { display: none; }
+@media (min-width: 1024px) { .x-fold-art { display: block; height: 640px; margin-bottom: 16px; border-radius: 16px; background: #4B12D6; } }
+/* a reveal dialog that opens on its own after the panel (states.html): scenarios dismiss it before measuring */
+.x-reveal { border: 2px solid var(--edge); border-radius: 16px; padding: 24px; background: var(--surface); color: var(--text); }

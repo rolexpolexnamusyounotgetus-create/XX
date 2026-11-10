@@ -2,7 +2,8 @@
 
 Read `docs/BRIEF.md` §0, §2, §3, §4.0, your §4.x page spec, §6b, §7 and §10 first, then
 `docs/research/00-lead-factcheck.md` (its rulings beat the brief). This page is the short version of how
-to build a page with the foundation (F0) and the QA tools (W8). Gatekeeper-checked Mon, Nov 9, 2026.
+to build a page with the foundation (F0) and the QA tools (W8). Gatekeeper-checked Mon, Nov 9, 2026; the round-1
+contracts (section 3) were added from the code on Tue, Nov 10, 2026.
 
 ## 1. Start a page
 
@@ -66,25 +67,50 @@ selects `data-*` hooks, never styling classes.
 
 Round 1 additions (G-CORE, Nov 10, 2026):
 
-- `YSD.ui.toast(text, {tone, priority, replace})` queues instead of replacing. `priority: 'high'` for share,
+- `YSD.ui.toast(text, {tone, timeout, priority, replace})` queues instead of replacing. `priority: 'high'` for share,
   copy and error results (interrupts; the interrupted toast comes back), `'low'` for sticker notes (waits).
   `replace: true` swaps at once (sticker facts). Toasts asked for in the same task come out most important first.
-- `YSD.ui.reveal({sticker, title, body, actions: [{label, href | onClick, primary}], ring, civic})` -> Promise:
-  the sticker unlock moment (centred, sized to the art, focus-managed, Escape or tap outside closes, static
-  under reduced motion, queued). `civic: true` falls back to a toast: nothing celebrates a civic step.
-- `YSD.ui.landing()` runs on every page opened with `?ref` or `?from`: "Kira sent you this · Join free".
+- `YSD.ui.reveal({sticker, title, body, kicker, actions: [{label, href | onClick, primary}], closeLabel, ring, civic})`
+  -> Promise `'dismiss' | 'action:<i>' | 'toast'`: the sticker unlock moment (centred, sized to the art,
+  focus-managed, Escape or tap outside closes, static under reduced motion, queued). `civic: true` falls back to a
+  toast: nothing celebrates a civic step.
+- `YSD.ui.landing({force})` runs on every page opened with `?ref` or `?from`: "Kira sent you this · Join free".
   Opt out with `<body data-landing="custom">` (quiz results that say "Kira got The Hype Captain") or by
   keeping rsvp.js's `[data-invite-landing]` box (events, home).
-- `YSD.ui.jump(el | '#id')` scrolls, opens any closed `<details>` around the target and moves focus to it (or
-  its first heading). Same-page links do this on their own; `[data-no-jump]` opts out. Collapsed sections keep
-  working anchors (a `#renew-mail-ballot` link opens its disclosure).
+- `YSD.ui.jump(el | '#id', {focus, scroll, smooth})` scrolls, opens any closed `<details>` around the target and
+  moves focus to it (or its first heading). Same-page links do this on their own; `[data-no-jump]` opts out.
+  Collapsed sections keep working anchors (a `#renew-mail-ballot` link opens its disclosure).
 - `YSD.ui.langHref()` and the header ES/EN link keep the query and the place on the page.
 - `YSD.ui.topDialog()` -> the open modal `<dialog>`.
-- Links: `YSD.share.url()` adds `from=<FirstName>` for adult members (journeys-08); `YSD.members.reset()`
-  is "Start over" (journeys-06). See `docs/infra/README.md`. Declarative hooks: `[data-share]`,
-`[data-countdown]`, `[data-sheet-open]`, `[data-rotor]`, `[data-ticker]`, `[data-sticker]`,
-`[data-cfg-href="links.x"]`, `[data-year]`. Infra calls (`YSD.share.url()`, `YSD.cal`, `YSD.cards`,
-`YSD.members`, `YSD.store`): `docs/infra/README.md`. Share links always come from `YSD.share.url()`.
+- Links: `YSD.share.url(path, params)` adds `from=<FirstName>` for adult members (journeys-08; never under 18,
+  off with `{from: false}`). `YSD.members.reset(opts)` is "Not Sam? Start over" (journeys-06): it archives the
+  member into the join log, clears their ref, stickers, streak, RSVPs and `rsvp:last`, and re-captures `?ref`;
+  `YSD.members.archived()` and `.resume(id)` are "Back to Sam" on the same device.
+
+Declarative hooks: `[data-share]`, `[data-countdown]`, `[data-sheet-open]`, `[data-rotor]`, `[data-ticker]`,
+`[data-sticker]`, `[data-cfg-href="links.x"]`, `[data-year]`. Infra calls (`YSD.share.url()`, `YSD.cal`,
+`YSD.cards`, `YSD.members`, `YSD.store`): `docs/infra/README.md`. Share links always come from `YSD.share.url()`.
+
+### Round 1 contracts from the other groups
+
+Exact signatures, options and events: `docs/infra/README.md`, "Round 1 contracts". Guard each one
+(`if (YSD.maker && YSD.maker.mountQuick)`, `YSD.cards.has('going')`) so your page works without the file.
+
+| Contract | File | One line |
+|---|---|---|
+| Colour worlds, heroes | `components.css` | `.section--<world>` + `--world`, `--world-pop`, `--world-note`; `.hero` + one shape, one edge, your own object (section 2 and the worlds table in the README) |
+| `YSD.cards.brand.mark/word/lockup/paths` | `cards.js` | the Saved Seat ticket and wordmark on a canvas, no fonts or images |
+| `YSD.brandCards.render('going', {first, eventTitle, when, place, link, colorToken}, {size: 'story'})` | `cards-brand.js` | "I'm going" story card (story or portrait); `first` stays '' for under-18s |
+| `YSD.brandCards.render('laptop', {stickers: [{id, x, y, r}], link}, {size: 'portrait'})` | `cards-brand.js` | the 404 laptop card (portrait or square) |
+| `YSD.brandCards.character(kind, resultId)` | `cards-brand.js` | `'show-up/hype-captain'` \| `'issue/rent'` \| `''`: art under `assets/img/characters/` |
+| `YSD.maker.mountQuick(el, {templates, eventId, size, onCustomize})` | `maker.js` | three ready-made 4:5 cards, one name field, one Send; `{el, state, select, canvas, render, destroy}` |
+| `YSD.membercard.rulesPanel(el, {heading, id, max, href, cta, eyebrow})` | `membercard.js` | the public "How stickers work" (15 locked stickers, voting never earns anything) |
+| `YSD.reel.mount(el, {limit, sort, showPost, postHref, moreHref, series})` | `reel.js` | the clip strip; `YSD.reel.card(clip, {variant: 'strip' \| 'feed', index, total})`, `YSD.reel.series(id?)` for the formats |
+| `YSD.rsvp.open(eventId, {opener, status})` | `rsvp.js` | opens the RSVP sheet on any page with eventcard.js, rsvp.js, rsvp.css and the events slice; null for an unknown id |
+| `rsvp:last` / `YSD.rsvp.last()` | `rsvp.js` | `{firstName, contact, contactType, eventId, ts}` saved on every I'm in (no age); join prefills from it |
+| `YSD.joinForm.mount(form, {compact, step2Inline, step2, headingLevel, titles, moreHref, source, card, cardHref, prefill, intent, onJoined, onSaved})` | `joinform.js` | the join form anywhere; an empty `form[data-join-form]` gets the three fields |
+| `YSD.joinForm.urlIntent()` | `joinform.js` | `{intent: 'host' \| 'crew' \| 'role' \| 'volunteer' \| '', crew}` from `?intent=` and `&crew=` |
+| `YSD.events.series(id)`, `.seriesList({withDates})`, `.tentpole()`, `.renderTentpole(event, {level})`, `.isTeen(event)` | `eventcard.js` | named series, the recurring tentpole night (next edition by the visitor's clock) and the "Good for under-18s" test |
 
 ## 4. Bilingual text
 
@@ -127,7 +153,11 @@ npm test                                                     # infra: see the kn
 
 Quick loop while styling: `node tools/qa.js --pages PAGE.html --widths 390 --no-axe --no-perf --no-share`.
 Then shoot it (`node tools/shoot.js --pages PAGE.html,es/PAGE.html`), look at the contact sheets at 390
-and 1440 in both themes, fix, and look again. Home also needs `data-qa="mail-ballot"` and `data-qa="reel"`.
+and 1440 in both themes, fix, and look again. Home also needs `data-qa="mail-ballot"` and `data-qa="reel"`, and
+qa checks its hero actions at 1366 x 768 (B6 fails when one is cut off or covered; it finds the row by
+`data-qa="hero-ctas"`, `.hero__actions`, then the first `main .btn-row`). Scenarios (tools/qa.js targets): home
+maker mounted (`[data-maker], [data-maker-quick]`), quiz answered with the sticker reveal dismissed, quiz result
+pages opened with `?from=Kira`, the RSVP sheet open, join's joined state.
 `npm test` also runs the shared UI suite (`tests/infra/ui.test.js`, chained from core.test.js). Brand assets:
 `node tools/make_brand.js` (and `--check`).
 

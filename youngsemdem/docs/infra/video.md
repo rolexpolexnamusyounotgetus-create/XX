@@ -55,7 +55,9 @@ Blob-touching calls return Promises; like/view/stats are synchronous. A **clip**
   status: 'ready'|'local'|'uploading'|'processing'|'failed', persisted: bool,
   upload: { provider, id, progress, loaded, total, error, message, uploadedAt } | null,
   available,      // local clips: false if the stored file is gone
-  photos, facts, burnedInText   // demo clips only (credits and sources)
+  photos, facts,  // demo clips only (credits and sources)
+  captions, captionI18n, title, series, lang, color, lqip, showUntil,   // demo clips, round 1 (see Demo content)
+  burnedInText    // older demo records only
 }
 ```
 
@@ -299,54 +301,53 @@ Before launch:
 
 ## Demo content
 
-Six DEMO clips, one per brief topic. Each has a fake creator handle (`@demo.maria`, `@demo.jordan`,
-`@demo.ava`, `@demo.luis`, `@demo.priya`, `@demo.sam`), made-up like and view counts, and a
-"DEMO CLIP" tag burned into the frame. They are flagged `demo: true` and hidden when
-`YSD_CONFIG.demo` is false.
+(Round 1, G-VIDEO, Tue Nov 10, 2026; this section was refreshed from `data/clips.js` and
+`assets/video/make_demo_clips.py` the same day.)
 
-| Clip | Burned-in claim | Source (checked Nov 9, 2026) |
-|---|---|---|
-| mail-ballot-renew | FL mail ballot requests last through the end of the next general election year, so 2025-26 requests end Dec 31, 2026; renew at voteseminole.gov or 407-585-8683 | [Fla. Stat. 101.62](https://www.flsenate.gov/Laws/Statutes/2025/101.62), [Seminole SOE vote by mail](https://voteseminole.gov/how-to-vote/vote-by-mail/) |
-| sunrail-rally | Seminole's four SunRail stops: Sanford, Lake Mary, Longwood, Altamonte Springs | [SunRail Phase 1 stations](https://corporate.sunrail.com/stations-trains/phase-1-stations/) |
-| first-time-voter | Bring a current photo ID with your signature | [Fla. Stat. 101.043](https://www.flsenate.gov/Laws/Statutes/2025/101.043) |
-| lake-monroe-canvass | none (stand-in lake photo, not Lake Monroe) | n/a |
-| precinct-captain | Official Democratic Party reps for your precinct; front-facing voter outreach | [SemDems precinct captain form](https://form.jotform.com/250016464253045) |
-| trivia-night-recap | none | n/a |
+Eight DEMO clips in five named recurring formats (`data/clips.js` `series`: Seminole in 60, First Time?, Crew Cam,
+En español, Open Mic). Each has a fake creator handle (`@demo.maria`, `@demo.jordan`, `@demo.ava`, `@demo.luis`,
+`@demo.priya`, `@demo.sam`, `@demo.vale`, `@demo.nia`) and made-up like and view counts that are never shown. They
+are flagged `demo: true` and hidden when `YSD_CONFIG.demo` is false.
 
-Photos: eight Unsplash photos, each opened on unsplash.com and marked "Free to use under the
-Unsplash License" (none are Unsplash+). URLs, photographers and descriptions are in each item's
-`photos` in `data/clips.js`. Unsplash allows modification without attribution; credits are kept
-anyway. People in the photos are not members and did not endorse anything. Before launch, replace
-these clips with real member videos (with consent), or at least drop the stock photos that show
-recognizable faces (sunrail-rally, mail-ballot-renew, trivia-night-recap).
+**Nothing is burned in.** The only word in the picture is a small "DEMO" bug (`burnedIn: ['DEMO']`), and posters
+carry no words at all. Captions are data: each clip has `captions.en` and `captions.es` (`{src, label,
+translated, cues: [[start, end, text]]}`; `lang` is the language it was made in) plus the same cues as WebVTT files,
+`assets/video/<file>.en.vtt` and `<file>.es.vtt`. `assets/js/reel.js` draws the cues as HTML caption chips over
+the video in the page language (on by default; the preference is `reel:cc`) and builds the transcript
+(`YSD.reel.transcript(clip)`) from the same cues; a translated clip's transcript lists the original too. Demo clip
+objects from `YSD.clips` carry `captions`, `captionI18n`, `title`, `series`, `lang`, `color`, `lqip` (a tiny
+blurred placeholder) and `showUntil` alongside `photos` and `facts`; `burnedInText` is only set on older records.
 
-Rebuild (needs Python with Pillow, ffmpeg, the Inter font and network access to
-images.unsplash.com):
+| Clip | Format | Claim in the captions | Source (checked Nov 10, 2026) |
+|---|---|---|---|
+| mail-ballot-renew (until Jan 1, 2027) | Seminole in 60 | Requests made before the Nov 3, 2026 general election end Dec 31, 2026; renew at voteseminole.gov or 407-585-8683 | [Fla. Stat. 101.62](https://www.flsenate.gov/Laws/Statutes/2025/101.62), [Seminole SOE vote by mail](https://voteseminole.gov/how-to-vote/vote-by-mail/) |
+| sunrail-rally | Crew Cam | Seminole's SunRail stations: Sanford, Lake Mary, Longwood, Altamonte Springs; SunRail runs Monday to Friday | [SunRail Phase 1 stations](https://corporate.sunrail.com/stations-trains/phase-1-stations/), [SunRail schedule](https://sunrail.com/help-center/support/maps-schedules/how-often-does-sunrail-run/) |
+| first-time-voter | First Time? | Bring a current, valid picture ID with a signature | [Fla. Stat. 101.043](https://www.flsenate.gov/Laws/Statutes/2025/101.043), [voter status lookup](https://registration.dos.fl.gov/CheckVoterStatus) |
+| lake-monroe-canvass | Crew Cam | none (stand-in lake photo, not Lake Monroe) | n/a |
+| precinct-captain | Seminole in 60 | Official Democratic Party reps for your precinct; front-facing voter outreach | [SemDems precinct captain form](https://form.jotform.com/250016464253045) |
+| trivia-night-recap | First Time? | none | n/a |
+| student-id-2027 (made in Spanish) | En español | HB 991 drops student IDs from the accepted photo IDs from Jan 1, 2027; a federal lawsuit filed Oct 16, 2026 challenges it | [HB 991 bill summary](https://flsenate.gov/Committees/BillSummaries/2026/html/991), [complaint](https://www.democracydocket.com/wp-content/uploads/2026/10/2026-10-16-Complaint.pdf) |
+| why-i-showed-up | Open Mic | none | n/a |
+
+Photos: nine Unsplash photos under the Unsplash License, with URLs, photographers and descriptions in each item's
+`photos` in `data/clips.js`. Unsplash allows modification without attribution; credits are kept anyway. People in
+the photos are not members and did not endorse anything. Before launch, replace these clips with real member videos
+(with consent), or at least drop the stock photos that show recognizable faces.
+
+Rebuild (needs Python 3.9+ with Pillow, ffmpeg and ffprobe, Node 22 with Playwright and Chromium, and network access
+to images.unsplash.com):
 
 ```sh
-python3 assets/video/make_demo_clips.py --cache /tmp/ysd-photos      # all clips + data/clips.js
-python3 assets/video/make_demo_clips.py --only demo-sunrail-rally     # one clip
-python3 assets/video/make_demo_clips.py --posters-only                # posters only; the MP4s are not touched
+python3 assets/video/make_demo_clips.py --cache /tmp/ysd-photos      # all clips, VTT files and data/clips.js
+python3 assets/video/make_demo_clips.py --only demo-sunrail-rally     # one clip (comma list allowed)
+python3 assets/video/make_demo_clips.py --data-only                   # no render: rewrite the VTT files and data/clips.js
 ```
 
-Edit `SPECS` in the script, not `data/clips.js`. Each clip is rendered frame by frame (Ken Burns
-with sub-pixel sampling, a tint, scrims and pop-in captions), then encoded with libx264 (CRF 27
-with `+faststart`, no audio track; the CRF goes up if a file passes 1.5 MB).
-
-**Posters** are frame 0 at 540x960: the pages show them at 469x836 CSS px at most (clips.html at
-desktop widths; 302x540 on a 390 px phone; 360x640 in the style guide), so 540 px covers every
-layout at 1x. Each is a progressive JPEG at the highest quality that fits in 60 KB; for busy photos
-(the lake, the street) only the photo layer is softened a little first, so the burned-in type stays
-sharp. `--posters-only` redraws just the posters: it never runs the video encoder, refuses a poster
-whose frame 0 no longer matches the MP4's first frame (the SPECS changed since the render; `--force`
-overrides), and merges into `data/clips.js` in place: `posterBytes`, `posterWidth`, `posterHeight`,
-`bytes` and `duration` re-read from the files, and `burnedInText` only for a spec that sets it. Every
-other field, hand edits included, stays as it is.
-
-**Transcripts.** `burnedInText` is the title plus one line per caption box, with the box's rows
-joined by a space (one sentence wrapped over two rows). A box that holds two sentences sets the
-spec's own `burnedInText` (the mail-ballot clip: "Ask again: voteseminole.gov" and "Should last
-through 2028" are two lines).
+Edit `SPECS` in the script, not `data/clips.js`. `assets/video/render_clips.js` renders every frame of a clip's shot
+list with `assets/video/stage.js` (creator formats: screen recordings with tap dots, a map with a facecam bubble,
+jump cuts and punch-ins, brand stickers popping in) and pipes it into ffmpeg; the script then encodes the MP4
+(720x1280 H.264, no audio, `+faststart`, CRF stepped up until it fits 1.5 MB), the poster (540x960 progressive JPEG,
+the best quality that fits 60 KB), the lqip and colour, the two VTT files and `data/clips.js`.
 
 ## Tests
 

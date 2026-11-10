@@ -138,6 +138,6 @@ window.YSD_DATA.pages.events = {
   'ev.kicker': { en: "YOU'RE INVITED", es: 'TE INVITAMOS' },
   'ev.series': { en: 'Part of', es: 'Parte de' },
   'ev.teen': { en: 'Good for under-18s: it ends in daylight, so no guardian form.', es: 'Ideal para menores de 18: termina de día, así que no hace falta el formulario del tutor.' },
-  'ev.tentpole': { en: "This month's big one", es: 'El grande del mes' },
+  'ev.tentpole': { en: 'The monthly big one', es: 'El grande de cada mes' }, // month-neutral: static pages can't know the visitor's month
   'ev.ogAlt': { en: 'A Young Dems invite card for {event}: {date}, {time}, {place}, with a DEMO tag', es: 'Una invitación de los Young Dems para {event}: {date}, {time}, {place}, con una etiqueta DEMO' }
 };

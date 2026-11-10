@@ -59,8 +59,8 @@
  *   version, demo, verified, timezone, note{}, labels{}, policy{}, rsvpForm{}, vibes{}, cities{},
  *   coverRules{}, skipDates[], schedule{} (+ schedule.drop: the January drop), series{} (named
  *   recurring formats: name{}, short{}?, recurs{}|null, blurb{}), tentpole{} (Seminole Sunday, the
- *   monthly big one: id, name{}, recurs{}, tagline{}, eyebrow{}), partners[] (REAL SemDems events,
- *   link out only), items[] (EVENT, sorted by start)
+ *   monthly big one: id, name{}, recurs{}, tagline{}, eyebrow{} when the next edition is this month,
+ *   eyebrowNext{} when it is later), partners[] (REAL SemDems events, link out only), items[] (EVENT, sorted by start)
  *
  * EVENT
  *   id            stable slug; use it for URLs (events.html#<id> or /events/<id>/) and as the YSD.cal id
@@ -383,7 +383,9 @@ window.YSD_DATA.events = {
       en: "One big free Sunday a month. A different park each time, the whole crew there, and daytime so everyone 14 and up can come.",
       es: "Un domingo grande y gratis cada mes. Un parque distinto cada vez, todo el grupo reunido y de día, para que pueda venir cualquier persona desde los 14 años."
     },
-    eyebrow: { en: "This month's big one", es: "El grande del mes" }
+    eyebrow: { en: "This month's big one", es: "El grande del mes" },
+    /* when the next edition is not in the current month (New York time): Nov 10 for the Dec 13 edition */
+    eyebrowNext: { en: "Next big one", es: "La próxima grande" }
   },
 
   /* REAL events hosted by the Seminole County Democrats (not by YDSC), copied from the Florida

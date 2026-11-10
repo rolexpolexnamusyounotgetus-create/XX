@@ -55,8 +55,9 @@
  *   "Not {name}? Start over" (journeys-06) asks first, then calls YSD.members.reset(): the member is archived
  *   into this browser's join log (kept, so friends credited to their code still count), their stickers, streak and
  *   RSVPs leave, and ?ref in the current URL is captured again, so a friend joining on the same phone through the
- *   member's own link is credited to that member. The idle form then offers "Back to {name}"
- *   (YSD.members.resume), which shows the squad meter moving on one device.
+ *   member's own link is credited to that member. The idle form, and the friend's done state right after they join
+ *   (as sharekit meter.demoHint promises), offer "Back to {name}" (YSD.members.resume), which shows the squad meter
+ *   moving on one device.
  *   Step two (all optional): "I want to..." intents, city chips (city colourways; the city's DEMO crew shows under
  *   them), DEMO crews (identity crews), issue chips (data/issues.js or a slice with items[].id/title/color; falls
  *   back to the core form.wants.* list), language, access needs, a guardian email for ages 14 to 17, and the SMS
@@ -524,6 +525,18 @@
       no.addEventListener('click', function () { ask.hidden = true; btn.hidden = false; btn.focus(); });
       yes.addEventListener('click', function () { ctl.reset(); });
       wrap.appendChild(btn); wrap.appendChild(ask);
+      // "Back to {name}" right after a friend joins on this device (sharekit meter.demoHint promises it here, too)
+      var arch = [];
+      try { arch = YSD.members && YSD.members.archived ? YSD.members.archived() : []; } catch (e) { arch = []; }
+      if (arch.length) {
+        var back = el('div', { class: 'cluster cluster--sm', 'data-join-switch-done': true }, [el('span', { class: 'small', text: T('done.switchLabel') })]);
+        arch.slice(0, 3).forEach(function (a) {
+          var b = el('button', { class: 'btn btn--ghost btn--sm', type: 'button', 'data-join-resume': a.id, translate: 'no', text: T('done.switch', { name: a.firstName || '?' }) });
+          b.addEventListener('click', function () { resume(a.id); });
+          back.appendChild(b);
+        });
+        wrap.appendChild(back);
+      }
       return wrap;
     }
     function paintSwitch() {

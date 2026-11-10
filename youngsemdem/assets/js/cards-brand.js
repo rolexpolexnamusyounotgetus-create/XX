@@ -44,7 +44,8 @@
  *               stickers found" from stickers.length and total.
  *   Both carry the link, the DEMO mark and the paid-for line like every other template.
  *
- * Every card, every size, prints the link (YSD.ui.prettyLink: no protocol, no utm, keeps ref), a DEMO mark
+ * Every card, every size, carries the Saved Seat ticket and "Young Dems" wordmark (YSD.cards.brand from cards.js, the
+ * header's paths; round 1, genz-brand-20) and prints the link (YSD.ui.prettyLink: no protocol, no utm, keeps ref), a DEMO mark
  * while YSD_CONFIG.demo is on, and the paid-for line (legal.cardFooter). PSA cards print "Official info:
  * voteseminole.gov" and use the required wording from docs/research/00. psa-id and serious issues
  * (data/issues.js tone 'serious') use the serious template: no stickers, no tilt. Quiz cards are posters
@@ -74,7 +75,6 @@
   var SIZES = { portrait: { width: 1080, height: 1350 }, story: { width: 1080, height: 1920 }, square: { width: 1080, height: 1080 } };
   var DISPLAY = '"Bricolage Grotesque", "Bricolage fb", "Arial Narrow", sans-serif';
   var BODY = '"Atkinson Hyperlegible Next", "Atkinson fb", system-ui, sans-serif';
-  var BUBBLE = 'M10 3 H54 a8 8 0 0 1 8 8 V35 a8 8 0 0 1 -8 8 H28 L14 54 L16 43 H10 a8 8 0 0 1 -8 -8 V11 a8 8 0 0 1 8 -8 Z';
   var RESULT_ART = { hype: 'sun', chat: 'calendar', data: 'cypress', doors: 'chicken', creator: 'camera', plusone: 'heart' };
   var ISSUE_ART = { housing: 'heart', heat: 'sun', schools: 'calendar', wages: 'celery', transit: 'train', water: 'gator', voting: 'calendar' };
   var REWIND_FROM = '2026-12-17T07:00:00-05:00', PSA_MAIL_UNTIL = '2027-01-01T00:00:00-05:00';
@@ -221,20 +221,30 @@
   }
 
   // ---------------------------------------------------------------- brand mark, DEMO tag, band, link panel
+  /** Saved Seat colours on a card world: the celery ticket (cream on a celery card, where celery would vanish) with a
+   *  night outline (cream on night), the wordmark in the world's text colour, and its marker swoosh in bubblegum on dark
+   *  worlds and violet on bright ones (celery would disappear on celery, sun and mint). cards-og.js follows the same rule. */
+  function brandColors(bg, dark) {
+    var b = String(bg || '').toLowerCase();
+    return {
+      mark: { body: b === C.celery.toLowerCase() ? C.cream : C.celery, ink: C.night, edge: b === C.night.toLowerCase() ? C.cream : C.night },
+      word: { fill: dark ? C.cream : C.night, swoosh: dark ? C.bubblegum : C.violet }
+    };
+  }
+  /** The brand lockup (genz-brand-20): the Saved Seat ticket and the lettered "Young Dems" wordmark from
+   *  YSD.cards.brand (assets/js/cards.js, the same paths as the header and the icons). Drawn in a 64-unit box at
+   *  (x, y), `scale` px per unit: the ticket fills about 70 x 50 units, the wordmark runs from x 78 to about 263. */
   function brand(ctx, env, wd, x, y, scale) {
-    var s = scale || 1;
+    var s = scale || 1, B = YSD.cards.brand, col = brandColors(wd.bg, wd.dark);
     ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
-    if (typeof w.Path2D === 'function') {
-      var p = new w.Path2D(BUBBLE);
-      ctx.fillStyle = wd.bg === C.violet ? C.night : C.violet; ctx.fill(p);
-      ctx.lineWidth = 3; ctx.strokeStyle = wd.dark ? C.cream : C.night; ctx.stroke(p);
+    if (B && typeof B.mark === 'function' && typeof w.Path2D === 'function') {
+      B.mark(ctx, -3, -10, 76, col.mark);
+      B.word(ctx, 78, 3, 38, col.word);
+    } else {
+      setFont(ctx, 34, 800, fam(env, 'display'), 'semi-condensed');
+      ctx.fillStyle = wd.fg; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('Young Dems', 0, 33);
     }
-    setFont(ctx, 21, 800, fam(env, 'display'));
-    ctx.fillStyle = C.celery; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    ctx.fillText('YD', 32, 31);
-    setFont(ctx, 34, 800, fam(env, 'display'), 'semi-condensed');
-    ctx.fillStyle = wd.fg; ctx.textAlign = 'left';
-    ctx.fillText('Young Dems', 74, 33);
     ctx.restore();
   }
   /** The brand's tangerine DEMO tag (top right). The engine adds its own small DEMO chip in the band. */

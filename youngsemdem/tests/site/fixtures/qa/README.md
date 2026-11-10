@@ -21,6 +21,12 @@ nothing here is ever written to.
   button only once the panel is open), `defect-source-path.html` (JS writes "data/civic.js" into the
   page) and `es/defect-english.html` (JS writes an English sentence into a Spanish page; "My Voter
   Record" and DEMO in a Spanish sentence must stay allowed).
+  Round 1 (Nov 10, 2026): `states.html`'s "Show the plan" also opens a reveal `<dialog>` 0.9 s later with 11 px
+  fine print inside, so its `panel` scenario passes only because a `dismiss` step closes it (the test re-runs it
+  without the step and expects a failure); its `from` scenario loads the page with `query: "?from=Kira"`.
+  `defect-fold.html` is `good.html` with a 640 px art block above the hero from 1024 px up: fine at 390 x 664,
+  but its hero actions sit below a 1366 x 768 screen, so its `fold` target fails B6 (`good.html` has the same
+  target and passes).
 - `i18n/`: a small site for `make_es.js` (strings, page copy, partials with `-es` variants).
   `index.html` and `events.html` are fully keyed; `untranslated.html` has one English sentence
   with no `data-t`, so `make_es.js --check untranslated.html` must fail.

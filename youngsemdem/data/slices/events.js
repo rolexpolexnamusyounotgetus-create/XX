@@ -176,7 +176,8 @@ window.YSD_DATA = window.YSD_DATA || {};
       "name": {"en":"Seminole Sunday","es":"Domingo en Seminole"},
       "recurs": {"en":"One big Sunday a month, 2 to 4 pm","es":"Un domingo grande al mes, de 2 a 4 p. m."},
       "tagline": {"en":"One big free Sunday a month. A different park each time, the whole crew there, and daytime so everyone 14 and up can come.","es":"Un domingo grande y gratis cada mes. Un parque distinto cada vez, todo el grupo reunido y de día, para que pueda venir cualquier persona desde los 14 años."},
-      "eyebrow": {"en":"This month's big one","es":"El grande del mes"}
+      "eyebrow": {"en":"This month's big one","es":"El grande del mes"},
+      "eyebrowNext": {"en":"Next big one","es":"La próxima grande"}
     },
     "partners": [
       {"id":"semdems-meeting-2026-11-12","real":true,"host":{"en":"Seminole County Democrats","es":"Seminole County Democrats"},"title":{"en":"SemDems monthly meeting","es":"Reunión mensual de SemDems"},"start":"2026-11-12T19:00:00-05:00","end":"2026-11-12T21:00:00-05:00","city":"altamonte-springs","detail":{"en":"Open to the public, second Thursday of every month. People start chatting at 6:30 pm, and the meeting starts at 7.","es":"Abierta al público, el segundo jueves de cada mes. La gente empieza a llegar y conversar a las 6:30 p. m., y la reunión empieza a las 7."},"url":"https://events.floridadems.org/event/12198/semdems-monthly-meeting","source":"https://events.floridadems.org/event/12198/semdems-monthly-meeting","verified":"2026-11-09","confidence":"high"},

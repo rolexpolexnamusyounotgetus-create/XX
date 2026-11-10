@@ -24,8 +24,11 @@
  *   share      site.url forced to https://qa.invalid: every share link, Web Share payload and copied
  *              text must not point at localhost, 127.0.0.1, the page's own origin or youngsemdems.com;
  *              plus the ?ref&from&e invite landing when the page has [data-invite-landing]
- *   scenarios  post-interaction states from the targets (quiz answered, RSVP sheet open, maker
- *              mounted, joined): overflow, text size, targets, contrast and English left in each
+ *   scenarios  post-interaction states from the targets (quiz answered with the sticker reveal dismissed,
+ *              a result page opened from ?from=Kira, RSVP sheet open, maker mounted, joined): overflow,
+ *              text size, targets, contrast and English left in each
+ *   folds      desktop first screens from the targets (home: 1366 x 768): the hero's actions must sit fully
+ *              on screen, uncovered (right-wing-desktop-fold); a miss fails B6
  *
  * Colours are read only after they settle: a constructed stylesheet turns transitions off and shows
  * scroll-driven reveals at their end, and qa waits for finite CSS animations before measuring.
@@ -62,6 +65,12 @@ const AI_HOSTS = [['api', 'open' + 'ai', 'com'], ['api', 'anth' + 'ropic', 'com'
  * es/<page> uses the English page's entry. '*' applies to every page. positions: element tops at
  * 390 px (selectors are tried in order; add data-qa hooks).
  *
+ * fold: desktop first screens, [{ id, label, width, height, selectors }]. Each loads the page fresh at
+ * width x height, scrolled to the top, and finds the hero's action row: the first selector (in order) whose
+ * first visible match outside the site header, the site footer and dialogs holds a visible button or link. Every .btn in
+ * that row (else every link and button) must sit fully inside the screen with nothing painted over its
+ * centre, and one of them must be a .btn--primary. Misses fail B6 (a GATE). Default selectors: FOLD_SELECTORS.
+ *
  * scenarios: post-interaction states qa measures after the normal passes (overflow, text size,
  * targets, contrast with pixel samples, English left on es/ pages, source paths). Each one loads the
  * page fresh at 390 px (or `widths`), runs its steps, then measures in every theme as
@@ -70,11 +79,18 @@ const AI_HOSTS = [['api', 'open' + 'ai', 'com'], ['api', 'anth' + 'ropic', 'com'
  *   { fill: sel, value: 'text' }           types into a field
  *   { press: 'Enter' }                     a key on the focused element
  *   { scrollTo: sel }                      scrolls the first match into view
- *   { waitFor: sel, timeout: ms }          until a match is visible (default 5000 ms)
+ *   { waitFor: sel, timeout: ms }          until any match is visible (default 5000 ms; a selector list
+ *                                          like '[data-maker], [data-maker-quick]' waits for either)
  *   { wait: ms }
  *   { repeat: n, click: sel, until: sel, wait: ms }   clicks until `until` is visible (quiz answers)
+ *   { dismiss: sel, close: sel, appear: ms }   a layer that opens on its own a moment later (the sticker
+ *                                          reveal, about 1.8 s after a quiz result): waits up to `appear`
+ *                                          ms (default 4000) for `dismiss` to show, then clicks `close`
+ *                                          inside it (Escape when `close` is left out or not found) until
+ *                                          it is gone (queued ones too, up to 5). Nothing showing is fine.
  * Any step can carry optional: true (a miss is not an error). A scenario with optional: true is
- * skipped quietly when its first step finds nothing (a hook the page may not have yet).
+ * skipped quietly when its first step finds nothing (a hook the page may not have yet). A scenario's
+ * `query` ('?from=Kira') is added to the page URL before it loads (result pages opened from a friend).
  */
 const RSVP_SHEET = { id: 'rsvp', label: 'RSVP sheet open', steps: [{ click: '[data-rsvp]:not([data-rsvp-status])' }, { waitFor: 'dialog[open]', timeout: 5000 }] };
 const DEFAULT_TARGETS = {
@@ -85,17 +101,24 @@ const DEFAULT_TARGETS = {
       { id: 'B9', label: 'Mail-ballot card top', selectors: ['[data-qa="mail-ballot"]', '.pin--deadline', '[data-pin="mail-ballot"]'], maxTop: 1000 },
       { id: 'B10', label: 'Reel top', selectors: ['[data-qa="reel"]', '[data-reel]', '.reel'], maxTop: 1688 }
     ],
-    scenarios: [{ id: 'maker', label: 'Card maker mounted', optional: true, steps: [{ scrollTo: '[data-qa="maker"]' }, { waitFor: '[data-maker]', timeout: 8000 }] }]
+    fold: [{ id: 'fold-1366', label: 'Hero actions at 1366 x 768', width: 1366, height: 768 }],
+    scenarios: [{ id: 'maker', label: 'Card maker mounted', optional: true, steps: [{ scrollTo: '[data-qa="maker"]' }, { waitFor: '[data-maker], [data-maker-quick]', timeout: 8000 }] }]
   },
   'quiz.html': {
     scenarios: [
       { id: 'quiz-done', label: 'Quiz answered: result and card', steps: [
         { click: '[data-quiz-start="show-up"]' },
         { repeat: 24, click: '[data-quiz-player] [data-opt]', until: '[data-quiz-result]:not([hidden])', wait: 450 },
-        { waitFor: '[data-quiz-result] [data-maker]', timeout: 8000, optional: true }
+        { waitFor: '[data-quiz-result] [data-maker]', timeout: 8000, optional: true },
+        // the first quiz earns a sticker: its reveal opens about 1.8 s after the result (ui.js YSD.ui.reveal)
+        { dismiss: 'dialog.unlock[open]', close: '.unlock__actions > button:last-child', appear: 4000 }
       ] },
       { id: 'maker', label: 'Cover maker mounted', steps: [{ scrollTo: '[data-quiz-cover]' }, { waitFor: '[data-quiz-cover] [data-maker]', timeout: 8000 }] }
     ]
+  },
+  // static result pages, opened from a friend's link: "Kira got The Hype Captain. Your turn" (genz-brand-13)
+  'quiz/*/*.html': {
+    scenarios: [{ id: 'from', label: 'Result page opened from ?from=Kira', query: '?from=Kira', steps: [{ waitFor: '[data-quiz-from]', timeout: 5000 }] }]
   },
   'events.html': { scenarios: [RSVP_SHEET] },
   'events/*.html': { scenarios: [RSVP_SHEET] },
@@ -106,6 +129,8 @@ const DEFAULT_TARGETS = {
     ] }]
   }
 };
+/** Where qa looks for the hero's action row on a desktop fold (tried in order; add data-qa="hero-ctas"). */
+const FOLD_SELECTORS = ['[data-qa="hero-ctas"]', '.hero__actions', 'main .btn-row', 'main p:has(> .btn--primary)'];
 /** Words qa never counts as English left on es/ pages (proper names; make_es NEUTRAL is added too). */
 const EN_ALLOW = ['My Voter Record', 'DEMO', 'Young Democrats of Seminole County', 'Young Democrats', 'Seminole County Democrats', 'Florida Young Democrats',
   'Vote.org', 'Rock the Vote', 'Pd. Pol. Adv.', 'QR', 'PDF', 'OK'];
@@ -118,7 +143,7 @@ const CHECKS = [
   ['N5', 'No text on gradients or photos'], ['N6', 'Static, portable, fast'], ['N7', 'Viral moments end offline'], ['N8', 'Spanish twin, no English left'],
   ['N9', 'Footer: paid for, DEMO, not official'], ['N10', 'Share URLs never from origin'],
   ['B1', 'First-view weight'], ['B2', 'Speed (4G LCP, CLS, TBT)'], ['B3', 'Outside hosts and trackers'], ['B4', 'Fonts'], ['B5', 'Who and what in 8 words'],
-  ['B6', 'First screen at 390 x 664'], ['B7', 'People photo in first 844 px'], ['B8', 'Colour blocks and contrast'], ['B9', 'Lead civic action position'],
+  ['B6', 'First screen at 390 x 664 (+ desktop folds)'], ['B7', 'People photo in first 844 px'], ['B8', 'Colour blocks and contrast'], ['B9', 'Lead civic action position'],
   ['B10', 'Video band position'], ['B11', 'Finder in nav'], ['B12', 'Self-sort routes'], ['B13', 'Collectible'], ['B14', 'Weekly cadence'], ['B15', 'Toy that teaches'],
   ['B16', 'Share layer'], ['B17', 'Event pages'], ['B18', 'Next drop'], ['B19', 'Community wall'], ['B20', 'Closed loop (?ref landing)'], ['B21', 'Video basics'],
   ['B22', 'Clip action'], ['B23', 'Post path'], ['B24', 'Microcopy'], ['B25', 'Spanish parity'], ['B26', 'Voice lint'], ['B27', 'Press and reduced motion'],
@@ -1026,6 +1051,53 @@ async function widthPass(browser, url, w, opts, axe, R) {
   await ctx.close();
 }
 
+/** Desktop folds (targets `fold`): the hero's action row fully on screen at e.g. 1366 x 768 (right-wing-desktop-fold). */
+async function foldPass(browser, url, fold, opts, R) {
+  const W = fold.width || 1366, H = fold.height || 768;
+  const ctx = await newCtx(browser, W, opts, { viewport: { width: W, height: H } });
+  try {
+    await ctx.addInitScript({ content: '(' + qaInit.toString() + ')({})' });
+    await routeOutside(ctx, new URL(url), opts.allowHosts, { allowed: new Set(), blocked: new Set() });
+    const page = await ctx.newPage();
+    await goto(page, url, opts.timeout);
+    await sleep(400);
+    await settle(page);
+    await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }));
+    await sleep(250);
+    const r = await page.evaluate(qaFold, fold.selectors || FOLD_SELECTORS);
+    R.folds.push(Object.assign({ id: fold.id || 'fold-' + W, label: fold.label || 'Hero actions at ' + W + ' x ' + H, width: W, height: H }, r));
+  } finally { await ctx.close().catch(() => {}); }
+}
+
+/** The hero's action row at the current viewport: each action's box, whether it is fully on screen and uncovered. */
+function qaFold(sels) {
+  const W = document.documentElement.clientWidth || window.innerWidth, H = window.innerHeight;
+  const seen = (el) => { for (let n = el; n && n.nodeType === 1; n = n.parentElement) { const s = getComputedStyle(n); if (s.display === 'none' || parseFloat(s.opacity) < 0.05) return false; if (n === el && s.visibility !== 'visible') return false; } return true; };
+  const vis = (el) => { if (!seen(el)) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+  const topAt = (x, y) => { for (const n of document.elementsFromPoint(x, y)) if (seen(n)) return n; return null; };
+  const label = (el) => (el.getAttribute('aria-label') || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  const name = (el) => el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/)[0] : '');
+  const acts = (box) => { const b = Array.from(box.querySelectorAll('.btn')).filter(vis); return b.length ? b : Array.from(box.querySelectorAll('a[href], button')).filter(vis); };
+  let box = null, used = null;
+  for (const s of sels) {
+    let list = [];
+    try { list = Array.from(document.querySelectorAll(s)); } catch (e) { list = []; }
+    box = list.find((el) => vis(el) && !el.closest('.site-header, body > header, [role="banner"], .site-footer, body > footer, dialog') && acts(el).length) || null;
+    if (box) { used = s; break; }
+  }
+  if (!box) return { sel: null, tried: sels, actions: [] };
+  return {
+    sel: used,
+    actions: acts(box).map((el) => {
+      const r = el.getBoundingClientRect();
+      const inside = r.left >= -0.5 && r.top >= -0.5 && r.right <= W + 0.5 && r.bottom <= H + 0.5;
+      const hit = inside ? topAt(r.left + r.width / 2, r.top + r.height / 2) : null;
+      const covered = inside && !(hit && (hit === el || el.contains(hit) || hit.contains(el)));
+      return { text: label(el), primary: el.matches('.btn--primary'), top: Math.round(r.top), bottom: Math.round(r.bottom), ok: inside && !covered, covered: covered ? (hit ? name(hit) : 'nothing') : null };
+    })
+  };
+}
+
 async function motionPass(browser, url, opts, R) {
   const ctx = await newCtx(browser, 390, opts, { reducedMotion: 'reduce' });
   await routeOutside(ctx, new URL(url), opts.allowHosts, { allowed: new Set(), blocked: new Set() });
@@ -1135,6 +1207,15 @@ function qaLanding() {
   return { visible: !el.hidden && s.display !== 'none' && el.getBoundingClientRect().height > 0, text: txt.replace(/\s+/g, ' ').replace(/\s+([,.;:!?])/g, '$1').trim().slice(0, 160) };
 }
 
+/** Resolves once any match of `sel` (a selector list works) is visible; rejects after `timeout` ms. */
+async function waitVisible(page, sel, timeout) {
+  try { await page.locator(sel).filter({ visible: true }).first().waitFor({ state: 'visible', timeout }); }
+  catch (e) {
+    if (!/filter|visible/i.test(String(e && e.message)) || /Timeout/i.test(String(e && e.message))) throw e;
+    await page.waitForSelector(sel, { state: 'visible', timeout });   // Playwright before 1.51: first match only
+  }
+}
+
 /** Runs one scenario step list on a page. Throws with the step that failed. */
 async function runSteps(page, steps, opts) {
   const visibleIndex = async (sel) => { const loc = page.locator(sel); const n = await loc.count(); for (let i = 0; i < n; i++) if (await loc.nth(i).isVisible().catch(() => false)) return loc.nth(i); return null; };
@@ -1166,7 +1247,18 @@ async function runSteps(page, steps, opts) {
         const ok = await page.evaluate((sel) => { const el = document.querySelector(sel); if (!el) return false; el.scrollIntoView({ block: 'center', behavior: 'instant' }); return true; }, st.scrollTo);
         if (!ok) throw new Error('no element matches ' + st.scrollTo);
       } else if (st.waitFor) {
-        await page.waitForSelector(st.waitFor, { state: 'visible', timeout: st.timeout || 5000 });
+        await waitVisible(page, st.waitFor, st.timeout || 5000);
+      } else if (st.dismiss) {
+        const shown = await waitVisible(page, st.dismiss, st.appear || 4000).then(() => true, () => false);
+        for (let k = 0; shown && k < 5; k++) {
+          const layer = await visibleIndex(st.dismiss);
+          if (!layer) break;
+          const btn = st.close ? layer.locator(st.close).first() : null;
+          if (btn && await btn.isVisible().catch(() => false)) await btn.click({ timeout: 3000 }).catch(() => page.keyboard.press('Escape'));
+          else await page.keyboard.press('Escape');
+          await sleep(350);   // a queued one opens about 120 ms after the last one closes
+        }
+        if (shown && await visibleIndex(st.dismiss)) throw new Error(st.dismiss + ' is still open after 5 tries');
       }
       if (st.wait && !st.repeat) await sleep(st.wait);
       else if (!st.wait) await sleep(120);
@@ -1191,7 +1283,7 @@ async function scenarioPass(browser, url, sc, opts, R) {
       const page = await ctx.newPage();
       const errs = [];
       page.on('pageerror', (e) => errs.push(firstLine(e)));
-      await goto(page, url, opts.timeout);
+      await goto(page, sc.query ? url.replace(/[?#].*$/, '') + (sc.query.charAt(0) === '?' ? '' : '?') + sc.query : url, opts.timeout);
       await sleep(400);
       try { await runSteps(page, sc.steps || [], opts); } catch (e) {
         if (sc.optional && e.step === 0) { rec.status = 'skipped'; rec.note = firstLine(e); return; }
@@ -1488,7 +1580,21 @@ function score(pageRel, R, opts, rules) {
   const b6soft = barsFirst.filter((b) => b.cover < 25).map((b) => ({ text: 'bottom bar ' + b.sel + ' shows before any scroll (' + b.cover + '% of the screen); keep it hidden until the visitor scrolls' }));
   const barOk = barsLater.filter((b) => b.cover < 25 && !barsFirst.some((x) => x.sel === b.sel));
   const barNote = barOk.length ? ', bottom bar hidden until scroll (' + barOk.map((b) => b.cover + '%').join(', ') + ' of the screen after)' : '';
-  set('B6', !b6d.length ? (b6soft.length ? 1 : 2) : (fsr.primary && fsr.secondaryHalf && !overl.length) ? 1 : 0, (fsr.primary ? '"' + fsr.primary + '"' + (fsr.secondary ? ' + "' + fsr.secondary + '"' : '') + (overl.length ? ', overlay' : '') : 'no primary action on the first screen') + barNote, b6d.concat(b6soft));
+  // desktop folds (targets fold): every hero action fully on screen and uncovered, one of them primary; a miss is a 0
+  const foldBad = [], foldOk = [];
+  for (const f of (R.folds || [])) {
+    const at = f.width + 'x' + f.height, size = f.width + ' x ' + f.height;
+    const miss = [];
+    if (!f.sel) miss.push({ at, text: 'no hero action row found at ' + size + ' (tried ' + (f.tried || []).join(', ') + ')' });
+    else {
+      for (const a of f.actions) if (!a.ok) miss.push({ at, sel: f.sel, text: '"' + a.text + '" ' + (a.covered ? 'is covered by ' + a.covered : 'is cut off by the fold (bottom ' + a.bottom + ' px, screen ' + f.height + ' px)') + ' at ' + size });
+      if (!f.actions.some((a) => a.primary && a.ok) && !miss.length) miss.push({ at, sel: f.sel, text: 'no .btn--primary in the hero action row at ' + size });
+    }
+    if (miss.length) foldBad.push(...miss); else foldOk.push(size);
+  }
+  b6d.push(...foldBad);
+  const foldNote = foldOk.length ? ', hero actions on screen at ' + foldOk.join(' and ') : '';
+  set('B6', foldBad.length ? 0 : !b6d.length ? (b6soft.length ? 1 : 2) : (fsr.primary && fsr.secondaryHalf && !overl.length) ? 1 : 0, (fsr.primary ? '"' + fsr.primary + '"' + (fsr.secondary ? ' + "' + fsr.secondary + '"' : '') + (overl.length ? ', overlay' : '') : 'no primary action on the first screen') + barNote + foldNote, b6d.concat(b6soft));
 
   // ---- B7 people photo (home)
   if (tg.peopleWithin) {
@@ -1677,11 +1783,12 @@ function parseArgs(argv) {
 
 async function checkPage(browser, base, pageRel, opts, axe, rules) {
   const url = base + encodeURI(pageRel);
-  const R = { page: pageRel, url, v: {}, axe: {}, errors: [], scenarios: [], stateText: [] };
+  const R = { page: pageRel, url, v: {}, axe: {}, errors: [], scenarios: [], stateText: [], folds: [] };
   R.rawHtml = fs.readFileSync(path.join(opts.root, pageRel), 'utf8');
   const started = Date.now();
   try { await mainPass(browser, url, pageRel, opts, axe, R); } catch (e) { R.errors.push('main pass: ' + firstLine(e)); }
   for (const w of opts.widths.filter((x) => x !== 390)) { try { await widthPass(browser, url, w, opts, axe, R); } catch (e) { R.errors.push(w + ' pass: ' + firstLine(e)); } }
+  for (const f of (targetsFor(opts.targets, pageRel).fold || [])) { try { await foldPass(browser, url, f, opts, R); } catch (e) { R.errors.push((f.id || 'fold') + ' pass: ' + firstLine(e)); } }
   try { await motionPass(browser, url, opts, R); } catch (e) { R.errors.push('reduced-motion pass: ' + firstLine(e)); }
   if (opts.perf) { try { await perfPass(browser, url, opts, R); } catch (e) { R.errors.push('4g pass: ' + firstLine(e)); } }
   if (opts.share) { try { await sharePass(browser, url, opts, R); } catch (e) { R.errors.push('share pass: ' + firstLine(e)); } }
@@ -1700,7 +1807,7 @@ async function checkPage(browser, base, pageRel, opts, axe, rules) {
   R.possible = measured.length * 2;
   R.reviewCount = rows.filter((r) => /^B/.test(r.id) && r.score === 'review').length;
   delete R.rawHtml; delete R.late; delete R.stateText;
-  if (R.dom) R.dom = { lang: R.dom.lang, bands: R.dom.bands, photos: R.dom.photos, firstScreen: R.firstScreen };
+  if (R.dom) R.dom = { lang: R.dom.lang, bands: R.dom.bands, photos: R.dom.photos, firstScreen: R.firstScreen, folds: R.folds };
   return R;
 }
 
@@ -1807,4 +1914,4 @@ async function main(argv) {
 
 if (require.main === module) main(process.argv.slice(2)).then((c) => { process.exitCode = c; });
 
-module.exports = { run, main, parseArgs, score, englishLeft, sourcePaths, targetsFor, ratio, lum, walkPages, DEFAULT_TARGETS, EN_ALLOW, GATES, CHECKS, qaCollect, qaFirstScreen, QA_SITE, SETTLE_CSS };
+module.exports = { run, main, parseArgs, score, englishLeft, sourcePaths, targetsFor, ratio, lum, walkPages, runSteps, DEFAULT_TARGETS, FOLD_SELECTORS, EN_ALLOW, GATES, CHECKS, qaCollect, qaFirstScreen, qaFold, QA_SITE, SETTLE_CSS };

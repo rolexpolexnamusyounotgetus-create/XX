@@ -28,7 +28,9 @@
  *   seriesList({ withDates })   -> every series that has a visible upcoming event (or every one): [{ ...series,
  *                                  next: event | null, dates: [event], locked: bool (only drop events left) }]
  *   tentpole()                  -> { id, name, recurs, tagline, eyebrow, next: event | null, editions: [event] }
- *                                  (next = the next visible edition by the visitor's clock; null when none)
+ *                                  (next = the next visible edition by the visitor's clock; null when none;
+ *                                  eyebrow is month-aware: tentpole.eyebrow "This month's big one" when next falls in
+ *                                  the current New York month, else tentpole.eyebrowNext "Next big one")
  *   renderTentpole(event, { level, lang, eager }) -> <article class="tentpole"> the poster-grade band (CSS in
  *                                  rsvp.css): duotone type lock-up, date ticket, DEMO seats bar, countdown, I'm in
  *   isTeen(event)               -> true when under-18s need no guardian form (ages.guardian false): "Good for
@@ -422,7 +424,26 @@
       .sort(function (a, b) { return Date.parse(a.start) - Date.parse(b.start); });
     var open = drop.isOpen();
     var vis = eds.filter(function (e) { return open || !drop.isDropEvent(e); });
-    return { id: T.id, name: tx(T.name, l), recurs: tx(T.recurs, l), tagline: tx(T.tagline, l), eyebrow: tx(T.eyebrow, l), next: vis[0] || null, editions: eds, demo: T.demo !== false };
+    var nx = vis[0] || null;
+    return { id: T.id, name: tx(T.name, l), recurs: tx(T.recurs, l), tagline: tx(T.tagline, l), eyebrow: tentEyebrow(nx, l), next: nx, editions: eds, demo: T.demo !== false };
+  }
+  /** "2026-12" for an ISO date (or now), in New York time: the chapter's calendar month. */
+  function nyMonth(iso) {
+    var dt = iso ? new Date(iso) : new Date();
+    if (isNaN(dt)) return '';
+    try {
+      var p = {};
+      new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit' }).formatToParts(dt).forEach(function (x) { p[x.type] = x.value; });
+      return p.year + '-' + p.month;
+    } catch (x) { return dt.getFullYear() + '-' + ('0' + (dt.getMonth() + 1)).slice(-2); }
+  }
+  /** The tentpole eyebrow, month-aware: "This month's big one" only when the edition falls in the current month
+      (New York time); otherwise "Next big one" (Nov 10 for a Dec 13 edition). */
+  function tentEyebrow(e, l) {
+    var T = data().tentpole || {};
+    var now = e && e.start && nyMonth(e.start) === nyMonth();
+    var o = now ? T.eyebrow : (T.eyebrowNext || { en: 'Next big one', es: 'La próxima grande' });
+    return tx(o, l) || tx(T.eyebrow, l);
   }
 
   /** Two-tone photo map (genz-brand-16): shadows go to --night, mid-tones to the event colour, highlights to a pale
@@ -484,7 +505,7 @@
 
     var body = el('div', 'tentpole__body');
     var eb = el('p', 'tentpole__eyebrow');
-    eb.appendChild(el('span', null, T ? T.eyebrow : ''));
+    eb.appendChild(el('span', null, T ? tentEyebrow(e, l) : ''));
     if (e.demo) { eb.appendChild(d.createTextNode(' ')); eb.appendChild(el('span', 'tag tag--demo', label('demoEvent', null, l))); }
     body.appendChild(eb);
     var h = el('h' + Math.min(6, Math.max(2, opts.level || 3)), 'tentpole__title');

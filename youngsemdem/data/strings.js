@@ -293,6 +293,7 @@ window.YSD_DATA.strings = {
     "nav.quiz": { en: "Quiz", es: "Quiz" },
     "nav.feed": { en: "Clips", es: "Clips" },
     "nav.post": { en: "Post a clip", es: "Sube un clip" },
+    "nav.host": { en: "Host a night", es: "Organiza una noche", note: "Footer link to host.html (the host kit)." },
     "nav.newsletter": { en: "Newsletter", es: "Boletín" },
     "nav.about": { en: "About", es: "Quiénes somos" },
     "nav.join": { en: "Join", es: "Únete" },
