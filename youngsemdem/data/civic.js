@@ -441,7 +441,7 @@ window.YSD_DATA.civic = {
     },
     schoolPrograms: {
       key: "links.vote.schoolPrograms",
-      url: "https://voteseminole.gov/community-news-and-the-office/school-programs/",
+      url: "https://voteseminole.gov/community-news-and-the-office/school-programs-community-engagement/",
       label: { en: "School programs (Seminole elections office)", es: "Programas escolares (oficina electoral de Seminole, en inglés)" },
       note: "Says the office registers and pre-registers high school students 'starting at age 16' and 'can present to your class or set up a registration station at your school' (checked 2026-11-10). Not in config yet: lead request to add links.vote.schoolPrograms."
     }
@@ -2864,6 +2864,6 @@ window.YSD_DATA.civic = {
     "https://www.flsenate.gov/Laws/Statutes/2026/102.012": { en: "Fla. Stat. 102.012(2) (2026), who can serve on an election board (includes pre-registered voters)", es: "Estatuto de Florida 102.012(2) (2026), quién puede trabajar en una mesa electoral (incluye a los preinscritos)", publisher: "The Florida Senate" },
     "https://voteseminole.gov/wp-content/uploads/2026/07/Seminole-County-2026-Voter-Guide-Update-1.pdf": { en: "Seminole County 2026 Voter Guide (PDF), p. 26: Become an Election Worker", es: "Guía del votante 2026 del Condado de Seminole (PDF), p. 26: trabajar en las elecciones", publisher: "Seminole County Supervisor of Elections" },
     "https://voteseminole.gov/elections/become-an-election-worker/": { en: "Become an election worker", es: "Trabajar en las elecciones (en inglés)", publisher: "Seminole County Supervisor of Elections" },
-    "https://voteseminole.gov/community-news-and-the-office/school-programs/": { en: "Community engagement and school programs", es: "Programas escolares y comunitarios (en inglés)", publisher: "Seminole County Supervisor of Elections" }
+    "https://voteseminole.gov/community-news-and-the-office/school-programs-community-engagement/": { en: "Community engagement and school programs", es: "Programas escolares y comunitarios (en inglés)", publisher: "Seminole County Supervisor of Elections" }
   }
 };
