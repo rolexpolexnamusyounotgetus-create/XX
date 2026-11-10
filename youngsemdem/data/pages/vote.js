@@ -154,7 +154,8 @@ window.YSD_DATA.pages.vote = {
   'step.problems-at-polls.cta': { en: 'Know your rights', es: 'Conoce tus derechos' },
 
   // private checklist (the "Done" ticks on each step; BRIEF 4.4 (6): no points, stickers or badges)
-  'check.done': { en: 'Done (only you see this)', es: 'Hecho (solo tú lo ves)' },
+  'check.done': { en: 'Done', es: 'Hecho' },
+  'check.doneHidden': { en: ' (only you see this)', es: ' (solo tú lo ves)' },
   'check.count': { en: 'Your private checklist: {n} of {total} done. Only you see it, and there are no points.', es: 'Tu lista privada: {n} de {total} hechos. Solo tú la ves y no hay puntos.' },
   'check.clear': { en: 'Clear my checklist', es: 'Borrar mi lista' },
   'check.cleared': { en: 'Checklist cleared on this device.', es: 'Lista borrada en este dispositivo.' },
@@ -178,6 +179,7 @@ window.YSD_DATA.pages.vote = {
   'teen.school.t': { en: 'Bring it to your school', es: 'Llévalo a tu escuela' },
   'teen.school.p': { en: 'The elections office will present to a class or set up a registration table at a high school, starting with students who are 16. Ask a teacher to book it.', es: 'La oficina electoral da charlas en clase o pone una mesa de inscripción en las escuelas secundarias, a partir de los 16 años. Pídele a un maestro que la reserve.' },
   'teen.school.cta': { en: 'School programs (official)', es: 'Programas escolares (oficial)' },
+  'teen.help.k': { en: 'WITH US', es: 'CON NOSOTROS' },
   'teen.help.t': { en: 'Help with us, safely', es: 'Ayuda con nosotros, de forma segura' },
   'teen.help.1': { en: 'Join free at 14. Your invite link uses a random code, never your name.', es: 'Únete gratis desde los 14. Tu enlace de invitación usa un código al azar, nunca tu nombre.' },
   'teen.help.2': { en: 'Come to daytime events. Anything off-site, after dark or at a rally needs a parent or guardian’s OK.', es: 'Ven a los eventos de día. Todo lo que sea fuera del local, de noche o en una marcha necesita el permiso de tu madre, padre o tutor.' },
@@ -269,8 +271,7 @@ window.YSD_DATA.pages.vote = {
   'share.card': { en: 'Make a card', es: 'Hacer una tarjeta' },
   'psa.nojs': { en: 'The cards need JavaScript. You can still share this page.', es: 'Las tarjetas necesitan JavaScript. Igual puedes compartir esta página.' },
 
-  // 11. need a human
-  'help.eyebrow': { en: 'NEED A HUMAN?', es: '¿NECESITAS A UNA PERSONA?' },
+  // 11. need a human (now the end of the FAQ section)
   'help.title': { en: 'Call someone whose whole job is this', es: 'Llama a quien se dedica a esto' },
   'help.soe': { en: 'Seminole County Supervisor of Elections', es: 'Supervisor de Elecciones del Condado de Seminole' },
   'help.disclaimer': { en: 'We’re the Young Democrats of Seminole County, a volunteer group, not the elections office. We checked every date and rule on this page against official sources on Nov 9, 2026. Before you act on one, confirm it at voteseminole.gov or call 407-585-8683.', es: 'Somos los Young Democrats of Seminole County, un grupo de voluntarios, no la oficina electoral. Revisamos cada fecha y regla de esta página en fuentes oficiales el 9 de noviembre de 2026. Antes de actuar, confírmala en voteseminole.gov o llama al 407-585-8683.' },

@@ -229,7 +229,7 @@
             <p class="x-rule__copy" data-id-copy data-t="vote:id.copy">Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it’s being challenged in court). Bring a driver’s license, state ID, or passport, and check voteseminole.gov before you go.</p>
             <div class="btn-row">
               <a class="btn btn--ink" href="https://voteseminole.gov/" data-cfg-href="links.vote.countyElections" data-official rel="noopener" data-t="vote:id.cta1">Check voteseminole.gov</a>
-              <a class="btn btn--ghost" href="https://voteseminole.gov/voters/are-you-election-ready/" data-cfg-href="links.vote.electionReady" data-official rel="noopener" data-t="vote:id.cta2">What ID to bring (official)</a>
+              <a class="link x-rule__link" href="https://voteseminole.gov/voters/are-you-election-ready/" data-cfg-href="links.vote.electionReady" data-official rel="noopener" data-t="vote:id.cta2">What ID to bring (official)</a>
             </div>
             <details class="x-fold x-fold--calm">
               <summary><span data-t="vote:rules.more">The details and sources</span></summary>
@@ -328,22 +328,37 @@
             <p data-t="vote:teen.school.p">The elections office will present to a class or set up a registration table at a high school, starting with students who are 16. Ask a teacher to book it.</p>
             <p class="x-tcard__act"><a class="link" href="https://voteseminole.gov/community-news-and-the-office/school-programs/" data-civic-link="schoolPrograms" data-official rel="noopener" data-t="vote:teen.school.cta">School programs (official)</a></p>
           </li>
+          <li class="x-tcard x-tcard--help">
+            <p class="x-tcard__k" data-t="vote:teen.help.k">WITH US</p>
+            <h3 class="x-tcard__t" data-t="vote:teen.help.t">Help with us, safely</h3>
+            <ul class="x-ticks x-ticks--teen">
+              <li data-t="vote:teen.help.1">Join free at 14. Your invite link uses a random code, never your name.</li>
+              <li data-t="vote:teen.help.2">Come to daytime events. Anything off-site, after dark or at a rally needs a parent or guardian’s OK.</li>
+              <li data-t="vote:teen.help.3">No club texts until you’re 18, and no one-on-one messages from adult organizers, ever.</li>
+              <li data-t="vote:teen.help.4">Help one person who can vote make their plan.</li>
+            </ul>
+          </li>
         </ol>
-        <div class="x-teen__help">
-          <h3 class="x-teen__h" data-t="vote:teen.help.t">Help with us, safely</h3>
-          <ul class="x-ticks x-ticks--teen">
-            <li data-t="vote:teen.help.1">Join free at 14. Your invite link uses a random code, never your name.</li>
-            <li data-t="vote:teen.help.2">Come to daytime events. Anything off-site, after dark or at a rally needs a parent or guardian’s OK.</li>
-            <li data-t="vote:teen.help.3">No club texts until you’re 18, and no one-on-one messages from adult organizers, ever.</li>
-            <li data-t="vote:teen.help.4">Help one person who can vote make their plan.</li>
-          </ul>
+        <div class="x-teen__foot">
           <div class="btn-row">
             <a class="btn btn--primary" href="join.html" data-t="cta.join">Join free</a>
             <a class="btn btn--ghost" href="#plan" data-t="vote:teen.help.plan">Make a plan together</a>
           </div>
           <p class="x-teen__parents"><a class="link" href="teen-safety.html" data-t="vote:teen.parents">For parents: our teen safety rules</a></p>
           <p class="x-teen__nothing" data-t="vote:teen.nothing">No prizes, points or stickers for pre-registering or voting, ever. Those steps are yours.</p>
-          <p class="x-fine"><span data-t="vote:why.src">Sources:</span> <a href="https://www.flsenate.gov/Laws/Statutes/2026/97.041" rel="noopener" data-t="vote:teen.src.law">F.S. 97.041(1)(b) (pre-register at 16)</a> · <a href="https://voteseminole.gov/voters/register-to-vote/" data-civic-link="countyRegister" rel="noopener" data-t="vote:teen.src.reg">Seminole: register to vote</a> · <a href="https://www.flsenate.gov/Laws/Statutes/2026/102.012" rel="noopener" data-t="vote:teen.src.poll">F.S. 102.012(2) (poll workers)</a> · <a href="https://voteseminole.gov/wp-content/uploads/2026/07/Seminole-County-2026-Voter-Guide-Update-1.pdf" rel="noopener" data-t="vote:teen.src.guide">Seminole 2026 Voter Guide, p. 26 (PDF)</a> · <a href="https://voteseminole.gov/community-news-and-the-office/school-programs/" rel="noopener" data-t="vote:teen.src.school">Seminole: school programs</a> · <span data-t="vote:teen.checked">Checked Nov 10, 2026</span></p>
+          <details class="x-fold">
+            <summary><span data-t="vote:why.src">Sources:</span></summary>
+            <div class="x-fold__body">
+              <ul class="x-mini x-fine">
+                <li><a href="https://www.flsenate.gov/Laws/Statutes/2026/97.041" rel="noopener" data-t="vote:teen.src.law">F.S. 97.041(1)(b) (pre-register at 16)</a></li>
+                <li><a href="https://voteseminole.gov/voters/register-to-vote/" data-civic-link="countyRegister" rel="noopener" data-t="vote:teen.src.reg">Seminole: register to vote</a></li>
+                <li><a href="https://www.flsenate.gov/Laws/Statutes/2026/102.012" rel="noopener" data-t="vote:teen.src.poll">F.S. 102.012(2) (poll workers)</a></li>
+                <li><a href="https://voteseminole.gov/wp-content/uploads/2026/07/Seminole-County-2026-Voter-Guide-Update-1.pdf" rel="noopener" data-t="vote:teen.src.guide">Seminole 2026 Voter Guide, p. 26 (PDF)</a></li>
+                <li><a href="https://voteseminole.gov/community-news-and-the-office/school-programs/" rel="noopener" data-t="vote:teen.src.school">Seminole: school programs</a></li>
+              </ul>
+              <p class="x-fine" data-t="vote:teen.checked">Checked Nov 10, 2026</p>
+            </div>
+          </details>
         </div>
       </div>
     </section>
@@ -389,21 +404,15 @@
         <div class="x-faq__tags u-js-only" role="group" aria-label="Show questions about" data-t-aria-label="vote:faq.filter" data-faq-tags></div>
         <div class="x-faq__list" data-faq></div>
         <p class="u-no-js"><span data-t="vote:faq.nojs">The questions show up here with JavaScript on. The elections office has its own:</span> <a class="link" href="https://voteseminole.gov/faqs/" data-civic-link="soeFaq" data-official rel="noopener" data-t="vote:faq.soe">Elections office FAQ</a></p>
-      </div>
-    </section>
-
-    <section class="section x-help" id="help" aria-labelledby="help-title">
-      <div class="wrap x-help__grid">
-        <div class="section-head">
-          <p class="eyebrow" data-t="vote:help.eyebrow">NEED A HUMAN?</p>
-          <h2 id="help-title" data-t="vote:help.title">Call someone whose whole job is this</h2>
-        </div>
-        <ul class="x-lines" data-hotlines>
-          <li class="x-line"><p class="x-line__name" data-t="vote:help.soe">Seminole County Supervisor of Elections</p><p><a class="btn btn--ink btn--sm" href="tel:+14075858683" data-soe-tel translate="no">407-585-8683</a></p></li>
-        </ul>
-        <div class="notice notice--info x-help__note">
-          <p data-t="vote:help.disclaimer">We’re the Young Democrats of Seminole County, a volunteer group, not the elections office. We checked every date and rule on this page against official sources on Nov 9, 2026. Before you act on one, confirm it at voteseminole.gov or call 407-585-8683.</p>
-          <p class="x-fine" data-t="vote:help.recheck">Next full recheck: by Tue, Dec 15, 2026.</p>
+        <div class="x-help" id="help">
+          <h3 class="x-help__title" id="help-title" data-t="vote:help.title">Call someone whose whole job is this</h3>
+          <ul class="x-lines" data-hotlines>
+            <li class="x-line"><p class="x-line__name" data-t="vote:help.soe">Seminole County Supervisor of Elections</p><p><a class="btn btn--ink btn--sm" href="tel:+14075858683" data-soe-tel translate="no">407-585-8683</a></p></li>
+          </ul>
+          <div class="notice notice--info x-help__note">
+            <p data-t="vote:help.disclaimer">We’re the Young Democrats of Seminole County, a volunteer group, not the elections office. We checked every date and rule on this page against official sources on Nov 9, 2026. Before you act on one, confirm it at voteseminole.gov or call 407-585-8683.</p>
+            <p class="x-fine" data-t="vote:help.recheck">Next full recheck: by Tue, Dec 15, 2026.</p>
+          </div>
         </div>
       </div>
     </section>

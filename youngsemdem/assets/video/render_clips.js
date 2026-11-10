@@ -66,6 +66,19 @@ function encodeMaster(file, fps) {
     await page.addScriptTag({ path: path.join(HERE, 'stage.js') });
     const duration = await page.evaluate(([c, a]) => STAGE.build(c, a), [clip, assets]);
     await page.evaluate(() => Promise.all([document.fonts.ready].concat(Array.from(document.images).map((i) => i.decode().catch(() => null)))));
+    if (job.preview) {
+      // preview mode (make_demo_clips.py --preview): a few stills per clip, no encoding
+      const shots = [];
+      for (const t of job.preview.length ? job.preview : [0.5]) {
+        if (t >= duration) continue;
+        await page.evaluate((x) => STAGE.render(x), t);
+        const f = path.join(job.tmp, clip.file + '-' + t.toFixed(2) + '.png');
+        await page.screenshot({ path: f, type: 'png' });
+        shots.push(f);
+      }
+      process.stdout.write(JSON.stringify({ id: clip.id, preview: shots }) + '\n');
+      continue;
+    }
     const frames = Math.round(duration * fps);
     const master = path.join(job.tmp, clip.file + '.master.mp4');
     const ff = encodeMaster(master, fps);

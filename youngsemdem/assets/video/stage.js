@@ -195,8 +195,8 @@
   };
 
   // Stylised Seminole County, not to scale: approximate city positions; lakes as soft shapes.
-  var CITIES = { sanford: ['Sanford', 0.56, 0.20], lakemary: ['Lake Mary', 0.30, 0.30], longwood: ['Longwood', 0.27, 0.52], altamonte: ['Altamonte Springs', 0.20, 0.71],
-    casselberry: ['Casselberry', 0.38, 0.78], wintersprings: ['Winter Springs', 0.56, 0.64], oviedo: ['Oviedo', 0.76, 0.74] };
+  var CITIES = { sanford: ['Sanford', 0.58, 0.20], lakemary: ['Lake Mary', 0.32, 0.30], longwood: ['Longwood', 0.24, 0.48], altamonte: ['Altamonte Springs', 0.12, 0.66],
+    casselberry: ['Casselberry', 0.36, 0.82], wintersprings: ['Winter Springs', 0.56, 0.57], oviedo: ['Oviedo', 0.76, 0.74] };
   LAYERS.map = function (L) {
     var n = el('div', '', 'position:absolute;inset:0;background:' + (L.bg || C.sky));
     var MX = 50, MY = L.top || 330, MW = 620, MH = 700;
@@ -210,7 +210,7 @@
       var c = CITIES[k], x = MX + c[1] * MW, y = MY + c[2] * MH;
       var g = el('div', '', 'position:absolute;left:' + x + 'px;top:' + y + 'px');
       g.innerHTML = '<i style="position:absolute;left:-13px;top:-13px;width:26px;height:26px;border-radius:50%;background:' + C.night + '"></i>' +
-        '<b style="position:absolute;' + (c[1] > 0.6 ? 'right:22px;' : 'left:22px;') + 'top:-22px;white-space:nowrap;font:800 34px/1 \'Bricolage Grotesque\';font-stretch:84%;color:' + C.night + ';background:' + C.cream + ';padding:4px 10px;border-radius:10px">' + c[0] + '</b>';
+        '<b style="position:absolute;left:20px;top:-21px;white-space:nowrap;font:800 32px/1 \'Bricolage Grotesque\';font-stretch:84%;color:' + C.night + ';background:' + C.cream + ';padding:4px 10px;border-radius:10px">' + c[0] + '</b>';
       n.appendChild(g); return g;
     });
     var pins = (L.pins || []).map(function (p) {
@@ -412,8 +412,8 @@
     var n = el('div', '', 'position:absolute;inset:0;pointer-events:none');
     var ids = L.ids, cx = L.x || 360, cy = L.y || 420;
     var items = ids.map(function (id, i) {
-      var a = (i / ids.length) * Math.PI * 2 + 0.4, r = 200 + (i % 3) * 70;
-      var s = sticker(id, 120 + (i % 3) * 30); n.appendChild(s);
+      var a = (i / ids.length) * Math.PI * 2 + 0.4, r = (L.radius || 200) + (i % 3) * (L.radius ? L.radius * 0.3 : 70);
+      var s = sticker(id, (L.size || 120) + (i % 3) * 30); n.appendChild(s);
       return { s: s, it: { id: id, x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r * 1.15, t: (L.at || 0) + i * 0.06, rot: (i % 2 ? 1 : -1) * (8 + i * 3), float: true } };
     });
     return { node: n, render: function (t, lt) { items.forEach(function (o) { placeSticker(o.s, o.it, lt); }); } };

@@ -485,7 +485,7 @@
       ctx.fillStyle = String(top[i].color).toLowerCase() === String(wd.bg).toLowerCase() ? C.cream : top[i].color;
       ctx.beginPath(); ctx.arc(cx + 12, ly + lf.size * 0.5, 12, 0, Math.PI * 2); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = C.night; ctx.stroke();
       setFont(ctx, lf.size, 800, fam(env, 'body'));
-      draw(ctx, { lines: lf.lines, lh: lf.lh, size: lf.size, height: lf.height }, cx + 34, ly - lf.size * 0.12, wd.fg, 'left');
+      draw(ctx, lf, cx + 34, ly - lf.size * 0.12, wd.fg, 'left');
       maxH = Math.max(maxH, ly + lf.height - y);
     }
     return maxH;
@@ -617,11 +617,7 @@
       var room = linkBottom - linkH - (tall ? 60 : 30) - nameTop;
       var nf = fit(ctx, ident, W - pad * 2, { max: tall ? 250 : 190, min: 76, maxLines: tall ? 3 : 2, lh: 0.86, maxH: room, family: fam(env, 'display'), stretch: 'condensed' });
       draw(ctx, nf, pad, nameTop + Math.max(0, (room - nf.height) / 2), wd.fg, 'left', serious ? null : wd.mark);
-      if (tall) {
-        var items = mixItems(data, L, 'issue');
-        if (!serious) yoursSticker(ctx, env, K('quizIssue.findYours', L), W - pad - 150, linkBottom - linkH - 10);
-        void items;
-      }
+      if (tall && !serious) yoursSticker(ctx, env, K('common.whatsYours', L), W - pad - 150, linkBottom - linkH - 10);
       band(ctx, env, data);
       return done(env);
     });

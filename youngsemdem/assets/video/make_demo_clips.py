@@ -173,7 +173,7 @@ SPECS = [
         'tags': ['vote-by-mail', 'explainer', 'psa'],
         'likes': 412, 'views': 3870, 'createdAt': '2026-11-06T18:20:00-05:00',
         'showUntil': '2027-01-01T00:00:00-05:00',
-        'posterAt': 0.75,
+        'posterAt': 2.9,
         'cues': [
             (0.0, 2.1, 'Asked for a mail ballot before Nov 3?', '¿Pediste la boleta por correo antes del 3 de noviembre?'),
             (2.1, 3.9, 'That request ends Dec 31.', 'Esa solicitud vence el 31 de diciembre.'),
@@ -315,14 +315,14 @@ SPECS = [
         ],
         'shots': [
             {'seconds': 1.2, 'layers': [P('laptops', [0.55, 0.25], [2.0, 2.05], shake=3), S(('megaphone', 570, 300, 0.15, 190, 10))]},
-            {'seconds': 1.0, 'transition': 'punch', 'layers': [P('laptops', [0.555, 0.27], [2.45, 2.5], shake=3, seed=2)]},
+            {'seconds': 1.0, 'transition': 'punch', 'layers': [P('laptops', [0.555, 0.27], [2.25, 2.3], shake=3, seed=2)]},
             {'seconds': 2.8, 'transition': 'flash', 'layers': [{'type': 'map', 'bg': '#4FD6FF', 'top': 360,
-                                                              'pins': [{'x': 0.56, 'y': 0.16, 't': 0.5}, {'x': 0.30, 'y': 0.26, 't': 0.75}, {'x': 0.26, 'y': 0.48, 't': 1.0},
-                                                                       {'x': 0.56, 'y': 0.60, 't': 1.25}, {'x': 0.76, 'y': 0.70, 't': 1.5}, {'x': 0.38, 'y': 0.74, 't': 1.75}],
+                                                              'pins': [{'x': 0.44, 'y': 0.16, 't': 0.5}, {'x': 0.14, 'y': 0.40, 't': 0.75}, {'x': 0.62, 'y': 0.36, 't': 1.0},
+                                                                       {'x': 0.86, 'y': 0.52, 't': 1.25}, {'x': 0.22, 'y': 0.79, 't': 1.5}, {'x': 0.70, 'y': 0.90, 't': 1.75}],
                                                               'facecam': {'photo': 'laptops', 'fx': 0.55, 'fy': 0.26, 'span': 0.13, 'x': 34, 'y': 60, 'size': 260}}]},
             {'seconds': 2.9, 'transition': 'punch', 'layers': [{'type': 'map', 'bg': '#FF7AC6', 'top': 360,
-                                                              'pins': [{'x': 0.45, 'y': 0.35, 't': 0.2, 'color': '#C8F03C'}, {'x': 0.66, 'y': 0.30, 't': 0.4, 'color': '#C8F03C'},
-                                                                       {'x': 0.18, 'y': 0.64, 't': 0.6, 'color': '#C8F03C'}, {'x': 0.62, 'y': 0.84, 't': 0.8, 'color': '#C8F03C'}],
+                                                              'pins': [{'x': 0.74, 'y': 0.30, 't': 0.2, 'color': '#C8F03C'}, {'x': 0.10, 'y': 0.58, 't': 0.4, 'color': '#C8F03C'},
+                                                                       {'x': 0.62, 'y': 0.70, 't': 0.6, 'color': '#C8F03C'}, {'x': 0.90, 'y': 0.88, 't': 0.8, 'color': '#C8F03C'}],
                                                               'facecam': {'photo': 'laptops', 'fx': 0.555, 'fy': 0.27, 'span': 0.11, 'x': 34, 'y': 60, 'size': 260}},
                                                              S(('bubbles', 580, 200, 1.1, 170, 10), ('chicken', 600, 1000, 1.5, 150, -8))]},
             {'seconds': 2.7, 'transition': 'flash', 'layers': [P('laptops', [0.55, 0.26], [1.8, 1.88], shake=3, seed=3),
@@ -360,7 +360,7 @@ SPECS = [
                                                                   {'sticker': 'chicken', 'score': 9, 'color': '#FF7AC6', 'bump': 1.9},
                                                                   {'sticker': 'manatee', 'score': 6, 'color': '#4FD6FF'},
                                                                   {'sticker': 'celery', 'score': 9, 'color': '#FF8B3D'}]},
-                                                              {'type': 'burst', 'ids': ['heart', 'sun', 'chicken', 'heart', 'sun', 'chicken'], 'x': 360, 'y': 330, 'at': 2.0}]},
+                                                              {'type': 'burst', 'ids': ['chicken', 'heart', 'sun', 'heart'], 'x': 600, 'y': 190, 'at': 2.0, 'radius': 70, 'size': 90}]},
             {'seconds': 2.6, 'transition': 'flash', 'layers': [P('cards', [0.62, 0.42], [1.16, 1.22], seed=4), S(('heart', 150, 280, 0.2, 170, -10), ('calendar', 590, 300, 0.5, 170, 10))]},
         ],
         'facts': [],
@@ -389,10 +389,10 @@ SPECS = [
             {'seconds': 1.2, 'transition': 'punch', 'layers': [{'type': 'solid', 'bg': '#6A2BFF', 'dots': 'rgba(255,246,234,.14)'}, {'type': 'ids', 'mode': 'student', 'x': 0.55}]},
             {'seconds': 2.8, 'transition': 'flash', 'layers': [{'type': 'date', 'num': '1', 'sub': '2027', 'bg': '#FFD23F', 'band': '#2236C9', 'rays': True, 'top': 200, 'size': 280, 'rot': -4},
                                                               S(('calendar', 590, 230, 0.6, 160, 12))]},
-            {'seconds': 1.6, 'transition': 'punch', 'layers': [P('laptops', [0.765, 0.29], [2.3, 2.35], shake=3, seed=2), S(('bubbles', 580, 300, 0.15, 170, 10))]},
+            {'seconds': 1.6, 'transition': 'punch', 'layers': [P('laptops', [0.765, 0.29], [2.2, 2.25], shake=3, seed=2), S(('bubbles', 580, 300, 0.15, 170, 10))]},
             {'seconds': 2.6, 'transition': 'whip', 'layers': [{'type': 'solid', 'bg': '#7EE081', 'dots': 'rgba(23,11,51,.12)'}, {'type': 'ids', 'mode': 'others'}]},
             {'seconds': 2.2, 'transition': 'punch', 'layers': [{'type': 'phone', 'views': [{'t': 0, 'view': 'home'}], 'taps': [{'t': 0.5, 'x': 360, 'y': 422}]},
-                                                              S(('calendar', 600, 1010, 0.4, 150, 10))]},
+                                                              S(('calendar', 600, 560, 0.4, 150, 10))]},
         ],
         'facts': [
             {'claim': 'HB 991 (Ch. 2026-26), signed Apr 1, 2026, removes student IDs (and some others) from the photo IDs accepted at '
@@ -420,7 +420,7 @@ SPECS = [
         ],
         'shots': [
             {'seconds': 1.0, 'layers': [P('park', [0.62, 0.24], [2.0, 2.05], shake=3), S(('megaphone', 160, 300, 0.12, 180, -10))]},
-            {'seconds': 1.0, 'transition': 'punch', 'layers': [P('park', [0.625, 0.26], [2.5, 2.55], shake=3, seed=2)]},
+            {'seconds': 1.0, 'transition': 'punch', 'layers': [P('park', [0.625, 0.26], [2.3, 2.35], shake=3, seed=2)]},
             {'seconds': 2.4, 'transition': 'whip', 'layers': [P('crowd', [0.32, 0.5], [1.3, 1.36], grade='cool', seed=3)]},
             {'seconds': 2.2, 'transition': 'flash', 'layers': [{'type': 'solid', 'bg': '#4FD6FF', 'dots': 'rgba(23,11,51,.12)'}, {'type': 'seats', 'top': 330, 'saved': 2, 'heart': 0.7}]},
             {'seconds': 2.4, 'transition': 'punch', 'layers': [P('park', [0.55, 0.36], [1.3, 1.38], grade='golden', seed=4), S(('heart', 160, 300, 0.25, 170, -10), ('calendar', 590, 330, 0.55, 170, 10))]},
@@ -432,13 +432,13 @@ SPECS = [
 
 
 # ------------------------------------------------------------------------------------- helpers
-def photo_url(pid, width=2400):
+def photo_url(pid, width=3200):
     return 'https://images.unsplash.com/photo-%s?w=%d&q=85&fm=jpg' % (pid, width)
 
 
 def download(key, cache):
     info = PHOTOS[key]
-    path = os.path.join(cache, '%s.jpg' % info['id'])
+    path = os.path.join(cache, '%s-w3200.jpg' % info['id'])
     if os.path.exists(path) and os.path.getsize(path) > 10000:
         return path
     url = photo_url(info['id'])

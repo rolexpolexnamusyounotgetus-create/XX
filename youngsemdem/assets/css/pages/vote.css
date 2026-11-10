@@ -335,3 +335,4 @@ html.js .p-vote .x-step { display:block;padding:0;border:0; }
 .p-vote .x-dsheet__wait { display:grid;place-items:center;height:100%;color:var(--cream);font-weight:700; }
 @media (max-height: 700px) { .p-vote .x-dsheet__frame { max-height:42dvh; } }
 @media (min-width: 640px) { .p-vote .x-dsheet { max-width:560px; } }
+.p-vote .x-cal:has(> .x-tile[hidden]) { grid-template-columns:minmax(0, 240px);justify-content:center; }
