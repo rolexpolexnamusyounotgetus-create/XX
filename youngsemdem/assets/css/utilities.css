@@ -1,0 +1,27 @@
+/* =====================================================================================
+   YDSC · utilities.css (F0). Single-purpose helpers, u- prefix (BRIEF §3.8). Loaded last.
+   Theme scopes (.theme-light, .theme-dark) live in tokens.css.
+   ===================================================================================== */
+.u-visually-hidden:not(:focus):not(:active) {
+  position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important;
+  overflow: hidden !important; clip: rect(0 0 0 0) !important; clip-path: inset(50%) !important; white-space: nowrap !important; border: 0 !important;
+}
+.u-center { margin-inline: auto; }
+.u-text-center { text-align: center; }
+.u-nowrap { white-space: nowrap; }
+.u-balance { text-wrap: balance; }
+.u-muted { color: var(--text-muted); }
+.u-small { font-size: var(--fs-small); line-height: 1.45; }
+.u-hand { font-family: var(--font-hand); font-weight: 400; }
+.u-mt-0 { margin-top: 0 !important; } .u-mt-2 { margin-top: var(--sp-2) !important; } .u-mt-4 { margin-top: var(--sp-4) !important; }
+.u-mt-6 { margin-top: var(--sp-6) !important; } .u-mt-8 { margin-top: var(--sp-8) !important; }
+.u-mb-0 { margin-bottom: 0 !important; } .u-mb-4 { margin-bottom: var(--sp-4) !important; } .u-mb-6 { margin-bottom: var(--sp-6) !important; }
+.u-flow > * + * { margin-top: var(--flow, 1em); }
+.u-max-prose { max-width: var(--prose); }
+.u-no-rotate { rotate: none !important; }
+@media (max-width: 639px) { .u-hide-sm { display: none !important; } }
+@media (min-width: 640px) { .u-show-sm { display: none !important; } }
+@media (max-width: 1023px) { .u-hide-md { display: none !important; } }
+@media (min-width: 1024px) { .u-show-md { display: none !important; } }
+html:not(.js) .u-js-only { display: none !important; }
+html.js .u-no-js { display: none !important; }

@@ -1,0 +1,34 @@
+{
+  "name": "youngsemdem",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Young Seminole Democrats demo site: plain static HTML, CSS and vanilla JS (no build step).",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "serve": "python3 -m http.server 8000",
+    "check": "node tools/check_site.js",
+    "check:strict": "node tools/check_site.js --strict",
+    "shoot": "node tools/shoot.js",
+    "bench": "node tools/bench_compare.js",
+    "sync": "python3 tools/sync_partials.py",
+    "sync:check": "python3 tools/sync_partials.py --check",
+    "csp": "node tools/csp.js --write",
+    "csp:check": "node tools/csp.js --check",
+    "sitemap": "python3 tools/make_sitemap.py",
+    "credits": "python3 tools/credits.py",
+    "credits:check": "python3 tools/credits.py --check",
+    "manifest": "node tools/manifest.js --write",
+    "manifest:check": "node tools/manifest.js --check",
+    "qa": "node tools/qa.js --all",
+    "voice": "node tools/voice_lint.js",
+    "es": "node tools/make_es.js --all",
+    "og": "node tools/make_og.js",
+    "preflight": "npm run sync:check && npm run check && npm run qa && npm run voice && npm run es -- --check && npm test",
+    "test": "node tests/infra/core.test.js && node tests/infra/video.test.js && node tests/infra/tooling.test.js && node tests/infra/integration.test.js",
+    "test:tooling": "node tests/infra/tooling.test.js",
+    "test:site": "node tests/site/w8.test.js"
+  }
+}

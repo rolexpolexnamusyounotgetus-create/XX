@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Young Democrats of Seminole County: the group chat that shows up (DEMO)</title>
+<meta name="description" content="Young Democrats of Seminole County, Florida, ages 14 to 39. Hangouts, voting help that links to official sources, and a crew from Sanford to Oviedo. Demo prototype.">
+<meta name="theme-color" content="#6A2BFF">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="The group chat that shows up">
+<meta property="og:description" content="Seminole County's Young Dems, ages 14 to 39. Come as you are. Bring a friend. (Demo prototype.)">
+<meta property="og:site_name" content="Young Democrats of Seminole County">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="es_US">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://images.unsplash.com">
+<link id="gf" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Atkinson+Hyperlegible+Next:wght@200..800&family=Caveat+Brush&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Atkinson+Hyperlegible+Next:wght@200..800&family=Caveat+Brush&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="a.css">
+<script>
+  (function(d){d.classList.add('js');try{var t=JSON.parse(localStorage.getItem('ysdA:theme'));if(t)d.setAttribute('data-theme',t)}catch(e){}})(document.documentElement);
+</script>
+</head>
+<body>
+
+<!-- ============ Sticker sprite (all original drawings; local Seminole motifs, no Native imagery) ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <clipPath id="clip-disc"><circle cx="60" cy="60" r="54"/></clipPath>
+  </defs>
+  <symbol id="stk-celery" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#C8F03C" stroke="#170B33" stroke-width="4"/>
+    <g stroke="#170B33" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M47 104 C45 84 43 64 38 46 L49 43 C53 62 56 82 58 104 Z" fill="#7BC043"/>
+      <path d="M78 104 C77 84 79 64 85 47 L95 51 C89 67 86 85 87 104 Z" fill="#6DB33A"/>
+      <path d="M56 104 C57 82 58 60 58 40 L69 40 C68 60 67 82 67 104 Z" fill="#A6DB5E"/>
+      <circle cx="42" cy="38" r="9" fill="#3F9A2C"/><circle cx="33" cy="31" r="7" fill="#3F9A2C"/>
+      <circle cx="63" cy="31" r="10" fill="#3F9A2C"/><circle cx="54" cy="22" r="7" fill="#3F9A2C"/><circle cx="72" cy="22" r="7" fill="#3F9A2C"/>
+      <circle cx="90" cy="42" r="9" fill="#3F9A2C"/><circle cx="98" cy="34" r="6" fill="#3F9A2C"/>
+      <rect x="44" y="80" width="46" height="10" rx="4" fill="#6A2BFF"/>
+    </g>
+    <path d="M62 50 V74 M51 56 L53 74 M84 60 L82 74" stroke="#2F7A14" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+  </symbol>
+  <symbol id="stk-gator" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#4FD6FF" stroke="#170B33" stroke-width="4"/>
+    <g clip-path="url(#clip-disc)">
+      <path d="M14 80 C14 66 28 58 44 58 L96 60 C108 60 112 67 110 73 C108 79 101 81 92 81 L30 83 C20 83 14 82 14 80 Z" fill="#45B649" stroke="#170B33" stroke-width="3.5" stroke-linejoin="round"/>
+      <circle cx="38" cy="54" r="11" fill="#45B649" stroke="#170B33" stroke-width="3.5"/>
+      <circle cx="58" cy="54" r="11" fill="#45B649" stroke="#170B33" stroke-width="3.5"/>
+      <circle cx="38" cy="53" r="6.5" fill="#fff"/><circle cx="58" cy="53" r="6.5" fill="#fff"/>
+      <circle cx="40" cy="54" r="3.2" fill="#170B33"/><circle cx="60" cy="54" r="3.2" fill="#170B33"/>
+      <circle cx="101" cy="66" r="2.2" fill="#170B33"/><circle cx="94" cy="65" r="2.2" fill="#170B33"/>
+      <path d="M38 75 L104 73" stroke="#170B33" stroke-width="3" stroke-linecap="round"/>
+      <path d="M50 75 l3 4 l3 -4 Z M66 74.5 l3 4 l3 -4 Z M82 74 l3 4 l3 -4 Z" fill="#fff" stroke="#170B33" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M0 86 Q15 79 30 86 T60 86 T90 86 T120 86 V120 H0 Z" fill="#2A8FE0"/>
+      <path d="M8 98 Q20 93 32 98 M70 102 Q82 97 94 102" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>
+    </g>
+  </symbol>
+  <symbol id="stk-train" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#FF8B3D" stroke="#170B33" stroke-width="4"/>
+    <g stroke="#170B33" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+      <rect x="33" y="22" width="54" height="72" rx="15" fill="#FFF6EA"/>
+      <rect x="40" y="30" width="40" height="24" rx="7" fill="#4FD6FF"/>
+      <rect x="33" y="62" width="54" height="9" fill="#6A2BFF"/>
+      <circle cx="45" cy="81" r="5" fill="#C8F03C"/><circle cx="75" cy="81" r="5" fill="#C8F03C"/>
+      <path d="M41 94 L31 106 M79 94 L89 106 M24 106 H96" fill="none"/>
+    </g>
+  </symbol>
+  <symbol id="stk-chicken" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#FF7AC6" stroke="#170B33" stroke-width="4"/>
+    <g stroke="#170B33" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M55 96 V106 M67 96 V106" stroke="#FF8B3D" stroke-width="4.5"/>
+      <path d="M38 88 C26 80 28 56 44 50 C46 36 58 30 68 36 C76 40 76 50 72 56 C86 54 98 60 96 74 C94 90 76 96 60 96 C50 96 44 92 38 88 Z" fill="#fff"/>
+      <path d="M54 35 C53 26 60 24 62 30 C64 22 73 24 70 33" fill="#FF4D6D"/>
+      <path d="M44 47 L33 51 L44 55 Z" fill="#FF8B3D"/>
+      <path d="M62 70 C70 62 84 66 84 74 C78 80 68 80 62 70 Z" fill="#FFE3F2"/>
+    </g>
+    <circle cx="52" cy="44" r="3.2" fill="#170B33"/>
+  </symbol>
+  <symbol id="stk-heart" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#6A2BFF" stroke="#170B33" stroke-width="4"/>
+    <g stroke="#170B33" stroke-width="3.5" stroke-linejoin="round">
+      <path d="M24 32 H96 a9 9 0 0 1 9 9 V75 a9 9 0 0 1 -9 9 H54 L36 99 L39 84 H24 a9 9 0 0 1 -9 -9 V41 a9 9 0 0 1 9 -9 Z" fill="#fff"/>
+      <path d="M60 76 C46 67 40 61 40 53 C40 47 45 43 50 43 C55 43 58 46 60 49 C62 46 65 43 70 43 C75 43 80 47 80 53 C80 61 74 67 60 76 Z" fill="#FF7AC6"/>
+    </g>
+  </symbol>
+  <symbol id="stk-sun" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#4FD6FF" stroke="#170B33" stroke-width="4"/>
+    <g stroke="#FF8B3D" stroke-width="6" stroke-linecap="round">
+      <path d="M60 14 V24 M60 96 V106 M14 60 H24 M96 60 H106 M27 27 L34 34 M86 86 L93 93 M93 27 L86 34 M34 86 L27 93"/>
+    </g>
+    <circle cx="60" cy="60" r="29" fill="#FFC93D" stroke="#170B33" stroke-width="3.5"/>
+    <path d="M36 55 H84" stroke="#170B33" stroke-width="4" stroke-linecap="round"/>
+    <rect x="38" y="52" width="19" height="13" rx="6" fill="#170B33"/><rect x="63" y="52" width="19" height="13" rx="6" fill="#170B33"/>
+    <path d="M49 73 Q60 82 71 73" fill="none" stroke="#170B33" stroke-width="3.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="stk-mail" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#FF8B3D" stroke="#170B33" stroke-width="4"/>
+    <g stroke="#170B33" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+      <rect x="22" y="36" width="72" height="50" rx="7" fill="#fff"/>
+      <path d="M22 41 L58 66 L94 41" fill="none"/>
+      <circle cx="88" cy="84" r="16" fill="#C8F03C"/>
+      <path d="M80 84 L86 90 L96 78" fill="none" stroke-width="4"/>
+    </g>
+  </symbol>
+</svg>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="ribbon" role="note">
+  <div class="wrap ribbon__in">
+    <span class="tag tag--demo">DEMO</span>
+    <span class="ribbon__long" data-i18n="ribbon">Prototype for the Young Democrats of Seminole County, pending the chapter's sign-off. Events, people, clips and counts marked DEMO are placeholders.</span>
+    <span class="ribbon__short" data-i18n="ribbon.short">Prototype pending YDSC sign-off. Anything marked DEMO is a placeholder.</span>
+  </div>
+</div>
+
+<header class="site" id="top">
+  <div class="wrap site__in">
+    <a class="brand" href="#top">
+      <svg class="brand__mark" viewBox="0 0 64 56" aria-hidden="true">
+        <path d="M10 3 H54 a8 8 0 0 1 8 8 V35 a8 8 0 0 1 -8 8 H28 L14 54 L16 43 H10 a8 8 0 0 1 -8 -8 V11 a8 8 0 0 1 8 -8 Z" fill="#6A2BFF" stroke="currentColor" stroke-width="3"/>
+        <text x="32" y="31" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="21" fill="#C8F03C" letter-spacing="-.5">YD</text>
+      </svg>
+      <span class="brand__words"><b>Young Dems</b> <small>of Seminole County</small><span class="sr">, home</span></span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Main">
+      <ul>
+        <li><a href="#pinned" data-i18n="nav.vote">Vote stuff</a></li>
+        <li><a href="#invite" data-i18n="nav.invite">Invite friends</a></li>
+        <li><a href="#reel" data-i18n="nav.clips">Clips</a></li>
+        <li><a href="#events" data-i18n="nav.events">Events</a></li>
+        <li><a href="#letter" data-i18n="nav.letter">The letter</a></li>
+      </ul>
+      <div class="nav__extra">
+        <button class="chip-btn" type="button" data-theme-toggle aria-label="Color theme: auto. Change theme"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor"/></svg> <span data-theme-label>Auto</span></button>
+      </div>
+    </nav>
+    <div class="site__actions">
+      <button class="lang" type="button" data-lang-toggle aria-pressed="false" aria-label="ES, leer en español"><span lang="es">ES</span></button>
+      <a class="btn btn--join" href="#join" data-i18n="cta.join">Join</a>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav" data-menu><span class="sr" data-i18n="menu">Menu</span><span class="menu-btn__bars" aria-hidden="true"></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ================= HERO ================= -->
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap hero__grid">
+    <div class="hero__copy">
+      <p class="eyebrow eyebrow--sticker"><span data-i18n="hero.eyebrow">Young Democrats of Seminole County · ages 14 to 39</span></p>
+      <h1 id="hero-title" class="hero__title">
+        <span class="kw" data-i18n="hero.title.a">The group chat</span>
+        <span class="kw kw--hi" data-i18n="hero.title.b">that shows up.</span>
+      </h1>
+      <p class="hero__rotor">
+        <span class="sr" data-i18n="hero.rotor.sr">We're the friend who always knows the deadline, has a plan for Thursday and saves you a seat.</span>
+        <span aria-hidden="true"><span data-i18n="hero.rotor.lead">We're the friend who</span> <span class="rotor"><span class="rotor__word" data-rotor>always knows the deadline.</span><span class="rotor__caret"></span></span></span>
+      </p>
+      <p class="hero__sub" data-i18n="hero.sub">Hangouts, voting help that links straight to the official sources, and a crew from Sanford to Oviedo. Come as you are. Bring a friend.</p>
+      <div class="hero__ctas">
+        <a class="btn btn--celery btn--xl" href="#join" data-i18n="cta.joinChat">Join the chat</a>
+        <a class="btn btn--ghost btn--xl" href="#events" data-i18n="cta.whatsOn">See what's on</a>
+      </div>
+      <a class="notif" href="#events">
+        <span class="notif__icon" aria-hidden="true">YD</span>
+        <span class="notif__body"><span class="notif__top"><b data-i18n="notif.from">Young Dems</b> <span data-i18n="notif.when">· next up</span> <span class="tag tag--demo tag--xs">DEMO</span></span>
+        <span class="notif__msg" data-i18n="notif.msg">Trivia night, Thu, Nov 19, 7 pm, Lake Mary. Free. You in?</span></span>
+        <span class="notif__go" aria-hidden="true">→</span>
+      </a>
+      <p class="hero__fine" data-i18n="hero.fine">Free to join the list. Events are open to everyone, registered Democrat or not.</p>
+    </div>
+
+    <div class="hero__chat">
+      <button class="stk stk--a" type="button" data-fact="celery" aria-label="Sticker: celery. Tap for a Seminole fact"><svg aria-hidden="true"><use href="#stk-celery"/></svg></button>
+      <button class="stk stk--b" type="button" data-fact="gator" aria-label="Sticker: gator. Tap for a Seminole fact"><svg aria-hidden="true"><use href="#stk-gator"/></svg></button>
+      <button class="stk stk--c" type="button" data-fact="sun" aria-label="Sticker: sun in sunglasses. Tap for a Florida fact"><svg aria-hidden="true"><use href="#stk-sun"/></svg></button>
+      <span class="word-stk word-stk--vamos" aria-hidden="true">¡Vamos!</span>
+
+      <div class="phone" role="group" aria-label="Demo group chat">
+        <div class="phone__top">
+          <div class="avs" aria-hidden="true"><i style="--c:#FF7AC6">M</i><i style="--c:#4FD6FF">L</i><i style="--c:#C8F03C">A</i><i style="--c:#FF8B3D">J</i></div>
+          <div class="phone__title"><b>Young Dems · Seminole</b><small>Maya, Luis, Ava, Jordan + you · <span class="tag tag--demo tag--xs">DEMO CHAT</span></small></div>
+        </div>
+        <ol class="thread" data-thread aria-live="off">
+          <li class="msg" data-from="Luis"><span class="msg__who">Luis</span><p>did everyone see Seminole voted blue for governor?? 👀</p><span class="react" aria-label="3 fire reactions">🔥 3</span></li>
+          <li class="msg" data-from="Ava"><span class="msg__who">Ava</span><p>about 54% here. unofficial till the county certifies (due Nov 16)</p></li>
+          <li class="msg" data-from="Jordan"><span class="msg__who">Jordan</span><p>state still went the other way tho</p></li>
+          <li class="msg" data-from="Maya"><span class="msg__who">Maya</span><p>yeah. so we get ready for 2027. step one: every mail ballot request runs out Dec 31</p></li>
+          <li class="msg msg--card" data-from="Maya">
+            <span class="msg__who">Maya</span>
+            <div class="mini-invite">
+              <div class="mini-invite__art"><span>TRIVIA<br>NIGHT</span><svg aria-hidden="true"><use href="#stk-heart"/></svg></div>
+              <div class="mini-invite__body">
+                <b>Trivia night: Seminole edition</b>
+                <span>Thu, Nov 19 · 7 pm · Lake Mary</span>
+                <span class="tag tag--demo tag--xs">DEMO EVENT</span>
+                <div class="mini-invite__btns">
+                  <button type="button" class="pill pill--yes" data-rsvp="trivia" data-rsvp-val="in" aria-pressed="false">I'm in</button>
+                  <a class="pill" href="#events">Details</a>
+                </div>
+              </div>
+            </div>
+          </li>
+          <li class="msg msg--me" data-from="you"><p>I'm in. bringing Sam</p><span class="msg__meta">Read 7:42 pm</span></li>
+          <li class="msg msg--typing" data-from="Luis" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span></li>
+        </ol>
+        <div class="phone__compose" aria-hidden="true"><span>Message the group…</span><b>↑</b></div>
+      </div>
+      <p class="hero__chatnote">Demo chat with placeholder people. The facts in it are real and <a href="#receipts">sourced below</a>.</p>
+    </div>
+  </div>
+
+  <div class="ticker" aria-label="Cities we cover">
+    <div class="ticker__track" data-ticker>
+      <span>Sanford</span><i>✦</i><span>Lake Mary</span><i>✦</i><span>Oviedo</span><i>✦</i><span>Winter Springs</span><i>✦</i><span>Altamonte Springs</span><i>✦</i><span>Casselberry</span><i>✦</i><span>Longwood</span><i>✦</i><span>Geneva</span><i>✦</i><span>Chuluota</span><i>✦</i><span>Unincorporated Seminole</span><i>✦</i>
+      <span aria-hidden="true">Sanford</span><i>✦</i><span aria-hidden="true">Lake Mary</span><i>✦</i><span aria-hidden="true">Oviedo</span><i>✦</i><span aria-hidden="true">Winter Springs</span><i>✦</i><span aria-hidden="true">Altamonte Springs</span><i>✦</i><span aria-hidden="true">Casselberry</span><i>✦</i><span aria-hidden="true">Longwood</span><i>✦</i><span aria-hidden="true">Geneva</span><i>✦</i><span aria-hidden="true">Chuluota</span><i>✦</i><span aria-hidden="true">Unincorporated Seminole</span><i>✦</i>
+    </div>
+    <button class="ticker__pause" type="button" data-motion-toggle aria-pressed="false"><span data-motion-label>Pause motion</span></button>
+  </div>
+</section>
+
+<!-- ================= PINNED: next thing to do ================= -->
+<section class="pinned" id="pinned" aria-labelledby="pinned-title">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="divider"><span>📌 <span data-i18n="pinned.kicker">Pinned in the chat</span></span></p>
+      <h2 id="pinned-title" class="sec-title" data-i18n="pinned.title">The next thing to do</h2>
+      <span class="word-stk word-stk--head word-stk--sky" aria-hidden="true">official links only</span>
+      <p class="sec-sub" data-i18n="pinned.sub">Sorted by deadline. Voting links go straight to the official county and state sites.</p>
+    </div>
+
+    <ol class="pins">
+      <li class="pin pin--tangerine">
+        <div class="pin__count" aria-hidden="true"><b data-days>52</b><span data-i18n="pinned.mail.days">days left</span></div>
+        <p class="pin__kicker"><span class="tag">Real deadline</span> <span data-countdown-sr class="sr">52 days left until December 31, 2026.</span></p>
+        <h3 data-i18n="pinned.mail.title">Every Florida mail ballot request runs out Dec 31.</h3>
+        <p data-i18n="pinned.mail.body">That includes yours if you voted by mail this year. Request again so you're covered for the 2027 city elections and for 2028.</p>
+        <a class="btn btn--ink" href="https://voteseminole.gov/how-to-vote/vote-by-mail/" rel="noopener" data-i18n="pinned.mail.cta">Renew on voteseminole.gov</a>
+        <p class="pin__fine"><span data-i18n="pinned.mail.fine">Not sure when 2027 requests open? The Supervisor of Elections can tell you:</span> <a href="tel:+14075858683">407-585-8683</a>. <a class="src" href="https://www.flsenate.gov/Laws/Statutes/2025/101.62" rel="noopener">F.S. 101.62</a></p>
+        <svg class="pin__stk" aria-hidden="true"><use href="#stk-mail"/></svg>
+      </li>
+      <li class="pin pin--sky">
+        <p class="pin__kicker"><span class="tag">New rule · Jan 1, 2027</span></p>
+        <h3 data-i18n="pinned.id.title">Student ID? It stops counting at the polls.</h3>
+        <p data-i18n="pinned.id.body">Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.</p>
+        <p class="pin__shout" data-i18n="pinned.id.shout">UCF and Seminole State, this one's for you.</p>
+        <a class="btn btn--ink" href="https://voteseminole.gov/" rel="noopener" data-i18n="pinned.id.cta">Check voteseminole.gov</a>
+        <p class="pin__fine"><a class="src" href="https://flsenate.gov/Committees/BillSummaries/2026/html/991" rel="noopener">HB 991 bill summary</a> · <a class="src" href="https://www.democracydocket.com/wp-content/uploads/2026/10/2026-10-16-Complaint.pdf" rel="noopener">Oct 16 lawsuit</a></p>
+      </li>
+      <li class="pin pin--celery">
+        <p class="pin__kicker"><span class="tag tag--demo">DEMO EVENT</span> <span class="tag" data-i18n="pinned.next.kicker">Next hangout</span></p>
+        <h3 data-i18n="pinned.next.title">Trivia night: Seminole edition</h3>
+        <p class="pin__when"><b data-i18n="pinned.next.when">Thu, Nov 19 · 7 pm · Lake Mary</b></p>
+        <p data-i18n="pinned.next.body">Free. Teams of 4, or we'll put you on one. Questions about where you live, zero pop quizzes on policy.</p>
+        <div class="pin__row">
+          <button type="button" class="btn btn--ink" data-rsvp="trivia" data-rsvp-val="in" aria-pressed="false"><span data-rsvp-label data-i18n="pinned.next.cta">I'm in</span></button>
+          <button type="button" class="btn btn--ghost-ink" data-ics="trivia" data-i18n="pinned.next.cal">Add to calendar</button>
+        </div>
+        <p class="pin__fine"><span data-going="trivia">23</span> <span data-i18n="pinned.next.going">going (demo count)</span></p>
+      </li>
+      <li class="pin pin--pink">
+        <p class="pin__kicker"><span class="tag" data-i18n="pinned.reg.kicker">Takes 2 minutes</span></p>
+        <h3 data-i18n="pinned.reg.title">Turning 16? Pre-register now.</h3>
+        <p data-i18n="pinned.reg.body">Florida lets you pre-register at 16, so you're ready the day you turn 18. Already registered? Check that your address is current.</p>
+        <div class="pin__row">
+          <a class="btn btn--ink" href="https://voteseminole.gov/voters/my-voter-record/" rel="noopener" data-i18n="pinned.reg.cta">Check my record</a>
+          <a class="btn btn--ghost-ink" href="https://registertovoteflorida.gov/home" rel="noopener" data-i18n="pinned.reg.cta2">Register</a>
+        </div>
+        <p class="pin__fine"><a class="src" href="https://www.flsenate.gov/Laws/Statutes/2025/97.041" rel="noopener">F.S. 97.041</a> · <span data-i18n="pinned.checked">Links checked Nov 9, 2026</span></p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ================= INVITE MACHINE (virality) ================= -->
+<section class="maker" id="invite" aria-labelledby="maker-title">
+  <div class="wrap maker__grid">
+    <div class="maker__head">
+      <p class="divider divider--dark"><span data-i18n="maker.kicker">Bring three friends</span></p>
+      <h2 id="maker-title" class="sec-title sec-title--light" data-i18n="maker.title">Send it to the group chat.</h2>
+      <p class="sec-sub sec-sub--light" data-i18n="maker.sub">Make a card, grab your link, drop it in the chat. Friends who join with your link land in your squad.</p>
+    </div>
+
+    <div class="maker__preview">
+      <div class="card-frame">
+        <canvas id="card" width="1080" height="1350" role="img" aria-label="Preview of your invite card"></canvas>
+      </div>
+      <div class="maker__share">
+        <button type="button" class="btn btn--celery btn--xl" data-share><span aria-hidden="true">↗</span> <span data-i18n="maker.send">Send to the group chat</span></button>
+        <div class="maker__share-row">
+          <button type="button" class="btn btn--line" data-save data-i18n="maker.save">Save image</button>
+          <a class="btn btn--line" data-sms href="sms:" data-i18n="maker.text">Text it</a>
+          <a class="btn btn--line" data-wa href="https://wa.me/" rel="noopener">WhatsApp</a>
+        </div>
+      </div>
+    </div>
+
+    <form class="maker__controls" data-maker onsubmit="return false">
+      <fieldset class="field">
+        <legend data-i18n="maker.what">1. What are you sending?</legend>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="tpl" value="trivia" checked><span data-i18n="maker.tpl.trivia">Trivia invite</span></label>
+          <label><input type="radio" name="tpl" value="mail"><span data-i18n="maker.tpl.mail">Mail ballot PSA</span></label>
+          <label><input type="radio" name="tpl" value="join"><span data-i18n="maker.tpl.join">Join me</span></label>
+        </div>
+      </fieldset>
+      <div class="field-row">
+        <div class="field">
+          <label for="mk-name" data-i18n="maker.name">2. Your first name</label>
+          <input id="mk-name" name="name" type="text" autocomplete="given-name" maxlength="16" placeholder="Sam" value="Sam">
+        </div>
+        <div class="field">
+          <label for="mk-city" data-i18n="maker.city">Your city</label>
+          <select id="mk-city" name="city">
+            <option>Sanford</option><option selected>Lake Mary</option><option>Oviedo</option><option>Winter Springs</option><option>Altamonte Springs</option><option>Casselberry</option><option>Longwood</option><option>Seminole County</option>
+          </select>
+        </div>
+      </div>
+      <fieldset class="field">
+        <legend data-i18n="maker.color">3. Colorway</legend>
+        <div class="swatches">
+          <label class="sw" style="--sw:#C8F03C"><input type="radio" name="color" value="celery" checked><span class="sr">Celery</span></label>
+          <label class="sw" style="--sw:#6A2BFF"><input type="radio" name="color" value="violet"><span class="sr">Ultraviolet</span></label>
+          <label class="sw" style="--sw:#FF7AC6"><input type="radio" name="color" value="pink"><span class="sr">Bubblegum</span></label>
+          <label class="sw" style="--sw:#FF8B3D"><input type="radio" name="color" value="tangerine"><span class="sr">Tangerine</span></label>
+          <label class="sw" style="--sw:#170B33"><input type="radio" name="color" value="night"><span class="sr">Night</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="field">
+        <legend data-i18n="maker.sticker">4. Sticker</legend>
+        <div class="stk-pick">
+          <label><input type="radio" name="stk" value="celery" checked><svg aria-hidden="true"><use href="#stk-celery"/></svg><span class="sr">Celery (Sanford, the Celery City)</span></label>
+          <label><input type="radio" name="stk" value="gator"><svg aria-hidden="true"><use href="#stk-gator"/></svg><span class="sr">Gator (Lake Jesup)</span></label>
+          <label><input type="radio" name="stk" value="train"><svg aria-hidden="true"><use href="#stk-train"/></svg><span class="sr">Train (SunRail)</span></label>
+          <label><input type="radio" name="stk" value="chicken"><svg aria-hidden="true"><use href="#stk-chicken"/></svg><span class="sr">Chicken (Oviedo)</span></label>
+          <label><input type="radio" name="stk" value="heart"><svg aria-hidden="true"><use href="#stk-heart"/></svg><span class="sr">Heart in a chat bubble</span></label>
+          <label><input type="radio" name="stk" value="sun"><svg aria-hidden="true"><use href="#stk-sun"/></svg><span class="sr">Sun in sunglasses</span></label>
+        </div>
+      </fieldset>
+      <div class="field">
+        <label for="mk-text" data-i18n="maker.msg">Your message (edit it, it's yours)</label>
+        <textarea id="mk-text" name="text" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <span class="label-like" data-i18n="maker.link">Your squad link</span>
+        <div class="linkbox">
+          <code data-reflink>youngsemdems.com/?ref=SAM7QX</code>
+          <button type="button" class="btn btn--celery btn--sm" data-copy data-i18n="maker.copy">Copy</button>
+        </div>
+      </div>
+      <div class="squad" aria-label="Your squad: 0 of 3 friends joined">
+        <div class="squad__slots" aria-hidden="true"><i>+</i><i>+</i><i>+</i></div>
+        <p><b data-i18n="maker.squad">0 of 3 friends in.</b> <span data-i18n="maker.squadsub">Bring three and you both get the sticker pack.</span> <span class="tag tag--demo tag--xs">DEMO PERK</span></p>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ================= THE REEL (video) ================= -->
+<section class="reel" id="reel" aria-labelledby="reel-title">
+  <div class="wrap">
+    <div class="sec-head sec-head--row">
+      <div>
+        <p class="divider divider--ink"><span data-i18n="reel.kicker">Clips from the group</span> <span class="tag tag--demo">DEMO</span></p>
+        <h2 id="reel-title" class="sec-title" data-i18n="reel.title">The Reel</h2>
+        <span class="word-stk word-stk--head word-stk--pink" aria-hidden="true">captions on, always</span>
+        <p class="sec-sub" data-i18n="reel.sub">Vertical, under a minute, captions on. Members make these. A real person on our team watches every clip before it goes live.</p>
+      </div>
+    </div>
+  </div>
+  <div class="reel__scroller" tabindex="0" aria-label="Video clips, scroll sideways">
+    <ul class="reel__list">
+      <li class="clip clip--post">
+        <button type="button" class="post-card" data-open-post>
+          <img src="https://images.unsplash.com/photo-1554080353-a576cf803bda?w=600&auto=format&fit=crop&q=70" alt="" width="600" height="900" loading="lazy">
+          <span class="post-card__plus" aria-hidden="true">+</span>
+          <span class="post-card__t" data-i18n="reel.post">Post a clip</span>
+          <span class="post-card__s" data-i18n="reel.postsub">60 seconds. Filmed vertical. About why you showed up.</span>
+        </button>
+      </li>
+      <li class="clip">
+        <div class="clip__frame">
+          <video preload="none" muted playsinline loop data-poster="media/mail-ballot-renew-poster.jpg" aria-label="Demo clip by @demo.maria: mail ballot PSA. Captions are burned in."><source src="media/mail-ballot-renew.mp4" type="video/mp4"></video>
+          <div class="clip__bars" aria-hidden="true"><i></i><i></i><i></i></div>
+          <button type="button" class="clip__play" data-play aria-label="Play clip: mail ballot PSA"><span aria-hidden="true">▶</span></button>
+          <p class="clip__cap">PSA: requested a mail ballot in 2025 or 2026? It ends Dec 31.</p>
+          <span class="clip__cc" aria-hidden="true">CC</span>
+        </div>
+        <a class="clip__act" href="https://voteseminole.gov/how-to-vote/vote-by-mail/" rel="noopener">Renew your request →</a>
+      </li>
+      <li class="clip">
+        <div class="clip__frame">
+          <video preload="none" muted playsinline loop data-poster="media/trivia-night-recap-poster.jpg" aria-label="Demo clip by @demo.sam: trivia night recap. Captions are burned in."><source src="media/trivia-night-recap.mp4" type="video/mp4"></video>
+          <div class="clip__bars" aria-hidden="true"><i></i><i></i><i></i></div>
+          <button type="button" class="clip__play" data-play aria-label="Play clip: trivia night recap"><span aria-hidden="true">▶</span></button>
+          <p class="clip__cap">New friends, questionable team names, zero regrets.</p>
+          <span class="clip__cc" aria-hidden="true">CC</span>
+        </div>
+        <a class="clip__act" href="#events">RSVP for the next one →</a>
+      </li>
+      <li class="clip">
+        <div class="clip__frame">
+          <video preload="none" muted playsinline loop data-poster="media/lake-monroe-canvass-poster.jpg" aria-label="Demo clip by @demo.luis: Lake Monroe sunset canvass. Captions are burned in."><source src="media/lake-monroe-canvass.mp4" type="video/mp4"></video>
+          <div class="clip__bars" aria-hidden="true"><i></i><i></i><i></i></div>
+          <button type="button" class="clip__play" data-play aria-label="Play clip: Lake Monroe sunset canvass"><span aria-hidden="true">▶</span></button>
+          <p class="clip__cap">Knocked doors, met neighbors, caught the sky.</p>
+          <span class="clip__cc" aria-hidden="true">CC</span>
+        </div>
+        <a class="clip__act" href="#events">Join the Riverwalk cleanup →</a>
+      </li>
+      <li class="clip">
+        <div class="clip__frame">
+          <video preload="none" muted playsinline loop data-poster="media/sunrail-rally-poster.jpg" aria-label="Demo clip by @demo.jordan: SunRail to the rally. Captions are burned in."><source src="media/sunrail-rally.mp4" type="video/mp4"></video>
+          <div class="clip__bars" aria-hidden="true"><i></i><i></i><i></i></div>
+          <button type="button" class="clip__play" data-play aria-label="Play clip: SunRail to the rally"><span aria-hidden="true">▶</span></button>
+          <p class="clip__cap">Took SunRail. No parking, no stress. Who's riding next time?</p>
+          <span class="clip__cc" aria-hidden="true">CC</span>
+        </div>
+        <a class="clip__act" href="https://sunrail.com/stations/" rel="noopener">The 4 Seminole stops →</a>
+      </li>
+      <li class="clip">
+        <div class="clip__frame">
+          <video preload="none" muted playsinline loop data-poster="media/first-time-voter-poster.jpg" aria-label="Demo clip by @demo.ava: first-time voter. Captions are burned in."><source src="media/first-time-voter.mp4" type="video/mp4"></video>
+          <div class="clip__bars" aria-hidden="true"><i></i><i></i><i></i></div>
+          <button type="button" class="clip__play" data-play aria-label="Play clip: first-time voter"><span aria-hidden="true">▶</span></button>
+          <p class="clip__cap">POV: you just voted for the first time.</p>
+          <span class="clip__cc" aria-hidden="true">CC</span>
+        </div>
+        <a class="clip__act" href="https://voteseminole.gov/voters/my-voter-record/" rel="noopener">Check your registration →</a>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= EVENTS (Partiful-style) ================= -->
+<section class="events" id="events" aria-labelledby="events-title">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="divider"><span data-i18n="events.kicker">You're invited</span></p>
+      <h2 id="events-title" class="sec-title" data-i18n="events.title">Invites</h2>
+      <span class="word-stk word-stk--head word-stk--celery" aria-hidden="true">first time? perfect</span>
+      <p class="sec-sub" data-i18n="events.sub">First time? Perfect. Every invite lists the cost and the access details. Tap "I'm in" and add it to your calendar.</p>
+    </div>
+
+    <ul class="invites">
+      <li class="inv inv--violet">
+        <div class="inv__cover inv__cover--art">
+          <span class="inv__date"><b>12</b><small>NOV</small></span>
+          <p class="inv__big">MONTHLY<br>MEETING</p>
+          <svg class="inv__stk" aria-hidden="true"><use href="#stk-heart"/></svg>
+          <span class="tag tag--real">REAL EVENT · VIA SEMDEMS</span>
+        </div>
+        <div class="inv__body">
+          <h3>Seminole County Democrats monthly meeting</h3>
+          <p class="inv__host">Hosted by our parent party, Seminole County Democrats. Open to the public.</p>
+          <ul class="inv__facts">
+            <li><b>Thu, Nov 12</b> · 7 to 9 pm (socializing from 6:30 pm)</li>
+            <li>Altamonte Springs</li>
+          </ul>
+          <ul class="inv__tags"><li>Open to all</li><li>First-timers welcome</li></ul>
+          <div class="inv__rsvp">
+            <a class="btn btn--ink" href="https://events.floridadems.org/org/seminole-county-democrats" rel="noopener">RSVP on the party calendar ↗</a>
+            <button type="button" class="btn btn--ghost-ink" data-ics="semdems">Add to calendar</button>
+          </div>
+          <p class="inv__src">Listed on the <a href="https://events.floridadems.org/org/seminole-county-democrats" rel="noopener">Florida Democrats events calendar</a>, checked Nov 9, 2026.</p>
+        </div>
+      </li>
+
+      <li class="inv inv--celery" data-event="trivia">
+        <div class="inv__cover">
+          <img src="https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&auto=format&fit=crop&q=70" alt="Friends laughing around a table (stock photo stand-in)" width="800" height="533" loading="lazy">
+          <span class="inv__date"><b>19</b><small>NOV</small></span>
+          <p class="inv__big inv__big--on-photo">TRIVIA<br>NIGHT</p>
+          <span class="tag tag--demo">DEMO EVENT</span>
+        </div>
+        <div class="inv__body">
+          <h3>Trivia night: Seminole edition</h3>
+          <p class="inv__host">Hosted by Maya and Jordan (demo hosts). Teams of 4, or we'll put you on one.</p>
+          <ul class="inv__facts">
+            <li><b>Thu, Nov 19</b> · 7 to 9 pm</li>
+            <li>Lake Mary (demo venue, back room of a local spot)</li>
+          </ul>
+          <ul class="inv__tags"><li>Free</li><li>Step-free entrance</li><li>Sober-friendly</li><li>Snacks</li></ul>
+          <div class="going" aria-hidden="true"><i style="--c:#FF7AC6">M</i><i style="--c:#4FD6FF">J</i><i style="--c:#FF8B3D">R</i><i style="--c:#C8F03C">T</i><i style="--c:#FFF6EA">+19</i></div>
+          <p class="inv__going"><span data-going="trivia">23</span> going <span class="tag tag--demo tag--xs">DEMO COUNT</span></p>
+          <div class="inv__rsvp" role="group" aria-label="RSVP to trivia night">
+            <button type="button" class="rsvp rsvp--in" data-rsvp="trivia" data-rsvp-val="in" aria-pressed="false">I'm in</button>
+            <button type="button" class="rsvp" data-rsvp="trivia" data-rsvp-val="maybe" aria-pressed="false">Maybe</button>
+            <button type="button" class="rsvp" data-rsvp="trivia" data-rsvp-val="no" aria-pressed="false">Can't</button>
+          </div>
+          <div class="inv__more">
+            <button type="button" class="linkish" data-ics="trivia">Add to calendar</button>
+            <button type="button" class="linkish" data-plusone="trivia">+1 a friend</button>
+          </div>
+        </div>
+      </li>
+
+      <li class="inv inv--pink" data-event="cleanup">
+        <div class="inv__cover">
+          <img src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=800&auto=format&fit=crop&q=70" alt="People watching the sunset over a calm lake from a waterfront path (stock photo stand-in)" width="800" height="533" loading="lazy">
+          <span class="inv__date"><b>21</b><small>NOV</small></span>
+          <p class="inv__big inv__big--on-photo">RIVERWALK<br>CLEANUP</p>
+          <span class="tag tag--demo">DEMO EVENT</span>
+        </div>
+        <div class="inv__body">
+          <h3>Riverwalk cleanup + coffee</h3>
+          <p class="inv__host">Hosted by Luis (demo host). Gloves and bags provided. Stay for coffee after.</p>
+          <ul class="inv__facts">
+            <li><b>Sat, Nov 21</b> · 9 to 11 am</li>
+            <li>Sanford Riverwalk, Lake Monroe</li>
+          </ul>
+          <ul class="inv__tags"><li>Free</li><li>Paved path</li><li>Kids welcome</li><li>Outdoors</li></ul>
+          <div class="going" aria-hidden="true"><i style="--c:#C8F03C">L</i><i style="--c:#6A2BFF;color:#fff">D</i><i style="--c:#4FD6FF">K</i><i style="--c:#FFF6EA">+11</i></div>
+          <p class="inv__going"><span data-going="cleanup">14</span> going <span class="tag tag--demo tag--xs">DEMO COUNT</span></p>
+          <div class="inv__rsvp" role="group" aria-label="RSVP to the Riverwalk cleanup">
+            <button type="button" class="rsvp rsvp--in" data-rsvp="cleanup" data-rsvp-val="in" aria-pressed="false">I'm in</button>
+            <button type="button" class="rsvp" data-rsvp="cleanup" data-rsvp-val="maybe" aria-pressed="false">Maybe</button>
+            <button type="button" class="rsvp" data-rsvp="cleanup" data-rsvp-val="no" aria-pressed="false">Can't</button>
+          </div>
+          <div class="inv__more">
+            <button type="button" class="linkish" data-ics="cleanup">Add to calendar</button>
+            <button type="button" class="linkish" data-plusone="cleanup">+1 a friend</button>
+          </div>
+        </div>
+      </li>
+    </ul>
+    <p class="events__host">Want to host the next one? <a href="#join">Tell us in the join form</a> and we'll help you plan it.</p>
+  </div>
+</section>
+
+<!-- ================= RECEIPTS (sourced stats) ================= -->
+<section class="receipts" id="receipts" aria-labelledby="receipts-title">
+  <div class="wrap">
+    <div class="sec-head sec-head--center">
+      <p class="divider divider--dark"><span>Screenshot these</span></p>
+      <h2 id="receipts-title" class="sec-title sec-title--light">Facts we can back up</h2>
+    </div>
+    <ul class="stats">
+      <li class="stat stat--violet">
+        <b class="stat__n">54%</b>
+        <p class="stat__t">Seminole voted blue for governor on Nov 3.</p>
+        <p class="stat__s">Jolly about 54%, Donalds about 44.5% in Seminole. Unofficial until the county certifies (due Nov 16). Statewide, Donalds won.</p>
+        <p class="stat__src"><a href="https://enr.electionsfl.org/SEM/4119/Summary/" rel="noopener">Seminole election night results</a> · <a href="https://floridaphoenix.com/2026/11/03/donalds-defeats-jolly-becoming-floridas-first-black-governor/" rel="noopener">Florida Phoenix</a></p>
+      </li>
+      <li class="stat stat--celery">
+        <b class="stat__n">1 in 3+</b>
+        <p class="stat__t">Seminole voters are 18 to 40.</p>
+        <p class="stat__s">124,626 of 338,692 active voters, in the county's own age bands (July 1, 2026).</p>
+        <p class="stat__src"><a href="https://voteseminole.gov/wp-content/uploads/2026/07/District-Demographic-Analysis.pdf" rel="noopener">Supervisor of Elections data (PDF)</a></p>
+      </li>
+      <li class="stat stat--pink">
+        <b class="stat__n">34.3%</b>
+        <p class="stat__t">of them aren't in any party. That's the biggest group.</p>
+        <p class="stat__s">Not a registered Democrat? Come anyway. Trivia doesn't check your voter card.</p>
+        <p class="stat__src"><a href="https://voteseminole.gov/wp-content/uploads/2026/07/District-Demographic-Analysis.pdf" rel="noopener">Supervisor of Elections data (PDF)</a></p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= JOIN ================= -->
+<section class="join" id="join" aria-labelledby="join-title">
+  <div class="wrap join__grid">
+    <div class="join__main">
+      <p class="divider divider--ink"><span data-i18n="join.kicker">Takes 30 seconds</span></p>
+      <h2 id="join-title" class="sec-title" data-i18n="join.title">Get in the chat.</h2>
+      <p class="sec-sub" data-i18n="join.sub">Two fields. No experience needed. We'll send the next hangout and the deadlines that matter, nothing else.</p>
+
+      <form class="join__form" data-join novalidate>
+        <div class="field-row">
+          <div class="field">
+            <label for="j-name">What should we call you?</label>
+            <input id="j-name" name="name" type="text" autocomplete="given-name" required>
+          </div>
+          <div class="field">
+            <label for="j-contact">Email or mobile</label>
+            <input id="j-contact" name="contact" type="text" inputmode="email" autocomplete="email" required aria-describedby="j-contact-help">
+            <small id="j-contact-help">One letter a week, never more. Unsubscribe anytime.</small>
+          </div>
+        </div>
+        <div class="field">
+          <label for="j-city">City <span class="opt">(optional)</span></label>
+          <select id="j-city" name="city">
+            <option value="">Pick one</option><option>Sanford</option><option>Lake Mary</option><option>Oviedo</option><option>Winter Springs</option><option>Altamonte Springs</option><option>Casselberry</option><option>Longwood</option><option>Unincorporated Seminole</option><option>Not in Seminole (yet)</option>
+          </select>
+        </div>
+        <fieldset class="field">
+          <legend>What do you care about? <span class="opt">(optional, pick any)</span></legend>
+          <div class="chips" data-issues>
+            <button type="button" aria-pressed="false" data-issue="rent">Rent &amp; housing</button>
+            <button type="button" aria-pressed="false" data-issue="bills">Wages &amp; bills</button>
+            <button type="button" aria-pressed="false" data-issue="abortion">Abortion access</button>
+            <button type="button" aria-pressed="false" data-issue="lgbtq">LGBTQ+ safety</button>
+            <button type="button" aria-pressed="false" data-issue="transit">Transit</button>
+            <button type="button" aria-pressed="false" data-issue="water">Clean water</button>
+            <button type="button" aria-pressed="false" data-issue="voting">Voting rights</button>
+            <button type="button" aria-pressed="false" data-issue="schools">Schools &amp; books</button>
+          </div>
+          <p class="chips__echo" data-issue-echo aria-live="polite"></p>
+        </fieldset>
+        <div class="field">
+          <label for="j-access">Anything that would make showing up easier? <span class="opt">(optional)</span></label>
+          <input id="j-access" name="access" type="text" placeholder="Rides, ASL, a quiet corner, kids in tow">
+        </div>
+        <label class="check">
+          <input type="checkbox" name="sms">
+          <span>Text me about Young Dems events and actions. Recurring automated texts, about 4 a month. Msg &amp; data rates may apply. Reply HELP for help, STOP to opt out. Consent isn't a condition of joining. <a href="#" aria-disabled="true">SMS terms</a> · <a href="#" aria-disabled="true">Privacy</a> <span class="tag tag--demo tag--xs">DEMO</span></span>
+        </label>
+        <button class="btn btn--ink btn--xl" type="submit">Get me in</button>
+        <p class="join__fine">We don't sell or share your info. Demo: nothing you type leaves this browser.</p>
+        <p class="form-msg" data-join-msg role="status" aria-live="polite"></p>
+      </form>
+    </div>
+
+    <aside class="join__side" aria-label="Membership and dues">
+      <figure class="join__photo">
+        <img src="https://images.unsplash.com/photo-1607748862156-7c548e7e98f4?w=800&auto=format&fit=crop&q=70" alt="A group of friends laughing together on outdoor steps (stock photo; not members)" width="800" height="1000" loading="lazy">
+        <span class="word-stk word-stk--come" aria-hidden="true">come as you are</span>
+      </figure>
+      <div class="member-card">
+        <p class="member-card__k">Want a vote in the chapter?</p>
+        <p class="member-card__big">$20<small>/year</small></p>
+        <p>Members are 14 to 39. Dues are paid in January through ActBlue.</p>
+        <p><b>Can't pay, for money or citizenship reasons?</b> Non-voting membership is open to you.</p>
+        <a class="btn btn--celery" href="https://secure.actblue.com/donate/ydscdues" rel="noopener">Pay dues on ActBlue ↗</a>
+        <hr>
+        <p class="member-card__chip">Got $5 to spare? <a href="https://secure.actblue.com/donate/youngsemdems" rel="noopener">Chip in on ActBlue ↗</a> Don't have it? Come anyway. Honestly, we need you more than your money.</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= THE THURSDAY LETTER ================= -->
+<section class="letter" id="letter" aria-labelledby="letter-title">
+  <div class="wrap letter__grid">
+    <div class="letter__copy">
+      <p class="divider"><span>Every Thursday. Never more.</span></p>
+      <h2 id="letter-title" class="sec-title">The Thursday Letter</h2>
+      <p class="sec-sub">One short letter from a member, five picks around the county, one thing to do with a real date. Same sign-off every week.</p>
+      <form class="letter__form" data-letter novalidate>
+        <label for="l-email" class="sr">Email</label>
+        <input id="l-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required aria-describedby="l-help">
+        <button class="btn btn--violet" type="submit">Send me Thursdays</button>
+      </form>
+      <p id="l-help" class="letter__help">One letter a week, never more, and you can unsubscribe anytime.</p>
+      <p class="form-msg" data-letter-msg role="status" aria-live="polite"></p>
+    </div>
+    <div class="letter__bubble">
+      <div class="lb__head"><i style="--c:#FF7AC6" aria-hidden="true">M</i><div><b>Maya, Oviedo</b><small>demo writer · Thursday 8:02 am</small></div></div>
+      <div class="lb__body">
+        <p>Hi, it's Maya. On election night I was outside a polling place with a clipboard and a lukewarm cold brew when a woman I'd never met asked if she could hand out water with me. She stayed two hours. Most people are one invitation away from showing up.</p>
+        <p>This week: trivia in Lake Mary, a Riverwalk cleanup, and one small thing with a real deadline. Your mail ballot request runs out Dec 31.</p>
+        <p class="lb__sign">See you Thursday.<br>Maya, for the Young Dems xo</p>
+      </div>
+      <svg class="lb__stk" aria-hidden="true"><use href="#stk-chicken"/></svg>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="foot" aria-labelledby="foot-title">
+  <div class="wrap">
+    <div class="foot__top">
+      <p class="foot__word" id="foot-title">Young Dems</p>
+      <p class="foot__lede">Young Democrats of Seminole County · ages 14 to 39 · Sanford, Lake Mary, Oviedo, Winter Springs, Altamonte Springs, Casselberry, Longwood and unincorporated Seminole.</p>
+      <div class="foot__stks" aria-label="Stickers. Tap for a fact.">
+        <button class="stk stk--sm" type="button" data-fact="train" aria-label="Sticker: SunRail train. Tap for a fact"><svg aria-hidden="true"><use href="#stk-train"/></svg></button>
+        <button class="stk stk--sm" type="button" data-fact="chicken" aria-label="Sticker: Oviedo chicken. Tap for a fact"><svg aria-hidden="true"><use href="#stk-chicken"/></svg></button>
+        <button class="stk stk--sm" type="button" data-fact="heart" aria-label="Sticker: heart. Tap for a note"><svg aria-hidden="true"><use href="#stk-heart"/></svg></button>
+        <button class="stk stk--sm" type="button" data-fact="mail" aria-label="Sticker: mail ballot. Tap for a fact"><svg aria-hidden="true"><use href="#stk-mail"/></svg></button>
+      </div>
+    </div>
+    <div class="foot__cols">
+      <nav aria-label="Do something">
+        <h3>Do something</h3>
+        <ul><li><a href="#join">Join</a></li><li><a href="#events">Events</a></li><li><a href="#invite">Make an invite card</a></li><li><a href="#reel">Post a clip</a></li><li><a href="https://secure.actblue.com/donate/youngsemdems" rel="noopener">Chip in ↗</a></li></ul>
+      </nav>
+      <nav aria-label="Voting, from the source">
+        <h3>Voting, from the source</h3>
+        <ul><li><a href="https://voteseminole.gov/" rel="noopener">Seminole Supervisor of Elections ↗</a></li><li><a href="https://registertovoteflorida.gov/home" rel="noopener">Register to vote ↗</a></li><li><a href="https://voteseminole.gov/voters/my-voter-record/" rel="noopener">My voter record ↗</a></li><li><a href="https://voteseminole.gov/how-to-vote/vote-by-mail/" rel="noopener">Vote by mail ↗</a></li><li><a href="https://voteseminole.dolphmap.com/" rel="noopener">Find my polling place ↗</a></li></ul>
+      </nav>
+      <nav aria-label="Family">
+        <h3>Family</h3>
+        <ul><li><a href="https://semdems.com/" rel="noopener">Seminole County Democrats ↗</a></li><li><a href="https://www.floridayoungdems.com/" rel="noopener">Florida Young Democrats ↗</a></li></ul>
+      </nav>
+      <nav aria-label="House rules">
+        <h3>House rules</h3>
+        <ul><li><a href="#" aria-disabled="true">Code of conduct (coming)</a></li><li><a href="#" aria-disabled="true">Privacy (coming)</a></li><li><a href="#" aria-disabled="true">Accessibility (coming)</a></li><li><a href="#top">Back to top ↑</a></li></ul>
+      </nav>
+    </div>
+    <div class="foot__legal">
+      <span class="tag tag--demo tag--lg">DEMO SITE</span>
+      <p class="foot__paid"><b>Paid for by [committee name and address placeholder].</b></p>
+      <p>A prototype built for the Young Democrats of Seminole County, awaiting the chapter's sign-off. Events, people, clips and counts marked DEMO are placeholders. Photos are Unsplash stand-ins; the people shown are not members and don't endorse anything. No ad trackers on this site.</p>
+      <p lang="es">Español: borrador, pendiente de revisión por hablantes nativos.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- Post-a-clip dialog -->
+<dialog class="sheet" id="post-dialog" aria-labelledby="post-title">
+  <form method="dialog" class="sheet__in" data-post novalidate>
+    <div class="sheet__head">
+      <h2 id="post-title">Post your take</h2>
+      <button type="button" class="sheet__x" data-close aria-label="Close">×</button>
+    </div>
+    <p>Got 60 seconds and something to say? Film it vertical, keep it kind and send it in. A real person on our team watches every video before it goes live.</p>
+    <div class="field">
+      <label for="p-link">Paste a TikTok, Instagram or YouTube link</label>
+      <input id="p-link" name="link" type="url" inputmode="url" placeholder="https://www.tiktok.com/@you/video/…">
+    </div>
+    <div class="field">
+      <label for="p-file">Or upload a video <span class="opt">(up to 3 minutes)</span></label>
+      <input id="p-file" name="file" type="file" accept="video/*">
+    </div>
+    <div class="field">
+      <label for="p-cap">Caption</label>
+      <input id="p-cap" name="cap" type="text" maxlength="300" placeholder="Why I showed up in Sanford">
+    </div>
+    <label class="check"><input type="checkbox" name="c1" required><span>I made this, or I have the right to post it.</span></label>
+    <label class="check"><input type="checkbox" name="c2" required><span>Everyone you can recognize in it agreed to be shown.</span></label>
+    <label class="check"><input type="checkbox" name="c3" required><span>If anyone in it is under 18, a parent or guardian said OK.</span></label>
+    <p class="form-msg" data-post-msg role="status" aria-live="polite"></p>
+    <div class="sheet__foot">
+      <button type="submit" class="btn btn--ink btn--xl" value="send">Send for review</button>
+      <span class="tag tag--demo">DEMO: nothing uploads</span>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" role="status" aria-live="polite" data-toast></div>
+<canvas class="confetti" aria-hidden="true" data-confetti></canvas>
+
+<noscript><style>.clip video{background:#170B33}</style></noscript>
+<script src="a.js" defer></script>
+</body>
+</html>

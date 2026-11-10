@@ -1,0 +1,5 @@
+/* Fixture styles: tap targets of at least 44px, nothing wider than the viewport. */
+body { margin: 0; padding: 0 16px; font: 16px/1.5 system-ui, sans-serif; }
+nav a { display: inline-block; min-height: 44px; min-width: 44px; padding: 10px; }
+button { min-width: 44px; min-height: 44px; }
+img { max-width: 100%; height: auto; }

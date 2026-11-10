@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es" data-page="good">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Página de prueba (inglés escrito por JS) · Young Democrats of Seminole County</title>
+  <meta name="description" content="Una página de prueba sin defectos sembrados.">
+  <meta property="og:title" content="Página de prueba">
+  <meta property="og:description" content="Una página de prueba sin defectos sembrados.">
+  <meta property="og:image" content="../assets/img/og/es/good.png">
+  <meta property="og:image:alt" content="Tarjeta de prueba sobre violeta.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="alternate" hreflang="en" href="../good.html">
+  <link rel="alternate" hreflang="es" href="good.html">
+  <link rel="alternate" hreflang="x-default" href="../good.html">
+  <link rel="stylesheet" href="../assets/css/fixture.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <div class="demo-banner"><p>Vista previa DEMO para los Young Democrats of Seminole County. Los formularios no envían nada.</p></div>
+  <header class="site-header"><a class="brand" href="good.html">Young Dems</a> <a class="btn btn--primary" href="#join">Únete gratis</a></header>
+  <main id="main">
+    <section class="wrap section--violet">
+      <h1>La política local es un trabajo en equipo.</h1>
+      <p>Planes gratis, respuestas claras sobre cómo votar y un grupo de Sanford a Oviedo.</p>
+      <p><a class="btn btn--primary" href="#join">Únete gratis</a> <a class="btn btn--ghost" href="#invites">Mira qué hay</a></p>
+    </section>
+    <section class="wrap" id="invites">
+      <h2>Te invitamos</h2>
+      <article class="invite" data-qa="invite">
+        <p>Noche de trivia: edición condado de Seminole <span class="tag tag--demo">Evento DEMO</span></p>
+        <p>jue 19 de nov · 7 p. m. · Casselberry</p>
+        <p data-demo>23 van (DEMO)</p>
+      </article>
+      <button type="button" class="btn" data-share>Mándalo al grupo</button>
+      <!-- allowed: proper names and DEMO stay in English -->
+      <p>Revisa tu registro en My Voter Record antes de votar. Todo aquí es DEMO.</p>
+      <!-- seeded defect: JS writes an English sentence after load (make_es --check never sees it) -->
+      <p data-late-text="Join free and bring a friend tonight">Únete</p>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <p>Pagado por [nombre y dirección del comité] <span class="tag tag--demo">DEMO</span></p>
+    <p>Vista previa para los Young Democrats of Seminole County. No es un sitio oficial de los Seminole County Democrats, de los Florida Young Democrats ni de ninguna organización del partido.</p>
+  </footer>
+  <div class="toast-region" role="status" aria-live="polite"></div>
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/store.js"></script>
+  <script src="../assets/js/share.js"></script>
+  <script src="../assets/js/fixture.js"></script>
+</body>
+</html>

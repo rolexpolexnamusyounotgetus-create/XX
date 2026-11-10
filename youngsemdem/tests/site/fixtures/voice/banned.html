@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Voice lint fixture: banned terms</title>
+<meta name="description" content="Every banned term, one per block. voice_lint.js must flag each one."></head>
+<body>
+<main>
+<!-- each <p data-expect="rule-id"> must produce that rule -->
+<p data-expect="native-imagery">Bring your warrior energy to the meeting.</p>
+<p data-expect="native-imagery">Find your tribe in Sanford.</p>
+<p data-expect="candidate-names">David Jolly won Seminole.</p>
+<p data-expect="candidate-names">Byron Donalds won statewide.</p>
+<p data-expect="ages-40-and-under">Open to everyone 40 and under.</p>
+<p data-expect="naming">Welcome to the Young Sem Dems.</p>
+<p data-expect="chat-labels">Join the chat tonight.</p>
+<p data-expect="slang-costume">This event is going to slay.</p>
+<p data-expect="fossil-talk">Our GOTV plan for the turnout universe.</p>
+<p data-expect="panic-fundraising">FINAL NOTICE: we noticed you haven't given yet.</p>
+<p data-expect="urgent-caps">URGENT: renew today.</p>
+<p data-expect="ableist">That line was crazy long.</p>
+<p data-expect="othering">A night for Latinx voters.</p>
+<p data-expect="game-costume">Earn +15 XP when you RSVP.</p>
+<p data-expect="game-costume">Press start to begin.</p>
+<p data-expect="game-costume">What's your organizer era?</p>
+<p data-expect="click-here">To RSVP, click here.</p>
+<p data-expect="mail-ballot-overclaim">Every Florida mail ballot request expires Dec 31.</p>
+<p data-expect="mail-ballot-overclaim">Dec 31 is the deadline to renew.</p>
+<p data-expect="claims-to-avoid">This is the youthquake.</p>
+<p data-expect="official-site">The official site of the Seminole County Democrats.</p>
+<p data-expect="celebrity">Inspired by Dua Lipa.</p>
+<p data-expect="profanity">No shit, it's free.</p>
+<p data-expect="time-format">Doors open at 7 PM.</p>
+<p data-expect="leftovers">Lorem ipsum dolor sit amet.</p>
+<p data-expect="ai-features">Ask our AI assistant anything.</p>
+<img src="x.jpg" alt="Friends with beer at the park" data-expect="alcohol" width="10" height="10">
+<section data-expect="exclamations"><p>Come to trivia!</p><p>Bring a friend!</p></section>
+<section class="band--serious" data-expect="serious-exclamation"><p>Nov 3 was hard. Get back up!</p></section>
+<article class="letter" data-expect="emoji"><p>Hi, it's Dani. See you Thursday 🎉</p></article>
+</main>
+</body>
+</html>

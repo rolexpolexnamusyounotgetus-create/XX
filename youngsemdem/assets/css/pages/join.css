@@ -1,0 +1,287 @@
+/* YDSC · join.css (W6, round 1 G-JOIN). join.html only; every rule sits under .p-join. Shared components come from
+   components.css (worlds, .hero, .edge--scallop); x- classes are page-only. Colour world: sky, with the live member
+   card as the hero object (genz-brand-01). The ticket is a light island (.theme-light) in both themes: a collectible
+   object, so it gets the hard border and offset shadow; the form fields inside stay quiet. Characters from
+   assets/img/characters/ peek over the card (decorative, alt=""). */
+
+/* ---------- hero: sky world, member card as the object, scalloped like a ticket stub ---------- */
+.p-join .x-hero { --hero-object:520px;padding-block:clamp(28px, 5vw, 80px) calc(clamp(56px, 7vw, 112px) + var(--edge, 0px)); }
+.p-join .x-hero__grid { align-items:start;gap:clamp(28px, 5vw, 72px); }
+@media (min-width: 1024px) { .p-join .x-hero__grid { grid-template-columns:minmax(0, 1.02fr) minmax(0, .98fr); } }
+@media (min-width: 900px) and (max-width: 1023px) { .p-join .x-hero__grid { grid-template-columns:minmax(0, 1fr); } }
+.p-join .x-hero__copy { gap:var(--sp-4);justify-items:start; }
+@media (min-width: 1024px) { .p-join .x-hero__copy { padding-top:clamp(16px, 3vw, 56px); } }
+.p-join .x-hero__pill { font-size:var(--fs-tag); }
+.p-join .x-hero__title { display:flex;flex-direction:column;align-items:flex-start;gap:var(--sp-3);margin-top:var(--sp-1); }
+.p-join .x-hero__big { display:block;font:800 clamp(64px, 17vw + 6px, 152px)/.84 var(--font-display-76);font-stretch:76%;letter-spacing:-.025em;color:var(--night);overflow-wrap:anywhere; }
+.p-join .x-hero[data-joined] .x-hero__big { font-size:clamp(52px, 12vw + 6px, 116px);line-height:.88; }
+.p-join .x-hero[data-joined="long"] .x-hero__big { font-size:clamp(44px, 9vw + 6px, 92px); }
+.p-join .x-hero__kicker {
+  display:inline-block;width:fit-content;max-width:100%;padding:.14em .5em .2em;rotate:-2deg;
+  font:800 var(--fs-h3)/1.05 var(--font-display-84);font-stretch:84%;letter-spacing:-.005em;
+  background:var(--cream);color:var(--night);border:var(--bw) solid var(--night);border-radius:18px 18px 18px 6px;box-shadow:4px 4px 0 var(--night);
+}
+.p-join .x-hero__lead { color:var(--night);max-width:32ch;font-weight:700; }
+
+/* the scalloped edge shows the next band, not a strip of page colour */
+.p-join .x-hero { z-index:1;margin-bottom:-16px; }
+.p-join .x-hero + .x-more, .p-join .x-hero + .x-more[hidden] + .x-get { padding-top:calc(var(--section-pad) + 16px); }
+
+/* who sent this (?ref / ?from): the B20 line, a pill in the hero */
+.p-join .x-invited { display:inline-flex;align-items:center;gap:10px;width:fit-content;max-width:100%;padding:6px 16px 6px 6px;border:var(--bw) solid var(--night);border-radius:var(--r-pill);background:var(--cream);color:var(--night);box-shadow:3px 3px 0 var(--night);font:800 var(--fs-small)/1.2 var(--font-body); }
+.p-join .x-invited__av { display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:50%;background:var(--violet);color:var(--cream);border:var(--bw) solid var(--night);font:800 18px/1 var(--font-display-84);font-stretch:84%; }
+.p-join .x-invited__av.sticker { --sticker-size:36px;background:transparent;border:0; }
+
+.p-join .x-receipts { display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:0;padding:0;list-style:none; }
+.p-join .x-receipts li { display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 14px 6px 8px;border:1.5px solid var(--night);border-radius:var(--r-pill);background:rgba(255, 255, 255, .45);font:700 var(--fs-small)/1.2 var(--font-body);color:var(--night); }
+.p-join .x-receipts li::before { content:"";flex:none;width:20px;height:20px;border-radius:50%;background:var(--night) center/12px no-repeat url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M2 6.4 4.8 9 10 3' fill='none' stroke='%23C8F03C' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>"); }
+.p-join .x-hero__more { gap:var(--sp-3) var(--sp-4); }
+.p-join .x-hero__more .btn { white-space:normal; }
+.p-join .x-teenlink { display:inline-flex;align-items:center;width:fit-content;min-height:44px;margin-top:-6px;font-size:var(--fs-small);font-weight:800;color:var(--violet-deep);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px; }
+.p-join .x-teenlink::after { content:"↓";margin-left:6px;text-decoration:none; }
+
+/* desktop: the sticker book teaser fills the column beside the form (the rewards, before anyone joins) */
+.p-join .x-teaser { display:none; }
+@media (min-width: 1024px) {
+  .p-join .x-teaser { display:flex;align-items:center;gap:var(--sp-5);width:100%;max-width:560px;margin-top:var(--sp-6);padding:18px 22px;background:var(--cream);color:var(--night);border:var(--bw) solid var(--night);border-radius:22px;box-shadow:6px 6px 0 var(--night);text-decoration:none;transition:transform var(--dur-1) var(--ease-pop); }
+  .p-join .x-teaser:hover { transform:translate(-2px, -2px);box-shadow:8px 8px 0 var(--night); }
+  .p-join .x-teaser__stickers { display:flex;flex:none;padding-left:10px; }
+  .p-join .x-teaser__stickers .sticker { --sticker-size:58px;margin-left:-14px; }
+  .p-join .x-teaser__text { display:grid;gap:4px;font-size:var(--fs-small);line-height:1.4; }
+  .p-join .x-teaser__text strong { font:800 var(--fs-h4)/1.05 var(--font-display-88);font-stretch:88%; }
+  .p-join .x-hero[data-joined] .x-teaser { display:none; }
+}
+
+/* join.html?e=<id>: the event this "I'm in" link was for (journeys-13) */
+.p-join .x-event { --duo:var(--celery);display:grid;gap:var(--sp-3);width:100%;max-width:520px;padding:16px 18px 18px;background:var(--cream);color:var(--night);border:var(--bw) solid var(--night);border-top:12px solid var(--duo);border-radius:20px;box-shadow:6px 6px 0 var(--night); }
+.p-join .x-event[data-state="loading"] { min-height:236px;align-content:start; }
+.p-join .x-event[data-state="missing"], .p-join .x-event[data-state="past"] { border-top-width:var(--bw); }
+.p-join .x-event__kicker { font:800 var(--fs-tag)/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase; }
+.p-join .x-event__row { display:flex;align-items:center;gap:var(--sp-4); }
+.p-join .x-event__ticket { flex:none;--rot:-4deg; }
+.p-join .x-event__text { display:grid;gap:6px;min-width:0; }
+.p-join .x-event__title { font:800 var(--fs-h4)/1.05 var(--font-display-88);font-stretch:88%;overflow-wrap:break-word; }
+.p-join .x-event__meta { font-size:var(--fs-small);line-height:1.4;font-weight:700; }
+.p-join .x-event__meta .tag { vertical-align:2px; }
+.p-join .x-event__lead { font-size:var(--fs-small);line-height:1.45; }
+.p-join .x-event .btn { white-space:normal; }
+
+/* ---------- the ticket: live pass + perforation + form ---------- */
+.p-join .x-ticket {
+  position:relative;width:100%;max-width:520px;justify-self:center;margin-top:clamp(40px, 9vw, 64px);
+  border:var(--bw) solid var(--night);border-radius:28px;background:var(--cream);color:var(--night);box-shadow:10px 10px 0 var(--night);
+}
+@media (min-width: 1024px) { .p-join .x-ticket { justify-self:end;margin-top:72px; } }
+/* friends peeking over the card (the "Bring a friend" in one picture) */
+.p-join .x-crew { position:absolute;z-index:0;left:0;right:0;bottom:calc(100% - 18px);display:flex;justify-content:center;align-items:flex-end;gap:0;pointer-events:none; }
+/* the characters are inline SVG (assets/img/characters/show-up/*.svg, copied in so the first view stays at 30 requests) */
+.p-join .x-crew__face { display:block;flex:none;width:clamp(64px, 18vw, 88px);height:auto;margin-inline:-6px;filter:drop-shadow(3px 3px 0 var(--night)); }
+.p-join .x-crew__face--a { rotate:-10deg;translate:0 10px; }
+.p-join .x-crew__face--b { width:clamp(76px, 22vw, 104px);z-index:1; }
+.p-join .x-crew__face--c { rotate:9deg;translate:0 12px; }
+@media (prefers-reduced-motion: no-preference) {
+  .p-join .x-crew__face { animation:x-peek .6s var(--ease-pop) both; }
+  .p-join .x-crew__face--b { animation-delay:.08s; } .p-join .x-crew__face--c { animation-delay:.16s; }
+  html[data-motion="paused"] .p-join .x-crew__face { animation:none; }
+}
+@keyframes x-peek { from { transform:translateY(40%);opacity:0; } }
+.p-join .x-pass {
+  --pass:var(--celery);
+  position:relative;z-index:1;display:grid;gap:var(--sp-2);padding:18px 20px 20px;border-radius:26px 26px 0 0;
+  background:var(--pass);color:var(--night);transition:background-color var(--dur-3) var(--ease-out);
+}
+.p-join .x-ticket__body { position:relative;z-index:1;background:var(--cream);border-radius:0 0 26px 26px; }
+.p-join .x-pass__row { display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);font:700 var(--fs-tag)/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase; }
+.p-join .x-pass__brand { display:inline-flex;align-items:center;gap:8px; }
+.p-join .x-pass__mark { width:38px;height:28px;flex:none; }
+.p-join .x-pass__kind { padding:4px 10px;border:1.5px solid var(--night);border-radius:var(--r-pill);background:var(--cream); }
+.p-join .x-pass__name {
+  min-height:.9em;padding-right:76px;margin-block:6px 2px;overflow-wrap:anywhere;
+  font:800 clamp(40px, 7vw + 14px, 66px)/.9 var(--font-display-76);font-stretch:76%;letter-spacing:-.02em;text-transform:uppercase;color:#3D3352;
+}
+.p-join .x-pass[data-filled] .x-pass__name, .p-join .x-pass[data-state="joined"] .x-pass__name { color:var(--night); }
+.p-join .x-pass[data-len="m"] .x-pass__name { font-size:clamp(28px, 4.4vw + 14px, 50px);overflow-wrap:break-word; }
+.p-join .x-pass[data-len="l"] .x-pass__name { font-size:clamp(22px, 2.6vw + 14px, 38px);overflow-wrap:break-word; }
+.p-join .x-pass__foot { flex-wrap:wrap;justify-content:flex-start;gap:4px 14px; }
+.p-join .x-pass[data-dark], .p-join .x-pass[data-dark] .x-pass__name { color:var(--cream); }
+.p-join .x-pass__sticker { position:absolute;right:16px;top:50%;margin-top:-24px;--rot:10deg; }
+/* decorative ticket barcode (no text on it) */
+.p-join .x-pass__code { position:absolute;right:20px;bottom:18px;width:72px;height:26px;border-radius:3px;background:repeating-linear-gradient(90deg, var(--night) 0 2px, transparent 2px 4px, var(--night) 4px 7px, transparent 7px 9px, var(--night) 9px 10px, transparent 10px 13px);opacity:.85; }
+.p-join .x-pass[data-state="joined"] .x-pass__code { display:none; }
+@media (max-width: 359px) { .p-join .x-pass__code { display:none; } }
+@media (min-width: 480px) { .p-join .x-pass__code { right:28px; } }
+.p-join .x-pass[data-state="joined"] .x-pass__kind { display:none; }
+/* 40+ (supporters, not members): no "You're in" stamp, so the pass keeps its SUPPORTER / SIMPATIZANTE pill (lead, Nov 9). */
+.p-join .x-pass[data-state="joined"][data-supporter] .x-pass__kind { display:inline-block; }
+.p-join .x-pass[data-supporter] .x-pass__row:first-child { flex-wrap:wrap;row-gap:6px; }
+.p-join .x-pass__stamp {
+  margin-block:-6px;padding:6px 12px;rotate:-7deg;
+  font:800 20px/1 var(--font-display-84);font-stretch:84%;text-transform:uppercase;letter-spacing:.02em;
+  color:var(--night);background:var(--cream);border:3px solid var(--night);border-radius:10px;box-shadow:3px 3px 0 var(--night);
+}
+.p-join .x-pass[data-state="joined"] .x-pass__sticker { display:none; }
+@media (prefers-reduced-motion: no-preference) {
+  .p-join .x-pass__stamp:not([hidden]) { animation:x-stamp .5s var(--ease-pop) both; }
+}
+@keyframes x-stamp { from { opacity:0;scale:1.8;rotate:-22deg; } }
+
+.p-join .x-ticket__body { padding:26px 20px 22px;border-top:var(--bw) dashed var(--night); }
+.p-join .x-ticket__body::before, .p-join .x-ticket__body::after {
+  content:"";position:absolute;top:-15px;width:28px;height:28px;border-radius:50%;background:var(--sky);border:var(--bw) solid var(--night);
+}
+.p-join .x-ticket__body::before { left:-16px;clip-path:inset(0 0 0 50%); }
+.p-join .x-ticket__body::after { right:-16px;clip-path:inset(0 50% 0 0); }
+@media (min-width: 480px) { .p-join .x-ticket__body { padding-inline:28px; } .p-join .x-pass { padding-inline:28px; } }
+
+.p-join .x-form { gap:18px; }
+.p-join .x-field--age input { max-width:9rem; }
+.p-join .x-form__go { margin-top:2px; }
+.p-join .x-form__demo { margin-top:-6px; }
+.p-join [data-join] [data-join-done] { gap:var(--sp-3); }
+.p-join [data-join] [data-join-done] .lead { font-size:var(--fs-body); }
+.p-join [data-join] [data-join-done] .btn { white-space:normal; }
+.p-join [data-join] [data-join-young] { margin-top:var(--sp-4); }
+.p-join [data-join] [data-join-switch] { align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-4);padding-bottom:var(--sp-4);border-bottom:1px dashed var(--line); }
+.p-join [data-join-intent] { border-left-color:var(--sun);background:#FFF1B8;color:var(--night); }
+.p-join [data-join-intent] .h4 { font:800 var(--fs-h4)/1.05 var(--font-display-88);font-stretch:88%; }
+.p-join [data-join-prefill] { display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:-4px 0 -6px;font-weight:700; }
+.p-join [data-join-reset-ask] .btn { white-space:normal; }
+
+/* ---------- make it yours: step two below the hero (journeys-11, journeys-12) ---------- */
+.p-join .x-more { padding-block:clamp(36px, 5vw, 72px); }
+.p-join .x-more__eyebrow { margin-bottom:var(--sp-3); }
+.p-join .x-more [data-join-step2] { gap:var(--sp-5); }
+.p-join .x-more [data-join-step2-head] .h2 { font-size:var(--fs-h2);line-height:1; }
+@media (min-width: 900px) {
+  .p-join .x-more [data-join-step2] { display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));column-gap:clamp(28px, 4vw, 56px);align-items:start; }
+  .p-join .x-more [data-join-step2] > [data-join-step2-head], .p-join .x-more [data-join-step2] > .form__summary,
+  .p-join .x-more [data-join-step2] > [data-join-group="actions"], .p-join .x-more [data-join-step2] > [data-join-group="crews"],
+  .p-join .x-more [data-join-step2] > [data-join-group="issues"] { grid-column:1 / -1; }
+}
+.p-join .x-more fieldset.field { margin:0;padding:var(--sp-4);border:var(--bw) solid var(--edge);border-radius:var(--r-lg);background:var(--surface);min-width:0; }
+.p-join .x-more fieldset.field > legend { float:left;width:100%;margin-bottom:var(--sp-2);padding:0;font:800 var(--fs-h4)/1.1 var(--font-display-88);font-stretch:88%; }
+.p-join .x-more fieldset.field > legend + * { clear:both; }
+.p-join .x-more fieldset[data-join-group="intent"] { border-color:var(--night);background:#E3F7FF;color:var(--night);box-shadow:5px 5px 0 var(--night); }
+.p-join .x-more [data-join-group="intent"] :is(legend, .field__label) { color:var(--night); }
+.p-join .x-more [data-join-group="intent"] .field__hint { color:#0F3240; }
+.p-join .x-more [data-join-group="crews"] .chip-row { display:grid;grid-template-columns:repeat(auto-fill, minmax(min(100%, 230px), 1fr));gap:var(--sp-2); }
+.p-join .chip__text { display:grid;gap:2px;text-align:left; }
+.p-join .chip__name { font-weight:800; }
+.p-join .chip__sub { font-weight:400;font-size:var(--fs-tag);line-height:1.3;opacity:.92; }
+.p-join [data-join-crews] .chip { justify-content:flex-start;border-radius:16px;padding:10px 14px;min-height:56px; }
+.p-join [data-join-crewline] { margin-top:var(--sp-3);padding:8px 12px;border-radius:var(--r-md);background:var(--surface-2);font-weight:700; }
+.p-join .x-more [data-join-picks] { align-items:flex-start;padding:var(--sp-5);border:var(--bw) solid var(--edge);border-radius:var(--r-lg);background:var(--surface); }
+.p-join .x-more .chip { padding-inline:14px; }
+.p-join .x-more .chip-row { gap:6px; }
+
+/* ---------- what you get: card, pack, squad demo (night) ---------- */
+.p-join .x-get__grid { display:grid;grid-template-columns:minmax(0, 1fr);gap:clamp(32px, 5vw, 56px);align-items:start; }
+@media (min-width: 900px) { .p-join .x-get__grid { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); } }
+.p-join .x-get__mine { display:grid;gap:var(--sp-5);min-width:0; }
+.p-join .x-card__locked { display:grid;gap:var(--sp-3);justify-items:start; }
+.p-join .x-pass--locked { width:100%;max-width:460px;border:var(--bw) dashed var(--line);border-radius:24px;background:transparent;color:var(--text-muted); }
+.p-join .x-pass--locked .x-pass__kind { background:transparent;border-color:var(--line); }
+.p-join .x-pass--locked .x-pass__name { color:var(--text-muted);padding-right:0; }
+.p-join .x-card__host [data-join-fallback-card] { padding:var(--sp-5);background:var(--surface);color:var(--text);border:var(--bw) solid var(--edge);border-radius:var(--r-lg);box-shadow:var(--sh-card) var(--shadow); }
+.p-join .x-card-link { overflow-wrap:anywhere;font-weight:700; }
+.p-join .x-squad { display:grid;gap:var(--sp-3);padding:var(--sp-5);border:var(--bw) dashed var(--line);border-radius:var(--r-lg); }
+.p-join .x-squad__title { font:800 var(--fs-h4)/1.1 var(--font-display-88);font-stretch:88%; }
+.p-join .x-squad__steps { display:grid;gap:6px;margin:0;padding-left:1.5em;font-weight:700;list-style:decimal; }
+.p-join .x-squad__steps ::marker { color:var(--celery);font-weight:800; }
+.p-join .x-squad p { margin:0; }
+.p-join .x-pack { display:grid;gap:var(--sp-4);justify-items:start; }
+.p-join .x-pack__title { font:800 var(--fs-h3)/1 var(--font-display-84);font-stretch:84%; }
+.p-join .x-pack__grid { display:grid;grid-template-columns:repeat(6, minmax(0, 1fr));gap:12px 8px;width:100%;max-width:560px;padding-block:var(--sp-2);justify-items:center; }
+@media (max-width: 479px) { .p-join .x-pack__grid { grid-template-columns:repeat(5, minmax(0, 1fr)); } }
+.p-join .x-pack__sticker { --sticker-size:min(64px, 100%);aspect-ratio:1;height:auto; }
+@media (min-width: 640px) { .p-join .x-pack__sticker { --sticker-size:76px; } }
+.p-join [data-sticker-pack][aria-disabled="true"] { opacity:1;--btn-bg:transparent;--btn-fg:var(--text);--btn-edge:var(--text);border-style:dashed;box-shadow:none;transform:none; }
+.p-join [data-sticker-pack][aria-disabled="true"]::before { content:"";width:14px;height:16px;flex:none;background:currentColor;mask:var(--lock) center/contain no-repeat; }
+
+/* ---------- how stickers work (YSD.membercard.rulesPanel) ---------- */
+.p-join .x-rules { padding-block:clamp(48px, 6vw, 96px);border-top:1px solid var(--line); }
+.p-join .x-rules .rules { grid-template-columns:minmax(0, 1fr); }
+.p-join .x-rules .rules__cta .btn { white-space:normal; }
+.p-join .x-rules .rules__title { font:800 var(--fs-h2)/1 var(--font-display-84);font-stretch:84%; }
+@media (min-width: 1024px) { .p-join .x-rules .rules__grid { grid-template-columns:repeat(5, minmax(0, 1fr)); } }
+/* phones: the 15 stickers become a one-row book you swipe through (every rule stays on the page; the rail is a
+   keyboard-scrollable region, join.js gives it tabindex and a name) */
+@media (max-width: 799.98px) {
+  .p-join .x-rules .rules__grid {
+    grid-template-columns:none;grid-auto-flow:column;grid-template-rows:auto;grid-auto-columns:min(46%, 176px);gap:var(--sp-3);
+    overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding-inline:var(--gutter-l);contain:inline-size;
+    padding:var(--sp-2) var(--gutter-r) var(--sp-4) var(--gutter-l);margin-inline:calc(var(--gutter-l) * -1) calc(var(--gutter-r) * -1);
+    scrollbar-width:thin;scrollbar-color:var(--text-muted) transparent;
+  }
+  .p-join .x-rules .rules__item {
+    grid-template-columns:minmax(0, 1fr);grid-template-areas:none;justify-items:center;align-content:start;text-align:center;
+    row-gap:4px;padding:var(--sp-3) var(--sp-2);scroll-snap-align:start;
+  }
+  .p-join .x-rules .rules__art { grid-area:auto;width:60px;height:60px; }
+  .p-join .x-rules :is(.rules__name, .rules__rule, .rules__state, .rules__perk) { grid-area:auto; }
+  .p-join .x-rules .rules__perk { justify-content:center; }
+  /* the perk's words are in the perk ladder right under the rail; the card keeps the tag, so the rail stays short */
+  .p-join .x-rules .rules__perk > span:not(.tag) { display:none; }
+  .p-join .x-rules .rules__state { order:9;margin-top:auto;padding-top:var(--sp-2); }
+  .p-join .x-rules .rules__item { display:flex;flex-direction:column;align-items:center; }
+  .p-join .x-rules .rules__grid:focus-visible { outline:3px solid var(--focus);outline-offset:2px; }
+}
+
+/* ---------- tiers: a swipe row on phones, three across from 800 px ---------- */
+.p-join .x-tiers { display:grid;gap:var(--sp-5); }
+@media (max-width: 799.98px) {
+  .p-join .x-tiers {
+    grid-auto-flow:column;grid-auto-columns:min(84%, 330px);gap:var(--sp-4);align-items:stretch;
+    overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding-inline:var(--gutter-l);contain:inline-size;
+    padding:var(--sp-2) var(--gutter-r) var(--sp-5) var(--gutter-l);margin-inline:calc(var(--gutter-l) * -1) calc(var(--gutter-r) * -1);
+    scrollbar-width:thin;scrollbar-color:var(--night) transparent;
+  }
+  .p-join .x-tiers > .tier { scroll-snap-align:start; }
+}
+@media (min-width: 800px) { .p-join .x-tiers { grid-template-columns:repeat(3, minmax(0, 1fr)); } }
+.p-join .x-tiers .tier { box-shadow:var(--sh-card) var(--night); }
+.p-join .x-fine { display:grid;gap:var(--sp-2);max-width:62ch;margin-top:clamp(28px, 4vw, 44px); }
+.p-join .x-fine .small { color:var(--text-muted); }
+
+/* ---------- 14 to 17 (sun): taped notes, no rotation on paragraphs ---------- */
+.p-join .x-teen__grid { display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 240px), 1fr));gap:var(--sp-5) var(--sp-4);margin:0;padding:var(--sp-3) 0 0;list-style:none; }
+.p-join .x-note { position:relative;display:grid;align-content:start;gap:var(--sp-2);padding:22px 18px 18px;background:var(--cream);color:var(--night);border:var(--bw) solid var(--night);border-radius:6px 6px 18px 6px;box-shadow:5px 5px 0 var(--night); }
+.p-join .x-note::before { content:"";position:absolute;top:-12px;left:50%;width:72px;height:22px;margin-left:-36px;background:rgba(79, 214, 255, .75);border:1.5px solid rgba(23, 11, 51, .35);rotate:-3deg; }
+.p-join .x-note:nth-child(2)::before { background:rgba(255, 122, 198, .75);rotate:4deg; }
+.p-join .x-note:nth-child(3)::before { background:rgba(126, 224, 129, .8);rotate:-2deg; }
+.p-join .x-note--vote::before { background:rgba(200, 240, 60, .85);rotate:3deg; }
+.p-join .x-note__t { font:800 var(--fs-h4)/1.05 var(--font-display-88);font-stretch:88%; }
+.p-join .x-note p { font-size:var(--fs-small);line-height:1.5; }
+.p-join .x-note__act { margin-top:var(--sp-2); }
+.p-join .x-note .btn { white-space:normal; }
+.p-join .x-teen__foot { display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3) var(--sp-5);margin-top:clamp(28px, 4vw, 40px); }
+.p-join .x-teen__foot .link { display:inline-flex;align-items:center;min-height:44px;font-weight:800; }
+.p-join .x-teen__foot .small { flex-basis:100%;margin:0; }
+.p-join .x-teen__foot .small .link { min-height:44px; }
+
+/* ---------- what happens next ---------- */
+.p-join .x-steps { display:grid;gap:0;counter-reset:none;margin:0;padding:0;list-style:none; }
+@media (min-width: 900px) { .p-join .x-steps { grid-template-columns:repeat(3, minmax(0, 1fr));gap:var(--sp-6); } }
+.p-join .x-step { display:grid;grid-template-columns:auto 1fr;align-items:start;gap:var(--sp-2) var(--sp-4);padding-block:var(--sp-5);border-top:1px solid var(--line); }
+.p-join .x-step > p { grid-column:2; }
+@media (min-width: 900px) { .p-join .x-step { grid-template-columns:1fr;border-top:0;padding-top:0; } .p-join .x-step > p { grid-column:auto; } }
+.p-join .x-step__n {
+  display:grid;place-items:center;width:56px;height:56px;border-radius:50%;
+  background:var(--celery);color:var(--night);border:var(--bw) solid var(--night);box-shadow:3px 3px 0 var(--night);
+  font:800 30px/1 var(--font-display-84);font-stretch:84%;
+}
+.p-join .x-step:nth-child(2) .x-step__n { background:var(--sky); }
+.p-join .x-step:nth-child(3) .x-step__n { background:var(--bubblegum); }
+.p-join .x-step__title { font:800 var(--fs-h4)/1.05 var(--font-display-88);font-stretch:88%;align-self:center; }
+.p-join .x-next__share { display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-4) var(--sp-5);margin-top:clamp(32px, 5vw, 56px);padding:var(--sp-5);border:1px solid var(--line);border-radius:var(--r-lg); }
+.p-join .x-next__share .lead { flex:1 1 18rem;margin:0; }
+.p-join .x-next__share p { margin:0; }
+.p-join .x-next__sticker { --rot:-5deg;font-family:var(--font-body);font-weight:700;font-size:20px;padding-block:.3em .36em; }
+/* Hand face loads only when the sticker nears the viewport (keeps first-view fonts at 2 files; BRIEF 6b B4). */
+@font-face { font-family:"YDSC Hand"; src:url("../../fonts/caveat-brush.woff2") format("woff2"); font-weight:400; font-display:swap; }
+html[data-hand="on"] .p-join .x-next__sticker { font-family:"YDSC Hand", var(--font-hand);font-weight:400;font-size:clamp(22px, 1.2vw + 18px, 30px);padding-block:.2em .28em; }
+
+/* ---------- chip-in ---------- */
+.p-join .x-chip { padding-block:clamp(40px, 6vw, 72px); }
+.p-join .x-chip__inner { display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp-4) var(--sp-6);padding:var(--sp-5);border:1px solid var(--line);border-radius:var(--r-lg); }
+.p-join .x-chip__inner p { margin:0; }

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" data-page="good" data-es="skip">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>QA fixture (bottom bar covering 35% of the screen after a scroll) · Young Democrats of Seminole County</title>
+  <meta name="description" content="A fixture page with no seeded defects.">
+  <meta property="og:title" content="QA fixture">
+  <meta property="og:description" content="A fixture page with no seeded defects.">
+  <meta property="og:image" content="assets/img/og/good.png">
+  <meta property="og:image:alt" content="QA fixture card on ultraviolet.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="assets/css/fixture.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="demo-banner"><p>DEMO preview for the Young Democrats of Seminole County. Forms don't send anything.</p></div>
+  <header class="site-header"><a class="brand" href="good.html">Young Dems</a> <a class="btn btn--primary" href="#join">Join free</a></header>
+  <main id="main">
+    <section class="wrap section--violet">
+      <h1>Local politics is a group project.</h1>
+      <p>Free hangouts, straight answers about voting, and a crew from Sanford to Oviedo.</p>
+      <p><a class="btn btn--primary" href="#join">Join free</a> <a class="btn btn--ghost" href="#invites">See what's on</a></p>
+    </section>
+    <section class="wrap" id="invites">
+      <h2>You're invited</h2>
+      <article class="invite" data-qa="invite">
+        <p>Trivia night: Seminole County edition <span class="tag tag--demo">DEMO event</span></p>
+        <p>Thu, Nov 19 · 7 pm · Casselberry</p>
+        <p data-demo>23 going (DEMO)</p>
+      </article>
+      <button type="button" class="btn" data-share>Send it to the group chat</button>
+    </section>
+    <section class="wrap x-spacer">
+      <h2>How it works</h2>
+      <p>Pick a hangout, tap I'm in, and bring someone. Every event is free and open to any party or none.</p>
+      <p>Trivia nights, canvass walks by the lake and letter-writing at the library. Come once, stay if you like it.</p>
+      <p>Questions about voting get straight answers with the official link next to each one.</p>
+      <p>Most of us are students or just starting work, from Sanford to Oviedo and everywhere between.</p>
+      <p>We meet on weeknights and some Saturday mornings, always somewhere you can reach by car or bus.</p>
+      <p>Bring a friend who has never been to anything political. That is the whole point.</p>
+    </section>
+    <section class="wrap x-spacer">
+      <h2>What to bring</h2>
+      <p>Nothing but yourself. Snacks are on us at most events, and we post the plan the day before.</p>
+      <p>If you need a ride or an accessibility change, say so when you RSVP and we will sort it out.</p>
+      <p>New faces are the best part of every night, so do not worry about knowing anyone.</p>
+      <p>We keep it friendly, local and short, and we finish on time so you can get home.</p>
+      <p>See you soon at the next one.</p>
+    </section>
+
+  </main>
+  <footer class="site-footer">
+    <p>Paid for by [committee name and address placeholder] <span class="tag tag--demo">DEMO</span></p>
+    <p>Preview for the Young Democrats of Seminole County. Not an official site of the Seminole County Democrats, Florida Young Democrats or any party organization.</p>
+  </footer>
+  <!-- seeded defect: a bottom bar that shows on scroll and covers about 35% of the screen -->
+  <div class="x-bar x-bar--tall" data-bottom-bar><p>Trivia is Thursday</p><a class="btn btn--bar" href="#invites">See the invite</a></div>
+  <div class="toast-region" role="status" aria-live="polite"></div>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/share.js"></script>
+  <script src="assets/js/fixture.js"></script>
+</body>
+</html>

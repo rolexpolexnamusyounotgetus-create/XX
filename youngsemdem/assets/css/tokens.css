@@ -1,0 +1,161 @@
+/* YDSC · tokens.css (F0; lead after merge). BRIEF §3.2-3.5. Bright colours are fills under ink, never text
+   on cream. Dark mode is designed and defined twice: the OS media query and [data-theme="dark"] (boot.js sets
+   it before paint). .theme-light/.theme-dark force a theme on a subtree; bright and cream sections (celery, pink or
+   bubblegum, sky, sun, mint, teal, orange, tangerine) are light islands, night sections dark islands; violet and
+   lake keep the page theme for the cards inside them. */
+
+/* ---------- Fonts: self-hosted WOFF2 (tools/fetch_fonts.py; assets/fonts/fonts.json) ---------- */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("../fonts/bricolage-800-wdth.woff2") format("woff2");
+  font-weight: 100 900; /* one weight (800) ships; the range stops synthetic bold at 900 */
+  font-stretch: 75% 100%;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("../fonts/atkinson-next-var.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Caveat Brush";
+  src: url("../fonts/caveat-brush.woff2") format("woff2");
+  font-weight: 400;
+  font-display: optional; /* decorative only, never preloaded */
+}
+
+/* ---------- Metric-matched fallbacks (graft from Concept C; no font gate) ----------
+   Measured Nov 9, 2026 in Playwright Chromium: 226 headlines + 240 body strings (EN + ES, data/strings.js) in the
+   web font vs Liberation Sans (metric twin of Arial, Helvetica, Arimo); size-adjust = web width / fallback width;
+   ascent/descent-override = typo metrics (Bricolage 930/-270, Atkinson 984/-316) / size-adjust. The display
+   fallback can't follow font-stretch, so one face per width: wdth 76 (hero, h1, stat) 81.5% · 78 (h2) 83.3% ·
+   84-88 (h3, h4, UI) 88.7% (h4 at 88 measured 92.3%). Atkinson: 400 98.4% · 700 98.8% · 800 102.1%.
+   No Arial Narrow: one face carries one size-adjust, and Narrow is missing on iOS and Android. */
+@font-face { font-family: "Bricolage fb 76"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Liberation Sans Bold"), local("Arimo Bold"); font-weight: 100 900; size-adjust: 81.5%; ascent-override: 114.1%; descent-override: 33.1%; line-gap-override: 0%; }
+@font-face { font-family: "Bricolage fb"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Liberation Sans Bold"), local("Arimo Bold"); font-weight: 100 900; size-adjust: 83.3%; ascent-override: 111.6%; descent-override: 32.4%; line-gap-override: 0%; }
+@font-face { font-family: "Bricolage fb 84"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Liberation Sans Bold"), local("Arimo Bold"); font-weight: 100 900; size-adjust: 88.7%; ascent-override: 104.8%; descent-override: 30.4%; line-gap-override: 0%; }
+@font-face { font-family: "Atkinson fb"; src: local("Arial"), local("ArialMT"), local("Helvetica"), local("Liberation Sans"), local("Arimo"); font-weight: 400; size-adjust: 98.4%; ascent-override: 100%; descent-override: 32.1%; line-gap-override: 0%; }
+@font-face { font-family: "Atkinson fb"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Liberation Sans Bold"), local("Arimo Bold"); font-weight: 700; size-adjust: 98.8%; ascent-override: 99.6%; descent-override: 32%; line-gap-override: 0%; }
+@font-face { font-family: "Atkinson fb"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Liberation Sans Bold"), local("Arimo Bold"); font-weight: 800; size-adjust: 102.1%; ascent-override: 96.4%; descent-override: 30.9%; line-gap-override: 0%; }
+
+/* ---------- Constants (same in both themes) ---------- */
+:root {
+  --violet: #6A2BFF;      /* ultraviolet: hero, brand blocks, white-text buttons */
+  --violet-deep: #4B12D6; /* links + focus on light surfaces */
+  --celery: #C8F03C;      /* Celery City lime: primary CTA fill, REAL tags */
+  --bubblegum: #FF7AC6;
+  --hotpink: #FF4FA3;
+  --sky: #4FD6FF;
+  --tangerine: #FF8B3D;   /* DEMO tags, deadline cards */
+  --orange: #FF6B1A;
+  --teal: #00B3A6;
+  --mint: #7EE081;
+  --sun: #FFD23F;
+  --lake: #2236C9;        /* serious band */
+  --night: #170B33;       /* ink */
+  --cream: #FFF6EA;
+  --white: #FFFFFF;
+  --on-fill: #170B33;     /* text on any bright fill, both themes */
+  --on-violet: #FFFFFF;
+
+  /* issue + event colour map (data/issues.js color, data/events.js cover.token) */
+  --issue-orange: var(--orange); --issue-pink: var(--hotpink); --issue-violet: var(--violet);
+  --issue-bubblegum: var(--bubblegum); --issue-violet-deep: var(--violet-deep); --issue-lime: var(--mint);
+  --issue-celery: var(--celery); --issue-sky: var(--sky); --issue-teal: var(--teal);
+  /* city colourways */
+  --city-sanford: var(--celery); --city-lake-mary: var(--sky); --city-oviedo: var(--tangerine);
+  --city-winter-springs: var(--mint); --city-altamonte-springs: var(--bubblegum); --city-casselberry: var(--hotpink);
+  --city-longwood: var(--teal); --city-unincorporated: var(--violet);
+
+  /* card engine aliases (YSD.cards): constants, so share cards look the same in any theme */
+  --ysd-bg: var(--cream); --ysd-fg: var(--night); --ysd-brand: var(--violet); --ysd-accent: var(--bubblegum);
+  --ysd-pop: var(--celery); --ysd-muted: #574D70; --ysd-ink: var(--night); --ysd-paper: var(--cream);
+  --ysd-font-display: "Bricolage Grotesque", "Bricolage fb", sans-serif;
+  --ysd-font-body: "Atkinson Hyperlegible Next", "Atkinson fb", system-ui, sans-serif;
+  --ysd-card-bg: var(--cream); --ysd-card-fg: var(--night); --ysd-card-brand: var(--violet); --ysd-card-accent: var(--bubblegum);
+  --ysd-card-pop: var(--celery); --ysd-card-muted: #574D70; --ysd-card-ink: var(--night); --ysd-card-paper: var(--cream);
+  --ysd-card-font-display: var(--ysd-font-display); --ysd-card-font-body: var(--ysd-font-body);
+
+  /* type */
+  --font-display: "Bricolage Grotesque", "Bricolage fb", "Arial Narrow", sans-serif;
+  --font-display-76: "Bricolage Grotesque", "Bricolage fb 76", "Arial Narrow", sans-serif;
+  --font-display-84: "Bricolage Grotesque", "Bricolage fb 84", sans-serif;
+  --font-display-88: "Bricolage Grotesque", "Bricolage fb 84", sans-serif;
+  --font-body: "Atkinson Hyperlegible Next", "Atkinson fb", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-hand: "Caveat Brush", "Bradley Hand", "Segoe Print", "Atkinson Hyperlegible Next", "Atkinson fb", sans-serif; /* never a generic serif cursive */
+  --fs-tag: 13px;
+  --fs-small: 15px;
+  --fs-body: 17px;
+  --fs-lead: clamp(19px, 0.5vw + 17px, 22px);
+  --fs-h4: clamp(20px, 1vw + 16px, 24px);
+  --fs-h3: clamp(24px, 2vw + 16px, 34px);
+  --fs-h2: clamp(36px, 4.5vw + 18px, 76px);
+  --fs-h1: clamp(44px, 6vw + 20px, 104px);
+  --fs-hero: clamp(52px, 13vw + 10px, 132px);
+  --fs-stat: clamp(56px, 8vw + 24px, 128px);
+
+  /* space (4 px base) */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px;
+  --sp-6: 32px; --sp-7: 48px; --sp-8: 64px; --sp-9: 96px; --sp-10: 128px;
+  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+  --wrap: 1200px;
+  --prose: 68ch;
+  --section-pad: clamp(48px, 8vw, 112px);
+  --header-h: 64px;
+
+  /* shape */
+  --r-xs: 6px; --r-sm: 10px; --r-md: 16px; --r-lg: 24px; --r-xl: 36px; --r-pill: 999px;
+  --r-bubble: 18px 18px 18px 6px; --r-bubble-me: 18px 18px 6px 18px;
+  --bw: 2px;
+  /* hard offset shadows (no blur): offsets only, so a local --shadow always applies.
+     Use as box-shadow: var(--sh-card) var(--shadow). Only on things you can tap or collect. */
+  --sh-press: 0 4px 0;
+  --sh-card: 6px 6px 0;
+  --sh-lift: 10px 10px 0;
+
+  /* motion */
+  --dur-1: 120ms; --dur-2: 220ms; --dur-3: 400ms; --dur-4: 900ms;
+  --ease-out: cubic-bezier(.2,.8,.2,1);
+  --ease-pop: cubic-bezier(.2,.9,.3,1.35);
+
+  /* film grain for the golden-hour grade (inline data: SVG, allowed by the CSP) */
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* ---------- Semantic tokens: light (default, and every light island) ---------- */
+:root, .theme-light, .section--cream, .section--celery, .section--pink, .section--bubblegum, .section--sky,
+.section--sun, .section--mint, .section--teal, .section--orange, .section--tangerine {
+  --bg:#FFF6EA; --surface:#FFFFFF; --surface-2:#F3EADB; --text:#170B33;
+  --text-muted:#574D70; --link:#4B12D6; --focus:#4B12D6; --edge:#170B33;
+  --line:#E4D9C6; --shadow:#170B33; --error:#B3261E; --success:#1E6B3A;
+  --placeholder:#6E6488;
+  --control: #6E6488;      /* input borders: 5.47:1 on white (WCAG 1.4.11 needs 3:1) */
+  --inverse-bg:#170B33; --inverse-text:#FFF6EA; --island-night:#170B33; --overlay:rgba(23, 11, 51, .62);
+  --sheen:.34;
+  --accent-ui: #6A2BFF;    /* checkbox, radio and range accents */
+  color-scheme: light;
+}
+
+/* ---------- Semantic tokens: dark (OS preference, unless the visitor chose light) ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#120826; --surface:#1E1240; --surface-2:#2A1B55; --text:#FFF6EA;
+    --text-muted:#CDC4EA; --link:#C8F03C; --focus:#C8F03C; --edge:#FFF6EA;
+    --line:#3A2A6B; --shadow:#6A2BFF; --error:#FFB4A8; --success:#8DE0A6;
+    --placeholder:#A79FC2; --control:#A79FC2; --inverse-bg:#FFF6EA; --inverse-text:#170B33;
+    --island-night:#0B0519; --overlay:rgba(4, 2, 12, .72); --sheen:.17; --accent-ui:#C8F03C;
+    color-scheme: dark;
+  }
+}
+/* ---------- Semantic tokens: dark (toggle, and every dark island) ---------- */
+:root[data-theme="dark"], .theme-dark, .section--night {
+  --bg:#120826; --surface:#1E1240; --surface-2:#2A1B55; --text:#FFF6EA;
+  --text-muted:#CDC4EA; --link:#C8F03C; --focus:#C8F03C; --edge:#FFF6EA;
+  --line:#3A2A6B; --shadow:#6A2BFF; --error:#FFB4A8; --success:#8DE0A6;
+  --placeholder:#A79FC2; --control:#A79FC2; --inverse-bg:#FFF6EA; --inverse-text:#170B33;
+  --island-night:#0B0519; --overlay:rgba(4, 2, 12, .72); --sheen:.17; --accent-ui:#C8F03C;
+  color-scheme: dark;
+}
+.theme-light, .theme-dark { background: var(--bg); color: var(--text); }

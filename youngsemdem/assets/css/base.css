@@ -1,0 +1,86 @@
+/* YDSC · base.css (F0): reset, type, links, focus, skip link, form controls, motion. Low specificity (:where). */
+
+*, *::before, *::after { box-sizing:border-box; }
+html {
+  -webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg);color:var(--text);scroll-padding-top:calc(var(--header-h) + 16px); /* focus never hides under the sticky header (2.4.11) */
+  hanging-punctuation:first;
+}
+body {
+  margin:0;min-height:100vh;min-height:100dvh;background:var(--bg);color:var(--text);font:400 var(--fs-body)/1.55 var(--font-body);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;
+}
+:where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd, fieldset, pre) { margin:0; }
+:where(ul, ol)[class], :where(ul, ol)[role="list"] { list-style:none;margin:0;padding:0; }
+:where(img, svg, video, canvas, picture) { display:block;max-width:100%; }
+:where(img, video) { height:auto; }
+:where(svg) { fill:currentColor; }
+:where(button, input, select, textarea) { font:inherit;color:inherit;letter-spacing:inherit; }
+:where(button) { cursor:pointer; }
+:where(button:disabled, [aria-disabled="true"]) { cursor:not-allowed; }
+:where(table) { border-collapse:collapse; }
+:where(hr) { border:0;border-top:1px solid var(--line);margin:var(--sp-6) 0; }
+[hidden] { display:none !important; }
+::selection { background:var(--celery);color:var(--night); }
+
+/* ---------- Type ---------- */
+:where(h1, h2, h3, h4) { font-family:var(--font-display);font-weight:800;letter-spacing:-.01em;text-wrap:balance;overflow-wrap:break-word; }
+:where(h1), .h1 { font-family:var(--font-display-76);font-size:var(--fs-h1);font-stretch:76%;line-height:.9;letter-spacing:-.02em; }
+:where(h2), .h2 { font-family:var(--font-display);font-size:var(--fs-h2);font-stretch:78%;line-height:.92;letter-spacing:-.015em; }
+:where(h3), .h3 { font-family:var(--font-display-84);font-size:var(--fs-h3);font-stretch:84%;line-height:1; }
+:where(h4), .h4 { font-family:var(--font-display-88);font-size:var(--fs-h4);font-stretch:88%;line-height:1.05; }
+.h-hero { font-family:var(--font-display-76);font-size:var(--fs-hero);font-stretch:76%;font-weight:800;line-height:.86;letter-spacing:-.025em; }
+:where(h5, h6) { font-size:var(--fs-body);font-weight:700; }
+.lead { font-size:var(--fs-lead);line-height:1.5;text-wrap:pretty; }
+.small, :where(small) { font-size:var(--fs-small);line-height:1.45; }
+.muted { color:var(--text-muted); }
+:where(p, li) { text-wrap:pretty; }
+:where(strong, b) { font-weight:700; }
+:where(code, kbd, pre) { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;font-size:.9em; }
+:where(pre code, pre kbd) { font-size:1em; }
+
+/* ---------- Links ---------- */
+:where(a) { color:var(--link);text-decoration-line:underline;text-decoration-thickness:.08em;text-underline-offset:.18em; }
+:where(a:hover) { text-decoration-thickness:.16em; }
+/* A bare phone number (numbers carry translate="no", BUILDERS §4) never breaks across lines; a labelled tel: link
+   ("Florida Abuse Hotline: 1-800-962-2873", "Call 407-585-8683") wraps like any other text. */
+:where(a[href^="tel:"][translate="no"]) { white-space:nowrap; }
+
+/* ---------- Focus:3 px ring, 2 px offset, colour per surface (tokens) ---------- */
+:focus { outline:none; }
+:focus-visible { outline:3px solid var(--focus);outline-offset:2px; }
+:where(a, button, summary, [tabindex]):focus-visible { border-radius:var(--r-xs); }
+
+/* ---------- Skip link ---------- */
+.skip-link {
+  position:absolute;left:var(--gutter-l);top:8px;z-index:100;transform:translateY(-160%);display:inline-flex;align-items:center;min-height:44px;padding:0 var(--sp-4);background:var(--celery);color:var(--night);border:var(--bw) solid var(--night);border-radius:var(--r-pill);font-weight:700;text-decoration:none;
+}
+.skip-link:focus, .skip-link:focus-visible { transform:none;outline-color:var(--night); }
+
+/* ---------- Forms (controls;layout lives in components .field) ---------- */
+:where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="submit"], [type="button"], [type="hidden"]), select, textarea) {
+  width:100%;min-height:48px;padding:10px 14px;background:var(--surface);color:var(--text);border:var(--bw) solid var(--control);border-radius:var(--r-sm);font-size:var(--fs-body);line-height:1.35;
+}
+:where(textarea) { min-height:112px;resize:vertical; }
+:where(select) {
+  appearance:none;padding-right:44px;background-image:linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);background-position:calc(100% - 22px) 52%, calc(100% - 16px) 52%;background-size:6px 6px;background-repeat:no-repeat;
+}
+:where(input, select, textarea):focus-visible { border-color:var(--focus);outline-offset:1px; }
+:where(input, select, textarea)[aria-invalid="true"] { border-color:var(--error); }
+::placeholder { color:var(--placeholder);opacity:1; }
+:where(input[type="checkbox"], input[type="radio"]) { width:24px;height:24px;margin:0;accent-color:var(--accent-ui);flex:none; }
+:where(input[type="file"]) { font-size:var(--fs-small);max-width:100%; }
+:where(label) { cursor:pointer; }
+:where(fieldset) { border:0;padding:0;min-width:0; }
+:where(legend) { padding:0; }
+
+/* ---------- Motion ---------- */
+/* Cross-document view transitions are NOT declared here: assets/boot.js injects the @view-transition rule on
+   http(s) only (on file:// Chrome logs "Transition was aborted" now and then), and never under Pause motion. */
+@media (prefers-reduced-motion:no-preference) {
+  html:not([data-motion="paused"]) { scroll-behavior:smooth; }
+}
+/* Reduced motion stops every animation and transition. Rule for every page: never hide content in a base state
+   and reveal it only through an animation (opacity:0 + "forwards"/"both"), because here that animation never
+   runs. Start visible and animate FROM hidden instead, inside (prefers-reduced-motion: no-preference). */
+@media (prefers-reduced-motion:reduce) {
+  *, *::before, *::after { animation:none !important;transition:none !important;scroll-behavior:auto !important; }
+}

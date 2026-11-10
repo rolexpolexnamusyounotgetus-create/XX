@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="missing.css">
+  <style>
+    .wide { width: 1600px; height: 20px; background: #ccc; }
+    .tiny { width: 16px; height: 16px; padding: 0; border: 0; margin: 0; }
+  </style>
+</head>
+<body>
+  <h1>Bad fixture</h1>
+  <h3>Skipped a level</h3>
+  <div class="wide">too wide</div>
+  <img src="pic.svg">
+  <p id="dup">one</p>
+  <p id="dup">two</p>
+  <nav>
+    <a href="nope.html">Broken link</a>
+    <a href="#missing-anchor">Broken anchor</a>
+    <a href="sub/other.html#nowhere">Broken cross-page anchor</a>
+    <a href="sub/other.html#somewhere">Good cross-page anchor</a>
+    <a href="#">Placeholder</a>
+    <a href="index.html"><span class="icon"></span></a>
+  </nav>
+  <div><button class="tiny" type="button">x</button><button class="tiny" type="button">y</button></div>
+  <button type="button"></button>
+  <script>document.title = 'inline script ran';</script>
+  <script src="bad.js"></script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+# Inline scripts are blocked: the checker must report the CSP violation as a console error.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:

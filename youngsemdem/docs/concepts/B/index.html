@@ -1,0 +1,1231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Young Dems · Issue 01 · Young Democrats of Seminole County (demo)</title>
+<meta name="description" content="The Young Democrats of Seminole County, Florida: ages 14 to 39. Hangouts, voting help, member clips and a weekly letter. Demo prototype.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#FF9A1F">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Come as you are. Bring a friend.">
+<meta property="og:description" content="Young Dems of Seminole County, ages 14 to 39. This month: tacos, trivia and a Riverwalk cleanup. (Demo prototype)">
+<meta property="og:image" content="https://images.unsplash.com/photo-1758272134088-d3d58d939d12?w=1200&auto=format&fit=crop&q=70">
+<meta property="og:image:alt" content="A group of friends laughing in a selfie on a sunny rooftop (stock photo)">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://images.unsplash.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Bricolage+Grotesque:wdth,wght@75..100,700..800&family=Figtree:ital,wght@0,400..800;1,400..800&display=swap">
+<style>
+/* ==========================================================================
+   Sunshine Editorial · design tokens
+   Bright colours are FILLS under dark ink. Text colours are checked at 4.5:1.
+   ========================================================================== */
+:root{
+  --paper:#FFF3E8; --paper-2:#FFE2CC; --surface:#FFFFFF; --ink:#1C0F17; --muted:#6A4A55;
+  --line:rgba(28,15,23,.14); --line-strong:rgba(28,15,23,.28);
+  --coral:#FF6A55; --tangerine:#FF9A1F; --pink:#FF3D8B; --sun:#FFD23F; --blue:#2741FF;
+  --blue-soft:#8FA0FF; --peach:#FFB199;
+  --on-fill:#1C0F17;              /* text on any bright fill, both themes */
+  --on-blue:#FFF3E8;              /* text on electric blue, both themes */
+  --link:#2741FF; --pink-text:#B4135A;
+  --header-bg:rgba(255,243,232,.86);
+  --glow-1:rgba(255,154,31,.55); --glow-2:rgba(255,61,139,.30);
+  --sunset:linear-gradient(165deg,#FFD23F 0%,#FF9A1F 30%,#FF6A55 62%,#FF3D8B 100%);
+  --shadow:0 1px 0 rgba(28,15,23,.05),0 22px 44px -22px rgba(140,30,50,.45);
+  --shadow-press:0 5px 0 var(--ink);
+  --f-display:"Fraunces","Iowan Old Style","Georgia",serif;
+  --f-label:"Bricolage Grotesque","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r-xl:28px; --r-lg:20px; --r-md:14px;
+  --gutter:clamp(16px,4vw,48px); --maxw:1320px;
+  --focus:#2741FF;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#160C14; --paper-2:#241520; --surface:#2B1A26; --ink:#FFF1E6; --muted:#C9B3BE;
+    --line:rgba(255,241,230,.14); --line-strong:rgba(255,241,230,.3);
+    --link:#8E9CFF; --pink-text:#FF7FB2; --header-bg:rgba(22,12,20,.84);
+    --glow-1:rgba(255,106,85,.30); --glow-2:rgba(255,61,139,.24);
+    --shadow:0 1px 0 rgba(0,0,0,.4),0 22px 44px -22px rgba(0,0,0,.8);
+    --shadow-press:0 5px 0 #000; --focus:#FFD23F;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#160C14; --paper-2:#241520; --surface:#2B1A26; --ink:#FFF1E6; --muted:#C9B3BE;
+  --line:rgba(255,241,230,.14); --line-strong:rgba(255,241,230,.3);
+  --link:#8E9CFF; --pink-text:#FF7FB2; --header-bg:rgba(22,12,20,.84);
+  --glow-1:rgba(255,106,85,.30); --glow-2:rgba(255,61,139,.24);
+  --shadow:0 1px 0 rgba(0,0,0,.4),0 22px 44px -22px rgba(0,0,0,.8);
+  --shadow-press:0 5px 0 #000; --focus:#FFD23F;
+}
+
+/* ---------- base ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.55;overflow-x:hidden;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+img,video,canvas{display:block;max-width:100%}
+a{color:var(--link);text-underline-offset:.18em;text-decoration-thickness:.08em}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:6px}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-left:var(--gutter);padding-right:var(--gutter)}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip{position:absolute;left:12px;top:-60px;z-index:100;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-weight:700;text-decoration:none}
+.skip:focus{top:12px}
+
+/* type */
+.eyebrow{font-family:var(--f-label);font-variation-settings:"wdth" 80;font-weight:800;font-size:13px;letter-spacing:.14em;text-transform:uppercase}
+.display{text-wrap:balance;font-family:var(--f-display);font-variation-settings:"opsz" 144,"SOFT" 60,"WONK" 0;font-weight:800;letter-spacing:-.028em;line-height:.95;margin:0}
+.display em{font-style:italic;font-weight:500;font-variation-settings:"opsz" 144,"SOFT" 100,"WONK" 1}
+h2.display{font-size:clamp(42px,8.6vw,104px)}
+h3{font-family:var(--f-display);font-variation-settings:"opsz" 72,"SOFT" 50;font-weight:750;letter-spacing:-.015em;line-height:1.05;margin:0;text-wrap:balance}
+.lead{font-size:clamp(19px,2.1vw,23px);line-height:1.42;font-weight:500;margin:0}
+.small{font-size:14px;line-height:1.45}
+.muted{color:var(--muted)}
+.src{font-size:13px;line-height:1.45;color:var(--muted)}
+.src a{color:inherit}
+
+/* buttons: tactile press */
+.btn{--bg:var(--ink);--fg:var(--paper);--edge:var(--pink);display:inline-flex;align-items:center;justify-content:center;gap:.5em;min-height:52px;padding:0 24px;border-radius:999px;border:2px solid var(--ink);background:var(--bg);color:var(--fg);font-family:var(--f-label);font-variation-settings:"wdth" 88;font-weight:800;font-size:17px;letter-spacing:.01em;text-decoration:none;cursor:pointer;box-shadow:0 5px 0 var(--edge);transform:translateY(0);transition:transform .12s ease,box-shadow .12s ease,background .2s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 0 var(--edge)}
+.btn:active{transform:translateY(5px);box-shadow:0 0 0 var(--edge)}
+.btn--ghost{--bg:transparent;--fg:var(--ink);--edge:var(--ink)}
+.btn--sun{--bg:var(--sun);--fg:var(--on-fill);--edge:var(--on-fill);border-color:var(--on-fill)}
+.btn--paper{--bg:#FFF3E8;--fg:#1C0F17;--edge:#1C0F17;border-color:#1C0F17}
+.btn--blue{--bg:var(--blue);--fg:#fff;--edge:var(--on-fill);border-color:var(--on-fill)}
+.btn--sm{min-height:44px;padding:0 18px;font-size:15px}
+header.site .btn--sm{padding:0 16px}
+.btn svg{width:18px;height:18px;flex:none}
+.textlink{background:none;border:0;padding:0;cursor:pointer;font-size:16px;font-family:var(--f-label);font-weight:800;font-variation-settings:"wdth" 88;color:inherit;display:inline-flex;align-items:center;gap:.35em;min-height:44px}
+
+/* chips & tags */
+.tag{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-family:var(--f-label);font-variation-settings:"wdth" 80;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:var(--paper)}
+.tag--demo{background:#1C0F17;color:#FFD23F}
+.tag--real{background:#2741FF;color:#fff}
+.tag--soft{background:rgba(255,243,232,.92);color:#1C0F17}
+
+/* die-cut sticker */
+.sticker{display:grid;place-items:center;text-align:center;width:118px;height:118px;border-radius:50%;background:var(--sun);color:var(--on-fill);font-family:var(--f-label);font-variation-settings:"wdth" 78;font-weight:800;font-size:17px;line-height:1.02;letter-spacing:.01em;text-transform:uppercase;padding:14px;box-shadow:0 0 0 5px #fff,0 14px 28px -8px rgba(0,0,0,.45);transform:rotate(-12deg)}
+
+/* photo treatment: golden-hour grade + gloss + grain */
+.photo{position:relative;overflow:hidden;border-radius:var(--r-xl);isolation:isolate;background:var(--peach)}
+.photo img{width:100%;height:100%;object-fit:cover;filter:saturate(1.12) contrast(1.04)}
+.photo::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(255,210,63,.32) 0%,rgba(255,154,31,.10) 45%,rgba(255,61,139,.34) 100%);mix-blend-mode:soft-light}
+.photo::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(118deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,0) 26%),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");mix-blend-mode:overlay;opacity:.55}
+.photo .credit{position:absolute;z-index:3;left:12px;top:12px}
+
+/* ---------- demo bar + header ---------- */
+.demobar{background:#1C0F17;color:#FFF3E8;font-size:13px;line-height:1.35;padding:8px 0}
+.demobar .wrap{display:flex;gap:10px;align-items:center}
+.demobar b{color:#FFD23F;font-family:var(--f-label);letter-spacing:.12em;font-weight:800}
+.demobar a{color:#FFF3E8}
+.demobar .long{display:none}
+header.site{position:sticky;top:0;z-index:50;background:var(--header-bg);-webkit-backdrop-filter:saturate(1.6) blur(14px);backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid var(--line)}
+header.site .wrap{display:flex;align-items:center;gap:8px;height:64px}
+.wordmark{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--ink);margin-right:auto;min-width:0}
+.wordmark .sun{width:26px;height:26px;border-radius:50%;background:var(--sunset);box-shadow:inset 0 -6px 0 rgba(255,61,139,.35);flex:none}
+.wordmark .wm{display:flex;flex-direction:column;line-height:1}
+.wordmark .wm b{white-space:nowrap;font-family:var(--f-display);font-style:italic;font-weight:850;font-variation-settings:"opsz" 72,"SOFT" 100,"WONK" 1;font-size:24px;letter-spacing:-.02em}
+.wordmark .wm small{font-family:var(--f-label);font-variation-settings:"wdth" 80;font-weight:700;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+nav.primary{display:none}
+nav.primary a{font-family:var(--f-label);font-variation-settings:"wdth" 86;font-weight:700;font-size:15px;color:var(--ink);text-decoration:none;padding:10px 12px;border-radius:999px}
+nav.primary a:hover{background:var(--paper-2)}
+.iconbtn{display:inline-grid;place-items:center;min-width:44px;height:44px;border-radius:999px;border:1.5px solid var(--line-strong);background:transparent;cursor:pointer;font-family:var(--f-label);font-weight:800;font-size:14px;letter-spacing:.06em;padding:0 10px}
+.iconbtn svg{width:20px;height:20px}
+.iconbtn:hover{background:var(--paper-2)}
+.theme-btn{display:none}
+.menu-btn[aria-expanded="true"]{background:var(--ink);color:var(--paper)}
+.mnav{position:absolute;left:0;right:0;top:100%;background:var(--paper);border-bottom:1px solid var(--line);box-shadow:0 30px 40px -30px rgba(0,0,0,.4);padding:8px var(--gutter) 20px}
+.mnav a{display:flex;justify-content:space-between;align-items:center;font-family:var(--f-display);font-weight:750;font-size:26px;letter-spacing:-.01em;color:var(--ink);text-decoration:none;padding:12px 0;border-bottom:1px solid var(--line)}
+.mnav a span{font-family:var(--f-label);font-size:13px;font-weight:800;color:var(--muted);letter-spacing:.1em}
+.mnav .row{display:flex;gap:10px;margin-top:16px}
+.es-note{display:none;background:var(--blue);color:#fff;font-size:14px;padding:8px 0}
+html[lang="es"] .es-note{display:block}
+
+/* ---------- COVER (hero) ---------- */
+.cover{position:relative;overflow:hidden;padding:18px 0 44px;background:
+  radial-gradient(60% 46% at 86% 18%,var(--glow-1),transparent 70%),
+  radial-gradient(52% 40% at 6% 72%,var(--glow-2),transparent 70%),var(--paper)}
+.folio{display:flex;justify-content:space-between;gap:12px;border-top:2px solid var(--ink);border-bottom:1px solid var(--line-strong);padding:7px 0;font-family:var(--f-label);font-variation-settings:"wdth" 80;font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.folio .mid{display:none}
+.masthead{margin:6px 0 0;line-height:.8}
+.masthead .mh{display:block;font-family:var(--f-display);font-weight:900;font-variation-settings:"opsz" 144,"SOFT" 100,"WONK" 1;font-size:min(calc((100vw - 2 * var(--gutter)) / 5.2),calc((var(--maxw) - 2 * var(--gutter)) / 5.2));letter-spacing:-.045em;white-space:nowrap;background:linear-gradient(100deg,var(--ink) 0 52%,var(--pink-text) 52.01% 100%);-webkit-background-clip:text;background-clip:text;color:transparent;padding:0 .04em .2em 0;margin-bottom:-.12em}
+.masthead .mh i{font-style:italic;font-weight:800}
+.masthead .sub{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin-top:14px;font-family:var(--f-label);font-variation-settings:"wdth" 82;font-weight:800;font-size:14px;letter-spacing:.12em;text-transform:uppercase}
+.masthead .sub span{display:inline-flex;align-items:center;gap:8px}
+.masthead .sub span+span::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--pink)}
+.cover-grid{display:grid;gap:22px;margin-top:16px}
+.cover-photo{position:relative}
+.cover-photo .photo{aspect-ratio:6/5;box-shadow:var(--shadow)}
+.masthead .sub .mid-only{display:none}
+.cover-photo .coverline{position:absolute;z-index:4;left:0;right:0;bottom:0;padding:70px 18px 18px;color:#FFF7EE;background:linear-gradient(180deg,rgba(28,15,23,0),rgba(28,15,23,.74))}
+.cover-photo .coverline p{margin:0;font-family:var(--f-display);font-weight:800;font-variation-settings:"opsz" 144,"SOFT" 80;font-size:clamp(36px,9.4vw,74px);line-height:.93;letter-spacing:-.03em;text-wrap:balance}
+.cover-photo .coverline p em{font-style:italic;font-weight:500;color:#FFD23F;font-variation-settings:"opsz" 144,"SOFT" 100,"WONK" 1}
+.cover-photo .sticker{position:absolute;z-index:5;right:-6px;top:-14px}
+.polaroid{display:none}
+.photo-cap{display:none;font-size:13px;color:var(--muted);margin:10px 0 0;text-align:right}
+.cover-copy .lead{margin-top:2px}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px 14px;margin-top:20px;align-items:center}
+.toc{list-style:none;margin:30px 0 0;padding:0;border-top:2px solid var(--ink)}
+.toc li{border-bottom:1px solid var(--line-strong)}
+.toc a{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:2px 12px;padding:11px 0;color:var(--ink);text-decoration:none}
+.toc .pg{grid-row:span 2;font-family:var(--f-display);font-weight:800;font-variation-settings:"opsz" 72,"SOFT" 100;font-size:30px;letter-spacing:-.03em;color:var(--pink-text)}
+.toc .kick{font-family:var(--f-label);font-variation-settings:"wdth" 80;font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.toc .line{text-wrap:balance;font-family:var(--f-display);font-weight:600;font-variation-settings:"opsz" 36,"SOFT" 50;font-size:19px;line-height:1.18;letter-spacing:-.01em}
+.toc .arr{grid-row:1/3;grid-column:3;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line-strong);transition:background .2s,transform .2s}
+.toc a:hover .arr{background:var(--sun);border-color:var(--on-fill);color:var(--on-fill);transform:rotate(-30deg)}
+.toc .arr svg{width:16px;height:16px}
+
+/* marquee */
+.marquee{background:var(--sun);color:var(--on-fill);border-top:2px solid var(--on-fill);border-bottom:2px solid var(--on-fill);display:flex;align-items:center;overflow:hidden;position:relative}
+.marquee .track{display:flex;flex:none;gap:0;white-space:nowrap;animation:marq 38s linear infinite;padding:12px 0}
+.marquee .track span{font-family:var(--f-display);font-weight:800;font-style:italic;font-variation-settings:"opsz" 72,"SOFT" 100,"WONK" 1;font-size:24px;letter-spacing:-.01em;padding:0 18px}
+.marquee .track span.dot{font-style:normal;padding:0;color:var(--pink-text);font-size:18px}
+.marquee.paused .track{animation-play-state:paused}
+.marquee .pause{position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:2;background:var(--on-fill);color:#FFD23F;border:0;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;cursor:pointer}
+.marquee .pause svg{width:18px;height:18px}
+@keyframes marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* section shell */
+section.sec{padding:clamp(56px,9vw,112px) 0}
+.sec-head{display:grid;gap:14px;margin-bottom:clamp(26px,4vw,44px)}
+.sec-head .kicker{display:flex;align-items:center;gap:12px}
+.sec-head .num{font-family:var(--f-display);font-weight:900;font-variation-settings:"opsz" 144,"SOFT" 100;font-size:22px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--paper);letter-spacing:-.04em}
+.sec-head .rule{flex:1;height:2px;background:currentColor;opacity:.9}
+.sec-head .pgref{font-family:var(--f-label);font-variation-settings:"wdth" 80;font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.sec-head p.lead{max-width:40ch}
+
+/* ---------- 02 THE ONE THING ---------- */
+.strip{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px var(--gutter) 18px;margin:0 calc(var(--gutter) * -1);scrollbar-width:thin}
+.strip>*{scroll-snap-align:start;flex:none}
+.thing{border-radius:var(--r-xl);padding:24px;color:var(--on-fill);position:relative;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px}
+.thing h3{font-size:clamp(28px,6.4vw,46px);letter-spacing:-.025em}
+.thing p{margin:0}
+.thing .src{color:rgba(28,15,23,.82)}
+.thing--main{width:min(88vw,620px);background:var(--sunset)}
+.thing--main::after{content:"";position:absolute;width:280px;height:280px;border-radius:50%;right:-90px;top:-110px;background:radial-gradient(circle,rgba(255,243,232,.75),rgba(255,243,232,0) 68%);pointer-events:none}
+.count{display:flex;align-items:baseline;gap:10px}
+.count b{font-family:var(--f-display);font-weight:900;font-variation-settings:"opsz" 144,"SOFT" 100;font-size:clamp(72px,16vw,128px);line-height:.8;letter-spacing:-.05em}
+.count span{font-family:var(--f-label);font-variation-settings:"wdth" 80;font-weight:800;font-size:15px;letter-spacing:.12em;text-transform:uppercase;max-width:7ch;line-height:1.1}
+.thing .actions{display:flex;flex-wrap:wrap;gap:10px 14px;margin-top:auto}
+.thing--next{width:min(78vw,340px);background:var(--peach)}
+.thing--id{width:min(78vw,340px);background:#FFF3E8;border:2px solid var(--on-fill)}
+.thing--id,.thing--id h3,.thing--next h3{color:var(--on-fill)}
+.thing .when{font-family:var(--f-label);font-variation-settings:"wdth" 82;font-weight:800;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
+.thing h3.sm{font-size:28px}
+
+/* ---------- 03 DEBRIEF (serious register: calm blue, no confetti) ---------- */
+.debrief{background:var(--blue);color:var(--on-blue)}
+.debrief a:not(.btn){color:#FFF3E8}
+.debrief .sec-head .num{background:#FFF3E8;color:#2741FF}
+.debrief-grid{display:grid;gap:30px}
+.debrief .body p{margin:0 0 16px;font-size:18px;max-width:58ch}
+.stats{display:grid;gap:0;border-top:2px solid rgba(255,243,232,.9)}
+.stat{display:grid;grid-template-columns:auto 1fr;gap:4px 18px;align-items:baseline;padding:18px 0;border-bottom:1px solid rgba(255,243,232,.35)}
+.stat b{font-family:var(--f-display);font-weight:800;font-variation-settings:"opsz" 144,"SOFT" 60;font-size:clamp(52px,11vw,84px);line-height:.85;letter-spacing:-.04em;grid-row:span 2;min-width:3.2ch}
+.stat span{font-size:17px;line-height:1.35}
+.stat small{font-size:13px;opacity:.88}
+.debrief .src{color:rgba(255,243,232,.9)}
+
+/* ---------- 04 LINEUP (Partiful-grade events) ---------- */
+.lineup-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:14px}
+.events{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px var(--gutter) 22px;margin:0 calc(var(--gutter) * -1);align-items:flex-start;scrollbar-width:thin}
+.ev{flex:none;width:min(84vw,330px);scroll-snap-align:start;border-radius:var(--r-xl);overflow:hidden;background:var(--c,var(--coral));color:var(--on-fill);box-shadow:var(--shadow);border:2px solid var(--on-fill)}
+.ev--coral{--c:var(--coral)} .ev--sun{--c:var(--sun)} .ev--pink{--c:var(--pink)} .ev--real{--c:#FFF3E8}
+.ev-art{position:relative;aspect-ratio:4/3;background:var(--c);overflow:hidden;border-bottom:2px solid var(--on-fill)}
+.ev-art img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.15) brightness(1.05);mix-blend-mode:multiply}
+.ev-art::after{content:"";position:absolute;inset:0;background:linear-gradient(200deg,rgba(255,243,232,.0) 30%,rgba(255,243,232,.0) 60%),radial-gradient(70% 60% at 80% 10%,rgba(255,243,232,.45),transparent 70%);mix-blend-mode:screen;pointer-events:none}
+.ev-date{position:absolute;z-index:2;left:12px;bottom:12px;background:#FFF3E8;color:#1C0F17;border:2px solid #1C0F17;border-radius:16px;padding:6px 10px 7px;text-align:center;line-height:1;font-family:var(--f-label);font-variation-settings:"wdth" 80;font-weight:800;font-size:12px;letter-spacing:.12em;box-shadow:3px 3px 0 #1C0F17}
+.ev-date b{display:block;font-family:var(--f-display);font-size:34px;letter-spacing:-.04em;font-weight:900;font-variation-settings:"opsz" 72,"SOFT" 100;margin:2px 0 1px}
+.ev-art .tag{position:absolute;z-index:2;right:12px;top:12px}
+.ev-body{padding:18px 18px 20px;display:grid;gap:12px}
+.ev-body h3{font-size:31px}
+.ev-meta{font-family:var(--f-label);font-variation-settings:"wdth" 84;font-weight:800;font-size:15px;margin:0}
+.ev-body p{margin:0;font-size:16px;line-height:1.45}
+.vibes{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.vibes li{font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;border:1.5px solid var(--on-fill);background:rgba(255,243,232,.55)}
+.going{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
+.faces{display:flex}
+.faces i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;margin-left:-8px;border:2px solid var(--c);font-style:normal;font-family:var(--f-label);font-weight:800;font-size:12px;color:#1C0F17}
+.faces i:first-child{margin-left:0}
+.faces i:nth-child(1){background:#FFF3E8}.faces i:nth-child(2){background:#8FA0FF}.faces i:nth-child(3){background:#FFD23F}.faces i:nth-child(4){background:#FFB199}
+.faces i.me{background:#1C0F17;color:#FFD23F}
+.ev .btn{width:100%}
+.rsvp-panel{display:grid;gap:12px;background:#FFF3E8;color:#1C0F17;border:2px solid #1C0F17;border-radius:var(--r-lg);padding:14px}
+.rsvp-panel[hidden]{display:none}
+.field{display:grid;gap:6px}
+.field label,.legend{font-weight:700;font-size:15px}
+.field .hint{font-size:13px;color:#6A4A55;font-weight:500}
+.input{width:100%;min-height:48px;border:2px solid #1C0F17;border-radius:14px;padding:10px 14px;background:#fff;color:#1C0F17;font-size:16px}
+.input::placeholder{color:#8A6F79}
+textarea.input{min-height:76px;resize:vertical}
+.toggle{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;min-height:44px;cursor:pointer}
+.toggle input{width:22px;height:22px;accent-color:#2741FF}
+.ok{display:grid;gap:10px;background:#1C0F17;color:#FFF3E8;border-radius:var(--r-lg);padding:16px;position:relative}
+.ok[hidden]{display:none}
+.ok p{margin:0;font-size:15.5px}
+.ok .row{display:flex;flex-wrap:wrap;gap:8px}
+.ok .btn{width:auto}
+.slap{position:absolute;right:10px;top:-34px;width:84px;height:84px;font-size:13px;padding:8px;background:#FF3D8B;color:#1C0F17}
+.ev--real .ev-body{padding-top:22px}
+.ev--real .big{font-family:var(--f-display);font-weight:800;font-variation-settings:"opsz" 144,"SOFT" 100;font-size:44px;line-height:.92;letter-spacing:-.035em;padding:22px 18px;border-bottom:2px solid #1C0F17;background:radial-gradient(80% 90% at 100% 0,rgba(39,65,255,.16),transparent 70%)}
+.ev--real .big em{font-style:italic;font-weight:500;color:#2741FF}
+.drop-note{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--muted)}
+.drop-note .pulse{width:10px;height:10px;border-radius:50%;background:var(--pink);box-shadow:0 0 0 0 rgba(255,61,139,.6);animation:pulse 2.2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 12px rgba(255,61,139,0)}100%{box-shadow:0 0 0 0 rgba(255,61,139,0)}}
+
+/* ---------- 05 COVER STAR (share-card generator) ---------- */
+.star{background:linear-gradient(170deg,#FF3D8B 0%,#FF6A55 58%,#FF9A1F 100%);color:var(--on-fill);position:relative;overflow:hidden}
+.star .sec-head .num{background:#1C0F17;color:#FFD23F}
+.star-grid{display:grid;gap:28px;align-items:start}
+.star-grid>*,.cover-grid>*,.debrief-grid>*,.letter-grid>*,.controls>*,.two>*,.joinform>*{min-width:0}
+fieldset{min-width:0}
+.preview{display:grid;justify-items:center;gap:12px;position:relative}
+.preview .frame{width:min(66vw,300px);border-radius:24px;overflow:hidden;border:3px solid #1C0F17;box-shadow:12px 14px 0 #1C0F17;background:#FFD23F;transform:rotate(-2deg)}
+.preview canvas{width:100%;height:auto;aspect-ratio:9/16}
+.preview .cap{font-size:13px;font-weight:700}
+.controls{background:#FFF3E8;color:#1C0F17;border:2px solid #1C0F17;border-radius:var(--r-xl);padding:20px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;box-shadow:8px 8px 0 #1C0F17}
+.controls .two{display:grid;gap:14px}
+select.input{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' stroke='%231C0F17' stroke-width='2.4' fill='none' stroke-linecap='round'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;border:0;margin:0;padding:0}
+.chips legend{margin-bottom:8px;padding:0}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.chip span{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:999px;border:2px solid #1C0F17;font-weight:700;font-size:14.5px;background:#fff;transition:background .15s,transform .15s}
+.chip input:checked+span{background:#1C0F17;color:#FFD23F}
+.chip input:focus-visible+span{outline:3px solid #2741FF;outline-offset:2px}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatch span{gap:8px}
+.swatch span::before{content:"";width:20px;height:20px;border-radius:50%;border:2px solid #1C0F17;background:var(--sw)}
+.upload{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.upload label.btn{cursor:pointer}
+.out-row{display:flex;flex-wrap:wrap;gap:12px}
+.squad{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;border-top:2px dashed rgba(28,15,23,.35);padding-top:16px}
+.linkbox{display:flex;gap:8px;align-items:center}
+.linkbox code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;background:#fff;border:2px solid #1C0F17;border-radius:12px;padding:12px}
+.slots{display:flex;gap:10px;align-items:center}
+.slots i{width:46px;height:46px;border-radius:50%;border:2.5px dashed #1C0F17;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:20px}
+.star .burst{position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(255,210,63,.75),rgba(255,210,63,0) 70%);pointer-events:none}
+
+/* ---------- 06 REEL ---------- */
+.reel{background:#1C0F17;color:#FFF3E8}
+.reel .sec-head .num{background:#FFD23F;color:#1C0F17}
+.reel .muted,.reel .src{color:#C9B3BE}
+.reel a:not(.btn):not(.act){color:#FFF3E8}
+.clips{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px var(--gutter) 20px;margin:0 calc(var(--gutter) * -1);scrollbar-width:thin;scrollbar-color:#FF3D8B #1C0F17}
+.clip{flex:none;width:min(52vw,228px);scroll-snap-align:start;display:grid;gap:10px}
+.clip .vbox{position:relative;aspect-ratio:9/16;border-radius:22px;overflow:hidden;background:#241520;border:2px solid rgba(255,243,232,.18)}
+.clip .vbox img,.clip .vbox video{width:100%;height:100%;object-fit:cover}
+.clip .play{position:absolute;inset:0;width:100%;border:0;background:linear-gradient(180deg,transparent 55%,rgba(28,15,23,.65));cursor:pointer;display:grid;place-items:center;padding:0}
+.clip .play .pbtn{width:62px;height:62px;border-radius:50%;background:#FFF3E8;color:#1C0F17;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(255,243,232,.25);transition:transform .2s}
+.clip .play:hover .pbtn{transform:scale(1.08)}
+.clip .play svg{width:24px;height:24px;margin-left:3px}
+.clip .dur{position:absolute;left:10px;bottom:10px;font-family:var(--f-label);font-weight:800;font-size:12px;background:rgba(28,15,23,.7);color:#FFF3E8;border-radius:999px;padding:3px 8px;pointer-events:none}
+.clip p{margin:0;font-size:14.5px;line-height:1.4}
+.clip .who{font-family:var(--f-label);font-variation-settings:"wdth" 84;font-weight:800;font-size:13px;color:#FFD23F}
+.clip .act{justify-self:start;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;background:#FF3D8B;color:#1C0F17;font-family:var(--f-label);font-weight:800;font-size:14px;text-decoration:none}
+.clip--post .vbox{display:grid;place-items:center;text-align:center;padding:18px;background:repeating-linear-gradient(135deg,rgba(255,61,139,.14) 0 14px,rgba(255,61,139,0) 14px 28px),#241520;border:2.5px dashed #FF3D8B}
+.clip--post button.postbtn{all:unset;cursor:pointer;display:grid;place-items:center;gap:12px;position:absolute;inset:0;padding:18px;text-align:center}
+.clip--post button.postbtn:focus-visible{outline:3px solid #FFD23F;outline-offset:-6px;border-radius:20px}
+.clip--post .plus{width:64px;height:64px;border-radius:50%;background:#FF3D8B;color:#1C0F17;display:grid;place-items:center;font-size:34px;font-weight:800;line-height:1}
+.clip--post strong{font-family:var(--f-display);font-weight:800;font-variation-settings:"opsz" 72,"SOFT" 100;font-size:26px;line-height:1;letter-spacing:-.02em}
+.clip--post small{font-size:13.5px;color:#C9B3BE;line-height:1.35}
+.clip--pending .vbox{border:2.5px solid #FFD23F}
+.clip--pending .badge{position:absolute;left:10px;top:10px;z-index:2}
+.postpanel{margin-top:6px;background:#FFF3E8;color:#1C0F17;border-radius:var(--r-xl);padding:20px;display:grid;gap:14px;max-width:760px;border:2px solid #FFD23F}
+.postpanel[hidden]{display:none}
+.postpanel h3{font-size:30px}
+.seg{display:inline-flex;border:2px solid #1C0F17;border-radius:999px;padding:3px;gap:3px;flex-wrap:wrap}
+.seg label{position:relative}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:999px;font-weight:700;font-size:15px}
+.seg input:checked+span{background:#1C0F17;color:#FFD23F}
+.seg input:focus-visible+span{outline:3px solid #2741FF}
+.consent{display:grid;gap:4px;border:0;margin:0;padding:0}
+.consent .toggle{align-items:flex-start;font-weight:500}
+.consent .toggle input{margin-top:2px;flex:none}
+.err{color:var(--pink-text);font-weight:700;font-size:14px;margin:0}
+.postpanel .err,.rsvp-panel .err{color:#B4135A}
+
+/* ---------- 07 JOIN ---------- */
+.join{background:var(--paper-2)}
+.tiers{display:grid;gap:16px}
+.tier{border-radius:var(--r-xl);padding:22px;border:2px solid var(--ink);background:var(--surface);display:grid;gap:12px;align-content:start;position:relative}
+.tier .price{font-family:var(--f-display);font-weight:900;font-variation-settings:"opsz" 144,"SOFT" 100;font-size:56px;line-height:.9;letter-spacing:-.04em}
+.tier .price small{font-family:var(--f-label);font-size:15px;letter-spacing:.06em;font-weight:800;text-transform:uppercase;margin-left:6px}
+.tier h3{font-size:28px}
+.tier p{margin:0;font-size:16px}
+.tier--star{background:#1C0F17;color:#FFF3E8;border-color:#1C0F17}
+:root[data-theme="dark"] .tier--star{border-color:#FF3D8B;box-shadow:0 0 0 4px rgba(255,61,139,.18)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tier--star{border-color:#FF3D8B;box-shadow:0 0 0 4px rgba(255,61,139,.18)}}
+.tier--star .price{color:#FFD23F}
+.tier--star .btn{--bg:var(--sun);--fg:#1C0F17;--edge:var(--pink);border-color:var(--sun)}
+.tier .ribbon{position:absolute;right:16px;top:-14px}
+.joinform{margin-top:22px;background:var(--surface);border:2px solid var(--ink);border-radius:var(--r-xl);padding:22px;display:grid;gap:16px;box-shadow:var(--shadow)}
+.joinform .input{border-color:#1C0F17}
+.joinform .two{display:grid;gap:14px}
+.joinform .legend,.joinform label{color:var(--ink)}
+.joinform .hint{color:var(--muted)}
+.joinform .chip span{color:#1C0F17}
+.privacy{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--muted)}
+.privacy svg{width:18px;height:18px;flex:none;margin-top:2px}
+.chipin{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;margin-top:22px;padding:18px 20px;border-radius:var(--r-lg);border:2px dashed var(--line-strong)}
+.chipin p{margin:0;flex:1 1 280px}
+.join-photo{display:none}
+
+/* ---------- 08 LETTER ---------- */
+.letter-grid{display:grid;gap:30px}
+.letter-photo .photo{aspect-ratio:4/5}
+.letter-photo figcaption{font-size:13px;color:var(--muted);margin-top:8px}
+.letter-body{font-size:18.5px;line-height:1.62;max-width:60ch}
+.letter-body .byline{display:flex;align-items:center;gap:10px;margin-bottom:16px;font-family:var(--f-label);font-variation-settings:"wdth" 84;font-weight:800;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+.letter-body .byline i{width:38px;height:38px;border-radius:50%;background:var(--sunset);display:grid;place-items:center;font-style:normal;font-family:var(--f-display);font-size:18px;color:#1C0F17}
+.letter-body p{margin:0 0 16px}
+.letter-body p.first::first-letter{float:left;font-family:var(--f-display);font-weight:900;font-variation-settings:"opsz" 144,"SOFT" 100;font-size:84px;line-height:.78;padding:6px 10px 0 0;color:var(--pink-text)}
+.signoff{font-family:var(--f-display);font-style:italic;font-weight:500;font-variation-settings:"opsz" 72,"SOFT" 100,"WONK" 1;font-size:26px;line-height:1.2}
+.letterform{display:grid;gap:14px;margin-top:26px;padding-top:24px;border-top:2px solid var(--ink)}
+.letterform .row{display:flex;gap:10px;flex-wrap:wrap}
+.letterform .row .input{flex:1 1 220px;border-color:var(--ink)}
+.letterform .chip span{color:#1C0F17}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,140%);z-index:90;background:#1C0F17;color:#FFF3E8;border:2px solid #FFD23F;border-radius:18px;padding:12px 18px;font-weight:600;font-size:15px;max-width:min(92vw,520px);box-shadow:0 18px 40px -12px rgba(0,0,0,.5);transition:transform .35s cubic-bezier(.2,1.4,.4,1)}
+.toast.show{transform:translate(-50%,0);visibility:visible}
+.toast{visibility:hidden}
+
+/* ---------- footer ---------- */
+footer.site{background:#1C0F17;color:#FFF3E8;position:relative;padding:0 0 32px}
+footer.site::before{content:"";display:block;height:10px;background:var(--sunset)}
+footer.site a:not(.btn){color:#FFF3E8}
+.foot-mast{font-family:var(--f-display);font-weight:900;font-variation-settings:"opsz" 144,"SOFT" 100,"WONK" 1;font-size:min(calc((100vw - 2 * var(--gutter)) / 5.3),calc((var(--maxw) - 2 * var(--gutter)) / 5.3));letter-spacing:-.045em;line-height:.85;margin:34px 0 0;color:transparent;-webkit-text-stroke:1.5px #FF9A1F;white-space:nowrap}
+.foot-grid{display:grid;gap:26px;margin-top:30px}
+.foot-grid h4{font-family:var(--f-label);font-variation-settings:"wdth" 80;font-weight:800;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#FFD23F;margin:0 0 10px}
+.foot-grid ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.foot-grid li a{display:inline-flex;min-height:36px;align-items:center;text-decoration:none;font-weight:600}
+.foot-grid li a:hover{text-decoration:underline}
+.legal{margin-top:34px;padding-top:22px;border-top:1px solid rgba(255,243,232,.2);display:grid;gap:14px;font-size:14px;color:#E6D3DC}
+.legal .paid{font-size:15px;color:#FFF3E8;border:1.5px solid rgba(255,243,232,.5);border-radius:12px;padding:10px 14px;justify-self:start}
+.demo-stamp{display:inline-flex;align-items:center;gap:10px;justify-self:start;background:#FFD23F;color:#1C0F17;border-radius:999px;padding:6px 16px 6px 6px;font-weight:700;font-size:14px}
+.demo-stamp b{background:#1C0F17;color:#FFD23F;border-radius:999px;padding:4px 12px;font-family:var(--f-label);letter-spacing:.16em;font-weight:800}
+
+/* ---------- reveal motion ---------- */
+.js .rise{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.8,.2,1)}
+.js .rise.in{opacity:1;transform:none}
+@keyframes sunrise{from{transform:translateY(40%) scale(.85);opacity:0}to{transform:none;opacity:1}}
+@keyframes slap{0%{transform:scale(1.9) rotate(-30deg);opacity:0}60%{transform:scale(.92) rotate(-8deg);opacity:1}100%{transform:scale(1) rotate(-12deg)}}
+.cover .masthead .mh{animation:sunrise .9s cubic-bezier(.2,.9,.2,1) both}
+.cover-photo .sticker{animation:slap .7s .5s cubic-bezier(.2,1.3,.4,1) both}
+.slap.go{animation:slap .6s cubic-bezier(.2,1.3,.4,1) both}
+@supports (animation-timeline:view()){
+  .photo img.kb{animation:kb linear both;animation-timeline:view();animation-range:entry 0% exit 100%}
+  @keyframes kb{from{transform:scale(1.12) translateY(-3%)}to{transform:scale(1.02) translateY(3%)}}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .js .rise{opacity:1;transform:none}
+  .marquee .track{flex-wrap:wrap;white-space:normal}
+  .marquee .track [aria-hidden]{display:none}
+  .marquee .pause{display:none}
+}
+
+/* ---------- breakpoints ---------- */
+@media (min-width:600px){
+  .demobar .short{display:none} .demobar .long{display:inline}
+  .folio .mid{display:inline}
+  .masthead .sub .mid-only{display:inline-flex}
+  .tiers{grid-template-columns:repeat(3,1fr)}
+  .controls .two,.joinform .two{grid-template-columns:1fr 1fr}
+}
+@media (min-width:960px){
+  nav.primary{display:flex;gap:2px;margin-right:6px}
+  .menu-btn{display:none!important}
+  .theme-btn{display:inline-grid}
+  .cover{padding:22px 0 64px}
+  .cover-grid{grid-template-columns:5fr 7fr;gap:44px;margin-top:22px;align-items:start}
+  .cover-copy{order:1;padding-top:6px}
+  .cover-photo{order:2}
+  .cover-photo .photo{aspect-ratio:3/2.05}
+  .cover-photo .coverline{padding:120px 30px 28px}
+  .cover-photo .sticker{width:148px;height:148px;font-size:20px;right:-26px;top:-38px}
+  .polaroid{display:block;position:absolute;z-index:6;left:-58px;top:-14px;width:190px;background:#fff;padding:10px 10px 34px;border-radius:6px;box-shadow:0 22px 40px -14px rgba(0,0,0,.45);transform:rotate(-7deg)}
+  .polaroid img{aspect-ratio:1;object-fit:cover;width:100%;height:auto;border-radius:2px;filter:saturate(1.2)}
+  .polaroid span{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-family:var(--f-display);font-style:italic;font-size:15px;color:#1C0F17}
+  .toc a{padding:12px 0}
+  .cover-photo .photo .credit{display:none}
+  .cover-photo .photo-cap{display:block}
+  .strip{display:grid;grid-template-columns:1.55fr 1fr 1fr;overflow:visible;margin:0;padding:4px 0 0}
+  .thing--main,.thing--next,.thing--id{width:auto}
+  .debrief-grid{grid-template-columns:1fr 1fr;gap:64px;align-items:start}
+  .events{display:grid;grid-template-columns:repeat(4,1fr);overflow:visible;margin:0;padding:6px 0 0}
+  .ev{width:auto}
+  .star-grid{grid-template-columns:1.05fr .95fr;gap:56px}
+  .preview{order:2;position:sticky;top:96px}
+  .preview .frame{width:330px}
+  .controls{order:1}
+  .clip{width:228px}
+  .letter-grid{grid-template-columns:.8fr 1.2fr;gap:64px;align-items:start}
+  .letter-photo{position:sticky;top:96px}
+  .join-wrap{display:grid;grid-template-columns:1fr;gap:0}
+  .foot-grid{grid-template-columns:2fr 1fr 1fr 1fr}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+
+<div class="demobar" role="note">
+  <div class="wrap">
+    <b>DEMO</b>
+    <span class="short" data-i18n="demoShort">Prototype for YDSC, pending the chapter's sign-off. <a href="#whats-real">What's real?</a></span>
+    <span class="long" data-i18n-html="demoLong">A design prototype for the Young Democrats of Seminole County, pending the chapter's sign-off. Events marked demo, people, counts and clips are placeholders. <a href="#whats-real">What's real?</a></span>
+  </div>
+</div>
+
+<header class="site">
+  <div class="wrap">
+    <a class="wordmark" href="#top">
+      <span class="sun" aria-hidden="true"></span>
+      <span class="wm"><b>Young Dems</b><small>Seminole County</small></span>
+    </a>
+    <nav class="primary" aria-label="Primary">
+      <a href="#lineup" data-i18n="navLineup">Lineup</a>
+      <a href="#reel" data-i18n="navReel">The Reel</a>
+      <a href="#cover-star" data-i18n="navCover">Make your cover</a>
+      <a href="#one-thing" data-i18n="navVote">Vote info</a>
+      <a href="#letter" data-i18n="navLetter">The Letter</a>
+    </nav>
+    <button class="iconbtn" id="langBtn" type="button" aria-label="ES: leer en español">ES</button>
+    <button class="iconbtn theme-btn" id="themeBtn" type="button" aria-label="Switch to dark mode">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+    <a class="btn btn--sm" href="#join" data-i18n="join">Join</a>
+    <button class="iconbtn menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="mnav" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+    </button>
+  </div>
+  <div class="mnav" id="mnav" hidden>
+    <a href="#lineup"><b data-i18n="navLineup">Lineup</b><span>P. 04</span></a>
+    <a href="#reel"><b data-i18n="navReel">The Reel</b><span>P. 06</span></a>
+    <a href="#cover-star"><b data-i18n="navCover">Make your cover</b><span>P. 05</span></a>
+    <a href="#one-thing"><b data-i18n="navVote">Vote info</b><span>P. 02</span></a>
+    <a href="#letter"><b data-i18n="navLetter">The Letter</b><span>P. 08</span></a>
+    <div class="row"><button class="btn btn--ghost btn--sm" id="themeBtnM" type="button">Dark mode</button></div>
+  </div>
+  <div class="es-note" role="note"><div class="wrap">Borrador en español, pendiente de revisión por hablantes nativos. Solo las partes principales están traducidas en este prototipo.</div></div>
+</header>
+
+<main id="main">
+<!-- =================== COVER =================== -->
+<section class="cover" id="top" aria-labelledby="mast">
+  <div class="wrap">
+    <div class="folio"><span data-i18n="issue">Issue No. 01</span><span class="mid" data-i18n="issueMid">The after-election issue</span><span data-i18n="issueDate">Week of Nov 9, 2026</span></div>
+    <h1 class="masthead" id="mast">
+      <span class="mh">Young <i>Dems</i></span>
+      <span class="sr-only">: the Young Democrats of Seminole County, Florida.</span>
+      <span class="sub" aria-hidden="true"><span>of Seminole County</span><span data-i18n="ages">Ages 14 to 39</span><span class="mid-only">Free to show up</span></span>
+    </h1>
+
+    <div class="cover-grid">
+      <div class="cover-photo">
+        <div class="photo">
+          <img class="kb" src="https://images.unsplash.com/photo-1758272134088-d3d58d939d12?w=1200&auto=format&fit=crop&q=70"
+               srcset="https://images.unsplash.com/photo-1758272134088-d3d58d939d12?w=640&auto=format&fit=crop&q=70 640w, https://images.unsplash.com/photo-1758272134088-d3d58d939d12?w=1200&auto=format&fit=crop&q=70 1200w"
+               sizes="(min-width:960px) 58vw, 92vw" width="1200" height="675" fetchpriority="high"
+               alt="Eight friends crowd into a sunny rooftop selfie, laughing and throwing up peace signs.">
+          <span class="credit tag tag--soft">Demo photo · Unsplash</span>
+          <div class="coverline"><p data-i18n-html="coverline">Come as you are. <em>Bring a friend.</em></p></div>
+        </div>
+        <div class="sticker" aria-hidden="true" data-i18n="sticker">First time? Perfect.</div>
+        <p class="photo-cap">Demo photos from Unsplash. The people shown aren't members.</p>
+        <figure class="polaroid" aria-hidden="true">
+          <img loading="lazy" src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=640&auto=format&fit=crop&q=70" alt="" width="640" height="428">
+          <span>golden hour club</span>
+        </figure>
+      </div>
+
+      <div class="cover-copy">
+        <p class="lead" data-i18n="deck">The Young Democrats of Seminole County: 14 to 39, Sanford to Altamonte, Oviedo to Longwood. Independents and the not-yet-sure are welcome. Showing up is always free.</p>
+        <div class="cta-row">
+          <a class="btn" href="#join" data-i18n="ctaJoin">Count me in</a>
+          <a class="btn btn--ghost" href="#lineup" data-i18n="ctaWhat">See what's on</a>
+        </div>
+        <ol class="toc" aria-label="In this issue">
+          <li><a href="#one-thing"><span class="pg">02</span><span class="kick" data-i18n="tk1">The one thing</span><span class="line" data-i18n="tl1">Your mail ballot request runs out Dec 31</span><span class="arr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>
+          <li><a href="#debrief"><span class="pg">03</span><span class="kick" data-i18n="tk2">Debrief</span><span class="line" data-i18n="tl2">Seminole voted blue for governor. Now what?</span><span class="arr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>
+          <li><a href="#lineup"><span class="pg">04</span><span class="kick" data-i18n="tk3">The lineup</span><span class="line" data-i18n="tl3">Tacos, trivia and a Riverwalk cleanup</span><span class="arr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>
+          <li><a href="#cover-star"><span class="pg">05</span><span class="kick" data-i18n="tk4">Cover star</span><span class="line" data-i18n="tl4">Put yourself on the cover, then send it to the group chat</span><span class="arr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>
+          <li><a href="#reel"><span class="pg">06</span><span class="kick" data-i18n="tk5">The Reel</span><span class="line" data-i18n="tl5">Sixty seconds, filmed vertical, about why you showed up</span><span class="arr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="marquee" id="marquee" role="region" aria-label="Every city in Seminole County">
+  <div class="track">
+    <span>Sanford</span><span class="dot" aria-hidden="true">✦</span><span>Lake Mary</span><span class="dot" aria-hidden="true">✦</span><span>Oviedo</span><span class="dot" aria-hidden="true">✦</span><span>Winter Springs</span><span class="dot" aria-hidden="true">✦</span><span>Altamonte Springs</span><span class="dot" aria-hidden="true">✦</span><span>Casselberry</span><span class="dot" aria-hidden="true">✦</span><span>Longwood</span><span class="dot" aria-hidden="true">✦</span><span>Geneva</span><span class="dot" aria-hidden="true">✦</span><span>Chuluota</span><span class="dot" aria-hidden="true">✦</span><span>and everywhere in between</span><span class="dot" aria-hidden="true">✦</span>
+    <span aria-hidden="true">Sanford</span><span class="dot" aria-hidden="true">✦</span><span aria-hidden="true">Lake Mary</span><span class="dot" aria-hidden="true">✦</span><span aria-hidden="true">Oviedo</span><span class="dot" aria-hidden="true">✦</span><span aria-hidden="true">Winter Springs</span><span class="dot" aria-hidden="true">✦</span><span aria-hidden="true">Altamonte Springs</span><span class="dot" aria-hidden="true">✦</span><span aria-hidden="true">Casselberry</span><span class="dot" aria-hidden="true">✦</span><span aria-hidden="true">Longwood</span><span class="dot" aria-hidden="true">✦</span><span aria-hidden="true">Geneva</span><span class="dot" aria-hidden="true">✦</span><span aria-hidden="true">Chuluota</span><span class="dot" aria-hidden="true">✦</span><span aria-hidden="true">and everywhere in between</span><span class="dot" aria-hidden="true">✦</span>
+  </div>
+  <button class="pause" id="marqPause" type="button" aria-pressed="false" aria-label="Pause the scrolling city names">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+  </button>
+</div>
+
+<!-- =================== 02 THE ONE THING =================== -->
+<section class="sec" id="one-thing" aria-labelledby="h-one">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker"><span class="num">02</span><span class="eyebrow" data-i18n="tk1">The one thing</span><span class="rule" aria-hidden="true"></span><span class="pgref">Do it this week</span></div>
+      <h2 class="display rise" id="h-one" data-i18n-html="oneH">Small step, <em>real deadline.</em></h2>
+    </div>
+    <div class="strip">
+      <article class="thing thing--main rise" aria-labelledby="h-mail">
+        <span class="eyebrow" data-i18n="mailEye">Mail ballot · everyone</span>
+        <h3 id="h-mail" data-i18n="mailH">Your mail ballot request runs out Dec 31.</h3>
+        <div class="count" aria-live="off"><b id="daysLeft">52</b><span data-i18n="daysLabel">days to go</span></div>
+        <p data-i18n="mailP">Every Florida mail ballot request on file ends Dec 31, 2026. Ask again so you're covered for the 2027 city elections and for 2028.</p>
+        <div class="actions">
+          <a class="btn btn--paper" href="https://voteseminole.gov/how-to-vote/vote-by-mail/" rel="noopener" target="_blank" data-i18n="mailCta">How to re-request</a>
+          <button class="textlink" type="button" id="remindBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span data-i18n="remind">Remind me in January</span></button>
+        </div>
+        <p class="src">Rule: <a href="https://www.flsenate.gov/Laws/Statutes/2025/101.62" rel="noopener" target="_blank">F.S. 101.62(1)(a)</a>. Ask the Seminole Supervisor of Elections when new requests start counting: 407-585-8683. Checked Nov 9, 2026.</p>
+      </article>
+
+      <article class="thing thing--next rise" aria-labelledby="h-next">
+        <span class="eyebrow">Next hangout · <span class="tag tag--demo">Demo</span></span>
+        <p class="when">Thu, Nov 19 · 7 pm</p>
+        <h3 class="sm" id="h-next">Tacos &amp; Talk, downtown Sanford</h3>
+        <p>However Nov 3 landed for you, come eat and regroup. Feelings welcome, plans optional.</p>
+        <div class="going" style="--c:var(--peach)"><span class="faces" aria-hidden="true"><i>M</i><i>J</i><i>P</i><i>L</i></span><span><b>23</b> going (demo) · free · kids welcome</span></div>
+        <div class="actions"><a class="btn btn--sm" href="#ev-tacos">Save my seat</a></div>
+      </article>
+
+      <article class="thing thing--id rise" aria-labelledby="h-id">
+        <span class="eyebrow">Heads up · Jan 1, 2027</span>
+        <h3 class="sm" id="h-id">Student IDs stop counting at the polls.</h3>
+        <p>Starting Jan 1, 2027, Florida stops accepting student IDs at the polls (it's being challenged in court). Bring a driver's license, state ID or passport, and check voteseminole.gov before you go.</p>
+        <div class="actions"><a class="btn btn--sm btn--ghost" style="--fg:#1C0F17;--edge:#1C0F17;border-color:#1C0F17" href="https://voteseminole.gov/" rel="noopener" target="_blank">Check what to bring</a></div>
+        <p class="src">Sources: <a href="https://flsenate.gov/Committees/BillSummaries/2026/html/991" rel="noopener" target="_blank">HB 991 summary</a> · <a href="https://www.democracydocket.com/wp-content/uploads/2026/10/2026-10-16-Complaint.pdf" rel="noopener" target="_blank">Oct 16 lawsuit</a></p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- =================== 03 DEBRIEF =================== -->
+<section class="sec debrief" id="debrief" aria-labelledby="h-debrief">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker"><span class="num">03</span><span class="eyebrow">Debrief</span><span class="rule" aria-hidden="true"></span><span class="pgref">Results unofficial until certified</span></div>
+      <h2 class="display" id="h-debrief" data-i18n-html="debH">Nov 3, <em>debriefed.</em></h2>
+    </div>
+    <div class="debrief-grid">
+      <div class="body">
+        <p class="lead" style="margin-bottom:18px">Seminole picked the Democrat for governor by nearly ten points. Statewide, the Republican won by about one. Both things are true.</p>
+        <p>The county still has to certify its results (the deadline is Nov 16), so treat every number here as unofficial for now. What isn't in doubt: Seminole showed up. And the biggest group of young voters in this county belongs to neither party. They're who we're here for, too.</p>
+        <p>However the night landed for you, you don't have to process it alone. Tacos &amp; Talk on Thursday, Nov 19 is a no-pressure debrief. Come as you are.</p>
+        <a class="btn btn--paper" href="#ev-tacos">Come to the debrief</a>
+      </div>
+      <div>
+        <div class="stats">
+          <div class="stat"><b>54%</b><span>Seminole's vote for the Democrat for governor, about 54% to 44%.</span><small>Unofficial. <a href="https://enr.electionsfl.org/SEM/4119/Summary/" rel="noopener" target="_blank">Seminole election-night results</a> · <a href="https://www.wftv.com/news/local/florida-election-results-by-county-explore-governor-us-senate-races/M4I4A3YEGJH6BJ3TSVPISSSXHA/" rel="noopener" target="_blank">WFTV</a></small></div>
+          <div class="stat"><b>34%</b><span>of Seminole voters aged 18 to 40 are independents (no party), the biggest group in that age band.</span><small><a href="https://voteseminole.gov/wp-content/uploads/2026/07/District-Demographic-Analysis.pdf" rel="noopener" target="_blank">Supervisor of Elections, July 1, 2026</a></small></div>
+          <div class="stat"><b>27%</b><span>of young people nationwide voted on Nov 3, the second-highest midterm in 30 years.</span><small>Preliminary estimate. <a href="https://circle.tufts.edu/latest-research/2026-youth-voter-turnout-second-highest-last-30-years" rel="noopener" target="_blank">CIRCLE, Nov 5, 2026</a></small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== 04 LINEUP =================== -->
+<section class="sec" id="lineup" aria-labelledby="h-lineup">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker"><span class="num">04</span><span class="eyebrow" data-i18n="tk3">The lineup</span><span class="rule" aria-hidden="true"></span><span class="pgref">Nov – Dec</span></div>
+      <div class="lineup-head">
+        <h2 class="display rise" id="h-lineup" data-i18n-html="lineH">Free this month. <em>Bring someone.</em></h2>
+        <p class="drop-note"><span class="pulse" aria-hidden="true"></span>December's lineup drops Tue, Dec 1 at noon (demo)</p>
+      </div>
+    </div>
+
+    <div class="events">
+
+      <article class="ev ev--coral rise" id="ev-tacos" aria-labelledby="h-ev1" data-ev="tacos" data-title="Tacos &amp; Talk (demo)" data-start="20261120T000000Z" data-end="20261120T020000Z" data-loc="Downtown Sanford, FL (venue TBA)">
+        <div class="ev-art">
+          <img loading="lazy" src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=1200&auto=format&fit=crop&q=70" width="1200" height="900" alt="A plate of tacos with lime wedges and fresh salsa.">
+          <span class="ev-date">THU<b>19</b>NOV</span>
+          <span class="tag tag--demo">Demo event</span>
+        </div>
+        <div class="ev-body">
+          <h3 id="h-ev1">Tacos &amp; Talk</h3>
+          <p class="ev-meta">7–9 pm · downtown Sanford</p>
+          <p>First time? Perfect. Name tags, good salsa and zero pop quizzes.</p>
+          <ul class="vibes" aria-label="Good to know"><li>Free</li><li>Step-free entrance</li><li>Kids welcome</li></ul>
+          <div class="going"><span class="faces" aria-hidden="true"><i>M</i><i>J</i><i>P</i><i>L</i></span><span><b data-count>23</b> going <span class="muted-in">(demo)</span></span></div>
+          <button class="btn rsvp-open" type="button" aria-expanded="false" aria-controls="rsvp-tacos">Save my seat</button>
+          <form class="rsvp-panel" id="rsvp-tacos" hidden novalidate></form>
+          <div class="ok" hidden></div>
+        </div>
+      </article>
+
+      <article class="ev ev--sun rise" id="ev-river" aria-labelledby="h-ev2" data-ev="river" data-title="Riverwalk Cleanup + Coffee (demo)" data-start="20261121T140000Z" data-end="20261121T160000Z" data-loc="Sanford Riverwalk, Lake Monroe, Sanford, FL">
+        <div class="ev-art">
+          <img loading="lazy" src="https://images.unsplash.com/photo-1783676056910-e5f3b27bdcbd?w=1200&auto=format&fit=crop&q=70" width="1200" height="800" alt="Two people stand by a calm lake as the sun goes down.">
+          <span class="ev-date">SAT<b>21</b>NOV</span>
+          <span class="tag tag--demo">Demo event</span>
+        </div>
+        <div class="ev-body">
+          <h3 id="h-ev2">Riverwalk Cleanup + Coffee</h3>
+          <p class="ev-meta">9–11 am · Sanford Riverwalk</p>
+          <p>Two hours on Lake Monroe, then coffee. Gloves and bags provided.</p>
+          <ul class="vibes" aria-label="Good to know"><li>Free</li><li>Outdoors</li><li>Sober-friendly</li></ul>
+          <div class="going"><span class="faces" aria-hidden="true"><i>A</i><i>R</i><i>K</i></span><span><b data-count>11</b> going <span>(demo)</span></span></div>
+          <button class="btn rsvp-open" type="button" aria-expanded="false" aria-controls="rsvp-river">Save my seat</button>
+          <form class="rsvp-panel" id="rsvp-river" hidden novalidate></form>
+          <div class="ok" hidden></div>
+        </div>
+      </article>
+
+      <article class="ev ev--pink rise" id="ev-trivia" aria-labelledby="h-ev3" data-ev="trivia" data-title="Trivia Night: Seminole Edition (demo)" data-start="20261204T000000Z" data-end="20261204T020000Z" data-loc="Oviedo, FL (venue TBA)">
+        <div class="ev-art">
+          <img loading="lazy" src="https://images.unsplash.com/photo-1646934280686-768a69c444eb?w=1200&auto=format&fit=crop&q=70" width="1200" height="800" alt="Friends around a wooden table playing a card game and laughing.">
+          <span class="ev-date">THU<b>3</b>DEC</span>
+          <span class="tag tag--demo">Demo event</span>
+        </div>
+        <div class="ev-body">
+          <h3 id="h-ev3">Trivia Night: Seminole Edition</h3>
+          <p class="ev-meta">7 pm · Oviedo</p>
+          <p>Teams of four. Come solo and we'll put you on one. Yes, there's a chicken round.</p>
+          <ul class="vibes" aria-label="Good to know"><li>Free</li><li>Quiet corner</li><li>Ask about rides</li></ul>
+          <div class="going"><span class="faces" aria-hidden="true"><i>S</i><i>D</i><i>T</i><i>N</i></span><span><b data-count>31</b> going <span>(demo)</span></span></div>
+          <button class="btn rsvp-open" type="button" aria-expanded="false" aria-controls="rsvp-trivia">Save my seat</button>
+          <form class="rsvp-panel" id="rsvp-trivia" hidden novalidate></form>
+          <div class="ok" hidden></div>
+        </div>
+      </article>
+
+      <article class="ev ev--real rise" aria-labelledby="h-ev0">
+        <div class="big">Monthly meeting, <em>open to the public</em></div>
+        <div class="ev-body">
+          <span class="tag tag--real">Real event · also this month</span>
+          <h3 id="h-ev0">Seminole County Democrats monthly meeting</h3>
+          <p class="ev-meta">Thu, Nov 12 · 7–9 pm · Altamonte Springs</p>
+          <p>Socializing starts at 6:30 pm. A good first look at how the county party works.</p>
+          <a class="btn btn--sm btn--ghost" style="--fg:#1C0F17;--edge:#1C0F17;border-color:#1C0F17" href="https://events.floridadems.org/org/seminole-county-democrats" rel="noopener" target="_blank">Details on the party calendar</a>
+          <p class="src" style="color:#6A4A55">Listed on the Florida Democrats events calendar, checked Nov 9, 2026.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- =================== 05 COVER STAR =================== -->
+<section class="sec star" id="cover-star" aria-labelledby="h-star">
+  <span class="burst" aria-hidden="true"></span>
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker"><span class="num">05</span><span class="eyebrow" data-i18n="tk4">Cover star</span><span class="rule" aria-hidden="true"></span><span class="pgref">Takes 20 seconds</span></div>
+      <h2 class="display" id="h-star" data-i18n-html="starH">Put yourself <em>on the cover.</em></h2>
+      <p class="lead" data-i18n="starP">Make your Young Dems cover, send it to the group chat, and bring three friends to the next one.</p>
+    </div>
+
+    <div class="star-grid">
+      <div class="preview">
+        <div class="frame"><canvas id="coverCanvas" width="1080" height="1920" role="img" aria-label="Preview of your cover"></canvas></div>
+        <p class="cap">Live preview · 1080 × 1920, sized for Stories</p>
+      </div>
+
+      <form class="controls" id="coverForm" novalidate>
+        <div class="two">
+          <div class="field">
+            <label for="cName" data-i18n="cName">What should we call you?</label>
+            <input class="input" id="cName" name="name" maxlength="18" autocomplete="given-name" placeholder="First name or nickname">
+          </div>
+          <div class="field">
+            <label for="cCity" data-i18n="cCity">Where in Seminole?</label>
+            <select class="input" id="cCity" name="city">
+              <option>Sanford</option><option>Lake Mary</option><option selected>Oviedo</option><option>Winter Springs</option><option>Altamonte Springs</option><option>Casselberry</option><option>Longwood</option><option>Geneva</option><option>Chuluota</option><option value="Seminole County">Somewhere else in the county</option>
+            </select>
+          </div>
+        </div>
+        <fieldset class="chips" id="causes">
+          <legend class="legend" data-i18n="cCause">I'm here for…</legend>
+          <label class="chip"><input type="radio" name="cause" value="rent that makes sense" checked><span>Rent that makes sense</span></label>
+          <label class="chip"><input type="radio" name="cause" value="buses that actually come"><span>Buses that come</span></label>
+          <label class="chip"><input type="radio" name="cause" value="clean lakes"><span>Clean lakes</span></label>
+          <label class="chip"><input type="radio" name="cause" value="abortion access"><span>Abortion access</span></label>
+          <label class="chip"><input type="radio" name="cause" value="my LGBTQ+ friends"><span>My LGBTQ+ friends</span></label>
+          <label class="chip"><input type="radio" name="cause" value="the right to vote"><span>The right to vote</span></label>
+          <label class="chip"><input type="radio" name="cause" value="jobs that pay"><span>Jobs that pay</span></label>
+          <label class="chip"><input type="radio" name="cause" value="good school boards"><span>Good school boards</span></label>
+        </fieldset>
+        <fieldset class="chips swatches">
+          <legend class="legend">Colorway</legend>
+          <label class="chip swatch" style="--sw:linear-gradient(160deg,#FFD23F,#FF6A55)"><input type="radio" name="color" value="golden" checked><span>Golden hour</span></label>
+          <label class="chip swatch" style="--sw:linear-gradient(160deg,#FFB199,#FF3D8B)"><input type="radio" name="color" value="pink"><span>Pink hour</span></label>
+          <label class="chip swatch" style="--sw:linear-gradient(160deg,#8FA0FF,#2741FF)"><input type="radio" name="color" value="blue"><span>Blue hour</span></label>
+        </fieldset>
+        <div class="upload">
+          <label class="btn btn--sm btn--ghost" style="--fg:#1C0F17;--edge:#1C0F17;border-color:#1C0F17" for="cPhoto">Add a selfie (optional)</label>
+          <input class="sr-only" type="file" id="cPhoto" accept="image/*">
+          <span class="small" style="color:#6A4A55">It stays on your phone. Nothing is uploaded.</span>
+        </div>
+        <div class="out-row">
+          <button class="btn" type="button" id="dlBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Save my cover</button>
+          <button class="btn btn--sun" type="button" id="shareBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"/></svg>Send to the group chat</button>
+        </div>
+        <div class="squad">
+          <p class="legend" style="margin:0">Bring three</p>
+          <div class="linkbox"><code id="refLink">youngsemdems.com/?ref=you</code><button class="btn btn--sm btn--ghost" style="--fg:#1C0F17;--edge:#1C0F17;border-color:#1C0F17" type="button" id="copyBtn">Copy link</button></div>
+          <div class="slots" aria-label="Friends who joined with your link: none yet"><i aria-hidden="true">+</i><i aria-hidden="true">+</i><i aria-hidden="true">+</i><span class="small">Friends who join with your link show up here. <span style="color:#6A4A55">(Demo: nothing is tracked yet.)</span></span></div>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- =================== 06 REEL =================== -->
+<section class="sec reel" id="reel" aria-labelledby="h-reel">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker"><span class="num">06</span><span class="eyebrow" data-i18n="tk5">The Reel</span><span class="rule" aria-hidden="true"></span><span class="pgref">Member clips</span></div>
+      <h2 class="display rise" id="h-reel" data-i18n-html="reelH">Sixty seconds. <em>Your take.</em></h2>
+      <p class="lead muted" style="max-width:46ch">Clips from people in the county, filmed vertical and captioned. Every one ends in something you can actually do.</p>
+    </div>
+    <div class="clips" id="clips">
+      <div class="clip clip--post">
+        <div class="vbox">
+          <button class="postbtn" type="button" id="postOpen" aria-expanded="false" aria-controls="postPanel">
+            <span class="plus" aria-hidden="true">+</span>
+            <strong>Post a clip</strong>
+            <small>Got 60 seconds and something to say? A real person watches every video before it goes live.</small>
+          </button>
+        </div>
+      </div>
+      <!-- clips rendered by JS from CLIPS -->
+    </div>
+    <form class="postpanel" id="postPanel" hidden novalidate aria-labelledby="h-post">
+      <h3 id="h-post">Post your take</h3>
+      <p style="margin:0">Film it vertical, keep it kind and send it in. We review every clip before it goes live, usually within two days.</p>
+      <div class="seg" role="radiogroup" aria-label="How do you want to send it?">
+        <label><input type="radio" name="mode" value="link" checked><span>Paste a link</span></label>
+        <label><input type="radio" name="mode" value="file"><span>Upload a video</span></label>
+      </div>
+      <div class="field" id="linkField"><label for="pLink">TikTok, Instagram or YouTube link</label><input class="input" id="pLink" type="url" inputmode="url" placeholder="https://www.tiktok.com/@you/video/…"></div>
+      <div class="field" id="fileField" hidden><label for="pFile">Your video (vertical, 60 seconds or less)</label><input class="input" id="pFile" type="file" accept="video/*"></div>
+      <div class="field"><label for="pCap">Caption <span class="hint">(optional)</span></label><input class="input" id="pCap" maxlength="120" placeholder="Why I showed up on Nov 3"></div>
+      <fieldset class="consent">
+        <legend class="legend">Before you send</legend>
+        <label class="toggle"><input type="checkbox" name="c1" required> I made this or have the right to post it.</label>
+        <label class="toggle"><input type="checkbox" name="c2" required> Everyone you can see or hear agreed to be in it.</label>
+        <label class="toggle"><input type="checkbox" name="c3" required> Nobody under 18 is shown without a parent's OK.</label>
+      </fieldset>
+      <p class="err" id="postErr" role="alert" hidden></p>
+      <div class="out-row"><button class="btn" type="submit">Send for review</button><button class="btn btn--ghost" type="button" id="postCancel" style="--fg:#1C0F17;--edge:#1C0F17;border-color:#1C0F17">Not now</button></div>
+      <p class="small" style="margin:0;color:#6A4A55">Demo: nothing leaves your browser. On the real site, clips go to a moderation queue first.</p>
+    </form>
+    <p class="src" style="margin-top:14px">Demo clips: stock photos and made-up creator handles. The people shown aren't members.</p>
+  </div>
+</section>
+
+<!-- =================== 07 JOIN =================== -->
+<section class="sec join" id="join" aria-labelledby="h-join">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker"><span class="num">07</span><span class="eyebrow">Membership, honestly</span><span class="rule" aria-hidden="true"></span><span class="pgref">Ages 14 to 39</span></div>
+      <h2 class="display rise" id="h-join" data-i18n-html="joinH">$20 a year. <em>Or free.</em></h2>
+      <p class="lead" style="max-width:48ch">Everything we host is open to anyone. Membership is for people who want a say in how the chapter runs.</p>
+    </div>
+    <div class="tiers">
+      <div class="tier rise">
+        <div class="price">$0</div>
+        <h3>Come to things</h3>
+        <p>No card, no dues, no quiz at the door. Independents and the not-yet-sure are welcome at every event.</p>
+        <a class="btn btn--sm btn--ghost" href="#lineup">See the lineup</a>
+      </div>
+      <div class="tier tier--star rise">
+        <span class="ribbon tag tag--real">Votes in the chapter</span>
+        <div class="price">$20<small>a year</small></div>
+        <h3>Member</h3>
+        <p>Dues are paid in January. For Seminole residents or students at a Seminole school, ages 14 to 39.</p>
+        <a class="btn btn--sm" href="#joinForm" data-tier="member">Become a member</a>
+      </div>
+      <div class="tier rise">
+        <div class="price">$0</div>
+        <h3>Non-voting member</h3>
+        <p>For anyone who can't pay dues, for money reasons or because of citizenship status. Same invites, same group chat.</p>
+        <a class="btn btn--sm btn--ghost" href="#joinForm" data-tier="nonvoting">Join free</a>
+      </div>
+    </div>
+
+    <form class="joinform rise" id="joinForm" novalidate aria-labelledby="h-jf">
+      <h3 id="h-jf" style="font-size:30px">Count me in</h3>
+      <div class="two">
+        <div class="field"><label for="jName">What should we call you?</label><input class="input" id="jName" autocomplete="given-name" required></div>
+        <div class="field"><label for="jEmail">Email <span class="hint">(one letter a week, never more)</span></label><input class="input" id="jEmail" type="email" inputmode="email" autocomplete="email" required></div>
+      </div>
+      <fieldset class="chips">
+        <legend class="legend">I want to…</legend>
+        <label class="chip"><input type="radio" name="tier" value="events" checked><span>Come to things</span></label>
+        <label class="chip"><input type="radio" name="tier" value="member"><span>Be a member ($20/yr)</span></label>
+        <label class="chip"><input type="radio" name="tier" value="nonvoting"><span>Be a non-voting member</span></label>
+      </fieldset>
+      <div class="field"><label for="jAccess">Anything that would make this easier for you? <span class="hint">(optional)</span></label><input class="input" id="jAccess" placeholder="Rides, ASL, a quiet corner, kids in tow, Spanish"></div>
+      <p class="err" id="joinErr" role="alert" hidden></p>
+      <div class="out-row"><button class="btn" type="submit">Count me in</button></div>
+      <p class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.4-8 9-4.6-.6-8-4.5-8-9V6z"/></svg><span>No ad pixels, no trackers. We don't sell or share your data. Demo: this form saves to your browser only.</span></p>
+      <div class="ok" id="joinOk" hidden></div>
+    </form>
+
+    <div class="chipin">
+      <p><strong>Got $5 to spare?</strong> That's coffee for one volunteer night. Don't have it? Come anyway, honestly. Every dollar will show up on our receipts page.</p>
+      <a class="btn btn--sm btn--ghost" href="https://secure.actblue.com/donate/youngsemdems" rel="noopener" target="_blank">Chip in on ActBlue</a>
+    </div>
+  </div>
+</section>
+
+<!-- =================== 08 LETTER =================== -->
+<section class="sec" id="letter" aria-labelledby="h-letter">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker"><span class="num">08</span><span class="eyebrow">The Thursday Letter</span><span class="rule" aria-hidden="true"></span><span class="pgref">Every Thursday</span></div>
+      <h2 class="display rise" id="h-letter" data-i18n-html="letterH">Hi, it's <em>Maya.</em></h2>
+    </div>
+    <div class="letter-grid">
+      <figure class="letter-photo" style="margin:0">
+        <div class="photo"><img class="kb" loading="lazy" src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=1200&auto=format&fit=crop&q=70" width="1200" height="800" alt="Four friends with their arms around each other watch the sun set over hills."><span class="credit tag tag--soft">Demo photo · Unsplash</span></div>
+        <figcaption>From this week's letter. Maya is a demo writer; real letters will be bylined by members.</figcaption>
+      </figure>
+      <div class="letter-body">
+        <div class="byline"><i aria-hidden="true">M</i><span>Maya, Oviedo · <span class="tag tag--demo">Demo writer</span></span></div>
+        <p class="first">On election night I was standing outside a polling place with a clipboard and a lukewarm cold brew when a woman I'd never met asked if she could hand out water with me. She stayed two hours. I didn't get her last name, but I got the point: most people are one invitation away from showing up.</p>
+        <p>However Nov 3 landed for you, this week is for breathing and regrouping. We're doing tacos in Sanford on Thursday (details above), and Jordan has five free things to do around the county this weekend, including the one with the good empanadas.</p>
+        <p>One small thing with a real deadline: your mail ballot request runs out Dec 31. Put a reminder in your phone to ask again.</p>
+        <p class="signoff">See you Thursday.<br>Maya, for the Young Dems xo</p>
+
+        <form class="letterform" id="letterForm" novalidate aria-labelledby="h-lf">
+          <h3 id="h-lf" style="font-size:28px">Get the letter</h3>
+          <div class="row">
+            <label class="sr-only" for="lEmail">Email</label>
+            <input class="input" id="lEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required>
+            <button class="btn" type="submit">Sign me up</button>
+          </div>
+          <fieldset class="chips">
+            <legend class="legend small">Also tell me about <span class="hint muted">(optional)</span></legend>
+            <label class="chip"><input type="checkbox" value="events"><span>Events</span></label>
+            <label class="chip"><input type="checkbox" value="volunteer"><span>Volunteering</span></label>
+            <label class="chip"><input type="checkbox" value="es" lang="es"><span>En español</span></label>
+            <label class="chip"><input type="checkbox" value="lgbtq"><span>LGBTQ+ meetups</span></label>
+            <label class="chip"><input type="checkbox" value="campus"><span>Campus (UCF, Seminole State)</span></label>
+          </fieldset>
+          <p class="small muted" style="margin:0">One letter a week, never more. Unsubscribe anytime.</p>
+          <p class="err" id="letterErr" role="alert" hidden></p>
+          <div class="ok" id="letterOk" hidden></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site" id="whats-real">
+  <div class="wrap">
+    <div class="foot-mast" aria-hidden="true">Young Dems</div>
+    <div class="foot-grid">
+      <div>
+        <h4>Young Democrats of Seminole County</h4>
+        <p style="margin:0;max-width:44ch">Democrats and the not-yet-sure, ages 14 to 39, all over Seminole County, Florida. Parent party: <a href="https://semdems.com" rel="noopener" target="_blank">Seminole County Democrats</a>.</p>
+      </div>
+      <div>
+        <h4>This issue</h4>
+        <ul><li><a href="#one-thing">The one thing</a></li><li><a href="#lineup">Lineup</a></li><li><a href="#cover-star">Make your cover</a></li><li><a href="#reel">The Reel</a></li></ul>
+      </div>
+      <div>
+        <h4>Voting help (official)</h4>
+        <ul><li><a href="https://voteseminole.gov/" rel="noopener" target="_blank">voteseminole.gov</a></li><li><a href="https://voteseminole.gov/voters/my-voter-record/" rel="noopener" target="_blank">Check your registration</a></li><li><a href="https://voteseminole.gov/how-to-vote/vote-by-mail/" rel="noopener" target="_blank">Vote by mail</a></li><li><a href="tel:+14075858683">407-585-8683</a></li></ul>
+      </div>
+      <div>
+        <h4>Money</h4>
+        <ul><li><a href="https://secure.actblue.com/donate/ydscdues" rel="noopener" target="_blank">Pay dues (ActBlue)</a></li><li><a href="https://secure.actblue.com/donate/youngsemdems" rel="noopener" target="_blank">Donate (ActBlue)</a></li><li><a href="#join">Receipts (coming at launch)</a></li></ul>
+      </div>
+    </div>
+    <div class="legal">
+      <span class="demo-stamp"><b>DEMO</b>Prototype, not yet an official site</span>
+      <p style="margin:0;max-width:80ch">A design prototype for the Young Democrats of Seminole County, pending the chapter's sign-off. Not an official site of the Seminole County Democrats, Florida Young Democrats or any party organization. Events marked demo, people, counts, quotes and clips are placeholders. Election figures are unofficial until certified. Photos are from Unsplash; the people in them aren't members and don't endorse anything. No ad pixels or trackers run on this page.</p>
+      <p class="paid">Paid for by [committee name and address placeholder]</p>
+      <p style="margin:0">© 2026 Young Democrats of Seminole County (demo)</p>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  'use strict';
+  var d=document, root=d.documentElement;
+  root.classList.add('js');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function $(s,c){return (c||d).querySelector(s)}
+  function $$(s,c){return Array.prototype.slice.call((c||d).querySelectorAll(s))}
+  function store(k,v){try{ if(v===undefined){return JSON.parse(localStorage.getItem('ysdB:'+k))} localStorage.setItem('ysdB:'+k,JSON.stringify(v)) }catch(e){return null}}
+  var toastEl=$('#toast'), tT;
+  function toast(msg){toastEl.textContent=msg;toastEl.classList.add('show');clearTimeout(tT);tT=setTimeout(function(){toastEl.classList.remove('show')},4200)}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+  /* ---------- theme ---------- */
+  function curTheme(){var t=root.getAttribute('data-theme'); if(t) return t; return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}
+  function setTheme(t){root.setAttribute('data-theme',t);store('theme',t);syncTheme()}
+  function syncTheme(){var dk=curTheme()==='dark';$('#themeBtn').setAttribute('aria-label',dk?'Switch to light mode':'Switch to dark mode');$('#themeBtnM').textContent=dk?'Light mode':'Dark mode'}
+  var saved=store('theme'); if(saved==='dark'||saved==='light') root.setAttribute('data-theme',saved);
+  syncTheme();
+  $('#themeBtn').addEventListener('click',function(){setTheme(curTheme()==='dark'?'light':'dark')});
+  $('#themeBtnM').addEventListener('click',function(){setTheme(curTheme()==='dark'?'light':'dark')});
+
+  /* ---------- mobile menu ---------- */
+  var mb=$('#menuBtn'), mn=$('#mnav');
+  mb.addEventListener('click',function(){var o=mb.getAttribute('aria-expanded')==='true';mb.setAttribute('aria-expanded',String(!o));mn.hidden=o});
+  $$('#mnav a').forEach(function(a){a.addEventListener('click',function(){mb.setAttribute('aria-expanded','false');mn.hidden=true})});
+
+  /* ---------- Spanish (draft, needs native review) ---------- */
+  var ES={
+    skip:'Saltar al contenido', demoShort:'Prototipo para YDSC, pendiente de aprobación. ',
+    demoLong:'Un prototipo de diseño para los Jóvenes Demócratas del Condado de Seminole, pendiente de la aprobación del capítulo. Los eventos marcados como demo, las personas, las cifras y los videos son de muestra. <a href="#whats-real">¿Qué es real?</a>',
+    navLineup:'Agenda', navReel:'Videos', navCover:'Tu portada', navVote:'Votar', navLetter:'La carta', join:'Únete',
+    issue:'Número 01', issueMid:'Edición poselectoral', issueDate:'Semana del 9 de nov. de 2026', ages:'De 14 a 39 años',
+    coverline:'Ven como eres. <em>Trae a tu gente.</em>', sticker:'¿Primera vez? Perfecto.',
+    deck:'Los Jóvenes Demócratas del Condado de Seminole: de 14 a 39 años, de Sanford a Altamonte, de Oviedo a Longwood. Independientes y quienes aún no están seguros: bienvenidos. Venir siempre es gratis.',
+    ctaJoin:'Cuenta conmigo', ctaWhat:'Mira la agenda',
+    tk1:'Lo único de hoy', tl1:'Tu solicitud de voto por correo vence el 31 de diciembre', tk2:'Resumen', tl2:'Seminole votó azul para gobernador. ¿Y ahora qué?', tk3:'La agenda', tl3:'Tacos, trivia y limpieza del Riverwalk', tk4:'Tu portada', tl4:'Ponte en la portada y mándala al chat de grupo', tk5:'Los videos', tl5:'Sesenta segundos, en vertical, sobre por qué llegaste',
+    oneH:'Paso pequeño, <em>fecha real.</em>', mailEye:'Voto por correo · para todos', mailH:'Tu solicitud de voto por correo vence el 31 de diciembre.', daysLabel:'días', mailP:'Todas las solicitudes de voto por correo vigentes en Florida vencen el 31 de diciembre de 2026. Vuelve a pedirla para las elecciones municipales de 2027 y para 2028.', mailCta:'Cómo volver a pedirla', remind:'Recuérdamelo en enero',
+    debH:'El 3 de noviembre, <em>en resumen.</em>', lineH:'Gratis este mes. <em>Trae a alguien.</em>', starH:'Ponte <em>en la portada.</em>', starP:'Crea tu portada de Young Dems, mándala al chat de grupo y trae a tres amistades a la próxima.', cName:'¿Cómo te llamamos?', cCity:'¿En qué parte de Seminole?', cCause:'Estoy aquí por…',
+    reelH:'Sesenta segundos. <em>Tu opinión.</em>', joinH:'$20 al año. <em>O gratis.</em>', letterH:'Hola, soy <em>Maya.</em>'
+  };
+  var EN={};
+  $$('[data-i18n],[data-i18n-html]').forEach(function(el){var k=el.getAttribute('data-i18n')||el.getAttribute('data-i18n-html');if(!(k in EN)) EN[k]=el.hasAttribute('data-i18n-html')?el.innerHTML:el.textContent});
+  function setLang(l){
+    var dict=l==='es'?ES:EN;
+    $$('[data-i18n]').forEach(function(el){var k=el.getAttribute('data-i18n'); if(dict[k]!=null) el.textContent=dict[k]});
+    $$('[data-i18n-html]').forEach(function(el){var k=el.getAttribute('data-i18n-html'); if(dict[k]!=null) el.innerHTML=dict[k]});
+    root.lang=l; var b=$('#langBtn'); b.textContent=l==='es'?'EN':'ES'; b.setAttribute('aria-label',l==='es'?'EN: read in English':'ES: leer en español');
+    store('lang',l); renderCover();
+  }
+  $('#langBtn').addEventListener('click',function(){setLang(root.lang==='es'?'en':'es')});
+
+  /* ---------- marquee pause (WCAG 2.2.2) ---------- */
+  var mq=$('#marquee'), mp=$('#marqPause');
+  mp.addEventListener('click',function(){var p=mq.classList.toggle('paused');mp.setAttribute('aria-pressed',String(p));mp.setAttribute('aria-label',p?'Play the scrolling city names':'Pause the scrolling city names');mp.innerHTML=p?'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg>':'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>'});
+
+  /* ---------- honest countdown to the real Dec 31, 2026 deadline (Eastern time) ---------- */
+  (function(){
+    var parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'numeric',day:'numeric'}).formatToParts(new Date());
+    var g=function(t){return +parts.filter(function(p){return p.type===t})[0].value};
+    var today=Date.UTC(g('year'),g('month')-1,g('day')), deadline=Date.UTC(2026,11,31);
+    var n=Math.round((deadline-today)/864e5), el=$('#daysLeft');
+    if(n<0){el.closest('.count').hidden=true} else {el.textContent=n; if(n===0){ $('[data-i18n="daysLabel"]').textContent='today is the day'} else if(n===1){ $('[data-i18n="daysLabel"]').textContent='day to go'}}
+  })();
+
+  /* ---------- calendar files ---------- */
+  function ics(o){
+    var now=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+    var lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//youngsemdems//demo//EN','CALSCALE:GREGORIAN','BEGIN:VEVENT','UID:'+o.uid+'@youngsemdems','DTSTAMP:'+now,'DTSTART:'+o.start,'DTEND:'+o.end,'SUMMARY:'+o.title.replace(/[,;]/g,'\\$&'),'LOCATION:'+(o.loc||'').replace(/[,;]/g,'\\$&'),'DESCRIPTION:'+(o.desc||'').replace(/[,;]/g,'\\$&'),'BEGIN:VALARM','TRIGGER:-PT2H','ACTION:DISPLAY','DESCRIPTION:Reminder','END:VALARM','END:VEVENT','END:VCALENDAR'];
+    var blob=new Blob([lines.join('\r\n')],{type:'text/calendar'}); var a=d.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=o.file||'young-dems.ics'; d.body.appendChild(a); a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);
+  }
+  $('#remindBtn').addEventListener('click',function(){
+    ics({uid:'mail-ballot-2027',start:'20270104T150000Z',end:'20270104T153000Z',title:'Re-request my mail ballot (Seminole)',loc:'voteseminole.gov',desc:'Florida mail ballot requests expired Dec 31 2026. Re-request at https://voteseminole.gov/how-to-vote/vote-by-mail/ or call 407-585-8683.',file:'remind-mail-ballot.ics'});
+    toast('Reminder saved for Mon, Jan 4 at 10 am. Future you says thanks.');
+  });
+
+  /* ---------- share helpers ---------- */
+  function baseUrl(){return /^https?:/.test(location.protocol)?location.origin+location.pathname:'https://youngsemdems.com/'}
+  function copy(text,msg){
+    function fallback(){var t=d.createElement('textarea');t.value=text;t.setAttribute('readonly','');t.style.position='fixed';t.style.opacity='0';d.body.appendChild(t);t.select();try{d.execCommand('copy')}catch(e){}t.remove();toast(msg)}
+    if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(function(){toast(msg)},fallback)} else fallback();
+  }
+  function shareText(text,url,msg){
+    if(navigator.share){navigator.share({text:text,url:url}).catch(function(){})} else copy(text+' '+url,msg||'Invite copied. Paste it in the group chat.');
+  }
+
+  /* ---------- RSVP (Partiful-style, no account) ---------- */
+  $$('.ev[data-ev]').forEach(function(ev){
+    var id=ev.getAttribute('data-ev'), btn=$('.rsvp-open',ev), panel=$('.rsvp-panel',ev), ok=$('.ok',ev), countEl=$('[data-count]',ev), faces=$('.faces',ev);
+    var title=ev.getAttribute('data-title').replace('&amp;','&');
+    panel.innerHTML='<div class="field"><label for="n-'+id+'">What should we call you?</label><input class="input" id="n-'+id+'" autocomplete="given-name" required></div>'+
+      '<label class="toggle"><input type="checkbox" id="p-'+id+'"> I\'m bringing a friend (+1)</label>'+
+      '<div class="field"><label for="a-'+id+'">Anything that would make this easier? <span class="hint">(optional)</span></label><input class="input" id="a-'+id+'" placeholder="Rides, ASL, a quiet corner, kids in tow"></div>'+
+      '<p class="err" role="alert" hidden></p><button class="btn btn--sm" type="submit">Save my seat</button>';
+    function done(name,plus){
+      btn.hidden=true; panel.hidden=true; ok.hidden=false;
+      countEl.textContent=(+countEl.textContent)+1+(plus?1:0);
+      if(!$('.me',faces)){var i=d.createElement('i');i.className='me';i.textContent=(name[0]||'Y').toUpperCase();faces.insertBefore(i,faces.firstChild)}
+      ok.innerHTML='<span class="sticker slap'+(reduce?'':' go')+'" aria-hidden="true">Seat saved</span><p><strong>You\'re on the list, '+esc(name)+'.</strong> Add it to your calendar so future you remembers. Yes, there will be snacks.</p><div class="row"><button class="btn btn--sm btn--sun" type="button" data-a="cal">Add to calendar</button><button class="btn btn--sm btn--paper" type="button" data-a="inv">Invite a friend</button></div><p class="small" style="opacity:.8">Demo: saved in this browser only.</p>';
+      $('[data-a=cal]',ok).addEventListener('click',function(){ics({uid:id+'-2026',start:ev.getAttribute('data-start'),end:ev.getAttribute('data-end'),title:title,loc:ev.getAttribute('data-loc'),desc:'Young Dems of Seminole County. First time? Perfect.',file:id+'.ics'})});
+      $('[data-a=inv]',ok).addEventListener('click',function(){shareText('I\'m going to '+title.replace(' (demo)','')+'. Come with me?',baseUrl()+'#ev-'+id)});
+    }
+    var prev=store('rsvp-'+id); if(prev&&prev.name){done(prev.name,prev.plus)}
+    btn.addEventListener('click',function(){var o=btn.getAttribute('aria-expanded')==='true';btn.setAttribute('aria-expanded',String(!o));panel.hidden=o;if(!o) $('input',panel).focus()});
+    panel.addEventListener('submit',function(e){e.preventDefault();var n=$('#n-'+id).value.trim(), er=$('.err',panel);
+      if(!n){er.textContent='We just need a name for the list. A nickname is fine.';er.hidden=false;$('#n-'+id).focus();return}
+      er.hidden=true; var plus=$('#p-'+id).checked; store('rsvp-'+id,{name:n,plus:plus}); done(n,plus); toast('Seat saved. See you there.');
+    });
+  });
+
+  /* ---------- COVER STAR: canvas share card ---------- */
+  var cv=$('#coverCanvas'), cx=cv.getContext('2d'), photo=null;
+  var COLORS={
+    golden:{stops:['#FFE27A','#FF9A1F','#FF6A55'],ink:'#1C0F17',accent:'#FF3D8B',sun:'rgba(255,243,232,.55)',bar:'#1C0F17',barText:'#FFD23F'},
+    pink:{stops:['#FFC2AE','#FF6A55','#FF3D8B'],ink:'#1C0F17',accent:'#FFD23F',sun:'rgba(255,243,232,.5)',bar:'#1C0F17',barText:'#FFB199'},
+    blue:{stops:['#8FA0FF','#2741FF','#18208F'],ink:'#FFF3E8',accent:'#FFD23F',sun:'rgba(255,210,63,.95)',bar:'#FFF3E8',barText:'#2741FF'}
+  };
+  function fitFont(text,weight,style,family,max,width){var s=max;do{cx.font=style+' '+weight+' '+s+'px '+family;if(cx.measureText(text).width<=width)break;s-=4}while(s>20);return s}
+  function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
+  function coverState(){
+    var f=$('#coverForm');
+    return {name:($('#cName').value.trim()||'You'),city:$('#cCity').value,cause:(f.querySelector('input[name=cause]:checked')||{}).value||'rent that makes sense',color:(f.querySelector('input[name=color]:checked')||{}).value||'golden'};
+  }
+  function renderCover(){
+    var s=coverState(), c=COLORS[s.color], W=1080, H=1920, F='"Fraunces", Georgia, serif', L='"Bricolage Grotesque", "Arial Narrow", sans-serif';
+    var es=root.lang==='es';
+    cx.save(); cx.clearRect(0,0,W,H);
+    var g=cx.createLinearGradient(0,0,W*0.35,H); g.addColorStop(0,c.stops[0]); g.addColorStop(.5,c.stops[1]); g.addColorStop(1,c.stops[2]); cx.fillStyle=g; cx.fillRect(0,0,W,H);
+    var rg=cx.createRadialGradient(W*.74,700,40,W*.74,700,520); rg.addColorStop(0,c.sun); rg.addColorStop(.55,c.sun); rg.addColorStop(.56,'rgba(255,255,255,0)'); cx.fillStyle=rg; cx.fillRect(0,0,W,H);
+    var glow=cx.createRadialGradient(W*.74,700,280,W*.74,700,720); glow.addColorStop(0,'rgba(255,243,232,.22)'); glow.addColorStop(1,'rgba(255,243,232,0)'); cx.fillStyle=glow; cx.fillRect(0,0,W,H);
+    cx.fillStyle=c.ink; cx.textBaseline='alphabetic';
+    // folio
+    cx.font='800 30px '+L; if('letterSpacing' in cx) cx.letterSpacing='5px';
+    cx.textAlign='left'; cx.fillText(es?'NÚMERO 01 · NOV 2026':'ISSUE 01 · NOV 2026',72,104);
+    cx.textAlign='right'; cx.fillText('SEMINOLE COUNTY, FL',W-72,104);
+    if('letterSpacing' in cx) cx.letterSpacing='0px';
+    cx.fillRect(72,128,W-144,4);
+    // masthead
+    cx.textAlign='center'; var ms=fitFont('Young Dems','900','','"Fraunces"',250,W-130); cx.font='900 '+ms+'px '+F;
+    if('letterSpacing' in cx) cx.letterSpacing='-8px';
+    cx.fillText('Young Dems',W/2,128+ms*0.86);
+    if('letterSpacing' in cx) cx.letterSpacing='0px';
+    var top=128+ms*0.86+46;
+    // star area
+    if(photo){
+      var px=72,py=top,pw=W-144,ph=1000; cx.save(); rr(px,py,pw,ph,44); cx.clip();
+      var r=Math.max(pw/photo.width,ph/photo.height), iw=photo.width*r, ih=photo.height*r; cx.drawImage(photo,px+(pw-iw)/2,py+(ph-ih)/2,iw,ih);
+      var og=cx.createLinearGradient(0,py,0,py+ph); og.addColorStop(0,'rgba(255,210,63,.18)'); og.addColorStop(1,'rgba(255,61,139,.30)'); cx.globalCompositeOperation='soft-light'; cx.fillStyle=og; cx.fillRect(px,py,pw,ph); cx.restore();
+      cx.lineWidth=6; cx.strokeStyle=c.ink; rr(px,py,pw,ph,44); cx.stroke();
+      var ny=py+ph+150; var ns=fitFont(s.name,'900','italic','"Fraunces"',150,W-144); cx.font='italic 900 '+ns+'px '+F; cx.fillStyle=c.ink; cx.fillText(s.name,W/2,ny);
+      var l1=(s.city==='Seminole County'?'Seminole County':s.city)+(es?' · nuevo miembro':'\u2019s newest Young Dem'); var s1=fitFont(l1,'700','','"Fraunces"',62,W-144); cx.font='700 '+s1+'px '+F; cx.fillText(l1,W/2,ny+84);
+      var l2=(es?'aquí por ':'here for ')+s.cause+'.'; var s2=fitFont(l2,'400','italic','"Fraunces"',62,W-144); cx.font='italic 400 '+s2+'px '+F; cx.fillText(l2,W/2,ny+158);
+    } else {
+      var cl=[[es?'LO ÚNICO':'THE ONE THING',es?'Pide tu boleta otra vez':'Re-request your mail ballot'],[es?'ESTE MES':'THIS MONTH',es?'Tacos, trivia y limpieza':'Tacos, trivia & a cleanup'],[es?'SIEMPRE':'ALWAYS',es?'Gratis para venir':'Free to show up']];
+      cx.textAlign='left';
+      cl.forEach(function(it,i){var y=top+70+i*132; cx.fillStyle=c.accent; cx.fillRect(72,y-24,34,8); cx.fillStyle=c.ink; cx.font='800 26px '+L; if('letterSpacing' in cx) cx.letterSpacing='4px'; cx.fillText(it[0],120,y-14); if('letterSpacing' in cx) cx.letterSpacing='0px'; var fs=fitFont(it[1],'700','italic','"Fraunces"',50,420); cx.font='italic 700 '+fs+'px '+F; cx.fillText(it[1],72,y+44)});
+      cx.textAlign='center';
+      var nm=s.name; var ns2=fitFont(nm,'900','italic','"Fraunces"',400,W-150); cx.font='italic 900 '+ns2+'px '+F; cx.fillStyle=c.ink;
+      cx.fillText(nm,W/2,1250);
+      var la=(s.city==='Seminole County'?'Seminole County':s.city)+(es?' · nuevo miembro':'\u2019s newest Young Dem'); var sa=fitFont(la,'700','','"Fraunces"',84,W-150); cx.font='700 '+sa+'px '+F; cx.fillText(la,W/2,1420);
+      var lb=(es?'aquí por ':'is here for ')+s.cause+'.'; var sb=fitFont(lb,'400','italic','"Fraunces"',84,W-150); cx.font='italic 400 '+sb+'px '+F; cx.fillText(lb,W/2,1516);
+    }
+    // sticker
+    cx.save(); cx.translate(W-200,top+110); cx.rotate(-0.22); cx.beginPath(); cx.arc(0,0,128,0,Math.PI*2); cx.fillStyle='#fff'; cx.fill(); cx.beginPath(); cx.arc(0,0,116,0,Math.PI*2); cx.fillStyle=c.accent; cx.fill();
+    cx.fillStyle='#1C0F17'; cx.textAlign='center'; cx.font='800 48px '+L; cx.fillText(es?'PORTADA':'COVER',0,-6); cx.fillText(es?'ESTELAR':'STAR',0,46); cx.restore();
+    // bottom bar
+    cx.fillStyle=c.bar; rr(72,1660,W-144,124,62); cx.fill();
+    cx.fillStyle=c.barText; cx.textAlign='center'; var bt=(es?'Ven conmigo → ':'Come with me → ')+'youngsemdems.com'; var bs=fitFont(bt,'800','',L,52,W-230); cx.font='800 '+bs+'px '+L; cx.fillText(bt,W/2,1740);
+    cx.fillStyle=c.ink; cx.font='700 30px '+L; if('letterSpacing' in cx) cx.letterSpacing='3px'; cx.fillText(es?'DEMO · DE 14 A 39 AÑOS · CONDADO DE SEMINOLE':'DEMO · AGES 14 TO 39 · SEMINOLE COUNTY, FL',W/2,1860); if('letterSpacing' in cx) cx.letterSpacing='0px';
+    cx.restore();
+    var nmv=$('#cName').value.trim(); cv.setAttribute('aria-label','Preview of your cover: '+s.name+', '+s.city+', here for '+s.cause+'.');
+    // referral link
+    var code=store('ref'); if(!code){code=Math.random().toString(36).slice(2,6);store('ref',code)}
+    var slug=(nmv||'friend').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'friend';
+    refLink=baseUrl()+'?ref='+slug+'-'+code; $('#refLink').textContent=refLink.replace(/^https?:\/\//,'');
+  }
+  var refLink='';
+  var rT; function schedule(){clearTimeout(rT);rT=setTimeout(renderCover,60)}
+  $('#coverForm').addEventListener('input',schedule); $('#coverForm').addEventListener('change',schedule);
+  $('#cPhoto').addEventListener('change',function(){var f=this.files&&this.files[0]; if(!f) return; var img=new Image(); img.onload=function(){photo=img;renderCover();toast('Looking good. Your photo stays on this device.')}; img.src=URL.createObjectURL(f)});
+  function coverBlob(cb){cv.toBlob(function(b){cb(b)},'image/png')}
+  $('#dlBtn').addEventListener('click',function(){coverBlob(function(b){var a=d.createElement('a');a.href=URL.createObjectURL(b);a.download='young-dems-cover.png';d.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);toast('Saved. Post it to your Story, then send the link to three friends.')})});
+  $('#shareBtn').addEventListener('click',function(){
+    var text='I just made my Young Dems cover. Come to the next one with me?';
+    coverBlob(function(b){
+      var file; try{file=new File([b],'young-dems-cover.png',{type:'image/png'})}catch(e){}
+      if(file&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],text:text+' '+refLink}).catch(function(){})}
+      else shareText(text,refLink,'Invite copied. Paste it in the group chat with your cover.');
+    });
+  });
+  $('#copyBtn').addEventListener('click',function(){copy(refLink,'Your link is copied. Three friends, that\u2019s the whole ask.')});
+  $$('[data-tier]').forEach(function(a){a.addEventListener('click',function(){var r=d.querySelector('#joinForm input[name=tier][value='+a.getAttribute('data-tier')+']'); if(r) r.checked=true})});
+
+  /* ---------- REEL ---------- */
+  var CLIPS=[
+    {id:'mail',src:'media/mail-ballot-renew.mp4',poster:'media/mail-ballot-renew-poster.jpg',dur:'0:10',who:'@demo.maria',cap:'PSA: mail ballot requests run out Dec 31. Ask again before your next election.',act:'Re-request yours',href:'https://voteseminole.gov/how-to-vote/vote-by-mail/'},
+    {id:'lake',src:'media/lake-monroe-canvass.mp4',poster:'media/lake-monroe-canvass-poster.jpg',dur:'0:10',who:'@demo.luis',cap:'Sunset canvass by the lake. Knocked doors, met neighbors, caught the sky.',act:'Join the cleanup',href:'#ev-river'},
+    {id:'trivia',src:'media/trivia-night-recap.mp4',poster:'media/trivia-night-recap-poster.jpg',dur:'0:10',who:'@demo.sam',cap:'Trivia night recap: new friends, questionable team names, zero regrets.',act:'Save a seat',href:'#ev-trivia'},
+    {id:'voter',src:'media/first-time-voter.mp4',poster:'media/first-time-voter-poster.jpg',dur:'0:09',who:'@demo.ava',cap:'POV: you just voted for the first time. Turning 16? You can pre-register.',act:'Check registration',href:'https://voteseminole.gov/voters/my-voter-record/'},
+    {id:'rail',src:'media/sunrail-rally.mp4',poster:'media/sunrail-rally-poster.jpg',dur:'0:10',who:'@demo.jordan',cap:'Took SunRail to the rally. No parking, no stress. Who\u2019s riding next time?',act:'Make your cover',href:'#cover-star'}
+  ];
+  var clipsEl=$('#clips');
+  CLIPS.forEach(function(c){
+    var el=d.createElement('article'); el.className='clip';
+    var ext=/^https?:/.test(c.href);
+    el.innerHTML='<div class="vbox"><img loading="lazy" src="'+c.poster+'" width="432" height="768" alt="Video poster: '+esc(c.cap)+'"><button class="play" type="button" aria-label="Play clip by '+c.who+' (demo, no sound)"><span class="pbtn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5l13 7.5-13 7.5z"/></svg></span></button><span class="dur">'+c.dur+'</span></div>'+
+      '<span class="who">'+c.who+' · demo</span><p>'+esc(c.cap)+'</p><a class="act" href="'+c.href+'"'+(ext?' target="_blank" rel="noopener"':'')+'>'+esc(c.act)+' →</a>';
+    clipsEl.appendChild(el);
+    $('.play',el).addEventListener('click',function(){
+      var box=$('.vbox',el), v=d.createElement('video'); v.src=c.src; v.poster=c.poster; v.muted=true; v.playsInline=true; v.setAttribute('playsinline',''); v.controls=true; v.loop=true; v.setAttribute('aria-label','Clip by '+c.who+'. Text is burned into the video: '+c.cap);
+      box.innerHTML=''; box.appendChild(v); v.play().catch(function(){}); v.focus();
+    });
+  });
+  var po=$('#postOpen'), pp=$('#postPanel');
+  function setPost(o){po.setAttribute('aria-expanded',String(o)); pp.hidden=!o; if(o){pp.scrollIntoView({behavior:reduce?'auto':'smooth',block:'nearest'}); setTimeout(function(){$('#pLink').focus()},300)}}
+  po.addEventListener('click',function(){setPost(pp.hidden)});
+  $('#postCancel').addEventListener('click',function(){setPost(false);po.focus()});
+  $$('input[name=mode]',pp).forEach(function(r){r.addEventListener('change',function(){var f=r.value==='file'&&r.checked; $('#fileField').hidden=!f; $('#linkField').hidden=f})});
+  pp.addEventListener('submit',function(e){
+    e.preventDefault(); var er=$('#postErr'), mode=pp.querySelector('input[name=mode]:checked').value, link=$('#pLink').value.trim(), file=$('#pFile').files[0];
+    var okLink=/^https?:\/\/(www\.|m\.|vm\.)?(tiktok\.com|instagram\.com|youtube\.com|youtu\.be)\//i.test(link);
+    if(mode==='link'&&!okLink){er.textContent='That link doesn\u2019t look like TikTok, Instagram or YouTube. Try once more?';er.hidden=false;$('#pLink').focus();return}
+    if(mode==='file'&&!file){er.textContent='Pick a video first. Vertical, 60 seconds or less.';er.hidden=false;return}
+    if($$('.consent input',pp).some(function(c){return !c.checked})){er.textContent='Check all three boxes so we can review it safely.';er.hidden=false;return}
+    er.hidden=true;
+    var card=d.createElement('article'); card.className='clip clip--pending'; var cap=$('#pCap').value.trim()||'Your clip';
+    var media=mode==='file'?'<video src="'+URL.createObjectURL(file)+'" muted playsinline controls></video>':'<div style="display:grid;place-items:center;height:100%;padding:16px;text-align:center;background:linear-gradient(160deg,#FF3D8B,#FF9A1F);color:#1C0F17"><strong style="font-family:var(--f-display);font-size:28px;line-height:1">Link received</strong><span style="font-size:13px;font-weight:600">'+esc(link.replace(/^https?:\/\//,'').slice(0,40))+'</span></div>';
+    card.innerHTML='<div class="vbox"><span class="badge tag tag--demo">Pending review</span>'+media+'</div><span class="who">You · only you can see this</span><p>'+esc(cap)+'</p>';
+    clipsEl.insertBefore(card,clipsEl.children[1]); pp.reset(); $('#fileField').hidden=true; $('#linkField').hidden=false; setPost(false);
+    clipsEl.scrollTo({left:0,behavior:reduce?'auto':'smooth'});
+    toast('Sent. A real person watches every video before it goes live. (Demo: nothing left your browser.)');
+  });
+
+  /* ---------- JOIN + LETTER forms ---------- */
+  var emailRe=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  $('#joinForm').addEventListener('submit',function(e){
+    e.preventDefault(); var n=$('#jName').value.trim(), m=$('#jEmail').value.trim(), er=$('#joinErr'), tier=this.querySelector('input[name=tier]:checked').value;
+    if(!n){er.textContent='What should we call you? A nickname is fine.';er.hidden=false;$('#jName').focus();return}
+    if(m.indexOf('@')<0){er.textContent='That email\u2019s missing an @. Happens to everyone. Try once more?';er.hidden=false;$('#jEmail').focus();return}
+    if(!emailRe.test(m)){er.textContent='That email doesn\u2019t look quite right. Try once more?';er.hidden=false;$('#jEmail').focus();return}
+    er.hidden=true; store('join',{name:n,tier:tier});
+    var extra=tier==='member'?' Dues are paid in January, and we\u2019ll send the link then. Want to get it done now? <a href="https://secure.actblue.com/donate/ydscdues" target="_blank" rel="noopener" style="color:#FFD23F">Pay $20 on ActBlue</a>.':tier==='nonvoting'?' Non-voting membership is free. Same invites, same group chat.':'';
+    var ok=$('#joinOk'); ok.hidden=false; ok.innerHTML='<span class="sticker slap'+(reduce?'':' go')+'" aria-hidden="true">You\u2019re in</span><p><strong>You\u2019re in, '+esc(n)+'.</strong> Your first letter lands Thursday. Go drink some water.'+extra+'</p><p class="small" style="opacity:.8">Demo: saved in this browser only.</p>';
+    toast('You\u2019re in. Your first letter lands Thursday.');
+  });
+  $('#letterForm').addEventListener('submit',function(e){
+    e.preventDefault(); var m=$('#lEmail').value.trim(), er=$('#letterErr');
+    if(m.indexOf('@')<0){er.textContent='That email\u2019s missing an @. Happens to everyone. Try once more?';er.hidden=false;$('#lEmail').focus();return}
+    if(!emailRe.test(m)){er.textContent='That email doesn\u2019t look quite right. Try once more?';er.hidden=false;$('#lEmail').focus();return}
+    er.hidden=true; var ok=$('#letterOk'); ok.hidden=false; ok.innerHTML='<p><strong>You\u2019re in.</strong> Your first letter lands Thursday. Go drink some water.</p><p class="small" style="opacity:.8">Demo: nothing was sent anywhere.</p>';
+    toast('You\u2019re in. See you Thursday.');
+  });
+
+  /* ---------- reveal on scroll ---------- */
+  if(!reduce&&'IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target)}})},{rootMargin:'0px 0px -8% 0px'});
+    $$('.rise').forEach(function(el){io.observe(el)});
+  } else { $$('.rise').forEach(function(el){el.classList.add('in')}) }
+
+  /* ---------- boot ---------- */
+  var savedLang=store('lang');
+  var fontsReady=(d.fonts&&d.fonts.load)?Promise.all([d.fonts.load('900 100px "Fraunces"'),d.fonts.load('italic 900 100px "Fraunces"'),d.fonts.load('italic 400 100px "Fraunces"'),d.fonts.load('700 100px "Fraunces"'),d.fonts.load('800 40px "Bricolage Grotesque"')]):Promise.resolve();
+  renderCover();
+  fontsReady.then(function(){ if(savedLang==='es') setLang('es'); else renderCover(); window.__coverReady=true; },function(){renderCover();window.__coverReady=true});
+})();
+</script>
+</body>
+</html>

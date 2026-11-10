@@ -1,0 +1,70 @@
+<!doctype html>
+<!--
+  YDSC page skeleton (BRIEF §7.4). Copy this file to the site root as <page>.html, then:
+    1. Replace PAGE (data-page, body class p-PAGE, seo.PAGE.* keys, assets/css/pages/PAGE.css, ...).
+    2. Put every visible static string in a leaf element with data-t="<key>" (data/strings.js) or
+       data-t="PAGE:key" (data/pages/PAGE.js); attributes use data-t-content, data-t-aria-label,
+       data-t-alt, data-t-placeholder, data-t-title. Brand names and numbers get translate="no".
+    3. python3 tools/sync_partials.py PAGE.html   (fills every @name partial marker below; never edit between them)
+       node tools/make_es.js PAGE.html            (writes es/PAGE.html and the hreflang pairs)
+       node tools/make_og.js PAGE.html es/PAGE.html   (renders assets/img/og/PAGE.png and og/es/PAGE.png from ysd:og)
+    4. Run the full check list in docs/BUILDERS.md before you report done.
+  Rules: no inline <script>, no inline event handlers, no style="" except custom properties
+  (style="--duo: var(--sky)"). Copy component markup from styleguide.html. Page-only CSS lives under
+  .p-PAGE in assets/css/pages/PAGE.css; if you need a shared component change, ask the lead and use an
+  x- prefix meanwhile. Links always end in .html (file:// works). Every DEMO item says DEMO.
+  A page loads data/slices/<page>.js or the full data file for a namespace, never both.
+-->
+<html lang="en" data-page="PAGE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title data-t="seo.PAGE.title">Page name · Young Democrats of Seminole County</title>
+  <meta name="description" content="One or two plain sentences, 160 characters at most." data-t-content="seo.PAGE.description">
+  <meta property="og:title" content="Short share title" data-t-content="seo.PAGE.ogTitle">
+  <meta property="og:description" content="What a friend sees in the group chat preview." data-t-content="seo.PAGE.ogDescription">
+  <meta property="og:image" content="assets/img/og/PAGE.png">
+  <meta property="og:image:alt" content="Describe the type-only card in words." data-t-content="PAGE:og.alt">
+  <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US"><meta property="og:locale:alternate" content="es_US">
+  <meta name="ysd:og" content='{"template":"og-page","kicker":"KICKER","title":"Card title","keys":{"kicker":"PAGE:og.kicker","title":"seo.PAGE.ogTitle"}}'>
+  <!-- @head --><!-- /@head -->
+  <link rel="stylesheet" href="assets/css/pages/PAGE.css">
+</head>
+<body class="p-PAGE">
+  <!-- @demo-banner --><!-- /@demo-banner -->
+  <!-- @header --><!-- /@header -->
+  <main id="main">
+    <div data-invite-landing hidden></div>
+
+    <section class="section section--violet" aria-labelledby="PAGE-title">
+      <div class="wrap stack stack--lg">
+        <p class="eyebrow eyebrow--pill" data-t="PAGE:hero.eyebrow">EYEBROW · 1 TO 3 WORDS</p>
+        <h1 class="h1" id="PAGE-title" data-t="PAGE:hero.title">One h1 per page</h1>
+        <p class="lead" data-t="PAGE:hero.sub">One sentence that says who and what. Then one primary and one secondary action.</p>
+        <div class="btn-row">
+          <a class="btn btn--primary btn--lg" href="join.html" data-t="cta.join">Join free</a>
+          <a class="btn btn--ghost btn--lg" href="events.html" data-t="cta.seeWhatsOn">See what's on</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="PAGE-next">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow" data-t="PAGE:next.eyebrow">SECTION</p>
+          <h2 id="PAGE-next" data-t="PAGE:next.title">A section title</h2>
+          <p class="section-head__sub" data-t="PAGE:next.sub">A short sub line, muted.</p>
+        </div>
+        <!-- components from styleguide.html go here -->
+        <p><button class="btn btn--ink" type="button" data-share><span data-t="cta.shareGroup">Send it to the group chat</span></button></p>
+      </div>
+    </section>
+  </main>
+  <!-- @footer --><!-- /@footer -->
+  <!-- @scripts --><!-- /@scripts -->
+  <!-- page data and modules, after the core stack (each a file: the CSP blocks inline scripts) -->
+  <script src="data/pages/PAGE.js"></script>
+  <script src="assets/js/pages/PAGE.js"></script>
+</body>
+</html>

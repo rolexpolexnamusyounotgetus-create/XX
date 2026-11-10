@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" data-page="good" data-es="skip">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>QA fixture (marker swipe, sticker button, fade-in and theme lag; passes) · Young Democrats of Seminole County</title>
+  <meta name="description" content="A fixture page with no seeded defects.">
+  <meta property="og:title" content="QA fixture">
+  <meta property="og:description" content="A fixture page with no seeded defects.">
+  <meta property="og:image" content="assets/img/og/good.png">
+  <meta property="og:image:alt" content="QA fixture card on ultraviolet.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="assets/css/fixture.css">
+</head>
+<body>
+  <!-- passes: a marker swipe under the h1 words, a caption over a sticker button, a fade-in and a late theme background (qa must sample and settle them) -->
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="demo-banner"><p>DEMO preview for the Young Democrats of Seminole County. Forms don't send anything.</p></div>
+  <header class="site-header"><a class="brand" href="good.html">Young Dems</a> <a class="btn btn--primary" href="#join">Join free</a></header>
+  <main id="main">
+    <section class="wrap section--violet">
+      <h1>Local politics is a <span class="x-hi">group project.</span></h1>
+      <p>Free hangouts, straight answers about voting, and a crew from Sanford to Oviedo.</p>
+      <p><a class="btn btn--primary" href="#join">Join free</a> <a class="btn btn--ghost" href="#invites">See what's on</a></p>
+    </section>
+    <section class="wrap" id="invites">
+      <h2>You're invited</h2>
+      <article class="invite" data-qa="invite">
+        <p>Trivia night: Seminole County edition <span class="tag tag--demo">DEMO event</span></p>
+        <p>Thu, Nov 19 · 7 pm · Casselberry</p>
+        <p data-demo>23 going (DEMO)</p>
+      </article>
+      <button type="button" class="btn" data-share>Send it to the group chat</button>
+      <!-- pixel sampled: a caption over a sticker button's SVG (one flat fill, so the pixels are uniform) -->
+      <div class="x-stage">
+        <button class="x-sticker" type="button" aria-label="Sticker: sun. Tap for a Seminole fact"><svg viewBox="0 0 300 120" preserveAspectRatio="none" aria-hidden="true"><rect width="300" height="120" rx="24" fill="#FFD23F"/></svg></button>
+        <p class="x-caption">Sun sticker, tap it for a fact</p>
+      </div>
+      <!-- settle: the colour fades in for 1.6 s after load; the card's background lags the theme switch by 2 s -->
+      <p class="x-fade" data-fade>This line fades in after the page loads.</p>
+      <div class="x-theme"><p>This card follows the theme a moment late.</p></div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <p>Paid for by [committee name and address placeholder] <span class="tag tag--demo">DEMO</span></p>
+    <p>Preview for the Young Democrats of Seminole County. Not an official site of the Seminole County Democrats, Florida Young Democrats or any party organization.</p>
+  </footer>
+  <div class="toast-region" role="status" aria-live="polite"></div>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/share.js"></script>
+  <script src="assets/js/fixture.js"></script>
+</body>
+</html>
