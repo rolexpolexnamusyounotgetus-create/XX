@@ -263,7 +263,13 @@
       if (submit) { submit.setAttribute('data-state', 'loading'); submit.setAttribute('aria-disabled', 'true'); }
       var job;
       if (howMode() === 'upload') {
-        job = YSD.clips.add(fileIn.files[0], { caption: caption, tags: tags }).then(function (clip) { return { kind: 'upload', id: clip.id, clip: clip }; });
+        job = YSD.clips.add(fileIn.files[0], {
+          caption: caption, tags: tags,
+          // moderation answers ride on the record (review journeys-01): captions box, minors, guardian, consents
+          captionsConfirmed: true, containsMinors: minors, guardianRequired: guardian,
+          guardianContact: guard ? String(guard.value || '').trim() : '',
+          consents: consents
+        }).then(function (clip) { return { kind: 'upload', id: clip.id, clip: clip }; });
       } else {
         var c = checkLink(linkIn.value);
         var rec = { id: 'link-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), source: 'local', link: c.url, host: c.host,

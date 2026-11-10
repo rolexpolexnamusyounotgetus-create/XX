@@ -595,7 +595,13 @@
     var copy = el('div', 'invite-landing__copy');
     copy.appendChild(el('p', 'invite-landing__who', from ? lbl('invitedBy', { name: from }) : lbl('invitedAnon')));
     var what = e && !past ? lbl('invitedTo', { event: tx(e.title), when: eventWhen(e) }) : e && past ? lbl('invitedPast') : lbl('invitedToUs');
-    copy.appendChild(el('p', 'invite-landing__what', what));
+    var whatP = el('p', 'invite-landing__what', what);
+    if (e && !past && e.demo !== false && !e.real) {
+      // Demo events always carry DEMO (BRIEF 0.2; review journeys-03).
+      whatP.appendChild(document.createTextNode(' '));
+      whatP.appendChild(el('span', 'tag tag--demo', lbl('demoEvent')));
+    }
+    copy.appendChild(whatP);
     if (e && !past) copy.appendChild(el('p', 'invite-landing__sub', lbl('invitedSub')));
     inner.appendChild(copy);
     var acts = el('div', 'invite-landing__actions');

@@ -2728,6 +2728,7 @@ window.YSD_DATA.civic = {
       },
       calendar: {
         title: { en: "Vote: {electionTitle}", es: "Votar: {electionTitle}" },
+        titleMail: { en: "Mail ballot must ARRIVE by 7 pm today ({electionTitle}). Mail it a week early.", es: "La boleta por correo tiene que LLEGAR hoy antes de las 7 p. m. ({electionTitle}). Envíala una semana antes." },
         description: {
           en: "My plan: {method}, {when}, {with}. Bring photo and signature ID. Polls: 7 am to 7 pm. Check details at voteseminole.gov or call 407-585-8683.",
           es: "Mi plan: {method}, {when}, {with}. Lleva identificación con foto y firma. Horario: 7 a. m. a 7 p. m. Revisa los detalles en voteseminole.gov o llama al 407-585-8683."

@@ -373,7 +373,7 @@
     if (outcome === 'plan' && V.dt) {
       var cal = P.outputs.calendar, dt = V.dt;
       btn(t('plan.cal'), 'btn--ink', function () {
-        var ev = { id: 'ysd-plan-' + dt.id, title: fill(tx(cal.title), v), description: fill(tx(mail ? cal.descriptionMail : cal.description), v), url: href('countyElections'), alarm: cal.remindersMinutesBefore[0] };
+        var ev = { id: 'ysd-plan-' + dt.id, title: fill(tx(mail && cal.titleMail ? cal.titleMail : cal.title), v), description: fill(tx(mail ? cal.descriptionMail : cal.description), v), url: href('countyElections'), alarm: cal.remindersMinutesBefore[0] };
         if (mail && dt.end) { ev.start = dt.end; ev.end = dt.end.replace(/T19:00/, 'T19:30'); } else { ev.start = dt.date; ev.end = dt.end; }
         var evs = [ev];
         if (V.dl) evs.push(calEvent(V.dl, { id: 'ysd-plan-' + V.dl.id, title: fill(tx(cal.deadlineEvent.title), v), description: fill(tx(cal.deadlineEvent.description), v), alarm: cal.deadlineEvent.remindersMinutesBefore[0] }));

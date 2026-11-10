@@ -168,7 +168,7 @@ window.YSD_DATA.pages.about = {
   'crew.sunrail.where': { en: 'Lake Mary and Longwood', es: 'Lake Mary y Longwood' },
   'crew.sunrail.idea': { en: 'Meet at the station after work and ride one stop together. Weekdays only, like SunRail.', es: 'Verse en la estación después del trabajo y viajar una parada juntos. Solo entre semana, como SunRail.' },
   'crew.chuluota.where': { en: 'Chuluota and east Seminole', es: 'Chuluota y el este de Seminole' },
-  'crew.chuluota.idea': { en: "Lemonade on somebody's porch and a sign-making afternoon.", es: 'Limonada en el porche de alguien y una tarde para hacer carteles.' },
+  'crew.chuluota.idea': { en: "Lemonade at a park pavilion and a sign-making afternoon.", es: 'Limonada en un pabellón del parque y una tarde para hacer carteles.' },
   'crew.oviedo.where': { en: 'Oviedo', es: 'Oviedo' },
   'crew.oviedo.idea': { en: "Coffee downtown and a vote-plan swap. Named for Oviedo's legendary chickens.", es: 'Café en el centro e intercambio de planes para votar. El nombre viene de las legendarias gallinas de Oviedo.' },
   'crew.wsprings.where': { en: 'Winter Springs', es: 'Winter Springs' },
