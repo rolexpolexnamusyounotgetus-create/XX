@@ -1,0 +1,1021 @@
+[
+ {
+  "id": "right-wing-porch-home",
+  "page": "about.html",
+  "files": [
+   "data/pages/about.js",
+   "about.html",
+   "es/about.html"
+  ],
+  "severity": "blocking",
+  "issue": "A DEMO crew's 'first hangout idea' is at a private home. This contradicts the site's own host rule ('A public place... Never someone's home') for a group that starts at age 14.",
+  "evidence": "about.html shows: 'Chuluota Porch Club / FIRST HANGOUT IDEA / Lemonade on somebody's porch and a sign-making afternoon.' (data/pages/about.js:171; ES 'Limonada en el porche de alguien'). events.html#host says: '1 A public place. A park, a library room, a caf\u00e9 anyone can walk into. Never someone's home.' data/events.js leaves out the real SemDems holiday party because it is 'at a private home... doesn't fit a 14-and-up site's host rules'. Report 07 \u00a77 requires 'public meeting venues only, never members' homes.'",
+  "fix": "Rewrite crew.chuluota.idea in EN and ES to a public venue (e.g. 'Lemonade at a park pavilion in Chuluota and a sign-making afternoon'). The name can stay. Regenerate es/about.html with tools/make_es.js."
+ },
+ {
+  "id": "right-wing-join-jump",
+  "page": "index.html",
+  "files": [
+   "assets/js/pages/home.js",
+   "assets/css/pages/home.css"
+  ],
+  "severity": "major",
+  "issue": "The hero's primary CTA 'Join free' (#join) scrolls to the scoreboard instead of the form, because lazy sections mount mid-scroll and push the target down about 650 px. Focus is not moved.",
+  "evidence": "RW/scripts/joinjump2.js at 390x844, normal motion: the page grows from 8,146 to 8,798 px during the smooth scroll. #join ends at 630 px from the top, and the first input at 821 of 844 px. The visitor sees 'The real scoreboard' (RW/jump-1500.png). activeElement stays BODY. With reduced motion it lands correctly (#join at 80 px). home.js:281-287 preloads only the target's own group. RPOF and donaldjtrump.com take you straight to a form.",
+  "fix": "On a click to #join, load every lazy group above the target, wait for them, then scrollIntoView and focus the first-name input. Alternatively, reserve each lazy section's mounted height (min-height or contain-intrinsic-size). Re-test both motion settings and es/index.html."
+ },
+ {
+  "id": "right-wing-desktop-fold",
+  "page": "index.html",
+  "files": [
+   "assets/css/pages/home.css",
+   "tools/qa.js"
+  ],
+  "severity": "major",
+  "issue": "On every common laptop viewport, the home hero's 'Join free' and 'See what's on' are below the fold, under about 215 px of empty purple.",
+  "evidence": "RW/scripts/fold.js: CTA top at 845 px at 1366x768, 836 at 1280x720, 852-908 at 1440x900 and 862 at 1536x864. es/index.html: 826 at 1366x768. The eyebrow starts at 335 px whatever the viewport height (RW/crops/index-1440-top.png). qa B6 checks only 390x664. AmericaFest desktop shows the date, place and REGISTER NOW within 900 px (BENCH/right-tpusa-amfest-desktop.png).",
+  "fix": "Size the hero to the viewport: min-height calc(100svh - header), content centred, an H1 clamp() with a vh term, and less top padding, so the CTAs sit at least 80 px above the fold at 1366x768. Add a 1366x768 first-screen check to qa.js."
+ },
+ {
+  "id": "right-wing-chapter-kit",
+  "page": "events.html",
+  "files": [
+   "events.html",
+   "data/pages/events.js",
+   "assets/js/pages/events.js",
+   "assets/css/pages/events.css",
+   "about.html",
+   "data/pages/about.js"
+  ],
+  "severity": "major",
+  "issue": "There's no chapter-in-a-box. 'Host one' is a four-rule checklist and a link to a plain join form: no kit, no templates, no reply promise, and no human to contact.",
+  "evidence": "events.html#host: 'Want to host the next one?', four rules, then 'Join free to pitch it', which links to join.html. about.html: 'Until the chapter picks a public contact, the join form is the way in.' TPUSA Students has a start-a-chapter form, free activism kits, a theme library, '90+ full-time Field Representatives' and a chapter map (BENCH/right-tpusa-startachapter-mobile.png, right-tpusa-clubamerica-mobile.png). Report 07 \u00a75.3 sets the bar: an EN and ES kit, a checklist, and a named human replying within 48 hours.",
+  "fix": "Build a 'Crew kit' block: downloadable EN and ES flyer template, paper sign-in sheet (first names only), first-hangout run-of-show, access-note template and share card (new assets/kit/ files). Add a three-question pitch (city, kind of night, date) that passes intent=host into the join form, and a role-based reply promise labelled DEMO ('Your crew guide replies within 2 days (DEMO)')."
+ },
+ {
+  "id": "right-wing-intent-lost",
+  "page": "about.html, events.html, quiz results, join.html",
+  "files": [
+   "about.html",
+   "events.html",
+   "data/quiz.js",
+   "tools/make_quiz_pages.js",
+   "assets/js/joinform.js",
+   "data/strings.js",
+   "assets/js/pages/join.js"
+  ],
+  "severity": "major",
+  "issue": "All 11 host, crew and run-for-a-role links go to a bare join.html, and the join form has no host, crew or role option, so the visitor's intent is lost.",
+  "evidence": "RW/scripts/links.js: about.html 'Start it with us' x7, 'Pitch a crew' and 'Tell us you're curious' all link to join.html. events.html 'Join free to pitch it' links to join.html. Quiz result 'Offer to host or emcee a night' links to ../../join.html. Step two after joining offers only city, issues, language and access (RW/text/join-after.txt). The WANTS chips in joinform.js:81 never render (joinform.js:389-390). CRNC's first screen separates 'Join a chapter' from 'Start a chapter'.",
+  "fix": "Pass intent in the URL (join.html?intent=host&crew=sanford, ?intent=role, ?intent=crew). Have joinform show a matching heading and a pre-ticked step-two chip ('I want to host a night', 'Curious about a role', 'Start a crew in {city}'), and store it in the payload."
+ },
+ {
+  "id": "right-wing-quiz-deadends",
+  "page": "quiz/show-up/*, quiz/issue/*, events.html",
+  "files": [
+   "assets/js/pages/events.js",
+   "data/pages/events.js",
+   "data/quiz.js",
+   "tools/make_quiz_pages.js"
+  ],
+  "severity": "major",
+  "issue": "10 of 15 quiz result pages link to event series that are locked behind the Dec 15 drop, so the filtered list shows '0 events' and an empty-state line that doesn't fit.",
+  "evidence": "RW/scripts/series.js: events.html?series=karaoke, mixer, sunrail, picnic, canvass and workshop-es all show '0 events (DEMO) / Nothing matches that one / No events this week. Rest counts too.' The events exist (mixer Jan 13, karaoke Feb 12). The rent, transit and wages results link only to locked series. Hype Captain's 'Events made for you' lists Karaoke nights and Member mixers, and both are empty.",
+  "fix": "When a filtered series has only locked items, show its teaser: 'Karaoke is in January's lineup. It drops Tue, Dec 15 at noon (DEMO). Notify me (.ics)', plus the next open event of the same kind. Make the quiz generator prefer open series."
+ },
+ {
+  "id": "right-wing-no-tentpole",
+  "page": "events.html, index.html",
+  "files": [
+   "data/events.js",
+   "assets/js/eventcard.js",
+   "assets/js/pages/events.js",
+   "events.html",
+   "assets/css/pages/events.css",
+   "assets/js/pages/home.js",
+   "assets/css/pages/home.css",
+   "tools/make_event_pages.js",
+   "tools/make_og.js"
+  ],
+  "severity": "major",
+  "issue": "No tentpole night and no recurring series. All Nov-Dec events get identical cards, and every series has a single date.",
+  "evidence": "The five Nov-Dec events use the same card (RW/crops/events-390-light-0*.png). Each series in data/events.js has exactly one item (?series=trivia shows '1 event (DEMO)'). Nothing says 'monthly'. AmericaFest's neon poster with 'December 17-20, Phoenix Convention Center / REGISTER NOW' (BENCH/right-tpusa-amfest-mobile.png) and Pick Up the Mic's gig poster set the bar. Report 07 \u00a75.5 calls for a monthly tentpole plus weekly hangouts.",
+  "fix": "Add tentpole and recurs fields. Make the Renew-ready party (Dec 13, capacity 60) December's tentpole, with a poster-grade band on events and home: duotone lock-up, date ticket, DEMO capacity bar, countdown and its own OG image. Show recurrence on the series cards ('Trivia \u00b7 third Thursday, monthly (DEMO)') and give trivia a second date."
+ },
+ {
+  "id": "right-wing-shows",
+  "page": "clips.html, index.html (Reel)",
+  "files": [
+   "data/clips.js",
+   "assets/js/reel.js",
+   "assets/js/pages/clips.js",
+   "data/pages/clips.js",
+   "assets/css/pages/clips.css",
+   "data/events.js"
+  ],
+  "severity": "major",
+  "issue": "There are no named recurring video formats and no open-mic or speak-up format. The Reel is six standalone DEMO clips under topic filters.",
+  "evidence": "clips.html: '6 CLIPS' under the filters All / Voting help / Hangouts / Volunteer / This week's prompt. The clips (@demo.sam, @demo.priya, ...) belong to no named format. TPUSA's shows shelf (Culture Apothecary, Prove Me Wrong, Turning Point Tonight; BENCH/right-tpusa-mobile-full.jpg), PragerU's shelves (BENCH/right-prageru-mobile.png) and Pick Up the Mic. Report 07 \u00a75.6 and \u00a75.7.",
+  "fix": "Add a series field with two or three named DEMO formats and a cadence ('Seminole in 60' explainers on Thursdays, 'First Time?' stories, an 'En espa\u00f1ol' segment). Render them as shelves on clips.html and as badges on home Reel cards. Add a monthly 'Open mic: 3 minutes, your take (DEMO)' event."
+ },
+ {
+  "id": "right-wing-merch",
+  "page": "site-wide (index.html, events.html)",
+  "files": [
+   "index.html",
+   "data/pages/home.js",
+   "assets/css/pages/home.css",
+   "events.html",
+   "data/pages/events.js",
+   "assets/js/cal.js",
+   "data/strings.js"
+  ],
+  "severity": "major",
+  "issue": "No merch or wearable identity and no merch drop. Every identity object is digital (member card, sticker PNG, share cards).",
+  "evidence": "No merch, tee or hoodie on any rendered page. A grep finds only legal notes and one event line, 'celery-green tote bags (DEMO)'. CRNC opens with a 'SHOP NEW MERCH' ticker (BENCH/right-crnc-mobile.png); the TPUSA merch store (BENCH/right-tpusa-merch-mobile.png); the sold-out Never Surrender sneaker drop. Report 07 \u00a75.9 sets the bar: member-designed, bilingual, honest edition sizes.",
+  "fix": "Add a DEMO 'Drop 01' band on home and events: one member-designed piece (e.g. a Celery City crewneck with 'La pol\u00edtica local es un trabajo en equipo' on the back), 'Edition of 100 (DEMO)', sizes XS-4XL, and Notify me or preorder .ics through YSD.cal. Free items go only for organizing actions, never civic ones (ruling 00), pending counsel."
+ },
+ {
+  "id": "right-wing-rewards-hidden",
+  "page": "join.html, index.html",
+  "files": [
+   "join.html",
+   "assets/js/pages/join.js",
+   "assets/js/membercard.js",
+   "data/levels.js",
+   "data/pages/join.js",
+   "index.html",
+   "data/pages/home.js"
+  ],
+  "severity": "major",
+  "issue": "The sticker book's public, fair rules are visible only after joining, and the only payoff is one DEMO sticker. Visitors can't see that we beat Patriot Rewards.",
+  "evidence": "Before joining, join.html says only 'and a sticker book. Stickers are for showing up and bringing friends, never for voting.' After joining (RW/crops/joined-04.png) the book shows 15 stickers with rules ('Squad of Three: Three friends join through your link'). The only reward is 'EXAMPLE PERK (DEMO): A welcome sticker at your first event'. Patriot Rewards publishes its criteria and pays out merch and VIP access (report 07 \u00a74.1).",
+  "fix": "Show the sticker book as a locked preview on join.html, plus a three-sticker teaser on home, with every rule and 'Voting steps never earn stickers' visible. Add a DEMO perk ladder for organizing only, pending counsel (Squad of Three gets first pick of tentpole seats; The Long Game gets the next drop item)."
+ },
+ {
+  "id": "right-wing-teen-path",
+  "page": "join.html, vote.html, events.html",
+  "files": [
+   "join.html",
+   "data/pages/join.js",
+   "vote.html",
+   "data/pages/vote.js",
+   "data/civic.js",
+   "events.html",
+   "assets/js/pages/events.js",
+   "data/pages/events.js",
+   "index.html"
+  ],
+  "severity": "major",
+  "issue": "No Club America-grade path for ages 14 to 17. Pre-registration at 16 appears only in a deep FAQ, and there's no teen section or teen-friendly event filter.",
+  "evidence": "The only teen voting content is the FAQ 'I'm 16. Can I register?' at about 13,600 px on vote.html. Join only asks 'How old are you?'. Events has no daytime or under-18 filter. Club America (scrapbook look, free kit, chapter finder, under-18 pledge, parent resources) scored highest in report 07 (25/35; BENCH/right-tpusa-clubamerica-mobile.png). Persona P3 is 15.",
+  "fix": "Add a '14 to 17? Here's your version' band on join.html and the home membership section: what you can do at 14, pre-register at 16 as a step card on vote.html (no reward attached), daytime events, how the guardian note works, and a parents' link to teen-safety. Add a 'Daytime / under-18 friendly' filter chip on events."
+ },
+ {
+  "id": "right-wing-identity-crews",
+  "page": "about.html, join step two",
+  "files": [
+   "about.html",
+   "data/pages/about.js",
+   "assets/js/pages/about.js",
+   "assets/css/pages/about.css",
+   "assets/js/joinform.js",
+   "data/strings.js"
+  ],
+  "severity": "major",
+  "issue": "Crews are city-only. There are no identity crews or sub-brands (students, Latino and Boricua, LGBTQ+, young parents, shift workers), which the right uses heavily.",
+  "evidence": "about.html 'CITY CREWS \u00b7 DEMO' lists seven cities plus 'Your crew here'. Join step two offers issues and language only, and the WANTS chips for 'students' and 'lgbtq' never render. RPOF has 10 identity coalitions, TPUSA runs the Young Women's Leadership Summit, and YAF's headline speaks to feeling out of place. Report 07 \u00a75.10 lists the crews to add.",
+  "fix": "Add four or five DEMO identity crews ('Seminole State and UCF students', 'Boricua and Latino crew, Spanish first', 'LGBTQ+ crew', 'Young parents, kids welcome', 'Service and hospitality shift workers'), each with a public-venue first hangout and 'Needs a host'. Make them pickable in join step two."
+ },
+ {
+  "id": "right-wing-crew-map",
+  "page": "about.html",
+  "files": [
+   "about.html",
+   "data/pages/about.js",
+   "assets/js/pages/about.js",
+   "assets/css/pages/about.css",
+   "assets/js/joinform.js"
+  ],
+  "severity": "major",
+  "issue": "No crew map or locator, and all seven crews say 'Needs a host', so the local layer reads as empty next to CRA's dot-map and Club America's chapter finder.",
+  "evidence": "about.html lists seven crew cards, each ending 'Needs a host / Start it with us'. No map, no mention on home, and no crew suggestion after choosing a city in join step two. CRA's map is report 07's 'strong at-a-glance proof device' (BENCH/right-cra-mobile.png).",
+  "fix": "Add an SVG Seminole map with one pin per crew at a public landmark and a state per pin ('Forming (DEMO)' or 'Needs a host'). Show one or two active DEMO crews as the finished design. After a city pick in join step two, show 'Your crew: Celery City Crew (DEMO)'."
+ },
+ {
+  "id": "right-wing-real-proof",
+  "page": "index.html",
+  "files": [
+   "index.html",
+   "data/pages/home.js",
+   "data/slices/home.js",
+   "assets/css/pages/home.css"
+  ],
+  "severity": "major",
+  "issue": "Home never shows that the chapter itself is real. Every person and org item is DEMO, and the scoreboard is county facts, not proof of us.",
+  "evidence": "Home's REAL content is civic only ('The real scoreboard': 1 in 3+, 34.3%, about 54%, about 27%). The real chapter proof lives only on about.html: 'YDSC is real, and the Florida Young Democrats list it as a chapter' and 'YDSC has hosted a musical theatre night in Oviedo to raise money for a local charity that supports LGBTQ+ youth'. CRNC leads with 'The best party on campus since 1892', TPUSA with three big numbers.",
+  "fix": "Add a three-item REAL strip under the hero or above the scoreboard: 'A real chapter of the Florida Young Democrats', 'Members from 14, dues optional', 'We've raised money for LGBTQ+ youth in Oviedo', each linked to its source with the checked date."
+ },
+ {
+  "id": "right-wing-bench-artifacts",
+  "page": "tools (head-to-head table)",
+  "files": [
+   "tools/bench_compare.js",
+   "tools/check_site.js",
+   "partials/head.html"
+  ],
+  "severity": "major",
+  "issue": "The bench_compare head-to-head table understates our pages on CLS, weight and share. B2 is a gate measured by this tool, and this table goes to the chapter.",
+  "evidence": "The bench reports CLS 0.57-0.75 on five of our pages; qa.js 4G measures 0-0.005. RW/scripts/cls.js shows the shift only when the bench's CTA poller is injected: body.p-join [8,836]->[0,844], 0.6957 at 720 ms, a forced layout before the four render-blocking stylesheets load. MB reads 0.58-0.70 uncompressed (the local server has no gzip) against competitors' compressed bytes; qa gzip is 225-289 KB. Share reads 'no' because shareRe (bench_compare.js:532) doesn't match 'Send it to the group chat', though qa B16 counts one share button per page.",
+  "fix": "Ignore layout shifts before first contentful paint, or start the CTA poller after DOMContentLoaded. Gzip text in the local server, or report qa's gzip figure for our pages. Add 'group chat|grupo|m\u00e1ndalo' to shareRe. As a belt, add an inline body{margin:0} to the head partial."
+ },
+ {
+  "id": "right-wing-repeat-event",
+  "page": "index.html",
+  "files": [
+   "assets/js/pages/home.js",
+   "data/slices/home.js"
+  ],
+  "severity": "minor",
+  "issue": "The same Sunset walk appears three times on home, so it reads as a one-event group.",
+  "evidence": "RW/scripts/repeat.js: 'Sunset walk-and-talk on Lake Monroe' at y 683 (hero ticket), y 1,065 (third pinned card) and y 2,698 (first invites card). TPUSA's 'Latest & upcoming' carousel shows several different events.",
+  "fix": "Start the invites carousel and the pinned 'next hangout' card from the event after the hero's."
+ },
+ {
+  "id": "right-wing-sticker-art",
+  "page": "join.html (sticker book)",
+  "files": [
+   "data/stickers.js",
+   "data/levels.js",
+   "assets/js/cards-brand.js"
+  ],
+  "severity": "minor",
+  "issue": "The 15 sticker-book entries share 9 pieces of art, which weakens collectibility, our answer to merch and rewards.",
+  "evidence": "data/levels.js art values: heart x3 (Saved Seat, Squad of Three, Bridge Builder); train x2; camera x2; cypress x2; sun x2. Visible in RW/crops/joined-04.png.",
+  "fix": "Draw six more county stickers so every sticker is unique (e.g. a Riverwalk lamp, Big Tree stump, a SunRail ticket, a bilingual speech bubble)."
+ },
+ {
+  "id": "right-wing-npa-depth",
+  "page": "vote.html",
+  "files": [
+   "vote.html",
+   "data/pages/vote.js",
+   "assets/js/pages/vote.js"
+  ],
+  "severity": "minor",
+  "issue": "The independent voter's key answer sits 14 screens down a 22-screen page.",
+  "evidence": "RW/scripts/voteh.js: page height 18,799 px at 390. 'No party? Here's what you can vote in.' is at 12,223 px and the NPA FAQ at about 13,600. The hero's jump links are 'Check My Voter Record / Make my plan / What changed'. Most young Seminole voters are NPA (ruling 00).",
+  "fix": "Add a 'No party?' jump chip to the hero, or move the NPA block to directly after 'Two rules change on Jan 1, 2027'."
+ },
+ {
+  "id": "right-wing-sunrail-saturday",
+  "page": "clips.html",
+  "files": [
+   "assets/js/reel.js",
+   "data/clips.js"
+  ],
+  "severity": "minor",
+  "issue": "A SunRail clip's action chip points to a Saturday event, but regular SunRail service runs on weekdays.",
+  "evidence": "@demo.jordan: 'Took SunRail to the rally... Who is riding next time?' with the chip 'Next hangout: Sat, Nov 14'. Our own crew card says 'Weekdays only, like SunRail.'",
+  "fix": "Map SunRail-tagged clips to the SunRail social teaser (Thu, Jan 21) or to the next weekday event."
+ },
+ {
+  "id": "genz-brand-01",
+  "page": "events, vote, clips, post, quiz, join, about, 404 (site-wide)",
+  "files": [
+   "events.html",
+   "vote.html",
+   "clips.html",
+   "post.html",
+   "quiz.html",
+   "join.html",
+   "about.html",
+   "404.html",
+   "assets/css/pages/events.css",
+   "assets/css/pages/vote.css",
+   "assets/css/pages/clips.css",
+   "assets/css/pages/quiz.css",
+   "assets/css/pages/join.css",
+   "assets/css/pages/about.css",
+   "assets/css/components.css"
+  ],
+  "severity": "major",
+  "issue": "Nine pages share one identical violet hero formula, so no page has its own colour world and screenshots of different pages look the same.",
+  "evidence": "The first hero section is section--violet on 9 of 13 core pages (index, events, vote, clips, post, quiz, join, about, 404); pixel (5,300) is rgb(106,43,255) on all nine. Same composition each time: eyebrow pill, 2-line condensed H1 with celery line 2 and pink swipe, round sticker top-right, celery plus ghost buttons. See $G/compare/hero-sameness.png. Poppi and Starface use per-product colour worlds (report 08 technique #1, P0).",
+  "fix": "Keep home flat ultraviolet (\u00a70.5). Give the other pages their own world and hero object: Events celery with the ticket, Vote lake blue with the orange deadline tile, Reel night with video first, Quiz bubblegum with the deck as hero, Join celery with the member card as hero, About sky, 404 sun. Vary the silhouette, not just the fill. Regenerate es twins."
+ },
+ {
+  "id": "genz-brand-02",
+  "page": "site-wide (quiz, results, join, vote, issues, newsletter, post, 404, about, events)",
+  "files": [
+   "data/events.js",
+   "data/stickers.js",
+   "quiz.html",
+   "join.html",
+   "about.html",
+   "assets/js/pages/quiz.js",
+   "assets/css/pages/quiz.css",
+   "assets/css/pages/join.css",
+   "assets/css/pages/about.css",
+   "CREDITS.md",
+   "tools/credits.py"
+  ],
+  "severity": "major",
+  "issue": "Site-wide people deficit: 7 of 13 core pages have no photo, the site has 4 Unsplash photos in total, and the most-used image is a lake, while every beauty benchmark leads with people.",
+  "evidence": "Visible img count is 0 on vote, issues, clips, post, quiz, quiz result, join, newsletter and 404. Photo 1783676056910 (lake, tiny silhouettes) appears 84 times in the repo (home ticket, events list, about, sunset event). Home first screen is 8.3% image; all other first screens 0%. Partiful's faces fill about 60% of its first screen ($G/compare/bench-m-4s.png). This is new evidence beyond the known 'people photos small on home'.",
+  "fix": "(1) Before launch: a consented member shoot at golden hour (Riverwalk, SunRail platform, trivia table). (2) For the demo now: an illustrated character set in the sticker style (one per quiz type) for quiz, results, join and about crews, which has no licensing risk. (3) Verify 6 to 8 more from-behind, hands-only or crowd photos so the lake stops standing in for people."
+ },
+ {
+  "id": "genz-brand-03",
+  "page": "index.html",
+  "files": [
+   "index.html",
+   "assets/css/pages/home.css",
+   "data/pages/home.js",
+   "es/index.html"
+  ],
+  "severity": "major",
+  "issue": "Home's first screen is dense, its funniest line is body-size, and the H1's 'group project' wink is never landed.",
+  "evidence": "148 words in the first 844 px at 390 (about 134 below the chrome), against about 12 to 25 on Partiful, Duolingo and Rhode. The rotor bubble ('We're the friend who always knows the deadline.') is 17 px in a 239x34 box under a 61 px H1. Crop: $G/compare/home-hero-crop.png. (The small photo is a known item and is not re-filed.)",
+  "fix": "Keep the brief's H1 verbatim, but add a 2 to 3 word Caveat Brush annotation ('the fun kind') beside 'group project'. Promote the rotor to a 24 to 28 px full-width chat bubble directly under the H1. On phones, move the hero sub below the CTAs so the first screen reads H1, bubble, two buttons."
+ },
+ {
+  "id": "genz-brand-04",
+  "page": "index.html",
+  "files": [
+   "index.html",
+   "assets/js/pages/home.js",
+   "assets/js/maker.js",
+   "assets/css/maker.css",
+   "assets/css/pages/home.css",
+   "data/pages/home.js"
+  ],
+  "severity": "major",
+  "issue": "Home is a 12-section sampler, and the share card (the viral engine) renders as a thumbnail inside a form.",
+  "evidence": "12 bands in 8,146 px. The maker preview is 155x191 px at 390 and 310x383 at 1440, inside a 1,104 px / 1,559 px section with 10 / 26 visible controls ($G/flows/home-maker-390.png, $G/strips/index-1440-light-s2.png). On Wrapped and Partiful the artefact is the hero.",
+  "fix": "On home, show the card at least 320 px wide (4:5) in a swipeable row of three ready-made cards with one first-name field and one Send button; put the rest behind 'Customize'. Merge the scoreboard into the debrief band (or move it to issues/about) and shrink the Letter card to a strip: about 8 big moments instead of 12 small ones."
+ },
+ {
+  "id": "genz-brand-05",
+  "page": "clips.html",
+  "files": [
+   "clips.html",
+   "assets/css/pages/clips.css",
+   "assets/js/pages/clips.js",
+   "data/pages/clips.js"
+  ],
+  "severity": "major",
+  "issue": "The Reel opens with no video in the first screen.",
+  "evidence": "The first clip's top is at 736 px at 390 (302x540): 0 px visible at 390x664 and 108 of 540 px at 844 ($G/strips/clips-390-light-r0.png). TikTok and Reels open on video; Poppi and Gymshark put 9:16 video in the first screen ($G/compare/clips-vs-poppi-gymshark-topicals.png).",
+  "fix": "Collapse the intro to one sticky line (The Reel \u00b7 DEMO, a weekly-prompt chip that opens a sheet, a filter icon). Start the first clip right under the header as a full-height snap feed, and move the moderation promise into a 'How the Reel works' sheet."
+ },
+ {
+  "id": "genz-brand-06",
+  "page": "clips.html, index.html (Reel)",
+  "files": [
+   "assets/video/make_demo_clips.py",
+   "data/clips.js",
+   "assets/video/first-time-voter.mp4",
+   "assets/video/precinct-captain.mp4",
+   "assets/video/mail-ballot-renew.mp4",
+   "assets/video/sunrail-rally.mp4",
+   "assets/video/lake-monroe-canvass.mp4",
+   "assets/video/trivia-night-recap.mp4"
+  ],
+  "severity": "major",
+  "issue": "The demo clips are stock-photo Ken Burns slideshows with centred drop-shadow titles, which is not a creator format anyone would post or forward.",
+  "evidence": "Posters: a suburban house ('What's a precinct captain?'), envelopes, empty train tracks, an I VOTED sticker; one face in six ($G/compare/reel-posters.png).",
+  "fix": "Re-cut in native formats without recognizable faces: a phone screen recording 'Renew your mail ballot in 40 seconds' with tap dots; a green-screen precinct-captain explainer over a Seminole map with stickers; a hands-only 'POV: your first trivia night'; a '3 free things this weekend' listicle; SunRail window footage with the four stop names. Use TikTok-native boxed, word-by-word captions and a 2-second hook, with no stale dates burned in."
+ },
+ {
+  "id": "genz-brand-07",
+  "page": "index.html (Reel), clips.html",
+  "files": [
+   "assets/js/reel.js",
+   "assets/css/pages/clips.css",
+   "assets/css/pages/home.css",
+   "assets/css/components.css"
+  ],
+  "severity": "major",
+  "issue": "Reel cards are buried in labels and links that compete with the clip.",
+  "evidence": "Each home Reel card (197x346 poster) has 5 items underneath: DEMO CLIP pill, 'Stock photo \u00b7 not members' pill, action button, 'Read the captions', 'Report', and the poster already burns in DEMO CLIP ($G/strips/index-1440-light-s1.png). The clips card DOM renders the stock tag twice plus DEMO CLIP, 4 rail buttons, the action and the captions link.",
+  "fix": "Use one merged 'DEMO \u00b7 stock photo' chip per card in a fixed corner (keeps B30). Move Report to the rail, make captions a CC icon on the rail, and leave the action chip as the only thing under the clip."
+ },
+ {
+  "id": "genz-brand-08",
+  "page": "events/*.html (all invite pages), events.html, index.html",
+  "files": [
+   "assets/js/ui.js",
+   "assets/js/rsvp.js",
+   "assets/css/rsvp.css",
+   "assets/css/components.css"
+  ],
+  "severity": "major",
+  "issue": "The RSVP success moment is invisible (confetti and toast render under the modal sheet), and the success state is a utility list.",
+  "evidence": "YSD.ui.confetti appends to body at z-index 95, while the sheet is a modal dialog in the top layer. 150 ms after submit, elementFromPoint at a confetti bit returns DIV.rsvp-done__hero inside the dialog, and the toast (top 750 px) is covered by the sheet's button. The capture shows neither: $G/compare/rsvp150.png (script $G/pw/confetti.js). The done state is 'Seat saved.' plus six buttons; Partiful celebrates with you in the guest list.",
+  "fix": "Host confetti and toasts inside the open dialog (document.querySelector('dialog[open]') || document.body). Make the ticket the hero of the done state: a big stub with 'SOFIA +1', a 'SEAT SAVED' stamp (the x-stamp keyframe exists in join.css), your initial joining the facepile, then the calendar and +1 actions. Static under reduced motion and never on calm events."
+ },
+ {
+  "id": "genz-brand-09",
+  "page": "events/*.html, events.html, index.html",
+  "files": [
+   "assets/js/rsvp.js",
+   "assets/js/maker.js",
+   "assets/css/rsvp.css",
+   "data/events.js"
+  ],
+  "severity": "major",
+  "issue": "There is no 'I'm going' story card at the RSVP peak, which is an obvious missing virality hook.",
+  "evidence": "The done state offers '+1 a friend' (a link) and 'Text this to a friend' but no image; rsvp.js never calls YSD.cards. The invite template exists only in the home maker. Report 08 \u00a76 ranks invites and share layer #2 and #3.",
+  "fix": "Add 'Make my I'm-going card' to the done state: open the maker in compact mode in a sheet with template 'invite', the event pre-selected and the first name pre-typed, 9:16 by default, so one more tap posts to a story."
+ },
+ {
+  "id": "genz-brand-10",
+  "page": "quiz.html (result), join.html",
+  "files": [
+   "assets/js/membercard.js",
+   "assets/js/ui.js",
+   "assets/css/components.css",
+   "data/levels.js"
+  ],
+  "severity": "major",
+  "issue": "Sticker unlocks are announced as a line of toast text that lands on top of the result card, so the collectible has no reveal.",
+  "evidence": "'New sticker: Called It.' covers the share-card preview at quiz finish ($G/compare/flow-quiz.png, frame 3). membercard.js line 134 only calls YSD.ui.toast. Starface's blind box and Topicals' card flip are the benchmark.",
+  "fix": "Add a 1-second slap-in of the sticker art itself (about 120 px; x-slap exists in quiz.css) in the top corner away from the card, captioned 'Called It \u00b7 on your card' with a 'See your stickers' link. Static badge under reduced motion; nothing for civic steps."
+ },
+ {
+  "id": "genz-brand-11",
+  "page": "quiz.html",
+  "files": [
+   "assets/js/pages/quiz.js",
+   "assets/css/pages/quiz.css",
+   "data/quiz.js",
+   "data/pages/quiz.js"
+  ],
+  "severity": "major",
+  "issue": "The quiz question screens are the flattest screens on the site, and a sliver of cut-off hero stickers stays under the header during play.",
+  "evidence": "Cream background, white A to F pills, a thin progress bar; no colour, art or answer reaction ($G/compare/flow-quiz.png, $G/compare/quiz-vs-finders.png). The quiz is report 08's number-one payoff technique.",
+  "fix": "Give each question a full-bleed colour world (rotate celery, sky, bubblegum, tangerine, mint, violet). Pop the chosen answer (scale, shadow collapse, sticker wiggle) before advancing. Use sticker picture tiles on 2 or 3 questions. Add an honest computed 'Leaning: The Spreadsheet Witch' line from question 4. Scroll the player flush under the header and hide the deck during play."
+ },
+ {
+  "id": "genz-brand-12",
+  "page": "quiz.html (result card), quiz/show-up/*.html",
+  "files": [
+   "assets/js/cards-brand.js",
+   "assets/css/maker.css"
+  ],
+  "severity": "major",
+  "issue": "The quiz share card is thin and empty in the middle, where Wrapped cards are posters.",
+  "evidence": "The 4:5 card has the type name, a small tagline pill, a small sticker and a thin mix bar with a large empty band ($G/compare/quiz-result-scroll.png, frame b).",
+  "fix": "Make the sticker (or character) the hero art at about 45% of the card width, set the type name huge, and show the top-two mix shares as giant numerals (computed from the answers, so honest). Put the tagline in a chat bubble and keep the link, DEMO and paid-for line at the bottom. The 9:16 version adds a 'What's yours?' sticker."
+ },
+ {
+  "id": "genz-brand-13",
+  "page": "quiz/show-up/*.html, quiz/issue/*.html (+ es)",
+  "files": [
+   "tools/make_quiz_pages.js",
+   "assets/js/rsvp.js",
+   "assets/js/pages/quiz.js",
+   "data/pages/quiz.js"
+  ],
+  "severity": "major",
+  "issue": "Shared result pages don't know who sent them, so the friend-to-friend hook is lost.",
+  "evidence": "None of the 15 result pages has [data-invite-landing] or loads rsvp.js; a friend sees the generic 'Someone sent you their result.' ($G/strips/quiz__show-up__hype-captain-390-light-r0.png), even though adult share URLs carry from=.",
+  "fix": "With ?from=Kira (letters only, textContent, never on under-18 links): 'Kira got The Hype Captain. Your turn: 8 questions, about a minute.' plus Find my type. Without from, keep today's line. Emit the slot from make_quiz_pages.js."
+ },
+ {
+  "id": "genz-brand-14",
+  "page": "quiz.html (issue mode), quiz/issue/*.html",
+  "files": [
+   "data/quiz.js",
+   "tools/make_quiz_pages.js",
+   "assets/js/cards-brand.js",
+   "assets/js/cards-og.js"
+  ],
+  "severity": "major",
+  "issue": "Issue-finder results are policy labels, not identities, so they are unlikely to be shared.",
+  "evidence": "The card headline is 'My Seminole issue: rent.' (data/quiz.js line 346); the OG reads 'YOUR MATCH / Rent + housing' ($G/compare/og-quiz.png). Report 04 \u00a7B9: people share results that describe them.",
+  "fix": "Add a voice-checked local identity name above the plain issue name: Team Lake Monroe (water), Team SunRail (transit), Team Library Card (freedom to read), Team Shade Tree (heat), Team Roommates (rent), Team Payday (wages), Team Ballot Ready (voting rights), Team Come As You Are (LGBTQ+). Reproductive freedom stays plain in the calm template. Keep the sourced number as the subline."
+ },
+ {
+  "id": "genz-brand-15",
+  "page": "quiz/issue/*.html, quiz/show-up/*.html (+ es)",
+  "files": [
+   "assets/js/cards-og.js",
+   "tools/make_quiz_pages.js",
+   "tools/make_og.js",
+   "assets/img/og/quiz/issue/rent.png",
+   "assets/img/og/quiz/issue/wages.png",
+   "assets/img/og/quiz/issue/transit.png",
+   "assets/img/og/es/quiz/issue/rent.png"
+  ],
+  "severity": "major",
+  "issue": "Quiz OG images cut their subline mid-sentence, and all 15 use one generic illustration, so the link preview (the product in a group chat) looks broken and anonymous.",
+  "evidence": "cards-og.js ogQuiz line 465 draws wrap(ctx, sub, colW)[0] only. Rent, Wages and Transit read 'One minute, everyday questions, one match. Take the', and ES rent drops 'Haz el quiz.' ($G/compare/og-quiz.png, og-quiz2.png). Every result OG uses the same three-toggle drawing, and issue OGs use a generic sub instead of the result's number.",
+  "fix": "Allow two sub lines (reserve the height) or fit to width. Draw the type's own sticker (data/stickers.js) at about 300 px. For issues, use the card subline ('Median rent here: $1,890 a month.'). Regenerate with tools/make_og.js."
+ },
+ {
+  "id": "genz-brand-16",
+  "page": "events/*.html (photo covers), events.html, index.html invites",
+  "files": [
+   "assets/css/components.css",
+   "tools/make_event_pages.js",
+   "assets/css/pages/events.css",
+   "data/events.js"
+  ],
+  "severity": "major",
+  "issue": "The duotone multiply turns dark photos to olive mud, and on phones the invite art sits below the RSVP (Partiful leads with the art).",
+  "evidence": ".photo--duo is grayscale plus mix-blend-mode: multiply (components.css lines 308 to 310), which can only darken: the trivia interior 1646934280686 becomes near-black olive ($G/compare/trivia-duotone-crop.png). The cover top is at 753 px at 390 ($G/compare/invite-vs-partiful.png). The photo-free type posters are the best art on the site ($G/compare/ev-posters.png).",
+  "fix": "Use a true two-tone map (shadows to --night, highlights to --duo) via an inline SVG feComponentTransfer, or lift levels before the multiply with a per-photo cover.lift. Use photos only when the subject reads at 120 px, otherwise the type poster. On phones, show a 160 to 200 px cover strip with the date stub above the title, keeping I'm in inside 664 px."
+ },
+ {
+  "id": "genz-brand-17",
+  "page": "vote.html",
+  "files": [
+   "vote.html",
+   "assets/js/pages/vote.js",
+   "assets/css/pages/vote.css",
+   "data/pages/vote.js"
+  ],
+  "severity": "major",
+  "issue": "The most screenshot-able asset (the Dec 31 / Jan 1 tiles) has no share action, and the page is 22 phone screens long.",
+  "evidence": "The tiles are in the first screen ($G/strips/vote-390-light-r0.png), but the PSA cards start at 15,141 px and the only [data-share] button is at 17,450 of 18,799 px. The steps run from 4,325 to 7,705 px.",
+  "fix": "Add 'Send these 2 dates' under the tiles, opening the psa-mail / psa-id maker in a 9:16 sheet (serious styling, no confetti). Collapse the steps into a 'How do you want to vote?' switch (mail / early / Election Day) with 3 steps each. Target 10,000 px or less."
+ },
+ {
+  "id": "genz-brand-18",
+  "page": "about.html",
+  "files": [
+   "about.html",
+   "assets/js/pages/about.js",
+   "assets/css/pages/about.css",
+   "data/pages/about.js",
+   "data/team.js"
+  ],
+  "severity": "major",
+  "issue": "About reads like terms and conditions plus an unfinished org chart; its best parts are buried.",
+  "evidence": "10,579 px at 390. 'What's real?' takes 2,587 px of bullet lists (3,862 to 6,449), the team is 1,307 px of eight 'Your President Here' cards, and there are 34 DEMO mentions ($G/strips/about-390-light-r1.png, r2). The Real-or-DEMO game and the city crews sit between them.",
+  "fix": "Turn 'What's real?' into 3 tiles (REAL / DEMO / NOT DECIDED YET) with counts and a details disclosure, in 900 px or less. Replace the team grid with one 'Seats open' card listing roles as chips. Move city crews up after 'Three jobs'. Target 7,000 px."
+ },
+ {
+  "id": "genz-brand-19",
+  "page": "post.html (and the clips post sheet)",
+  "files": [
+   "post.html",
+   "assets/js/pages/post.js",
+   "assets/css/pages/clips.css",
+   "data/pages/clips.js"
+  ],
+  "severity": "major",
+  "issue": "Posting is a long plain form with no preview of your clip and no examples, which loses to every upload flow Gen Z uses.",
+  "evidence": "4,462 px of fields with no visual ($G/strips/post-390-light-r0.png); post.js creates no object-URL preview. Rare Beauty and Alo show UGC to inspire posts.",
+  "fix": "After a file is picked, show it in a 9:16 phone frame (object URL, never uploaded) with the caption overlaid live and a DEMO tag. Add a 3-poster 'Good ones look like this' strip above the form. Keep the three unchecked consents and the minors question as they are, in plain words."
+ },
+ {
+  "id": "genz-brand-20",
+  "page": "site-wide (header, footer, cards, OG, icons)",
+  "files": [
+   "partials/header.html",
+   "partials/header-es.html",
+   "partials/footer.html",
+   "partials/footer-es.html",
+   "assets/css/components.css",
+   "assets/icons/favicon.svg",
+   "assets/js/cards-brand.js",
+   "assets/js/cards-og.js",
+   "tools/sync_partials.py"
+  ],
+  "severity": "major",
+  "issue": "There is no ownable brand mark: 'YD' in a speech bubble reads as a generic chat-app badge, and the wordmark is a common Google font set as plain type.",
+  "evidence": "partials/header.html line 4 (YD bubble SVG) plus 'Young Dems' in Bricolage 800; the footer's giant wordmark is the same font. Every leader in report 08 owns a mark or face (Starface smiley, Spotify Mix, Duolingo); technique #3 asks for a custom lettered wordmark.",
+  "fix": "Draw a lettered 'Young Dems' wordmark SVG (custom Y and D, a celery underline swoosh echoing the marker swipe) and use it in the header, footer, cards and OG images. Optionally (an open question for Kira) give the celery sticker a face as the brand's 'big yellow', to sign the 404, empty states and the Letter P.S."
+ },
+ {
+  "id": "genz-brand-21",
+  "page": "join.html",
+  "files": [
+   "join.html",
+   "data/pages/join.js",
+   "es/join.html"
+  ],
+  "severity": "minor",
+  "issue": "Join's first screen leads with money: the only other hero action is 'See how dues work'.",
+  "evidence": "$G/strips/join-390-light-r0.png",
+  "fix": "Lead with the collectible: 'See what you get' (card and sticker pack). Keep the dues link in the tiers band."
+ },
+ {
+  "id": "genz-brand-22",
+  "page": "index.html (Reel), clips.html",
+  "files": [
+   "assets/js/reel.js",
+   "assets/css/pages/clips.css",
+   "assets/css/pages/home.css",
+   "data/clips.js",
+   "assets/video/make_demo_clips.py"
+  ],
+  "severity": "minor",
+  "issue": "Reel posters flash as black rectangles when swiped or scrolled in quickly.",
+  "evidence": "Posters are set by IntersectionObserver; after a full home scroll, strip cards 3 and 4 still had poster='' (mail-ballot-renew, first-time-voter), and the full-page shots show black frames ($G/strips/clips-390-light-r0.png). Video background is #0B0519.",
+  "fix": "Give each card its dominant colour or a tiny inline blurred placeholder from data/clips.js, and observe the horizontal strip with a horizontal rootMargin."
+ },
+ {
+  "id": "genz-brand-23",
+  "page": "clips.html, index.html (Reel)",
+  "files": [
+   "assets/video/make_demo_clips.py",
+   "data/clips.js"
+  ],
+  "severity": "minor",
+  "issue": "Clip captions use dated borrowed slang and clich\u00e9.",
+  "evidence": "'POV: you just voted for the first time and the sticker hits different.' (data/clips.js line 160); 'new friends, questionable team names, zero regrets.' (line 317). Voice dials set slang to 2, and report 05 warns against slang cosplay.",
+  "fix": "'POV: you just voted for the first time and the sticker is going on everything.'; 'Trivia night recap: new friends, questionable team names, one very loud tiebreaker.' Match the ES captions."
+ },
+ {
+  "id": "genz-brand-24",
+  "page": "issues.html",
+  "files": [
+   "assets/js/pages/issues.js",
+   "assets/css/pages/issues.css",
+   "data/issues.js"
+  ],
+  "severity": "minor",
+  "issue": "The LGBTQ+ freedom jump tile is the only bento tile without a number, so it reads as missing data.",
+  "evidence": "$G/strips/issues-390-light-r0.png: $1,890, 51 days, 60.37%, 30+, $15 on the others; data/issues.js has no stat for lgbtq.",
+  "fix": "Use a sourced number if one exists; otherwise make it a deliberate words tile (heart sticker plus 'Come as you are') styled so it looks intentional."
+ },
+ {
+  "id": "genz-brand-25",
+  "page": "clips.html (1440)",
+  "files": [
+   "assets/css/pages/clips.css",
+   "assets/js/pages/clips.js"
+  ],
+  "severity": "minor",
+  "issue": "At 1440 the Reel leaves about 45% of the viewport as empty night.",
+  "evidence": "$G/strips/clips-1440-light-s0.png, s1: a single 420 px clip column plus a caption panel.",
+  "fix": "Add an 'Up next' rail of the next three posters, or a two-up layout at 1280 px and wider."
+ },
+ {
+  "id": "genz-brand-26",
+  "page": "newsletter.html",
+  "files": [
+   "newsletter.html",
+   "assets/js/pages/newsletter.js",
+   "assets/css/pages/newsletter.css",
+   "data/newsletter.js"
+  ],
+  "severity": "minor",
+  "issue": "The Thursday Letter is a wall of text.",
+  "evidence": "The letter runs from 1,600 to 2,883 px at 390 with only a drop cap ($G/strips/newsletter-390-light-r0.png).",
+  "fix": "Add one pull quote ('He stayed until the polls closed.') and one inline sticker or photo moment; keep the letter calm (no emoji, one exclamation mark at most)."
+ },
+ {
+  "id": "genz-brand-27",
+  "page": "events.html, quiz results",
+  "files": [
+   "data/events.js",
+   "data/pages/events.js",
+   "assets/js/eventcard.js"
+  ],
+  "severity": "minor",
+  "issue": "Recurring formats have generic series names ('Trivia nights', 'Karaoke nights', 'Member mixers'), so nothing becomes a repeatable brand.",
+  "evidence": "Series chips on $G/strips/quiz__show-up__hype-captain-390-light-r0.png; report 08 technique #18.",
+  "fix": "Give each series an ownable name used on cards, chips and the drop (e.g. SunRail Social, Riverwalk Hour, Big Tree Picnic Club, Creator Night), checked against report 05 and \u00a72.6."
+ },
+ {
+  "id": "genz-brand-28",
+  "page": "404.html",
+  "files": [
+   "assets/js/pages/about.js",
+   "assets/js/cards-brand.js",
+   "data/pages/about.js"
+  ],
+  "severity": "minor",
+  "issue": "The 404 laptop toy ends in a share of the page, not of the laptop you decorated.",
+  "evidence": "$G/flows/404-toy-6-light.png: the button is 'Send the group chat a link that works'.",
+  "fix": "Add 'Send my laptop': render the decorated lid as a 4:5 card with '6 of 10 Seminole stickers found' and the link."
+ },
+ {
+  "id": "journeys-01",
+  "page": "post.html, clips.html (post sheet)",
+  "files": [
+   "assets/js/pages/post.js",
+   "tests/infra/video.test.js"
+  ],
+  "severity": "blocking",
+  "issue": "Uploaded clips drop every moderation answer (captions, minors, guardian, consents), so in production a clip showing a minor uploads without the guardian gate.",
+  "evidence": "As a 16-year-old member I uploaded test-clip.webm, ticked captions, answered Yes to 'anyone under 18 in this clip?', entered mom@example.com and ticked 3 consents. ysd:clips:local[0] = {captionsConfirmed:false, containsMinors:null, needsGuardian:false, guardianContactProvided:false, consents:[]}. post.js:266 calls YSD.clips.add(file, {caption, tags}) only; clips.js:881 gates on rec.needsGuardian, which is now false. Link submissions store the same fields correctly.",
+  "fix": "Pass {captionsConfirmed:true, containsMinors:minors, guardianContact:<field>, guardianRequired:guardian, consents} to YSD.clips.add, and add a test that minors=yes yields needsGuardian:true."
+ },
+ {
+  "id": "journeys-02",
+  "page": "Every RSVP sheet (home, events, event pages)",
+  "files": [
+   "assets/js/rsvp.js",
+   "data/events.js",
+   "data/slices/core.js",
+   "docs/BRIEF.md"
+  ],
+  "severity": "blocking",
+  "issue": "The RSVP sheet stores first name and contact with no neutral age screen, which contradicts the published minors policy ('we never collect info from anyone under 13') and the join form's under-14 gate.",
+  "evidence": "Join at age 13 shows 'We didn't save anything you typed' and stores only ysd:ref. The RSVP sheet fields are firstName, contact, plusOne, access, an 'I'm under 18' checkbox (not a neutral screen per the FTC FAQ cited in docs/legal/MINORS_POLICY.md) and showName. Any child can RSVP and ysd:rsvp:<id> keeps name and phone; in production YSD.rsvp.submit POSTs them.",
+  "fix": "Add the free-entry age field from legal.snippets.ageLabel/ageHint, skipped when member.age is known. Under 14: show ageTooYoung and store or send nothing. 14 to 17: derive under18 from the age and drop the checkbox. Update BRIEF \u00a75.4 to match."
+ },
+ {
+  "id": "journeys-03",
+  "page": "index.html, events.html, events/*.html (EN and ES)",
+  "files": [
+   "assets/js/rsvp.js",
+   "assets/css/rsvp.css"
+  ],
+  "severity": "blocking",
+  "issue": "The invite landing banner names a demo event (and a person) with no DEMO label, which breaks \u00a70.2 and the B30 gate.",
+  "evidence": "The banner text is 'Kira invited you \u00b7 to Trivia night: Seminole County edition \u00b7 Thu, Nov 19 \u00b7 7 to 9 pm \u00b7 Free, no account needed' (ES: 'Kira te invit\u00f3 a Noche de trivia\u2026') with no DEMO tag (shots/a-home-landing-390.png). The site banner says 'Anything marked DEMO is made up', which implies unmarked items are real. On home, nothing else on the first screen labels this event.",
+  "fix": "In landing(), append a tag tag--demo ('DEMO event' / 'Evento DEMO') to .invite-landing__what whenever event.demo !== false."
+ },
+ {
+  "id": "journeys-04",
+  "page": "All pages (header ES/EN link)",
+  "files": [
+   "assets/js/ui.js"
+  ],
+  "severity": "major",
+  "issue": "The language toggle keeps the page but drops the hash and the query everywhere, so the invite banner, filters and anchors are lost when switching to Spanish.",
+  "evidence": "jF.js clicked the header lang link with a section hash: 86/86 http and 84/84 file:// transitions lost the hash. events/trivia-county-edition.html?ref=KIRA7QX&from=Kira&e=\u2026 \u2192 ES \u2192 es/events/trivia-county-edition.html with no 'Kira te invit\u00f3' banner. events.html?series=trivia \u2192 es/events.html (filter lost). vote.html#renew-mail-ballot \u2192 es/vote.html (lands at the top). Cause: ui.langHref() does split('#')[0].split('?')[0] and is computed once on load.",
+  "fix": "Carry location.search (minus ref/utm_*) and the current hash; recompute on hashchange and on pointerdown/click of [data-lang-link], using the nearest in-view section id."
+ },
+ {
+  "id": "journeys-05",
+  "page": "quiz.html results \u2192 events.html?series=",
+  "files": [
+   "assets/js/pages/quiz.js",
+   "assets/js/pages/events.js",
+   "data/pages/events.js",
+   "data/quiz.js"
+  ],
+  "severity": "major",
+  "issue": "'Events made for you' and some 'Start here' actions send 5 of 6 show-up types (first chip for Door-Knock Natural and Plus-One) and 3 of 9 issue matches (Rent, Wages, Transit) to an empty list.",
+  "evidence": "Door-Knock Natural \u2192 'Neighbor check-ins' \u2192 events.html?series=canvass \u2192 'Only showing Neighbor check-ins \u00d7 \u00b7 0 events (DEMO) \u00b7 Nothing matches that one \u00b7 No events this week. Rest counts too.' (shots/b-http-phone-en-show-up-04-events-filtered.png). The canvass, mixer, sunrail, karaoke, picnic and workshop-es series exist only in 2027 and are hidden behind the Dec 15 drop. Housing and Wages map only to mixer; Transit only to sunrail.",
+  "fix": "Only render series chips that have a visible event (reuse nextEvent's filter), falling back to ?kind=. For drop-only series, show 'In January's lineup, drops Tue, Dec 15 at noon (DEMO) \u00b7 Notify me'. In events.js, when a filtered list is empty but drop events match, put the drop card and the Notify me .ics in the empty state and fix the 'this week' copy."
+ },
+ {
+  "id": "journeys-06",
+  "page": "join.html member card, home maker meter",
+  "files": [
+   "assets/js/joinform.js",
+   "assets/js/members.js",
+   "assets/js/share.js",
+   "assets/js/membercard.js",
+   "data/sharekit.js"
+  ],
+  "severity": "major",
+  "issue": "The squad meter can never move in the demo, and 'Not {name}? Start over' wipes the joins log and credits the next join to the wrong referrer.",
+  "evidence": "Second context: the friend joins with referredBy SAM78D; Sam's meter stays at '0 of 3 \u2026 DEMO: only joins on this device count'. Same device: Sam's own link shows 'You're already in'; Start over calls members.forget() (which deletes 'joins') and restores the arrival ref KIRA7QX; Ana then joins with referredBy 'KIRA7QX', not Sam's code. The Plus-One and Squad of Three stickers are unreachable, and Sam's stickers and RSVPs pass to the next person.",
+  "fix": "Have reset() archive the previous member into 'joins' instead of calling forget(), re-capture or clear ref so the next same-device join credits the link it came from, clear stickers, streak and RSVPs (or confirm first), and reword meter.demoHint to describe a demo path that actually works."
+ },
+ {
+  "id": "journeys-07",
+  "page": "join.html (#card)",
+  "files": [
+   "assets/js/membercard.js",
+   "assets/css/maker.css"
+  ],
+  "severity": "major",
+  "issue": "The member card prints your invite link but has no Copy or Share control, and a visually hidden 'Copy link:' label sits on a plain <code>.",
+  "evidence": "Card actions are only 'Member card \u00b7 Save image' and 'Reset DEMO stickers'. The link is <span class=u-visually-hidden>Copy link: </span><code>127.0.0.1:8731/join.html?ref=SAM78D</code>. The only share button on the page is about 440 px above, in 'What happens next' (shots/a-joined-card-crop.png).",
+  "fix": "Add 'Copy my link' and 'Send it to the group chat' buttons (plus sms: and WhatsApp) under the link on the card, reusing joinform.js fallbackCard's pattern, and remove the fake 'Copy link:' label."
+ },
+ {
+  "id": "journeys-08",
+  "page": "join.html, home maker, quiz share",
+  "files": [
+   "assets/js/membercard.js",
+   "assets/js/maker.js",
+   "assets/js/pages/join.js",
+   "assets/js/pages/quiz.js",
+   "assets/js/members.js"
+  ],
+  "severity": "major",
+  "issue": "Adult members' links never carry from=<FirstName>, so friends see 'A friend invited you' instead of 'Sam invited you'.",
+  "evidence": "The member card, join-page share (\"I'm joining the Young Dems\u2026 ?\u2026&ref=SAM6M5\"), maker after 'Get your link' and quiz share all have ref but no from. The friend's landing reads 'A friend invited you to the Young Dems' (shots/a2-http-phone-en-friend-landing.png). Only the RSVP +1 link adds from=Sam. Brief \u00a75.1 says from is on by default for adults.",
+  "fix": "Add the 'Show my first name on my link' toggle (default on for 18+, forced off under 18) to the member card and maker, store it on the member, and pass from through one helper used by every member link."
+ },
+ {
+  "id": "journeys-09",
+  "page": "RSVP success state (all event surfaces)",
+  "files": [
+   "assets/js/rsvp.js",
+   "assets/css/rsvp.css",
+   "data/slices/core.js"
+  ],
+  "severity": "major",
+  "issue": "After 'Seat saved.' nothing invites the person to join or get their link, so the '+1 a friend' link carries no ref and the RSVP \u2192 join loop breaks.",
+  "evidence": "The done state offers calendar, +1 a friend, Text this to a friend, Done, Change and Can't (shots/a-http-phone-en-index_html-04-rsvp-done.png). The +1 URL is events/trivia-county-edition.html?utm_source=share&\u2026&e=trivia-county-edition&from=Sam with no ref. Joining needs a trip to the header, a new page and retyping.",
+  "fix": "Add a 'Want credit when friends come? Get your link: one more question' block that joins with the RSVP's name and contact plus age, then refreshes the +1 and sms hrefs so they carry the new ref."
+ },
+ {
+  "id": "journeys-10",
+  "page": "join.html after an RSVP",
+  "files": [
+   "assets/js/joinform.js"
+  ],
+  "severity": "major",
+  "issue": "The join form ignores the name and contact the visitor just gave in the RSVP, so they retype both (5 taps instead of 2).",
+  "evidence": "After RSVPing as Sam / sam@example.com, join.html#join-form inputs were firstName=, contact=, age=. The reverse works: the RSVP sheet pre-fills from the member record (the age-16 run showed firstName=Ava, contact=+14075550199).",
+  "fix": "In mount(), when no member exists, pre-fill firstName and contact from the latest rsvp:* record on this device, leaving age blank."
+ },
+ {
+  "id": "journeys-11",
+  "page": "newsletter.html \u2192 join.html#more",
+  "files": [
+   "assets/js/joinform.js",
+   "join.html"
+  ],
+  "severity": "major",
+  "issue": "'Pick your city and issues' lands at the top of join.html on the 'Join free.' hero, with step two below the fold and focus on <body>.",
+  "evidence": "There is no id='more' on join.html; scrollY stays 0, the first screen shows 'Join free. We saved you a seat.' and 'You're already in, Sofi.', and step two starts at 933 px (shots/e-http-phone-en-22-03-step2.png). The same happens in ES over file://.",
+  "fix": "Give the step-two form id='more', or scroll it into view and focus its first chip after paintStep2 (joinform.js:581). Better still, render step two inline on newsletter.html."
+ },
+ {
+  "id": "journeys-12",
+  "page": "join.html at 1440",
+  "files": [
+   "assets/css/pages/join.css",
+   "join.html",
+   "assets/js/pages/join.js"
+  ],
+  "severity": "major",
+  "issue": "The desktop join success screen leaves a 650 px empty violet void, and the headline still says 'Join free.' after joining.",
+  "evidence": "At 1440x900 the hero grows from 665 to 1,777 px because step two renders in the right column. The vertically centred left column pushes the H1 'Join free. We saved you a seat.' to 835 px, below the fold (shots/join-desk-after-top.png).",
+  "fix": "Set align-items:start on the hero grid, move step two and picks below the hero, and swap the H1 to the joined state once a member exists."
+ },
+ {
+  "id": "journeys-13",
+  "page": "join.html?e=<eventId>",
+  "files": [
+   "assets/js/pages/join.js",
+   "join.html",
+   "data/slices/join.js",
+   "assets/js/rsvp.js"
+  ],
+  "severity": "major",
+  "issue": "The fallback link behind every 'I'm in' (join.html?e=<id>) ignores the event: no RSVP and no mention of it.",
+  "evidence": "join.html?e=trivia-county-edition with JS shows the generic join page; nothing mentions Trivia night, no sheet opens and joining saves no seat. With ?ref&from&e the banner says 'Kira invited you to the Young Dems' and drops e. This is what long-press \u2192 'Open in new tab', or slow or blocked JS, leads to.",
+  "fix": "Read ?e on join.html: show 'Save your seat at <event>, <date>' with the RSVP sheet (load eventcard.js, rsvp.js and an events slice), or RSVP automatically on join."
+ },
+ {
+  "id": "journeys-14",
+  "page": "index.html maker, quiz result share (no Web Share API)",
+  "files": [
+   "assets/js/ui.js",
+   "assets/js/membercard.js",
+   "assets/js/maker.js"
+  ],
+  "severity": "major",
+  "issue": "When 'Send it to the group chat' falls back to the clipboard, the 'Link copied' confirmation is replaced by 'New sticker: Card Maker.', so the user never learns anything was copied.",
+  "evidence": "A MutationObserver on .toast-region recorded exactly ['New sticker: Card Maker.'] after the home maker share, while the clipboard held the message and link. The quiz share behaves the same. This hits desktop Chrome on Linux, Firefox desktop and headless runs.",
+  "fix": "Queue toasts instead of replacing them, or merge them ('Copied. Paste it in the group chat \u00b7 New sticker: Card Maker'), and show the sticker toast after the share result."
+ },
+ {
+  "id": "journeys-15",
+  "page": "events/<id>.html with ?ref&from&e",
+  "files": [
+   "assets/js/rsvp.js",
+   "assets/css/rsvp.css"
+  ],
+  "severity": "major",
+  "issue": "On an event page the invite banner repeats the title, date and 'I'm in', giving two identical CTAs in the first screen and pushing the cover photo down.",
+  "evidence": "At 390x844: banner 'I'm in' at 317 px, H1 at 546 px, page 'I'm in' at 750 px, all within the first screen (shots/a3-http-phone-event-first.png). Partiful shows the inviter as a single line on the invite itself.",
+  "fix": "Use a compact variant when e matches the current event page: avatar + 'Kira invited you' + dismiss, with no title, date or button."
+ },
+ {
+  "id": "journeys-16",
+  "page": "quiz.html (#show-up / #issue deep links)",
+  "files": [
+   "assets/js/pages/quiz.js"
+  ],
+  "severity": "major",
+  "issue": "'Start the quiz' (home), 'Find my type' (static result pages) and other quiz.html#show-up / #issue links only scroll to the picker; the quiz doesn't start.",
+  "evidence": "quiz.html#show-up loads with the player hidden at scrollY 958 and focus on BODY; #issue: player hidden at 1437. An extra tap and a 'did it work?' moment. 'Quick match (4 taps)' takes 6 taps from home.",
+  "fix": "On load and on hashchange with #show-up or #issue, run the same start routine as [data-quiz-start] and focus question 1."
+ },
+ {
+  "id": "journeys-17",
+  "page": "vote.html (#plan, mail voters)",
+  "files": [
+   "assets/js/pages/vote.js",
+   "data/civic.js"
+  ],
+  "severity": "major",
+  "issue": "A mail voter's plan .ics creates an event titled 'Vote: \u2026' at 7 pm on Election Day, which is the arrival deadline, inviting a late ballot.",
+  "evidence": "Plan: Altamonte Springs \u2192 registered \u2192 by mail \u2192 'the day it arrives'. my-voting-plan.ics has DTSTART;TZID=America/New_York:20271102T190000 and SUMMARY:Vote: Lake Mary and Altamonte Springs city elections (expected). Only the description says the ballot must reach the office by 7 pm.",
+  "fix": "For method 'mail', title it 'Mail ballot must ARRIVE by 7 pm (postmarks don't count)' and add a 'Mail your ballot' event about 7 days earlier (EN and ES)."
+ },
+ {
+  "id": "journeys-18",
+  "page": "quiz.html, quiz/** results, vote.html, clips.html, post.html",
+  "files": [
+   "quiz.html",
+   "vote.html",
+   "clips.html",
+   "post.html",
+   "tools/make_quiz_pages.js",
+   "assets/js/rsvp.js",
+   "data/slices/core.js"
+  ],
+  "severity": "major",
+  "issue": "Shared quiz, clip and vote links open with no 'who sent this' landing; the ref is captured but nothing is shown (B20 says all pages).",
+  "evidence": "These pages have no [data-invite-landing]. quiz.html?ref=KIRA7QX&from=Kira shows nothing, and a friend arriving on quiz/show-up/door-knock-natural.html?ref=\u2026 sees a stranger's result with no 'Kira got The Door-Knock Natural. What's yours?'.",
+  "fix": "Add the landing container to these pages plus a result-aware string on quiz result pages, and move landing() into a small invite.js that pages without events can load. Regenerate quiz/** and es/quiz/**."
+ },
+ {
+  "id": "journeys-19",
+  "page": "join.html #card, vote.html #plan, newsletter #signup",
+  "files": [
+   "assets/js/ui.js"
+  ],
+  "severity": "minor",
+  "issue": "In-page jump links don't move focus, so keyboard and screen reader users start from the top again.",
+  "evidence": "After 'See your card', the header 'Your card' and 'Make my plan', document.activeElement is <body>.",
+  "fix": "Add a generic same-page a[href^='#'] handler that focuses the target heading (tabindex=-1)."
+ },
+ {
+  "id": "journeys-20",
+  "page": "post.html",
+  "files": [
+   "assets/js/pages/post.js",
+   "data/pages/clips.js"
+  ],
+  "severity": "minor",
+  "issue": "The post form's error summary lists all 7 errors, including 'Tick this box to post your clip.' three times without naming which box.",
+  "evidence": "A bad-host link gives '7 things need a fix\u2026' with the host error plus 6 others and three identical consent lines.",
+  "fix": "Name each consent in its message, and consider validating only the step in view on first submit."
+ },
+ {
+  "id": "journeys-21",
+  "page": "post.html (Post another, non-member)",
+  "files": [
+   "assets/js/pages/post.js"
+  ],
+  "severity": "minor",
+  "issue": "'Post another' clears the age and minors answers, so non-members are asked their age again.",
+  "evidence": "After the first post, form2State.age is '', with captions and consents reset.",
+  "fix": "Keep the age for the session (not stored), or offer to join so it's remembered."
+ },
+ {
+  "id": "journeys-22",
+  "page": "index.html maker, quiz result",
+  "files": [
+   "assets/js/maker.js"
+  ],
+  "severity": "minor",
+  "issue": "'Copy link' copies the whole message rather than the link.",
+  "evidence": "The clipboard got '(DEMO event) Sunset walk-and-talk on Lake Monroe\u2026 Come with me? http://\u2026'.",
+  "fix": "Copy only the URL, or relabel the button 'Copy message'."
+ },
+ {
+  "id": "journeys-23",
+  "page": "quiz/show-up/*.html, quiz/issue/*.html",
+  "files": [
+   "tools/make_quiz_pages.js",
+   "assets/js/pages/quiz.js"
+  ],
+  "severity": "minor",
+  "issue": "A static result page's 'Send it to the group chat' shares that result page instead of the quiz.",
+  "evidence": "On door-knock-natural.html it copies 'Two quick quizzes\u2026 Take one and tell me what you get. \u2026/quiz/show-up/door-knock-natural.html'.",
+  "fix": "Point the share at quiz.html."
+ },
+ {
+  "id": "journeys-24",
+  "page": "events/<id>.html (.ics)",
+  "files": [
+   "assets/js/eventcard.js"
+  ],
+  "severity": "minor",
+  "issue": "The RSVP .ics LOCATION repeats the city.",
+  "evidence": "LOCATION:A board-game caf\u00e9 in Casselberry (DEMO venue)\\, Casselberry",
+  "fix": "Skip the city when the venue string already contains it."
+ },
+ {
+  "id": "journeys-25",
+  "page": "Invite landing banner",
+  "files": [
+   "assets/js/rsvp.js"
+  ],
+  "severity": "minor",
+  "issue": "The invite banner gives the date but not the place.",
+  "evidence": "'Kira invited you to Trivia night: Seminole County edition \u00b7 Thu, Nov 19 \u00b7 7 to 9 pm', with no Casselberry. AmericaFest and Partiful lead with date and place.",
+  "fix": "Append '\u00b7 {city}' to .invite-landing__what."
+ },
+ {
+  "id": "journeys-26",
+  "page": "404 (local QA server)",
+  "files": [
+   "tools/check_site.js"
+  ],
+  "severity": "minor",
+  "issue": "The local QA server serves the English 404 for missing /es/ paths, so the Spanish 404 is never exercised (production netlify.toml is correct).",
+  "evidence": "/es/events/nada.html on the check_site server returns lang=en with 'This page skipped the meeting.'; netlify.toml maps /es/* to /es/404.html.",
+  "fix": "In createServer(), serve es/404.html for missing paths under /es/."
+ }
+]
